@@ -42,7 +42,7 @@ final class DaxDialogsOnboardingMigratorTests: XCTestCase {
         XCTAssertFalse(daxDialogsSettingsMock.isDismissed)
 
         // WHEN
-        sut.migrateFromOldToNewOboarding()
+        sut.migrateFromOldToNewOnboarding()
 
         // THEN
         XCTAssertTrue(daxDialogsSettingsMock.isDismissed)
@@ -54,7 +54,7 @@ final class DaxDialogsOnboardingMigratorTests: XCTestCase {
         XCTAssertFalse(daxDialogsSettingsMock.isDismissed)
 
         // WHEN
-        sut.migrateFromOldToNewOboarding()
+        sut.migrateFromOldToNewOnboarding()
 
         // THEN
         XCTAssertFalse(daxDialogsSettingsMock.isDismissed)

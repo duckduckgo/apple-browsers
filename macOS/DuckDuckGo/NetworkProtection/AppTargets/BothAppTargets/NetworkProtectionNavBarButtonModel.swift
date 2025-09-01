@@ -69,7 +69,11 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
 
     // MARK: - Upsell
 
-    private var shouldShowUpsell = false
+    @Published
+    private(set) var shouldShowUpsell = false
+
+    @Published
+    private(set) var shouldShowNotificationDot = false
 
     // MARK: - Initialization
 
@@ -78,7 +82,7 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
          vpnGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
          statusReporter: NetworkProtectionStatusReporter,
          iconProvider: IconProvider,
-         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = Application.appDelegate.vpnUpsellVisibilityManager) {
+         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager) {
 
         self.popoverManager = popoverManager
         self.vpnGatekeeper = vpnGatekeeper
@@ -140,14 +144,24 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
     }
 
     private func setupUpsellSubscription() {
-        vpnUpsellVisibilityManager.$shouldShowUpsell.sink { [weak self] shouldShowUpsell in
+        vpnUpsellVisibilityManager.$state.sink { [weak self] state in
             guard let self = self else {
                 return
             }
 
             Task { @MainActor in
-                self.shouldShowUpsell = shouldShowUpsell
+                self.shouldShowUpsell = state == .visible
                 self.updateVisibility()
+            }
+        }.store(in: &cancellables)
+
+        vpnUpsellVisibilityManager.$shouldShowNotificationDot.sink { [weak self] shouldShowNotificationDot in
+            guard let self = self else {
+                return
+            }
+
+            Task { @MainActor in
+                self.shouldShowNotificationDot = shouldShowNotificationDot
             }
         }.store(in: &cancellables)
     }
@@ -155,6 +169,12 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
     @MainActor
     func updateVisibility() {
         Task { @MainActor in
+            guard !shouldShowUpsell else {
+                pinNetworkProtectionToNavBarIfNeverPinnedBefore()
+                showVPNButton = true
+                return
+            }
+
             guard let canStartVPN = try? await vpnGatekeeper.canStartVPN() else {
                 // If there's an error, don't make any changes
                 return
@@ -168,7 +188,7 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
                 return
             }
 
-            showVPNButton = isPinned || popoverManager.isShown || isHavingConnectivityIssues || shouldShowUpsell
+            showVPNButton = isPinned || popoverManager.isShown || isHavingConnectivityIssues
         }
     }
 

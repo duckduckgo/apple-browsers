@@ -944,6 +944,15 @@
 "broken.site.report.success.toast" = "Jouw melding helpt DuckDuckGo beter te maken voor iedereen!";
 
 /* No comment provided by engineer. */
+"Broker JSON:" = "JSON datahandelaars:";
+
+/* No comment provided by engineer. */
+"Broker: %@" = "Datahandelaar: %@";
+
+/* No comment provided by engineer. */
+"Brokers" = "Datahandelaars";
+
+/* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Annuleren is niet meer dan één keer toegestaan";
 
 /* Close All Tabs */
@@ -1135,6 +1144,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Wachtwoorden exporteren vanuit Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Selecteer bestand...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Selecteer het bestand met wachtwoorden die zijn geëxporteerd uit Safari of Chrome. Dit is meestal een ZIP- of CSV-bestand.";
 
@@ -1161,6 +1173,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Importeren voltooid!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Creditcards";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Overgeslagen duplicaten";
@@ -1203,6 +1218,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Fouten opsporen";
+
+/* No comment provided by engineer. */
+"Delete" = "Verwijderen";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "apparaat";
@@ -1311,6 +1329,30 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo voor iOS";
+
+/* Header title for the subscription activation view */
+"duckduckgo.subscription.activate.header.title" = "Voeg je DuckDuckGo-abonnement toe aan dit apparaat";
+
+/* Description for adding subscription via email address */
+"duckduckgo.subscription.activate.via.email.description" = "Gebruik een e-mailadres om je abonnement aan dit apparaat toe te voegen.";
+
+/* Header for section for activating subscription on other devices */
+"duckduckgo.subscription.add.to.devices.header" = "Voeg je abonnement toe aan andere apparaten";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"duckduckgo.subscription.add.to.devices.no.email.footer" = "Voeg je abonnement toe aan je andere apparaten via Apple ID of door een e-mailadres te koppelen. **[Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"duckduckgo.subscription.add.to.devices.with.email.footer" = "Gebruik dit e-mailadres om je abonnement toe te voegen aan je andere apparaten in de DuckDuckGo-app. Ga naar Instellingen > DuckDuckGo-abonnement > Ik heb een abonnement. **[Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* FAQ Description */
+"duckduckgo.subscription.faq.description" = "Krijg via onze hulppagina's antwoorden op veelgestelde vragen of neem er contact op met de klantenservice voor abonnementen.";
+
+/* Hero Text for Personal information removal */
+"duckduckgo.subscription.pir.hero" = "Activeer het DuckDuckGo-abonnement op je desktop om Personal Information Removal in te stellen";
+
+/* Remove from device confirmation dialog text */
+"duckduckgo.subscription.remove.from.device.text" = "Je hebt niet langer toegang tot je DuckDuckGo-abonnement op dit apparaat. Je abonnement wordt niet opgezegd en het blijft actief op je andere apparaten.";
 
 /* Text displayed when DuckPlayer is always enabled */
 "duckPlayer.alwaysEnabled.label" = "Altijd";
@@ -1948,6 +1990,9 @@
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Alle tabbladen weergeven";
 
+/* No comment provided by engineer. */
+"Loading brokers..." = "Datahandelaars laden...";
+
 /* Summary text for the macOS browser waitlist */
 "mac-browser.waitlist.summary" = "DuckDuckGo voor Mac heeft de snelheid die je nodig hebt en de browsefuncties die je verwacht, en zit boordevol met onze allerbeste privacy essentials.";
 
@@ -2036,7 +2081,7 @@
 "network.protection.addwidget.tip.title" = "VPN-widget toevoegen";
 
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "De VPN-verbinding is verbroken omdat het abonnement is verlopen. Abonneer je op Privacy Pro om opnieuw verbinding te maken met DuckDuckGo VPN.";
+"network.protection.entitlement.expired.notification.body" = "De VPN-verbinding is verbroken omdat het abonnement is verlopen. Abonneer je op DuckDuckGo om opnieuw verbinding te maken met de VPN.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN kon geen verbinding maken. Probeer het later opnieuw.";
@@ -2242,47 +2287,11 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Sneltoetsen";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Pas je favorieten en go-to-functies aan. Herschik dingen of verberg ze om de tabbladpagina overzichtelijk te maken.";
+/* No comment provided by engineer. */
+"No results found" = "Geen resultaten gevonden";
 
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Je nieuwe tabbladpagina is... Nieuw!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Favorieten";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Sneltoetsen";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Secties op het nieuwe tabblad weergeven, verbergen en opnieuw ordenen";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "SECTIES";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "Sneltoetsen";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Nieuwe tabbladpagina aanpassen";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Bladwijzers";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Downloads";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Wachtwoorden";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Instellingen";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Open op een willekeurige site het menu ••• en selecteer **Favoriet toevoegen** om deze toe te voegen aan je nieuwe tabbladpagina.";
+/* No comment provided by engineer. */
+"OK" = "OK";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Beheerde cookies";
@@ -2298,6 +2307,18 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Standaard privé zoeken";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo heeft ook een %1$@, beschikbaar met een %2$@ en %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "geavanceerde, privé AI";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "Optioneel betaald abonnement.";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
 
 /* The message of the option to set the address bar to the bottom. */
 "onboarding.highlights.addressBarPosition.bottom.message" = "Gemakkelijk te bereiken";
@@ -2338,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Verwijder browsegegevens met één knop";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokkeer trackers van derden";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2377,6 +2398,18 @@
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Ik snap het! Ik sla de andere tips over.";
 
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Probeer het gratis!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "DuckDuckGo heeft ook een beveiligde %1$@, verkrijgbaar met een %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "Optioneel betaald abonnement.";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + nog 2 premium beveiligingen";
+
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Widget toevoegen";
 
@@ -2409,6 +2442,9 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "De app die nodig is om die link te openen, is niet gevonden";
+
+/* No comment provided by engineer. */
+"Opting Out..." = "Afmelden...";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Geen toegang tot de alleen voor abonnees beschikbare Duck.ai-modellen";
@@ -2593,6 +2629,9 @@
 /* Privacy Icon accessibility title */
 "privacy.icon.shield" = "Privacy-pictogram";
 
+/* No comment provided by engineer. */
+"Profile Information" = "Profielgegevens";
+
 /* Deny action */
 "prompt.custom.url.scheme.dontopen" = "Annuleren";
 
@@ -2606,6 +2645,9 @@
 "prompt.custom.url.scheme.title" = "Openen in een andere app?";
 
 /* No comment provided by engineer. */
+"Relatives: %@" = "Gezinsleden: %@";
+
+/* No comment provided by engineer. */
 "Reset" = "Herstel";
 
 /* No comment provided by engineer. */
@@ -2615,7 +2657,19 @@
 "Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
+"Results" = "Resultaten";
+
+/* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Zoek of voer een adres in";
+
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Vraag stellen aan Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Zoeken";
 
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Secundaire/ Tweede actie";
@@ -2647,11 +2701,17 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Over";
 
+/* About page subscription sentence: deprecated */
+"settings.about.subscription.sentence.deprecated" = "Daarnaast bieden we ook [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), een drie-in-één abonnementsservice, geïntegreerd in onze browser. Abonnees van Privacy Pro krijgen nog meer privacybescherming met een snelle en eenvoudige [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) die je online activiteiten beschermt, een dienst die je persoonlijke gegevens opspoort en verwijdert van zoeksites om mensen op internet te vinden, en een dienst die je identiteit herstelt als deze wordt gestolen.";
+
+/* About page subscription sentence: rebranding + AI chat */
+"settings.about.subscription.sentence.rebranding.ai" = "Daarnaast bieden we het [DuckDuckGo-abonnement](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) ook in onze browser aan. Abonnees profiteren van nog meer privacybescherming met een snel en eenvoudig [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) om je online activiteiten te beschermen, toegang tot geavanceerde AI-modellen in onze privé AI-chatdienst Duck.ai, een functie die je persoonlijke gegevens opspoort en verwijdert van sites om mensen online te zoeken, en een dienst die je identiteit herstelt als deze wordt gestolen.";
+
 /* about tagline */
 "settings.about.tagline" = "Bescherming. Privacy.Gemoedsrust.";
 
-/* about page */
-"settings.about.text.new" = "DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.\n\nWe believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. \n\nIn addition, we also offer [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), a three-in-one subscription service, integrated into our browser. Subscribers to Privacy Pro get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.\n\nTake back control of your personal information with the browser designed for data protection, not data collection.";
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo is het onafhankelijke online beveiligingsbedrijf voor iedereen die weer controle wil krijgen over zijn of haar persoonlijke gegevens.\n\nWij zijn ervan overtuigd dat de beste manier om je persoonlijke gegevens te beschermen tegen hackers, oplichters en bedrijven die je privacy schenden is om te voorkomen dat ze worden verzameld. Daarom verkiezen miljoenen mensen [DuckDuckGo boven Chrome en andere browsers](ddgQuickLink://duckduckgo.com/compare-privacy) om online te zoeken en te surfen. Onze ingebouwde zoekmachine is zoals Google, maar volgt je zoekopdrachten nooit. En met onze browsebescherming, zoals blokkering van advertentietrackers en cookieblokkering, voorkom je dat andere bedrijven je gegevens verzamelen. Oh, en onze browser is gratis — we verdienen geld met [zoekadvertenties die de privacy respecteren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), niet door je gegevens uit te buiten. \n\n%@ \n\nKrijg weer de controle over je persoonlijke gegevens met de browser die is ontworpen voor gegevensbescherming, niet voor gegevensverzameling.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Toegankelijkheid";
@@ -2671,11 +2731,29 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Volledig siteadres weergeven";
 
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Standaard)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Experimenteel)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Probeer onze experimentele optie om Duck.ai direct vanuit de adresbalk te benaderen.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Zoeken en Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Alleen zoeken";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Snelkoppelingen Duck.ai beheren";
+
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-snelkoppelingen";
 
 /* Settings screen text for showing AI Chat in the input box */
-"settings.aichat.shortcuts.input" = "Zoekinvoer";
+"settings.aichat.shortcuts.input" = "Experimentele adresbalk";
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Zoeken op het web of direct een vraag stellen aan Duck.ai vanuit de adresbalk";
@@ -2749,6 +2827,9 @@
 /* Settings cell to link users to other products by DuckDuckGo */
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo op andere platforms";
 
+/* Subscription expired tittle message */
+"settings.duckduckgo.subscription.expired.title" = "Je Privacy Pro-abonnement is verlopen";
+
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Blokkeer e-mailtrackers en verberg je adres, zonder van e-mailprovider te wisselen.\n[Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/wat-is-duckduckgo-email-protection/)";
 
@@ -2797,8 +2878,14 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Wachtwoorden importeren";
 
+/* Copy for budge on settings item to show an item is new */
+"settings.item.badge.new" = "Nieuw";
+
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Toetsenbord";
+
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Meer informatie";
 
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Laat DuckDuckGo pop-ups voor cookietoestemming beheren";
@@ -2893,9 +2980,6 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Ik heb een abonnement";
 
-/* Subscription expired description */
-"settings.subscription.expired.comment" = "Abonneer je opnieuw om Privacy Pro te blijven gebruiken";
-
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Je Privacy Pro-abonnement is verlopen";
 
@@ -2930,7 +3014,7 @@
 "settings.subscription.subscribe.title.no.ai.chat" = "Beveilig je wifi, en bescherm je identiteit.";
 
 /* Try DuckDuckGo Subscription Free button text */
-"settings.subscription.try.free.button" = "Probeer het DuckDuckGo-abonnement gratis";
+"settings.subscription.try.free.button" = "Probeer gratis";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free.no.ai.chat" = "Probeer Privacy Pro gratis";
@@ -2953,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Instellingen";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Helpt bij het blokkeren van trackers van derden die zich proberen te vermommen binnen een website met behulp van DNS.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Beschermt tegen DNS CNAME cloaking";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Schakelt tracking uit voor Facebook-content, zoals Facebook-widgets voor reacties op andere sites.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Bescherming tegen Facebook-tracking";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Helpt voorkomen dat trackingbedrijven unieke identificatiegegevens over je browser en apparaat verkrijgen, die ze gebruiken om je op het internet te volgen.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Voorkomt fingerprint tracking";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Verlaat automatisch cookies van eerste partijen na 30 dagen, zodat sites je niet onbeperkt kunnen volgen als je bent uitgelogd.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Laat cookies van eerste partijen vervallen";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Vervangt Google AMP-links door de site van de oorspronkelijke uitgever.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blokkeert Google's AMP-tracking";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blokkeert aanmeldingspop-ups van Google op sites die niet van Google zijn.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blokkeert de pop-ups voor aanmelden bij Google";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Verwijdert trackingparameters in links om te voorkomen dat derden je gedrag op verschillende sites kunnen volgen.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blokkeert het volgen van links";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Helpt voorkomen dat bedrijven de laatst bezochte website kunnen identificeren.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Beschermt tegen referrer tracking";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "We blokkeren invasieve trackers voordat ze worden geladen. Zo elimineren we effectief advertenties die afhankelijk zijn van tracking.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blokkeert gerichte advertenties";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Helpt bij het blokkeren van cookies van derden die je op elke website volgen door te voorkomen dat trackers van derden überhaupt worden geladen.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blokkeert trackers van derden";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Onbeschermde sites";
 
@@ -2965,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Bescherming tegen webtracking";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Bescherming tegen webtracking is altijd ingeschakeld";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo blokkeert automatisch verborgen trackers terwijl je op het web surft.\n[Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Hoe wij je beschermen";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "De DuckDuckGo-browser biedt bescherming tegen tracking die altijd actief is. [Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Selecteer de optie die het beste je probleem beschrijft.";
@@ -3046,9 +3199,6 @@
 /* View title for activating subscription */
 "subscription.activate.view.title" = "Ik heb een abonnement";
 
-/* Resend activation instructions button */
-"subscription.add.device.resend.instructions" = "Instructies opnieuw verzenden";
-
 /* Add email to an existing subscription */
 "subscription.add.email" = "Voeg een e-mailadres toe om je abonnement op je andere apparaten te activeren. We zullen dit adres alleen gebruiken om je abonnement te verifiëren.";
 
@@ -3063,9 +3213,6 @@
 
 /* Footer for section for activating subscription on other devices when email is added */
 "subscription.add.to.devices.with.email.footer" = "Gebruik dit e-mailadres om je abonnement toe te voegen op je andere apparaten in de DuckDuckGo-app. Ga naar Instellingen > Privacy Pro > Ik heb een abonnement. **[Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Subscription availability message on Apple devices */
-"subscription.available.apple" = "Privacy Pro is beschikbaar op elk apparaat dat is aangemeld bij hetzelfde Apple-account.";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Je abonnement is aangeschaft via de Google Play Store. Om je abonnement te verlengen, open je de abonnementsinstellingen van de Google Play Store op een apparaat dat is aangemeld bij hetzelfde Google-account waarmee je het abonnement hebt gekocht.";
@@ -3109,8 +3256,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Krijg antwoorden op veelgestelde vragen of neem contact op met de klantenservice van Privacy Pro via onze helppagina's.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Verstuur feedback";
+/* Share Feedback Button */
+"subscription.feedback" = "Feedback delen";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Annuleren";
@@ -3168,6 +3315,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Je abonnement wordt hersteld ...";
+
+/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
+"subscription.rebranding.message" = "Privacy Pro heet nu gewoon het DuckDuckGo-abonnement";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Verwijderen van dit apparaat";
@@ -3422,7 +3572,7 @@
 "vpn.access-revoked.alert.action.subscribe" = "Abonneer";
 
 /* Alert message for the alert when the Privacy Pro subscription expiress */
-"vpn.access-revoked.alert.message" = "Abonneer je op Privacy Pro om opnieuw verbinding te maken met DuckDuckGo VPN.";
+"vpn.access-revoked.alert.message" = "Abonneer je op DuckDuckGo om opnieuw verbinding te maken met de VPN.";
 
 /* Alert title for the alert when the Privacy Pro subscription expires */
 "vpn.access-revoked.alert.title" = "De verbinding met de VPN is verbroken omdat het abonnement is beëindigd";
@@ -3663,6 +3813,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Doorgaan";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Creditcards";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Wachtwoorden";

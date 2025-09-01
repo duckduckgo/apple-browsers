@@ -121,12 +121,6 @@ public final class DataBrokerProtectionManager {
         authenticationManager.isUserAuthenticated
     }
 
-    public func checkForBrokerUpdates() {
-        Task {
-            try await brokerUpdater?.checkForUpdates()
-        }
-    }
-
     // MARK: - Debugging Features
 
     public func showAgentIPAddress() {

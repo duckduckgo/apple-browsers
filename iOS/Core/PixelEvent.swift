@@ -42,6 +42,10 @@ extension Pixel {
         case refreshPressed
         case pullToRefresh
 
+        // https://app.asana.com/1/137249556945/project/392891325557410/task/1210882421460693?focus=true
+        case widgetReport
+        case widgetReportFailure
+
         case deviceOrientationLandscape
 
         case keyboardGoWhileOnNTP
@@ -78,6 +82,7 @@ extension Pixel {
         case tabsStoreSupportDirAccessError
         case tabsStoreInitError
         case tabsStoreSaveError
+        case tabsStoreReadError
 
         // MARK: Tabswitcher improvements
         case tabSwitcherEditMenuClicked
@@ -192,6 +197,8 @@ extension Pixel {
         case autocompleteClickSearchHistory
         case autocompleteClickSiteHistory
         case autocompleteClickOpenTab
+        case autocompleteAskAIChatLegacyExperience
+        case autocompleteAskAIChatExperimentalExperience
         case autocompleteDisplayedLocalBookmark
         case autocompleteDisplayedLocalFavorite
         case autocompleteDisplayedLocalHistory
@@ -792,10 +799,7 @@ extension Pixel {
 
         case debugBreakageExperiment
 
-        case debugWebViewNotInVisibleTabHierarchy
         case debugWebViewInVisibleTabHidden
-        case debugWebViewNotAttachedToWindow
-        case debugWebViewHasZeroFrameSize
 
         // Return user measurement
         case debugReturnUserAddATB
@@ -814,6 +818,7 @@ extension Pixel {
         
         case bookmarksCouldNotLoadDatabase
         case bookmarksCouldNotPrepareDatabase
+        case bookmarksCouldNotMigrateDatabase
         case bookmarksMigrationAlreadyPerformed
         case bookmarksMigrationFailed
         case bookmarksMigrationCouldNotPrepareDatabase
@@ -973,6 +978,10 @@ extension Pixel {
         case debugDefaultBrowserPromptFailedToRetrieveUserType
         /// Fired when it is not possible to save from the persistence store the type of user.
         case debugDefaultBrowserPromptFailedToSaveUserType
+        /// Fired when it is not possible to retrieve from the persistence store whether the inactive user modal was shown.
+        case debugDefaultBrowserPromptFailedToRetrieveInactiveModalShown
+        /// Fired when it is not possible to save from the persistence store that the inactive user modal was shown.
+        case  debugDefaultBrowserPromptFailedToSaveInactiveModalShown
 
         /// Fired when the SAD modal sheet appears on screen.
         case defaultBrowserPromptModalShown
@@ -982,6 +991,17 @@ extension Pixel {
         case defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped
         /// Fired when the “Don’t ask again” button of the SAD modal sheet is tapped.
         case defaultBrowserPromptModalDoNotAskAgainButtonTapped
+        /// Fired when the SAD modal sheet for inactive users appears on screen.
+        case defaultBrowserPromptInactiveUserModalShown
+        /// Fired when the “Close” button of the SAD modal sheet for inactive users is tapped.
+        case defaultBrowserPromptInactiveUserModalClosedButtonTapped
+        /// Fired when the “Set As Default Browser" button of the SAD modal sheet for inactive users is tapped.
+        case defaultBrowserPromptInactiveUserModalSetAsDefaultBrowserButtonTapped
+        /// Fired when "Plus even more protections..." button of the SAD modal sheet for inactive users is tapped.
+        case defaultBrowserPromptInactiveUserModalMoreProtectionsButtonTapped
+
+        /// Fired when creating the app configurationuser defaults in ai chat settings migration failed.
+        case debugFailedToCreateAppConfigurationUserDefaultsInAIChatSettingsMigration
 
         // MARK: History
         case historyStoreLoadFailed
@@ -1026,13 +1046,20 @@ extension Pixel {
         case privacyProSubscriptionManagementRemoval
         case privacyProSuccessfulSubscriptionAttribution
         case privacyProKeychainAccessError
+        // Subscription KeychainManager
+        case privacyProKeychainManagerDataAddedToTheBacklog
+        case privacyProKeychainManagerDeallocatedWithBacklog
+        case privacyProKeychainManagerDataWroteFromBacklog
+        case privacyProKeychainManagerFailedToWriteDataFromBacklog
         // AUth V2
         case privacyProInvalidRefreshTokenDetected
         case privacyProInvalidRefreshTokenSignedOut
         case privacyProInvalidRefreshTokenRecovered
         case privacyProAuthV2MigrationFailed
+        case privacyProAuthV2MigrationFailed2
         case privacyProAuthV2MigrationSucceeded
         case privacyProAuthV2GetTokensError
+        case privacyProAuthV2GetTokensError2
 
         case settingsPrivacyProAccountWithNoSubscriptionFound
 
@@ -1138,26 +1165,6 @@ extension Pixel {
         case favoriteLaunchedNTPDaily
         case bookmarkLaunchedDaily
         case newTabPageDisplayedDaily
-
-        // MARK: New Tab Page
-        case newTabPageMessageDisplayed
-        case newTabPageMessageDismissed
-
-        case newTabPageFavoritesPlaceholderTapped
-
-        case newTabPageFavoritesSeeMore
-        case newTabPageFavoritesSeeLess
-
-        case newTabPageCustomize
-
-        case newTabPageShortcutClicked(_ shortcutName: String)
-
-        case newTabPageCustomizeSectionOff(_ sectionName: String)
-        case newTabPageCustomizeSectionOn(_ sectionName: String)
-        case newTabPageSectionReordered
-
-        case newTabPageCustomizeShortcutRemoved(_ shortcutName: String)
-        case newTabPageCustomizeShortcutAdded(_ shortcutName: String)
 
         // MARK: DuckPlayer
 
@@ -1266,6 +1273,17 @@ extension Pixel {
         case aiChatMetricOpenMostRecentHistoryChat
         case aiChatMetricSentPromptOngoingChat
         case aiChatInternalSwitchBarDisplayed
+        case aiChatExperimentalAddressBarIsEnabledDaily
+        
+        // MARK: Experimental Omnibar Metrics
+        case aiChatExperimentalOmnibarShown
+        case aiChatExperimentalOmnibarPromptSubmitted
+        case aiChatExperimentalOmnibarQuerySubmitted
+        case aiChatExperimentalOmnibarModeSwitched
+        case aiChatExperimentalOmnibarSessionBothModes
+        case aiChatLegacyOmnibarShown
+        case aiChatLegacyOmnibarQuerySubmitted
+        case aiChatLegacyOmnibarAichatButtonPressed
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1320,6 +1338,11 @@ extension Pixel {
         case duckPlayerNativePrimingModalCTA
         /// Settings gear icon is tapped from Duck Player UI
         case duckPlayerNativeDuckPlayerSettingsOpened
+
+        // MARK: - System Settings Picture-in-Picture Video Tutorial
+        case systemSettingsPiPTutorialFailedToLoadVideo
+
+        case appDidTerminateWithUnhandledError
     }
 
 }
@@ -1336,6 +1359,8 @@ extension Pixel.Event {
         case .appLaunchFromShareExtension: return "m_app-launch_shared-link"
         case .refreshPressed: return "m_r"
         case .pullToRefresh: return "m_pull-to-reload"
+        case .widgetReport: return "m_widget-report"
+        case .widgetReportFailure: return "m_widget-report-failure"
 
         case .deviceOrientationLandscape: return "m_device_orientation_landscape"
 
@@ -1362,6 +1387,7 @@ extension Pixel.Event {
         case .tabsStoreSupportDirAccessError: return "m_debug_tabs_store_support_dir_access_error"
         case .tabsStoreInitError: return "m_debug_tabs_store_init_error"
         case .tabsStoreSaveError: return "m_debug_tabs_store_save_error"
+        case .tabsStoreReadError: return "m_debug_tabs_store_read_error"
 
         case .tabSwitcherListEnabled: return "m_ts_l"
         case .tabSwitcherGridEnabled: return "m_ts_g"
@@ -1477,6 +1503,10 @@ extension Pixel.Event {
         case .autocompleteClickSearchHistory: return "m_autocomplete_click_history_search"
         case .autocompleteClickSiteHistory: return "m_autocomplete_click_history_site"
         case .autocompleteClickOpenTab: return "m_autocomplete_click_switch_to_tab"
+
+        case .autocompleteAskAIChatLegacyExperience: return "m_autocomplete_click_askaichat_legacy"
+        case .autocompleteAskAIChatExperimentalExperience: return "m_autocomplete_click_askaichat_experimental"
+
         case .autocompleteDisplayedLocalBookmark: return "m_autocomplete_display_local_bookmark"
         case .autocompleteDisplayedLocalFavorite: return "m_autocomplete_display_local_favorite"
         case .autocompleteDisplayedLocalHistory: return "m_autocomplete_display_local_history"
@@ -2002,6 +2032,8 @@ extension Pixel.Event {
         case .debugWebsiteDataStoresNotClearedOne: return "m_d_wkwebsitedatastoresnotcleared_one"
         case .debugWebsiteDataStoresCleared: return "m_d_wkwebsitedatastorescleared"
 
+        case .debugFailedToCreateAppConfigurationUserDefaultsInAIChatSettingsMigration: return "m_debug_failed-to-create-app-configuration-during-aichat-settings-migration"
+
             // MARK: Tab interaction state debug pixels
 
         case .tabInteractionStateSourceMissingRootDirectory:
@@ -2034,17 +2066,22 @@ extension Pixel.Event {
         case .debugDefaultBrowserPromptFailedToRetrieveUserType: return "m_debug_set-as-default-prompt_failed-to-retrieve-user-type"
         case .debugDefaultBrowserPromptFailedToSaveUserType: return "m_debug_set-as-default-prompt_failed-to-save-user-type"
 
+        case .debugDefaultBrowserPromptFailedToRetrieveInactiveModalShown: return "m_debug_set-as-default-prompt_failed-to-retrieve-inactive-modal-shown"
+        case .debugDefaultBrowserPromptFailedToSaveInactiveModalShown: return "m_debug_set-as-default-prompt_failed-to-save-inactive-modal-shown"
+
         case .defaultBrowserPromptModalShown: return "m_set-as-default-prompt_modal-shown"
         case .defaultBrowserPromptModalClosedButtonTapped: return "m_set-as-default-prompt_modal-closed-button-action"
         case .defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped: return "m_set-as-default-prompt_modal-set-as-default-browser-button-action"
         case .defaultBrowserPromptModalDoNotAskAgainButtonTapped: return "m_set-as-default-prompt_modal-do-not-ask-again-button-action"
 
+        case .defaultBrowserPromptInactiveUserModalShown: return "m_set-as-default-prompt_inactive-user-modal-shown"
+        case .defaultBrowserPromptInactiveUserModalClosedButtonTapped: return "m_set-as-default-prompt_inactive-user_modal-closed-button-action"
+        case .defaultBrowserPromptInactiveUserModalSetAsDefaultBrowserButtonTapped: return "m_set-as-default-prompt_inactive-user_modal-set-as-default-browser-button-action"
+        case .defaultBrowserPromptInactiveUserModalMoreProtectionsButtonTapped: return "m_set-as-default-prompt_inactive-user_modal-more-protections-button-action"
+
             // MARK: Debug Web View
 
         case .debugWebViewInVisibleTabHidden: return "m_debug_webview_in_visible_tab_hidden"
-        case .debugWebViewNotInVisibleTabHierarchy: return "m_debug_webview_not_in_visible_tab_hierarchy"
-        case .debugWebViewNotAttachedToWindow: return "m_debug_webview_not_attached_to_window"
-        case .debugWebViewHasZeroFrameSize: return "m_debug_webview_has_zero_frame_size"
 
             // MARK: Ad Attribution
 
@@ -2072,6 +2109,7 @@ extension Pixel.Event {
             
         case .bookmarksCouldNotLoadDatabase: return "m_d_bookmarks_could_not_load_database"
         case .bookmarksCouldNotPrepareDatabase: return "m_d_bookmarks_could_not_prepare_database"
+        case .bookmarksCouldNotMigrateDatabase: return "m_d_bookmarks_could_not_migrate_database"
         case .bookmarksMigrationAlreadyPerformed: return "m_d_bookmarks_migration_already_performed"
         case .bookmarksMigrationFailed: return "m_d_bookmarks_migration_failed"
         case .bookmarksMigrationCouldNotPrepareDatabase: return "m_d_bookmarks_migration_could_not_prepare_database"
@@ -2242,13 +2280,20 @@ extension Pixel.Event {
         case .privacyProSubscriptionManagementRemoval: return "m_privacy-pro_settings_remove-from-device_click"
         case .privacyProSuccessfulSubscriptionAttribution: return "m_subscribe"
         case .privacyProKeychainAccessError: return "m_privacy-pro_keychain_access_error"
-        // AUth V2
+            // Subscription KeychainManager
+        case .privacyProKeychainManagerDataAddedToTheBacklog: return "m_privacy-pro_keychain_manager_data_added_to_backlog"
+        case .privacyProKeychainManagerDeallocatedWithBacklog: return "m_privacy-pro_keychain_manager_deallocated_with_backlog"
+        case .privacyProKeychainManagerDataWroteFromBacklog: return "m_privacy-pro_keychain_manager_data_wrote_from_backlog"
+        case .privacyProKeychainManagerFailedToWriteDataFromBacklog: return "m_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
+            // Auth V2
         case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .privacyProInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
         case .privacyProAuthV2MigrationFailed: return "m_privacy-pro_auth_v2_migration_failure"
+        case .privacyProAuthV2MigrationFailed2: return "m_privacy-pro_auth_v2_migration_failure2"
         case .privacyProAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
         case .privacyProAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"
+        case .privacyProAuthV2GetTokensError2: return "m_privacy-pro_auth_v2_get_tokens_error2"
 
         case .settingsPrivacyProAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
 
@@ -2344,31 +2389,6 @@ extension Pixel.Event {
         case .bookmarkLaunchedDaily: return "m_bookmark_launched_daily"
         case .newTabPageDisplayedDaily: return "m_new_tab_page_displayed_daily"
 
-        // MARK: New Tab Page
-        case .newTabPageMessageDisplayed: return "m_new_tab_page_message_displayed"
-        case .newTabPageMessageDismissed: return "m_new_tab_page_message_dismissed"
-
-        case .newTabPageFavoritesPlaceholderTapped: return "m_new_tab_page_favorites_placeholder_click"
-
-        case .newTabPageFavoritesSeeMore: return "m_new_tab_page_favorites_see_more"
-        case .newTabPageFavoritesSeeLess: return "m_new_tab_page_favorites_see_less"
-
-        case .newTabPageShortcutClicked(let name):
-            return "m_new_tab_page_shortcut_clicked_\(name)"
-
-        case .newTabPageCustomize: return "m_new_tab_page_customize"
-
-        case .newTabPageCustomizeSectionOff(let sectionName):
-            return "m_new_tab_page_customize_section_off_\(sectionName)"
-        case .newTabPageCustomizeSectionOn(let sectionName):
-            return "m_new_tab_page_customize_section_on_\(sectionName)"
-        case .newTabPageSectionReordered: return "m_new_tab_page_customize_section_reordered"
-
-        case .newTabPageCustomizeShortcutRemoved(let shortcutName):
-            return "m_new_tab_page_customize_shortcut_removed_\(shortcutName)"
-        case .newTabPageCustomizeShortcutAdded(let shortcutName):
-            return "m_new_tab_page_customize_shortcut_added_\(shortcutName)"
-
         // MARK: DuckPlayer
         case .duckPlayerSettingsOpen: return "m_settings_duckplayer_open"
         case .duckPlayerDailyUniqueView: return "duckplayer_daily-unique-view"
@@ -2443,7 +2463,7 @@ extension Pixel.Event {
 
         // MARK: Launch time
         case .appDidFinishLaunchingTime(let time): return "m_debug_app-did-finish-launching-time-\(time)"
-        case .appDidShowUITime(let time): return "m_debug_app-did-show-ui-time-\(time)"
+        case .appDidShowUITime(let time): return "m_debug_app-did-show-ui-time-2-\(time)"
 
         // MARK: AI Chat
         case .aiChatNoRemoteSettingsFound(let settings):
@@ -2478,6 +2498,17 @@ extension Pixel.Event {
         case .aiChatMetricOpenMostRecentHistoryChat: return "m_aichat_open_most_recent_history_chat"
         case .aiChatMetricSentPromptOngoingChat: return "m_aichat_sent_prompt_ongoing_chat"
         case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
+        case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
+        
+        // MARK: Experimental Omnibar Metrics
+        case .aiChatExperimentalOmnibarShown: return "m_aichat_experimental_omnibar_shown"
+        case .aiChatExperimentalOmnibarPromptSubmitted: return "m_aichat_experimental_omnibar_prompt_submitted"
+        case .aiChatExperimentalOmnibarQuerySubmitted: return "m_aichat_experimental_omnibar_query_submitted"
+        case .aiChatExperimentalOmnibarModeSwitched: return "m_aichat_experimental_omnibar_mode_switched"
+        case .aiChatExperimentalOmnibarSessionBothModes: return "m_aichat_experimental_omnibar_session_both_modes"
+        case .aiChatLegacyOmnibarShown: return "m_aichat_legacy_omnibar_shown"
+        case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
+        case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"
@@ -2581,6 +2612,11 @@ extension Pixel.Event {
         /// Settings gear icon is tapped from Duck Player UI
         case .duckPlayerNativeDuckPlayerSettingsOpened:
             return "duckplayer_native_duckplayer_settings_opened"
+
+        // MARK: System Settings PiP Video Tutorial
+        case .systemSettingsPiPTutorialFailedToLoadVideo: return "m_picture-in-picture-tutorial_failed-to-load-video"
+
+        case .appDidTerminateWithUnhandledError: return "m_app-did-terminate-with-unhandled-error"
         }
     }
 }

@@ -28,14 +28,14 @@ public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridg
     public init() {}
 
     public var enabledFeatures: [Entitlement.ProductName] = []
-    public func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool {
-        enabledFeatures.contains(feature)
-    }
     public func isFeatureEnabled(_ feature: Entitlement.ProductName) async -> Bool {
         enabledFeatures.contains(feature)
     }
 
     public var subscriptionFeatures: [Entitlement.ProductName] = []
+    public func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool {
+        subscriptionFeatures.contains(feature)
+    }
     public func currentSubscriptionFeatures() async -> [Entitlement.ProductName] {
         subscriptionFeatures
     }
@@ -45,8 +45,10 @@ public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridg
     }
 
     public var canPurchase: Bool = true
-    public var canPurchasePublisher: AnyPublisher<Bool, Never> = .init(Empty())
-    public var returnSubscription: Result<PrivacyProSubscription, Error>!
+    public var returnSubscription: Result<PrivacyProSubscription, Error>?
+    public var canPurchasePublisher: AnyPublisher<Bool, Never> { canPurchaseSubject.eraseToAnyPublisher() }
+    public var canPurchaseSubject: PassthroughSubject<Bool, Never> = .init()
+
     public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
         switch returnSubscription! {
         case .success(let subscription):
@@ -94,7 +96,10 @@ public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridg
     }
 
     public func isSubscriptionPresent() -> Bool {
-        switch returnSubscription! {
+        guard let returnSubscription else {
+            return false
+        }
+        switch returnSubscription {
         case .success:
             return true
         case .failure:

@@ -164,8 +164,10 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
             Logger.dataBrokerProtection.log("Running operation: \(String(describing: jobData), privacy: .public)")
 
             do {
+                var executed = false
+
                 if jobData is ScanJobData {
-                    try await withTimeout(jobDependencies.executionConfig.scanJobTimeout) { [self] in
+                    executed = try await withTimeout(jobDependencies.executionConfig.scanJobTimeout) { [self] in
                         try await BrokerProfileScanSubJob(dependencies: jobDependencies).runScan(
                             brokerProfileQueryData: brokerProfileData,
                             showWebView: showWebView,
@@ -176,7 +178,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                             })
                     }
                 } else if let optOutJobData = jobData as? OptOutJobData {
-                    try await withTimeout(jobDependencies.executionConfig.optOutJobTimeout) { [self] in
+                    executed = try await withTimeout(jobDependencies.executionConfig.optOutJobTimeout) { [self] in
                         try await BrokerProfileOptOutSubJob(dependencies: jobDependencies).runOptOut(
                             for: optOutJobData.extractedProfile,
                             brokerProfileQueryData: brokerProfileData,
@@ -190,9 +192,13 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                     assertionFailure("Unsupported job data type")
                 }
 
-                let sleepInterval = jobDependencies.executionConfig.intervalBetweenSameBrokerJobs
-                Logger.dataBrokerProtection.log("Waiting...: \(sleepInterval, privacy: .public)")
-                try await Task.sleep(nanoseconds: UInt64(sleepInterval) * 1_000_000_000)
+                if executed {
+                    let sleepInterval = jobDependencies.executionConfig.intervalBetweenSameBrokerJobs
+                    Logger.dataBrokerProtection.log("Waiting...: \(sleepInterval, privacy: .public)")
+                    try await Task.sleep(nanoseconds: UInt64(sleepInterval) * 1_000_000_000)
+                } else {
+                    Logger.dataBrokerProtection.log("Job skipped, moving on...")
+                }
             } catch {
                 Logger.dataBrokerProtection.error("Error: \(error.localizedDescription, privacy: .public)")
 

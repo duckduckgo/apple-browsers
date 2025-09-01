@@ -123,8 +123,9 @@ extension NavigationProtectionTabExtension: NavigationResponder {
             request = newRequest
         }
 
-        if request != navigationAction.request {
-            return .redirectInvalidatingBackItemIfNeeded(navigationAction) {
+        if request != navigationAction.request,
+           let mainFrameTarget = navigationAction.mainFrameTarget {
+            return .redirect(mainFrameTarget) {
                 $0.load(request)
             }
         }

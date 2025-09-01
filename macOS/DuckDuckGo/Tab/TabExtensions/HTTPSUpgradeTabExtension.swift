@@ -39,7 +39,7 @@ extension HTTPSUpgradeTabExtension: NavigationResponder {
 
     @MainActor
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
-        guard navigationAction.isForMainFrame else { return .next }
+        guard let mainFrameTarget = navigationAction.mainFrameTarget else { return .next }
 
         // resetting lastUpgradedURL for new navigation or cross-domain navigation
         if (navigationAction.navigationType == .other && !navigationAction.isUserInitiated)
@@ -54,7 +54,7 @@ extension HTTPSUpgradeTabExtension: NavigationResponder {
         lastUpgradedURL = upgradedURL
         didUpgradeToHttpsSubject.send(upgradedURL)
 
-        return .redirectInvalidatingBackItemIfNeeded(navigationAction) {
+        return .redirect(mainFrameTarget) {
             $0.load(URLRequest(url: upgradedURL))
         }
     }

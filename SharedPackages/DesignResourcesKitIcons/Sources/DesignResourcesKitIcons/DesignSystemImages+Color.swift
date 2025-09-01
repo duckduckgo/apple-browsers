@@ -24,6 +24,7 @@ public extension DesignSystemImages {
             public static var adsBlocked: DesignSystemImage { .init(resource: .adsBlockedColor16) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChatColor16) }
             public static var aiChatGradient: DesignSystemImage { .init(resource: .aiChatColorGradient16) }
+            public static var aiGeneral: DesignSystemImage { .init(resource: .aiGeneralColor16) }
             public static var appearance: DesignSystemImage { .init(resource: .appearanceColor16) }
             public static var assist: DesignSystemImage { .init(resource: .assistColor16) }
             public static var autofill: DesignSystemImage { .init(resource: .autofillColor16) }
@@ -74,6 +75,7 @@ public extension DesignSystemImages {
             public static var identityBlockedPIR: DesignSystemImage { .init(resource: .identityBlockedPIRColor16) }
             public static var identityTheftRestoration: DesignSystemImage { .init(resource: .identityTheftRestorationColor16) }
             public static var `import`: DesignSystemImage { .init(resource: .importColor16) }
+            public static var infoFeedback: DesignSystemImage { .init(resource: .infoFeedbackColor16) }
             public static var key: DesignSystemImage { .init(resource: .keyColor16) }
             public static var linkSecure: DesignSystemImage { .init(resource: .linkSecureColor16) }
             public static var lock: DesignSystemImage { .init(resource: .lockColor16) }
@@ -115,6 +117,7 @@ public extension DesignSystemImages {
             public static var adsFewer: DesignSystemImage { .init(resource: .adsFewerColor24) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChatColor24) }
             public static var aiChatGradient: DesignSystemImage { .init(resource: .aiChatGradientColor24) }
+            public static var aiGeneral: DesignSystemImage { .init(resource: .aiGeneralColor24) }
             public static var appTP: DesignSystemImage { .init(resource: .appTPColor24) }
             public static var appearance: DesignSystemImage { .init(resource: .appearanceColor24) }
             public static var askSiri: DesignSystemImage { .init(resource: .askSiriColor24) }

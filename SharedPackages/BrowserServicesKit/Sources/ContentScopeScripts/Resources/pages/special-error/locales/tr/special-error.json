@@ -1,0 +1,95 @@
+{
+  "smartling" : {
+    "string_format" : "icu",
+    "translate_paths" : [
+    {
+      "path" : "*/title",
+      "key" : "{*}/title",
+      "instruction" : "*/note"
+    }]
+  },
+  "advancedButton" : {
+    "title" : "Gelişmiş",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to see advanced options on click."
+  },
+  "advancedEllipsisButton" : {
+    "title" : "Gelişmiş...",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to see advanced options on click. This button contains a trailing ellipsis."
+  },
+  "leaveSiteButton" : {
+    "title" : "Bu Siteden Ayrılın",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to leave the website and navigate to previous page."
+  },
+  "visitSiteButton" : {
+    "title" : "Riski Kabul Edin ve Siteyi Ziyaret Edin",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to visit the website anyway despite the risks."
+  },
+  "maliciousSiteTabTitle" : {
+    "title" : "Uyarı: Güvenlik Riski",
+    "note" : "Title shown in the browser window or tab when the current page may be a security risk due to phishing"
+  },
+  "malwarePageHeading" : {
+    "title" : "Uyarı: Bu site yeni bir{newline}güvenlik riski olabilir",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to malware distribution. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "malwareWarningText" : {
+    "title" : "DuckDuckGo Scam Blocker, cihazınızı tehlikeye atmak veya kişisel bilgilerinizi çalmak için tasarlanmış kötü amaçlı yazılım dağıtıyor olabileceğinden bu sayfanın yüklenmesini engelledi.{newline}<a>Daha fazla bilgi</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to malware distribution. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "malwareAdvancedInfoHeading" : {
+    "title" : "Bu web sitesinin güvenli olduğuna inanıyorsanız <a>bir hata bildirebilirsiniz</a>. Riski göze alabiliyorsanız web sitesini yine de ziyaret edebilirsiniz.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to malware distribution."
+  },
+  "phishingPageHeading" : {
+    "title" : "Uyarı: Bu site yeni bir{newline}güvenlik riski olabilir",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to Phishing issues. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "phishingWarningText" : {
+    "title" : "DuckDuckGo Scam Blocker, şifreler veya kredi kartı numaraları gibi kişisel bilgilerinizi ele geçirmek için meşru bir siteyi taklit ediyor olabileceğinden bu sayfanın yüklenmesini engelledi.{newline}<a>Daha fazla bilgi</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to Phishing issues. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "phishingAdvancedInfoHeading" : {
+    "title" : "Bu web sitesinin güvenli olduğuna inanıyorsanız <a>bir hata bildirebilirsiniz</a>. Riski göze alabiliyorsanız web sitesini yine de ziyaret edebilirsiniz.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to malware distribution."
+  },
+  "scamPageHeading" : {
+    "title" : "Uyarı: Bu site yeni bir{newline}güvenlik riski olabilir",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to suspected scam attempts. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "scamWarningText" : {
+    "title" : "DuckDuckGo Scam Blocker, sizi yanlış iddialarla para transferi yapmaya, sahte ürünler satın almaya veya kötü amaçlı yazılım yüklemeye çalışıyor olabileceğinden bu sayfanın yüklenmesini engelledi.{newline}<a>Daha fazla bilgi</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to suspected scam attempts. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "scamAdvancedInfoHeading" : {
+    "title" : "Bu web sitesinin güvenli olduğuna inanıyorsanız <a>bir hata bildirebilirsiniz</a>. Riski göze alabiliyorsanız web sitesini yine de ziyaret edebilirsiniz.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to suspected scam attempts."
+  },
+  "sslPageHeading" : {
+    "title" : "Uyarı: Bu site güvenli olmayabilir",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to SSL issues"
+  },
+  "sslWarningText" : {
+    "title" : "Bu sitenin sertifikası geçersiz. <b>{domain}</b> gibi görünen ve gizli bilgilerinizi riske atabilecek bir sunucuya bağlanıyor olabilirsiniz.",
+    "note" : "Describes an SSL error where a website’s security certificate is invalid. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslAdvancedInfoHeading" : {
+    "title" : "DuckDuckGo, bir web sitesinin sertifikası geçersiz olduğunda sizi uyarır.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to SSL issues."
+  },
+  "sslExpiredAdvancedInfoText" : {
+    "title" : "<b>{domain}</b> için güvenlik sertifikasının süresi doldu. Web sitesi yanlış yapılandırılmış, bir saldırgan bağlantınızı tehlikeye atmış veya sistem saatiniz yanlış ayarlanmış olabilir.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues."
+  },
+  "sslInvalidAdvancedInfoText" : {
+    "title" : "Cihazınızın işletim sistemi, <b>{domain}</b> için güvenlik sertifikasına güvenmiyor. Web sitesi yanlış yapılandırılmış veya bir saldırgan bağlantınızı tehlikeye atmış olabilir.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslSelfSignedAdvancedInfoText" : {
+    "title" : "Cihazınızın işletim sistemi, <b>{domain}</b> için güvenlik sertifikasına güvenmiyor. Web sitesi yanlış yapılandırılmış veya bir saldırgan bağlantınızı tehlikeye atmış olabilir.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslWrongHostAdvancedInfoText" : {
+    "title" : "<b>{domain}</b> için güvenlik sertifikası <b>*{eTldPlus1}</b> ile eşleşmiyor. Web sitesi yanlış yapılandırılmış veya bir saldırgan bağlantınızı tehlikeye atmış olabilir.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The two placeholders are website domain names (example: duckduckgo.com)."
+  }
+}

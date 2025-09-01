@@ -112,6 +112,9 @@ struct BookmarksDatabaseSetup {
             do {
                 try migrationAssertion.assert(migrationVersion: 1)
             } catch {
+                DailyPixel.fireDailyAndCount(pixel: .bookmarksCouldNotMigrateDatabase,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                             error: error)
                 assertionFailure(error.localizedDescription)
             }
         }

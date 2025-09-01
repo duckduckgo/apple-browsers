@@ -31,8 +31,10 @@ enum GeneralPixel: PixelKitEventV2 {
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
     case launch
     case dailyActiveUser(isDefault: Bool, isAddedToDock: Bool?)
+    case dailyFireWindowConfiguration(startupFireWindow: Bool, openFireWindowByDefault: Bool, fireAnimationEnabled: Bool)
 
-    case navigation
+    case navigation(NavigationKind)
+    case navigationToExternalURL
     case serp
     case serpInitial
 
@@ -424,7 +426,7 @@ enum GeneralPixel: PixelKitEventV2 {
     case bitwardenSendingOfMessageFailed
     case bitwardenSharedKeyInjectionFailed
 
-    case updaterAborted
+    case updaterAborted(reason: String)
     case updaterDidFindUpdate
     case updaterDidDownloadUpdate
     case updaterDidRunUpdate
@@ -547,8 +549,14 @@ enum GeneralPixel: PixelKitEventV2 {
         case .dailyActiveUser:
             return  "m_mac_daily_active_user"
 
+        case .dailyFireWindowConfiguration:
+            return "m_mac_fire_window_configuration"
+
         case .navigation:
             return "m_mac_navigation"
+
+        case .navigationToExternalURL:
+            return "m_mac_navigation_url_source-external"
 
         case .serp:
             return "m_mac_navigation_search"
@@ -1265,6 +1273,17 @@ enum GeneralPixel: PixelKitEventV2 {
             }
 
             return params
+
+        case .dailyFireWindowConfiguration(let startupFireWindow, let openFireWindowByDefault, let fireAnimationEnabled):
+            return [
+                "startup_fire_window": startupFireWindow ? "true" : "false",
+                "open_fire_window_by_default": openFireWindowByDefault ? "true" : "false",
+                "fire_animation_enabled": fireAnimationEnabled ? "true" : "false"
+            ]
+
+        case .navigation(let kind):
+            return ["kind": kind.description]
+
         case .dataImportFailed(source: _, sourceVersion: let version, error: let error):
             var params = error.pixelParameters
 
@@ -1407,6 +1426,8 @@ enum GeneralPixel: PixelKitEventV2 {
                 .autocompleteClickOpenTab(from: let source):
             return ["source": source.rawValue]
 
+        case .updaterAborted(let reason):
+            return ["reason": reason]
         default: return nil
         }
     }
@@ -1421,6 +1442,13 @@ enum GeneralPixel: PixelKitEventV2 {
         case attributed = "attributed"
         case unknown = "unknown"
 
+    }
+
+    enum NavigationKind: String, CustomStringConvertible {
+        var description: String { rawValue }
+
+        case regular
+        case client
     }
 
     enum OnboardingShown: String, CustomStringConvertible {

@@ -32,6 +32,11 @@ final class MockPictureInPictureController: PictureInPictureControlling {
         subject.eraseToAnyPublisher()
     }
 
+    var supportsPictureInPicture: Bool = true
+    func isPictureInPictureSupported() -> Bool {
+        supportsPictureInPicture
+    }
+
     func setupPictureInPicture(playerLayer: AVPlayerLayer) {
         didCallSetupPictureInPicture = true
         capturedAVPlayerLayer = playerLayer

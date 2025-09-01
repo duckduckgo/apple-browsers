@@ -101,7 +101,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     private weak var lastTab: Tab?
 
     // Publisher for contextual onboarding completion
-    @Published private(set) var isContextualOnboardingCompleted: Bool = true
+    @Published private(set) var isContextualOnboardingCompleted: Bool
     var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
 
     // Computed property for managing state.
@@ -131,6 +131,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     init(trackerMessageProvider: TrackerMessageProviding, stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage()) {
         self.trackerMessageProvider = trackerMessageProvider
         self.stateStorage = stateStorage
+        self.isContextualOnboardingCompleted = stateStorage.stateString == ContextualOnboardingState.onboardingCompleted.rawValue
     }
 
     // Returns the last dialog shown if it was shown for the given tab.

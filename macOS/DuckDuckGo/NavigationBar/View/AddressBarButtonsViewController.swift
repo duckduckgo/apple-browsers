@@ -359,6 +359,10 @@ final class AddressBarButtonsViewController: NSViewController {
         if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
             permissionAuthorizationPopover.close()
         }
+
+        for case let .some(animationView) in [trackerAnimationView1, trackerAnimationView2, trackerAnimationView3, shieldDotAnimationView, shieldAnimationView] {
+            animationView.stop()
+        }
     }
 
     func showBadgeNotification(_ type: NavigationBarBadgeAnimationView.AnimationType) {
@@ -910,6 +914,9 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     func updateButtons() {
+        // Prevent crash if Combine subscriptions outlive view lifecycle
+        guard isViewLoaded else { return }
+
         stopAnimationsAfterFocus()
 
         if featureFlagger.isFeatureOn(.aiChatSidebar) {
@@ -1344,6 +1351,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updatePermissionButtons() {
+        // Prevent crash if Combine subscriptions outlive view lifecycle
+        guard isViewLoaded else { return }
         guard let tabViewModel else { return }
 
         permissionButtons.isShown = !isTextFieldEditorFirstResponder
@@ -1695,6 +1704,16 @@ final class AddressBarButtonsViewController: NSViewController {
                 self?.stopHighlightingPrivacyShield()
             })
             .store(in: &cancellables)
+    }
+
+    deinit {
+        // Cancel all subscriptions to prevent Combine from outliving view controller lifecycle
+        cancellables.removeAll()
+        permissionsCancellables.removeAll()
+        urlCancellable = nil
+        zoomLevelCancellable = nil
+        trackerAnimationTriggerCancellable = nil
+        privacyEntryPointIconUpdateCancellable = nil
     }
 
 }

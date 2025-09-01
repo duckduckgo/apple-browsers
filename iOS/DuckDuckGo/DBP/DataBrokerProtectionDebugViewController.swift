@@ -23,6 +23,8 @@ import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
 import Core
 import Subscription
+import PixelKit
+import BrowserServicesKit
 
 final class DataBrokerProtectionDebugViewController: UITableViewController {
 
@@ -35,6 +37,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case database
         case debugActions
         case environment
+        case dbpMetadata
 
         var title: String {
             switch self {
@@ -46,6 +49,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return "Debug Actions"
             case .environment:
                 return "Environment"
+            case .dbpMetadata:
+                return "DBP Metadata"
             }
         }
 
@@ -54,14 +59,12 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             case .healthOverview:
                 return .rightDetail
             case .database:
-                if row == DatabaseRows.deviceIdentifier.rawValue {
-                    return .subtitle
-                } else {
-                    return .rightDetail
-                }
+                return .rightDetail
             case .debugActions:
                 return .rightDetail
             case .environment:
+                return .subtitle
+            case .dbpMetadata:
                 return .subtitle
             }
         }
@@ -72,7 +75,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case saveProfile
         case pendingScanJobs
         case pendingOptOutJobs
-        case deviceIdentifier
         case deleteAllData
 
         var title: String {
@@ -85,12 +87,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return "Pending Scans"
             case .pendingOptOutJobs:
                 return "Pending Opt Outs"
-            case .deviceIdentifier:
-#if DEBUG || ALPHA
-                return "UUID"
-#else
-                return "No UUID due to wrong build type"
-#endif
             case .deleteAllData:
                 return "Delete All Data"
             }
@@ -120,6 +116,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case runPendingScans
         case runPendingOptOuts
         case runAllPendingJobs
+        case fireWeeklyPixel
 
         var title: String {
             switch self {
@@ -133,6 +130,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return "Run Pending Opt Outs"
             case .runAllPendingJobs:
                 return "Run All Pending Jobs"
+            case .fireWeeklyPixel:
+                return "Test Firing Weekly Pixels"
             }
         }
     }
@@ -153,10 +152,21 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             }
         }
     }
+    
+    enum DBPMetadataRows: Int, CaseIterable {
+        case refreshMetadata
+        case metadataDisplay
+    }
 
     private var manager: DataBrokerProtectionIOSManager
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
+    
+    @MainActor private var dbpMetadata: String? {
+        didSet {
+            tableView.reloadSections(IndexSet(integer: Sections.dbpMetadata.rawValue), with: .none)
+        }
+    }
 
 
     @MainActor private var healthOverview: HealthOverviewRows = .loading {
@@ -181,6 +191,11 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     private var jobCountRefreshTimer: Timer?
     private let webViewWindowHelper = PIRDebugWebViewWindowHelper()
     
+    private lazy var eventPixels: DataBrokerProtectionEventPixels = {
+        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .iOS)
+        return DataBrokerProtectionEventPixels(database: manager.database, handler: sharedPixelsHandler)
+    }()
+    
     enum JobExecutionState: Equatable {
         case idle
         case running
@@ -201,6 +216,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         super.viewWillAppear(animated)
         loadHealthOverview()
         loadJobCounts()
+        refreshMetadata()
 
         // Check the manager state when entering the debug screen, since PIR could already be running
         if manager.isRunningJobs && jobExecutionState == .idle {
@@ -344,6 +360,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         return section.title
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let section = Sections(rawValue: indexPath.section) else {
             fatalError("Failed to create a Section from index '\(indexPath.section)'")
@@ -369,9 +386,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 cell.detailTextLabel?.text = "\(jobCounts.pendingScans)"
             case .pendingOptOutJobs:
                 cell.detailTextLabel?.text = "\(jobCounts.pendingOptOuts)"
-            case .deviceIdentifier:
-                cell.detailTextLabel?.font = UIFont.monospacedSystemFont(ofSize: 17, weight: .regular)
-                cell.detailTextLabel?.text = DataBrokerProtectionSettings.deviceIdentifier
             case .deleteAllData:
                 cell.textLabel?.textColor = .systemRed
             }
@@ -465,6 +479,18 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 cell.detailTextLabel?.text = detailText
             default: break
             }
+            
+        case .dbpMetadata:
+            guard let row = DBPMetadataRows(rawValue: indexPath.row) else { return cell }
+            switch row {
+            case .refreshMetadata:
+                cell.textLabel?.text = "Refresh Metadata"
+                cell.textLabel?.textColor = .systemBlue
+            case .metadataDisplay:
+                cell.textLabel?.font = .monospacedSystemFont(ofSize: 13.0, weight: .regular)
+                cell.textLabel?.text = dbpMetadata ?? "Loading..."
+                cell.textLabel?.numberOfLines = 0
+            }
         }
 
         return cell
@@ -476,6 +502,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case .database: return DatabaseRows.allCases.count
         case .debugActions: return DebugActionRows.allCases.count
         case .environment: return EnvironmentRows.allCases.count
+        case .dbpMetadata: return DBPMetadataRows.allCases.count
         case .none: return 0
         }
     }
@@ -503,25 +530,19 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             handleEnvironmentAction(for: row)
         case .healthOverview:
             break
+        case .dbpMetadata:
+            guard let row = DBPMetadataRows(rawValue: indexPath.row) else { return }
+            switch row {
+            case .refreshMetadata:
+                refreshMetadata()
+            case .metadataDisplay:
+                break
+            }
         }
 
         tableView.deselectRow(at: indexPath, animated: true)
     }
 
-    override func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard let section = Sections(rawValue: indexPath.section), section == .database,
-              let row = DatabaseRows(rawValue: indexPath.row), row == .deviceIdentifier else {
-            return nil
-        }
-
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
-            let copyAction = UIAction(title: "Copy", image: UIImage(systemName: "doc.on.doc")) { _ in
-                UIPasteboard.general.string = DataBrokerProtectionSettings.deviceIdentifier
-            }
-
-            return UIMenu(title: "", children: [copyAction])
-        }
-    }
 
     // MARK: - Debug Action Rows
 
@@ -541,6 +562,10 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             runPendingJobs(type: .optOut)
         case .runAllPendingJobs:
             runPendingJobs(type: .all)
+        case .fireWeeklyPixel:
+            Task { @MainActor in
+                eventPixels.fireWeeklyReportPixels()
+            }
         }
     }
     
@@ -647,7 +672,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             self.navigationController?.pushViewController(saveProfileViewController, animated: true)
         case .deleteAllData:
             presentDeleteAllDataAlertController()
-        case .deviceIdentifier, .pendingScanJobs, .pendingOptOutJobs:
+        case .pendingScanJobs, .pendingOptOutJobs:
             break
         }
     }
@@ -656,7 +681,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         let alert = UIAlertController(title: "Delete All PIR Data?", message: "This will remove all data and statistics from the PIR database, and give you a new tester ID.", preferredStyle: .alert)
         alert.addAction(title: "Delete All Data", style: .destructive) { [weak self] in
             try? self?.manager.deleteAllData()
-            DataBrokerProtectionSettings.incrementDeviceIdentifier()
             self?.loadJobCounts()
             self?.tableView.reloadData()
         }
@@ -804,6 +828,14 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             } catch {
                 Logger.dataBrokerProtection.error("Failed to check for broker updates: \(error.localizedDescription)")
             }
+        }
+    }
+    
+    // MARK: - DBP Metadata
+    
+    private func refreshMetadata() {
+        Task { @MainActor in
+            self.dbpMetadata = await DefaultDBPMetadataCollector().collectMetadata()?.toPrettyPrintedJSON()
         }
     }
 }

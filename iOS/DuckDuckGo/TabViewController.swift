@@ -113,6 +113,9 @@ class TabViewController: UIViewController {
         get { return findInPageScript?.findInPage }
         set { findInPageScript?.findInPage = newValue }
     }
+    
+    var daxEasterEggHandler: DaxEasterEggHandling?
+    var logoCache: DaxEasterEggLogoCaching = DaxEasterEggLogoCache()
 
     let favicons = Favicons.shared
     let progressWorker = WebProgressWorker()
@@ -139,6 +142,7 @@ class TabViewController: UIViewController {
 
     private static let tld = AppDependencyProvider.shared.storageCache.tld
     private let adClickAttributionDetection = ContentBlocking.shared.makeAdClickAttributionDetection(tld: tld)
+    let adClickExternalOpenDetector: AdClickExternalOpenDetector
     let adClickAttributionLogic = ContentBlocking.shared.makeAdClickAttributionLogic(tld: tld)
 
     private var httpsForced: Bool = false
@@ -375,7 +379,8 @@ class TabViewController: UIViewController {
                                    tabInteractionStateSource: TabInteractionStateSource?,
                                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                                    featureDiscovery: FeatureDiscovery,
-                                   keyValueStore: ThrowingKeyValueStoring) -> TabViewController {
+                                   keyValueStore: ThrowingKeyValueStoring,
+                                   daxDialogsManager: DaxDialogsManaging) -> TabViewController {
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
             TabViewController(coder: coder,
@@ -397,7 +402,8 @@ class TabViewController: UIViewController {
                               tabInteractionStateSource: tabInteractionStateSource,
                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                               featureDiscovery: featureDiscovery,
-                              keyValueStore: keyValueStore
+                              keyValueStore: keyValueStore,
+                              daxDialogsManager: daxDialogsManager
             )
         })
         return controller
@@ -442,6 +448,7 @@ class TabViewController: UIViewController {
     let specialErrorPageNavigationHandler: SpecialErrorPageManaging
     let featureDiscovery: FeatureDiscovery
     let keyValueStore: ThrowingKeyValueStoring
+    let daxDialogsManager: DaxDialogsManaging
 
     required init?(coder aDecoder: NSCoder,
                    tabModel: Tab,
@@ -464,7 +471,9 @@ class TabViewController: UIViewController {
                    tabInteractionStateSource: TabInteractionStateSource?,
                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                    featureDiscovery: FeatureDiscovery,
-                   keyValueStore: ThrowingKeyValueStoring) {
+                   keyValueStore: ThrowingKeyValueStoring,
+                   daxDialogsManager: DaxDialogsManaging,
+                   adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector()) {
 
         self.tabModel = tabModel
         self.appSettings = appSettings
@@ -487,7 +496,8 @@ class TabViewController: UIViewController {
         self.specialErrorPageNavigationHandler = specialErrorPageNavigationHandler
         self.featureDiscovery = featureDiscovery
         self.keyValueStore = keyValueStore
-
+        self.adClickExternalOpenDetector = adClickExternalOpenDetector
+        self.daxDialogsManager = daxDialogsManager
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase
         }
@@ -500,6 +510,14 @@ class TabViewController: UIViewController {
         // Assign itself as specialErrorPageNavigationDelegate for SpecialErrorPages
         specialErrorPageNavigationHandler.delegate  = self
 
+        self.adClickExternalOpenDetector.mitigationHandler = { [weak self] in
+            guard let self else { return }
+            if self.tabModel.link?.title == nil {
+                self.closeTab()
+            } else if self.url != self.webView.url {
+                self.url = self.webView.url
+            }
+        }
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -600,7 +618,7 @@ class TabViewController: UIViewController {
         // Update DuckPlayer when WebView appears
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewAppearance(self)
 
-        fireWebViewDebugPixels()
+        checkWebViewVisibilityConsistency()
     }
 
     override func buildActivities() -> [UIActivity] {
@@ -642,18 +660,13 @@ class TabViewController: UIViewController {
         adClickAttributionLogic.applyInheritedAttribution(state: attribution)
     }
 
-    private func fireWebViewDebugPixels() {
-        if !webView.isDescendant(of: view) {
-            DailyPixel.fireDailyAndCount(pixel: .debugWebViewNotInVisibleTabHierarchy)
-        }
-        if webView.window == nil {
-            DailyPixel.fireDailyAndCount(pixel: .debugWebViewNotAttachedToWindow)
-        }
-        if webView.isHidden && (errorMessage.text.isNilOrEmpty || error.isHidden) {
+    private func checkWebViewVisibilityConsistency() {
+        if webView.isHidden && error.isHidden {
             DailyPixel.fireDailyAndCount(pixel: .debugWebViewInVisibleTabHidden)
-        }
-        if webView.frame == .zero {
-            DailyPixel.fireDailyAndCount(pixel: .debugWebViewHasZeroFrameSize)
+            
+            // Fix inconsistent state - if webView is hidden but no error shown, show webView
+            // https://app.asana.com/1/137249556945/project/414709148257752/task/1210155968610460?focus=true
+            hideErrorMessage()
         }
     }
 
@@ -888,17 +901,18 @@ class TabViewController: UIViewController {
             progressWorker.progressDidChange(webView.estimatedProgress)
             
         case #keyPath(WKWebView.url):
-        // A short delay is required here, because the URL takes some time
-        // to propagate to the webView.url property accessor and might not
-        // be immediately available in the observer
-        let previousURL = self.url
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            self?.webViewUrlHasChanged(previousURL: previousURL, newURL: self?.webView.url)
-        }
-            
+            // A short delay is required here, because the URL takes some time
+            // to propagate to the webView.url property accessor and might not
+            // be immediately available in the observer
+            let previousURL = self.url
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                guard let self else { return }
+                self.webViewUrlHasChanged(previousURL: previousURL, newURL: self.webView.url)
+            }
+
         case #keyPath(WKWebView.canGoBack):
             delegate?.tabLoadingStateDidChange(tab: self)
-            
+
         case #keyPath(WKWebView.canGoForward):
             delegate?.tabLoadingStateDidChange(tab: self)
 
@@ -911,16 +925,15 @@ class TabViewController: UIViewController {
     }
     
     func webViewUrlHasChanged(previousURL: URL? = nil, newURL: URL? = nil) {
-        
         // Handle DuckPlayer Navigation URL changes
         if let currentURL = newURL ?? webView.url {
             _ = duckPlayerNavigationHandler.handleURLChange(webView: webView, previousURL: previousURL, newURL: currentURL, isNavigationError: lastError != nil)
         }
-            
+
         if url == nil {
-            url = webView.url
-        } else if let currentHost = url?.host, let newHost = webView.url?.host, currentHost == newHost {
-            url = webView.url
+            url = newURL
+        } else if let currentHost = url?.host, let newHost = newURL?.host, currentHost == newHost {
+            url = newURL
         }
     }
     
@@ -955,13 +968,28 @@ class TabViewController: UIViewController {
         load(url: url.applyingSearchHeaderParams())
     }
     
-    private func shouldReissueSearch(for url: URL) -> Bool {
+        private func shouldReissueSearch(for url: URL) -> Bool {
         guard url.isDuckDuckGoSearch else { return false }
-        return !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
+        
+        var shouldReissue = !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
+        
+        // Only check DuckAI params if the feature flag is enabled
+        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+            shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
+        }
+        
+        return shouldReissue
     }
     
     private func reissueSearchWithRequiredParams(for url: URL) {
-        let mobileSearch = url.applyingStatsParams()
+        var mobileSearch = url.applyingStatsParams()
+        
+        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+            mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
+        }
+        
         reissueNavigationWithSearchHeaderParams(for: mobileSearch)
     }
     
@@ -1222,7 +1250,7 @@ class TabViewController: UIViewController {
     }
     
     func didLaunchBrowsingMenu() {
-        DaxDialogs.shared.resumeRegularFlow()
+        daxDialogsManager.resumeRegularFlow()
     }
 
     private func openExternally(url: URL) {
@@ -1423,6 +1451,9 @@ extension TabViewController: WKNavigationDelegate {
         let httpsForced = tld.domain(lastUpgradedURL?.host) == tld.domain(webView.url?.host)
         onWebpageDidStartLoading(httpsForced: httpsForced)
         textZoomCoordinator.onNavigationCommitted(applyToWebView: webView)
+        
+        // Check cache for instant logo display during back navigation
+        checkDaxEasterEggCacheIfDuckDuckGoSearch(webView)
     }
 
     private func onWebpageDidStartLoading(httpsForced: Bool) {
@@ -1556,6 +1587,7 @@ extension TabViewController: WKNavigationDelegate {
         linkProtection.setMainFrameUrl(webView.url)
         referrerTrimming.onBeginNavigation(to: webView.url)
         adClickAttributionDetection.onStartNavigation(url: webView.url)
+        adClickExternalOpenDetector.startNavigation()
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -1563,9 +1595,11 @@ extension TabViewController: WKNavigationDelegate {
         self.currentlyLoadedURL = webView.url
         onTextZoomChange()
         adClickAttributionDetection.onDidFinishNavigation(url: webView.url)
+        adClickExternalOpenDetector.finishNavigation()
         adClickAttributionLogic.onDidFinishNavigation(host: webView.url?.host)
         hideProgressIndicator()
         onWebpageDidFinishLoading()
+        extractDaxEasterEggLogoIfDuckDuckGoSearch(webView)
         instrumentation.didLoadURL()
         checkLoginDetectionAfterNavigation()
         trackSecondSiteVisitIfNeeded(url: webView.url)
@@ -1648,6 +1682,58 @@ extension TabViewController: WKNavigationDelegate {
         
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
     }
+    
+    /// Check cache for DaxEasterEgg logo on commit (instant display for back navigation)
+    private func checkDaxEasterEggCacheIfDuckDuckGoSearch(_ webView: WKWebView) {
+        guard featureFlagger.isFeatureOn(.daxEasterEggLogos) else { return }
+        
+        guard let url = webView.url, url.isDuckDuckGoSearch else {
+            // Clear logo when navigating away from DuckDuckGo search
+            if tabModel.daxEasterEggLogoURL != nil {
+                delegate?.tab(self, didExtractDaxEasterEggLogoURL: nil)
+            }
+            return
+        }
+        
+        // Check cache for instant logo display
+        if let searchQuery = url.searchQuery,
+           let cachedLogoURL = logoCache.getLogo(for: searchQuery) {
+            Logger.daxEasterEgg.debug("Using cached logo on commit for query '\(searchQuery)': \(cachedLogoURL)")
+            delegate?.tab(self, didExtractDaxEasterEggLogoURL: cachedLogoURL)
+        }
+    }
+    
+    /// Trigger DaxEasterEgg extraction with cache fallback on DuckDuckGo search pages
+    private func extractDaxEasterEggLogoIfDuckDuckGoSearch(_ webView: WKWebView) {
+        guard featureFlagger.isFeatureOn(.daxEasterEggLogos) else { return }
+        
+        guard let url = webView.url, url.isDuckDuckGoSearch else {
+            // Clear logo when navigating away from DuckDuckGo search
+            if tabModel.daxEasterEggLogoURL != nil {
+                delegate?.tab(self, didExtractDaxEasterEggLogoURL: nil)
+            }
+            return
+        }
+        
+        // Check cache first - if found, use it and skip extraction
+        if let searchQuery = url.searchQuery,
+           let cachedLogoURL = logoCache.getLogo(for: searchQuery) {
+            Logger.daxEasterEgg.debug("Using cached logo on finish for query '\(searchQuery)': \(cachedLogoURL)")
+            delegate?.tab(self, didExtractDaxEasterEggLogoURL: cachedLogoURL)
+            return
+        }
+        
+        // Cache miss - proceed with JavaScript extraction
+        // Ensure handler is created for new tabs that navigate directly to DuckDuckGo
+        if daxEasterEggHandler == nil {
+            daxEasterEggHandler = DaxEasterEggHandler(webView: webView, logoCache: logoCache)
+            daxEasterEggHandler?.delegate = self
+            Logger.daxEasterEgg.debug("Created DaxEasterEggHandler for new tab")
+        }
+        
+        Logger.daxEasterEgg.debug("Extracting for tab - URL: \(url.absoluteString)")
+        daxEasterEggHandler?.extractLogosForCurrentPage()
+    }
 
     func trackSecondSiteVisitIfNeeded(url: URL?) {
         // Track second non-SERP webpage visit
@@ -1658,7 +1744,7 @@ extension TabViewController: WKNavigationDelegate {
     func showDaxDialogOrStartTrackerNetworksAnimationIfNeeded() {
         guard !isLinkPreview else { return }
 
-        if DaxDialogs.shared.isAddFavoriteFlow {
+        if daxDialogsManager.isAddFavoriteFlow {
             delegate?.tabDidRequestShowingMenuHighlighter(tab: self)
             return
         }
@@ -1682,14 +1768,14 @@ extension TabViewController: WKNavigationDelegate {
             scheduleTrackerNetworksAnimation(collapsing: true)
             return
         }
-        guard let spec = DaxDialogs.shared.nextBrowsingMessageIfShouldShow(for: privacyInfo) else {
+        guard let spec = daxDialogsManager.nextBrowsingMessageIfShouldShow(for: privacyInfo) else {
 
             // Dismiss Contextual onboarding if there's no message to show.
             contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
             // Dismiss privacy dashbooard pulse animation when no browsing dialog to show.
             delegate?.tabDidRequestPrivacyDashboardButtonPulse(tab: self, animated: false)
 
-            if DaxDialogs.shared.shouldShowFireButtonPulse {
+            if daxDialogsManager.shouldShowFireButtonPulse {
                 delegate?.tabDidRequestFireButtonPulse(tab: self)
             }
             
@@ -1705,7 +1791,7 @@ extension TabViewController: WKNavigationDelegate {
             guard let self else { return }
             // https://app.asana.com/0/414709148257752/1201620790053163/f
             if self.url != daxDialogSourceURL && self.url?.isSameDuckDuckGoSearchURL(other: daxDialogSourceURL) == false {
-                DaxDialogs.shared.overrideShownFlagFor(spec, flag: false)
+                daxDialogsManager.overrideShownFlagFor(spec, flag: false)
                 self.isShowingFullScreenDaxDialog = false
                 return
             }
@@ -1754,6 +1840,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         Logger.general.debug("didFailNavigation; error: \(error)")
         adClickAttributionDetection.onDidFailNavigation()
+        adClickExternalOpenDetector.failNavigation(error: error)
         hideProgressIndicator()
         webpageDidFailToLoad()
         checkForReloadOnError()
@@ -1769,7 +1856,7 @@ extension TabViewController: WKNavigationDelegate {
 
         if isError {
             showBars(animated: true)
-            privacyInfo = nil
+            privacyInfo = PrivacyInfo(url: .empty, parentEntity: nil, protectionStatus: .init(unprotectedTemporary: false, enabledFeatures: [], allowlisted: false, denylisted: false), isSpecialErrorPageVisible: true)
             onPrivacyInfoChanged()
         }
         
@@ -1779,6 +1866,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         Logger.general.debug("didFailProvisionalNavigation; error: \(error)")
         adClickAttributionDetection.onDidFailNavigation()
+        adClickExternalOpenDetector.failNavigation(error: error)
         hideProgressIndicator()
         linkProtection.setMainFrameUrl(nil)
         referrerTrimming.onFailedNavigation()
@@ -2689,6 +2777,18 @@ extension TabViewController: UIGestureRecognizerDelegate {
 }
 
 // MARK: - UserContentControllerDelegate
+extension TabViewController: DaxEasterEggDelegate {
+    
+    func daxEasterEggHandler(_ handler: DaxEasterEggHandling, didFindLogoURL logoURL: String?, for pageURL: String) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            
+            Logger.daxEasterEgg.debug("Handler found logo - Page: \(pageURL), Logo: \(logoURL ?? "nil")")
+            self.delegate?.tab(self, didExtractDaxEasterEggLogoURL: logoURL)
+        }
+    }
+}
+
 extension TabViewController: UserContentControllerDelegate {
 
     var userScripts: UserScripts? {
@@ -2721,6 +2821,14 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
         userScripts.contentScopeUserScript.delegate = self
+        userScripts.serpSettingsUserScript.delegate = self
+        userScripts.serpSettingsUserScript.webView = webView
+        
+        // Setup DaxEasterEgg handler only for DuckDuckGo search pages
+        if daxEasterEggHandler == nil, let url = webView.url, url.isDuckDuckGoSearch {
+            daxEasterEggHandler = DaxEasterEggHandler(webView: webView, logoCache: logoCache)
+            daxEasterEggHandler?.delegate = self
+        }
 
         // Special Error Page (SSL, Malicious Site protection)
         specialErrorPageNavigationHandler.setUserScript(userScripts.specialErrorPageUserScript)
@@ -3720,4 +3828,24 @@ extension TabViewController {
             }
             .store(in: &cancellables)
     }
+}
+
+extension TabViewController: SERPSettingsUserScriptDelegate {
+
+    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
+        guard let mainVC = parent as? MainViewController else { return }
+        mainVC.segueToSettingsPrivateSearch {
+            mainVC.closeTab(self.tabModel)
+            mainVC.showBars()
+        }
+    }
+    
+    func serpSettingsUserScriptDidRequestToOpenDuckAISettings(_ userScript: SERPSettingsUserScript) {
+        guard let mainVC = parent as? MainViewController else { return }
+        mainVC.segueToSettingsAIChat {
+            mainVC.closeTab(self.tabModel)
+            mainVC.showBars()
+        }
+    }
+
 }

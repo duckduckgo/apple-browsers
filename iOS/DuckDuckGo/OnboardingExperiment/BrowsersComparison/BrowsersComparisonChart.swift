@@ -21,18 +21,55 @@ import SwiftUI
 
 // MARK: - Chart View
 
+extension BrowsersComparisonChart {
+
+    struct Configuration {
+        var fontSize: CGFloat = 15.0
+        var allowContentToScrollUnderHeader: Bool = false
+    }
+
+}
+
 struct BrowsersComparisonChart: View {
-    let privacyFeatures: [BrowsersComparisonModel.PrivacyFeature]
+    private let privacyFeatures: [BrowsersComparisonModel.PrivacyFeature]
+    private let configuration: Configuration
+
+    init(privacyFeatures: [BrowsersComparisonModel.PrivacyFeature], configuration: Configuration = Configuration()) {
+        self.privacyFeatures = privacyFeatures
+        self.configuration = configuration
+    }
 
     var body: some View {
         VStack(spacing: Metrics.stackSpacing) {
             Header(browsers: BrowsersComparisonModel.Browser.allCases)
                 .frame(height: Metrics.headerHeight)
 
-            ForEach(privacyFeatures, id: \.type) { feature in
-                Row(feature: feature)
-            }
+            content
+        }
+    }
 
+    @ViewBuilder
+    private var content: some View {
+        let content = ForEach(Array(privacyFeatures.enumerated()), id: \.element.type) { index, feature in
+            let shouldDisplayDivider = index < privacyFeatures.count - 1 || !configuration.allowContentToScrollUnderHeader
+            Row(feature: feature, shouldDisplayDivider: shouldDisplayDivider)
+        }
+
+        if configuration.allowContentToScrollUnderHeader {
+            let height = CGFloat(privacyFeatures.count) * Metrics.imageContainerSize.height
+             ScrollView(showsIndicators: false) {
+                 // Wrap content in stack view to avoid rows height to stretch
+                 VStack(spacing: Metrics.scrollableVStackSpacing) {
+                     content
+                 }
+                 .frame(height: height)
+             }
+             .frame(maxHeight: height) // Avoid stretching the scroll view to bottom of the screen on iPad
+            Divider()
+                .padding(.top, Metrics.scrollableBottomDividerPadding)
+
+        } else {
+            content
         }
     }
 }
@@ -68,6 +105,7 @@ extension BrowsersComparisonChart {
 
     struct Row: View {
         let feature: BrowsersComparisonModel.PrivacyFeature
+        let shouldDisplayDivider: Bool
 
         var body: some View {
             HStack {
@@ -85,7 +123,9 @@ extension BrowsersComparisonChart {
             }
             .frame(maxHeight: Metrics.imageContainerSize.height)
 
-            Divider()
+            if shouldDisplayDivider {
+                Divider()
+            }
         }
     }
 
@@ -120,6 +160,8 @@ private enum Metrics {
     static let headerImageContainerSize = CGSize(width: 40, height: 80)
     static let imageContainerSize = CGSize(width: 40.0, height: 50.0)
     static let font = Font.system(size: 15.0)
+    static let scrollableVStackSpacing: CGFloat = 0
+    static let scrollableBottomDividerPadding: CGFloat = 4
 }
 
 #Preview {

@@ -1,7 +1,7 @@
 {
   "name": "SmartBackgroundChecks",
   "url": "smartbackgroundchecks.com",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "parent": "peoplefinders.com",
   "addedDatetime": 1678082400000,
   "optOutUrl": "https://www.smartbackgroundchecks.com/optout",
@@ -63,5 +63,6 @@
     "confirmOptOutScan": 72,
     "maintenanceScan": 120,
     "maxAttempts": -1
-  }
+  },
+  "removedAt": null
 }

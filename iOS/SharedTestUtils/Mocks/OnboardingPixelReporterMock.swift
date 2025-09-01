@@ -22,7 +22,7 @@ import Core
 import Onboarding
 @testable import DuckDuckGo
 
-final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, OnboardingCustomInteractionPixelReporting, OnboardingDaxDialogsReporting, OnboardingAddToDockReporting, OnboardingSetAsDefaultBrowserExperimentReporting {
+final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, OnboardingCustomInteractionPixelReporting, OnboardingDaxDialogsReporting, OnboardingAddToDockReporting {
     private(set) var didCallMeasureOnboardingIntroImpression = false
     private(set) var didCallMeasureSkipOnboardingCTAAction = false
     private(set) var didCallMeasureConfirmSkipOnboardingCTAAction = false
@@ -52,9 +52,6 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureAddToDockPromoShowTutorialCTAAction = false
     private(set) var didCallMeasureAddToDockPromoDismissCTAAction = false
     private(set) var didCallMeasureAddToDockTutorialDismissCTAAction = false
-
-    private(set) var didCallMeasureDidSetDDGAsDefaultBrowser = false
-    private(set) var didCallMeasureDidNotSetDDGAsDefaultBrowser = false
 
     private(set) var didCallMeasureTrySearchDialogNewTabDismissButtonTapped = false
     private(set) var didCallMeasureSearchResultDialogDismissButtonTapped = false
@@ -153,14 +150,6 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
 
     func measureAddToDockTutorialDismissCTAAction() {
         didCallMeasureAddToDockTutorialDismissCTAAction = true
-    }
-
-    func measureDidSetDDGAsDefaultBrowser() {
-        didCallMeasureDidSetDDGAsDefaultBrowser = true
-    }
-
-    func measureDidNotSetDDGAsDefaultBrowser() {
-        didCallMeasureDidNotSetDDGAsDefaultBrowser = true
     }
 
     func measureTrySearchDialogNewTabDismissButtonTapped() {

@@ -23,7 +23,9 @@ import BrowserServicesKit
 import Subscription
 import Persistence
 import DDGSync
+import Configuration
 import SetDefaultBrowserUI
+import SystemSettingsPiPTutorial
 
 @MainActor
 protocol URLHandling {
@@ -66,9 +68,12 @@ final class MainCoordinator {
          fireproofing: Fireproofing,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
-         didFinishLaunchingStartTime: CFAbsoluteTime,
+         customConfigurationURLProvider: CustomConfigurationURLProviding,
+         didFinishLaunchingStartTime: CFAbsoluteTime?,
          keyValueStore: ThrowingKeyValueStoring,
-         defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
+         defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting,
+         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
+         daxDialogsManager: DaxDialogsManaging
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -76,7 +81,8 @@ final class MainCoordinator {
 
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
-                                                          privacyProDataReporter: reportingService.privacyProDataReporter)
+                                                          privacyProDataReporter: reportingService.privacyProDataReporter,
+                                                          isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()
         let historyManager = try Self.makeHistoryManager()
         let tabsPersistence = try TabsModelPersistence()
@@ -108,7 +114,8 @@ final class MainCoordinator {
                                 maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
                                 maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                 featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
-                                keyValueStore: keyValueStore)
+                                keyValueStore: keyValueStore,
+                                daxDialogsManager: daxDialogsManager)
         controller = MainViewController(bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         historyManager: historyManager,
@@ -120,7 +127,6 @@ final class MainCoordinator {
                                         tabManager: tabManager,
                                         syncPausedStateManager: syncService.syncErrorHandler,
                                         privacyProDataReporter: reportingService.privacyProDataReporter,
-                                        variantManager: variantManager,
                                         contextualOnboardingLogic: daxDialogs,
                                         contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter,
                                         subscriptionFeatureAvailability: subscriptionService.subscriptionFeatureAvailability,
@@ -134,7 +140,10 @@ final class MainCoordinator {
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                         aiChatSettings: aiChatSettings,
                                         themeManager: ThemeManager.shared,
-                                        keyValueStore: keyValueStore)
+                                        keyValueStore: keyValueStore,
+                                        customConfigurationURLProvider: customConfigurationURLProvider,
+                                        systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+                                        daxDialogsManager: daxDialogsManager)
     }
 
     func start() {
@@ -145,15 +154,9 @@ final class MainCoordinator {
         let provider = AppDependencyProvider.shared
         switch HistoryManager.make(isAutocompleteEnabledByUser: provider.appSettings.autocomplete,
                                    isRecentlyVisitedSitesEnabledByUser: provider.appSettings.recentlyVisitedSites,
-                                   privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
                                    tld: provider.storageCache.tld) {
         case .failure(let error):
-            Pixel.fire(pixel: .historyStoreLoadFailed, error: error)
-            if error.isDiskFull {
-                throw UIApplication.TerminationError.insufficientDiskSpace
-            } else {
-                throw UIApplication.TerminationError.unrecoverableState
-            }
+            throw TerminationError.historyDatabase(error)
         case .success(let historyManager):
             return historyManager
         }
@@ -350,6 +353,29 @@ extension MainCoordinator: ShortcutItemHandling {
             self.controller.launchAutofillLogins(openSearch: true, source: .appIconShortcut)
         }
         Pixel.fire(pixel: .autofillLoginsLaunchAppShortcut)
+    }
+
+}
+
+// MARK: - SystemSettingsPiPTutorialPresenting
+
+extension MainCoordinator: SystemSettingsPiPTutorialPresenting {
+
+    func attachPlayerView(_ view: UIView) {
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.layer.opacity = 0.001
+        controller.view.addSubview(view)
+        NSLayoutConstraint.activate([
+            view.widthAnchor.constraint(equalToConstant: 1),
+            view.heightAnchor.constraint(equalToConstant: 1),
+            view.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor),
+            view.topAnchor.constraint(equalTo: controller.view.topAnchor),
+        ])
+        controller.view.sendSubviewToBack(view)
+    }
+
+    func detachPlayerView(_ view: UIView) {
+        view.removeFromSuperview()
     }
 
 }

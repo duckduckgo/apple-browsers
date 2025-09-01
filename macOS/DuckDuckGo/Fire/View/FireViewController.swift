@@ -33,7 +33,7 @@ final class FireViewController: NSViewController {
     private(set) var fireViewModel: FireViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
     private let visualStyle: VisualStyleProviding
-    private let visualizeFireAnimationDecider: VisualizeFireAnimationDecider
+    private let visualizeFireAnimationDecider: VisualizeFireSettingsDecider
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var fireDialogViewController: FirePopoverViewController = {
@@ -52,7 +52,7 @@ final class FireViewController: NSViewController {
     private var fireAnimationViewLoadingTask: Task<(), Never>?
     private(set) lazy var fireIndicatorVisibilityManager = FireIndicatorVisibilityManager { [weak self] in self?.view.superview }
 
-    static func create(tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel, visualizeFireAnimationDecider: VisualizeFireAnimationDecider) -> FireViewController {
+    static func create(tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel, visualizeFireAnimationDecider: VisualizeFireSettingsDecider) -> FireViewController {
         NSStoryboard(name: "Fire", bundle: nil).instantiateInitialController { coder in
             self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
         }!
@@ -65,7 +65,7 @@ final class FireViewController: NSViewController {
     init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
           fireViewModel: FireViewModel,
           visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
-          visualizeFireAnimationDecider: VisualizeFireAnimationDecider) {
+          visualizeFireAnimationDecider: VisualizeFireSettingsDecider) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.fireViewModel = fireViewModel
         self.visualStyle = visualStyle

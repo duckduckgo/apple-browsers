@@ -143,8 +143,7 @@ final class FirePopoverViewController: NSViewController {
     }
 
     private func updateBurnerButtonAppearance() {
-        self.burnerWindowButton.image = NSApp.delegateTyped.visualStyle.isNewStyle ?
-            DesignSystemImages.Glyphs.Size16.fireWindow : .newBurnerWindow
+        self.burnerWindowButton.image = DesignSystemImages.Glyphs.Size16.fireWindow
 
         self.burnerWindowButton.wantsLayer = true
         addCircularBackground(to: self.burnerWindowButton)

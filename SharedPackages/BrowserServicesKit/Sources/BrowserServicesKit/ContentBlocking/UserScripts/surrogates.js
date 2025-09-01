@@ -501,6 +501,9 @@
 
     // public
     async function shouldBlock (trackerUrl, type, element) {
+        if (!trackerUrl || trackerUrl.toString() === '') {
+            return false
+        }
         const startTime = performance.now()
         if (!blockingEnabled) {
             return false

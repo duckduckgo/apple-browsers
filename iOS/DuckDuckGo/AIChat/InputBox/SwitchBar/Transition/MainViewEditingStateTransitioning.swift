@@ -20,6 +20,6 @@
 import UIKit
 
 protocol MainViewEditingStateTransitioning {
-    func hide(with yOffset: CGFloat)
+    func hide(with barYOffset: CGFloat, contentYOffset: CGFloat)
     func show()
 }

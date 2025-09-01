@@ -21,6 +21,7 @@ import Foundation
 import Combine
 import Persistence
 import Core
+import UIKit
 
 // MARK: - TextEntryMode Enum
 public enum TextEntryMode: String, CaseIterable {
@@ -42,6 +43,7 @@ protocol SwitchBarHandling: AnyObject {
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { get }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { get }
+    var clearButtonTappedPublisher: AnyPublisher<Void, Never> { get }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { get }
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { get }
 
@@ -52,6 +54,7 @@ protocol SwitchBarHandling: AnyObject {
     func clearText()
     func microphoneButtonTapped()
     func markUserInteraction()
+    func clearButtonTapped()
 }
 
 // MARK: - SwitchBarHandler Implementation
@@ -71,6 +74,10 @@ final class SwitchBarHandler: SwitchBarHandling {
     @Published private(set) var currentToggleState: TextEntryMode = .search
     @Published private(set) var hasUserInteractedWithText: Bool = false
     @Published private(set) var isCurrentTextValidURL: Bool = false
+    
+    // MARK: - Mode Usage Detection
+    private static var hasUsedSearchInSession = false
+    private static var hasUsedAIChatInSession = false
 
     var isVoiceSearchEnabled: Bool {
         voiceSearchHelper.isVoiceSearchEnabled
@@ -100,12 +107,27 @@ final class SwitchBarHandler: SwitchBarHandling {
         microphoneButtonTappedSubject.eraseToAnyPublisher()
     }
 
+    var clearButtonTappedPublisher: AnyPublisher<Void, Never> {
+        clearButtonTappedSubject.eraseToAnyPublisher()
+    }
+
     private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode), Never>()
     private let microphoneButtonTappedSubject = PassthroughSubject<Void, Never>()
+    private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
+    private var backgroundObserver: NSObjectProtocol?
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol, storage: KeyValueStoring) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
+        
+        // Set up app lifecycle observers to reset session flags
+        backgroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            Self.resetSessionFlags()
+        }
     }
 
     // MARK: - SwitchBarHandling Implementation
@@ -116,13 +138,23 @@ final class SwitchBarHandler: SwitchBarHandling {
     }
 
     func submitText(_ text: String) {
-        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        textSubmissionSubject.send((text: text, mode: currentToggleState))
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        
+        updateModeUsage(currentToggleState)
+        textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
     }
 
     func setToggleState(_ state: TextEntryMode) {
+        // Only fire pixel if the state is actually changing
+        let isStateChanging = currentToggleState != state
+        
         currentToggleState = state
         saveToggleState()
+        
+        if isStateChanging {
+            Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched)
+        }
     }
 
     func clearText() {
@@ -137,6 +169,10 @@ final class SwitchBarHandler: SwitchBarHandling {
         hasUserInteractedWithText = true
     }
 
+    func clearButtonTapped() {
+        clearButtonTappedSubject.send(())
+    }
+
     func saveToggleState() {
         storage.set(currentToggleState.rawValue, forKey: StorageKey.toggleState)
     }
@@ -146,6 +182,36 @@ final class SwitchBarHandler: SwitchBarHandling {
         if let storedValue = storage.object(forKey: StorageKey.toggleState) as? String,
            let restoredState = TextEntryMode(rawValue: storedValue) {
             currentToggleState = restoredState
+        }
+    }
+    
+    deinit {
+        if let observer = backgroundObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+    
+    // MARK: - Session Management
+    private static func resetSessionFlags() {
+        hasUsedSearchInSession = false
+        hasUsedAIChatInSession = false
+    }
+    
+    // MARK: - Mode Usage Detection  
+    private func updateModeUsage(_ mode: TextEntryMode) {
+        let previouslyUsedBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
+        
+        switch mode {
+        case .search:
+            Self.hasUsedSearchInSession = true
+        case .aiChat:
+            Self.hasUsedAIChatInSession = true
+        }
+        
+        // Fire pixel only when user achieves both-mode usage for the first time in this session
+        let nowUsesBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
+        if nowUsesBothModes && !previouslyUsedBothModes {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarSessionBothModes)
         }
     }
 }

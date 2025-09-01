@@ -78,7 +78,8 @@ final class ScriptSourceProviderTests: XCTestCase {
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             fireproofDomains: MockFireproofDomains(domains: []),
-            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld)
+            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld),
+            newTabPageActionsManager: nil
         )
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)

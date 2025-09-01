@@ -1,0 +1,48 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - duckplayer_native
+
+---
+
+# Load constants
+- runFlow:
+    file: shared/constants.yaml
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+# Open Settings
+- runFlow: 
+    file: shared/open_settings.yaml
+
+# Turn DuckPlayer to Auto
+- tapOn:
+    id: chevron.up.chevron.down
+- tapOn: ${output.openAutomaticallyLabel}
+
+# Close Settings
+- runFlow: 
+    file: shared/close_settings.yaml
+
+# Navigate to a video
+# Load Site
+- runFlow: 
+    file: shared/load_youtube_url.yaml
+
+# Tap on the video
+- runFlow:
+    file: shared/tap_serp_title.yaml
+
+# Assert Duck Player is Visible
+- runFlow: 
+    file: shared/duckplayer_is_visible.yaml
+
+# Close Duck Player
+- runFlow: 
+    file: shared/close_player.yaml
+
+# Assert Duck Player Welcome Pill is not present
+- assertVisible:
+    id: ${output.resumeInDuckPlayerLabel}

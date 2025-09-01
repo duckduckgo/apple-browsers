@@ -73,6 +73,7 @@ class FavoritesOverlay: UIViewController {
         collectionView.backgroundColor = .clear
         if isUsingSearchInputCustomStyling {
             collectionView.contentInsetAdjustmentBehavior = .always
+            collectionView.automaticallyAdjustsScrollIndicatorInsets = true
         }
 
         view.addSubview(collectionView)

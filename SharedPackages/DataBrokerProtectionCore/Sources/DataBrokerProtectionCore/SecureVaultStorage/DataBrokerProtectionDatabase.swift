@@ -78,6 +78,10 @@ public protocol DataBrokerProtectionRepository {
     func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)?
 
     func fetchFirstEligibleJobDate() throws -> Date?
+
+    func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws
+    func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent]
+    func deleteBackgroundTaskEvents(olderThan date: Date) throws
 }
 
 public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
@@ -681,5 +685,17 @@ extension DataBrokerProtectionDatabase {
 
     public func fetchFirstEligibleJobDate() throws -> Date? {
         try vault.fetchFirstEligibleJobDate()
+    }
+
+    public func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws {
+        try vault.save(backgroundTaskEvent: event)
+    }
+
+    public func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent] {
+        try vault.fetchBackgroundTaskEvents(since: date)
+    }
+
+    public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
+        try vault.deleteBackgroundTaskEvents(olderThan: date)
     }
 }

@@ -1,5 +1,5 @@
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "A VPN-kapcsolat megszakadt, mert lejárt az előfizetésed. Fizess elő a Privacy Pro szolgáltatásra a DuckDuckGo VPN újracsatlakoztatásához.";
+"network.protection.entitlement.expired.notification.body" = "A VPN-kapcsolat megszakadt, mert lejárt az előfizetésed. Fizess elő a DuckDuckGóra, hogy újra csatlakozhass a VPN-hez.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "A DuckDuckGo VPN nem tudott csatlakozni. Próbálkozz újra később.";

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Combine
 import Common
 import Foundation
@@ -151,8 +152,32 @@ extension ReleaseNotesValues {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
+        // Fall back to cached release notes if necessary
+        // This happens when there's no connectivity,
+        // or when the appcast hasn't finished loading by the time the Release Notes screen shows up
         guard let latestUpdate = updateController.latestUpdate else {
-            // Fire both daily and count pixels to track this anomaly
+            let keyValueStore = Application.appDelegate.keyValueStore
+            if let data = try? keyValueStore.object(forKey: UpdateController.Constants.pendingUpdateInfoKey) as? Data,
+               let cached = try? JSONDecoder().decode(UpdateController.PendingUpdateInfo.self, from: data) {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "MMMM dd yyyy"
+                let releaseTitle = formatter.string(from: cached.date)
+
+                let cachedVersion = "\(cached.version) (\(cached.build))"
+                let status = currentVersion == cachedVersion ? ReleaseNotesValues.Status.loaded : ReleaseNotesValues.Status.updateReady
+
+                self.init(status: status,
+                          currentVersion: currentVersion,
+                          latestVersion: cachedVersion,
+                          lastUpdate: lastUpdate,
+                          releaseTitle: releaseTitle,
+                          releaseNotes: cached.releaseNotes,
+                          releaseNotesPrivacyPro: cached.releaseNotesPrivacyPro,
+                          downloadProgress: 0.00,
+                          automaticUpdate: updateController.areAutomaticUpdatesEnabled)
+                return
+            }
+
             pixelKit?.fire(GeneralPixel.releaseNotesEmpty, frequency: .dailyAndCount)
 
             self.init(status: updateController.updateProgress.toStatus,
@@ -204,7 +229,7 @@ extension ReleaseNotesValues {
 
 private extension Update {
     var versionString: String? {
-        "\(version) \(build)"
+        "\(version) (\(build))"
     }
 }
 

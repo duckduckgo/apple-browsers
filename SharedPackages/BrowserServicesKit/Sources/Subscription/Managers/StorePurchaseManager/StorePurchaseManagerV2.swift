@@ -29,7 +29,7 @@ public enum StoreError: Error {
 public enum StorePurchaseManagerError: LocalizedError {
     case productNotFound
     case externalIDisNotAValidUUID
-    case purchaseFailed
+    case purchaseFailed(Error)
     case transactionCannotBeVerified
     case transactionPendingAuthentication
     case purchaseCancelledByUser
@@ -207,12 +207,6 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
 
             if Set(availableProducts.map { $0.id }) != Set(self.availableProducts.map { $0.id }) {
                 self.availableProducts = availableProducts
-
-                // Update cached subscription features mapping
-                for id in availableProducts.compactMap({ $0.id }) {
-                    _ = await subscriptionFeatureMappingCache.subscriptionFeatures(for: id)
-                }
-
                 NotificationCenter.default.post(name: .availableAppStoreProductsDidChange, object: self, userInfo: nil)
             }
         } catch {
@@ -301,7 +295,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
             purchaseResult = try await product.purchase(options: options)
         } catch {
             Logger.subscriptionStorePurchaseManager.error("Product purchase failed: \(error.localizedDescription, privacy: .public)")
-            return .failure(StorePurchaseManagerError.purchaseFailed)
+            return .failure(StorePurchaseManagerError.purchaseFailed(error))
         }
 
         Logger.subscriptionStorePurchaseManager.log("PurchaseSubscription complete")

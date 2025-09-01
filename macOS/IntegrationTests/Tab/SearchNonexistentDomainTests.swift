@@ -239,7 +239,7 @@ final class SearchNonexistentDomainTests: XCTestCase {
                                                       bookmarkProvider: bookmarkProviderMock,
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })
-        addressBar.suggestionContainerViewModel = SuggestionContainerViewModel(isHomePage: true, isBurner: false, suggestionContainer: suggestionContainer, visualStyle: VisualStyle.legacy)
+        addressBar.suggestionContainerViewModel = SuggestionContainerViewModel(isHomePage: true, isBurner: false, suggestionContainer: suggestionContainer, visualStyle: VisualStyle.current)
 
         suggestionContainer.getSuggestions(for: enteredString)
         suggestionLoadingMock.completion!(.init(topHits: [.website(url: url)], duckduckgoSuggestions: [], localSuggestions: []), nil)

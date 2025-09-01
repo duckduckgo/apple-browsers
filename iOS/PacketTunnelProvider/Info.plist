@@ -13,5 +13,7 @@
 		<key>NSExtensionPrincipalClass</key>
 		<string>$(PRODUCT_MODULE_NAME).NetworkProtectionPacketTunnelProvider</string>
 	</dict>
+	<key>VPN_APP_GROUP</key>
+	<string>$(VPN_APP_GROUP)</string>
 </dict>
 </plist>

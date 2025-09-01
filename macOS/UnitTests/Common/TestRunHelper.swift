@@ -17,11 +17,11 @@
 //
 
 import Common
+import CommonObjCExtensions
 import Foundation
 import os.log
 import WebKit
 import XCTest
-import CommonObjCExtensions
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -44,13 +44,17 @@ extension XCTestCase {
 
             autoreleasepool {
                 if view.window?.className.contains("NSMenu") == true
+                    || view.nextResponder?.className.contains("NSMenuBar") == true
                     || view.window?.className.contains("TUINSWindow") == true {
 
                     objToDeinit = nil
 
                 } else if !(view is WKWebView),
-                   let viewController = view.nextResponder as? NSViewController,
-                   !viewController.className.hasPrefix("TUINS") {
+                          let viewController = view.nextResponder as? NSViewController,
+                          !viewController.className.hasPrefix("TUINS"),
+                          !viewController.className.hasPrefix("NSTextInsertionIndicator"),
+                          !viewController.className.hasPrefix("STWeb"),
+                          !viewController.className.hasPrefix("SPCompletionList") {
 
                     objToDeinit = viewController
                 } else if view.window != nil {
@@ -89,6 +93,8 @@ final class TestRunHelper: NSObject {
     fileprivate var loadedViews: [ViewRef] = []
     fileprivate var nonNilVarsStoppedTestCases = Set<ObjectIdentifier>()
 
+    @objc static var allowAppSendUserEvents: Bool = false
+
     override init() {
         super.init()
         XCTestObservationCenter.shared.addTestObserver(self)
@@ -101,6 +107,7 @@ final class TestRunHelper: NSObject {
 
         // swizzle WKWebViewConfiguration.init to use a shared process pool
         _=WKWebViewConfiguration.swizzleInitOnce
+        _=WKWebView.swizzleInstallScreenTimeWebpageControllerIfNeededOnce
 
         // swizzle NSView.init to track loaded views
         _=NSView.swizzleInitWithFrameOnce
@@ -125,6 +132,7 @@ final class TestRunHelper: NSObject {
 extension TestRunHelper: XCTestObservation {
 
     func testBundleWillStart(_ testBundle: Bundle) {
+        UserDefaults.standard.set(false, forKey: "NSAutomaticWindowAnimationsEnabled")
         if AppVersion.runType == .unitTests {
             windowObserver = NotificationCenter.default.addObserver(forName: .init("NSWindowDidOrderOnScreenAndFinishAnimatingNotification"), object: nil, queue: .main) {_ in
                 fatalError("Unit Tests should not present UI. Use MockWindow if needed.")
@@ -137,6 +145,8 @@ extension TestRunHelper: XCTestObservation {
     }
 
     func testBundleDidFinish(_ testBundle: Bundle) {
+        UserDefaults.standard.removeObject(forKey: "NSAutomaticWindowAnimationsEnabled")
+
         if case .integrationTests = AppVersion.runType {
             FileManager.default.cleanupTemporaryDirectory(excluding: ["Database.sqlite",
                                                                       "Database.sqlite-wal",
@@ -153,6 +163,8 @@ extension TestRunHelper: XCTestObservation {
     }
 
     func testCaseWillStart(_ testCase: XCTestCase) {
+        Self.allowAppSendUserEvents = false
+
         if !loadedViews.isEmpty {
             let descr = loadedViews.compactMap(\.view).description
             Logger.tests.warning("Loaded views not empty at start of test case: \(descr)")
@@ -168,6 +180,8 @@ extension TestRunHelper: XCTestObservation {
     }
 
     func testCaseDidFinish(_ testCase: XCTestCase) {
+        assert(!TestRunHelper.allowAppSendUserEvents, "allowAppSendUserEvents must be set to `false` in tearDown()")
+
         if case .unitTests = AppVersion.runType {
             // cleanup dedicated temporary directory after each test run
             FileManager.default.cleanupTemporaryDirectory()
@@ -202,10 +216,7 @@ extension TestRunHelper: XCTestObservation {
                 }
             }
             let waiter = WaiterDelegate { unfulfilledExpectations in
-#if CI
-                fatalError("Test timed out waiting for deallocation: \(unfulfilledExpectations)")
-#else
-                breakByRaisingSigInt("""
+                testCase.reportIssue("""
                 Test timed out waiting for deallocation: \(unfulfilledExpectations)"
 
                 To exorcise the issue:
@@ -217,10 +228,10 @@ extension TestRunHelper: XCTestObservation {
                   5. Consider adding autoreleasepool {} around heavy object creation in tests
                   6. Use Instruments > Allocations to track object lifecycle
                   7. Disable this check and add breakpoints in dealloc methods to verify cleanup timing
+                  8. If the deallocation expectation of this class is incorrect, you can add it to exclusions in `deallocExpectations`
                 """)
-#endif
             }
-            XCTWaiter(delegate: waiter).wait(for: testCase.deallocExpectations(), timeout: 3)
+            XCTWaiter(delegate: waiter).wait(for: testCase.deallocExpectations(), timeout: 5)
 
             withExtendedLifetime(waiter) {}
             TestRunHelper.shared.loadedViews = []
@@ -249,7 +260,7 @@ extension TestRunHelper: XCTestObservation {
         if !unexpectedNonNilVariables.isEmpty,
            // don't break twice
            nonNilVarsStoppedTestCases.insert(ObjectIdentifier(type(of: testCase))).inserted {
-            breakByRaisingSigInt("""
+            testCase.reportIssue("""
             Test case '\(testCase.name)' has non-nil variables that should be nullified (or cleared - for Collections) after test completion: \(Array(unexpectedNonNilVariables).sorted())
             Reset the variables in `tearDown` method or override `allowedNonNilVariables` and add variable names to the returned value to allow
             the test to keep the variables after its completion.
@@ -371,4 +382,16 @@ extension WKWebViewConfiguration {
         self.init()
     }
 
+}
+extension WKWebView {
+    static var swizzleInstallScreenTimeWebpageControllerIfNeededOnce: Void = {
+        guard let originalMethod = class_getInstanceMethod(WKWebView.self, NSSelectorFromString("_installScreenTimeWebpageControllerIfNeeded")) else { return }
+        let swizzledMethod = class_getInstanceMethod(WKWebView.self, #selector(swizzled_installScreenTimeWebpageControllerIfNeeded))!
+
+        method_exchangeImplementations(originalMethod, swizzledMethod)
+    }()
+
+    // skip STWebRemoteViewController initialization
+    @objc dynamic func swizzled_installScreenTimeWebpageControllerIfNeeded() {
+    }
 }

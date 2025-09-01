@@ -1,0 +1,61 @@
+// See https://app.asana.com/0/72649045549333/1208001118995887/f.
+{
+    m_vpn_access_revoked_ios: {
+        description: 'The VPN has learnt access to PPro has been revoked for the account',
+        owners: ['diegoreymendez'],
+        triggers: ['other'],
+        suffixes: ['form_factor', 'legacy_daily_count'],
+        parameters: [
+            {
+                key: 'e',
+                type: 'string',
+                description: 'Error code',
+            },
+            {
+                key: 'd',
+                type: 'string',
+                description: 'Error domain',
+            },
+            {
+                key: 'ueX',
+                type: 'string',
+                description: 'Underlying error code (x is depth)',
+            },
+            {
+                key: 'udX',
+                type: 'string',
+                description: 'Underlying error domain (x is depth)',
+            },
+            'appVersion',
+        ],
+    },
+    m_vpn_access_unmanaged_error_ios: {
+        description: 'The subscription library has communicated to the VPN there‘s been a recoverable error when trying to retrieve the token.',
+        owners: ['diegoreymendez'],
+        triggers: ['other'],
+        suffixes: ['form_factor', 'legacy_daily_count'],
+        parameters: [
+            {
+                key: 'e',
+                type: 'string',
+                description: 'Error code',
+            },
+            {
+                key: 'd',
+                type: 'string',
+                description: 'Error domain',
+            },
+            {
+                key: 'ueX',
+                type: 'string',
+                description: 'Underlying error code (x is depth)',
+            },
+            {
+                key: 'udX',
+                type: 'string',
+                description: 'Underlying error domain (x is depth)',
+            },
+            'appVersion',
+        ],
+    },
+}

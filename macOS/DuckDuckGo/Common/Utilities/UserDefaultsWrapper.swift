@@ -91,6 +91,7 @@ public struct UserDefaultsWrapper<T> {
         case restorePreviousSession = "preferences.startup.restore-previous-session"
         case launchToCustomHomePage = "preferences.startup.launch-to-custom-home-page"
         case customHomePageURL = "preferences.startup.customHomePageURL"
+        case openFireWindowByDefault = "preferences.startup.open-fire-window-by-default"
         case currentThemeName = "com.duckduckgo.macos.currentThemeNameKey"
         case showFullURL = "preferences.appearance.show-full-url"
         case showAutocompleteSuggestions = "preferences.appearance.show-autocomplete-suggestions"
@@ -190,7 +191,7 @@ public struct UserDefaultsWrapper<T> {
         // ---
         // Please note that shared defaults MUST have a name that matches exactly their value,
         // or else KVO will just not work as of 2023-08-07
-
+        case hadVPNEntitlements = "hadVPNEntitlements"
         case networkProtectionOnboardingStatusRawValue = "networkProtectionOnboardingStatusRawValue"
 
         // Updates

@@ -1,7 +1,7 @@
 {
   "name": "PeopleSearcher",
   "url": "peoplesearcher.com",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.peoplesearcher.com/optOut/name/landing",
   "steps": [
@@ -207,5 +207,6 @@
     "maintenanceScan": 120,
     "maxAttempts": -1
   },
-  "addedDatetime": 1738341001174
+  "addedDatetime": 1738341001174,
+  "removedAt": null
 }

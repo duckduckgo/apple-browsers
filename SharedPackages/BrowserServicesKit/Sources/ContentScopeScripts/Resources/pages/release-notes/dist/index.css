@@ -1,0 +1,924 @@
+/* shared/components/DuckDuckGoLogo/DuckDuckGoLogo.module.css */
+.DuckDuckGoLogo_logo {
+  background: url("./Logo-Horizontal-A4FFOYBB.svg") no-repeat;
+  height: var(--sp-10);
+  display: block;
+}
+@media (prefers-color-scheme: dark) {
+  .DuckDuckGoLogo_logo {
+    background: url("./Logo-Horizontal-Dark-BQCDSFDZ.svg") no-repeat;
+  }
+}
+
+/* pages/release-notes/app/components/App.module.css */
+:root {
+  --sp-145: calc(580 * var(--px-in-rem));
+}
+body {
+  color: var(--theme-text-primary-color);
+  margin: var(--sp-6) 0 var(--sp-8);
+}
+.App_main {
+  padding: var(--sp-6) var(--sp-5);
+  position: relative;
+  display: grid;
+  gap: var(--sp-8);
+}
+.App_header {
+  max-width: var(--sp-320);
+  width: 100%;
+  margin: 0 auto;
+}
+.App_core {
+  width: 100%;
+  max-width: var(--sp-145);
+  margin: 0 auto;
+}
+
+/* shared/components/Button/Button.module.css */
+.Button_button {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--button-bg);
+  color: var(--button-text);
+  cursor: pointer;
+  position: relative;
+}
+[data-platform-name=macos] .Button_button {
+  border: 0;
+  border-radius: calc(5 * var(--px-in-rem));
+  box-shadow: var(--button-shadow);
+  font-size: calc(13 * var(--px-in-rem));
+  height: var(--sp-5);
+  opacity: var(--button-opacity);
+  padding: 0 var(--sp-3);
+}
+[data-platform-name=macos] .Button_button.Button_lg {
+  height: var(--sp-7);
+  border-radius: calc(6 * var(--px-in-rem));
+}
+[data-platform-name=macos] .Button_button.Button_xl {
+  height: var(--sp-8);
+  border-radius: calc(6 * var(--px-in-rem));
+}
+[data-platform-name=macos] .Button_button:disabled {
+  background: var(--button-bg--disabled, var(--button-bg));
+  box-shadow: var(--button-shadow--disabled, var(--button-shadow));
+  color: var(--button-text--disabled, var(--button-text));
+  opacity: var(--button-opacity--disabled, var(--button-opacity));
+}
+[data-platform-name=macos] .Button_button:disabled:hover {
+  background: var(--button-bg--disabled, var(--button-bg));
+  box-shadow: var(--button-shadow--disabled, var(--button-shadow));
+  color: var(--button-text--disabled, var(--button-text));
+  opacity: var(--button-opacity--disabled, var(--button-opacity));
+}
+[data-platform-name=macos] .Button_button:focus,
+[data-platform-name=macos] .Button_button:focus-visible {
+  background: var(--button-bg--focus, var(--button-bg));
+  box-shadow: var(--button-shadow--focus, var(--button-shadow));
+  color: var(--button-text--focus, var(--button-text));
+  opacity: var(--button-opacity--focus, var(--button-opacity));
+}
+[data-platform-name=macos] .Button_button:hover {
+  background: var(--button-bg);
+  box-shadow: var(--button-shadow--hover, var(--button-shadow));
+  color: var(--button-text--hover, var(--button-text));
+  opacity: var(--button-opacity--hover, var(--button-opacity));
+}
+[data-platform-name=macos] .Button_button:active {
+  background: var(--button-bg--active, var(--button-bg));
+  box-shadow: var(--button-shadow--active, var(--button-shadow));
+  color: var(--button-text--active, var(--button-text));
+  opacity: var(--button-opacity--active, var(--button-opacity));
+}
+[data-platform-name=ios] .Button_button {
+  border-radius: var(--sp-2);
+  border: 0;
+  font-size: calc(15 * var(--px-in-rem));
+  font-weight: 600;
+  height: calc(50 * var(--px-in-rem));
+  letter-spacing: calc(-0.23 * var(--px-in-rem));
+  padding: 0 var(--sp-6);
+  text-align: center;
+}
+[data-platform-name=ios] .Button_button:active {
+  background: var(--button-bg--active, var(--button-bg));
+  color: var(--button-text--active, var(--button-text));
+}
+[data-platform-name=ios] .Button_button:disabled {
+  background: var(--button-bg--disabled, var(--button-bg));
+  color: var(--button-text--disabled, var(--button-text));
+}
+body:not([data-platform-name]) .Button_button {
+  background-blend-mode:
+    normal,
+    color-burn,
+    normal;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.12) 0%,
+      rgba(255, 255, 255, 0) 100%),
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 0.06) 100%),
+    #007aff;
+  border-radius: var(--sp-2);
+  border: 1px solid rgba(40, 145, 255, 0.05);
+  box-shadow: 0 0 1px 0 rgba(40, 145, 255, 0.05), 0 1px 1px 0 rgba(40, 145, 255, 0.1);
+  color: white;
+  font-size: calc(13 * var(--px-in-rem));
+  font-weight: 600;
+  line-height: var(--sp-8);
+  padding: 0 var(--sp-4);
+}
+body:not([data-platform-name]) .Button_button:hover {
+  background:
+    linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.16) 100%),
+    #2749db;
+}
+body:not([data-platform-name]) .Button_button:active {
+  background:
+    linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.16) 100%),
+    #1743d1;
+}
+[data-platform-name=macos] {
+  --macos-control-focused-shadow:
+    0 0 0 3px rgba(57, 105, 239, 0.55),
+    0 0 0 1px rgba(57, 105, 239, 0.55) inset,
+    0 0 1px 0 rgba(0, 0, 0, 0.05),
+    0 1px 1px 0 rgba(0, 0, 0, 0.1);
+  --macos-control-standard-background-rest: var(--color-white);
+  --macos-control-standard-background-rest--dark: rgba(255, 255, 255, 0.28);
+  --macos-control-standard-background-pressed: #e7e7e7;
+  --macos-control-standard-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.2) inset,
+    0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
+    0 0 0 1px rgba(0, 0, 0, 0.1),
+    0 0 1px 0 rgba(0, 0, 0, 0.05),
+    0 1px 1px 0 rgba(0, 0, 0, 0.2);
+  --macos-control-accent-branded-background-rest:
+    linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.16) 100%),
+    #2749DB;
+  --macos-control-accent-branded-background-pressed:
+    linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.16) 100%),
+    #2140C0;
+  --macos-control-accent-branded-background-hover:
+    linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.16) 100%),
+    #2749DB;
+  --macos-control-accent-branded-background-disabled: var(--color-white);
+  --macos-control-accent-branded-background-focus:
+    linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.00) 0%,
+      rgba(255, 255, 255, 0.16) 100%),
+    #2749DB;
+  --macos-control-accent-branded-shadow-rest:
+    0 1px 0 0 rgba(255, 255, 255, 0) inset,
+    0 1px 0 0 rgba(255, 255, 255, 0) inset,
+    0 0 0 1px rgba(0, 122, 255, 0.05),
+    0 0 1px 0 rgba(0, 122, 255, 0.05),
+    0 1px 1px 0 rgba(0, 122, 255, 0.1);
+  --macos-control-accent-branded-shadow-pressed:
+    0px 0.5px 0px 0px rgba(255, 255, 255, 0.00) inset,
+    0px 1px 0px 0px rgba(255, 255, 255, 0.00) inset,
+    0px 0px 0px 0.5px rgba(0, 122, 255, 0.05),
+    0px 0px 1px 0px rgba(0, 122, 255, 0.05),
+    0px 1px 1px 0px rgba(0, 122, 255, 0.10);
+  --macos-control-accent-branded-shadow-hover:
+    0px 0.5px 0px 0px rgba(255, 255, 255, 0.00) inset,
+    0px 1px 0px 0px rgba(255, 255, 255, 0.00) inset,
+    0px 0px 0px 0.5px rgba(0, 122, 255, 0.05),
+    0px 0px 1px 0px rgba(0, 122, 255, 0.05),
+    0px 1px 1px 0px rgba(0, 122, 255, 0.10);
+  --macos-control-accent-branded-shadow-disabled:
+    0px 0.5px 0px 0px rgba(255, 255, 255, 0.20) inset,
+    0px 1px 0px 0px rgba(255, 255, 255, 0.05) inset,
+    0px 0px 0px 0.5px rgba(0, 0, 0, 0.10),
+    0px 0px 1px 0px rgba(0, 0, 0, 0.05),
+    0px 1px 1px 0px rgba(0, 0, 0, 0.20);
+}
+[data-platform-name=macos] .Button_button.Button_standard {
+  --button-bg: var(--macos-control-standard-background-rest);
+  --button-text: var(--macos-text-primary);
+  --button-shadow: var(--macos-control-standard-shadow);
+  --button-opacity: 1;
+  --button-bg--active: var(--macos-control-standard-background-pressed);
+  --button-bg--disabled: var(--macos-control-standard-background-rest);
+  --button-text--disabled: var(--macos-text-primary);
+  --button-shadow--disabled: var(--macos-control-standard-shadow);
+  --button-opacity--disabled: 0.4;
+  --button-shadow--focus: var(--macos-control-focused-shadow);
+}
+[data-platform-name=macos] .Button_button.Button_accent,
+[data-platform-name=macos] .Button_button.Button_accentBrand {
+  --button-bg: var(--macos-control-accent-branded-background-rest);
+  --button-text: var(--color-white);
+  --button-shadow: var(--macos-control-accent-branded-shadow-rest);
+  --button-opacity: 1;
+  --button-bg--active: var(--macos-control-accent-branded-background-pressed);
+  --button-text--active: var(--color-white-at-80);
+  --button-shadow--active: var(--macos-control-accent-branded-shadow-pressed);
+  --button-bg--disabled: var(--macos-control-standard-background-rest);
+  --button-text--disabled: var(--macos-text-primary);
+  --button-shadow--disabled: var(--macos-control-standard-shadow);
+  --button-opacity--disabled: 0.4;
+  --button-bg--focus: var(--macos-control-accent-branded-background-focus);
+  --button-text--focus: var(--color-white);
+  --button-shadow--focus: var(--macos-control-focused-shadow);
+  --button-bg--hover: var(--macos-control-accent-branded-background-hover);
+  --button-text--hover: var(--color-white);
+  --button-shadow--hover: var(--macos-control-accent-branded-shadow-hover);
+}
+[data-theme=dark] :is([data-platform-name=macos] .Button_button).Button_standard {
+  --button-bg: var(--macos-control-standard-background-rest--dark);
+  --button-text: var(--color-white-at-84);
+}
+[data-platform-name=ios] .Button_button.Button_primary {
+  --button-bg: var(--color-blue-50);
+  --button-text: var(--color-white);
+  --button-bg--active: var(--color-blue-70);
+  --button-text--active: var(--color-white);
+  --button-bg--disabled: var(--color-black-at-6);
+  --button-text--disabled: var(--color-black-at-36);
+}
+[data-platform-name=ios] .Button_button.Button_ghost {
+  --button-bg: transparent;
+  --button-text: var(--color-blue-50);
+  --button-bg--active: rgba(57, 105, 239, 0.12);
+  --button-text--active: var(--color-blue-70);
+  --button-bg--disabled: transparent;
+  --button-text--disabled: var(--color-black-at-36);
+}
+[data-theme=dark] :is([data-platform-name=ios] .Button_button).Button_primary {
+  --button-bg: var(--color-blue-30);
+  --button-text: var(--color-black-at-84);
+  --button-bg--active: var(--color-blue-50);
+  --button-text--active: var(--color-black-at-84);
+  --button-bg--disabled: var(--color-black-at-6);
+  --button-text--disabled: var(--color-black-at-36);
+}
+[data-theme=dark] :is([data-platform-name=ios] .Button_button).Button_ghost {
+  --button-bg: transparent;
+  --button-text: var(--color-blue-30);
+  --button-bg--active: rgba(114, 149, 246, 0.2);
+  --button-text--active: var(--color-blue-20);
+  --button-bg--disabled: transparent;
+  --button-text--disabled: var(--color-black-at-36);
+}
+[data-platform-name=windows] .Button_button {
+  --focus-ring: 0px 0px 0px 1px var(--color-white), 0px 0px 0px 3px var(--color-black);
+  border-radius: var(--border-radius-sm);
+  height: var(--sp-8);
+  border-width: 0;
+  padding-left: var(--sp-3);
+  padding-right: var(--sp-3);
+}
+[data-platform-name=windows] .Button_button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+[data-platform-name=windows] .Button_button.Button_standard {
+  background-color: var(--color-black-at-6);
+  border-width: 0;
+}
+[data-platform-name=windows] .Button_button.Button_standard:hover {
+  background-color: var(--color-black-at-9);
+  cursor: pointer;
+}
+[data-platform-name=windows] .Button_button.Button_standard:active {
+  background-color: var(--color-black-at-12);
+}
+[data-platform-name=windows] .Button_button.Button_standard:disabled {
+  color: var(--color-black-at-84);
+}
+[data-platform-name=windows] .Button_button.Button_standard:disabled:hover {
+  cursor: not-allowed;
+  background-color: var(--color-white-at-6);
+}
+[data-platform-name=windows] .Button_button.Button_accentBrand {
+  background-color: var(--ddg-color-primary);
+  color: var(--color-white);
+}
+[data-platform-name=windows] .Button_button.Button_accentBrand:hover {
+  background-color: var(--color-blue-60);
+}
+[data-platform-name=windows] .Button_button.Button_accentBrand:active {
+  background-color: var(--color-blue-70);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button) {
+  --focus-ring: 0px 0px 0px 1px var(--color-black), 0px 0px 0px 3px var(--color-white);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard {
+  color: var(--color-white-at-84);
+  background-color: var(--color-white-at-12);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard:hover {
+  background-color: var(--color-white-at-18);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard:active {
+  background-color: var(--color-white-at-24);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard:disabled {
+  color: var(--color-white-at-12);
+  opacity: 0.8;
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard:disabled:hover {
+  background-color: var(--color-white-at-12);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand {
+  color: var(--color-black-at-84);
+  background-color: var(--color-blue-20);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand:hover {
+  background-color: var(--color-blue-30);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand:active {
+  background-color: var(--color-blue-40);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand:disabled {
+  background-color: var(--color-white-at-36);
+  color: var(--color-black-at-84);
+}
+
+/* shared/components/Card/Card.module.css */
+.Card_card {
+  background: var(--color-black-at-1);
+  border: 1px solid var(--color-black-at-9);
+  border-radius: var(--sp-3);
+  padding: var(--sp-6) var(--sp-6) var(--sp-8);
+}
+@media (prefers-color-scheme: dark) {
+  .Card_card {
+    background: var(--color-white-at-3);
+    border-color: var(--color-white-at-9);
+  }
+}
+
+/* shared/components/Text/Text.module.css */
+a {
+  color: var(--ddg-color-primary);
+}
+.Text_title-1 {
+  font-size: calc(22 * var(--px-in-rem));
+  line-height: calc(26 * var(--px-in-rem));
+}
+.Text_title-1.Text_strictSpacing {
+  letter-spacing: calc(-0.26 * var(--px-in-rem));
+}
+.Text_title-2 {
+  font-size: calc(17 * var(--px-in-rem));
+  font-weight: 600;
+  line-height: calc(22 * var(--px-in-rem));
+}
+.Text_title-2.Text_strictSpacing {
+  letter-spacing: calc(-0.43 * var(--px-in-rem));
+}
+.Text_title-2-emphasis {
+  font-size: calc(17 * var(--px-in-rem));
+  font-weight: 700;
+  line-height: calc(22 * var(--px-in-rem));
+}
+.Text_title-2-emphasis.Text_strictSpacing {
+  letter-spacing: calc(-0.43 * var(--px-in-rem));
+}
+.Text_headline {
+  font-size: calc(13 * var(--px-in-rem));
+  font-weight: 600;
+  line-height: calc(16 * var(--px-in-rem));
+}
+.Text_headline.Text_strictSpacing {
+  letter-spacing: calc(-0.08 * var(--px-in-rem));
+}
+.Text_subheadline {
+  font-size: calc(11 * var(--px-in-rem));
+  line-height: calc(14 * var(--px-in-rem));
+}
+.Text_subheadline.Text_strictSpacing {
+  letter-spacing: calc(0.06 * var(--px-in-rem));
+}
+.Text_body {
+  font-size: calc(13 * var(--px-in-rem));
+  line-height: calc(16 * var(--px-in-rem));
+}
+.Text_body.Text_strictSpacing {
+  letter-spacing: calc(-0.08 * var(--px-in-rem));
+}
+.Text_body-emphasis {
+  font-size: calc(13 * var(--px-in-rem));
+  font-weight: 600;
+  line-height: calc(16 * var(--px-in-rem));
+}
+.Text_body-emphasis.Text_strictSpacing {
+  letter-spacing: calc(-0.08 * var(--px-in-rem));
+}
+.Text_label-small {
+  font-size: calc(11 * var(--px-in-rem));
+  line-height: calc(11 * var(--px-in-rem));
+}
+.Text_label-small.Text_strictSpacing {
+  letter-spacing: calc(0.06 * var(--px-in-rem));
+}
+.Text_label-default {
+  font-size: calc(13 * var(--px-in-rem));
+  line-height: calc(13 * var(--px-in-rem));
+}
+.Text_label-default.Text_strictSpacing {
+  letter-spacing: calc(-0.08 * var(--px-in-rem));
+}
+.Text_label-medium {
+  font-size: calc(13 * var(--px-in-rem));
+  font-weight: 500;
+  line-height: calc(13 * var(--px-in-rem));
+}
+.Text_label-medium.Text_strictSpacing {
+  letter-spacing: calc(-0.25 * var(--px-in-rem));
+}
+.Text_caption-2-emphasis {
+  font-size: calc(10 * var(--px-in-rem));
+  line-height: calc(13 * var(--px-in-rem));
+}
+.Text_caption-2-emphasis.Text_strictSpacing {
+  letter-spacing: calc(0.12 * var(--px-in-rem));
+}
+[data-platform-name=ios] .Text_title-2 {
+  font-size: calc(22 * var(--px-in-rem));
+  font-weight: 600;
+  line-height: calc(28 * var(--px-in-rem));
+}
+[data-platform-name=ios] .Text_title-2.Text_strictSpacing {
+  letter-spacing: calc(0.35 * var(--px-in-rem));
+}
+[data-platform-name=ios] .Text_body {
+  font-size: calc(16 * var(--px-in-rem));
+  font-weight: 400;
+  line-height: calc(21 * var(--px-in-rem));
+}
+[data-platform-name=ios] .Text_body.Text_strictSpacing {
+  letter-spacing: calc(-0.31 * var(--px-in-rem));
+}
+[data-platform-name=windows] .Text_custom-title-1 {
+  font-size: calc(18 * var(--px-in-rem));
+  font-weight: 600;
+  line-height: calc(22 * var(--px-in-rem));
+  letter-spacing: normal;
+}
+[data-platform-name=windows] .Text_body {
+  font-size: calc(14 * var(--px-in-rem));
+  font-weight: 400;
+  line-height: calc(20 * var(--px-in-rem));
+  letter-spacing: normal;
+}
+
+/* pages/release-notes/app/components/ContentPlaceholder.module.css */
+.ContentPlaceholder_contentPlaceholder h2,
+.ContentPlaceholder_contentPlaceholder p {
+  background: var(--color-black-at-6);
+}
+[data-theme=dark] .ContentPlaceholder_contentPlaceholder h2,
+[data-theme=dark] .ContentPlaceholder_contentPlaceholder p {
+  background: var(--color-white-at-6);
+}
+.ContentPlaceholder_contentPlaceholder h2 {
+  border-radius: var(--sp-3);
+  height: var(--sp-6);
+  width: 75%;
+}
+.ContentPlaceholder_contentPlaceholder p {
+  border-radius: var(--sp-2);
+  height: var(--sp-4);
+  margin-top: var(--sp-2);
+  width: 50%;
+}
+.ContentPlaceholder_contentPlaceholder ul {
+  margin-top: var(--sp-6);
+}
+.ContentPlaceholder_contentPlaceholder li {
+  margin-top: var(--sp-4);
+  padding-left: var(--sp-5);
+  position: relative;
+  padding-left: var(--sp-6);
+}
+.ContentPlaceholder_contentPlaceholder li::before {
+  background: var(--color-black-at-6);
+  border-radius: 0.375rem;
+  content: "";
+  display: inline-block;
+  width: var(--sp-3);
+  height: var(--sp-3);
+  position: absolute;
+  top: 0.125rem;
+  left: 0;
+}
+.ContentPlaceholder_contentPlaceholder li p {
+  width: 100%;
+}
+.ContentPlaceholder_contentPlaceholder li p:last-child {
+  width: 50%;
+}
+[data-theme=dark] .ContentPlaceholder_contentPlaceholder li::before {
+  background: var(--color-white-at-6);
+}
+
+/* pages/release-notes/app/components/ReleaseNotes.module.css */
+.ReleaseNotes_article {
+  --bullet-color: rgba(57, 105, 239, 0.24);
+  --sp-4_5: calc(18 * var(--px-in-rem));
+  --sp-2_5: calc(10 * var(--px-in-rem));
+  --sp-1_5: calc(6 * var(--px-in-rem));
+  margin: 0 auto;
+  width: 100%;
+  display: grid;
+  gap: var(--sp-9);
+  padding-top: var(--sp-6);
+}
+[data-theme=dark] .ReleaseNotes_article {
+  --bullet-color: var(--color-blue-20);
+}
+.ReleaseNotes_heading {
+  display: grid;
+  width: 100%;
+  gap: var(--sp-2);
+}
+.ReleaseNotes_card {
+  display: grid;
+  width: 100%;
+  gap: var(--sp-6);
+}
+.ReleaseNotes_title {
+  font-size: calc(50 * var(--px-in-rem));
+  font-weight: 800;
+  line-height: normal;
+}
+.ReleaseNotes_statusContainer {
+  display: grid;
+  width: 100%;
+  gap: var(--sp-1) var(--sp-2);
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto;
+}
+.ReleaseNotes_gridIcon {
+  grid-row: span 2;
+}
+.ReleaseNotes_statusIcon {
+  width: var(--sp-6);
+  height: var(--sp-6);
+}
+.ReleaseNotes_checkIcon {
+  background: url("./Check-Color-24-Y2U7ZXXE.svg") no-repeat;
+}
+.ReleaseNotes_alertIcon {
+  background: url("./Exclamation-Color-24-AAA3M64P.svg") no-repeat;
+}
+.ReleaseNotes_warningIcon {
+  background: url("./Exclamation-High-Color-24-6LOXQFBN.svg") no-repeat;
+}
+.ReleaseNotes_spinnerIcon {
+  background: url("./Spinner-16-PX3I3MW3.svg") no-repeat;
+  animation: ReleaseNotes_spinner 1500ms infinite linear;
+}
+[data-theme=dark] .ReleaseNotes_spinnerIcon {
+  background-image: url("./Spinner-16-Dark-CEPTUYIF.svg");
+}
+@keyframes ReleaseNotes_spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.ReleaseNotes_statusText {
+  align-self: center;
+}
+.ReleaseNotes_statusTimestamp {
+  color: var(--theme-text-secondary-color);
+}
+.ReleaseNotes_buttonContainer {
+  padding-top: var(--sp-1_5);
+}
+.ReleaseNotes_notesHeading {
+  display: grid;
+  gap: var(--sp-0_5);
+}
+.ReleaseNotes_notesSubheading {
+  align-items: center;
+  display: flex;
+  gap: var(--sp-3);
+}
+.ReleaseNotes_notesIcon {
+  background-repeat: no-repeat;
+  display: block;
+  width: var(--sp-4);
+  height: var(--sp-4);
+}
+.ReleaseNotes_notesIconPrivacyPro {
+  background-image: url("./Privacy-Pro-Color-16-42TBSCRM.svg");
+}
+.ReleaseNotes_releaseTitle {
+  align-items: flex-start;
+  display: flex;
+  font-size: calc(26 * var(--px-in-rem));
+  font-weight: 600;
+  gap: var(--sp-2);
+  line-height: 1;
+  letter-spacing: calc(-0.26 * var(--px-in-rem));
+}
+.ReleaseNotes_releaseVersion {
+  color: var(--theme-text-secondary-color);
+}
+.ReleaseNotes_listContainer {
+  display: grid;
+  gap: var(--sp-4_5);
+  width: 100%;
+}
+.ReleaseNotes_listGrid {
+  display: grid;
+  gap: var(--sp-9);
+  width: 100%;
+}
+.ReleaseNotes_list {
+  display: grid;
+  gap: var(--sp-4_5);
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+.ReleaseNotes_list:last-of-type {
+  margin-bottom: 0;
+}
+.ReleaseNotes_listItem {
+  margin: 0 0 0;
+  position: relative;
+  padding-left: var(--sp-7);
+}
+.ReleaseNotes_listItem::before {
+  background: var(--bullet-color);
+  border-radius: var(--sp-1_5);
+  content: "";
+  display: inline-block;
+  width: var(--sp-3);
+  height: var(--sp-3);
+  position: absolute;
+  top: var(--sp-0_5);
+  left: var(--sp-0_5);
+}
+.ReleaseNotes_newTag {
+  background-color: var(--color-yellow-60);
+  border-radius: var(--sp-1_5) 0;
+  color: var(--color-black);
+  display: inline-block;
+  padding: calc(3 * var(--px-in-rem)) var(--sp-2);
+  text-transform: uppercase;
+  top: calc(-1 * var(--sp-0_5));
+  font-size: calc(11.5 * var(--px-in-rem));
+  font-weight: 600;
+  line-height: calc(11 * var(--px-in-rem));
+}
+.ReleaseNotes_updatesLink {
+  display: inline-flex;
+  align-items: center;
+  border-bottom: 1px solid transparent;
+  width: fit-content;
+  text-decoration: none;
+}
+.ReleaseNotes_updatesLink:hover {
+  border-bottom-color: currentColor;
+}
+.ReleaseNotes_updatesLink .ReleaseNotes_linkIcon {
+  height: 1rem;
+  width: 1rem;
+  margin-left: var(--sp-1);
+  vertical-align: middle;
+}
+
+/* pages/release-notes/app/Components.module.css */
+.Components_main {
+  display: grid;
+  gap: var(--sp-10);
+  padding: var(--sp-10);
+}
+.Components_main hr {
+  border: 0;
+  border-bottom: 1px solid black;
+  width: 100%;
+}
+[data-theme=dark] :is(.Components_main hr) {
+  border-bottom: 1px solid white;
+}
+.Components_card {
+  display: grid;
+  width: 100%;
+  gap: var(--sp-6);
+}
+
+/* shared/styles/variables.css */
+:root {
+  --base: 16px;
+  font-size: calc(16px / var(--base));
+  --px-in-rem: calc(1rem / 16);
+  --sp-320: 80rem;
+  --sp-256: 64rem;
+  --sp-192: 48rem;
+  --sp-96: 24rem;
+  --sp-90: 22.5rem;
+  --sp-80: 20rem;
+  --sp-72: 18rem;
+  --sp-64: 16rem;
+  --sp-56: 14rem;
+  --sp-48: 12rem;
+  --sp-40: 10rem;
+  --sp-35: 8.75rem;
+  --sp-32: 8rem;
+  --sp-30: 7.5rem;
+  --sp-25: 6.25rem;
+  --sp-24: 6rem;
+  --sp-20: 5rem;
+  --sp-16: 4rem;
+  --sp-15: 3.75rem;
+  --sp-14: 3.5rem;
+  --sp-13: 3.25rem;
+  --sp-12: 3rem;
+  --sp-11: 2.75rem;
+  --sp-10: 2.5rem;
+  --sp-9: 2.25rem;
+  --sp-8: 2rem;
+  --sp-7: 1.75rem;
+  --sp-6: 1.5rem;
+  --sp-5: 1.25rem;
+  --sp-4: 1rem;
+  --sp-3: 0.75rem;
+  --sp-2: 0.5rem;
+  --sp-1: 0.25rem;
+  --sp-0_5: 0.125rem;
+  --color-red-50: #de5833;
+  --color-purple-50: #5132a9;
+  --color-yellow-50: #fcd00a;
+  --color-green-50: #4cba3c;
+  --color-yellow-60: #f9be1a;
+  --color-blue-100: #051133;
+  --color-blue-90: #0b2059;
+  --color-blue-80: #14307e;
+  --color-blue-70: #1e42a4;
+  --color-blue-60: #2b55ca;
+  --color-blue-50: #3969ef;
+  --color-blue-40: #557ff3;
+  --color-blue-30: #7295f6;
+  --color-blue-20: #8fabf9;
+  --color-blue-10: #adc2fc;
+  --color-blue-0: #ccdaff;
+  --color-black: #000;
+  --color-gray-95: #111;
+  --color-gray-90: #222;
+  --color-gray-85: #333;
+  --color-gray-80: #444;
+  --color-gray-70: #666;
+  --color-gray-60: #888;
+  --color-gray-50: #aaa;
+  --color-gray-40: #ccc;
+  --color-gray-30: #ddd;
+  --color-gray-25: #e5e5e5;
+  --color-gray-20: #eee;
+  --color-gray-10: #f5f5f5;
+  --color-gray-0: #fafafa;
+  --color-white: #fff;
+  --color-black-at-1: rgba(0, 0, 0, 0.01);
+  --color-black-at-3: rgba(0, 0, 0, 0.03);
+  --color-black-at-6: rgba(0, 0, 0, 0.06);
+  --color-black-at-9: rgba(0, 0, 0, 0.09);
+  --color-black-at-12: rgba(0, 0, 0, 0.12);
+  --color-black-at-15: rgba(0, 0, 0, 0.15);
+  --color-black-at-18: rgba(0, 0, 0, 0.18);
+  --color-black-at-36: rgba(0, 0, 0, 0.36);
+  --color-black-at-40: rgba(0, 0, 0, 0.4);
+  --color-black-at-42: rgba(0, 0, 0, 0.42);
+  --color-black-at-48: rgba(0, 0, 0, 0.48);
+  --color-black-at-50: rgba(0, 0, 0, 0.5);
+  --color-black-at-60: rgba(0, 0, 0, 0.6);
+  --color-black-at-72: rgba(0, 0, 0, 0.72);
+  --color-black-at-80: rgba(0, 0, 0, 0.8);
+  --color-black-at-84: rgba(0, 0, 0, 0.84);
+  --color-black-at-90: rgba(0, 0, 0, 0.9);
+  --color-black-at-96: rgba(0, 0, 0, 0.96);
+  --color-gray85-at-80: rgba(51, 51, 51, 0.8);
+  --color-white-at-3: rgba(255, 255, 255, 0.03);
+  --color-white-at-6: rgba(255, 255, 255, 0.06);
+  --color-white-at-9: rgba(255, 255, 255, 0.09);
+  --color-white-at-12: rgba(255, 255, 255, 0.12);
+  --color-white-at-15: rgba(255, 255, 255, 0.15);
+  --color-white-at-18: rgba(255, 255, 255, 0.18);
+  --color-white-at-24: rgba(255, 255, 255, 0.24);
+  --color-white-at-30: rgba(255, 255, 255, 0.3);
+  --color-white-at-36: rgba(255, 255, 255, 0.36);
+  --color-white-at-42: rgba(255, 255, 255, 0.42);
+  --color-white-at-50: rgba(255, 255, 255, 0.5);
+  --color-white-at-60: rgba(255, 255, 255, 0.6);
+  --color-white-at-70: rgba(255, 255, 255, 0.7);
+  --color-white-at-80: rgba(255, 255, 255, 0.8);
+  --color-white-at-84: rgba(255, 255, 255, 0.84);
+  --color-white-at-85: rgba(255, 255, 255, 0.85);
+  --color-white-at-96: rgba(255, 255, 255, 0.96);
+  --ddg-color-primary: var(--color-blue-50);
+  --ddg-color-primary-dark: var(--color-blue-30);
+  --theme-background-color: var(--color-white);
+  --theme-text-primary-color: var(--color-black-at-84);
+  --theme-text-secondary-color: var(--color-black-at-60);
+  --theme-text-link-color: var(--ddg-color-primary);
+  --border-radius-lg: 12px;
+  --border-radius-md: 8px;
+  --border-radius-sm: 6px;
+  --border-radius-xs: 4px;
+  --macos-text-primary: var(--color-black-at-84);
+  --ios-content-max-width: calc(794 * var(--px-in-rem));
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --theme-background-color: var(--color-gray-95);
+    --theme-text-primary-color: var(--color-white-at-85);
+    --theme-text-secondary-color: var(--color-white-at-50);
+    --theme-text-link-color: var(--ddg-color-primary-dark);
+  }
+}
+
+/* shared/styles/reset.css */
+*,
+*:after,
+*:before {
+  box-sizing: border-box;
+}
+html[data-reduced-motion=true] * {
+  animation: none !important;
+  transition: none !important;
+}
+body {
+  font-family: var(--theme-font-family, system-ui);
+  font-size: 15px;
+  line-height: 20px;
+  letter-spacing: -0.08px;
+  margin: 0;
+  height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+  background: var(--theme-background-color);
+  color: var(--theme-text-primary-color);
+}
+body > main {
+  width: 100%;
+}
+h1,
+h2,
+h3,
+h4,
+p {
+  font-weight: normal;
+  margin: 0;
+}
+a {
+  color: var(--theme-text-link-color);
+}
+button {
+  font-family: system-ui, sans-serif;
+}
+ul {
+  margin: 0;
+  padding: 0;
+}
+li {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* shared/styles/utilities.css */
+.offscreen {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
+/* shared/styles/global.css */

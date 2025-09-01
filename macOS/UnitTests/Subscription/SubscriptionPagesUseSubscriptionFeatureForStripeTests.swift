@@ -341,8 +341,8 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
         XCTAssertNil(result)
         XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated.name + "_c",
+                                     PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated(Constants.invalidTokenError).name + "_d",
+                                     PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated(Constants.invalidTokenError).name + "_c",
                                      PrivacyProPixel.privacyProOfferScreenImpression.name])
     }
 

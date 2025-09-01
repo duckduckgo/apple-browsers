@@ -25,8 +25,9 @@ public enum VPNCommand: Codable {
     case sendTestNotification
     case restartAdapter
     case uninstallVPN(showNotification: Bool)
-    case disableConnectOnDemandAndShutDown
+    case simulateSubscriptionExpirationInTunnel
     case quitAgent
+    case createLogSnapshot
 }
 
 public enum ExtensionRequest: Codable {

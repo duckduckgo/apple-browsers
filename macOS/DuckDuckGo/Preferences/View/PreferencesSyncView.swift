@@ -27,16 +27,30 @@ struct SyncView: View {
 
     var body: some View {
         if let syncService = NSApp.delegateTyped.syncService, let syncDataProviders = NSApp.delegateTyped.syncDataProviders {
-            let syncPreferences = SyncPreferences(
-                syncService: syncService,
-                syncBookmarksAdapter: syncDataProviders.bookmarksAdapter,
-                syncCredentialsAdapter: syncDataProviders.credentialsAdapter,
-                syncPausedStateManager: syncDataProviders.syncErrorHandler
-            )
-            SyncUI_macOS.ManagementView(model: syncPreferences)
-                .onAppear {
-                    requestSync()
-                }
+            if NSApp.delegateTyped.featureFlagger.isFeatureOn(.refactorOfSyncPreferences) {
+                let syncPreferences = SyncPreferences(
+                    syncService: syncService,
+                    syncBookmarksAdapter: syncDataProviders.bookmarksAdapter,
+                    syncCredentialsAdapter: syncDataProviders.credentialsAdapter,
+                    syncPausedStateManager: syncDataProviders.syncErrorHandler
+                )
+                SyncUI_macOS.ManagementView(model: syncPreferences)
+                    .onAppear {
+                        requestSync()
+                    }
+            } else {
+                let syncPreferences = LegacySyncPreferences(
+                    syncService: syncService,
+                    syncBookmarksAdapter: syncDataProviders.bookmarksAdapter,
+                    syncCredentialsAdapter: syncDataProviders.credentialsAdapter,
+                    syncPausedStateManager: syncDataProviders.syncErrorHandler
+                )
+                SyncUI_macOS.ManagementView(model: syncPreferences)
+                    .onAppear {
+                        requestSync()
+                    }
+            }
+
         } else {
             FailedAssertionView("Failed to initialize Sync Management View")
         }

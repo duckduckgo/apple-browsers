@@ -1,0 +1,95 @@
+{
+  "smartling" : {
+    "string_format" : "icu",
+    "translate_paths" : [
+    {
+      "path" : "*/title",
+      "key" : "{*}/title",
+      "instruction" : "*/note"
+    }]
+  },
+  "advancedButton" : {
+    "title" : "Išplėstinė",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to see advanced options on click."
+  },
+  "advancedEllipsisButton" : {
+    "title" : "Išplėstinė informacija...",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to see advanced options on click. This button contains a trailing ellipsis."
+  },
+  "leaveSiteButton" : {
+    "title" : "Išeiti iš šios svetainės",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to leave the website and navigate to previous page."
+  },
+  "visitSiteButton" : {
+    "title" : "Priimti riziką ir apsilankyti svetainėje",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to visit the website anyway despite the risks."
+  },
+  "maliciousSiteTabTitle" : {
+    "title" : "Įspėjimas: saugumo rizika",
+    "note" : "Title shown in the browser window or tab when the current page may be a security risk due to phishing"
+  },
+  "malwarePageHeading" : {
+    "title" : "Įspėjimas: ši svetainė gali kelti{newline}saugumo riziką",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to malware distribution. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "malwareWarningText" : {
+    "title" : "„DuckDuckGo“ sukčiavimo blokatorius neleido šiam puslapiui įkelti, nes jis gali platinti kenkėjišką programinę įrangą, skirtą pakenkti tavo įrenginiui arba pavogti tavo asmeninę informaciją.{newline}<a>Sužinok daugiau</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to malware distribution. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "malwareAdvancedInfoHeading" : {
+    "title" : "Jei manote, kad ši svetainė yra saugi, galite <a>pranešti apie klaidą</a>. Vis dar galite apsilankyti svetainėje savo rizika.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to malware distribution."
+  },
+  "phishingPageHeading" : {
+    "title" : "Įspėjimas: ši svetainė gali kelti{newline}saugumo riziką",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to Phishing issues. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "phishingWarningText" : {
+    "title" : "„DuckDuckGo“ sukčiavimo blokatorius neleido šiam puslapiui įsikelti, nes jis gali apsimesti teisėta svetaine, kad apgaulės būdu išviliotų iš tavęs asmeninę informaciją, pvz., slaptažodžius ar kredito kortelių numerius.{newline}<a>Sužinok daugiau</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to Phishing issues. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "phishingAdvancedInfoHeading" : {
+    "title" : "Jei manote, kad ši svetainė yra saugi, galite <a>pranešti apie klaidą</a>. Vis dar galite apsilankyti svetainėje savo rizika.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to malware distribution."
+  },
+  "scamPageHeading" : {
+    "title" : "Įspėjimas: ši svetainė gali kelti{newline}saugumo riziką",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to suspected scam attempts. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "scamWarningText" : {
+    "title" : "„DuckDuckGo“ sukčiavimo blokatorius neleido šiam puslapiui įkelti, nes jis gali bandyti apgauti ar manipuliuoti tavimi, siekdamas, kad pervestum pinigus, pirktum padirbtas prekes arba įdiegtum kenkėjiškas programas prisidengiant melagingais pretekstais.{newline}<a>Sužinokite daugiau</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to suspected scam attempts. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "scamAdvancedInfoHeading" : {
+    "title" : "Jei manote, kad ši svetainė yra saugi, galite <a>pranešti apie klaidą</a>. Vis dar galite apsilankyti svetainėje savo rizika.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to suspected scam attempts."
+  },
+  "sslPageHeading" : {
+    "title" : "Įspėjimas: ši svetainė gali būti nesaugi",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to SSL issues"
+  },
+  "sslWarningText" : {
+    "title" : "Šios svetainės sertifikatas negalioja. Galbūt jungiatės prie serverio, kuris apsimeta <b>{domain}</b>, o tai gali kelti pavojų jūsų konfidencialiai informacijai.",
+    "note" : "Describes an SSL error where a website’s security certificate is invalid. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslAdvancedInfoHeading" : {
+    "title" : "„DuckDuckGo“ įspėja jus, kai svetainėje yra netinkamas sertifikatas.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to SSL issues."
+  },
+  "sslExpiredAdvancedInfoText" : {
+    "title" : "<b>{domain}</b> saugumo sertifikato galiojimas yra pasibaigęs. Gali būti, kad svetainė neteisingai sukonfigūruota arba atakos vykdytojas pakenkė jūsų ryšiui arba kad jūsų sistemos laikrodžio rodomas laikas yra neteisingas.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues."
+  },
+  "sslInvalidAdvancedInfoText" : {
+    "title" : "<b>{domain}</b> saugos sertifikatu nepasitiki jūsų įrenginio operacinė sistema. Gali būti, kad svetainė neteisingai sukonfigūruota arba atakos vykdytojas pakenkė jūsų ryšiui.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslSelfSignedAdvancedInfoText" : {
+    "title" : "<b>{domain}</b> saugos sertifikatu nepasitiki jūsų įrenginio operacinė sistema. Gali būti, kad svetainė neteisingai sukonfigūruota arba atakos vykdytojas pakenkė jūsų ryšiui.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslWrongHostAdvancedInfoText" : {
+    "title" : "<b>{domain}</b> saugos sertifikatas neatitinka <b>*.{eTldPlus1}</b>. Gali būti, kad svetainė neteisingai sukonfigūruota arba atakos vykdytojas pakenkė jūsų ryšiui.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The two placeholders are website domain names (example: duckduckgo.com)."
+  }
+}

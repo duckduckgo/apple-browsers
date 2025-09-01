@@ -20,3 +20,6 @@
 
 DDG_SLOW_COMPILE_CHECK_THRESHOLD = 100
 OTHER_SWIFT_FLAGS[config=Debug][arch=*][sdk=*] = $(inherited) -Xfrontend -warn-long-expression-type-checking=$(DDG_SLOW_COMPILE_CHECK_THRESHOLD) -Xfrontend -warn-long-function-bodies=$(DDG_SLOW_COMPILE_CHECK_THRESHOLD)
+
+GROUP_ID_PREFIX = group.com.duckduckgo
+VPN_APP_GROUP = $(GROUP_ID_PREFIX).netp

@@ -77,19 +77,17 @@ struct PreferencesSection: Hashable, Identifiable {
         if subscriptionState.hasSubscription {
             var subscriptionPanes: [PreferencePaneIdentifier] = []
 
-            if let currentSubscriptionFeatures = subscriptionState.subscriptionFeatures {
-                if currentSubscriptionFeatures.contains(.networkProtection) {
-                    subscriptionPanes.append(.vpn)
-                }
-                if currentSubscriptionFeatures.contains(.dataBrokerProtection) {
-                    subscriptionPanes.append(.personalInformationRemoval)
-                }
-                if currentSubscriptionFeatures.contains(.paidAIChat) && subscriptionState.isPaidAIChatEnabled {
-                    subscriptionPanes.append(.paidAIChat)
-                }
-                if currentSubscriptionFeatures.contains(.identityTheftRestoration) || currentSubscriptionFeatures.contains(.identityTheftRestorationGlobal) {
-                    subscriptionPanes.append(.identityTheftRestoration)
-                }
+            if subscriptionState.isNetworkProtectionRemovalAvailable {
+                subscriptionPanes.append(.vpn)
+            }
+            if subscriptionState.isPersonalInformationRemovalAvailable {
+                subscriptionPanes.append(.personalInformationRemoval)
+            }
+            if subscriptionState.isPaidAIChatAvailable {
+                subscriptionPanes.append(.paidAIChat)
+            }
+            if subscriptionState.isIdentityTheftRestorationAvailable {
+                subscriptionPanes.append(.identityTheftRestoration)
             }
 
             subscriptionPanes.append(.subscriptionSettings)
@@ -118,7 +116,7 @@ enum PreferencesSectionIdentifier: Hashable, CaseIterable {
         case .purchasePrivacyPro:
             return nil
         case .privacyPro:
-            return UserText.subscription
+            return UserText.subscriptionDeprecated
         case .regularPreferencePanes:
             return UserText.mainSettings
         case .about:
@@ -212,7 +210,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         case .dataClearing:
             return UserText.dataClearing
         case .privacyPro:
-            return UserText.subscription
+            return UserText.subscriptionDeprecated
         case .vpn:
             return UserText.vpn
         case .personalInformationRemoval:
@@ -249,7 +247,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         }
     }
 
-    func preferenceIconName(for settingsIconProvider: SettingsIconsProviding) -> NSImage {
+    func preferenceIconName(for settingsIconProvider: SettingsIconsProviding, isSubscriptionRebrandingOn: Bool) -> NSImage {
         switch self {
         case .defaultBrowser:
             return settingsIconProvider.defaultBrowserIcon
@@ -294,6 +292,9 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         case .otherPlatforms:
             return settingsIconProvider.otherPlatformsIcon
         case .aiChat:
+            if isSubscriptionRebrandingOn {
+                return settingsIconProvider.aiGeneralIcon
+            }
             return settingsIconProvider.duckAIIcon
         }
     }

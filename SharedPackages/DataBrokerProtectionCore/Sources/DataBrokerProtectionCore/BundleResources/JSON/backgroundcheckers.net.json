@@ -1,7 +1,7 @@
 {
   "name": "BackgroundCheckers",
   "url": "backgroundcheckers.net",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.backgroundcheckers.net/optOut/name/landing",
   "steps": [
@@ -207,5 +207,6 @@
     "maintenanceScan": 120,
     "maxAttempts": -1
   },
-  "addedDatetime": 1738336354315
+  "addedDatetime": 1738336354315,
+  "removedAt": null
 }

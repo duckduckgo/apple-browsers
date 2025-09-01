@@ -179,6 +179,16 @@
                ReferencedContainer = "container:../SharedPackages/VPN">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SystemSettingsPiPTutorialTests"
+               BuildableName = "SystemSettingsPiPTutorialTests"
+               BlueprintName = "SystemSettingsPiPTutorialTests"
+               ReferencedContainer = "container:LocalPackages/SystemSettingsPiPTutorial">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

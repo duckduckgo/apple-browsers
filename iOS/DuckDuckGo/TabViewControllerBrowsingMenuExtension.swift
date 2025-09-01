@@ -355,7 +355,7 @@ extension TabViewController {
         }
 
         // Capture flow state here as will be reset after menu is shown
-        let addToFavoriteFlow = DaxDialogs.shared.isAddFavoriteFlow
+        let addToFavoriteFlow = daxDialogsManager.isAddFavoriteFlow
 
         let entry = BrowsingMenuEntry.regular(name: UserText.actionSaveFavorite,
                                               image: DesignSystemImages.Glyphs.Size16.favorite,

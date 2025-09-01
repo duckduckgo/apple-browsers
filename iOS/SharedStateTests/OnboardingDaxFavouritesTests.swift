@@ -24,17 +24,18 @@ import DDGSync
 import History
 import BrowserServicesKit
 import RemoteMessaging
-import Configuration
+@testable import Configuration
 import Core
 import SubscriptionTestingUtilities
 import Common
 @testable import DuckDuckGo
 @testable import PersistenceTestingUtils
+import SystemSettingsPiPTutorialTestSupport
 
 // swiftlint:disable force_try
 
-@MainActor
-final class OnboardingDaxFavouritesTests: XCTestCase {
+ @MainActor
+ final class OnboardingDaxFavouritesTests: XCTestCase {
     private var sut: MainViewController!
     private var tutorialSettingsMock: MockTutorialSettings!
     private var contextualOnboardingLogicMock: ContextualOnboardingLogicMock!
@@ -65,9 +66,10 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
             database: db,
             errorEvents: nil,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
-            duckPlayerStorage: MockDuckPlayerStorage()
+            duckPlayerStorage: MockDuckPlayerStorage(),
+            configurationURLProvider: MockCustomURLProvider()
         )
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter())
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter(), isStillOnboarding: { false })
         let tabsModel = TabsModel(desktop: true)
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
@@ -104,7 +106,9 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
                                     maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
                                     maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                                     featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
-                                    keyValueStore: try! MockKeyValueFileStore())
+                                    keyValueStore: try! MockKeyValueFileStore(),
+                                    daxDialogsManager: DummyDaxDialogsManager()
+        )
         sut = MainViewController(
             bookmarksDatabase: db,
             bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
@@ -117,7 +121,6 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
             tabManager: tabManager,
             syncPausedStateManager: CapturingSyncPausedStateManager(),
             privacyProDataReporter: privacyProDataReporter,
-            variantManager: variantManager,
             contextualOnboardingLogic: contextualOnboardingLogicMock,
             contextualOnboardingPixelReporter: onboardingPixelReporter,
             tutorialSettings: tutorialSettingsMock,
@@ -132,7 +135,10 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
             themeManager: MockThemeManager(),
-            keyValueStore: keyValueStore
+            keyValueStore: keyValueStore,
+            customConfigurationURLProvider: MockCustomURLProvider(),
+            systemSettingsPiPTutorialManager: MockSystemSettingsPiPTutorialManager(),
+            daxDialogsManager: DummyDaxDialogsManager(),
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()
@@ -145,12 +151,12 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    func testWhenMakeOnboardingSeenIsCalled_ThenSetHasSeenOnboardingTrue() {
+    func testWhenMarkOnboardingSeenIsCalled_ThenSetHasSeenOnboardingTrue() {
         // GIVEN
         XCTAssertFalse(tutorialSettingsMock.hasSeenOnboarding)
 
         // WHEN
-        tutorialSettingsMock.hasSeenOnboarding = true
+        sut.markOnboardingSeen()
 
         // THEN
         XCTAssertTrue(tutorialSettingsMock.hasSeenOnboarding)

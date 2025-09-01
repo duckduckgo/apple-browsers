@@ -47,6 +47,7 @@ final class MainViewController: NSViewController {
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
     private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
     private let visualStyle: VisualStyleProviding
+    private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
 
     let tabCollectionViewModel: TabCollectionViewModel
     let bookmarkManager: BookmarkManager
@@ -60,6 +61,7 @@ final class MainViewController: NSViewController {
     private var viewEventsCancellables = Set<AnyCancellable>()
     private var tabViewModelCancellables = Set<AnyCancellable>()
     private var bookmarksBarVisibilityChangedCancellable: AnyCancellable?
+    private var appearanceChangedCancellable: AnyCancellable?
     private var bannerPromptObserver: Any?
     private var bannerDismissedCancellable: AnyCancellable?
 
@@ -81,7 +83,7 @@ final class MainViewController: NSViewController {
         fatalError("MainViewController: Bad initializer")
     }
 
-    init(tabCollectionViewModel: TabCollectionViewModel? = nil,
+    init(tabCollectionViewModel: TabCollectionViewModel,
          bookmarkManager: BookmarkManager = NSApp.delegateTyped.bookmarkManager,
          bookmarkDragDropManager: BookmarkDragDropManager = NSApp.delegateTyped.bookmarkDragDropManager,
          historyCoordinator: HistoryCoordinator = NSApp.delegateTyped.historyCoordinator,
@@ -100,11 +102,11 @@ final class MainViewController: NSViewController {
          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
          pixelFiring: PixelFiring? = PixelKit.shared,
-         visualizeFireAnimationDecider: VisualizeFireAnimationDecider = NSApp.delegateTyped.visualizeFireAnimationDecider
+         visualizeFireAnimationDecider: VisualizeFireSettingsDecider = NSApp.delegateTyped.visualizeFireSettingsDecider,
+         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter = NSApp.delegateTyped.vpnUpsellPopoverPresenter
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
-        let tabCollectionViewModel = tabCollectionViewModel ?? TabCollectionViewModel()
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.historyCoordinator = historyCoordinator
@@ -192,7 +194,8 @@ final class MainViewController: NSViewController {
                                                                          autofillPopoverPresenter: autofillPopoverPresenter,
                                                                          brokenSitePromptLimiter: brokenSitePromptLimiter,
                                                                          aiChatMenuConfig: aiChatMenuConfig,
-                                                                         aiChatSidebarPresenter: aiChatSidebarPresenter)
+                                                                         aiChatSidebarPresenter: aiChatSidebarPresenter,
+                                                                         vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter)
 
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
@@ -201,6 +204,7 @@ final class MainViewController: NSViewController {
             bookmarkManager: bookmarkManager,
             dragDropManager: bookmarkDragDropManager
         )
+        self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
 
         super.init(nibName: nil, bundle: nil)
         browserTabViewController.delegate = self
@@ -225,6 +229,7 @@ final class MainViewController: NSViewController {
         subscribeToMouseTrackingArea()
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkBarVisibility()
+        subscribeToAppearanceChanges()
         subscribeToSetAsDefaultAndAddToDockPromptsNotifications()
         mainView.findInPageContainerView.applyDropShadow()
 
@@ -256,6 +261,8 @@ final class MainViewController: NSViewController {
     }
 
     override func viewDidAppear() {
+        initPreloader()
+
         mainView.setMouseAboveWebViewTrackingAreaEnabled(true)
         registerForBookmarkBarPromptNotifications()
 
@@ -297,6 +304,10 @@ final class MainViewController: NSViewController {
     func windowDidResignKey() {
         browserTabViewController.windowDidResignKey()
         tabBarViewController.hideTabPreview()
+    }
+
+    func windowDidEndLiveResize() {
+        tabCollectionViewModel.newTabPageTabPreloader?.reloadTab()
     }
 
     func showBookmarkPromptIfNeeded() {
@@ -363,6 +374,19 @@ final class MainViewController: NSViewController {
         mainView.updateTrackingAreas()
 
         updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+    }
+
+    private func initPreloader() {
+        guard tabCollectionViewModel.newTabPageTabPreloader == nil else {
+            return
+        }
+
+        if featureFlagger.isFeatureOn(.newTabPagePerTab) {
+            let preloader = NewTabPageTabPreloader(viewSizeProvider: { [weak self] in
+                self?.browserTabViewController.view.bounds.size
+            })
+            tabCollectionViewModel.newTabPageTabPreloader = preloader
+        }
     }
 
     private func updateDividerColor(isShowingHomePage isHomePage: Bool) {
@@ -443,6 +467,13 @@ final class MainViewController: NSViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateBookmarksBarViewVisibility(visible: self!.shouldShowBookmarksBar)
+            }
+    }
+
+    private func subscribeToAppearanceChanges() {
+        appearanceChangedCancellable = NSApp.publisher(for: \.effectiveAppearance)
+            .sink { [weak self] _ in
+                self?.tabCollectionViewModel.newTabPageTabPreloader?.reloadTab(force: true)
             }
     }
 
@@ -828,7 +859,7 @@ extension MainViewController: BrowserTabViewControllerDelegate {
     )
     bkman.loadBookmarks()
 
-    let vc = MainViewController(bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider())
+    let vc = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()), bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider())
     var c: AnyCancellable!
     c = vc.publisher(for: \.view.window).sink { window in
         window?.titlebarAppearsTransparent = true

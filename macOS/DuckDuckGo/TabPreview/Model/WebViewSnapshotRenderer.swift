@@ -24,22 +24,21 @@ import os.log
 protocol WebViewSnapshotRendering {
 
     @MainActor
-    func renderSnapshot(webView: WKWebView) async -> NSImage?
+    func renderSnapshot(webView: WKWebView, delay: TimeInterval) async -> NSImage?
 
 }
 
 final class WebViewSnapshotRenderer: WebViewSnapshotRendering {
 
     @MainActor
-    func renderSnapshot(webView: WKWebView) async -> NSImage? {
+    func renderSnapshot(webView: WKWebView, delay: TimeInterval) async -> NSImage? {
         dispatchPrecondition(condition: .onQueue(.main))
         Logger.tabSnapshots.debug("Preview rendering started for \(String(describing: webView.url))")
 
         let configuration = WKSnapshotConfiguration.makePreviewSnapshotConfiguration()
 
         do {
-            // Wait a bit to allow super-fast loading pages (e.g. localhost and special pages) get rendered in the webView
-            try? await Task.sleep(nanoseconds: 100000000)
+            try? await Task.sleep(interval: delay)
             let image = try await webView.takeSnapshot(configuration: configuration)
             Logger.tabSnapshots.debug("Preview rendered for \(String(describing: webView.url))")
 

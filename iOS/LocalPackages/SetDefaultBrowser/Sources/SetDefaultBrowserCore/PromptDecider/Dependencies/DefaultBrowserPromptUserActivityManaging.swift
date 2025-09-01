@@ -26,11 +26,18 @@ public protocol DefaultBrowserPromptUserActivityProvider {
     ///
     /// An "active day" means a day when the user either opened the app (cold start), or when they brought the app to the foreground.
     ///
-    /// - Returns: The number of days the user has been active. Returns 0 if the date is in the future or if there has been no activity.
+    /// - Returns: The number of days the user has been active. Returns 0 if there has been no activity.
     ///
     /// - Note: The count includes only days with actual user activity, not calendar days.
     ///         For example, if a user was active on days 1, 3, and 7 after the given date, this method would return 3, not 7.
     func numberOfActiveDays() -> Int
+
+    /// Returns the number of consecutive days the user has been inactive in the app.
+    ///
+    /// An "inactive day" means a day when the user neither opened the app (cold start), nor when they brought the app to the foreground.
+    ///
+    /// - Returns: The number of days the user has been inactive. Returns 0 if there has been activity.
+    func numberOfInactiveDays() -> Int
 }
 
 /// A type that manages the user activity information for SAD prompt decisions.

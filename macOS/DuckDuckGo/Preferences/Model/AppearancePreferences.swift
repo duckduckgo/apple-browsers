@@ -154,8 +154,14 @@ final class DefaultNewTabPageNavigator: NewTabPageNavigator {
             Application.appDelegate.windowControllersManager.showTab(with: .newtab)
             try? await Task.sleep(interval: 0.2)
             if let window = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
-                let newTabPageViewModel = window.mainViewController.browserTabViewController.newTabPageWebViewModel
-                NSApp.delegateTyped.newTabPageCustomizationModel.customizerOpener.openSettings(for: newTabPageViewModel.webView)
+                if Application.appDelegate.featureFlagger.isFeatureOn(.newTabPagePerTab) {
+                    if let webView = window.mainViewController.browserTabViewController.webView {
+                        Application.appDelegate.newTabPageCustomizationModel.customizerOpener.openSettings(for: webView)
+                    }
+                } else {
+                    let newTabPageViewModel = window.mainViewController.browserTabViewController.newTabPageWebViewModel
+                    NSApp.delegateTyped.newTabPageCustomizationModel.customizerOpener.openSettings(for: newTabPageViewModel.webView)
+                }
             }
         }
     }

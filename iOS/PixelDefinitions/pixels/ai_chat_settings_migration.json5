@@ -1,0 +1,10 @@
+// See https://app.asana.com/1/137249556945/project/392891325557410/task/1210873370382228?focus=true
+{
+    'm_debug_failed-to-create-app-configuration-during-aichat-settings-migration': {
+        description: 'Fires when AI Chat Settings migration failed to create the App Configuration Store which basically should never happen and this pixel may never even get fired.',
+        owners: ['brindy'],
+        triggers: ['startup'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+}

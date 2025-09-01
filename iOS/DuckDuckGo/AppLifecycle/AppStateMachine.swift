@@ -110,8 +110,7 @@ protocol BackgroundHandling {
 @MainActor
 protocol TerminatingHandling {
 
-    init()
-    init(terminationError: UIApplication.TerminationError, application: UIApplication)
+    init(error: Error, application: UIApplication)
 
 }
 
@@ -160,10 +159,8 @@ final class AppStateMachine {
         } else {
             do {
                 currentState = try .launching(initializing.makeLaunchingState())
-            } catch let error as UIApplication.TerminationError {
-                currentState = .terminating(Terminating(terminationError: error))
             } catch {
-                currentState = .terminating(Terminating())
+                currentState = .terminating(Terminating(error: error))
             }
         }
     }

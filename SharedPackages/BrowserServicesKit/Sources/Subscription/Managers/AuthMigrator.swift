@@ -28,7 +28,7 @@ public class AuthMigrator {
     /// Fired here
     /// - migrationSucceeded
     /// - migrationFailed(Error)
-    let pixelHandler: SubscriptionPixelHandler
+    let pixelHandler: SubscriptionPixelHandling
 
     public var isReadyToUseAuthV2: Bool {
         switch (isAuthV2Enabled, oAuthClient.isUserAuthenticated) {
@@ -47,7 +47,7 @@ public class AuthMigrator {
     }
 
     public init(oAuthClient: any OAuthClient,
-                pixelHandler: SubscriptionPixelHandler,
+                pixelHandler: SubscriptionPixelHandling,
                 isAuthV2Enabled: Bool) {
         self.oAuthClient = oAuthClient
         self.pixelHandler = pixelHandler
@@ -58,13 +58,16 @@ public class AuthMigrator {
         guard isAuthV2Enabled else { return }
         do {
             try await oAuthClient.migrateV1Token()
-            pixelHandler.handle(pixelType: .migrationSucceeded)
+            pixelHandler.handle(pixel: .migrationSucceeded)
             Logger.subscription.log("V1 token migration completed")
         } catch OAuthClientError.authMigrationNotPerformed {
             Logger.subscription.log("V1 token migration not needed")
+        } catch OAuthServiceError.authAPIError(let code) where code == OAuthRequest.BodyErrorCode.invalidToken {
+            Logger.subscription.error("V1 token invalid during migration, logging out user")
+            try? await oAuthClient.logout()
         } catch {
             Logger.subscription.error("Failed to migrate V1 token: \(error, privacy: .public)")
-            pixelHandler.handle(pixelType: .migrationFailed(error))
+            pixelHandler.handle(pixel: .migrationFailed(error))
         }
     }
 

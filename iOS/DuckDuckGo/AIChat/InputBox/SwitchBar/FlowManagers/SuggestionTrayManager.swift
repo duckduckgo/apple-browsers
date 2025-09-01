@@ -26,6 +26,7 @@ import Persistence
 import History
 import Suggestions
 import Core
+import AIChat
 
 /// Dependencies required for the suggestion tray
 struct SuggestionTrayDependencies {
@@ -35,6 +36,8 @@ struct SuggestionTrayDependencies {
     let tabsModel: TabsModel
     let featureFlagger: FeatureFlagger
     let appSettings: AppSettings
+    let aiChatSettings: AIChatSettingsProvider
+    let newTabPageDependencies: SuggestionTrayViewController.NewTabPageDependencies
 }
 
 /// Protocol for handling suggestion tray events
@@ -59,6 +62,27 @@ final class SuggestionTrayManager: NSObject {
 
     var isShowingSuggestionTray: Bool {
         suggestionTrayViewController?.view.isHidden == false
+    }
+
+    var shouldDisplayFavoritesOverlay: Bool {
+        let canDisplayFavorites = suggestionTrayViewController?.canShow(for: .favorites) ?? false
+        let hasRemoteMessages = suggestionTrayViewController?.hasRemoteMessages ?? false
+
+        return !shouldDisplaySuggestionTray && (canDisplayFavorites || hasRemoteMessages)
+    }
+
+    var shouldDisplaySuggestionTray: Bool {
+        let query = switchBarHandler.currentText
+        // No text so don't show suggestins
+        guard !query.isBlank else { return false }
+
+        // For URLs, only show suggestions if the user has interacted with the text
+        if switchBarHandler.isCurrentTextValidURL {
+            return switchBarHandler.hasUserInteractedWithText
+        }
+
+        // For all other cases just show suggestions
+        return true
     }
 
     // MARK: - Initialization
@@ -86,7 +110,9 @@ final class SuggestionTrayManager: NSObject {
                 historyManager: self.dependencies.historyManager,
                 tabsModel: self.dependencies.tabsModel,
                 featureFlagger: self.dependencies.featureFlagger,
-                appSettings: self.dependencies.appSettings
+                appSettings: self.dependencies.appSettings,
+                aiChatSettings: self.dependencies.aiChatSettings,
+                newTabPageDependencies: self.dependencies.newTabPageDependencies
             )
         }) else {
             assertionFailure("Failed to instantiate SuggestionTrayViewController")
@@ -95,7 +121,6 @@ final class SuggestionTrayManager: NSObject {
 
         controller.coversFullScreen = true
         controller.isUsingSearchInputCustomStyling = true
-        controller.additionalFavoritesOverlayInsets = UIEdgeInsets(top: 0, left: 6, bottom: 0, right: 6)
 
         parentViewController.addChild(controller)
         containerView.addSubview(controller.view)
@@ -115,6 +140,7 @@ final class SuggestionTrayManager: NSObject {
 
         controller.autocompleteDelegate = self
         controller.favoritesOverlayDelegate = self
+        controller.newTabPageControllerDelegate = self
         controller.didMove(toParent: parentViewController)
 
         showInitialSuggestions()
@@ -162,20 +188,20 @@ final class SuggestionTrayManager: NSObject {
     }
     
     private func updateSuggestionTrayForCurrentState() {
-        let query = switchBarHandler.currentText
-        let hasUserInteracted = switchBarHandler.hasUserInteractedWithText
-        
-        if query.isEmpty || !hasUserInteracted {
-            showSuggestionTray(.favorites)
-        } else {
+        if shouldDisplaySuggestionTray {
+            let query = switchBarHandler.currentText
             showSuggestionTray(.autocomplete(query: query))
+        } else {
+            showSuggestionTray(.favorites)
         }
     }
     
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
         guard let suggestionTray = suggestionTrayViewController else { return }
         
-        let canShowSuggestion = suggestionTray.canShow(for: type)
+        let canShowSuggestion =
+            suggestionTray.canShow(for: type) ||
+            (type == .favorites && suggestionTray.hasRemoteMessages)
 
         if canShowSuggestion {
             suggestionTray.fill()
@@ -188,7 +214,7 @@ final class SuggestionTrayManager: NSObject {
     
     private func extractText(from suggestion: Suggestion) -> String? {
         switch suggestion {
-        case .phrase(let phrase):
+        case .phrase(let phrase), .askAIChat(let phrase):
             return phrase
         case .website(let url):
             return extractTextFromURL(url)
@@ -247,4 +273,26 @@ extension SuggestionTrayManager: FavoritesOverlayDelegate {
     func favoritesOverlay(_ overlay: FavoritesOverlay, didSelect favorite: BookmarkEntity) {
         delegate?.suggestionTrayManager(self, didSelectFavorite: favorite)
     }
+}
+
+// MARK: - NewTabPageControllerDelegate
+
+extension SuggestionTrayManager: NewTabPageControllerDelegate {
+
+    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+        delegate?.suggestionTrayManager(self, didSelectFavorite: favorite)
+    }
+    
+    func newTabPageDidDeleteFavorite(_ controller: NewTabPageViewController, favorite: Bookmarks.BookmarkEntity) {
+        assertionFailure("Unexpected")
+    }
+    
+    func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: Bookmarks.BookmarkEntity) {
+        assertionFailure("Unexpected")
+    }
+    
+    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {
+        // no-op this is handled by the main view controller on a real new tab page
+    }
+
 }

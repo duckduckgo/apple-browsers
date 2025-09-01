@@ -85,6 +85,7 @@ struct DataBrokerRunCustomJSONView: View {
                 Divider()
 
                 TextEditor(text: $jsonText)
+                    .autocorrectionDisabled()
                     .border(Color.gray, width: 1)
                     .padding()
 

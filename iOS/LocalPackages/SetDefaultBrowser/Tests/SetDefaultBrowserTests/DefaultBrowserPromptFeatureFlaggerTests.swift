@@ -27,14 +27,27 @@ struct DefaultBrowserPromptFeatureFlaggerTests {
     let mockFeatureFlagSettingsProvider = MockDefaultBrowserPromptFeatureFlagSettingsProvider()
     let mockFeatureFlagProvider = MockDefaultBrowserPromptFeatureFlagProvider()
 
-    @Test("Check Feature Flag Returns The Correct Value", arguments: [true, false])
-    func isDefaultBrowserPromptFeatureEnabledThenReturnTheCorrectValue(_ isEnabled: Bool) {
+    @Test("Check Feature Flag For Active Users Returns The Correct Value", arguments: [true, false])
+    func isDefaultBrowserPromptForActiveUsersFeatureEnabledThenReturnTheCorrectValue(_ isEnabled: Bool) {
         // GIVEN
-        mockFeatureFlagProvider.isDefaultBrowserPromptsFeatureEnabled = isEnabled
+        mockFeatureFlagProvider.isDefaultBrowserPromptsForActiveUsersFeatureEnabled = isEnabled
         let sut = DefaultBrowserPromptFeatureFlag(settingsProvider: mockFeatureFlagSettingsProvider, featureFlagProvider: mockFeatureFlagProvider)
 
         // WHEN
-        let result = sut.isDefaultBrowserPromptsFeatureEnabled
+        let result = sut.isDefaultBrowserPromptsForActiveUsersFeatureEnabled
+
+        // THEN
+        #expect(result == isEnabled)
+    }
+
+    @Test("Check Feature Flag For Inactive Users Returns The Correct Value", arguments: [true, false])
+    func isDefaultBrowserPromptForInactiveUsersFeatureEnabledThenReturnTheCorrectValue(_ isEnabled: Bool) {
+        // GIVEN
+        mockFeatureFlagProvider.isDefaultBrowserPromptsForInactiveUsersFeatureEnabled = isEnabled
+        let sut = DefaultBrowserPromptFeatureFlag(settingsProvider: mockFeatureFlagSettingsProvider, featureFlagProvider: mockFeatureFlagProvider)
+
+        // WHEN
+        let result = sut.isDefaultBrowserPromptsForInactiveUsersFeatureEnabled
 
         // THEN
         #expect(result == isEnabled)
@@ -44,21 +57,27 @@ struct DefaultBrowserPromptFeatureFlaggerTests {
     func checkRemoteSettingsAreReturnedCorrectly() throws {
         // GIVEN
         mockFeatureFlagSettingsProvider.defaultBrowserPromptFeatureSettings = [
-            DefaultBrowserPromptFeatureSettings.firstModalDelayDays.rawValue: 2,
-            DefaultBrowserPromptFeatureSettings.secondModalDelayDays.rawValue: 4,
-            DefaultBrowserPromptFeatureSettings.subsequentModalRepeatIntervalDays.rawValue: 6
+            DefaultBrowserPromptFeatureSettings.firstActiveModalDelayDays.rawValue: 2,
+            DefaultBrowserPromptFeatureSettings.secondActiveModalDelayDays.rawValue: 4,
+            DefaultBrowserPromptFeatureSettings.subsequentActiveModalRepeatIntervalDays.rawValue: 6,
+            DefaultBrowserPromptFeatureSettings.inactiveModalNumberOfDaysSinceInstall.rawValue: 48,
+            DefaultBrowserPromptFeatureSettings.inactiveModalNumberOfInactiveDays.rawValue: 23,
         ]
         let sut = DefaultBrowserPromptFeatureFlag(settingsProvider: mockFeatureFlagSettingsProvider, featureFlagProvider: mockFeatureFlagProvider)
 
         // WHEN
-        let firstModalDelayDays = sut.firstModalDelayDays
-        let secondModalDelayDays = sut.secondModalDelayDays
-        let subsequentModalRepeatIntervalDays = sut.subsequentModalRepeatIntervalDays
+        let firstModalDelayDays = sut.firstActiveModalDelayDays
+        let secondModalDelayDays = sut.secondActiveModalDelayDays
+        let subsequentModalRepeatIntervalDays = sut.subsequentActiveModalRepeatIntervalDays
+        let inactiveModalNumberOfDaysSinceInstall = sut.inactiveModalNumberOfDaysSinceInstall
+        let inactiveModalNumberOfInactiveDays = sut.inactiveModalNumberOfInactiveDays
 
         // THEN
         #expect(firstModalDelayDays == 2)
         #expect(secondModalDelayDays == 4)
         #expect(subsequentModalRepeatIntervalDays == 6)
+        #expect(inactiveModalNumberOfDaysSinceInstall == 48)
+        #expect(inactiveModalNumberOfInactiveDays == 23)
     }
 
     @Test("Check Subfeature Settings Default Value Are Returned When Remote Settings Not Set")
@@ -68,14 +87,18 @@ struct DefaultBrowserPromptFeatureFlaggerTests {
         let sut = DefaultBrowserPromptFeatureFlag(settingsProvider: mockFeatureFlagSettingsProvider, featureFlagProvider: mockFeatureFlagProvider)
 
         // WHEN
-        let firstModalDelayDays = sut.firstModalDelayDays
-        let secondModalDelayDays = sut.secondModalDelayDays
-        let subsequentModalRepeatIntervalDays = sut.subsequentModalRepeatIntervalDays
+        let firstModalDelayDays = sut.firstActiveModalDelayDays
+        let secondModalDelayDays = sut.secondActiveModalDelayDays
+        let subsequentModalRepeatIntervalDays = sut.subsequentActiveModalRepeatIntervalDays
+        let inactiveModalNumberOfDaysSinceInstall = sut.inactiveModalNumberOfDaysSinceInstall
+        let inactiveModalNumberOfInactiveDays = sut.inactiveModalNumberOfInactiveDays
 
         // THEN
         #expect(firstModalDelayDays == 1)
         #expect(secondModalDelayDays == 4)
         #expect(subsequentModalRepeatIntervalDays == 14)
+        #expect(inactiveModalNumberOfDaysSinceInstall == 28)
+        #expect(inactiveModalNumberOfInactiveDays == 7)
     }
 
 }

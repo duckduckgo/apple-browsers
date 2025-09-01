@@ -20,7 +20,7 @@ ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES
 CODE_SIGN_IDENTITY[config=CI][sdk=macosx*] = Developer ID Application
 CODE_SIGN_STYLE[config=CI][sdk=*] = Manual
 
-FEATURE_FLAGS = FEEDBACK
+FEATURE_FLAGS =
 
 INFOPLIST_FILE = UnitTests/Info.plist
 PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.macos.browser.DuckDuckGoTests

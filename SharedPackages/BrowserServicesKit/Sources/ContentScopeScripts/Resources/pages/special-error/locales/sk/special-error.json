@@ -1,0 +1,95 @@
+{
+  "smartling" : {
+    "string_format" : "icu",
+    "translate_paths" : [
+    {
+      "path" : "*/title",
+      "key" : "{*}/title",
+      "instruction" : "*/note"
+    }]
+  },
+  "advancedButton" : {
+    "title" : "Pokročilé",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to see advanced options on click."
+  },
+  "advancedEllipsisButton" : {
+    "title" : "Pokročilé...",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to see advanced options on click. This button contains a trailing ellipsis."
+  },
+  "leaveSiteButton" : {
+    "title" : "Opustiť túto stránku",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to leave the website and navigate to previous page."
+  },
+  "visitSiteButton" : {
+    "title" : "Akceptovať riziko a navštíviť stránku",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to visit the website anyway despite the risks."
+  },
+  "maliciousSiteTabTitle" : {
+    "title" : "Upozornenie: Riziko pre zabezpečenie",
+    "note" : "Title shown in the browser window or tab when the current page may be a security risk due to phishing"
+  },
+  "malwarePageHeading" : {
+    "title" : "Varovanie: Táto stránka môže predstavovať{newline}bezpečnostné riziko",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to malware distribution. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "malwareWarningText" : {
+    "title" : "Blokovanie podvodov DuckDuckGo zabránilo načítaniu tejto stránky, pretože môže šíriť škodlivý softvér určený na zneužitie tvojho zariadenia alebo krádež tvojich osobných údajov.{newline}<a>Zistiť viac</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to malware distribution. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "malwareAdvancedInfoHeading" : {
+    "title" : "Ak si myslíš, že táto webová stránka je bezpečná, môžeš <a>nahlásiť chybu</a>. Webovú stránku môžeš stále navštíviť na vlastné riziko.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to malware distribution."
+  },
+  "phishingPageHeading" : {
+    "title" : "Varovanie: Táto lokalita môže predstavovať{newline}riziko pre zabezpečenie",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to Phishing issues. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "phishingWarningText" : {
+    "title" : "Blokovanie podvodov DuckDuckGo zabránilo načítaniu tejto stránky, pretože sa môže vydávať za legitímnu lokalitu s cieľom vylákať od teba poskytnutie osobných údajov, ako sú heslá alebo čísla kreditných kariet.{newline}<a>Zistiť viac</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to Phishing issues. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "phishingAdvancedInfoHeading" : {
+    "title" : "Ak si myslíš, že táto webová stránka je bezpečná, môžeš <a>nahlásiť chybu</a>. Webovú stránku môžeš stále navštíviť na vlastné riziko.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to malware distribution."
+  },
+  "scamPageHeading" : {
+    "title" : "Varovanie: Táto lokalita môže predstavovať{newline}riziko pre zabezpečenie",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to suspected scam attempts. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "scamWarningText" : {
+    "title" : "DuckDuckGo blokátor podvodov zablokoval túto stránku, pretože sa ťa môže pokúšať oklamať alebo zmanipulovať na prevod peňazí, kúpu falšovaného tovaru alebo inštalovania škodlivého softvéru pod falošnými zámienkami.{newline}<a>Viac informácií</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to suspected scam attempts. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "scamAdvancedInfoHeading" : {
+    "title" : "Ak si myslíš, že táto webová stránka je bezpečná, môžeš <a>nahlásiť chybu</a>. Webovú stránku môžeš stále navštíviť na vlastné riziko.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to suspected scam attempts."
+  },
+  "sslPageHeading" : {
+    "title" : "Varovanie: Táto stránka môže byť nezabezpečená",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to SSL issues"
+  },
+  "sslWarningText" : {
+    "title" : "Certifikát pre túto stránku je neplatný. Možno sa pripájate k serveru, ktorý predstiera, že je <b>{domain}</b>, čo by mohlo ohroziť vaše dôverné údaje.",
+    "note" : "Describes an SSL error where a website’s security certificate is invalid. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslAdvancedInfoHeading" : {
+    "title" : "DuckDuckGo vás upozorní, keď má webová stránka neplatný certifikát.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to SSL issues."
+  },
+  "sslExpiredAdvancedInfoText" : {
+    "title" : "Uplynula platnosť bezpečnostného certifikátu pre <b>{domain}</b>. Je možné, že webová lokalita je nesprávne nakonfigurovaná, že útočník ohrozil vaše pripojenie alebo že vaše systémové hodiny nie sú správne.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues."
+  },
+  "sslInvalidAdvancedInfoText" : {
+    "title" : "Bezpečnostný certifikát pre <b>{domain}</b> nie je pre operačný systém vášho zariadenia dôveryhodný. Je možné, že webová lokalita je nesprávne nakonfigurovaná alebo že útočník ohrozil vaše pripojenie.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslSelfSignedAdvancedInfoText" : {
+    "title" : "Bezpečnostný certifikát pre <b>{domain}</b> nie je pre operačný systém vášho zariadenia dôveryhodný. Je možné, že webová lokalita je nesprávne nakonfigurovaná alebo že útočník ohrozil vaše pripojenie.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslWrongHostAdvancedInfoText" : {
+    "title" : "Bezpečnostný certifikát pre <b>{domain}</b> sa nezhoduje s <b>*.{eTldPlus1}</b>. Je možné, že webová lokalita je nesprávne nakonfigurovaná alebo že útočník ohrozil vaše pripojenie.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The two placeholders are website domain names (example: duckduckgo.com)."
+  }
+}

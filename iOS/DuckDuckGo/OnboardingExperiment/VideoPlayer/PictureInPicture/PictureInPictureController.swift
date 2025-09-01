@@ -38,6 +38,9 @@ protocol PictureInPictureControlling {
 
     /// Programmatically stops the current Picture in Picture session.
     func stopPictureInPicture()
+
+    /// Returns a Boolean value that indicates whether the current device supports Picture in Picture.
+    func isPictureInPictureSupported() -> Bool
 }
 
 final class PictureInPictureController: NSObject, ObservableObject {
@@ -67,6 +70,10 @@ extension PictureInPictureController: PictureInPictureControlling {
 
     var pictureInPictureEventPublisher: AnyPublisher<PictureInPictureEvent, Never> {
         subject.eraseToAnyPublisher()
+    }
+
+    func isPictureInPictureSupported() -> Bool {
+        controller != nil
     }
 
     func setupPictureInPicture(playerLayer: AVPlayerLayer) {

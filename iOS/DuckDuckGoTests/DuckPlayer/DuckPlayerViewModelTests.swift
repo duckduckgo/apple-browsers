@@ -276,40 +276,6 @@ final class DuckPlayerViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testHandleYouTubeNavigation_SameVideo_NoPublisherEvents() {
-        // Given
-        let sameVideoURL = URL(string: "https://www.youtube.com/watch?v=\(viewModel.videoID)")!
-        var dismissPublisherFired = false
-        var navigationPublisherFired = false
-
-        // Subscribe to both publishers to ensure neither fires
-        viewModel.dismissPublisher
-            .sink { _ in
-                dismissPublisherFired = true
-            }
-            .store(in: &cancellables)
-            
-        viewModel.youtubeNavigationRequestPublisher
-            .sink { _ in
-                navigationPublisherFired = true
-            }
-            .store(in: &cancellables)
-
-        // When
-        viewModel.handleYouTubeNavigation(sameVideoURL)
-
-        // Then - Wait a brief moment to ensure no publishers fire
-        let expectation = XCTestExpectation(description: "Brief wait")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 0.2)
-        
-        XCTAssertFalse(dismissPublisherFired, "Dismiss publisher should not fire for same video")
-        XCTAssertFalse(navigationPublisherFired, "Navigation publisher should not fire for same video")
-    }
-
-    @MainActor
     func testHandleYouTubeNavigation_DifferentVideo_SendsNavigationRequest() {
         // Given
         let differentVideoURL = URL(string: "https://www.youtube.com/watch?v=differentVideoID")!

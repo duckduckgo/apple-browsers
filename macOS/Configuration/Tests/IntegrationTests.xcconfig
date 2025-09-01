@@ -20,7 +20,7 @@ MACOSX_DEPLOYMENT_TARGET = 11.4
 CODE_SIGN_IDENTITY[config=CI][sdk=macosx*] = Developer ID Application
 CODE_SIGN_STYLE[config=CI][sdk=*] = Manual
 
-FEATURE_FLAGS = FEEDBACK
+FEATURE_FLAGS =
 
 INFOPLIST_FILE = IntegrationTests/Info.plist
 PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.Integration-Tests

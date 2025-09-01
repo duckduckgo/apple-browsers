@@ -31,6 +31,7 @@ import Subscription
 import VPN
 import AIChat
 import DataBrokerProtection_iOS
+import SystemSettingsPiPTutorial
 
 final class SettingsViewModel: ObservableObject {
 
@@ -87,6 +88,7 @@ final class SettingsViewModel: ObservableObject {
     private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
 
     private let keyValueStore: ThrowingKeyValueStoring
+    private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
     // Closures to interact with legacy view controllers through the container
     var onRequestPushLegacyView: ((UIViewController) -> Void)?
@@ -115,6 +117,14 @@ final class SettingsViewModel: ObservableObject {
 
     var isSubscriptionRebrandingEnabled: Bool {
         featureFlagger.isFeatureOn(.subscriptionRebranding)
+    }
+
+    var isPIREnabled: Bool {
+        featureFlagger.isFeatureOn(.personalInformationRemoval)
+    }
+
+    var isUpdatedAIFeaturesSettingsEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
 
     var shouldShowNoMicrophonePermissionAlert: Bool = false
@@ -164,6 +174,8 @@ final class SettingsViewModel: ObservableObject {
             }
         )
     }
+
+    // MARK: - Actions
 
     var addressBarPositionBinding: Binding<AddressBarPosition> {
         Binding<AddressBarPosition>(
@@ -509,6 +521,7 @@ final class SettingsViewModel: ObservableObject {
          subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
          urlOpener: URLOpener = UIApplication.shared,
          keyValueStore: ThrowingKeyValueStoring,
+         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          dataBrokerProtectionIOSManager: DataBrokerProtectionIOSManager? = .shared
     ) {
 
@@ -535,6 +548,7 @@ final class SettingsViewModel: ObservableObject {
         self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         self.urlOpener = urlOpener
         self.keyValueStore = keyValueStore
+        self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.dataBrokerProtectionIOSManager = dataBrokerProtectionIOSManager
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
@@ -566,7 +580,6 @@ extension SettingsViewModel {
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
-            isExperimentalAIChatTransitionEnabled: experimentalAIChatManager.isExperimentalTransitionEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
@@ -617,7 +630,7 @@ extension SettingsViewModel {
 
     private func updateRecentlyVisitedSitesVisibility() {
         withAnimation {
-            shouldShowRecentlyVisitedSites = historyManager.isHistoryFeatureEnabled() && state.autocomplete
+            shouldShowRecentlyVisitedSites = state.autocomplete
         }
     }
 
@@ -769,14 +782,14 @@ extension SettingsViewModel {
         self.deepLinkTarget = nil
     }
 
+    @MainActor
     func setAsDefaultBrowser(_ source: String? = nil) {
         var parameters: [String: String] = [:]
         if let source = source {
             parameters[PixelParameters.source] = source
         }
         Pixel.fire(pixel: .settingsSetAsDefault, withAdditionalParameters: parameters)
-        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-        UIApplication.shared.open(url)
+        systemSettingsPiPTutorialManager.playPiPTutorialAndNavigateTo(destination: .defaultBrowser)
         if shouldShowSetAsDefaultBrowser {
             try? keyValueStore.set(true, forKey: Constants.shouldCheckIfDefaultBrowserKey)
         }
@@ -826,16 +839,28 @@ extension SettingsViewModel {
 
     func openMoreSearchSettings() {
         Pixel.fire(pixel: .settingsMoreSearchSettings)
-        urlOpener.open(URL.searchSettings)
+        let url = URL.searchSettings.appendingParameter(name: SERPSettingsConstants.returnParameterKey,
+                                                        value: SERPSettingsConstants.privateSearch)
+        urlOpener.open(url)
     }
 
     func openAssistSettings() {
         Pixel.fire(pixel: .settingsOpenAssistSettings)
-        urlOpener.open(URL.assistSettings)
+        let url = URL.assistSettings.appendingParameter(name: SERPSettingsConstants.returnParameterKey,
+                                                        value: SERPSettingsConstants.aiFeatures)
+        urlOpener.open(url)
     }
 
     func openAIChat() {
         urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
+    }
+    
+    func openWebTrackingProtectionLearnMore() {
+        urlOpener.open(URL.webTrackingProtection)
+    }
+    
+    func openGPCLearnMore() {
+        urlOpener.open(URL.gpcLearnMore)
     }
 
     var shouldDisplayDuckPlayerContingencyMessage: Bool {
@@ -950,6 +975,7 @@ extension SettingsViewModel {
         case restoreFlow
         case duckPlayer
         case aiChat
+        case privateSearch
         case subscriptionSettings
         // Add other cases as needed
 
@@ -962,6 +988,7 @@ extension SettingsViewModel {
             case .restoreFlow: return "restoreFlow"
             case .duckPlayer: return "duckPlayer"
             case .aiChat: return "aiChat"
+            case .privateSearch: return "privateSearch"
             case .subscriptionSettings: return "subscriptionSettings"
             // Ensure all cases are covered
             }
@@ -971,7 +998,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .subscriptionSettings:
+            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings:
                 return .navigationLink
             }
         }
@@ -1269,6 +1296,7 @@ extension SettingsViewModel {
         Binding<Bool>(
             get: { self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled },
             set: { newValue in
+                self.objectWillChange.send()
                 self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
             }
         )
@@ -1298,15 +1326,6 @@ extension SettingsViewModel {
             set: { _ in
                 self.experimentalAIChatManager.toggleExperimentalTheming()
                 self.state.isExperimentalAIChatEnabled = self.experimentalAIChatManager.isExperimentalAIChatSettingsEnabled
-            })
-    }
-
-    var aiChatExperimentalTransitionBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.state.isExperimentalAIChatTransitionEnabled },
-            set: { _ in
-                self.experimentalAIChatManager.toggleExperimentalTransition()
-                self.state.isExperimentalAIChatTransitionEnabled = self.experimentalAIChatManager.isExperimentalTransitionEnabled
             })
     }
 

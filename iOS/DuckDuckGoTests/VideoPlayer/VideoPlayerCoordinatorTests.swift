@@ -25,12 +25,14 @@ import AVFoundation
 @Suite("Video Player - Coordinator")
 final class VideoPlayerCoordinatorTests {
     private let fakeURL = URL(string: "https://duckduckgo.com")!
+    private let videoURL: URL
     private var mockPlayer: MockAVQueuePlayer!
     private var mockAudioSessionManager: MockAudioSessionManager!
     private var mockPictureInPictureController: MockPictureInPictureController!
     private var playerConfiguration: VideoPlayerConfiguration!
 
-    init() {
+    init() throws {
+        videoURL = try #require(Bundle(for: VideoPlayerCoordinatorTests.self).url(forResource: "default-browser", withExtension: "mp4"))
         mockPlayer = MockAVQueuePlayer()
         mockAudioSessionManager = MockAudioSessionManager()
         mockPictureInPictureController = MockPictureInPictureController()
@@ -38,34 +40,50 @@ final class VideoPlayerCoordinatorTests {
 
     @discardableResult
     func makeSUT(
-        url: URL,
-        configuration: VideoPlayerConfiguration = .init(loopVideo: false),
+        configuration: VideoPlayerConfiguration = VideoPlayerConfiguration(),
         player: MockAVQueuePlayer = MockAVQueuePlayer()
     ) -> VideoPlayerCoordinator {
         mockPlayer = player
         playerConfiguration = configuration
         return VideoPlayerCoordinator(
-            url: url,
             configuration: playerConfiguration,
             player: mockPlayer,
             pictureInPictureController: mockPictureInPictureController,
-            audioSessionManager: mockAudioSessionManager
+            audioSessionManager: mockAudioSessionManager,
+            scheduler: DispatchQueue.immediate.eraseToAnyScheduler()
         )
     }
 
-    @Test("Check PlayerItem Is Assigned To Player When Init With URL")
-    func whenInitWithURLThenPlayerItemIsAssignedToPlayer() throws {
+    @Test("Check When URL Does Not Exist Then AVPlayerItem Status is Failed")
+    func whenInitWithFakeURLThenPlayerItemIsNotAssignedToPlayer() async throws {
         // GIVEN
+        let sut = makeSUT(player: mockPlayer)
         #expect(!mockPlayer.didCallReplaceCurrentItem)
         #expect(mockPlayer.capturedCurrentItem == nil)
 
         // WHEN
-        makeSUT(url: fakeURL, configuration: .init(loopVideo: true), player: mockPlayer)
+        await sut.loadAsset(url: fakeURL, shouldLoopVideo: false).value
+
+        // THEN
+        #expect(!mockPlayer.didCallReplaceCurrentItem)
+        #expect(mockPlayer.capturedCurrentItem == nil)
+        #expect(sut.playerItemStatus == .failed)
+    }
+
+    @Test("Check PlayerItem Is Assigned To Player When Load URL")
+    func whenInitWithURLThenPlayerItemIsAssignedToPlayer() async throws {
+        // GIVEN
+        let sut = makeSUT(player: mockPlayer)
+        #expect(!mockPlayer.didCallReplaceCurrentItem)
+        #expect(mockPlayer.capturedCurrentItem == nil)
+
+        // WHEN
+        await sut.loadAsset(url: videoURL, shouldLoopVideo: false).value
 
         // THEN
         let asset = try #require(mockPlayer.capturedCurrentItem?.asset as? AVURLAsset)
         #expect(mockPlayer.didCallReplaceCurrentItem)
-        #expect(asset.url == fakeURL)
+        #expect(asset.url == videoURL)
     }
 
     @Test(
@@ -75,10 +93,11 @@ final class VideoPlayerCoordinatorTests {
             false
         ]
     )
-    func whenIsLoopingVideoCalledAndLoopVideoIsTrueThenReturnTrue(isLooping: Bool) {
+    func whenIsLoopingVideoCalledAndLoopVideoIsTrueThenReturnTrue(isLooping: Bool) async {
         // GIVEN
         mockPlayer = .init()
-        let sut = makeSUT(url: fakeURL, configuration: .init(loopVideo: isLooping), player: mockPlayer)
+        let sut = makeSUT(player: mockPlayer)
+        await sut.loadAsset(url: videoURL, shouldLoopVideo: isLooping).value
 
         // WHEN
         let result = sut.isLoopingVideo
@@ -90,8 +109,8 @@ final class VideoPlayerCoordinatorTests {
     @Test(
         "Check Video Player Is Configured With The Right Parameters",
         arguments: [
-            VideoPlayerConfiguration(loopVideo: false),
-            VideoPlayerConfiguration(loopVideo: false, preventsDisplaySleepDuringVideoPlayback: true, allowsExternalPlayback: true)
+            VideoPlayerConfiguration(),
+            VideoPlayerConfiguration(preventsDisplaySleepDuringVideoPlayback: true, allowsExternalPlayback: true)
         ]
     )
     func whenInitWithDefaultConfigurationThenVideoPlayerConfigurationIsTheOneExpected(configuration: VideoPlayerConfiguration) {
@@ -99,7 +118,7 @@ final class VideoPlayerCoordinatorTests {
         mockPlayer = .init()
 
         // WHEN
-        makeSUT(url: fakeURL, configuration: configuration, player: mockPlayer)
+        makeSUT(configuration: configuration, player: mockPlayer)
 
         // THEN
         #expect(mockPlayer.preventsDisplaySleepDuringVideoPlayback == configuration.preventsDisplaySleepDuringVideoPlayback)
@@ -109,8 +128,8 @@ final class VideoPlayerCoordinatorTests {
     @Test("Check Play Is Called")
     func whenPlayIsCalledThenAskPlayerToPlay() {
         // GIVEN
+        let sut = makeSUT()
         #expect(!mockPlayer.didCallPlay)
-        let sut = makeSUT(url: fakeURL)
 
         // WHEN
         sut.play()
@@ -122,8 +141,8 @@ final class VideoPlayerCoordinatorTests {
     @Test("Check Pause Is Called")
     func whenPauseIsCalledThenAskPlayerToPause() {
         // GIVEN
+        let sut = makeSUT()
         #expect(!mockPlayer.didCallPause)
-        let sut = makeSUT(url: fakeURL)
 
         // WHEN
         sut.pause()
@@ -132,13 +151,80 @@ final class VideoPlayerCoordinatorTests {
         #expect(mockPlayer.didCallPause)
     }
 
+    @Test("Check Stop Removes Player Item")
+    func whenStopIsCalledThenResetPlayerItem() {
+        // GIVEN
+        let sut = makeSUT()
+        #expect(!mockPlayer.didCallRemoveAllItems)
+
+        // WHEN
+        sut.stop()
+
+        // THEN
+        #expect(mockPlayer.didCallRemoveAllItems)
+    }
+
+    @Test("Check Stop Resets AVPlayerItem Status")
+    func whenStopIsCalledThenResetAVPlayerItemStatus() async {
+        // GIVEN
+        let playerItem = MockAVPlayerItem(url: fakeURL)
+        mockPlayer.mockItemToReturn = playerItem
+        let sut = makeSUT(player: mockPlayer)
+        await sut.loadAsset(url: videoURL, shouldLoopVideo: false).value
+        playerItem.mockStatus = .readyToPlay
+        #expect(sut.playerItemStatus == .readyToPlay)
+
+        // WHEN
+        sut.stop()
+
+        // THEN
+        #expect(sut.playerItemStatus == .unknown)
+    }
+
+    // MARK: - Player Item Status
+
+    @Test(
+        "Check Player Item Status Is Updated When AVPlayerItem Status changes",
+        arguments: [
+            AVPlayerItem.Status.unknown,
+            .readyToPlay,
+            .failed,
+        ]
+    )
+    func whenPlayerItemStatusIsUpdatedThenUpdatePlayerItemStatus(_ status: AVPlayerItem.Status) async {
+        // GIVEN
+        let playerItem = MockAVPlayerItem(url: fakeURL)
+        mockPlayer.mockItemToReturn = playerItem
+        let sut = makeSUT(player: mockPlayer)
+        await sut.loadAsset(url: videoURL, shouldLoopVideo: false).value
+
+        // WHEN
+        playerItem.mockStatus = status
+
+        // THEN
+        #expect(sut.playerItemStatus == status)
+    }
+
     // MARK: - Picture In Picture
+
+    @Test("Check Is Supported Picture In Picture Value Is Returned Correctly", arguments: [true, false])
+    func whenIsSupportedPictureInPictureIsCalledThenReturnCorrectValue(_ isSupported: Bool) {
+        // GIVEN
+        let sut = makeSUT()
+        mockPictureInPictureController.supportsPictureInPicture = isSupported
+
+        // WHEN
+        let result = sut.isPictureInPictureSupported()
+
+        // THEN
+        #expect(result == isSupported)
+    }
 
     @Test(
         "Check Audio Session Is Configured When Picture In Picture Required",
         arguments: [
-            VideoPlayerConfiguration(loopVideo: false, allowsPictureInPicturePlayback: true),
-            VideoPlayerConfiguration(loopVideo: false, allowsPictureInPicturePlayback: false)
+            VideoPlayerConfiguration(allowsPictureInPicturePlayback: true),
+            VideoPlayerConfiguration(allowsPictureInPicturePlayback: false)
         ]
 
     )
@@ -147,7 +233,7 @@ final class VideoPlayerCoordinatorTests {
         #expect(!mockAudioSessionManager.didCallSetPlaybackSessionActive)
 
         // WHEN
-        makeSUT(url: fakeURL, configuration: configuration)
+        makeSUT(configuration: configuration)
 
         // THEN
         #expect(mockAudioSessionManager.didCallSetPlaybackSessionActive == configuration.allowsPictureInPicturePlayback)
@@ -159,7 +245,7 @@ final class VideoPlayerCoordinatorTests {
         let avPlayerLayer = AVPlayerLayer()
         #expect(!mockPictureInPictureController.didCallSetupPictureInPicture)
         #expect(mockPictureInPictureController.capturedAVPlayerLayer == nil)
-        let sut = makeSUT(url: fakeURL)
+        let sut = makeSUT()
 
         // WHEN
         sut.setupPictureInPicture(playerLayer: avPlayerLayer)
@@ -169,11 +255,12 @@ final class VideoPlayerCoordinatorTests {
         #expect(mockPictureInPictureController.capturedAVPlayerLayer == avPlayerLayer)
     }
 
-    @Test("Check Stop Picture In Picture Is Called")
+    @Test("Check Stop Picture In Picture Is Called When PiP Session Is Active")
     func whenStopPictureInPictureIsCalledThenAskPictureInPictureControllerToStopPictureInPicture() {
         // GIVEN
         #expect(!mockPictureInPictureController.didCallStopPictureInPicture)
-        let sut = makeSUT(url: fakeURL)
+        let sut = makeSUT()
+        mockPictureInPictureController.send(.didStartPictureInPicture)
 
         // WHEN
         sut.stopPictureInPicture()
@@ -185,7 +272,7 @@ final class VideoPlayerCoordinatorTests {
     @Test("Check Audio Session is Deactivated On Deinitialization")
     func whenDeinitThenAudioSessionIsDeactivated() {
         // GIVEN
-        var sut: VideoPlayerCoordinator! = makeSUT(url: fakeURL, configuration: .init(loopVideo: false, allowsPictureInPicturePlayback: true))
+        var sut: VideoPlayerCoordinator! = makeSUT(configuration: .init(allowsPictureInPicturePlayback: true))
         #expect(!mockAudioSessionManager.didCallSetPlaybackSessionInactive)
 
         // WHEN
@@ -206,7 +293,7 @@ final class VideoPlayerCoordinatorTests {
     )
     func whenPictureInPictureStartsThenPictureInPictureIsActiveEventIsPublished(context: (event: PictureInPictureEvent, expectedResult: Bool)) {
         // GIVEN
-        let sut = makeSUT(url: fakeURL, configuration: .init(loopVideo: false, allowsPictureInPicturePlayback: true))
+        let sut = makeSUT(configuration: .init(allowsPictureInPicturePlayback: true))
         var capturedIsActive: Bool = false
         let c = sut.$isPictureInPictureActive
             .sink { isActive in

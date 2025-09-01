@@ -95,12 +95,10 @@ extension Preferences {
                     model.openNewTab(with: .privacyPolicy)
                 }
 
-#if FEEDBACK
                 Button(UserText.sendFeedback) {
                     model.openFeedbackForm()
                 }
                 .padding(.top, 4)
-#endif
             }
 #if SPARKLE
             .onAppear {

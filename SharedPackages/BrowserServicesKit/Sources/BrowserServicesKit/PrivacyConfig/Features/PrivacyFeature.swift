@@ -45,7 +45,6 @@ public enum PrivacyFeature: String {
     case dbp
     case sync
     case privacyDashboard
-    case history
     case updatesWontAutomaticallyRestartApp
     case performanceMetrics
     case privacyPro
@@ -55,7 +54,6 @@ public enum PrivacyFeature: String {
     case brokenSitePrompt
     case remoteMessaging
     case additionalCampaignPixelParams
-    case newTabPageImprovements
     case syncPromotion
     case autofillSurveys
     case marketplaceAdPostback
@@ -81,6 +79,10 @@ public enum PrivacyFeature: String {
     case tabCrashRecovery
     case delayedWebviewPresentation
     case disableFireAnimation
+    case feedbackForm
+    case htmlNewTabPage
+    case daxEasterEggLogos
+    case openFireWindowByDefault
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -118,8 +120,19 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
 
-    // This is fairly temporary and will likely be removed in a release or two one way or another
-    case june2025TabManagerLayoutChanges
+    // Shows a PiP video when the user is redirect to the system settings to set DDG as the default browser.
+    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210806442029191?focus=true
+    case defaultBrowserTutorial
+
+    case widgetReporting
+
+    /// Add ask AI chat to end of autocomplete suggestions
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210839825079760?focus=true
+    case askAIChatSuggestion
+
+    // Local inactivity provisional notifications delivered to Notification Center.
+    // https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
+    case inactivityNotification
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -152,6 +165,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case inputFocusApi
     case canPromoteImportPasswordsInPasswordManagement
     case canPromoteImportPasswordsInBrowser
+    case createFireproofFaviconUpdaterSecureVaultInBackground
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -163,6 +177,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlistBetaActive
     case freemium
     case remoteBrokerDelivery
+    case emailConfirmationDecoupling
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -185,8 +200,26 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Adds context menu action for summarizing text selected on a website.
     case textSummarization
 
-    // Adds capability to load AI Chat in a sidebar
+    /// Adds capability to load AI Chat in a sidebar
     case sidebar
+
+    /// Experimental address bar with duck.ai
+    case experimentalAddressBar
+
+    /// Global switch to disable all AI Chat related functionality
+    case globalToggle
+}
+
+public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .htmlNewTabPage
+    }
+
+    /// Global switch to disable New Tab Page search box
+    case omnibar
+
+    /// Global switch to control shared or independent New Tab Page
+    case newTabPagePerTab
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -233,6 +266,8 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canScanUrlBasedSyncSetupBarcodes
     case canInterceptSyncSetupUrls
     case syncSetupBarcodeIsUrlBased
+    case refactorOfSyncPreferences
+    case newSyncEntryPoints
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {
@@ -257,6 +292,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case paidAIChat
     case subscriptionRebranding
     case vpnToolbarUpsell
+    case supportsAlternateStripePaymentFlow
+    case subscriptionPurchaseWidePixelMeasurement
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {
@@ -346,14 +383,15 @@ public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
 
     // https://app.asana.com/1/137249556945/project/1206329551987282/task/1209304767941984?focus=true
     case scheduledDefaultBrowserPrompts // iOS
+
+    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210716028790591?focus=true
+    case scheduledDefaultBrowserPromptsInactiveUser // iOS
 }
 
 public enum OnboardingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extendedOnboarding }
 
     case showSettingsCompleteSetupSection
-    /// https://app.asana.com/1/137249556945/project/1108686900785972/task/1210454186090900?focus=true
-    case setAsDefaultBrowserPiPVideoExperiment
 }
 
 public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {

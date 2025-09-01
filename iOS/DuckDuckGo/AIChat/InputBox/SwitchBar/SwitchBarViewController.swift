@@ -35,7 +35,7 @@ class SwitchBarViewController: UIViewController {
 
     private var segmentedPickerHostingController: UIHostingController<PickerWrapper>?
     let textEntryViewController: SwitchBarTextEntryViewController
-    let backButton = BrowserChromeButton(.secondary)
+    let backButton = BrowserChromeButton()
 
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
@@ -45,12 +45,12 @@ class SwitchBarViewController: UIViewController {
     // Items for the segmented picker
     private let pickerItems = [
         ImageSegmentedPickerItem(
-            text: "Search",
+            text: UserText.searchInputToggleSearchButtonTitle,
             selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearchGradientColor),
             unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearch)
         ),
         ImageSegmentedPickerItem(
-            text: "Duck.ai",
+            text: UserText.searchInputToggleAIChatButtonTitle,
             selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChatGradientColor),
             unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChat)
         )
@@ -193,6 +193,6 @@ private struct PickerWrapper: View {
 
     var body: some View {
         ImageSegmentedPickerView(viewModel: viewModel)
-            .frame(width: 230)
+            .frame(width: 216)
     }
 }

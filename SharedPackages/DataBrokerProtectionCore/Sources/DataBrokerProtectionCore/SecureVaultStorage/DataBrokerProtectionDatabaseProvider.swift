@@ -105,6 +105,10 @@ public protocol DataBrokerProtectionDatabaseProvider: SecureStorageDatabaseProvi
     func save(_ optOutAttemptDB: OptOutAttemptDB) throws
 
     func fetchFirstEligibleJobDate() throws -> Date?
+
+    func save(_ event: BackgroundTaskEventDB) throws
+    func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEventDB]
+    func deleteBackgroundTaskEvents(olderThan date: Date) throws
  }
 
 public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorageDatabaseProvider, DataBrokerProtectionDatabaseProvider {
@@ -123,7 +127,7 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
                                                      key: Data,
                                                      migrationProvider: T.Type = DefaultDataBrokerProtectionDatabaseMigrationsProvider.self,
                                                      reporter: SecureVaultReporting? = nil) throws -> DefaultDataBrokerProtectionDatabaseProvider {
-        try DefaultDataBrokerProtectionDatabaseProvider(file: file, key: key, registerMigrationsHandler: migrationProvider.v6Migrations, reporter: reporter)
+        try DefaultDataBrokerProtectionDatabaseProvider(file: file, key: key, registerMigrationsHandler: migrationProvider.v7Migrations, reporter: reporter)
     }
 
     public init(file: URL,
@@ -710,6 +714,28 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
 
             let result = try Row.fetchOne(db, sql: sql)
             return result?[alias]
+        }
+    }
+
+    public func save(_ event: BackgroundTaskEventDB) throws {
+        try db.write { db in
+            try event.save(db)
+        }
+    }
+
+    public func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEventDB] {
+        try db.read { db in
+            try BackgroundTaskEventDB
+                .filter(BackgroundTaskEventDB.Columns.timestamp >= date)
+                .fetchAll(db)
+        }
+    }
+
+    public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
+        _ = try db.write { db in
+            try BackgroundTaskEventDB
+                .filter(BackgroundTaskEventDB.Columns.timestamp < date)
+                .deleteAll(db)
         }
     }
 }

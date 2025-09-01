@@ -28,6 +28,11 @@ protocol TabsModelPersisting {
     func save(model: TabsModel)
 }
 
+enum TabsPersistenceError: Error {
+    case appSupportDirAccess
+    case storeInit
+}
+
 class TabsModelPersistence: TabsModelPersisting {
 
     private struct Constants {
@@ -36,21 +41,14 @@ class TabsModelPersistence: TabsModelPersisting {
         static let legacyUDKey = "com.duckduckgo.opentabs"
     }
 
-    enum Error: Swift.Error {
-        case tabsPersistenceAppSupportDirAccessError
-        case tabsPersistenceInitError
-    }
-
     private let store: ThrowingKeyValueStoring
     private let legacyStore: KeyValueStoring
 
     convenience init() throws {
 
         guard let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            Pixel.fire(pixel: .tabsStoreSupportDirAccessError)
-
             // Move app to Terminating state
-            throw Error.tabsPersistenceAppSupportDirAccessError
+            throw TerminationError.tabsPersistence(.appSupportDirAccess)
         }
 
         do {
@@ -58,10 +56,8 @@ class TabsModelPersistence: TabsModelPersisting {
             self.init(store: store,
                       legacyStore: UserDefaults.app)
         } catch {
-            Pixel.fire(pixel: .tabsStoreInitError)
-
             // Move app to Terminating state
-            throw Error.tabsPersistenceInitError
+            throw TerminationError.tabsPersistence(.storeInit)
         }
     }
 
@@ -81,6 +77,9 @@ class TabsModelPersistence: TabsModelPersisting {
             }
             return model
         } catch {
+            DailyPixel.fireDailyAndCount(pixel: .tabsStoreReadError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
             Logger.general.error("Something went wrong unarchiving TabsModel \(error.localizedDescription, privacy: .public)")
         }
         return nil
@@ -120,7 +119,9 @@ class TabsModelPersistence: TabsModelPersisting {
             let data = try NSKeyedArchiver.archivedData(withRootObject: model, requiringSecureCoding: false)
             try store.set(data, forKey: Constants.storageKey)
         } catch {
-            Pixel.fire(pixel: .tabsStoreSaveError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
             Logger.general.error("Something went wrong archiving TabsModel: \(error.localizedDescription, privacy: .public)")
         }
     }

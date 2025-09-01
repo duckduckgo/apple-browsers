@@ -21,6 +21,8 @@ import WebKit
 
 public protocol NavigationResponder {
 
+    // A tab extension will receive these calls only if registered in Tab+Navigation.swift file
+
     // MARK: Decision making
 
     /// Decides whether to allow or cancel a navigation

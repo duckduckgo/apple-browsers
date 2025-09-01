@@ -1,7 +1,7 @@
 {
   "name": "NeighborWho",
   "url": "neighborwho.com",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "parent": "beenverified.com",
   "optOutUrl": "https://www.neighborwho.com/svc/optout/search/optouts",
   "mirrorSites": [
@@ -70,5 +70,6 @@
     "maintenanceScan": 120,
     "maxAttempts": -1
   },
-  "addedDatetime": 1745320348502
+  "addedDatetime": 1745320348502,
+  "removedAt": null
 }

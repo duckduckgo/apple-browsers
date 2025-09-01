@@ -19,21 +19,40 @@
 
 import Foundation
 
-package enum DefaultBrowserPromptType: CustomDebugStringConvertible {
-    case firstModal
-    case secondModal
-    case subsequentModal
+package enum DefaultBrowserPromptType: Equatable, CustomDebugStringConvertible {
+
+    case inactive
+    case active(ActiveUserPrompt)
 
     package var debugDescription: String {
         switch self {
-        case .firstModal:
-            return "First modal"
-        case .secondModal:
-            return "Second modal"
-        case .subsequentModal:
-            return "Subsequent modal"
+        case .inactive:
+            return "Inactive Modal"
+        case let .active(prompt):
+            return "Active \(prompt.debugDescription)"
         }
     }
+}
+
+package extension DefaultBrowserPromptType {
+
+    enum ActiveUserPrompt: Equatable, CustomDebugStringConvertible {
+        case firstModal
+        case secondModal
+        case subsequentModal
+
+        package var debugDescription: String {
+            switch self {
+            case .firstModal:
+                return "First modal"
+            case .secondModal:
+                return "Second modal"
+            case .subsequentModal:
+                return "Subsequent modal"
+            }
+        }
+    }
+
 }
 
 @MainActor
@@ -45,13 +64,31 @@ package protocol DefaultBrowserPromptTypeDeciding {
 package final class DefaultBrowserPromptTypeDecider: DefaultBrowserPromptTypeDeciding {
     private let featureFlagger: DefaultBrowserPromptFeatureFlagger
     private let store: DefaultBrowserPromptStorage
-    private let userTypeProvider: DefaultBrowserPromptUserTypeProviding
-    private let userActivityProvider: DefaultBrowserPromptUserActivityProvider
+    private let activeUserPromptDecider: DefaultBrowserPromptTypeDeciding
+    private let inactiveUserPromptDecider: DefaultBrowserPromptTypeDeciding
     private let defaultBrowserManager: DefaultBrowserManaging
     private let installDateProvider: () -> Date?
     private let dateProvider: () -> Date
 
-    package init(
+    init(
+        featureFlagger: DefaultBrowserPromptFeatureFlagger,
+        store: DefaultBrowserPromptStorage,
+        activeUserPromptDecider: DefaultBrowserPromptTypeDeciding,
+        inactiveUserPromptDecider: DefaultBrowserPromptTypeDeciding,
+        defaultBrowserManager: DefaultBrowserManaging,
+        installDateProvider: @escaping () -> Date?,
+        dateProvider: @escaping () -> Date
+    ) {
+        self.featureFlagger = featureFlagger
+        self.store = store
+        self.activeUserPromptDecider = activeUserPromptDecider
+        self.inactiveUserPromptDecider = inactiveUserPromptDecider
+        self.installDateProvider = installDateProvider
+        self.defaultBrowserManager = defaultBrowserManager
+        self.dateProvider = dateProvider
+    }
+
+    package convenience init(
         featureFlagger: DefaultBrowserPromptFeatureFlagger,
         store: DefaultBrowserPromptStorage,
         userTypeProvider: DefaultBrowserPromptUserTypeProviding,
@@ -60,43 +97,61 @@ package final class DefaultBrowserPromptTypeDecider: DefaultBrowserPromptTypeDec
         installDateProvider: @escaping () -> Date?,
         dateProvider: @escaping () -> Date = Date.init
     ) {
-        self.featureFlagger = featureFlagger
-        self.store = store
-        self.userTypeProvider = userTypeProvider
-        self.userActivityProvider = userActivityProvider
-        self.installDateProvider = installDateProvider
-        self.defaultBrowserManager = defaultBrowserManager
-        self.dateProvider = dateProvider
+
+        let daysSinceInstall: () -> Int = {
+            guard
+                let date = installDateProvider(),
+                let numberOfDays = Calendar.current.dateComponents([.day], from: date, to: dateProvider()).day
+            else {
+                return 0
+            }
+
+            return numberOfDays
+        }
+
+        let activeUserPromptDecider = DefaultBrowserPromptTypeDecider.ActiveUser(
+            featureFlagger: featureFlagger,
+            store: store,
+            userTypeProvider: userTypeProvider,
+            userActivityProvider: userActivityProvider,
+            daysSinceInstallProvider: daysSinceInstall
+        )
+
+        let inactiveUserPromptDecider = DefaultBrowserPromptTypeDecider.InactiveUser(
+            featureFlagger: featureFlagger,
+            store: store,
+            userActivityProvider: userActivityProvider,
+            daysSinceInstallProvider: daysSinceInstall
+        )
+
+        self.init(
+            featureFlagger: featureFlagger,
+            store: store,
+            activeUserPromptDecider: activeUserPromptDecider,
+            inactiveUserPromptDecider: inactiveUserPromptDecider,
+            defaultBrowserManager: defaultBrowserManager,
+            installDateProvider: installDateProvider,
+            dateProvider: dateProvider
+        )
     }
 
     package func promptType() -> DefaultBrowserPromptType? {
-        // If Feature is disabled return nil
-        guard featureFlagger.isDefaultBrowserPromptsFeatureEnabled else {
-            Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Feature disabled.")
-            return nil
-        }
-
         // If user has permanently disabled prompt return nil
         guard !store.isPromptPermanentlyDismissed else {
             Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Prompt Permanently Dismissed. Will not show prompt.")
             return nil
         }
 
-        guard let userType = userTypeProvider.currentUserType() else {
-            Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed to determine user type. Will not show prompt.")
+        // Check what prompt to show
+        Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Deciding what prompt to show.")
+        guard let promptToShow = decidePromptType() else {
+            Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - No Prompt To Show.")
             return nil
         }
 
-        // Check if we should be using first, second or subsequent modal depending on the user type.
-        guard let modalToShow = determineModalType(for: userType) else {
-            Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - No Modal To Show.")
-            return nil
-        }
-
-        Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Modal To Show Before Assessing Default Browser \(modalToShow.debugDescription).")
-
+        Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Modal To Show Before Assessing Default Browser \(promptToShow.debugDescription).")
         // If browser is not the default one show the modal otherwise do not show it again.
-        return defaultBrowserManager.defaultBrowserInfo().isEligibleToShowDefaultBrowserPrompt() ? modalToShow : nil
+        return defaultBrowserManager.defaultBrowserInfo().isEligibleToShowDefaultBrowserPrompt() ? promptToShow : nil
     }
 
 }
@@ -105,52 +160,27 @@ package final class DefaultBrowserPromptTypeDecider: DefaultBrowserPromptTypeDec
 
 private extension DefaultBrowserPromptTypeDecider {
 
-    func determineModalType(for user: DefaultBrowserPromptUserType) -> DefaultBrowserPromptType? {
-        if shouldShowFirstModal() {
-            return .firstModal
-        } else if shouldShowSecondModal(for: user) {
-            return .secondModal
-        } else if shouldShowSubsequentModal(for: user) {
-            return .subsequentModal
+    func decidePromptType() -> DefaultBrowserPromptType? {
+        // If user has already seen any prompt Today do not show another one.
+        guard !hasAlreadySeenAnyModalToday() else {
+            Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Already Seen a Prompt Today. Skipping it.")
+            return nil
+        }
+
+        // First, check if we need to display the prompt for inactive users.
+        // Second, check if we need to display one of the prompt for active users.
+        if let inactivePrompt = inactiveUserPromptDecider.promptType() {
+            return inactivePrompt
+        } else if let activePrompt = activeUserPromptDecider.promptType() {
+            return activePrompt
         } else {
             return nil
         }
     }
 
-    // If the user has not seen the first modal, they have installed the app at least `firstModalDelayDays` ago, show the first modal.
-    func shouldShowFirstModal() -> Bool {
-        !store.hasSeenFirstModal &&
-        daysSinceInstall() >= featureFlagger.firstModalDelayDays
-    }
-
-    // If the user has seen the first modal but they have not seen the second modal and they have been active for `secondModalDelayDays`, show the second modal.
-    func shouldShowSecondModal(for user: DefaultBrowserPromptUserType) -> Bool {
-        user.isNewOrReturningUser &&
-        !store.hasSeenSecondModal &&
-        userActivityProvider.numberOfActiveDays() == featureFlagger.secondModalDelayDays
-    }
-
-    // If the user has seen the last modal and they have been active for `subsequentModalRepeatIntervalDays`, show the subsequentModalRepeatIntervalDays modal.
-    func shouldShowSubsequentModal(for user: DefaultBrowserPromptUserType) -> Bool {
-        let modalSeenCondition = user.isNewOrReturningUser ? store.hasSeenSecondModal : store.hasSeenFirstModal
-
-        return modalSeenCondition &&
-        userActivityProvider.numberOfActiveDays() == featureFlagger.subsequentModalRepeatIntervalDays
-    }
-
-    func daysSinceInstall() -> Int {
-        daysSince(date: installDateProvider())
-    }
-
-    func daysSince(date: Date?) -> Int {
-        guard
-            let date,
-            let numberOfDays = Calendar.current.dateComponents([.day], from: date, to: dateProvider()).day
-        else {
-            return 0
-        }
-
-        return numberOfDays
+    func hasAlreadySeenAnyModalToday() -> Bool {
+        guard let lastModalShownDate = store.lastModalShownDate else { return false }
+        return Calendar.current.isDate(Date(timeIntervalSince1970: lastModalShownDate), inSameDayAs: dateProvider())
     }
 
 }

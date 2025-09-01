@@ -24,15 +24,18 @@ import DesignResourcesKitIcons
 struct FavoriteItemView: View {
     let favorite: Favorite
     let faviconLoading: FavoritesFaviconLoading?
+    let isEditable: Bool
     let onMenuAction: ((MenuAction) -> Void)?
 
     var body: some View {
         VStack(spacing: 6) {
             FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
-            .contextMenu {
-                // This context menu can be moved up in the hierarchy to `FavoritesView` once support for iOS 15 is removed. contextMenu with preview modifier can be used then.
-                    contextMenuItems()
-            }
+                .if(isEditable) {
+                    $0.contextMenu {
+                        // This context menu can be moved up in the hierarchy to `FavoritesView` once support for iOS 15 is removed. contextMenu with preview modifier can be used then.
+                        contextMenuItems()
+                    }
+                }
 
             Text(favorite.title)
                 .font(Font.system(size: 12))
@@ -86,7 +89,7 @@ extension FavoriteItemView {
 }
 
 private extension FavoriteItemView {
-    init(favorite: Favorite) {
-        self.init(favorite: favorite, faviconLoading: nil, onMenuAction: nil)
+    init(favorite: Favorite, isEditable: Bool = true) {
+        self.init(favorite: favorite, faviconLoading: nil, isEditable: isEditable, onMenuAction: nil)
     }
 }

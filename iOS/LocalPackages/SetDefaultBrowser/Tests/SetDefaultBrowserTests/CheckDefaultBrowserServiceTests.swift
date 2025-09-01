@@ -25,8 +25,8 @@ import SetDefaultBrowserTestSupport
 
 @Suite("Set Default Browser - Check Default Browser Service")
 struct CheckDefaultBrowserServiceTests {
-    private static let isLowerThanIOS18PointTwo: Bool = {
-        if #available(iOS 18.2, *) {
+    private static let isLowerThanPermittedVersion: Bool = {
+        if #available(iOS 18.3, *) {
             false
         } else {
             true
@@ -41,7 +41,7 @@ struct CheckDefaultBrowserServiceTests {
             false
         ]
     )
-    @available(iOS 18.2, *)
+    @available(iOS 18.3, *)
     func checkDefaultBrowserReturnsSuccess(_ expectedDefaultBrowserValue: Bool) throws {
         // GIVEN
         let application = MockApplication()
@@ -57,7 +57,7 @@ struct CheckDefaultBrowserServiceTests {
 
     @MainActor
     @Test("Check is Default Browser returns maxNumberOfAttemptsExceeded when rateLimited error")
-    @available(iOS 18.2, *)
+    @available(iOS 18.3, *)
     func checkDefaultBrowserReturnsMaxNumberOfAttemptsExceededFailure() throws {
         // GIVEN
         let timestamp: TimeInterval = 1773122108000 // 10th of March 2026
@@ -87,7 +87,7 @@ struct CheckDefaultBrowserServiceTests {
 
     @MainActor
     @Test("Check is Default Browser returns unknown failure when generic error")
-    @available(iOS 18.2, *)
+    @available(iOS 18.3, *)
     func checkDefaultBrowserReturnsUnknownFailure() throws {
         // GIVEN
         let systemError = NSError(
@@ -112,7 +112,7 @@ struct CheckDefaultBrowserServiceTests {
     }
 
     @MainActor
-    @Test(.enabled(if: CheckDefaultBrowserServiceTests.isLowerThanIOS18PointTwo))
+    @Test(.enabled(if: CheckDefaultBrowserServiceTests.isLowerThanPermittedVersion))
     func legacyCheckDefaultBrowserReturnsNotSupportedFailure() throws {
         // GIVEN
         let sut = SystemCheckDefaultBrowserService()

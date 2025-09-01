@@ -23,6 +23,7 @@ import Persistence
 import Core
 import SetDefaultBrowserCore
 import SetDefaultBrowserUI
+import SystemSettingsPiPTutorial
 
 @MainActor
 final class DefaultBrowserPromptService {
@@ -33,7 +34,9 @@ final class DefaultBrowserPromptService {
     init(
         featureFlagger: FeatureFlagger,
         privacyConfigManager: PrivacyConfigurationManaging,
-        keyValueFilesStore: ThrowingKeyValueStoring
+        keyValueFilesStore: ThrowingKeyValueStoring,
+        systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManager,
+        isOnboardingCompletedProvider: @escaping () -> Bool
     ) {
 
 #if DEBUG || ALPHA
@@ -61,9 +64,11 @@ final class DefaultBrowserPromptService {
             userTypeProviding: userTypeManager,
             userActivityManager: userActivityManager,
             checkDefaultBrowserContextStorage: checkDefaultBrowserInfoStorage,
+            defaultBrowserSettingsNavigator: systemSettingsPiPTutorialManager,
             checkDefaultBrowserDebugEventMapper: checkDefaultBrowserPixelHandler,
             promptUserInteractionEventMapper: promptActivityPixelHandler,
-            isOnboardingCompletedProvider: { !DaxDialogs.shared.isEnabled },
+            uiProvider: DefaultBrowserPromptUIProvider(),
+            isOnboardingCompletedProvider: isOnboardingCompletedProvider,
             installDateProvider: { StatisticsUserDefaults().installDate },
             currentDateProvider: defaultBrowserDateProvider
         )
@@ -71,52 +76,23 @@ final class DefaultBrowserPromptService {
 
     func resume() {
         // Application has been launched or brought to foreground.
-        guard featureFlagAdapter.isDefaultBrowserPromptsFeatureEnabled else { return }
+        guard shouldRecordActivity() else { return }
         Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Record User Activity If Needed.")
         userActivityManager.recordActivity()
+    }
+
+    private func shouldRecordActivity() -> Bool {
+        // True if either active/inactive prompt features is enabled
+        featureFlagAdapter.isDefaultBrowserPromptsForActiveUsersFeatureEnabled || featureFlagAdapter.isDefaultBrowserPromptsForInactiveUsersFeatureEnabled
     }
 }
 
 // MARK: - Adapters
 
-extension DefaultBrowserInfoStore: DefaultBrowserContextStorage {
+extension SystemSettingsPiPTutorialManager: @retroactive DefaultBrowserPromptSettingsNavigating {
 
-    var defaultBrowserContext: DefaultBrowserContext? {
-        get {
-            defaultBrowserInfo.flatMap(DefaultBrowserContext.init)
-        }
-        set {
-            guard let newValue else { return }
-            defaultBrowserInfo = DefaultBrowserInfo(with: newValue)
-        }
+    public func navigateToSetDefaultBrowserSettings() {
+        playPiPTutorialAndNavigateTo(destination: .defaultBrowser)
     }
 
-}
-
-// Remove when DefaultBrowserInfo is not used anymore as duplicate in Onboarding
-extension DefaultBrowserContext {
-
-    init(with info: DefaultBrowserInfo) {
-        self.init(
-            isDefaultBrowser: info.isDefaultBrowser,
-            lastSuccessfulCheckDate: info.lastSuccessfulCheckDate,
-            lastAttemptedCheckDate: info.lastAttemptedCheckDate,
-            numberOfTimesChecked: info.numberOfTimesChecked,
-            nextRetryAvailableDate: info.nextRetryAvailableDate
-        )
-    }
-
-}
-
-extension DefaultBrowserInfo {
-
-    init(with context: DefaultBrowserContext) {
-        self.init(
-            isDefaultBrowser: context.isDefaultBrowser,
-            lastSuccessfulCheckDate: context.lastSuccessfulCheckDate,
-            lastAttemptedCheckDate: context.lastAttemptedCheckDate,
-            numberOfTimesChecked: context.numberOfTimesChecked,
-            nextRetryAvailableDate: context.nextRetryAvailableDate
-        )
-    }
 }

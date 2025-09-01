@@ -118,6 +118,8 @@ struct Foreground: ForegroundHandling {
         services.remoteMessagingService.resume()
         services.statisticsService.resume()
         services.defaultBrowserPromptService.resume()
+        services.dbpService.resume()
+        services.widePixelService.resume()
 
         appDependencies.mainCoordinator.onForeground()
     }

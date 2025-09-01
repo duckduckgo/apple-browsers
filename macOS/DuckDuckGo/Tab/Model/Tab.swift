@@ -62,6 +62,7 @@ protocol NewWindowPolicyDecisionMaker {
         var featureFlagger: FeatureFlagger
         var contentScopeExperimentsManager: ContentScopeExperimentsManaging
         var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+        var newTabPageShownPixelSender: NewTabPageShownPixelSender
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -136,7 +137,8 @@ protocol NewWindowPolicyDecisionMaker {
                      tabsPreferences: TabsPreferences = TabsPreferences.shared,
                      onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
                      pageRefreshMonitor: PageRefreshMonitoring = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern),
-                     aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil
+                     aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil,
+                     newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil
     ) {
 
         let duckPlayer = duckPlayer
@@ -193,7 +195,9 @@ protocol NewWindowPolicyDecisionMaker {
                   tabsPreferences: tabsPreferences,
                   onboardingPixelReporter: onboardingPixelReporter,
                   pageRefreshMonitor: pageRefreshMonitor,
-                  aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration)
+                  aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
+                  newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender
+        )
     }
 
     @MainActor
@@ -236,7 +240,8 @@ protocol NewWindowPolicyDecisionMaker {
          tabsPreferences: TabsPreferences,
          onboardingPixelReporter: OnboardingAddressBarReporting,
          pageRefreshMonitor: PageRefreshMonitoring,
-         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
+         newTabPageShownPixelSender: NewTabPageShownPixelSender
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -320,8 +325,9 @@ protocol NewWindowPolicyDecisionMaker {
                                                        faviconManagement: faviconManagement,
                                                        featureFlagger: featureFlagger,
                                                        contentScopeExperimentsManager: contentScopeExperimentsManager,
-                                                       aiChatMenuConfiguration: aiChatMenuConfiguration))
-
+                                                       aiChatMenuConfiguration: aiChatMenuConfiguration,
+                                                       newTabPageShownPixelSender: newTabPageShownPixelSender)
+            )
         super.init()
         tabGetter = { [weak self] in self }
         userContentController.map(userContentControllerPromise.fulfill)
@@ -451,7 +457,7 @@ protocol NewWindowPolicyDecisionMaker {
     /// Publishes currently active main frame Navigation state
     var navigationStatePublisher: some Publisher<NavigationState?, Never> {
         navigationDelegate.$currentNavigation.map { currentNavigation -> AnyPublisher<NavigationState?, Never> in
-            MainActor.assumeIsolated {
+            MainActor.assumeMainThread {
                 currentNavigation?.$state.map { $0 }.eraseToAnyPublisher() ?? Just(nil).eraseToAnyPublisher()
             }
         }.switchToLatest()
@@ -474,7 +480,7 @@ protocol NewWindowPolicyDecisionMaker {
                 guard let currentNavigation = currentNavigation else {
                     return false
                 }
-                return MainActor.assumeIsolated {
+                return MainActor.assumeMainThread {
                     let isSameDocumentNavigation = (currentNavigation.redirectHistory.first ?? currentNavigation.navigationAction).navigationType.isSameDocumentNavigation
                     return !isSameDocumentNavigation
                 }
@@ -702,7 +708,7 @@ protocol NewWindowPolicyDecisionMaker {
         if #available(macOS 12.0, *) {
             self.interactionState = (webView.interactionState as? Data).map { .webViewProvided($0) } ?? .none
         } else {
-            self.interactionState = (try? webView.sessionStateData()).map { .webViewProvided($0) } ?? .none
+            self.interactionState = webView.sessionStateData().map { .webViewProvided($0) } ?? .none
         }
 
         return self.interactionState.data
@@ -1063,7 +1069,7 @@ protocol NewWindowPolicyDecisionMaker {
 
     private func restoreInteractionState(with interactionStateData: Data) {
         guard #available(macOS 12.0, *) else {
-            try? webView.restoreSessionState(from: interactionStateData)
+            webView.restoreSessionState(from: interactionStateData)
             return
         }
         webView.interactionState = interactionStateData

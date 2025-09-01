@@ -1,0 +1,95 @@
+{
+  "smartling" : {
+    "string_format" : "icu",
+    "translate_paths" : [
+    {
+      "path" : "*/title",
+      "key" : "{*}/title",
+      "instruction" : "*/note"
+    }]
+  },
+  "advancedButton" : {
+    "title" : "Avanzado",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to see advanced options on click."
+  },
+  "advancedEllipsisButton" : {
+    "title" : "Avanzadas...",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to see advanced options on click. This button contains a trailing ellipsis."
+  },
+  "leaveSiteButton" : {
+    "title" : "Salir de este sitio",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to leave the website and navigate to previous page."
+  },
+  "visitSiteButton" : {
+    "title" : "Aceptar el riesgo y visitar el sitio",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to visit the website anyway despite the risks."
+  },
+  "maliciousSiteTabTitle" : {
+    "title" : "Advertencia: riesgo de seguridad",
+    "note" : "Title shown in the browser window or tab when the current page may be a security risk due to phishing"
+  },
+  "malwarePageHeading" : {
+    "title" : "Advertencia: este sitio puede suponer un riesgo para la seguridad{newline}",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to malware distribution. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "malwareWarningText" : {
+    "title" : "El Scam Blocker de DuckDuckGo ha impedido que se cargue esta página porque es posible que distribuya malware diseñado para poner en peligro tu dispositivo o robar tu información personal.{newline}<a>Más información</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to malware distribution. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "malwareAdvancedInfoHeading" : {
+    "title" : "Si crees que este sitio web es seguro, puedes <a>informar de un error</a>. Puedes seguir visitando el sitio web por tu cuenta y riesgo.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to malware distribution."
+  },
+  "phishingPageHeading" : {
+    "title" : "Advertencia: este sitio puede suponer un{newline}riesgo para la seguridad",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to Phishing issues. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "phishingWarningText" : {
+    "title" : "El Scam Blocker de DuckDuckGo impidió que esta página se cargara, ya que podría estar haciéndose pasar por un sitio legítimo con el fin de engañarte y obtener información personal, como contraseñas o números de tarjetas de crédito.{newline}<a>Más información</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to Phishing issues. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "phishingAdvancedInfoHeading" : {
+    "title" : "Si crees que este sitio web es seguro, puedes <a>informar de un error</a>. Puedes seguir visitando el sitio web por tu cuenta y riesgo.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to malware distribution."
+  },
+  "scamPageHeading" : {
+    "title" : "Advertencia: este sitio puede suponer un{newline}riesgo para la seguridad",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to suspected scam attempts. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "scamWarningText" : {
+    "title" : "El Scam Blocker de DuckDuckGo ha impedido que se cargue esta página porque podría estar intentando engañarte o manipularte para que transfieras dinero, compres productos falsificados o instales malware bajo falsas argumentos.{newline}<a>Más información</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to suspected scam attempts. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "scamAdvancedInfoHeading" : {
+    "title" : "Si crees que este sitio web es seguro, puedes <a>informar de un error</a>. Puedes seguir visitando el sitio web por tu cuenta y riesgo.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to suspected scam attempts."
+  },
+  "sslPageHeading" : {
+    "title" : "Advertencia: este sitio puede ser inseguro",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to SSL issues"
+  },
+  "sslWarningText" : {
+    "title" : "El certificado de este sitio no es válido. Puede que te estés conectando a un servidor que se hace pasar por <b>{domain}</b>, lo que podría poner en riesgo tu información confidencial.",
+    "note" : "Describes an SSL error where a website’s security certificate is invalid. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslAdvancedInfoHeading" : {
+    "title" : "DuckDuckGo te avisa cuando un sitio web tiene un certificado no válido.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to SSL issues."
+  },
+  "sslExpiredAdvancedInfoText" : {
+    "title" : "El certificado de seguridad de<b>{domain}</b> ha caducado. Es posible que el sitio web esté mal configurado, que un atacante haya comprometido tu conexión o que el reloj del sistema no sea correcto.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues."
+  },
+  "sslInvalidAdvancedInfoText" : {
+    "title" : "El sistema operativo de tu dispositivo no confía en el certificado de seguridad de <b>{domain}</b>. Es posible que el sitio web esté mal configurado o que un atacante haya comprometido tu conexión.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslSelfSignedAdvancedInfoText" : {
+    "title" : "El sistema operativo de tu dispositivo no confía en el certificado de seguridad de <b>{domain}</b>. Es posible que el sitio web esté mal configurado o que un atacante haya comprometido tu conexión.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslWrongHostAdvancedInfoText" : {
+    "title" : "El certificado de seguridad de<b>{domain}</b> no coincide con <b>*.{eTldPlus1}</b>. Es posible que el sitio web esté mal configurado o que un atacante haya comprometido tu conexión.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The two placeholders are website domain names (example: duckduckgo.com)."
+  }
+}

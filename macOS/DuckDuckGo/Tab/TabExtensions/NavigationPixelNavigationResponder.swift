@@ -24,40 +24,69 @@ import WebKit
 /**
  * This responder is responsible for firing navigation pixel on regular and same-tab navigations.
  */
-struct NavigationPixelNavigationResponder {
+final class NavigationPixelNavigationResponder {
 
     private let pixelFiring: PixelFiring?
+    fileprivate var previousSameDocumentNavigation: SameDocumentNavigation?
 
     init(pixelFiring: PixelFiring? = PixelKit.shared) {
         self.pixelFiring = pixelFiring
+    }
+
+    struct SameDocumentNavigation: Equatable {
+        let url: URL
+        let type: WKSameDocumentNavigationType
+
+        func isAnchorFollowingStatePop(_ previous: SameDocumentNavigation?) -> Bool {
+            previous?.url.isSameDocument(url) == true
+            && type == .anchorNavigation
+            && previous?.type == .sessionStatePop
+        }
     }
 }
 
 extension NavigationPixelNavigationResponder: NavigationResponder {
 
     func didStart(_ navigation: Navigation) {
-        let shouldFireNavigationPixel: Bool = {
-            /// Fire navigation pixel on all navigations except for loading error pages
-            if navigation.navigationAction.navigationType == .alternateHtmlLoad {
-                return false
-            }
-            /// Sometimes navigation type for an error page is reported as `.other`, so checking also target frame URL
-            /// This has a side effect of filtering out also some navigations starting on an error page (e.g. using a reload button,
-            /// that is also reported as `.other`).
-            if navigation.navigationAction.navigationType == .other && navigation.navigationAction.targetFrame?.url == .error {
-                return false
-            }
-            return true
-        }()
+        guard navigation.navigationAction.isForMainFrame else {
+            return
+        }
+
+        /// Fire navigation pixel on all navigations except for JS redirects and loading error pages
+        let shouldFireNavigationPixel: Bool = switch navigation.navigationAction.navigationType {
+        case .redirect(.developer), .redirect(.client), .alternateHtmlLoad:
+            false
+        case .other where navigation.navigationAction.targetFrame?.url == .error:
+            // Sometimes navigation type for an error page is reported as `.other`, so checking also target frame URL
+            // This has a side effect of filtering out also some navigations starting on an error page (e.g. using a reload button,
+            // that is also reported as `.other`).
+            false
+        default:
+            true
+        }
 
         if shouldFireNavigationPixel {
-            pixelFiring?.fire(GeneralPixel.navigation)
+            pixelFiring?.fire(GeneralPixel.navigation(.regular))
         }
     }
 
     func navigation(_ navigation: Navigation, didSameDocumentNavigationOf navigationType: WKSameDocumentNavigationType) {
-        if navigationType != .sessionStateReplace {
-            PixelKit.fire(GeneralPixel.navigation)
+        guard navigation.navigationAction.isForMainFrame, navigationType != .sessionStateReplace else {
+            return
         }
+
+        /// Some anchor navigations call `pop state` before, so there are 2 same-page navigations:
+        /// `pop state` and `hash change`. We only want to send 1 pixel for this, so we're firing it
+        /// on the `pop state` event and then we filter out the `hash change` if it happens immediately
+        /// after `pop state` for the same URL.
+        let sameDocumentNavigation = SameDocumentNavigation(url: navigation.url, type: navigationType)
+        let isAnchorFollowingStatePop = sameDocumentNavigation.isAnchorFollowingStatePop(previousSameDocumentNavigation)
+        previousSameDocumentNavigation = sameDocumentNavigation
+
+        guard !isAnchorFollowingStatePop else {
+            return
+        }
+
+        pixelFiring?.fire(GeneralPixel.navigation(.client))
     }
 }

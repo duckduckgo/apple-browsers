@@ -1,5 +1,5 @@
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "VPN отключен ввиду окончания подписки. Чтобы вновь подключиться к DuckDuckGo VPN, оформите подписку Privacy Pro.";
+"network.protection.entitlement.expired.notification.body" = "VPN отключен ввиду окончания подписки. Оформите подписку, чтобы подключиться снова.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "Подключиться к DuckDuckGo VPN не удалось. Повторите попытку позже.";

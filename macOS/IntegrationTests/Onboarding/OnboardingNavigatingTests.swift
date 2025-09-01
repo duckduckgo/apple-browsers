@@ -46,9 +46,9 @@ final class OnboardingNavigatingTests: XCTestCase {
         let mockWindow = MockWindow(isVisible: false)
         let mvc = MainWindowController(
             window: mockWindow,
-            mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(), fireCoordinator: fireCoordinator),
-            popUp: false,
-            fireViewModel: fireCoordinator.fireViewModel)
+            mainViewController: MainViewController(tabCollectionViewModel: TabCollectionViewModel(isPopup: false), autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(), fireCoordinator: fireCoordinator),
+            fireViewModel: fireCoordinator.fireViewModel,
+            visualStyle: NSApp.delegateTyped.visualStyle)
         mvc.window = mockWindow
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mvc
 
@@ -65,9 +65,9 @@ final class OnboardingNavigatingTests: XCTestCase {
         let mockWindow = MockWindow(isVisible: false)
         let mvc = MainWindowController(
             window: mockWindow,
-            mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(), fireCoordinator: fireCoordinator),
-            popUp: false,
-            fireViewModel: fireCoordinator.fireViewModel
+            mainViewController: MainViewController(tabCollectionViewModel: TabCollectionViewModel(isPopup: false), autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(), fireCoordinator: fireCoordinator),
+            fireViewModel: fireCoordinator.fireViewModel,
+            visualStyle: NSApp.delegateTyped.visualStyle
         )
         mvc.window = mockWindow
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mvc

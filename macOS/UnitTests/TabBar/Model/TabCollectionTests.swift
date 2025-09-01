@@ -203,6 +203,28 @@ final class TabCollectionTests: XCTestCase {
         }
     }
 
+    // MARK: - PopUp
+
+    @MainActor
+    func testPopupTabCollectionAllowsOnlyOneTab_Append() {
+        let popup = TabCollection(isPopup: true)
+        popup.append(tab: Tab())
+        XCTAssertEqual(popup.tabs.count, 1)
+        // Attempt to append another tab should be ignored
+        popup.append(tab: Tab())
+        XCTAssertEqual(popup.tabs.count, 1)
+    }
+
+    @MainActor
+    func testPopupTabCollectionAllowsOnlyOneTab_Insert() {
+        let popup = TabCollection(isPopup: true)
+        XCTAssertTrue(popup.insert(Tab(), at: 0))
+        XCTAssertEqual(popup.tabs.count, 1)
+        // Attempt to insert second tab should be ignored and return false
+        XCTAssertFalse(popup.insert(Tab(content: .newtab), at: 1))
+        XCTAssertEqual(popup.tabs.count, 1)
+    }
+
 }
 
 private extension Tab {

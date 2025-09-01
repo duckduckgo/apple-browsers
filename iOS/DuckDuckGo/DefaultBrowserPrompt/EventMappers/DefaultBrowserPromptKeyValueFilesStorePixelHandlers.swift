@@ -56,6 +56,12 @@ enum DefaultBrowserPromptKeyValueFilesStorePixelHandlers {
         case let .failedToSaveValue(.permanentlyDismissPrompt(error)):
             Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Save Permanently Dismissed Prompt: \(error)")
             DailyPixel.fireDailyAndCount(pixel: .debugDefaultBrowserPromptFailedToSavePermanentlyDismissedPrompt, error: error)
+        case let .failedToRetrieveValue(.inactiveModalShown(error)):
+            Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Retrieve Inactive Modal Shown: \(error)")
+            DailyPixel.fireDailyAndCount(pixel: .debugDefaultBrowserPromptFailedToRetrieveInactiveModalShown, error: error)
+        case let .failedToSaveValue(.inactiveModalShown(error)):
+            Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Save Inactive Modal Shown: \(error)")
+            DailyPixel.fireDailyAndCount(pixel: .debugDefaultBrowserPromptFailedToSaveInactiveModalShown, error: error)
         }
     }
 

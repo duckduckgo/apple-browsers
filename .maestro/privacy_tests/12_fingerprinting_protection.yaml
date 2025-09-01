@@ -1,0 +1,90 @@
+# fingerprinting_protection.yaml
+appId: com.duckduckgo.mobile.ios
+tags:
+    - privacy
+---
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+# Load Site
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://duckduckgo.com"
+- pressKey: Enter
+
+- assertVisible: ".*DuckDuckGo.*"
+
+# Bookmark site
+- assertVisible: "Browsing menu"
+- tapOn: "Browsing menu"
+- assertVisible: "Add Bookmark"
+- tapOn: "Add Bookmark"
+
+# Verify site has been bookmarked
+- assertVisible: "Browsing menu"
+- tapOn: "Browsing menu"
+- assertVisible: "Bookmarks"
+- tapOn: "Bookmarks"
+- assertVisible: "DuckDuckGo - Protection. Privacy. Peace of mind."
+
+# Edit bookmark to become bookmarklet
+- tapOn: "Edit"
+- assertVisible: "chevron"
+- tapOn: "chevron"
+- assertVisible: "Clear text"
+- tapOn: "Clear text"
+- inputText: "javascript:(function(){const values = {'screen.availTop': 0,'screen.availLeft': 0,'screen.availWidth': screen.width,'screen.availHeight': screen.height,'screen.colorDepth': 24,'screen.pixelDepth': 24,'window.screenY': 0,'window.screenLeft': 0,'navigator.doNotTrack': undefined};var passed = true;var reason = null;for (const test of results.results) {if (values[test.id] !== undefined) {if (values[test.id] !== test.value) {console.log(test.id, values[test.id]);reason = test.id;passed = false;break;}}}var elem = document.createElement('p');elem.innerHTML = (passed) ? 'TEST PASSED' : 'TEST FAILED: ' + reason;document.body.insertBefore(elem, document.body.childNodes[0]);}());"
+- tapOn: "Save"
+- tapOn: "Done"
+- tapOn: "Done"
+
+# Clear all tabs and data
+- tapOn: "Close Tabs and Clear Data"
+- tapOn:
+      id: "alert.forget-data.confirm"
+- waitForAnimationToEnd
+
+# Navigate to fingerprinting test page
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/privacy-protections/fingerprinting/?run"
+- pressKey: Enter
+
+# Wait for page to load
+- extendedWaitUntil:
+    visible: "⚠️ Please note that:"
+    timeout: 10000
+
+# Run the bookmarklet
+- tapOn: "Browsing menu"
+- tapOn: "Bookmarks"
+- tapOn: "DuckDuckGo - Protection. Privacy. Peace of mind."
+
+# Verify test passed
+- extendedWaitUntil:
+    visible: "TEST PASSED"
+    timeout: 10000
+
+# Delete bookmark
+- tapOn: "Browsing menu"
+- tapOn: "Bookmarks"
+- tapOn: "Edit"
+- tapOn: "chevron"
+- hideKeyboard
+- tapOn: "Delete"
+- assertVisible: "Delete?"
+- tapOn: "Delete"
+- assertVisible: "No bookmarks added yet"
+- tapOn: "Done"
+- tapOn: "Done"
+
+# Clear all tabs and data
+- tapOn: "Close Tabs and Clear Data"
+- tapOn:
+      id: "alert.forget-data.confirm"

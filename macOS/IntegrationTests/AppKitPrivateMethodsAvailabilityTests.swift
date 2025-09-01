@@ -22,6 +22,10 @@ import AppKit
 
 final class AppKitPrivateMethodsAvailabilityTests: XCTestCase {
 
+    override func tearDown() {
+        TestRunHelper.allowAppSendUserEvents = false
+    }
+
     func testLastLeftHit() throws {
         var window: NSWindow!
         autoreleasepool {
@@ -50,7 +54,8 @@ final class AppKitPrivateMethodsAvailabilityTests: XCTestCase {
                                            eventNumber: -22966,
                                            clickCount: 1,
                                            pressure: 1)!
-            window.postEvent(event, atStart: false)
+            TestRunHelper.allowAppSendUserEvents = true
+            NSApp.sendEvent(event)
 
             waitForExpectations(timeout: 0.1)
 

@@ -29,14 +29,19 @@ public struct DefaultBrowserPromptUserActivity: Equatable, Sendable, Codable {
     /// The most recent date when the user was active.
     public internal(set) var lastActiveDate: Date?
 
+    /// The second most recent date when the user was active. Used to calculate number of inactive days between `secondLastActiveDate` and `lastActiveDate`.
+    public internal(set) var secondLastActiveDate: Date?
+
     /// Initialises a new user activity instance with the specified dates.
     ///
     /// - Parameters:
     ///   - numberOfActiveDays: The number of days when the user was active. Default is 0.
     ///   - lastActiveDate: The most recent activity date. Default is `nil`.
-    public init(numberOfActiveDays: Int = 0, lastActiveDate: Date? = nil) {
+    ///   - secondLastActiveDate: The second most recent activity date. Default is `nil`.
+    public init(numberOfActiveDays: Int = 0, lastActiveDate: Date? = nil, secondLastActiveDate: Date? = nil) {
         self.numberOfActiveDays = numberOfActiveDays
         self.lastActiveDate = lastActiveDate
+        self.secondLastActiveDate = secondLastActiveDate
     }
 }
 

@@ -109,7 +109,7 @@ public protocol OAuthClient {
     func migrateV1Token() async throws
 
     /// Use the TokenContainer provided
-    func adopt(tokenContainer: TokenContainer)
+    func adopt(tokenContainer: TokenContainer) throws
 
     // Creates a TokenContainer with the provided access token and refresh token, decodes them and returns the container
     func decode(accessToken: String, refreshToken: String) async throws -> TokenContainer
@@ -130,7 +130,7 @@ public protocol OAuthClient {
     func logout() async throws
 
     /// Remove the tokens container stored locally
-    func removeLocalAccount()
+    func removeLocalAccount() throws
 }
 
 final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
@@ -314,7 +314,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 throw OAuthClientError.authMigrationNotPerformed
             }
 
-            guard let legacyTokenStorage else {
+            guard var legacyTokenStorage else {
                 Logger.OAuthClient.fault("Auth migration attempted without a LegacyTokenStorage")
                 throw OAuthClientError.authMigrationNotPerformed
             }
@@ -328,16 +328,17 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             try await exchange(accessTokenV1: legacyToken)
             Logger.OAuthClient.log("Tokens migrated successfully")
 
-            // NOTE: We don't remove the old token to allow roll back to Auth V1
+            // After releasing Auth V2 at 100% we are now deleting the Auth V1 token.
+            legacyTokenStorage.token = nil
         }
 
         migrationOngoingTask = task
         return try await task.value
     }
 
-    public func adopt(tokenContainer: TokenContainer) {
+    public func adopt(tokenContainer: TokenContainer) throws {
         Logger.OAuthClient.log("Adopting TokenContainer")
-        try? tokenStorage.saveTokenContainer(tokenContainer)
+        try tokenStorage.saveTokenContainer(tokenContainer)
     }
 
     // MARK: Create
@@ -380,7 +381,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     public func logout() async throws {
         let existingToken = try tokenStorage.getTokenContainer()?.accessToken
-        removeLocalAccount()
+        try removeLocalAccount()
 
         // Also removing V1
         Logger.OAuthClient.log("Removing V1 token")
@@ -394,8 +395,8 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
     }
 
-    public func removeLocalAccount() {
+    public func removeLocalAccount() throws {
         Logger.OAuthClient.log("Removing local account")
-        try? tokenStorage.saveTokenContainer(nil)
+        try tokenStorage.saveTokenContainer(nil)
     }
 }

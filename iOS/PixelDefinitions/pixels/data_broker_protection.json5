@@ -1,0 +1,213 @@
+{
+    'm_ios_dbp_optout_stage_condition-found': {
+        description: 'Fired when DBP runs a condition action and its expectation is met',
+        owners: ['samsymons', 'quanganhdo'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'isInternalUser',
+                description: 'Whether the user is internal',
+                type: 'string',
+                enum: ['true', 'false'],
+            },
+            {
+                key: 'tries',
+                description: 'The number of tries it took for the action to complete',
+                type: 'integer',
+            },
+            {
+                key: 'data_broker',
+                description: 'The name of the data broker that this action was operating on',
+                type: 'string',
+            },
+            {
+                key: 'broker_version',
+                description: 'The version of the broker JSON file',
+                type: 'string',
+            },
+            {
+                key: 'attempt_id',
+                description: 'The ID of the opt out attempt',
+                type: 'string',
+            },
+            {
+                key: 'action_id',
+                description: 'The ID of the action, to disambiguate between multiple actions in the same opt out attempt',
+                type: 'string',
+            },
+            {
+                key: 'duration',
+                description: 'The duration of the action execution in milliseconds',
+                type: 'number',
+            },
+        ],
+    },
+    'm_ios_dbp_optout_stage_condition-not-found': {
+        description: 'Fired when DBP runs a condition action and its expectation is not met',
+        owners: ['samsymons', 'quanganhdo'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'isInternalUser',
+                description: 'Whether the user is internal',
+                type: 'string',
+                enum: ['true', 'false'],
+            },
+            {
+                key: 'tries',
+                description: 'The number of tries it took for the action to complete',
+                type: 'integer',
+            },
+            {
+                key: 'data_broker',
+                description: 'The name of the data broker that this action was operating on',
+                type: 'string',
+            },
+            {
+                key: 'broker_version',
+                description: 'The version of the broker JSON file',
+                type: 'string',
+            },
+            {
+                key: 'attempt_id',
+                description: 'The ID of the opt out attempt',
+                type: 'string',
+            },
+            {
+                key: 'action_id',
+                description: 'The ID of the action, to disambiguate between multiple actions in the same opt out attempt',
+                type: 'string',
+            },
+            {
+                key: 'duration',
+                description: 'The duration of the action execution in milliseconds',
+                type: 'number',
+            },
+        ],
+    },
+    'm_ios_dbp_event_weekly-report_stalled-scans': {
+        description: 'Fired weekly with metrics about stalled scan operations',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'num_total',
+                description: 'Total number of scan operations in the last 7 days',
+                type: 'number',
+            },
+            {
+                key: 'num_stalled',
+                description: 'Number of stalled scan operations in the last 7 days',
+                type: 'number',
+            },
+            {
+                key: 'total_by_broker',
+                description: 'JSON object mapping broker names to total scan counts',
+                type: 'object',
+                patternProperties: {
+                    '^[a-zA-Z0-9\\s\\-\\.]+(-[0-9]+\\.[0-9]+\\.[0-9]+)$': {
+                        type: 'integer',
+                    },
+                },
+            },
+            {
+                key: 'stalled_by_broker',
+                description: 'JSON object mapping broker names to stalled scan counts',
+                type: 'object',
+                patternProperties: {
+                    '^[a-zA-Z0-9\\s\\-\\.]+(-[0-9]+\\.[0-9]+\\.[0-9]+)$': {
+                        type: 'integer',
+                    },
+                },
+            },
+        ],
+    },
+    'm_ios_dbp_event_weekly-report_stalled-optouts': {
+        description: 'Fired weekly with metrics about stalled opt-out operations',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'num_total',
+                description: 'Total number of opt-out operations in the last 7 days',
+                type: 'number',
+            },
+            {
+                key: 'num_stalled',
+                description: 'Number of stalled opt-out operations in the last 7 days',
+                type: 'number',
+            },
+            {
+                key: 'total_by_broker',
+                description: 'JSON object mapping broker names to total opt-out counts',
+                type: 'object',
+                patternProperties: {
+                    '^[a-zA-Z0-9\\s\\-\\.]+(-[0-9]+\\.[0-9]+\\.[0-9]+)$': {
+                        type: 'integer',
+                    },
+                },
+            },
+            {
+                key: 'stalled_by_broker',
+                description: 'JSON object mapping broker names to stalled opt-out counts',
+                type: 'object',
+                patternProperties: {
+                    '^[a-zA-Z0-9\\s\\-\\.]+(-[0-9]+\\.[0-9]+\\.[0-9]+)$': {
+                        type: 'integer',
+                    },
+                },
+            },
+        ],
+    },
+    'm_ios_dbp_event_weekly-report_background-task_session': {
+        description: 'Fired weekly with background task session metrics including started, orphaned, completed, terminated counts, and duration statistics',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'num_started',
+                description: 'Number of background task sessions started in the last 7 days',
+                type: 'number',
+            },
+            {
+                key: 'num_orphaned',
+                description: 'Number of background task sessions that were started but never completed or terminated in the last 7 days',
+                type: 'number',
+            },
+            {
+                key: 'num_completed',
+                description: 'Number of background task sessions completed successfully in the last 7 days',
+                type: 'number',
+            },
+            {
+                key: 'num_terminated',
+                description: 'Number of background task sessions terminated (expired) in the last 7 days',
+                type: 'number',
+            },
+            {
+                key: 'duration_min_ms',
+                description: 'Minimum duration of background task sessions in milliseconds',
+                type: 'number',
+            },
+            {
+                key: 'duration_max_ms',
+                description: 'Maximum duration of background task sessions in milliseconds',
+                type: 'number',
+            },
+            {
+                key: 'duration_median_ms',
+                description: 'Median duration of background task sessions in milliseconds',
+                type: 'number',
+            },
+        ],
+    },
+}

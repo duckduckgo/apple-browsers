@@ -21,6 +21,7 @@ import Common
 import Combine
 import Sparkle
 import BrowserServicesKit
+import Persistence
 import SwiftUIExtensions
 import PixelKit
 import SwiftUI
@@ -59,6 +60,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     enum Constants {
         static let internalChannelName = "internal-channel"
+        static let pendingUpdateInfoKey = "com.duckduckgo.updateController.pendingUpdateInfo"
     }
 
     lazy var notificationPresenter = UpdateNotificationPresenter()
@@ -77,6 +79,26 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         }
     }
     private var cachedUpdateResult: UpdateCheckResult?
+
+    // Struct used to persist pending update info across app restarts
+    struct PendingUpdateInfo: Codable {
+        let version: String
+        let build: String
+        let date: Date
+        let releaseNotes: [String]
+        let releaseNotesPrivacyPro: [String]
+        let isCritical: Bool
+
+        init(from item: SUAppcastItem) {
+            self.version = item.displayVersionString
+            self.build = item.versionString
+            self.date = item.date ?? Date()
+            let (notes, notesPro) = ReleaseNotesParser.parseReleaseNotes(from: item.itemDescription)
+            self.releaseNotes = notes
+            self.releaseNotesPrivacyPro = notesPro
+            self.isCritical = item.isCriticalUpdate
+        }
+    }
 
     @Published private(set) var updateProgress = UpdateCycleProgress.default {
         didSet {
@@ -101,6 +123,17 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     @UserDefaultsWrapper(key: .updateValidityStartDate, defaultValue: nil)
     var updateValidityStartDate: Date?
 
+    private let keyValueStore: ThrowingKeyValueStoring
+
+    private var pendingUpdateInfo: Data? {
+        get {
+            try? keyValueStore.object(forKey: Constants.pendingUpdateInfoKey) as? Data
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: Constants.pendingUpdateInfoKey)
+        }
+    }
+
     var lastUpdateCheckDate: Date? { updater?.lastUpdateCheckDate }
     var lastUpdateNotificationShownDate: Date = .distantPast
 
@@ -113,7 +146,12 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         willSet {
             if newValue != areAutomaticUpdatesEnabled {
                 userDriver?.cancelAndDismissCurrentUpdate()
-                updater = nil
+
+                if useLegacyAutoRestartLogic {
+                    updater = nil
+                } else {
+                    updater?.resetUpdateCycle()
+                }
             }
         }
         didSet {
@@ -176,24 +214,19 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     init(internalUserDecider: InternalUserDecider,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         updateCheckState: UpdateCheckState = UpdateCheckState()) {
+         updateCheckState: UpdateCheckState = UpdateCheckState(),
+         keyValueStore: ThrowingKeyValueStoring = NSApp.delegateTyped.keyValueStore) {
 
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
         self.updateCheckState = updateCheckState
+        self.keyValueStore = keyValueStore
         super.init()
 
         _ = try? configureUpdater()
 
-#if DEBUG
-        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG) {
-            checkForUpdateRespectingRollout()
-        }
-#else
         checkForUpdateRespectingRollout()
-#endif
-
         subscribeToResignKeyNotifications()
     }
 
@@ -233,6 +266,11 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // Check for updates while adhering to the rollout schedule
     // This is the default behavior
     func checkForUpdateRespectingRollout() {
+#if DEBUG
+        guard NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG) else {
+            return
+        }
+#endif
         Task { @UpdateCheckActor in
             await performUpdateCheck()
         }
@@ -275,14 +313,17 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         }
 
         userDriver?.cancelAndDismissCurrentUpdate()
-        updater = nil
+        if useLegacyAutoRestartLogic {
+            updater = nil
+        } else {
+            updater?.resetUpdateCycle()
+        }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             guard let self,
-                  let updater = try? configureUpdater(needsUpdateCheck: true) else {
+                  let updater = try? configureUpdater() else {
                 return
             }
-            self.updater = updater
 
             if skipRollout {
                 updater.checkForUpdates()
@@ -332,6 +373,15 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     // MARK: - Private
 
+    // Cache the pending update info to persist across app restarts
+    private func cachePendingUpdate(from item: SUAppcastItem) {
+        let info = PendingUpdateInfo(from: item)
+        if let encoded = try? JSONEncoder().encode(info) {
+            pendingUpdateInfo = encoded
+            Logger.updates.log("Cached pending update info for version \(info.version) build \(info.build)")
+        }
+    }
+
     // Determines if a forced update check is necessary
     //
     // Due to frequent releases (weekly public, daily internal), the downloaded update
@@ -345,20 +395,25 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         return Date().timeIntervalSince(updateValidityStartDate) > threshold
     }
 
-    // Resets the updater state, configures it with dependencies/settings
+    // Configures the updater
     //
-    // - Parameters:
-    //   - needsUpdateCheck: A flag indicating whether to perform a new appcast check.
-    //     Set to `true` if the pending update might be obsolete.
-    //     Defaults to `false`
-    private func configureUpdater(needsUpdateCheck: Bool = false) throws -> SPUUpdater? {
+    @discardableResult
+    private func configureUpdater() throws -> SPUUpdater? {
         // Workaround to reset the updater state
         cachedUpdateResult = nil
         latestUpdate = nil
 
-        userDriver = UpdateUserDriver(internalUserDecider: internalUserDecider,
-                                      areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
-        guard let userDriver else { return nil }
+        if !useLegacyAutoRestartLogic, let userDriver {
+            userDriver.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
+        } else {
+            userDriver = UpdateUserDriver(internalUserDecider: internalUserDecider,
+                                          areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
+        }
+
+        guard let userDriver,
+              updater == nil else {
+            return nil
+        }
 
         let updater = SPUUpdater(hostBundle: Bundle.main, applicationBundle: Bundle.main, userDriver: userDriver, delegate: self)
 
@@ -452,10 +507,14 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         }
 
         userDriver.cancelAndDismissCurrentUpdate()
-        updater = nil
+        if useLegacyAutoRestartLogic {
+            updater = nil
+        } else {
+            updater?.resetUpdateCycle()
+        }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            _ = try? self?.configureUpdater(needsUpdateCheck: true)
+            _ = try? self?.configureUpdater()
             self?.checkForUpdateSkippingRollout()
         }
     }
@@ -480,13 +539,52 @@ extension UpdateController: SPUUpdaterDelegate {
         Logger.updates.error("Updater did abort with error: \(error.localizedDescription, privacy: .public) (\(error.pixelParameters, privacy: .public))")
         let errorCode = (error as NSError).code
         guard ![Int(Sparkle.SUError.noUpdateError.rawValue),
+                // Triggered when the user cancels the update during installation
+                Int(Sparkle.SUError.resumeAppcastError.rawValue),
                 Int(Sparkle.SUError.installationCanceledError.rawValue),
                 Int(Sparkle.SUError.runningTranslocated.rawValue),
                 Int(Sparkle.SUError.downloadError.rawValue)].contains(errorCode) else {
             return
         }
 
-        PixelKit.fire(DebugEvent(GeneralPixel.updaterAborted, error: error))
+        PixelKit.fire(DebugEvent(
+            GeneralPixel.updaterAborted(reason: sparkleUpdaterErrorReason(from: error.localizedDescription)),
+            error: error
+        ))
+    }
+
+    internal func sparkleUpdaterErrorReason(from errorDescription: String) -> String {
+        // Hardcodes known Sparkle failures to ensure that no file paths are ever included.
+        // Any unrecognized strings will be sent with "unknown", and will need to be debugged further as it means there
+        // is a Sparkle error that isn't being accounted for in this list.
+        let knownErrorPrefixes = [
+            "Failed to resume installing update.",
+            "Package installer failed to launch.",
+            "Guided package installer failed to launch",
+            "Guided package installer returned non-zero exit status",
+            "Failed to perform installation because the paths to install at and from are not valid",
+            "Failed to recursively update new application's modification time before moving into temporary directory",
+            "Failed to perform installation because a path could not be constructed for the old installation",
+            "Failed to move the new app",
+            "Failed to perform installation because the last path component of the old installation URL could not be constructed.",
+            "The update is improperly signed and could not be validated.",
+            "Found regular application update",
+            "An error occurred while running the updater.",
+            "An error occurred while encoding the installer parameters.",
+            "An error occurred while starting the installer.",
+            "An error occurred while connecting to the installer.",
+            "An error occurred while launching the installer.",
+            "An error occurred while extracting the archive",
+            "An error occurred while downloading the update",
+            "An error occurred in retrieving update information",
+            "An error occurred while parsing the update feed"
+        ]
+
+        for prefix in knownErrorPrefixes where errorDescription.hasPrefix(prefix) {
+            return prefix
+        }
+
+        return "unknown"
     }
 
     func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
@@ -494,6 +592,8 @@ extension UpdateController: SPUUpdaterDelegate {
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidFindUpdate))
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: false)
         updateValidityStartDate = Date()
+
+        cachePendingUpdate(from: item)
     }
 
     func updaterDidNotFindUpdate(_ updater: SPUUpdater, error: any Error) {
@@ -509,6 +609,8 @@ extension UpdateController: SPUUpdaterDelegate {
             return reason == Int(Sparkle.SPUNoUpdateFoundReason.onNewerThanLatestVersion.rawValue)
         }()
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: true, needsLatestReleaseNote: needsLatestReleaseNote)
+
+        cachePendingUpdate(from: item)
     }
 
     func updater(_ updater: SPUUpdater, didDownloadUpdate item: SUAppcastItem) {

@@ -1,0 +1,20 @@
+appId: com.duckduckgo.mobile.ios
+---
+
+# Load constants
+- runFlow:
+    file: constants.yaml
+
+- assertVisible:
+    id: ${output.searchEntryId}
+- tapOn: 
+    id: ${output.searchEntryId}
+- inputText: ${output.youtubeSearchUrl}
+- pressKey: Enter
+
+- waitForAnimationToEnd
+
+# Refresh the page to ensure the cookies are handled
+- tapOn: Refresh page
+
+- waitForAnimationToEnd

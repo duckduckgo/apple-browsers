@@ -1,0 +1,90 @@
+{
+    'm_set-as-default-prompt_inactive-user-modal-shown': {
+        description: 'Fires when the modal for inactive users to set DDG as the default browser is prompted.',
+        owners: ['alessandroboron'],
+        triggers: ['other'],
+        suffixes: ['form_factor'],
+        parameters: [
+            // Commonly used param, defined in params_dictionary.json.
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    'm_set-as-default-prompt_inactive-user_modal-closed-button-action': {
+        description: 'Fires when the button to dismiss the modal for inactive users is tapped.',
+        owners: ['alessandroboron'],
+        triggers: ['other'],
+        suffixes: ['form_factor'],
+        parameters: [
+            // Commonly used param, defined in params_dictionary.json.
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    'm_set-as-default-prompt_inactive-user_modal-set-as-default-browser-button-action': {
+        description: 'Fires when the button to set the browser as the default browser is tapped.',
+        owners: ['alessandroboron'],
+        triggers: ['other'],
+        suffixes: ['form_factor'],
+        parameters: [
+            // Commonly used param, defined in params_dictionary.json.
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    'm_set-as-default-prompt_inactive-user_modal-more-protections-button-action': {
+        description: 'Fires when the Even more protections... that opens a website to compare privacy protections is tapped.',
+        owners: ['alessandroboron'],
+        triggers: ['other'],
+        suffixes: ['form_factor'],
+        parameters: [
+            // Commonly used param, defined in params_dictionary.json.
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    'm_debug_set-as-default-prompt_failed-to-retrieve-inactive-modal-shown': {
+        description: 'Fires when we fail to retrieve the flag to decide whether we already shown the prompt from the persistence store.',
+        owners: ['alessandroboron'],
+        triggers: ['other'],
+        suffixes: ['form_factor', 'first_daily_count'],
+        parameters: [
+            // Commonly used param, defined in params_dictionary.json.
+            'appVersion',
+            'pixelSource',
+            // Default Parameters for errors "e" and "d"
+            {
+                key: 'e',
+                description: 'The error code if present.',
+                type: 'string',
+            },
+            {
+                key: 'd',
+                description: 'The domain of the error. e.g. NSCocoaErrorDomain',
+                type: 'string',
+            },
+        ],
+    },
+    'm_debug_set-as-default-prompt_failed-to-save-inactive-modal-shown': {
+        description: 'Fires when we fail to save to the persistence store the flag to indicate whether we already shown the prompt.',
+        owners: ['alessandroboron'],
+        triggers: ['other'],
+        suffixes: ['form_factor', 'first_daily_count'],
+        parameters: [
+            // Commonly used param, defined in params_dictionary.json.
+            'appVersion',
+            'pixelSource',
+            // Default Parameters for errors "e" and "d"
+            {
+                key: 'e',
+                description: 'The error code if present.',
+                type: 'string',
+            },
+            {
+                key: 'd',
+                description: 'The domain of the error. e.g. NSCocoaErrorDomain',
+                type: 'string',
+            },
+        ],
+    },
+}

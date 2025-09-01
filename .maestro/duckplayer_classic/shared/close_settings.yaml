@@ -1,0 +1,7 @@
+appId: com.duckduckgo.mobile.ios
+---
+# Close Settings - need to go back twice on iPad
+- tapOn: 
+    text: "Settings"
+- tapOn: 
+    text: "Done"

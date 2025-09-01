@@ -23,7 +23,7 @@ import Bookmarks
 import BrowserServicesKit
 import Core
 
-final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
+final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
     var isShowingLogo: Bool {
         favoritesModel.isEmpty
@@ -31,78 +31,51 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     private lazy var borderView = StyledTopBottomBorderView()
 
-    private let variantManager: VariantManager
     private let newTabDialogFactory: any NewTabDaxDialogProvider
-    private let newTabDialogTypeProvider: NewTabDialogSpecProvider
+    private let daxDialogsManager: NewTabDialogSpecProvider & PrivacyProPromotionCoordinating
 
     private let newTabPageViewModel: NewTabPageViewModel
     private let messagesModel: NewTabPageMessagesModel
     private let favoritesModel: FavoritesViewModel
-    private let shortcutsModel: ShortcutsModel
-    private let shortcutsSettingsModel: NewTabPageShortcutsSettingsModel
-    private let sectionsSettingsModel: NewTabPageSectionsSettingsModel
     private let associatedTab: Tab
 
     private var hostingController: UIHostingController<AnyView>?
 
-    private let pixelFiring: PixelFiring.Type
     private let messageNavigationDelegate: MessageNavigationDelegate
 
-    private var privacyProPromotionCoordinating: PrivacyProPromotionCoordinating
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
 
     init(tab: Tab,
-         isNewTabPageCustomizationEnabled: Bool,
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
          privacyProDataReporting: PrivacyProDataReporting? = nil,
-         variantManager: VariantManager,
          newTabDialogFactory: any NewTabDaxDialogProvider,
-         newTabDialogTypeProvider: NewTabDialogSpecProvider,
-         privacyProPromotionCoordinating: PrivacyProPromotionCoordinating = DaxDialogs.shared,
+         daxDialogsManager: NewTabDialogSpecProvider & PrivacyProPromotionCoordinating,
          faviconLoader: FavoritesFaviconLoading,
-         pixelFiring: PixelFiring.Type = Pixel.self,
          messageNavigationDelegate: MessageNavigationDelegate,
          appSettings: AppSettings,
          appWidthObserver: AppWidthObserver = .shared) {
 
         self.associatedTab = tab
-        self.variantManager = variantManager
         self.newTabDialogFactory = newTabDialogFactory
-        self.newTabDialogTypeProvider = newTabDialogTypeProvider
-        self.privacyProPromotionCoordinating = privacyProPromotionCoordinating
-        self.pixelFiring = pixelFiring
+        self.daxDialogsManager = daxDialogsManager
         self.messageNavigationDelegate = messageNavigationDelegate
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
 
         newTabPageViewModel = NewTabPageViewModel()
-        shortcutsSettingsModel = NewTabPageShortcutsSettingsModel()
-        sectionsSettingsModel = NewTabPageSectionsSettingsModel()
-        favoritesModel = FavoritesViewModel(isNewTabPageCustomizationEnabled: isNewTabPageCustomizationEnabled,
-                                            favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
+        favoritesModel = FavoritesViewModel(favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader)
-        shortcutsModel = ShortcutsModel()
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 privacyProDataReporter: privacyProDataReporting,
                                                 navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate))
 
-        if isNewTabPageCustomizationEnabled {
-            super.init(rootView: AnyView(CustomizableNewTabPageView(viewModel: self.newTabPageViewModel,
-                                                        messagesModel: self.messagesModel,
-                                                        favoritesViewModel: self.favoritesModel,
-                                                        shortcutsModel: self.shortcutsModel,
-                                                        shortcutsSettingsModel: self.shortcutsSettingsModel,
-                                                        sectionsSettingsModel: self.sectionsSettingsModel)))
-        } else {
-            super.init(rootView: AnyView(NewTabPageView(viewModel: self.newTabPageViewModel,
-                                                              messagesModel: self.messagesModel,
-                                                              favoritesViewModel: self.favoritesModel)))
-        }
+        super.init(rootView: NewTabPageView(viewModel: self.newTabPageViewModel,
+                                            messagesModel: self.messagesModel,
+                                            favoritesViewModel: self.favoritesModel))
 
         assignFavoriteModelActions()
-        assignShorcutsModelActions()
     }
 
     override func viewDidLoad() {
@@ -126,13 +99,19 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
         presentNextDaxDialog()
 
-        pixelFiring.fire(.homeScreenShown, withAdditionalParameters: [:])
-        sendDailyDisplayPixel()
-
         if !favoritesModel.isEmpty {
             borderView.insertSelf(into: view)
             updateBorderView()
         }
+    }
+
+    func setFavoritesEditable(_ editable: Bool) {
+        newTabPageViewModel.canEditFavorites = editable
+        favoritesModel.canEditFavorites = editable
+    }
+
+    func hideBorderView() {
+        borderView.isHidden = true
     }
 
     func widthChanged() {
@@ -175,10 +154,10 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
             delegate?.newTabPageDidRequestFaviconsFetcherOnboarding(self)
         }
 
-        favoritesModel.onFavoriteURLSelected = { [weak self] url in
+        favoritesModel.onFavoriteURLSelected = { [weak self] favorite in
             guard let self else { return }
 
-            delegate?.newTabPageDidOpenFavoriteURL(self, url: url)
+            delegate?.newTabPageDidSelectFavorite(self, favorite: favorite)
         }
 
         favoritesModel.onFavoriteEdit = { [weak self] favorite in
@@ -195,48 +174,17 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         }
     }
 
-    private func assignShorcutsModelActions() {
-        shortcutsModel.onShortcutOpened = { [weak self] shortcut in
-            guard let self else { return }
-
-            switch shortcut {
-            case .aiChat:
-                shortcutsDelegate?.newTabPageDidRequestAIChat(self)
-            case .bookmarks:
-                shortcutsDelegate?.newTabPageDidRequestBookmarks(self)
-            case .downloads:
-                shortcutsDelegate?.newTabPageDidRequestDownloads(self)
-            case .passwords:
-                shortcutsDelegate?.newTabPageDidRequestPasswords(self)
-            case .settings:
-                shortcutsDelegate?.newTabPageDidRequestSettings(self)
-            }
-        }
-    }
-
     // MARK: - NewTabPage
 
     var isDragging: Bool { newTabPageViewModel.isDragging }
 
     weak var chromeDelegate: BrowserChromeDelegate?
     weak var delegate: NewTabPageControllerDelegate?
-    weak var shortcutsDelegate: NewTabPageControllerShortcutsDelegate?
 
-    func launchNewSearch() {
+    private func launchNewSearch() {
         // If we are displaying a Privacy Pro promotion on a new tab, do not activate search
-        guard !privacyProPromotionCoordinating.isShowingPrivacyProPromotion else { return }
-        chromeDelegate?.omniBar.beginEditing()
-    }
-
-    func openedAsNewTab(allowingKeyboard: Bool) {
-        if allowingKeyboard && KeyboardSettings().onNewTab {
-
-            // The omnibar is inside a collection view so this needs a chance to do its thing
-            // which might also be async. Not great.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                self.launchNewSearch()
-            }
-        }
+        guard !daxDialogsManager.isShowingPrivacyProPromotion else { return }
+        chromeDelegate?.omniBar.beginEditing(animated: true)
     }
 
     func dismiss() {
@@ -253,27 +201,13 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
     func onboardingCompleted() {
         presentNextDaxDialog()
         // Show Keyboard when showing the first Dax tip
-        chromeDelegate?.omniBar.beginEditing()
+        chromeDelegate?.omniBar.beginEditing(animated: true)
     }
 
     // MARK: - Onboarding
 
     private func presentNextDaxDialog() {
-        showNextDaxDialogNew(dialogProvider: newTabDialogTypeProvider, factory: newTabDialogFactory)
-    }
-
-    // MARK: - Private
-
-    private func sendDailyDisplayPixel() {
-
-        let favoritesCount = favoritesModel.allFavorites.count
-        let bucket = HomePageDisplayDailyPixelBucket(favoritesCount: favoritesCount)
-
-        DailyPixel.fire(pixel: .newTabPageDisplayedDaily, withAdditionalParameters: [
-            "FavoriteCount": bucket.value,
-            "Shortcuts": sectionsSettingsModel.enabledItems.contains(.shortcuts) ? "1" : "0",
-            "Favorites": sectionsSettingsModel.enabledItems.contains(.favorites) ? "1" : "0"
-        ])
+        showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
     }
 
     // MARK: -
@@ -322,7 +256,7 @@ extension NewTabPageViewController {
         let onManualDismiss: () -> Void = { [weak self] in
             self?.dismissHostingController(didFinishNTPOnboarding: true)
             // Show keyboard when manually dismiss the Dax tips.
-            self?.chromeDelegate?.omniBar.beginEditing()
+            self?.chromeDelegate?.omniBar.beginEditing(animated: true)
         }
 
         let daxDialogView = AnyView(factory.createDaxDialog(for: spec, onCompletion: onDismiss, onManualDismiss: onManualDismiss))

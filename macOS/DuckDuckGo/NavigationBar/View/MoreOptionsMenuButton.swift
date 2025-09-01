@@ -20,17 +20,14 @@ import Cocoa
 import Combine
 import Common
 
-final class MoreOptionsMenuButton: MouseOverButton {
-
-    private static let notificationSize: CGFloat = 6
-    private static let notificationOffset: CGFloat = 3
+final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
 
 #if SPARKLE
     private var updateController: UpdateControllerProtocol?
     private var dockCustomization: DockCustomization?
 #endif
 
-    private var notificationLayer: CALayer?
+    var notificationLayer: CALayer?
     private var cancellable: AnyCancellable?
 
     var notificationColor: NSColor = .updateIndicator {
@@ -76,39 +73,9 @@ final class MoreOptionsMenuButton: MouseOverButton {
 #endif
     }
 
-    private func setupNotificationLayerIfNeeded() {
-        guard notificationLayer == nil, let layer = self.layer else { return }
-
-        let notificationLayer = CALayer()
-        notificationLayer.backgroundColor = notificationColor.cgColor
-        layoutNotification(notificationLayer: notificationLayer)
-        notificationLayer.isHidden = !isNotificationVisible
-        layer.addSublayer(notificationLayer)
-        self.notificationLayer = notificationLayer
-    }
-
-    private func updateNotificationLayer() {
-        notificationLayer?.backgroundColor = notificationColor.cgColor
-    }
-
-    private func updateNotificationVisibility() {
-        notificationLayer?.isHidden = !isNotificationVisible
-    }
-
     override func layout() {
         super.layout()
         layoutNotification(notificationLayer: notificationLayer)
-    }
-
-    private func layoutNotification(notificationLayer: CALayer?) {
-        // Position the dot notification indicator to upper right corner of the button
-        notificationLayer?.frame = CGRect(
-            x: self.bounds.width - MoreOptionsMenuButton.notificationSize - MoreOptionsMenuButton.notificationOffset,
-            y: MoreOptionsMenuButton.notificationOffset,
-            width: MoreOptionsMenuButton.notificationSize,
-            height: MoreOptionsMenuButton.notificationSize
-        )
-        notificationLayer?.cornerRadius = MoreOptionsMenuButton.notificationSize / 2
     }
 
 }

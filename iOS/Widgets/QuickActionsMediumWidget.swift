@@ -67,7 +67,7 @@ struct QuickActionsMediumEntry: TimelineEntry {
 struct QuickActionsMediumWidgetView: View {
     var entry: QuickActionsMediumEntry
 
-    private let shortcuts: [ShortcutOption] = [.duckAI,
+    private let shortcuts: [ShortcutOption] = [.voiceSearch,
                                                .passwords,
                                                .favorites,
                                                .emailProtection]
@@ -77,8 +77,10 @@ struct QuickActionsMediumWidgetView: View {
             VStack(alignment: .center, spacing: 0) {
                 HStack(spacing: 12) {
                     LargeSearchFieldView()
-                    Link(destination: DeepLinks.voiceSearch) {
-                        CircleIconView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.microphoneSolid))
+                    if entry.isAIChatEnabled {
+                        Link(destination: DeepLinks.openAIChat) {
+                            CircleIconView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat))
+                        }
                     }
                 }
 

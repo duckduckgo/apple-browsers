@@ -84,7 +84,7 @@ extension UserText {
         if isSubscriptionRebrandingEnabled {
             return NSLocalizedString("feedback-form.title", value: "Help Improve the DuckDuckGo Subscription", comment: "Title for each screen of the feedback form")
         }
-        return NSLocalizedString("feedback-form.title", value: "Help Improve Privacy Pro", comment: "Title for each screen of the feedback form")
+        return NSLocalizedString("feedback-form.title.deprecated", value: "Help Improve Privacy Pro", comment: "Title for each screen of the feedback form")
     }
 
     static let generalFeedbackFormCategorySelect = NSLocalizedString("general.feedback-form.category.select-feature", value: "Select a category", comment: "Title for the feature selection state of the general feedback form")
@@ -308,7 +308,7 @@ extension UserText {
 
     static let vpnDnsServerIPv4Description = NSLocalizedString("vpn.dns.server.ipv4.description", value: "IPv4 Address:", comment: "Description of the IPv4 text field")
 
-    static let vpnDnsServerIPv4Disclaimer = NSLocalizedString("vpn.dns.server.disclaimer", value: "Using a custom DNS server can impact browsing speeds and expose your activity to third parties if the server isn't secure or reliable.", comment: "Disclaimer for the custom DNS server option")
+    static let vpnDnsServerIPv4Disclaimer = NSLocalizedString("vpn.dns.server.disclaimer", value: "Using a custom DNS server can impact browsing speeds and expose your activity to 3rd parties if the server isn't secure or reliable.", comment: "Disclaimer for the custom DNS server option")
 
     static let vpnDnsServerApplyButtonTitle = NSLocalizedString("vpn.dns.server.apply.button.title", value: "Apply", comment: "Title for the Apply custom DNS server button")
 

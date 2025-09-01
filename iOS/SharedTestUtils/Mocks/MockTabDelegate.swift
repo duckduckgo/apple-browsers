@@ -41,6 +41,7 @@ final class MockTabDelegate: TabDelegate {
     private(set) var didRequestFireButtonPulseCalled = false
     private(set) var tabDidRequestPrivacyDashboardButtonPulseCalled = false
     private(set) var privacyDashboardAnimated: Bool?
+    var isAIChatEnabled = false
 
 
     func tabWillRequestNewTab(_ tab: DuckDuckGo.TabViewController) -> UIKeyModifierFlags? { nil }
@@ -126,7 +127,8 @@ final class MockTabDelegate: TabDelegate {
     func tabDidRequestRefresh(tab: DuckDuckGo.TabViewController) {}
 
     func tabDidRequestNavigationToDifferentSite(tab: DuckDuckGo.TabViewController) {}
-
+    
+    func tab(_ tab: DuckDuckGo.TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {}
 }
 
 extension TabViewController {
@@ -157,7 +159,8 @@ extension TabViewController {
             tabInteractionStateSource: MockTabInteractionStateSource(),
             specialErrorPageNavigationHandler: DummySpecialErrorPageNavigationHandler(),
             featureDiscovery: MockFeatureDiscovery(),
-            keyValueStore: try! MockKeyValueFileStore()
+            keyValueStore: try! MockKeyValueFileStore(),
+            daxDialogsManager: DummyDaxDialogsManager()
         )
         tab.attachWebView(configuration: .nonPersistent(), andLoadRequest: nil, consumeCookies: false, customWebView: customWebView)
         return tab

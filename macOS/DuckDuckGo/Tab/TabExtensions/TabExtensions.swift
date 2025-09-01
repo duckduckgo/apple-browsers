@@ -80,6 +80,7 @@ protocol TabExtensionDependencies {
     var featureFlagger: FeatureFlagger { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
     var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable { get }
+    var newTabPageShownPixelSender: NewTabPageShownPixelSender { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -199,6 +200,11 @@ extension TabExtensionsBuilder {
         }
         add {
             SearchNonexistentDomainNavigationResponder(tld: dependencies.privacyFeatures.contentBlocking.tld, contentPublisher: args.contentPublisher, setContent: args.setContent)
+        }
+        add {
+            NewTabPageTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
+                                   webViewPublisher: args.webViewFuture,
+                                   pixelSender: dependencies.newTabPageShownPixelSender)
         }
 
         let isCapturingHistory = !args.isTabBurner && !args.isTabLoadedInSidebar

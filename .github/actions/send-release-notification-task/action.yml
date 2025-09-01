@@ -1,0 +1,68 @@
+name: Send Release Notification Task
+description: Creates an Asana notification task that a release has been made public
+
+inputs:
+  platform:
+    description: Platform (ios or macos)
+    required: true
+  tag:
+    description: Release tag (e.g., 7.123.0-0+ios or 1.123.0-0+macos)
+    required: true
+  asana-project:
+    description: Asana Project ID
+    required: true
+  asana-access-token:
+    description: "Asana access token"
+    required: true
+  asana-section:
+    description: Asana Section ID to add the task to
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - id: compute
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        TAG="${{ inputs.tag }}"
+        PLATFORM="${{ inputs.platform }}"
+
+        # Derive major.minor.patch from either x.y.z-<build>[+platform] or x.y.z.<build>
+        if [[ "${TAG}" == *"+"* || "${TAG}" == *"-"* ]]; then
+          PUBLIC_VERSION="$(sed -E 's/[+-].*$//' <<< "${TAG}")"
+        elif [[ "${TAG}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          PUBLIC_VERSION="${TAG%.*}"
+        else
+          PUBLIC_VERSION="${TAG}"
+        fi
+
+        PUBLIC_TAG="${PUBLIC_VERSION}+${PLATFORM}"
+
+        if [[ "${PLATFORM}" != "ios" && "${PLATFORM}" != "macos" ]]; then
+          echo "Invalid platform: ${PLATFORM}" >&2
+          exit 1
+        fi
+
+        if [[ "${PLATFORM}" == "ios" ]]; then
+          TASK_NAME="iOS ${PUBLIC_VERSION} is now public"
+        else
+          TASK_NAME="macOS ${PUBLIC_VERSION} is now public"
+        fi
+
+        REPO="${{ github.repository }}"
+        DESC="Release tag: https://github.com/${REPO}/releases/tag/${PUBLIC_TAG}"
+
+        echo "task-name=${TASK_NAME}" >> "$GITHUB_OUTPUT"
+        echo "task-desc=${DESC}" >> "$GITHUB_OUTPUT"
+
+    - name: Create Asana task
+      uses: duckduckgo/native-github-asana-sync@v1.1
+      with:
+        action: create-asana-task
+        asana-pat: ${{ inputs.asana-access-token }}
+        asana-project: ${{ inputs.asana-project }}
+        asana-section: ${{ inputs.asana-section }}
+        asana-task-name: ${{ steps.compute.outputs.task-name }}
+        asana-task-description: ${{ steps.compute.outputs.task-desc }}

@@ -55,6 +55,7 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
     }
 
     override func tearDown() async throws {
+        clock = nil
         updateManager = nil
         updateManagerInfoStore = nil
         dataManager = nil
@@ -62,6 +63,13 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
         updateIntervalProvider = nil
         mockEventMapping = nil
         updateTask?.cancel()
+        do {
+            try await withTimeout(1) { [updateTask] in
+                try await updateTask?.value
+            }
+        } catch is CancellationError {
+        }
+        updateTask = nil
     }
 
     func testUpdateHashPrefixes() async throws {
@@ -308,29 +316,38 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
         isScamProtectionSupported = false
         self.updateIntervalProvider = { _ in 0.9 }
 
-        let eHashPrefixesNotUpdated = expectation(description: "Hash prefixes for scam should not be updated")
-        eHashPrefixesNotUpdated.isInverted = true
-
+        // Data for both hash prefixes and filter set should not be updated when scam protection is disabled
         let c1 = await dataManager.publisher(for: .hashPrefixes(threatKind: .scam))
             .dropFirst()
-            .sink { _ in
-                eHashPrefixesNotUpdated.fulfill()
+            .sink { data in
+                XCTFail("Unexpected hash prefixes update received: \(data)")
             }
-
-        let eFilterSetNotUpdated = expectation(description: "Filter set for scam should not be updated")
-        eFilterSetNotUpdated.isInverted = true
 
         let c2 = await dataManager.publisher(for: .filterSet(threatKind: .scam))
             .dropFirst()
-            .sink { _ in
-                eFilterSetNotUpdated.fulfill()
+            .sink { data in
+                XCTFail("Unexpected filter set update received: \(data)")
             }
 
+        // Set up sleep expectations to synchronize with the mock clock
+        var sleepIndex = 0
+        let sleepExpectations = [
+            XCTestExpectation(description: "Will Sleep 1"),
+            XCTestExpectation(description: "Will Sleep 2"),
+        ]
+        self.willSleep = { _ in
+            DispatchQueue.main.async {
+                sleepExpectations[safe: sleepIndex]?.fulfill()
+                sleepIndex += 1
+            }
+        }
+
         updateTask = updateManager.startPeriodicUpdates()
+        await fulfillment(of: [sleepExpectations[0]], timeout: 1)
 
-        try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
-
-        await fulfillment(of: [eHashPrefixesNotUpdated, eFilterSetNotUpdated], timeout: 1, enforceOrder: false)
+        // Advance the clock to trigger the next sleep interval
+        await self.clock.advance(by: .seconds(1))
+        await fulfillment(of: [sleepExpectations[1]], timeout: 1)
 
         withExtendedLifetime((c1, c2)) {}
     }
@@ -474,7 +491,12 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
 
         // Cancel the update task
         updateTask!.cancel()
-        await Task.megaYield(count: 10)
+        do {
+            try await withTimeout(1) { [updateTask=updateTask!] in
+                try await updateTask.value
+            }
+        } catch is CancellationError {
+        }
 
         // Reset expectations for further updates
         let c = await dataManager.$store.dropFirst().sink { data in

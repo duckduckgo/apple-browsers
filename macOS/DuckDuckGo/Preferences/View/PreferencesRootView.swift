@@ -118,9 +118,10 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared)
                 case .dataClearing:
-                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences)
+                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences,
+                                     startupModel: NSApp.delegateTyped.startupPreferences)
                 case .privacyPro:
                     SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:
@@ -360,9 +361,9 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared)
                 case .dataClearing:
-                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences)
+                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences, startupModel: NSApp.delegateTyped.startupPreferences)
                 case .privacyPro:
                     SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:
@@ -520,7 +521,9 @@ enum Preferences {
 
             return PreferencesSubscriptionSettingsModelV2(userEventHandler: userEventHandler,
                                                           subscriptionManager: subscriptionManager,
-                                                          subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher())
+                                                          subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
+                                                          keyValueStore: NSApp.delegateTyped.keyValueStore,
+                                                          isRebrandingOn: { featureFlagger.isFeatureOn(.subscriptionRebranding) })
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {

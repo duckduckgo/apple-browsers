@@ -38,10 +38,14 @@ struct BrokerProfileOptOutSubJob {
 
     // MARK: - Opt-Out Jobs
 
+    /// Returns: `true` if the opt-out was executed, `false` if it was skipped due to:
+    ///   - Profile already being removed
+    ///   - Broker performing opt-outs within parent
+    ///   - Profile manually removed by user
     public func runOptOut(for extractedProfile: ExtractedProfile,
                           brokerProfileQueryData: BrokerProfileQueryData,
                           showWebView: Bool,
-                          shouldRunNextStep: @escaping () -> Bool) async throws {
+                          shouldRunNextStep: @escaping () -> Bool) async throws -> Bool {
         // 1. Validate that the broker and profile query data objects each have an ID:
         guard let brokerId = brokerProfileQueryData.dataBroker.id,
               let profileQueryId = brokerProfileQueryData.profileQuery.id,
@@ -53,20 +57,20 @@ struct BrokerProfileOptOutSubJob {
         // 2. Validate that profile hasn't already been opted-out:
         guard extractedProfile.removedDate == nil else {
             Logger.dataBrokerProtection.log("Profile already removed, skipping...")
-            return
+            return false
         }
 
         // 3. Validate that profile is eligible to be opted-out now:
         guard !brokerProfileQueryData.dataBroker.performsOptOutWithinParent() else {
             Logger.dataBrokerProtection.log("Broker opts out in parent, skipping...")
-            return
+            return false
         }
 
         // 4. Validate that profile isn't manually removed by user (using "This isn't me")
         guard let events = try? dependencies.database.fetchOptOutHistoryEvents(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId),
               !events.doesBelongToUserRemovedRecord else {
             Logger.dataBrokerProtection.log("Manually removed by user, skipping...")
-            return
+            return false
         }
 
         // 5. Set up dependencies used to report the status of the opt-out job:
@@ -146,6 +150,8 @@ struct BrokerProfileOptOutSubJob {
             )
             throw error
         }
+
+        return true
     }
 
     private func reportOptOutJobCompletion(brokerProfileQueryData: BrokerProfileQueryData,

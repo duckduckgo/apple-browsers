@@ -26,7 +26,7 @@ CODE_SIGN_ENTITLEMENTS[config=Alpha][arch=*][sdk=*] = DuckDuckGo/DuckDuckGoAlpha
 CODE_SIGN_IDENTITY[sdk=macosx*] = Developer ID Application
 CODE_SIGN_IDENTITY[config=Debug][sdk=macosx*] = Apple Development
 
-FEATURE_FLAGS = FEEDBACK SPARKLE STRIPE
+FEATURE_FLAGS = SPARKLE STRIPE
 
 INFOPLIST_FILE = DuckDuckGo/Info.plist
 

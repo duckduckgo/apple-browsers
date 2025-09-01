@@ -59,7 +59,7 @@ protocol SubscriptionUserScriptHandling {
 public protocol SubscriptionUserScriptNavigationDelegate: AnyObject {
     @MainActor func navigateToSettings()
     @MainActor func navigateToSubscriptionActivation()
-    @MainActor func navigateToSubscriptionPurchase(origin: String?)
+    @MainActor func navigateToSubscriptionPurchase(origin: String?, featurePage: String?)
 }
 
 protocol UserScriptMessagePushing: AnyObject {
@@ -152,7 +152,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
             return nil
         }()
 
-        navigationDelegate?.navigateToSubscriptionPurchase(origin: purchaseParams?.origin)
+        navigationDelegate?.navigateToSubscriptionPurchase(origin: purchaseParams?.origin, featurePage: "duckai")
         return nil
     }
 

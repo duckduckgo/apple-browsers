@@ -49,12 +49,21 @@ final class GeolocationServiceMock: GeolocationServiceProtocol {
 
     init() {
         locationPublisherEventsHandler = $currentLocationPublished
-            .handleEvents(receiveSubscription: self.didReceiveSubscription, receiveCancel: self.didReceiveCancel)
+            .handleEvents(receiveSubscription: { [weak self] in self?.didReceiveSubscription($0) },
+                          receiveCancel: { [weak self] in self?.didReceiveCancel() })
             .eraseToAnyPublisher()
-        highAccuracyEventsHandler = $currentLocationPublished.map { _ in }
-            .handleEvents(receiveSubscription: self.didReceiveHighAccuracySubscription,
-                          receiveCancel: self.didReceiveHighAccuracyCancel)
+        highAccuracyEventsHandler = $currentLocationPublished
+            .asVoid()
+            .handleEvents(receiveSubscription: { [weak self] in self?.didReceiveHighAccuracySubscription($0) },
+                          receiveCancel: { [weak self] in self?.didReceiveHighAccuracyCancel() })
             .eraseToAnyPublisher()
+    }
+
+    func tearDown() {
+        onSubscriptionReceived = nil
+        onSubscriptionCancelled = nil
+        onHighAccuracyRequested = nil
+        onHighAccuracyCancelled = nil
     }
 
     var currentLocation: Result<CLLocation, Error>? {

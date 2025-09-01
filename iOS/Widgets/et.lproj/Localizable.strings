@@ -104,7 +104,7 @@
 "widget.gallery.search.display.name" = "Otsi";
 
 /* Description of VPN widget in widget gallery */
-"widget.gallery.vpn.description" = "Vaata ja halda oma VPN-ühendust. Nõuab Privacy Pro tellimust.";
+"widget.gallery.vpn.description" = "Vaata ja halda oma VPN-ühendust. Nõuab DuckDuckGo tellimust.";
 
 /* Display name for VPN widget in widget gallery */
 "widget.gallery.vpn.display.name" = "VPN";

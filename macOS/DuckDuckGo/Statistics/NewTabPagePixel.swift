@@ -145,6 +145,9 @@ enum NewTabPagePixel: PixelKitEventV2 {
     case omnibarHidden
     case omnibarShown
 
+    // Parameter duration: Load time in **seconds** (will be converted to milliseconds in pixel).
+    case newTabPageLoadingTime(duration: TimeInterval, osMajorVersion: Int)
+
     // MARK: -
 
     enum ProtectionsReportMode: String {
@@ -169,6 +172,7 @@ enum NewTabPagePixel: PixelKitEventV2 {
         case .omnibarModeChanged: return "new-tab-page_omnibar_mode_changed"
         case .omnibarHidden: return "new-tab-page_omnibar_hidden"
         case .omnibarShown: return "new-tab-page_omnibar_shown"
+        case .newTabPageLoadingTime: return "new-tab-page_loading_time"
         }
     }
 
@@ -183,6 +187,12 @@ enum NewTabPagePixel: PixelKitEventV2 {
         case .omnibarModeChanged(let mode):
             return [
                 "mode": mode.rawValue
+            ]
+        case .newTabPageLoadingTime(let duration, let osMajorVersion):
+            // "loadingTime" is reported in **milliseconds**
+            return [
+                "loadingTime": String(Int(duration * 1000)),
+                "osMajorVersion": "\(osMajorVersion)"
             ]
         case .favoriteSectionHidden,
                 .protectionsSectionHidden,

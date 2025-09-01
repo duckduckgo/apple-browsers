@@ -50,6 +50,8 @@ private extension LottieColor {
         switch icon {
         case .red:
             self = LottieColor(r: 0.87, g: 0.34, b: 0.2, a: 1.0)
+        case .pink:
+            self = LottieColor(r: 0.9, g: 0.58, b: 0.62, a: 1.0)
         case .yellow:
             self = LottieColor(r: 0.89, g: 0.64, b: 0.07, a: 1.0)
         case .green:

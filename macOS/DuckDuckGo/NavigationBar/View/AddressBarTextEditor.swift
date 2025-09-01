@@ -469,7 +469,7 @@ final class AddressBarTextEditor: NSTextView {
     /// if it‘s possible to parse the dragged text as a URL.
     /// Falls back to default system text dragging otherwise.
     override func draggingSession(_ session: NSDraggingSession, willBeginAt screenPoint: NSPoint) {
-        let tabViewModel = addressBar?.tabCollectionViewModel.selectedTabViewModel
+        let tabViewModel = addressBar?.tabCollectionViewModel?.selectedTabViewModel
         let currentUrl = tabViewModel?.tab.content.userEditableUrl
 
         // allow dragging domain name without the scheme, dropping the "://" part if no scheme is selected
@@ -510,8 +510,8 @@ final class AddressBarTextEditor: NSTextView {
         session.setPreviewProvider(URLDragPreviewProvider(url: draggedUrl, favicon: favicon))
 
         // if the address matches currently loaded URL
-        if let title = addressBar?.tabCollectionViewModel.selectedTabViewModel?.title, !title.isEmpty,
-           addressBar?.tabCollectionViewModel.selectedTabViewModel?.tab.url == draggedUrl {
+        if let title = addressBar?.tabCollectionViewModel?.selectedTabViewModel?.title, !title.isEmpty,
+           addressBar?.tabCollectionViewModel?.selectedTabViewModel?.tab.url == draggedUrl {
             session.draggingPasteboard.setString(title, forType: .urlName)
         }
     }

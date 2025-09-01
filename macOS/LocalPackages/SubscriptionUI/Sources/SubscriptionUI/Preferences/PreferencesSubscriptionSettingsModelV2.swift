@@ -23,6 +23,7 @@ import enum Combine.Publishers
 import class Combine.AnyCancellable
 import BrowserServicesKit
 import os.log
+import Persistence
 
 public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
@@ -33,10 +34,19 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     @Published var email: String?
     var hasEmail: Bool { !(email?.isEmpty ?? true) }
 
+    private var isRebrandingOn: () -> Bool
+    @Published private(set) var rebrandingMessageDismissed: Bool = false
+
+    public var showRebrandingMessage: Bool {
+        return isRebrandingOn() && !rebrandingMessageDismissed
+    }
+
     private var subscriptionPlatform: PrivacyProSubscription.Platform?
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
     private let subscriptionManager: SubscriptionManagerV2
+    private let keyValueStore: ThrowingKeyValueStoring
+    private let rebrandingDismissedKey = "hasDismissedSubscriptionRebrandingMessage"
 
     private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
@@ -60,10 +70,14 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
     public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
                 subscriptionManager: SubscriptionManagerV2,
-                subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>
-    ) {
+                subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>,
+                keyValueStore: ThrowingKeyValueStoring,
+                isRebrandingOn: @escaping () -> Bool) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
+        self.keyValueStore = keyValueStore
+        self.isRebrandingOn = isRebrandingOn
+        self.rebrandingMessageDismissed = (try? keyValueStore.object(forKey: rebrandingDismissedKey) as? Bool) ?? false
 
         Task {
             await self.updateSubscription(cachePolicy: .cacheFirst)
@@ -87,13 +101,9 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
         Publishers.CombineLatest3($subscriptionStatus, $hasActiveTrialOffer, subscriptionStateUpdate)
             .map { status, hasTrialOffer, state in
 
-                let hasAnyEntitlement = !state.userEntitlements.isEmpty
-
                 Logger.subscription.debug("""
-Update subscription state:
-subscriptionStatus: \(status.rawValue)
-hasActiveTrialOffer: \(hasTrialOffer)
-hasAnyEntitlement: \(hasAnyEntitlement)
+Update subscription state: \(state.debugDescription, privacy: .public)
+hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
 """)
 
                 switch status {
@@ -103,7 +113,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
                     // Check for free trial first
                     if hasTrialOffer {
                         return PreferencesSubscriptionSettingsState.subscriptionFreeTrialActive
-                    } else if hasAnyEntitlement {
+                    } else if state.hasAnyEntitlement {
                         return PreferencesSubscriptionSettingsState.subscriptionActive
                     } else {
                         return PreferencesSubscriptionSettingsState.subscriptionPendingActivation
@@ -138,13 +148,19 @@ hasAnyEntitlement: \(hasAnyEntitlement)
     enum ChangePlanOrBillingAction {
         case presentSheet(ManageSubscriptionSheet)
         case navigateToManageSubscription(() -> Void)
+        case showInternalSubscriptionAlert
     }
 
     @MainActor
     func changePlanOrBillingAction() async -> ChangePlanOrBillingAction {
         userEventHandler(.didClickChangePlanOrBilling)
 
-        switch subscriptionPlatform {
+        guard let platform = subscriptionPlatform else {
+            assertionFailure("Missing or unknown subscriptionPlatform")
+            return .navigateToManageSubscription { }
+        }
+
+        switch platform {
         case .apple:
             return .navigateToManageSubscription { [weak self] in
                 self?.changePlanOrBilling(for: .appStore)
@@ -155,9 +171,8 @@ hasAnyEntitlement: \(hasAnyEntitlement)
             return .navigateToManageSubscription { [weak self] in
                 self?.changePlanOrBilling(for: .stripe)
             }
-        default:
-            assertionFailure("Missing or unknown subscriptionPlatform")
-            return .navigateToManageSubscription { }
+        case .unknown:
+            return .showInternalSubscriptionAlert
         }
     }
 
@@ -309,7 +324,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
             }
 
         case .expired, .inactive:
-            self.subscriptionDetails = UserText.preferencesSubscriptionExpiredCaption(formattedDate: formattedDate)
+            self.subscriptionDetails = UserText.preferencesSubscriptionExpiredCaption(isRebrandingOn: isRebrandingOn(), formattedDate: formattedDate)
         default:
             if hasActiveTrialOffer {
                 self.subscriptionDetails = UserText.preferencesTrialSubscriptionExpiringCaption(formattedDate: formattedDate)
@@ -327,6 +342,11 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
         return dateFormatter
     }()
+
+    public func dismissRebrandingMessage() {
+        rebrandingMessageDismissed = true
+        try? keyValueStore.set(true, forKey: rebrandingDismissedKey)
+    }
 }
 
 enum ManageSubscriptionSheet: Identifiable {

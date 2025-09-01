@@ -121,14 +121,6 @@ extension TabSwitcherViewController {
         presentForgetDataAlert()
     }
 
-    func addNewTab() {
-        guard !isProcessingUpdates else { return }
-
-        Pixel.fire(pixel: .tabSwitcherNewTab)
-        delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
-        dismiss()
-    }
-
     func transitionToMultiSelect() {
         self.isEditing = true
         collectionView.reloadData()
@@ -449,7 +441,7 @@ extension TabSwitcherViewController {
 
         configureFireButton()
 
-        if interfaceMode == .largeSize || !isJune2025LayoutChangeEnabled {
+        if interfaceMode == .largeSize {
             barsHandler.doneButton.primaryAction = action(UserText.navigationTitleDone) { [weak self] in
                 self?.onDonePressed(self!.barsHandler.doneButton)
             }
@@ -460,13 +452,8 @@ extension TabSwitcherViewController {
             barsHandler.doneButton.accessibilityLabel = UserText.navigationTitleDone
         }
 
-        if isJune2025LayoutChangeEnabled {
-            barsHandler.editButton.image = DesignSystemImages.Glyphs.Size24.menuDotsVertical
-            barsHandler.editButton.title = nil
-        } else {
-            barsHandler.editButton.image = nil
-            barsHandler.editButton.title = UserText.actionGenericEdit
-        }
+        barsHandler.editButton.image = DesignSystemImages.Glyphs.Size24.menuDotsVertical
+        barsHandler.editButton.title = nil
 
         barsHandler.editButton.accessibilityLabel = UserText.actionGenericEdit
         barsHandler.editButton.menu = createEditMenu()

@@ -10,6 +10,9 @@ appId: com.duckduckgo.mobile.ios
 - tapOn: Passcode field
 - inputText: "0000"
 - pressKey: Enter
+- tapOn:
+    id: Button_DismissImportPromo
+    optional: true
 - tapOn: My Personal Website 
 - tapOn: Delete Password
 - tapOn: Delete Password

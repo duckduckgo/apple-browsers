@@ -109,7 +109,8 @@ public struct Step: Codable, Sendable {
                 let action = try JSONDecoder().decode(EmailConfirmationAction.self, from: jsonData)
                 actionList.append(action)
             case .condition:
-                continue
+                let action = try JSONDecoder().decode(ConditionAction.self, from: jsonData)
+                actionList.append(action)
             }
         }
 
@@ -134,8 +135,12 @@ extension Array where Element == Action {
                 try container.encode(emailConfirmationAction)
             } else if let clickAction = action as? ClickAction {
                 try container.encode(clickAction)
-            } else if let expectactionAction = action as? ExpectationAction {
-                try container.encode(expectactionAction)
+            } else if let expectationAction = action as? ExpectationAction {
+                try container.encode(expectationAction)
+            } else if let conditionAction = action as? ConditionAction {
+                try container.encode(conditionAction)
+            } else {
+                assertionFailure("Failed to encode action: \(action.actionType.rawValue)")
             }
         }
     }

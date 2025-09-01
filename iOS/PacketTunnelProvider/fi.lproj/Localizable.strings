@@ -1,5 +1,5 @@
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "VPN katkaistu vanhentuneen tilauksen takia. Tilaa Privacy Pro, jotta voit yhdistää DuckDuckGo VPN:n uudelleen.";
+"network.protection.entitlement.expired.notification.body" = "VPN katkaistu vanhentuneen tilauksen takia. Tilaa DuckDuckGo, jotta voit yhdistää VPN:n uudelleen.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN ei onnistunut muodostamaan yhteyttä. Yritä myöhemmin uudelleen.";

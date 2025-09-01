@@ -1,0 +1,33 @@
+{
+  "configurations" : [
+    {
+      "id" : "357E0EE9-33B8-4B6F-A774-B80C323DF10D",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : {
+      "targets" : [
+        {
+          "containerPath" : "container:",
+          "identifier" : "SystemSettingsPiPTutorial",
+          "name" : "SystemSettingsPiPTutorial"
+        }
+      ]
+    },
+    "testRepetitionMode" : "retryOnFailure"
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "SystemSettingsPiPTutorialTests",
+        "name" : "SystemSettingsPiPTutorialTests"
+      }
+    }
+  ],
+  "version" : 1
+}

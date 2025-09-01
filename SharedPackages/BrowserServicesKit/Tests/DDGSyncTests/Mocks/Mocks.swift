@@ -297,6 +297,7 @@ final class MockRemoteKeyExchanging: RemoteKeyExchanging {
     var pollForPublicKeyResult: ExchangeMessage?
     var pollForPublicKeyError: Error?
     var stopPollingCalled = 0
+    var stopPollingCallback: (() -> Void) = { }
 
     init(code: String = "", pollResult: ExchangeMessage? = nil) {
         self.code = code
@@ -311,6 +312,7 @@ final class MockRemoteKeyExchanging: RemoteKeyExchanging {
 
     func stopPolling() {
         stopPollingCalled += 1
+        stopPollingCallback()
     }
 }
 

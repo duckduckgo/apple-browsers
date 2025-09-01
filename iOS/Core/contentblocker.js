@@ -587,6 +587,9 @@
 
     // public
     function shouldBlock (trackerUrl, type) {
+        if (!trackerUrl || trackerUrl.toString() === '') {
+            return false
+        }
         seenUrls.add(trackerUrl)
         const startTime = performance.now()
 

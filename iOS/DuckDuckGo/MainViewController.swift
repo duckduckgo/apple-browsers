@@ -42,7 +42,9 @@ import AIChat
 import NetworkExtension
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import Configuration
 import PixelKit
+import SystemSettingsPiPTutorial
 
 class MainViewController: UIViewController {
 
@@ -90,7 +92,6 @@ class MainViewController: UIViewController {
     var suggestionTrayController: SuggestionTrayViewController?
 
     let homePageConfiguration: HomePageConfiguration
-    let homeTabManager: NewTabPageManager
     let tabManager: TabManager
     let previewsSource: TabPreviewsSource
     let appSettings: AppSettings
@@ -108,7 +109,6 @@ class MainViewController: UIViewController {
     let syncService: DDGSyncing
     let syncDataProviders: SyncDataProviders
     let syncPausedStateManager: any SyncPausedStateManaging
-    private let variantManager: VariantManager
     private let tutorialSettings: TutorialSettings
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     let contextualOnboardingPixelReporter: OnboardingPixelReporting
@@ -119,9 +119,8 @@ class MainViewController: UIViewController {
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
 
-    /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
-    @UserDefaultsWrapper(key: .networkProtectionEntitlementsExpired, defaultValue: true)
-    private var lastKnownEntitlementsExpired: Bool
+    @UserDefaultsWrapper(key: .hadVPNEntitlements, defaultValue: false)
+    private var hadVPNEntitlements: Bool
 
     private var localUpdatesCancellable: AnyCancellable?
     private var syncUpdatesCancellable: AnyCancellable?
@@ -195,7 +194,11 @@ class MainViewController: UIViewController {
     var historyManager: HistoryManaging
     var viewCoordinator: MainViewCoordinator!
     let aiChatSettings: AIChatSettingsProvider
+    
+
+    let customConfigurationURLProvider: CustomConfigurationURLProviding
     let experimentalAIChatManager: ExperimentalAIChatManager
+    let daxDialogsManager: DaxDialogsManaging
 
     var appDidFinishLaunchingStartTime: CFAbsoluteTime?
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
@@ -223,9 +226,12 @@ class MainViewController: UIViewController {
     let isAuthV2Enabled: Bool
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
+    let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+    
+    private let daxEasterEggPresenter: DaxEasterEggPresenting
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -239,7 +245,6 @@ class MainViewController: UIViewController {
         tabManager: TabManager,
         syncPausedStateManager: any SyncPausedStateManaging,
         privacyProDataReporter: PrivacyProDataReporting,
-        variantManager: VariantManager,
         contextualOnboardingLogic: ContextualOnboardingLogic,
         contextualOnboardingPixelReporter: OnboardingPixelReporting,
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
@@ -257,7 +262,11 @@ class MainViewController: UIViewController {
         experimentalAIChatManager: ExperimentalAIChatManager = ExperimentalAIChatManager(),
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
         themeManager: ThemeManaging,
-        keyValueStore: ThrowingKeyValueStoring
+        keyValueStore: ThrowingKeyValueStoring,
+        customConfigurationURLProvider: CustomConfigurationURLProviding,
+        systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
+        daxDialogsManager: DaxDialogsManaging,
+        daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter()
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -276,8 +285,6 @@ class MainViewController: UIViewController {
         self.themeManager = themeManager
         self.syncPausedStateManager = syncPausedStateManager
         self.privacyProDataReporter = privacyProDataReporter
-        self.homeTabManager = NewTabPageManager()
-        self.variantManager = variantManager
         self.tutorialSettings = tutorialSettings
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.contextualOnboardingPixelReporter = contextualOnboardingPixelReporter
@@ -293,6 +300,10 @@ class MainViewController: UIViewController {
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
         self.keyValueStore = keyValueStore
+        self.customConfigurationURLProvider = customConfigurationURLProvider
+        self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
+        self.daxDialogsManager = daxDialogsManager
+        self.daxEasterEggPresenter = daxEasterEggPresenter
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -327,13 +338,25 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
+
+        let newTabPageDependencies = SuggestionTrayViewController.NewTabPageDependencies(favoritesModel: favoritesViewModel,
+                                                                                         homePageMessagesConfiguration: homePageConfiguration,
+                                                                                         privacyProDataReporting: privacyProDataReporter,
+                                                                                         newTabDialogFactory: newTabDaxDialogFactory,
+                                                                                         newTabDaxDialogManager: daxDialogsManager,
+                                                                                         faviconLoader: faviconLoader,
+                                                                                         messageNavigationDelegate: self,
+                                                                                         appSettings: appSettings)
+
         let suggestionTrayDependencies = SuggestionTrayDependencies(favoritesViewModel: favoritesViewModel,
                                                                     bookmarksDatabase: bookmarksDatabase,
                                                                     historyManager: historyManager,
                                                                     tabsModel: tabManager.model,
                                                                     featureFlagger: featureFlagger,
-                                                                    appSettings: appSettings)
-
+                                                                    appSettings: appSettings,
+                                                                    aiChatSettings: aiChatSettings,
+                                                                    newTabPageDependencies: newTabPageDependencies)
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
@@ -417,7 +440,7 @@ class MainViewController: UIViewController {
         _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
         applyWidth()
 
-        if DaxDialogs.shared.shouldShowFireButtonPulse {
+        if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
     }
@@ -427,13 +450,23 @@ class MainViewController: UIViewController {
         super.performSegue(withIdentifier: identifier, sender: sender)
     }
 
+    private func fireExperimentalAddressBarPixel() {
+        let isEnabledParam = "is_enabled"
+        let isEnableValue = "\(aiChatSettings.isAIChatSearchInputUserSettingsEnabled)"
+
+        DailyPixel.fireDaily(.aiChatExperimentalAddressBarIsEnabledDaily,
+                             withAdditionalParameters: [isEnabledParam: isEnableValue])
+        
+    }
+
     private func installSwipeTabs() {
         guard swipeTabsCoordinator == nil else { return }
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
                                                       aiChatSettings: aiChatSettings,
-                                                      appSettings: appSettings)
+                                                      appSettings: appSettings,
+                                                      daxEasterEggPresenter: daxEasterEggPresenter)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
@@ -497,7 +530,8 @@ class MainViewController: UIViewController {
                                          historyManager: self.historyManager,
                                          tabsModel: self.tabManager.model,
                                          featureFlagger: self.featureFlagger,
-                                         appSettings: self.appSettings)
+                                         appSettings: self.appSettings,
+                                         aiChatSettings: self.aiChatSettings)
         }) else {
             assertionFailure()
             return
@@ -786,7 +820,9 @@ class MainViewController: UIViewController {
 
             UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
                 self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-                if let ntp = self.newTabPageViewController, ntp.isShowingLogo {
+
+                // In case `isAIChatSearchInputUserSettings` is enabled prevent adjusting the bottom containers along with the keyboard to prevent logo on NTP from transitioning too far
+                if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled, let ntp = self.newTabPageViewController, ntp.isShowingLogo {
                     self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
                 } else {
                     self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
@@ -881,6 +917,7 @@ class MainViewController: UIViewController {
     private func addLaunchTabNotificationObserver() {
         launchTabObserver = LaunchTabNotification.addObserver(handler: { [weak self] urlString in
             guard let self = self else { return }
+            viewCoordinator.omniBar.endEditing()
             if let url = URL(trimmedAddressBarString: urlString), url.isValid {
                 self.loadUrlInNewTab(url, inheritedAttribution: nil)
             } else {
@@ -922,7 +959,7 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.barView.menuButtonContent.delegate = self
     }
     
-    fileprivate func attachHomeScreen() {
+    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false) {
         guard !autoClearInProgress else { return }
         
         viewCoordinator.logoContainer.isHidden = false
@@ -938,21 +975,22 @@ class MainViewController: UIViewController {
             fatalError("No tab model")
         }
 
-        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: DaxDialogs.shared, onboardingPixelReporter: contextualOnboardingPixelReporter)
+        // Attaching HomeScreen means it's going to be displayed immediately.
+        // This value gets updated on didAppear so after we leave this function so **after** `refreshControls` is done already, which leads to dot being visible on tab switcher icon on newly opened tab page.
+        tabModel.viewed = true
+
+        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let controller = NewTabPageViewController(tab: tabModel,
-                                                  isNewTabPageCustomizationEnabled: homeTabManager.isNewTabPageSectionsEnabled,
                                                   interactionModel: favoritesViewModel,
                                                   homePageMessagesConfiguration: homePageConfiguration,
                                                   privacyProDataReporting: privacyProDataReporter,
-                                                  variantManager: variantManager,
                                                   newTabDialogFactory: newTabDaxDialogFactory,
-                                                  newTabDialogTypeProvider: DaxDialogs.shared,
+                                                  daxDialogsManager: daxDialogsManager,
                                                   faviconLoader: faviconLoader,
                                                   messageNavigationDelegate: self,
                                                   appSettings: appSettings)
 
         controller.delegate = self
-        controller.shortcutsDelegate = self
         controller.chromeDelegate = self
 
         newTabPageViewController = controller
@@ -960,12 +998,32 @@ class MainViewController: UIViewController {
         viewCoordinator.logoContainer.isHidden = true
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
 
-        // Attaching HomeScreen means it's going to be displayed immediately.
-        // This value gets updated on didAppear so after we leave this function so **after** `refreshControls` is done already, which leads to dot being visible on tab switcher icon on newly opened tab page.
-        tabModel.viewed = true
+        // This has to happen after the new tab controller is created so that it knows to set the buttons correctly
+        // ie remove back/forward and show bookmarks/passwords
+        // but also before any other UI updates so that data from the old tab doesn't find its way into the new one
         refreshControls()
 
+        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
+            omniBar.beginEditing(animated: true)
+        }
+
         syncService.scheduler.requestSyncImmediately()
+
+        // It's possible for this to be called when in the background of the
+        //  switcher, and we only want to show the pixel when it's actually
+        // about to shown to the user.
+        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
+            fireNewTabPixels()
+        }
+    }
+
+    func fireNewTabPixels() {
+        Pixel.fire(.homeScreenShown, withAdditionalParameters: [:])
+        let favoritesCount = favoritesViewModel.favorites.count
+        let bucket = HomePageDisplayDailyPixelBucket(favoritesCount: favoritesCount)
+        DailyPixel.fire(pixel: .newTabPageDisplayedDaily, withAdditionalParameters: [
+            "FavoriteCount": bucket.value,
+        ])
     }
 
     fileprivate func removeHomeScreen() {
@@ -1031,10 +1089,11 @@ class MainViewController: UIViewController {
     }
     
     func onForeground() {
+        fireExperimentalAddressBarPixel()
         skipSERPFlow = true
         
         // Show Fire Pulse only if Privacy button pulse should not be shown. In control group onboarding `shouldShowPrivacyButtonPulse` is always false.
-        if DaxDialogs.shared.shouldShowFireButtonPulse && !DaxDialogs.shared.shouldShowPrivacyButtonPulse {
+        if daxDialogsManager.shouldShowFireButtonPulse && !daxDialogsManager.shouldShowPrivacyButtonPulse {
             showFireButtonPulse()
         }
     }
@@ -1115,7 +1174,7 @@ class MainViewController: UIViewController {
     func enterSearch() {
         if presentedViewController == nil {
             showBars()
-            viewCoordinator.omniBar.beginEditing()
+            viewCoordinator.omniBar.beginEditing(animated: true)
         }
     }
 
@@ -1201,7 +1260,7 @@ class MainViewController: UIViewController {
         themeColorManager.updateThemeColor()
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
-        if DaxDialogs.shared.shouldShowFireButtonPulse {
+        if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
     }
@@ -1266,6 +1325,8 @@ class MainViewController: UIViewController {
 
         guard let tab = currentTab, tab.link != nil else {
             viewCoordinator.omniBar.stopBrowsing()
+            // Clear Dax Easter Egg logo when no tab is active
+            viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
             return
         }
 
@@ -1278,6 +1339,10 @@ class MainViewController: UIViewController {
         } else {
             viewCoordinator.omniBar.resetPrivacyIcon(for: tab.url)
         }
+
+        // Restore the Dax Easter Egg logo URL for the current tab
+        Logger.daxEasterEgg.debug("RefreshOmniBar - Stored Logo: \(tab.tabModel.daxEasterEggLogoURL ?? "nil")")
+        viewCoordinator.omniBar.setDaxEasterEggLogoURL(tab.tabModel.daxEasterEggLogoURL)
 
         viewCoordinator.omniBar.startBrowsing()
     }
@@ -1325,7 +1390,7 @@ class MainViewController: UIViewController {
             self.deferredFireOrientationPixel()
         } completion: { _ in
             if isKeyboardShowing {
-                self.omniBar.beginEditing()
+                self.omniBar.beginEditing(animated: true)
             }
 
             ViewHighlighter.updatePositions()
@@ -1370,7 +1435,7 @@ class MainViewController: UIViewController {
     }
 
     func refreshMenuButtonState() {
-        if !homeTabManager.isNewTabPageSectionsEnabled && newTabPageViewController != nil {
+        if newTabPageViewController != nil {
             viewCoordinator.omniBar.barView.menuButton.accessibilityLabel = UserText.bookmarksButtonHint
             viewCoordinator.updateToolbarWithState(.newTab)
             presentedMenuButton.setState(.menuImage, animated: false)
@@ -1429,7 +1494,7 @@ class MainViewController: UIViewController {
         suggestionTrayController?.show(for: type)
         applyWidthToTrayController()
         if !AppWidthObserver.shared.isLargeWidth {
-            if !DaxDialogs.shared.shouldShowFireButtonPulse {
+            if !daxDialogsManager.shouldShowFireButtonPulse {
                 ViewHighlighter.hideAll()
             }
             if type.hideOmnibarSeparator() && appSettings.currentAddressBarPosition != .bottom {
@@ -1582,7 +1647,7 @@ class MainViewController: UIViewController {
             notificationView == nil,
             !isPad,
             DefaultTutorialSettings().hasSeenOnboarding,
-            !DaxDialogs.shared.isStillOnboarding(),
+            !daxDialogsManager.isStillOnboarding(),
             isPortrait else { return }
         // We're using async to ensure the view dismissal happens on the first runloop after a refresh. This prevents the scenario where the view briefly appears and then immediately disappears after a refresh.
         brokenSitePromptLimiter.didShowToast()
@@ -1626,10 +1691,10 @@ class MainViewController: UIViewController {
     }
 
     func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true) {
-        if DaxDialogs.shared.shouldShowFireButtonPulse {
+        if daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
-        DaxDialogs.shared.fireButtonPulseCancelled()
+        daxDialogsManager.fireButtonPulseCancelled()
         hideSuggestionTray()
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.dismiss()
@@ -1639,11 +1704,11 @@ class MainViewController: UIViewController {
         } else {
             tabManager.addHomeTab()
         }
-        attachHomeScreen()
+        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard)
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
-        newTabPageViewController?.openedAsNewTab(allowingKeyboard: allowingKeyboard)
         themeColorManager.updateThemeColor()
+        showBars() // In case the browser chrome bars are hidden when calling this method
     }
     
     func updateFindInPage() {
@@ -1769,6 +1834,7 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshOmniBar()
+                WidgetCenter.shared.reloadAllTimelines()
             }
             .store(in: &aiChatCancellables)
     }
@@ -1911,7 +1977,7 @@ class MainViewController: UIViewController {
                 let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
                 let hasEntitlement = try await subscriptionManager.isFeatureEnabled(.networkProtection)
 
-                if hasEntitlement && lastKnownEntitlementsExpired {
+                if !hadVPNEntitlements && hasEntitlement {
                     PixelKit.fire(
                         VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
                             isSubscriptionActive: isSubscriptionActive,
@@ -1919,8 +1985,8 @@ class MainViewController: UIViewController {
                             trigger: trigger),
                         frequency: .dailyAndCount)
                     
-                    lastKnownEntitlementsExpired = false
-                } else if !hasEntitlement && !lastKnownEntitlementsExpired {
+                    hadVPNEntitlements = hasEntitlement
+                } else if hadVPNEntitlements && !hasEntitlement {
                     PixelKit.fire(
                         VPNSubscriptionClientCheckPixel.vpnFeatureDisabled(
                             isSubscriptionActive: isSubscriptionActive,
@@ -1928,7 +1994,7 @@ class MainViewController: UIViewController {
                             trigger: trigger),
                         frequency: .dailyAndCount)
                     
-                    lastKnownEntitlementsExpired = true
+                    hadVPNEntitlements = hasEntitlement
                 }
             } catch {
                 await handleClientCheckFailure(error: error, trigger: trigger)
@@ -1962,23 +2028,17 @@ class MainViewController: UIViewController {
                 Logger.subscription.fault("Missing entitlements payload")
                 return
             }
-            let hasEntitlements = payload.entitlements.contains(.networkProtection)
+            let hasVPNEntitlements = payload.entitlements.contains(.networkProtection)
             let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
-            if hasEntitlements {
+            if hasVPNEntitlements {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                         isSubscriptionActive: isSubscriptionActive,
                         isAuthV2Enabled: isAuthV2Enabled,
                         sourceObject: notification.object),
                     frequency: .dailyAndCount)
-
-                if lastKnownEntitlementsExpired {
-                    lastKnownEntitlementsExpired = false
-                }
-
-                return
             } else {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureDisabled(
@@ -1987,17 +2047,15 @@ class MainViewController: UIViewController {
                         sourceObject: notification.object),
                     frequency: .dailyAndCount)
 
-                if !lastKnownEntitlementsExpired {
-                    lastKnownEntitlementsExpired = true
+                if await networkProtectionTunnelController.isInstalled {
+                    tunnelDefaults.enableEntitlementMessaging()
                 }
+
+                await networkProtectionTunnelController.stop()
+                await networkProtectionTunnelController.removeVPN(reason: .entitlementCheck)
             }
 
-            if await networkProtectionTunnelController.isInstalled {
-                tunnelDefaults.enableEntitlementMessaging()
-            }
-
-            await networkProtectionTunnelController.stop()
-            await networkProtectionTunnelController.removeVPN(reason: .entitlementCheck)
+            hadVPNEntitlements = hasVPNEntitlements
         }
     }
 
@@ -2171,7 +2229,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     var canHideBars: Bool {
-        return !DaxDialogs.shared.shouldShowFireButtonPulse
+        return !daxDialogsManager.shouldShowFireButtonPulse
     }
 
     var isToolbarHidden: Bool {
@@ -2257,6 +2315,9 @@ extension MainViewController: BrowserChromeDelegate {
             }
             loadUrlInNewTab(url, reuseExisting: tabId.map(ExistingTabReusePolicy.tabWithId) ?? .any, inheritedAttribution: .noAttribution)
 
+        case .askAIChat(let value):
+            openAIChat(value, autoSend: true)
+
         case .unknown(value: let value), .internalPage(title: let value, url: _, _):
             assertionFailure("Unknown suggestion: \(value)")
         }
@@ -2267,6 +2328,7 @@ extension MainViewController: BrowserChromeDelegate {
 
 // MARK: - OmniBarDelegate Methods
 extension MainViewController: OmniBarDelegate {
+
     func isSuggestionTrayVisible() -> Bool {
         suggestionTrayController?.isShowing == true
     }
@@ -2312,7 +2374,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onOmniQuerySubmitted(_ query: String) {
-        if !DaxDialogs.shared.shouldShowFireButtonPulse {
+        if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
         omniBar.cancel()
@@ -2333,7 +2395,7 @@ extension MainViewController: OmniBarDelegate {
         // Dismiss privacy icon animation when showing privacy dashboard
         dismissPrivacyDashboardButtonPulse()
 
-        if !DaxDialogs.shared.shouldShowFireButtonPulse {
+        if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
         hideSuggestionTray()
@@ -2345,11 +2407,11 @@ extension MainViewController: OmniBarDelegate {
         omniBar.cancel()
 
         // Dismiss privacy icon animation when showing menu
-        if !DaxDialogs.shared.shouldShowPrivacyButtonPulse {
+        if !daxDialogsManager.shouldShowPrivacyButtonPulse {
             dismissPrivacyDashboardButtonPulse()
         }
 
-        if !DaxDialogs.shared.shouldShowFireButtonPulse {
+        if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
         performCancel()
@@ -2374,7 +2436,8 @@ extension MainViewController: OmniBarDelegate {
         }
 
         let controller = BrowsingMenuViewController.instantiate(headerEntries: headerEntries,
-                                                                menuEntries: menuEntries)
+                                                                menuEntries: menuEntries,
+                                                                daxDialogsManager: daxDialogsManager)
 
         controller.modalPresentationStyle = .custom
         controller.onDismiss = {
@@ -2397,7 +2460,7 @@ extension MainViewController: OmniBarDelegate {
     }
     
     @objc func onBookmarksPressed() {
-        if !DaxDialogs.shared.shouldShowFireButtonPulse {
+        if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
         performCancel()
@@ -2441,7 +2504,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onSettingsPressed() {
-        if !DaxDialogs.shared.shouldShowFireButtonPulse {
+        if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
         segueToSettings()
@@ -2519,13 +2582,10 @@ extension MainViewController: OmniBarDelegate {
         let selectQueryText = !(isSERPPresented && !skipSERPFlow)
         skipSERPFlow = false
         
-        if !DaxDialogs.shared.shouldShowFireButtonPulse {
+        if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
-        guard let newTabPageViewController = newTabPageViewController else {
-            return selectQueryText
-        }
-        newTabPageViewController.launchNewSearch()
+
         return selectQueryText
     }
 
@@ -2551,24 +2611,26 @@ extension MainViewController: OmniBarDelegate {
     }
 
     private func openAIChatFromAddressBar() {
-        /// https://app.asana.com/0/1204167627774280/1209322943444951
 
-        if omniBar.isTextFieldEditing {
-            let textFieldValue = omniBar.text
-            omniBar.endEditing()
+        let isEditing = omniBar.isTextFieldEditing
+        let textFieldValue = omniBar.text
+        omniBar.endEditing()
 
-            /// Check if the URL in the text field is the same as the one loaded
-            /// If it is, open the chat normally (no auto-send)
-            /// If the URLs differ, open the chat with the new text and auto-send enabled
-            if let currentURLString = currentTab?.url?.absoluteString, currentURLString == textFieldValue {
+        OpenAIChatFromAddressBarHandling().determineOpeningStrategy(
+            isTextFieldEditing: isEditing,
+            textFieldValue: textFieldValue,
+            currentURL: currentTab?.url,
+            openWithPromptAndSend: {
+                openAIChat($0, autoSend: true)
+            },
+            open: {
                 openAIChat()
-            } else {
-                openAIChat(textFieldValue, autoSend: true)
             }
-        } else {
-            openAIChat()
-        }
+        )
 
+        if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarAichatButtonPressed)
+        }
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromAddressBar)
     }
 
@@ -2602,6 +2664,25 @@ extension MainViewController: OmniBarDelegate {
     func onDidEndEditing() {
         omniBar.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: currentTab?.url))
     }
+
+    // MARK: - Experimental Address Bar (pixels only)
+    func onExperimentalAddressBarTapped() {
+        fireControllerAwarePixel(ntp: .addressBarClickOnNTP,
+                                 serp: .addressBarClickOnSERP,
+                                 website: .addressBarClickOnWebsite)
+    }
+
+    func onExperimentalAddressBarClearPressed() {
+        fireControllerAwarePixel(ntp: .addressBarClearPressedOnNTP,
+                                 serp: .addressBarClearPressedOnSERP,
+                                 website: .addressBarClearPressedOnWebsite)
+    }
+
+    func onExperimentalAddressBarCancelPressed() {
+        fireControllerAwarePixel(ntp: .addressBarCancelPressedOnNTP,
+                                 serp: .addressBarCancelPressedOnSERP,
+                                 website: .addressBarCancelPressedOnWebsite)
+    }
 }
 
 extension MainViewController: FavoritesOverlayDelegate {
@@ -2627,7 +2708,7 @@ extension MainViewController: AutocompleteViewControllerDelegate {
 
     func autocomplete(pressedPlusButtonForSuggestion suggestion: Suggestion) {
         switch suggestion {
-        case .phrase(phrase: let phrase):
+        case .phrase(phrase: let phrase), .askAIChat(let phrase):
             viewCoordinator.omniBar.updateQuery(phrase)
         case .website(url: let url):
             if url.isDuckDuckGoSearch, let query = url.searchQuery {
@@ -2648,7 +2729,7 @@ extension MainViewController: AutocompleteViewControllerDelegate {
     func autocomplete(highlighted suggestion: Suggestion, for query: String) {
 
         switch suggestion {
-        case .phrase(phrase: let phrase):
+        case .phrase(phrase: let phrase), .askAIChat(let phrase):
             viewCoordinator.omniBar.text = phrase
             if phrase.hasPrefix(query) {
                 viewCoordinator.omniBar.selectTextToEnd(query.count)
@@ -2693,7 +2774,9 @@ extension MainViewController {
 }
 
 extension MainViewController: NewTabPageControllerDelegate {
-    func newTabPageDidOpenFavoriteURL(_ controller: NewTabPageViewController, url: URL) {
+
+    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+        guard let url = favorite.urlObject else { return }
         handleRequestedURL(url)
     }
 
@@ -2710,33 +2793,11 @@ extension MainViewController: NewTabPageControllerDelegate {
     }
 }
 
-extension MainViewController: NewTabPageControllerShortcutsDelegate {
-    func newTabPageDidRequestDownloads(_ controller: NewTabPageViewController) {
-        segueToDownloads()
-    }
-    
-    func newTabPageDidRequestBookmarks(_ controller: NewTabPageViewController) {
-        segueToBookmarks()
-    }
-    
-    func newTabPageDidRequestPasswords(_ controller: NewTabPageViewController) {
-        launchAutofillLogins(source: .newTabPageShortcut)
-    }
-    
-    func newTabPageDidRequestAIChat(_ controller: NewTabPageViewController) {
-        loadUrl(Constant.duckAIURL)
-    }
-    
-    func newTabPageDidRequestSettings(_ controller: NewTabPageViewController) {
-        segueToSettings()
-    }
-
-    private enum Constant {
-        static let duckAIURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=1")!
-    }
-}
-
 extension MainViewController: TabDelegate {
+    
+    var isAIChatEnabled: Bool {
+        return aiChatSettings.isAIChatEnabled
+    }
     
     func tab(_ tab: TabViewController,
              didRequestNewWebViewWithConfiguration configuration: WKWebViewConfiguration,
@@ -2819,6 +2880,7 @@ extension MainViewController: TabDelegate {
             }
         } else {
             loadUrlInNewTab(url, inheritedAttribution: attribution)
+            self.currentTab?.adClickExternalOpenDetector.invalidateForUserInitiated()
             self.currentTab?.openingTab = tab
         }
 
@@ -2828,6 +2890,22 @@ extension MainViewController: TabDelegate {
         if currentTab == tab {
             viewCoordinator.omniBar.updatePrivacyIcon(for: privacyInfo)
             themeColorManager.updateThemeColor()
+        }
+    }
+    
+    func tab(_ tab: TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            Logger.daxEasterEgg.debug("Tab received logo - Tab [\(tab.tabModel.uid)] Logo: \(logoURL ?? "nil"), IsCurrent: \(self.currentTab == tab)")
+            
+            tab.tabModel.daxEasterEggLogoURL = logoURL
+            
+            // Only update omnibar if this is the currently active tab
+            if self.currentTab == tab {
+                Logger.daxEasterEgg.debug("Setting omnibar logo: \(logoURL ?? "nil")")
+                self.viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
+            }
+            // If this is NOT the current tab, the logo will be restored when the tab becomes active via refreshOmniBar()
         }
     }
 
@@ -3017,7 +3095,7 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didSelectTab tab: Tab) {
         selectTab(tab)
-        if DaxDialogs.shared.shouldShowFireButtonPulse {
+        if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
         themeColorManager.updateThemeColor()
@@ -3048,7 +3126,7 @@ extension MainViewController: TabSwitcherDelegate {
         }
         closeTab(tab)
         
-        if DaxDialogs.shared.shouldShowFireButtonPulse {
+        if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
     }
@@ -3063,6 +3141,7 @@ extension MainViewController: TabSwitcherDelegate {
             let newTab = Tab()
             tabManager.replaceTab(at: index, withNewTab: newTab)
             tabManager.selectTab(newTab)
+            showBars() // In case the browser chrome bars are hidden when calling this method
         } else {
             tabManager.remove(at: index)
         }
@@ -3233,7 +3312,7 @@ extension MainViewController: AutoClearWorker {
         pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.count)"])
 
         AutoconsentManagement.shared.clearCache()
-        DaxDialogs.shared.clearHeldURLData()
+        daxDialogsManager.clearHeldURLData()
 
         if self.syncService.authState == .inactive {
             self.bookmarksDatabaseCleaner?.cleanUpDatabaseNow()
@@ -3264,7 +3343,7 @@ extension MainViewController: AutoClearWorker {
             self.forgetTabs()
             await self.forgetData()
             Instruments.shared.endTimedEvent(for: spid)
-            DaxDialogs.shared.resumeRegularFlow()
+            self.daxDialogsManager.resumeRegularFlow()
         } onTransitionCompleted: {
             ActionMessageView.present(message: UserText.actionForgetAllDone,
                                       presentationLocation: .withBottomBar(andAddressBarBottom: self.appSettings.currentAddressBarPosition.isBottom))
@@ -3278,19 +3357,21 @@ extension MainViewController: AutoClearWorker {
                 self.newTabPageViewController?.showNextDaxDialog()
             } else if KeyboardSettings().onNewTab {
                 let showKeyboardAfterFireButton = DispatchWorkItem {
-                    self.enterSearch()
+                    if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+                        self.enterSearch()
+                    }
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: showKeyboardAfterFireButton)
                 self.showKeyboardAfterFireButton = showKeyboardAfterFireButton
             }
 
-            DaxDialogs.shared.clearedBrowserData()
+            self.daxDialogsManager.clearedBrowserData()
 
         }
     }
     
     private func showFireButtonPulse() {
-        DaxDialogs.shared.fireButtonPulseStarted()
+        daxDialogsManager.fireButtonPulseStarted()
         guard let window = view.window else { return }
         
         let fireButtonView: UIView?
@@ -3312,7 +3393,7 @@ extension MainViewController: AutoClearWorker {
     }
 
     private func dismissPrivacyDashboardButtonPulse() {
-        DaxDialogs.shared.setPrivacyButtonPulseSeen()
+        daxDialogsManager.setPrivacyButtonPulseSeen()
         viewCoordinator.omniBar.dismissOnboardingPrivacyIconAnimation()
     }
 
@@ -3547,12 +3628,22 @@ private extension UIBarButtonItem {
 extension MainViewController: MessageNavigationDelegate { }
 
 extension MainViewController: MainViewEditingStateTransitioning {
-    func hide(with yOffset: CGFloat) {
-        additionalSafeAreaInsets.top = yOffset
+
+    private var isDaxLogoVisible: Bool {
+        newTabPageViewController?.isShowingLogo == true
+    }
+
+    func hide(with barYOffset: CGFloat, contentYOffset: CGFloat) {
+        if isDaxLogoVisible {
+            omniBar.barView.layer.sublayerTransform = CATransform3DMakeTranslation(0, barYOffset, 0)
+        } else {
+            additionalSafeAreaInsets.top = contentYOffset
+        }
         omniBar.barView.hideButtons()
     }
 
     func show() {
+        omniBar.barView.layer.sublayerTransform = CATransform3DIdentity
         additionalSafeAreaInsets.top = 0
         omniBar.barView.revealButtons()
     }

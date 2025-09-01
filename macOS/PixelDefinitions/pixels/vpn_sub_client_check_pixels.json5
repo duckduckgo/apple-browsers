@@ -1,0 +1,179 @@
+// See https://app.asana.com/0/72649045549333/1208001118995887/f.
+{
+    m_mac_vpn_subs_client_check_signed_in: {
+        description: 'The VPN learns from checking the subscription state that the user has signed in',
+        owners: ['diegoreymendez'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            {
+                key: 'authVersion',
+                type: 'string',
+                description: 'Version of auth',
+                enum: ['v1', 'v2'],
+            },
+            {
+                key: 'isSubscriptionActive',
+                type: 'string',
+                description: 'Whether the subscription is active',
+                enum: ['true', 'false'],
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    m_mac_vpn_subs_client_check_signed_out: {
+        description: 'The VPN learns from checking the subscription state that the user has signed out',
+        owners: ['diegoreymendez'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            {
+                key: 'authVersion',
+                type: 'string',
+                description: 'Version of auth',
+                enum: ['v1', 'v2'],
+            },
+            {
+                key: 'isSubscriptionActive',
+                type: 'string',
+                description: 'Whether the subscription is active',
+                enum: ['true', 'false'],
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    m_mac_vpn_subs_client_check_vpn_feature_enabled: {
+        description: 'The VPN learns from checking the subscription state that the VPN feature is enabled',
+        owners: ['diegoreymendez'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            {
+                key: 'authVersion',
+                type: 'string',
+                description: 'Version of auth',
+                enum: ['v1', 'v2'],
+            },
+            {
+                key: 'isSubscriptionActive',
+                type: 'string',
+                description: 'Whether the subscription is active',
+                enum: ['true', 'false'],
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    m_mac_vpn_subs_client_check_vpn_feature_disabled: {
+        description: 'The VPN learns from checking the subscription state that the VPN feature is disabled',
+        owners: ['diegoreymendez'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            {
+                key: 'authVersion',
+                type: 'string',
+                description: 'Version of auth',
+                enum: ['v1', 'v2'],
+            },
+            {
+                key: 'isSubscriptionActive',
+                type: 'string',
+                description: 'Whether the subscription is active',
+                enum: ['true', 'false'],
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    m_mac_vpn_subs_client_check_failed: {
+        description: 'When doing a client-check on startup and getting a transient error that does not allow us to know the entitlements status',
+        owners: ['diegoreymendez'],
+        triggers: ['other'],
+        suffixes: ['daily'],
+        parameters: [
+            {
+                key: 'authVersion',
+                type: 'string',
+                description: 'Version of auth',
+                enum: ['v1', 'v2'],
+            },
+            {
+                key: 'isSubscriptionActive',
+                type: 'string',
+                description: 'Whether the subscription is active',
+                enum: ['true', 'false'],
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    m_mac_vpn_subs_client_check_on_wake_vpn_feature_enabled: {
+        description: 'Fired when the device wakes, if PPro is enabled',
+        owners: ['diegoreymendez'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            {
+                key: 'authVersion',
+                type: 'string',
+                description: 'Version of auth',
+                enum: ['v1', 'v2'],
+            },
+            {
+                key: 'isSubscriptionActive',
+                type: 'string',
+                description: 'Whether the subscription is active',
+                enum: ['true', 'false'],
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    m_mac_vpn_subs_client_check_on_wake_vpn_feature_disabled: {
+        description: 'Fired when the device wakes, if PPro is disabled',
+        owners: ['diegoreymendez'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            {
+                key: 'authVersion',
+                type: 'string',
+                description: 'Version of auth',
+                enum: ['v1', 'v2'],
+            },
+            {
+                key: 'isSubscriptionActive',
+                type: 'string',
+                description: 'Whether the subscription is active',
+                enum: ['true', 'false'],
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    m_mac_vpn_subs_client_check_on_foreground_failed: {
+        description: 'When doing a client-check on device wake',
+        owners: ['diegoreymendez'],
+        triggers: ['other'],
+        suffixes: ['daily'],
+        parameters: [
+            {
+                key: 'authVersion',
+                type: 'string',
+                description: 'Version of auth',
+                enum: ['v1', 'v2'],
+            },
+            {
+                key: 'isSubscriptionActive',
+                type: 'string',
+                description: 'Whether the subscription is active',
+                enum: ['true', 'false'],
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+}

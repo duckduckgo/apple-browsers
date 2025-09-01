@@ -29,6 +29,7 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     }
 
     var savedPermissions = [String: [PermissionType: Bool]]()
+    var setPermissionCalls: [(decision: PersistedPermissionDecision, domain: String, permissionType: PermissionType)] = []
 
     var persistedPermissionTypes: Set<PermissionType> {
         savedPermissions.reduce(into: Set<PermissionType>()) { partialResult, permissions in
@@ -46,6 +47,7 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     }
 
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
+        setPermissionCalls.append((decision: decision, domain: domain, permissionType: permissionType))
         savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = decision == .ask ? nil : decision.boolValue
     }
 
@@ -64,6 +66,24 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     func burnPermissions(of baseDomains: Set<String>, tld: Common.TLD, completion: @escaping () -> Void) {
         burnPermissionsOfDomainsCalled = true
         completion()
+    }
+
+    // For testing permission requests from PermissionModel
+    var capturedRequests: [(permissions: [PermissionType], domain: String, url: URL, completion: (Bool) -> Void)] = []
+    var onPermissionRequested: (() -> Void)?
+
+    func permissions(_ permissions: [PermissionType], requestedForDomain domain: String, url: URL, decisionHandler: @escaping (Bool) -> Void) {
+        capturedRequests.append((permissions: permissions, domain: domain, url: url, completion: decisionHandler))
+        onPermissionRequested?()
+    }
+
+    var lastRequest: (permissions: [PermissionType], domain: String, url: URL, completion: (Bool) -> Void)? {
+        return capturedRequests.last
+    }
+
+    func respondToLastRequest(with decision: Bool) {
+        guard let lastRequest = capturedRequests.last else { return }
+        lastRequest.completion(decision)
     }
 
 }

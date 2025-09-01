@@ -43,11 +43,11 @@ public struct ImageSegmentedPickerConfiguration {
     ///   - backgroundColor: The picker's background color. Defaults to backdrop color.
     ///   - selectedBackgroundColor: The selected indicator's background color. Defaults to tertiary background color.
     public init(
-        font: Font = .system(size: 16, weight: .medium),
+        font: Font = .system(size: 14, weight: .medium), /// Color not specified in the design system
         selectedTextColor: Color = .init(designSystemColor: .textPrimary),
         unselectedTextColor: Color = .init(designSystemColor: .textPrimary),
         backgroundColor: Color = .init(designSystemColor: .backdrop),
-        selectedBackgroundColor: Color = .init(designSystemColor: .backgroundTertiary)
+        selectedBackgroundColor: Color = .init(designSystemColor: .surface)
     ) {
         self.font = font
         self.selectedTextColor = selectedTextColor
@@ -132,8 +132,8 @@ public class ImageSegmentedPickerViewModel: ObservableObject {
 /// ```
 public struct ImageSegmentedPickerView: View {
     private enum Constants {
-        static let outerHeight: CGFloat = 40
-        static let innerHeight: CGFloat = 36
+        static let outerHeight: CGFloat = 38
+        static let innerHeight: CGFloat = 34
         static let innerHorizontalPadding: CGFloat = 2
     }
 
@@ -157,8 +157,8 @@ public struct ImageSegmentedPickerView: View {
                     .fill(viewModel.configuration.selectedBackgroundColor)
                     .frame(width: geo.size.width / CGFloat(viewModel.items.count), height: Constants.innerHeight)
                     .offset(x: currentOffset)
-                    .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 0.5, x: 0, y: 0.5)
-                    .animation(.easeInOut(duration: 0.2), value: currentOffset)
+                    .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 4, x: 0, y: 4)
+                    .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 2, x: 0, y: 1)
 
                 HStack(spacing: 0) {
                     ForEach(Array(viewModel.items.enumerated()), id: \.element.id) { index, item in
@@ -178,11 +178,6 @@ public struct ImageSegmentedPickerView: View {
                 var transaction = Transaction()
                 transaction.disablesAnimations = true
                 withTransaction(transaction) {
-                    currentOffset = calculateCurrentOffset(geometry: geo)
-                }
-            }
-            .onChange(of: viewModel.selectedItem.id) { _ in
-                if viewModel.scrollProgress == nil {
                     currentOffset = calculateCurrentOffset(geometry: geo)
                 }
             }

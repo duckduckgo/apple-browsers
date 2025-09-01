@@ -45,7 +45,7 @@ PROVISIONING_PROFILE_SPECIFIER[config=Review][sdk=macosx*] = match Direct com.du
 PROVISIONING_PROFILE_SPECIFIER[config=Release][sdk=macosx*] = match Direct com.duckduckgo.macos.DBP.backgroundAgent macos
 PROVISIONING_PROFILE_SPECIFIER[config=Alpha][sdk=macosx*] = match Direct com.duckduckgo.macos.DBP.backgroundAgent.alpha macos
 
-FEATURE_FLAGS = FEEDBACK
+FEATURE_FLAGS =
 
 GCC_PREPROCESSOR_DEFINITIONS[arch=*][sdk=*] = DBP=1
 GCC_PREPROCESSOR_DEFINITIONS[config=CI][arch=*][sdk=*] = DBP=1 DEBUG=1 CI=1 $(inherited)

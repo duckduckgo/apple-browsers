@@ -1,7 +1,7 @@
 {
   "name": "New England Facts",
   "url": "newenglandfacts.com",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "addedDatetime": 1703052000000,
   "optOutUrl": "https://newenglandfacts.com/ng/control/privacy",
   "steps": [
@@ -131,5 +131,6 @@
     "confirmOptOutScan": 72,
     "maintenanceScan": 120,
     "maxAttempts": -1
-  }
+  },
+  "removedAt": null
 }

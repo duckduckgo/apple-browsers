@@ -38,10 +38,11 @@ struct BrokerProfileScanSubJob {
 
     // MARK: - Scan Jobs
 
+    /// Returns: `true` if the scan was executed, `false` if it was skipped
     public func runScan(brokerProfileQueryData: BrokerProfileQueryData,
                         showWebView: Bool,
                         isManual: Bool,
-                        shouldRunNextStep: @escaping () -> Bool) async throws {
+                        shouldRunNextStep: @escaping () -> Bool) async throws -> Bool {
         Logger.dataBrokerProtection.log("Running scan operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
         // 1. Validate that the broker and profile query data objects each have an ID:
@@ -159,6 +160,8 @@ struct BrokerProfileScanSubJob {
                                  schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig)
             throw error
         }
+
+        return true
     }
 
     private func scheduleOptOutsForExtractedProfiles(extractedProfiles: [ExtractedProfile],
@@ -280,20 +283,8 @@ struct BrokerProfileScanSubJob {
                     let calculateDurationSinceLastStage = now.timeIntervalSince(attempt.lastStageDate) * 1000
                     let calculateDurationSinceStart = now.timeIntervalSince(attempt.startDate) * 1000
                     pixelHandler.fire(.optOutFinish(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceLastStage))
-
-// This should never ever go to production and only exists for internal testing
-#if os(iOS)
-                    pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker,
-                                                     attemptId: attemptUUID,
-                                                     duration: calculateDurationSinceStart,
-                                                     brokerType: brokerProfileQueryData.dataBroker.type,
-                                                     vpnConnectionState: vpnConnectionState,
-                                                     vpnBypassStatus: vpnBypassStatus,
-                                                     deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-#else
                     pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceStart,
                                                      brokerType: brokerProfileQueryData.dataBroker.type, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
-#endif
                 }
             }
         }

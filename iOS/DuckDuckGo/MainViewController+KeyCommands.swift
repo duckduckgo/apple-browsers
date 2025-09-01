@@ -140,12 +140,8 @@ extension MainViewController {
     @objc func keyboardLocation() {
         guard tabSwitcherController == nil else { return }
 
-        if let controller = newTabPageViewController {
-            controller.launchNewSearch()
-        } else {
-            showBars()
-            viewCoordinator.omniBar.beginEditing()
-        }
+        showBars()
+        viewCoordinator.omniBar.beginEditing(animated: true)
     }
 
     @objc func keyboardFire() {

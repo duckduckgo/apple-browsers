@@ -199,6 +199,7 @@ final class MockCSSCommunicationDelegate: CCFCommunicationDelegate {
     var captchaInfo: GetCaptchaInfoResponse?
     var solveCaptchaResponse: SolveCaptchaResponse?
     var successActionId: String?
+    var conditionSuccessActions: [Action]?
     var onErrorCallback: ((Error) -> Void)?
 
     func loadURL(url: URL) {
@@ -226,6 +227,10 @@ final class MockCSSCommunicationDelegate: CCFCommunicationDelegate {
         self.solveCaptchaResponse = response
     }
 
+    func conditionSuccess(actions: [Action]) async {
+        self.conditionSuccessActions = actions
+    }
+
     func reset() {
         lastError = nil
         profiles = nil
@@ -234,6 +239,7 @@ final class MockCSSCommunicationDelegate: CCFCommunicationDelegate {
         captchaInfo = nil
         solveCaptchaResponse = nil
         onErrorCallback = nil
+        conditionSuccessActions = nil
     }
 }
 

@@ -49,7 +49,7 @@ struct SettingsMainSettingsView: View {
         SettingsEntry(label: UserText.accessibility, build: Self.viewBuilder.buildAccessibility),
         SettingsEntry(label: UserText.dataClearing, build: Self.viewBuilder.buildDataClearing),
         SettingsEntry(label: UserText.duckPlayerFeatureName, build: Self.viewBuilder.buildDuckPlayer),
-    ].sorted(by: { $0.label < $1.label })
+    ].sorted(by: { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending })
 
     var body: some View {
         Section(header: Text(UserText.mainSettings)) {
@@ -71,9 +71,10 @@ struct SettingsMainSettingsView: View {
     struct SettingsViewBuilder {
 
         @ViewBuilder func buildAIFeatures(viewModel: SettingsViewModel) -> AnyView {
+            let aiSettingsImage = viewModel.isSubscriptionRebrandingEnabled ? DesignSystemImages.Color.Size24.aiGeneral : DesignSystemImages.Color.Size24.aiChat
             AnyView(NavigationLink(destination: SettingsAIFeaturesView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.settingsAiFeatures,
-                                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat))
+                                 image: Image(uiImage: aiSettingsImage))
             })
         }
 

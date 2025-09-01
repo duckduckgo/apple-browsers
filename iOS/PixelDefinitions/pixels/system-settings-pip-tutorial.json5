@@ -1,0 +1,31 @@
+// See https://app.asana.com/0/72649045549333/1208001118995887/f.
+{
+    systemSettingsPiPTutorialFailedToLoadVideo: {
+        description: 'Fires when the the Picture-in-Picture video tutorial Fails to load.',
+        owners: ['alessandroboron'],
+        triggers: ['other'],
+        suffixes: ['form_factor', 'first_daily_count'],
+        parameters: [
+            // Commonly used param, defined in params_dictionary.json.
+            'appVersion',
+            'pixelSource',
+            // Path of the embedded video. E.g. 'es.lproj/default-browser-tutorial.mp4'
+            {
+                key: 'video_url_path',
+                description: 'The local path of the embedded video that failed.',
+                type: 'string',
+            },
+            // Default Parameters for errors "e" and "d"
+            {
+                key: 'e',
+                description: 'The error code if present.',
+                type: 'string',
+            },
+            {
+                key: 'd',
+                description: 'The domain of the error. e.g. AVFoundationErrorDomain',
+                type: 'string',
+            },
+        ],
+    },
+}

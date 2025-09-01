@@ -56,6 +56,7 @@ class FireproofFaviconUpdaterTests: XCTestCase, TabNotifying, FaviconProviding {
         try db.tearDown(deleteStores: true)
     }
 
+    @MainActor
     func testWhenBookmarkDoesNotExist_ThenImageNotReplacement() {
         let updater = FireproofFaviconUpdater(bookmarksDatabase: db, tab: self, favicons: self)
         updater.faviconUserScript(FaviconUserScript(), didRequestUpdateFaviconForHost: "example.com", withUrl: nil)
@@ -68,6 +69,7 @@ class FireproofFaviconUpdaterTests: XCTestCase, TabNotifying, FaviconProviding {
         XCTAssertFalse(replaceFaviconCalled)
     }
 
+    @MainActor
     func testWhenBookmarkExistsButNoImage_ThenImageNotReplacement() throws {
         try createBookmark()
 
@@ -82,6 +84,7 @@ class FireproofFaviconUpdaterTests: XCTestCase, TabNotifying, FaviconProviding {
         XCTAssertFalse(replaceFaviconCalled)
     }
 
+    @MainActor
     func testWhenBookmarkExistsButAnddImageExists_ThenImageIsReplaced() throws {
         try createBookmark()
 
@@ -99,6 +102,7 @@ class FireproofFaviconUpdaterTests: XCTestCase, TabNotifying, FaviconProviding {
         XCTAssertTrue(replaceFaviconCalled)
     }
 
+    @MainActor
     func testWhenBookmarkExistsWithWWWPrefixButAnddImageExists_ThenImageIsReplaced() throws {
         try createBookmark()
 

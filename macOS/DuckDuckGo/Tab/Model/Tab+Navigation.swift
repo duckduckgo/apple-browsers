@@ -45,7 +45,7 @@ extension Tab: NavigationResponder {
             .weak(nullable: self.aiChat),
 
             .weak(nullable: self.navigationHotkeyHandler),
-            .struct(NavigationPixelNavigationResponder()),
+            .strong(NavigationPixelNavigationResponder()),
             .weak(nullable: self.brokenSiteInfo),
             .weak(nullable: self.tabCrashRecovery),
 
@@ -102,6 +102,9 @@ extension Tab: NavigationResponder {
 
             // Internal Feedback Form
             .weak(nullable: self.internalFeedbackForm),
+
+            // New Tab Page
+            .weak(nullable: self.newTabPage),
 
             // should be the last, for Unit Tests navigation events tracking
             .struct(nullable: testsClosureNavigationResponder)

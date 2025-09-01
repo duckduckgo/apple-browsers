@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import MetricBuilder
 
 extension OnboardingView {
 
@@ -29,7 +30,7 @@ extension OnboardingView {
 
         var body: some View {
             GeometryReader { proxy in
-                if isIpadLandscape(v: verticalSizeClass, h: horizontalSizeClass) {
+                if isIPadLandscape(v: verticalSizeClass, h: horizontalSizeClass) {
                     landingScreenIPadLandscape(proxy: proxy)
                 } else {
                     landingScreenPortrait(proxy: proxy)
@@ -96,11 +97,11 @@ extension OnboardingView {
 // MARK: - Metrics
 
 private enum Metrics {
-    static let iconSize = MetricBuilder<CGSize>(value: .init(width: 70, height: 70)).iPad(landscape: .init(width: 96, height: 96))
+    static let iconSize = MetricBuilder<CGSize>(default: .init(width: 70, height: 70)).iPad(landscape: .init(width: 96, height: 96))
     static let welcomeMessageStackSpacing = MetricBuilder<CGFloat>(iPhone: 13, iPad: 32)
     static let titleSize = MetricBuilder<CGFloat>(iPhone: 28, iPad: 36).iPad(landscape: 48)
     static let titleWidth = MetricBuilder<CGFloat?>(iPhone: 252, iPad: nil)
-    static let hikerImage = MetricBuilder<ImageResource>(value: .hiker).smallIphone(.hikerSmall)
+    static let hikerImage = MetricBuilder<ImageResource>(default: .hiker).iPhoneSmallScreen(.hikerSmall)
     enum Landscape {
         static let textMinSpacerPercentage: CGFloat = 0.15
         static let daxImagePositionPercentage: CGFloat = 0.15

@@ -67,14 +67,14 @@ final class SubscriptionErrorReporterTests: XCTestCase {
 
     func testReporterForPurchaseFailedError() async throws {
         // Given
-        let errorToBeHandled: SubscriptionError = .purchaseFailed
+        let errorToBeHandled: SubscriptionError = .purchaseFailed(NSError(domain: "error", code: 1))
 
         // When
         reporter.report(subscriptionActivationError: errorToBeHandled)
 
         // Then
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c"])
+        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseFailureStoreError(errorToBeHandled).name + "_d",
+                                     PrivacyProPixel.privacyProPurchaseFailureStoreError(errorToBeHandled).name + "_c"])
     }
 
     func testReporterForMissingEntitlementsError() async throws {
@@ -159,14 +159,14 @@ final class SubscriptionErrorReporterTests: XCTestCase {
 
     func testReporterForAccountCreationFailedError() async throws {
         // Given
-        let errorToBeHandled: SubscriptionError = .accountCreationFailed
+        let errorToBeHandled: SubscriptionError = .accountCreationFailed(NSError(domain: "error", code: 1))
 
         // When
         reporter.report(subscriptionActivationError: errorToBeHandled)
 
         // Then
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated.name + "_c"])
+        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated(errorToBeHandled).name + "_d",
+                                     PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated(errorToBeHandled).name + "_c"])
     }
 
     func testReporterForActiveSubscriptionAlreadyPresentError() async throws {

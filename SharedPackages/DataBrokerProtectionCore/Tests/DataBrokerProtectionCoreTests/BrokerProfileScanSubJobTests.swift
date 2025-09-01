@@ -567,4 +567,21 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: mockDatabase.lastPreferredRunDateOnOptOut, date2: Date().addingTimeInterval(config.hoursUntilNextOptOutAttempt.hoursToSeconds)))
     }
 
+    func testScanSubJob_whenExecutedSuccessfully_returnsTrue() async throws {
+        // When
+        let result = try await sut.runScan(
+            brokerProfileQueryData: .init(
+                dataBroker: .mock,
+                profileQuery: .mock,
+                scanJobData: .mock
+            ),
+            showWebView: false,
+            isManual: false,
+            shouldRunNextStep: { true }
+        )
+
+        // Then
+        XCTAssertTrue(result)
+    }
+
 }

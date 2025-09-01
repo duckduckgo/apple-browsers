@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import UIKit
+import Foundation
 import SetDefaultBrowserCore
 
 @MainActor
@@ -30,8 +30,10 @@ public enum DefaultBrowserPromptFactory {
         userTypeProviding: DefaultBrowserPromptUserTypeProviding,
         userActivityManager: DefaultBrowserPromptUserActivityManaging,
         checkDefaultBrowserContextStorage: DefaultBrowserContextStorage,
+        defaultBrowserSettingsNavigator: DefaultBrowserPromptSettingsNavigating,
         checkDefaultBrowserDebugEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserManagerDebugEvent>,
         promptUserInteractionEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>,
+        uiProvider: any DefaultBrowserPromptUIProviding,
         isOnboardingCompletedProvider: @escaping () -> Bool,
         installDateProvider: @escaping () -> Date?,
         currentDateProvider: @escaping () -> Date
@@ -62,12 +64,12 @@ public enum DefaultBrowserPromptFactory {
             promptStore: promptActivityStore,
             userActivityManager: userActivityManager,
             promptTypeDecider: promptTypeDecider,
-            urlOpener: UIApplication.shared,
+            defaultBrowserSettingsNavigator: defaultBrowserSettingsNavigator,
             eventMapper: promptUserInteractionEventMapper,
             dateProvider: currentDateProvider
         )
 
-        return DefaultBrowserModalPresenter(coordinator: coordinator)
+        return DefaultBrowserModalPresenter(coordinator: coordinator, uiProvider: uiProvider)
     }
 
 }

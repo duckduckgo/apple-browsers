@@ -1,0 +1,30 @@
+// See https://app.asana.com/1/137249556945/project/392891325557410/task/1210882421460693
+{
+    'm_widget-report': {
+        description: 'Fires daily to report configured widgets on the device, including widget kinds and families. This pixel can be enabled and disabled using the iOSBrowserConfig.widgetReporting feature flag which is off by default.',
+        owners: ['brindy'],
+        triggers: ['startup'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'enabled_widgets',
+                description: 'A comma separated list of enabled widgets in the format WidgetName-Family. The widget name is defined statically in code so will not contain user inforation.  The family is defined by iOS',
+                type: 'string',
+                pattern: '([A-Za-z]+-(systemSmall|systemMedium|systemLarge))(,[A-Za-z]+-(systemSmall|systemMedium|systemLarge))*',
+                examples: [
+                    'QuickActionWidget-systemSmall',
+                    'QuickActionWidget-systemSmall,FavoritesWidget-systemLarge',
+                    'VPNStatusWidget-systemSmall,QuickActionsWidget-systemSmall,FavoritesWidget-systemMedium,FavoritesWidget-systemLarge',
+                ],
+            },
+        ],
+    },
+    'm_widget-report-failure': {
+        description: 'Fires when widget configuration reporting fails due to an error retrieving current widget configurations. This pixel can be enabled and disabled using the iOSBrowserConfig.widgetReporting feature flag which is off by default.',
+        owners: ['brindy'],
+        triggers: ['startup'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+    },
+}

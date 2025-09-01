@@ -151,12 +151,13 @@ struct SettingsSubscriptionView: View {
             )
         }
 
-        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
+        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled && settingsViewModel.isAuthV2Enabled {
             SettingsCellView(
                 label: UserText.settingsSubscriptionAiChatTitle,
                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
                 statusIndicator: StatusIndicatorView(status: .off),
-                isGreyedOut: true
+                isGreyedOut: true,
+                isNew: true
             )
         }
 
@@ -185,7 +186,7 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: settingsView) {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.settingsPProSubscriptionExpiredTitle,
+                    subtitle: UserText.settingsPProSubscriptionExpiredTitle(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled),
                     image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
                     accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
@@ -200,7 +201,7 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: settingsView) {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.settingsPProSubscriptionExpiredTitle,
+                    subtitle: UserText.settingsPProSubscriptionExpiredTitle(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled),
                     image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
                     accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
@@ -271,8 +272,8 @@ struct SettingsSubscriptionView: View {
             var statusIndicator: StatusIndicator = hasDBPEntitlement && hasValidStoredProfile ? .on : .off
 
             let destination: LazyView<AnyView> = {
-                if let dbpManager = settingsViewModel.dataBrokerProtectionIOSManager,
-                   DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
+                if settingsViewModel.isPIREnabled,
+                   let dbpManager = settingsViewModel.dataBrokerProtectionIOSManager {
                     return LazyView(AnyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: dbpManager)))
                 } else {
                     statusIndicator = .on
@@ -291,7 +292,7 @@ struct SettingsSubscriptionView: View {
             .disabled(!hasDBPEntitlement)
         }
 
-        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
+        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled && settingsViewModel.isAuthV2Enabled {
             let hasAIChatEntitlement = userEntitlements.contains(.paidAIChat)
 
             NavigationLink(destination: LazyView(SubscriptionAIChatView(viewModel: settingsViewModel)), isActive: $isShowingPaidAIChat) {
@@ -299,7 +300,8 @@ struct SettingsSubscriptionView: View {
                     label: UserText.settingsSubscriptionAiChatTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
                     statusIndicator: StatusIndicatorView(status: hasAIChatEntitlement ? .on : .off),
-                    isGreyedOut: !hasAIChatEntitlement
+                    isGreyedOut: !hasAIChatEntitlement,
+                    isNew: true
                 )
             }
             .disabled(!hasAIChatEntitlement)

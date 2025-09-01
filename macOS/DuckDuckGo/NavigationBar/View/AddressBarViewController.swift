@@ -201,7 +201,6 @@ final class AddressBarViewController: NSViewController {
         updateView()
         // only activate active text field leading constraint on its appearance to avoid constraint conflicts
         activeTextFieldMinXConstraint.isActive = false
-        addressBarTextField.tabCollectionViewModel = tabCollectionViewModel
         addressBarTextField.onboardingDelegate = onboardingPixelReporter
 
         // allow dropping text to inactive address bar
@@ -240,6 +239,8 @@ final class AddressBarViewController: NSViewController {
             subscribeToMouseEvents()
             subscribeToFirstResponder()
         }
+        addressBarTextField.tabCollectionViewModel = tabCollectionViewModel
+
         subscribeToSelectedTabViewModel()
         subscribeToAddressBarValue()
         subscribeToButtonsWidth()
@@ -248,6 +249,7 @@ final class AddressBarViewController: NSViewController {
 
     override func viewWillDisappear() {
         cancellables.removeAll()
+        addressBarTextField.tabCollectionViewModel = nil
     }
 
     override func viewDidLayout() {
@@ -585,7 +587,7 @@ final class AddressBarViewController: NSViewController {
         case .url(urlString: _, url: _, userTyped: let userTyped): self.mode = userTyped ? .editing(.url) : .browsing
         case .suggestion(let suggestionViewModel):
             switch suggestionViewModel.suggestion {
-            case .phrase, .unknown:
+            case .phrase, .unknown, .askAIChat:
                 self.mode = .editing(.text)
             case .website, .bookmark, .historyEntry, .internalPage:
                 self.mode = .editing(.url)

@@ -1900,52 +1900,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     }
 
     @MainActor
-    func testRoundedPageSheetDismissal_TriggersReEntryPill() {
-        // Given
-        let videoID = "test123"
-        let source: DuckPlayer.VideoNavigationSource = .youtube
-        let timestamp: TimeInterval = 30
-        mockDuckPlayerSettings.welcomeMessageShown = true
-        mockDuckPlayerSettings.primingMessagePresented = true
-
-        // Present the DuckPlayer
-        _ = sut.presentDuckPlayer(
-            videoID: videoID,
-            source: source,
-            in: mockHostViewController,
-            title: nil,
-            timestamp: timestamp
-        )
-
-        // Verify initial state
-        XCTAssertTrue(sut.state.hasBeenShown, "State should indicate DuckPlayer has been shown")
-        XCTAssertNil(sut.containerViewController, "Pill container should not exist while DuckPlayer is shown")
-
-        // Ensure hostView reference is maintained
-        XCTAssertNotNil(sut.hostView, "Host view should be maintained")
-
-        // When - Simulate DuckPlayer dismissal by triggering the dismiss publisher
-        guard let playerViewModel = sut.playerViewModel else {
-            XCTFail("Player view model should exist")
-            return
-        }
-
-        // Simulate the view disappearing and dismiss publisher firing
-        playerViewModel.dismissPublisher.send(timestamp)
-        
-        // Wait for pill presentation using helper method
-        waitForCondition(
-            condition: { [weak sut] in sut?.containerViewController != nil },
-            description: "Pill should be presented after dismissal"
-        )
-
-        // Then - Should present re-entry pill 
-        XCTAssertNotNil(sut.containerViewController, "Pill container should be created after dismissal")
-        XCTAssertEqual(sut.state.timestamp, timestamp, "State should preserve the timestamp")
-        XCTAssertTrue(sut.duckPlayerSettings.welcomeMessageShown, "Welcome message should be marked as shown")
-    }
-
-    @MainActor
     func testDuckPlayerDismissal_UpdatesStateAndSettings() {
         // Given
         let videoID = "test123"

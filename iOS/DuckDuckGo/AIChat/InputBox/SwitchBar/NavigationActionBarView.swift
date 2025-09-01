@@ -27,7 +27,7 @@ final class NavigationActionBarView: UIView {
     // MARK: - Constants
     enum Constants {
         static let barHeight: CGFloat = 76
-        static let buttonSize: CGFloat = 44
+        static let buttonSize: CGFloat = 40
         static let padding: CGFloat = 16
         static let buttonSpacing: CGFloat = 12
         static let cornerRadius: CGFloat = 8
@@ -110,12 +110,14 @@ final class NavigationActionBarView: UIView {
         mainStackView.translatesAutoresizingMaskIntoConstraints = false
         backgroundGradientView.translatesAutoresizingMaskIntoConstraints = false
         
+        let mainStackMinHeightConstraint = mainStackView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.buttonSize)
         NSLayoutConstraint.activate([
             // Main stack view constraints
             mainStackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Constants.padding),
             mainStackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Constants.padding),
             mainStackView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: Constants.padding),
             mainStackView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor, constant: -Constants.padding),
+            mainStackMinHeightConstraint,
 
             // Background gradient should align with the keyboard (or bottom safe area)
             backgroundGradientView.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -160,7 +162,6 @@ final class NavigationActionBarView: UIView {
     }
     
     private func setupBindings() {
-        // Observe view model changes
         viewModel.$isSearchMode
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -183,6 +184,13 @@ final class NavigationActionBarView: UIView {
             .store(in: &cancellables)
         
         viewModel.$isCurrentTextValidURL
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateUI()
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$isKeyboardVisible
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateUI()
@@ -225,14 +233,11 @@ final class NavigationActionBarView: UIView {
         let isValidURL = viewModel.isCurrentTextValidURL
         let isSearchMode = viewModel.isSearchMode
         
-        // Determine icon
         let icon: UIImage? = {
-            if isValidURL {
-                return DesignSystemImages.Glyphs.Size24.globe
-            } else if isSearchMode {
+            if isSearchMode && !isValidURL {
                 return DesignSystemImages.Glyphs.Size24.searchFind
             } else {
-                return DesignSystemImages.Glyphs.Size24.arrowUp
+                return DesignSystemImages.Glyphs.Size24.arrowRightSmall
             }
         }()
         
@@ -243,18 +248,18 @@ final class NavigationActionBarView: UIView {
         )
         searchButton.isEnabled = hasText
         
-        // Animate changes
         UIView.animate(withDuration: 0.2) {
             self.searchButton.alpha = hasText ? 1.0 : 0.5
         }
     }
     
     private func updateButtonVisibility() {
-        // Update microphone button visibility
         let shouldShowMicButton = viewModel.shouldShowMicButton
         microphoneButton.isHidden = !shouldShowMicButton
         
-        // Update search button visibility
+        let shouldShowNewLineButton = viewModel.isKeyboardVisible && viewModel.hasText && !viewModel.isSearchMode
+        newLineButton.isHidden = !shouldShowNewLineButton
+        
         let shouldShowSearchButton = viewModel.hasText
         searchButton.isHidden = !shouldShowSearchButton
     }
@@ -284,6 +289,10 @@ final class NavigationActionBarView: UIView {
 // MARK: - CircularButton
 
 private class CircularButton: UIButton {
+
+    enum Constants {
+        static let hitSize: CGFloat = 44.0
+    }
 
     private let secondShadowLayer = CALayer()
     private var definedBackgroundColor: UIColor?
@@ -354,6 +363,14 @@ private class CircularButton: UIButton {
             layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
             secondShadowLayer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
         }
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        assert(Constants.hitSize >= frame.height)
+        let offset = (frame.height - Constants.hitSize) / 2
+        let rect = CGRect(x: offset, y: offset, width: Constants.hitSize, height: Constants.hitSize)
+        guard rect.contains(point) else { return nil }
+        return self
     }
 }
 

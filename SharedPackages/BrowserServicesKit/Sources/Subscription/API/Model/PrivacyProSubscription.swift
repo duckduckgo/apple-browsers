@@ -68,7 +68,7 @@ public struct PrivacyProSubscription: Codable, Equatable, CustomDebugStringConve
     ///
     /// The `Offer` struct encapsulates information about a specific subscription offer,
     /// including its type.
-    public struct Offer: Codable, Equatable {
+    public struct Offer: Codable, Equatable, Hashable {
         /// The type of the offer.
         public let type: OfferType
     }
@@ -118,5 +118,19 @@ public struct PrivacyProSubscription: Codable, Equatable, CustomDebugStringConve
         dateFormatter.timeStyle = .short
         dateFormatter.timeZone = TimeZone.current
         return dateFormatter.string(from: date)
+    }
+
+    // MARK: - Equatable
+
+    public static func == (lhs: PrivacyProSubscription, rhs: PrivacyProSubscription) -> Bool {
+        return lhs.productId == rhs.productId &&
+        lhs.name == rhs.name &&
+        lhs.billingPeriod == rhs.billingPeriod &&
+        lhs.startedAt == rhs.startedAt &&
+        lhs.expiresOrRenewsAt == rhs.expiresOrRenewsAt &&
+        lhs.platform == rhs.platform &&
+        lhs.status == rhs.status &&
+        Set(lhs.activeOffers) == Set(rhs.activeOffers) &&
+        Set(lhs.features ?? []) == Set(rhs.features ?? [])
     }
 }

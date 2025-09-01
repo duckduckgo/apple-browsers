@@ -28,7 +28,8 @@ import os.log
 extension DefaultSubscriptionManager {
 
     // Init the SubscriptionManager using the standard dependencies and configuration, to be used only in the dependencies tree root
-    public convenience init(featureFlagger: FeatureFlagger? = nil) {
+    public convenience init(featureFlagger: FeatureFlagger? = nil,
+                            pixelHandlingSource: SubscriptionPixelHandler.Source) {
         // Configure Subscription
         let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
@@ -92,7 +93,9 @@ extension DefaultSubscriptionManager {
         accountManager.delegate = self
 
         // Auth V2 cleanup in case of rollback
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { _, error in
+        let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: pixelHandlingSource)
+        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
+        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { _, error in
             Logger.subscription.error("Failed to remove AuthV2 token container : \(error.localizedDescription, privacy: .public)")
         }
         try? tokenStorage.saveTokenContainer(nil)
@@ -125,11 +128,13 @@ extension DefaultSubscriptionManagerV2 {
                             environment: SubscriptionEnvironment,
                             featureFlagger: FeatureFlagger? = nil,
                             userDefaults: UserDefaults,
-                            pixelHandlingSource: AuthV2PixelHandler.Source) {
+                            pixelHandlingSource: SubscriptionPixelHandler.Source) {
 
+        let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: pixelHandlingSource)
+        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
         let authService = DefaultOAuthService(baseURL: environment.authEnvironment.url,
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { accessType, error in
+        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
             PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
                                                                              accessError: error,
                                                                              source: KeychainErrorSource.shared,
@@ -174,10 +179,6 @@ extension DefaultSubscriptionManagerV2 {
                         userDefaults.storefrontRegionOverride == .restOfWorld)
             }
         }
-
-        // Pixel handler configuration
-        let pixelHandler: SubscriptionPixelHandler = AuthV2PixelHandler(source: pixelHandlingSource)
-
         let isInternalUserEnabled = { featureFlagger?.internalUserDecider.isInternalUser ?? false }
         let legacyAccountStorage = AccountKeychainStorage()
         if #available(macOS 12.0, *) {

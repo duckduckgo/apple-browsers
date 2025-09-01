@@ -44,7 +44,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     var forMainFrameOnly: Bool { false }
 
     private weak var selfTestWebView: WKWebView?
-    private weak var selfTestFrameInfo: WKFrameInfo?
+    private var selfTestFrameInfo: WKFrameInfo?
 
     private var topUrl: URL?
     private let preferences = CookiePopupProtectionPreferences.shared

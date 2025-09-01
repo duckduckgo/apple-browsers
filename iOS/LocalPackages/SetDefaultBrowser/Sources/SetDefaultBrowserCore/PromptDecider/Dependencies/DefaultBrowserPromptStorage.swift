@@ -27,6 +27,8 @@ public protocol DefaultBrowserPromptStorage: AnyObject {
     var modalShownOccurrences: Int { get set }
     /// A boolean value indicating whether the user has chosen to permanently dismiss the SAD prompts.
     var isPromptPermanentlyDismissed: Bool { get set }
+    /// A boolean value indicating whether the user has seen the inactive modal SAD prompt.
+    var hasInactiveModalShown: Bool { get set }
 }
 
 public extension DefaultBrowserPromptStorage {

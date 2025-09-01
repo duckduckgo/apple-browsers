@@ -1,5 +1,5 @@
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "VPN aufgrund abgelaufenen Abonnements getrennt. Abonniere Privacy Pro, um die Verbindung zum DuckDuckGo-VPN wiederherzustellen.";
+"network.protection.entitlement.expired.notification.body" = "VPN aufgrund abgelaufenen Abonnements getrennt. Abonniere DuckDuckGo, um die Verbindung zum VPN wiederherzustellen.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN konnte keine Verbindung herstellen. Bitte versuche es zu einem späteren Zeitpunkt erneut.";

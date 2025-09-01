@@ -26,12 +26,6 @@ import Persistence
 
 struct AppConfiguration {
 
-    @UserDefaultsWrapper(key: .privacyConfigCustomURL, defaultValue: nil)
-    private var privacyConfigCustomURL: String?
-
-    @UserDefaultsWrapper(key: .remoteMessagingConfigCustomURL, defaultValue: nil)
-    private var remoteMessagingConfigCustomURL: String?
-
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
 
     let persistentStoresConfiguration = PersistentStoresConfiguration()
@@ -42,40 +36,43 @@ struct AppConfiguration {
     func start() throws {
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
         PixelConfiguration.configure(with: featureFlagger)
-        NewTabPageIntroMessageConfiguration().disableIntroMessageForReturningUsers()
 
         contentBlockingConfiguration.prepareContentBlocking()
-        configureAPIRequestUserAgent()
+        APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
+
         onboardingConfiguration.migrateToNewOnboarding()
+        clearTemporaryDirectory()
         try persistentStoresConfiguration.configure()
-        setConfigurationURLProvider()
+        migrateAIChatSettings()
 
         WidgetCenter.shared.reloadAllTimelines()
         PrivacyFeatures.httpsUpgrade.loadDataAsync()
     }
 
-    private func configureAPIRequestUserAgent() {
-        APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
+    /// Perform AI Chat settings migration, and needs to happen before AIChatSettings is created
+    ///  and the widgets needs to be reloaded after.
+    /// Moves settings from `UserDefaults.standard` to the shared container.
+    private func migrateAIChatSettings() {
+        AIChatSettingsMigration.migrate(from: UserDefaults.standard, to: {
+            let sharedUserDefaults = UserDefaults(suiteName: Global.appConfigurationGroupName)
+            if sharedUserDefaults == nil {
+                Pixel.fire(pixel: .debugFailedToCreateAppConfigurationUserDefaultsInAIChatSettingsMigration)
+            }
+            return sharedUserDefaults ?? UserDefaults()
+        })
     }
 
-    private func setConfigurationURLProvider() {
-        // Never use the custom configuration by default when not DEBUG, but
-        //  you can go to the debug menu and enabled it.
-        if !isDebugBuild {
-            Configuration.setURLProvider(AppConfigurationURLProvider())
-            return
+    private func clearTemporaryDirectory() {
+        let tmp = FileManager.default.temporaryDirectory
+        do {
+            try FileManager.default.removeItem(at: tmp)
+            Logger.general.info("🧹 Removed temp directory at: \(tmp.path)")
+            // https://app.asana.com/1/137249556945/project/1201392122292466/task/1210925187026095?focus=true
+            try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true, attributes: nil)
+            Logger.general.info("📁 Recreated temp directory at: \(tmp.path)")
+        } catch {
+            Logger.general.error("❌ Failed to reset tmp dir: \(error.localizedDescription)")
         }
-
-        // Always use custom configuration in debug.
-        //  Only the configurations editable in the debug menu are specified here.
-        let privacyConfigURL = privacyConfigCustomURL.flatMap { URL(string: $0) }
-        let remoteMessagingConfigURL = remoteMessagingConfigCustomURL.flatMap { URL(string: $0) }
-
-        // This will default to normal values if the overrides are nil.
-        Configuration.setURLProvider(CustomConfigurationURLProvider(
-            customPrivacyConfigurationURL: privacyConfigURL,
-            customRemoteMessagingConfigURL: remoteMessagingConfigURL
-        ))
     }
 
     @MainActor

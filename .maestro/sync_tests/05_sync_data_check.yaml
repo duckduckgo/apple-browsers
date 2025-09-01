@@ -1,5 +1,6 @@
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - sync
 name: 05_sync_data_check
 

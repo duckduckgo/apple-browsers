@@ -1,0 +1,43 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - ipad
+    - duckplayer_classic
+
+---
+
+
+# Load constants
+- runFlow:
+    file: shared/constants.yaml
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+# Open Settings
+- runFlow: 
+    file: shared/open_settings.yaml
+
+- tapOn:
+    id: chevron.up.chevron.down
+
+# Set to "Open Automatically"
+- tapOn: ${output.askLabel}
+
+# Close Settings
+- runFlow: 
+    file: shared/close_settings.yaml
+
+# Navigate directly to YouTube URL
+- runFlow: 
+    file: shared/load_youtube_url.yaml
+
+# Wait for results to load
+- waitForAnimationToEnd
+
+# Tap on Turn On Duck Player Overlay Button
+- tapOn: ${output.turnOnDuckPlayerLabel}
+
+# Verify Duck Player Classic opens automatically
+- runFlow:
+    file: shared/duckplayer_is_visible.yaml

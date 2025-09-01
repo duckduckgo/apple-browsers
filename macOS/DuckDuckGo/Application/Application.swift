@@ -19,11 +19,13 @@
 import AppKit
 import Common
 import Foundation
+import Combine
 
 @objc(Application)
 final class Application: NSApplication {
 
     public static var appDelegate: AppDelegate! // swiftlint:disable:this weak_delegate
+    private var fireWindowPreferenceCancellable: AnyCancellable?
 
     override init() {
         super.init()
@@ -53,9 +55,19 @@ final class Application: NSApplication {
             aiChatMenuConfig: delegate.aiChatMenuConfiguration,
             internalUserDecider: delegate.internalUserDecider,
             appearancePreferences: delegate.appearancePreferences,
-            privacyConfigurationManager: delegate.privacyFeatures.contentBlocking.privacyConfigurationManager
+            privacyConfigurationManager: delegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+            isFireWindowDefault: delegate.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
+            configurationURLProvider: delegate.configurationURLProvider
         )
         self.mainMenu = mainMenu
+
+        // Subscribe to Fire Window preference changes to update menu dynamically
+        fireWindowPreferenceCancellable = delegate.dataClearingPreferences.$shouldOpenFireWindowbyDefault
+            .dropFirst()
+            .sink { [weak mainMenu] isFireWindowDefault in
+                mainMenu?.updateMenuItemsPositionForFireWindowDefault(isFireWindowDefault)
+                mainMenu?.updateMenuShortcutsFor(isFireWindowDefault)
+            }
 
         // Makes sure Spotlight search is part of Help menu
         self.helpMenu = mainMenu.helpMenu
@@ -72,4 +84,32 @@ final class Application: NSApplication {
         NSGetUncaughtExceptionHandler()?(exception)
     }
 
+#if DEBUG
+    var testIgnoredEvents: [NSEvent.EventType] = {
+        var testIgnoredEvents: [NSEvent.EventType] = [
+            .mouseMoved, .mouseExited, .mouseExited, .mouseEntered,
+            .leftMouseUp, .leftMouseUp, .leftMouseDown, .leftMouseDragged,
+            .rightMouseUp, .rightMouseUp, .rightMouseDown, .rightMouseDragged,
+            .otherMouseUp, .otherMouseUp, .otherMouseDown, .otherMouseDragged,
+            .keyDown, .keyUp, .flagsChanged,
+            .scrollWheel, .magnify, .rotate, .swipe,
+            .directTouch, .gesture, .beginGesture,
+            .tabletPoint, .tabletProximity,
+            .pressure,
+        ]
+        if #available(macOS 26.0, *) {
+            testIgnoredEvents.append(.init(rawValue: 40)! /* .mouseCancelled */)
+        }
+        return testIgnoredEvents
+    }()
+    override func sendEvent(_ event: NSEvent) {
+        // Ignore user events when running Tests
+        if [.unitTests, .integrationTests].contains(AppVersion.runType),
+           testIgnoredEvents.contains(event.type),
+           (NSClassFromString("TestRunHelper") as? NSObject.Type)!.value(forKey: "allowAppSendUserEvents") as? Bool != true {
+            return
+        }
+        super.sendEvent(event)
+    }
+#endif
 }

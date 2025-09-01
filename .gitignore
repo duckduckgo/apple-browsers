@@ -65,3 +65,8 @@ default.profraw
 # Claude
 .claude/settings.local.json
 
+/build-ui-tests
+
+# xcode-build-server files
+buildServer.json
+.compile

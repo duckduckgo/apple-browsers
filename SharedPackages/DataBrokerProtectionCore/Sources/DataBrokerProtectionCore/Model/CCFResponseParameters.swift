@@ -60,6 +60,24 @@ public struct SolveCaptchaResponse: Decodable {
     let callback: EvalResponse
 }
 
+public class ConditionSuccessResponse: Decodable {
+    enum CodingKeys: String, CodingKey {
+        case actions
+    }
+
+    let actions: [Action]
+
+    public required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let actionsList = try container.decodeIfPresent([[String: Any]].self, forKey: .actions)
+        if let actionsList = actionsList {
+            self.actions = try Step.parse(actionsList)
+        } else {
+            self.actions = []
+        }
+    }
+}
+
 enum CCFSuccessData {
     case navigate(NavigateResponse)
     case extract([ExtractedProfile])
@@ -68,6 +86,7 @@ enum CCFSuccessData {
     case expectation
     case getCaptchaInfo(GetCaptchaInfoResponse)
     case solveCaptcha(SolveCaptchaResponse)
+    case conditionSuccess(ConditionSuccessResponse)
 }
 
 struct CCFSuccessResponse: Decodable {
@@ -107,7 +126,7 @@ struct CCFSuccessResponse: Decodable {
         case .solveCaptcha:
             self.response = .solveCaptcha(try container.decode(SolveCaptchaResponse.self, forKey: .response))
         case .condition:
-            self.response = nil
+            self.response = .conditionSuccess(try container.decode(ConditionSuccessResponse.self, forKey: .response))
         }
     }
 }

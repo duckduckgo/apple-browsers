@@ -1,0 +1,36 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - device_info
+
+---
+
+# This test will run on iPhone simulator because it has the 'iphone' tag
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+# First, verify we're running on iPhone by checking browser info
+- assertVisible:
+    id: searchEntry
+- tapOn: 
+    id: searchEntry
+    
+# Get user Agent
+- inputText: "https://useragentstring.com/"
+- pressKey: Enter
+
+- assertVisible: "iPhone"
+
+# Navigate back to search
+- tapOn:
+    id: searchEntry
+
+- pressKey: Backspace
+    
+# Now run a normal search to verify iPhone-specific layout
+- inputText: "remote iOS developer jobs"
+- pressKey: Enter
+
+- assertVisible: ".*" # This will match any visible element

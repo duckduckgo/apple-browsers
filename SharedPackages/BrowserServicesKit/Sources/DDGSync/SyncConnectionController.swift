@@ -59,7 +59,7 @@ public protocol SyncConnectionControlling {
     /**
      Returns a device ID, public key and secret key ready for display and allows callers attempt to fetch the transmitted public key
      */
-    func startExchangeMode()  async throws -> PairingInfo
+    func startExchangeMode() async throws -> PairingInfo
 
     /**
      Returns a device id and temporary secret key ready for display and allows callers attempt to fetch the transmitted recovery key.
@@ -81,17 +81,55 @@ public protocol SyncConnectionControlling {
     func syncCodeEntered(code: String, canScanURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool
 }
 
+private actor SyncConnectionState {
+    private var _isCodeHandlingInFlight: Bool = false
+    private var _exchanger: RemoteKeyExchanging?
+    private var _connector: RemoteConnecting?
+
+    func setCodeHandlingInFlight(_ value: Bool) {
+        _isCodeHandlingInFlight = value
+    }
+
+    func isCodeHandlingInFlight() -> Bool {
+        return _isCodeHandlingInFlight
+    }
+
+    func setExchanger(_ exchanger: RemoteKeyExchanging?) {
+        _exchanger = exchanger
+    }
+
+    func getExchanger() -> RemoteKeyExchanging? {
+        return _exchanger
+    }
+
+    func setConnector(_ connector: RemoteConnecting?) {
+        _connector = connector
+    }
+
+    func getConnector() -> RemoteConnecting? {
+        return _connector
+    }
+
+    func stopConnectMode() {
+        _connector?.stopPolling()
+        _connector = nil
+    }
+
+    func stopExchangeMode() {
+        _exchanger?.stopPolling()
+        _exchanger = nil
+    }
+}
+
 public class SyncConnectionController: SyncConnectionControlling {
     private let deviceName: String
     private let deviceType: String
     private let syncService: DDGSyncing
     private let dependencies: SyncDependencies
 
-    weak var delegate: SyncConnectionControllerDelegate?
+    private weak var delegate: SyncConnectionControllerDelegate?
 
-    private var exchanger: RemoteKeyExchanging?
-    private var connector: RemoteConnecting?
-    private var isCodeHandlingInFlight: Bool = false
+    private let state = SyncConnectionState()
 
     private var recoveryCode: String {
         guard let code = syncService.account?.recoveryCode else {
@@ -109,26 +147,26 @@ public class SyncConnectionController: SyncConnectionControlling {
         self.dependencies = dependencies
     }
 
-    public func startExchangeMode() throws -> PairingInfo {
+    public func startExchangeMode() async throws -> PairingInfo {
         let exchanger = try remoteExchange()
-        self.exchanger = exchanger
+        await state.setExchanger(exchanger)
         startExchangePolling()
         let pairingInfo = PairingInfo(base64Code: exchanger.code, deviceName: deviceName)
         return pairingInfo
     }
 
-    public func startConnectMode() throws -> PairingInfo {
+    public func startConnectMode() async throws -> PairingInfo {
         let connector = try remoteConnect()
-        self.connector = connector
+        await state.setConnector(connector)
         self.startConnectPolling()
         let pairingInfo = PairingInfo(base64Code: connector.code, deviceName: deviceName)
         return pairingInfo
     }
 
-    public func cancel() {
-        isCodeHandlingInFlight = false
-        stopConnectMode()
-        stopExchangeMode()
+    public func cancel() async {
+        await state.setCodeHandlingInFlight(false)
+        await state.stopConnectMode()
+        await state.stopExchangeMode()
     }
 
     @discardableResult
@@ -161,12 +199,14 @@ public class SyncConnectionController: SyncConnectionControlling {
 
     @discardableResult
     public func syncCodeEntered(code: String, canScanURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool {
-        guard !isCodeHandlingInFlight else {
+        guard !(await state.isCodeHandlingInFlight()) else {
             return false
         }
-        isCodeHandlingInFlight = true
+        await state.setCodeHandlingInFlight(true)
         defer {
-            isCodeHandlingInFlight = false
+            Task {
+                await state.setCodeHandlingInFlight(false)
+            }
         }
 
         let syncCode: SyncCode
@@ -217,7 +257,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         Task { @MainActor in
             let exchangeMessage: ExchangeMessage
             do {
-                guard let message = try await exchanger?.pollForPublicKey() else {
+                guard let message = try await (await state.getExchanger())?.pollForPublicKey() else {
                     // Polling likely cancelled
                     return
                 }
@@ -234,8 +274,8 @@ public class SyncConnectionController: SyncConnectionControlling {
                 await delegate?.controllerDidError(.failedToTransmitExchangeRecoveryKey, underlyingError: error, setupRole: .sharer)
             }
 
-            await delegate?.controllerDidFinishTransmittingRecoveryKey()
-            await exchanger?.stopPolling()
+            delegate?.controllerDidFinishTransmittingRecoveryKey()
+            (await state.getExchanger())?.stopPolling()
         }
     }
 
@@ -243,7 +283,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         Task { @MainActor in
             let recoveryKey: SyncCode.RecoveryKey
             do {
-                guard let key = try await connector?.pollForRecoveryKey() else {
+                guard let key = try await (await state.getConnector())?.pollForRecoveryKey() else {
                     // Polling likely cancelled
                     return
                 }
@@ -253,7 +293,7 @@ public class SyncConnectionController: SyncConnectionControlling {
                 return
             }
 
-            await delegate?.controllerDidReceiveRecoveryKey()
+            delegate?.controllerDidReceiveRecoveryKey()
 
             do {
                 try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: false, setupRole: .sharer)
@@ -326,16 +366,6 @@ public class SyncConnectionController: SyncConnectionControlling {
         }
 
         return true
-    }
-
-    private func stopConnectMode() {
-        self.connector?.stopPolling()
-        self.connector = nil
-    }
-
-    private func stopExchangeMode() {
-        exchanger?.stopPolling()
-        exchanger = nil
     }
 
     private func handleRecoveryCodeLoginError(recoveryKey: SyncCode.RecoveryKey, error: Error, setupRole: SyncSetupRole) async {

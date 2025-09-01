@@ -58,8 +58,8 @@ final class ConfigurationManager: DefaultConfigurationManager {
         PixelKit.fire(DebugEvent(domainEvent, error: error))
     }
 
-    init(fetcher: ConfigurationFetching = ConfigurationFetcher(store: ConfigurationStore(), eventMapping: configurationDebugEvents),
-         store: ConfigurationStoring = ConfigurationStore(),
+    init(fetcher: ConfigurationFetching,
+         store: ConfigurationStoring,
          defaults: KeyValueStoring = UserDefaults.appConfiguration,
          trackerDataManager: TrackerDataManager,
          privacyConfigurationManager: PrivacyConfigurationManaging,

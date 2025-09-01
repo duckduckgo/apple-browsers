@@ -138,6 +138,10 @@ final actor PixelFiringMock: PixelFiring, PixelFiringAsync, DailyPixelFiring {
         onCountComplete(expectedCountPixelFireError)
     }
 
+    static func fireDailyAndCount(_ pixel: Core.Pixel.Event, error: (any Error)?, withAdditionalParameters params: [String: String]) {
+        lastDailyPixelInfo = PixelInfo(pixelName: pixel.name, error: error, params: params, includedParams: nil)
+    }
+
     // -
 
     static func tearDown() {

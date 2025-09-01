@@ -1,6 +1,7 @@
 # swipe_tabs.yaml
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - release
 
 ---

@@ -1,7 +1,7 @@
 {
   "name": "PeoplesWhizr",
   "url": "peopleswhizr.com",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "parent": "peoplewhiz.com",
   "addedDatetime": 1709445600000,
   "optOutUrl": "https://peopleswhizr.com/optout",
@@ -53,5 +53,6 @@
     "confirmOptOutScan": 72,
     "maintenanceScan": 120,
     "maxAttempts": -1
-  }
+  },
+  "removedAt": null
 }

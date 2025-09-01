@@ -1,0 +1,95 @@
+{
+  "smartling" : {
+    "string_format" : "icu",
+    "translate_paths" : [
+    {
+      "path" : "*/title",
+      "key" : "{*}/title",
+      "instruction" : "*/note"
+    }]
+  },
+  "advancedButton" : {
+    "title" : "Haladó",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to see advanced options on click."
+  },
+  "advancedEllipsisButton" : {
+    "title" : "Speciális…",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to see advanced options on click. This button contains a trailing ellipsis."
+  },
+  "leaveSiteButton" : {
+    "title" : "Webhely elhagyása",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to leave the website and navigate to previous page."
+  },
+  "visitSiteButton" : {
+    "title" : "Kockázat elfogadása és a webhely megnyitása",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to visit the website anyway despite the risks."
+  },
+  "maliciousSiteTabTitle" : {
+    "title" : "Figyelem: Biztonsági kockázat",
+    "note" : "Title shown in the browser window or tab when the current page may be a security risk due to phishing"
+  },
+  "malwarePageHeading" : {
+    "title" : "Figyelmeztetés: Lehet, hogy ez a webhely{newline}biztonsági kockázatot jelent",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to malware distribution. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "malwareWarningText" : {
+    "title" : "A DuckDuckGo csalásblokkoló megakadályozta az oldal a betöltését, mert vélhetően olyan rosszindulatú programot terjeszt, amely veszélyeztetheti az eszközöd biztonságát vagy ellophatja a személyes adataidat.{newline}<a>További részletek</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to malware distribution. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "malwareAdvancedInfoHeading" : {
+    "title" : "Ha úgy gondolod, hogy ez a weboldal biztonságos, <a>tegyél hibabejelentést</a>. A weboldalt továbbra is saját felelősségedre látogathatod.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to malware distribution."
+  },
+  "phishingPageHeading" : {
+    "title" : "Figyelem: A webhely{newline}biztonsági kockázatot jelenthet",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to Phishing issues. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "phishingWarningText" : {
+    "title" : "A DuckDuckGo csalásblokkoló megakadályozta az oldal a betöltését, mivel előfordulhat, hogy valódi webhelynek adja ki magát, hogy megtévesszen és így személyes adatokat, például jelszavakat vagy bankkártyaszámokat szerezzen tőled.{newline}<a>További részletek</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to Phishing issues. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "phishingAdvancedInfoHeading" : {
+    "title" : "Ha úgy gondolod, hogy ez a weboldal biztonságos, <a>tegyél hibabejelentést</a>. A weboldalt továbbra is saját felelősségedre látogathatod.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to malware distribution."
+  },
+  "scamPageHeading" : {
+    "title" : "Figyelem: A webhely{newline}biztonsági kockázatot jelenthet",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to suspected scam attempts. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "scamWarningText" : {
+    "title" : "A DuckDuckGo csalásblokkoló megakadályozta az oldal a betöltését, mert feltehetően megtévesztő vagy manipulatív módon megpróbál rávenni pénz átutalására, hamisított termékek vásárlására, vagy rosszindulatú program telepítésére.{newline}<a>További részletek</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to suspected scam attempts. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "scamAdvancedInfoHeading" : {
+    "title" : "Ha úgy gondolod, hogy ez a weboldal biztonságos, <a>tegyél hibabejelentést</a>. A weboldalt továbbra is saját felelősségedre látogathatod.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to suspected scam attempts."
+  },
+  "sslPageHeading" : {
+    "title" : "Figyelmeztetés: Lehet, hogy ez a webhely nem biztonságos",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to SSL issues"
+  },
+  "sslWarningText" : {
+    "title" : "A webhely tanúsítványa érvénytelen. Előfordulhat, hogy olyan szerverhez csatlakozol, amely megpróbál <b>{domain}</b> címűként viselkedni, veszélybe sodorva ezzel bizalmas adataidat.",
+    "note" : "Describes an SSL error where a website’s security certificate is invalid. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslAdvancedInfoHeading" : {
+    "title" : "A DuckDuckGo figyelmeztet, ha egy webhely érvénytelen tanúsítvánnyal rendelkezik.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to SSL issues."
+  },
+  "sslExpiredAdvancedInfoText" : {
+    "title" : "A megnyitni kívánt <b>{domain}</b> biztonsági tanúsítványa lejárt. Lehetséges, hogy a webhely nincs megfelelően konfigurálva, esetleg egy támadó feltörte a kapcsolatodat, vagy a rendszeróra beállítása helytelen.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues."
+  },
+  "sslInvalidAdvancedInfoText" : {
+    "title" : "A megnyitni kívánt <b>{domain}</b> biztonsági tanúsítványát az eszköz operációs rendszere nem ítéli meg biztonságosnak. Lehetséges, hogy a webhely nincs megfelelően konfigurálva, vagy egy támadó feltörte a kapcsolatodat.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslSelfSignedAdvancedInfoText" : {
+    "title" : "A megnyitni kívánt <b>{domain}</b> biztonsági tanúsítványát az eszköz operációs rendszere nem ítéli meg biztonságosnak. Lehetséges, hogy a webhely nincs megfelelően konfigurálva, vagy egy támadó feltörte a kapcsolatodat.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslWrongHostAdvancedInfoText" : {
+    "title" : "A megnyitni kívánt <b>{domain}</b> biztonsági tanúsítványa nem egyezik ezzel: <b>*.{eTldPlus1}</b>. Lehetséges, hogy a webhely nincs megfelelően konfigurálva, vagy egy támadó feltörte a kapcsolatodat.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The two placeholders are website domain names (example: duckduckgo.com)."
+  }
+}

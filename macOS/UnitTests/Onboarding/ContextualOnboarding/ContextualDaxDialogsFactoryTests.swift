@@ -249,8 +249,8 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let mainWindowController = MainWindowController(
             window: window,
             mainViewController: mainViewController,
-            popUp: false,
-            fireViewModel: fireCoordinator.fireViewModel
+            fireViewModel: fireCoordinator.fireViewModel,
+            visualStyle: NSApp.delegateTyped.visualStyle
         )
         mainWindowController.window = window
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController

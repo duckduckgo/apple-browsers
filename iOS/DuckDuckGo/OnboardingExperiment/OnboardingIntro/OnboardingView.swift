@@ -20,6 +20,8 @@
 import SwiftUI
 import Onboarding
 import DuckUI
+import SystemSettingsPiPTutorial
+import MetricBuilder
 
 // MARK: - OnboardingView
 
@@ -40,10 +42,6 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            // Position the 'Set Default Browser' video tutorial behind the onboarding background.
-            // When we want to show the PiP video to the user we will start playing and then deeplink into the settings.
-            setDefaultBrowserTutorialView
-
             OnboardingBackground()
 
             switch model.state {
@@ -160,18 +158,8 @@ struct OnboardingView: View {
             animateText: $model.browserComparisonState.animateComparisonText,
             showContent: $model.browserComparisonState.showComparisonButton,
             isSkipped: $model.isSkipped,
-            setAsDefaultBrowserAction: {
-                if model.enrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial() {
-                    // Play video first and then deeplink to the settings.
-                    // Once the video starts playing sending the app to the background will start PiP automatically.
-                    isPlayingSetAsDefaultVideo = true
-                } else {
-                    model.setDefaultBrowserAction()
-                }
-            },
-            cancelAction: {
-                model.cancelSetDefaultBrowserAction()
-            }
+            setAsDefaultBrowserAction: model.setDefaultBrowserAction,
+            cancelAction: model.cancelSetDefaultBrowserAction
         )
         .onboardingDaxDialogStyle()
     }
@@ -208,31 +196,6 @@ struct OnboardingView: View {
             action: model.selectAddressBarPositionAction
         )
         .onboardingDaxDialogStyle()
-    }
-
-    private var setAsDefaultTutorialVideoView: some View {
-        SetAsDefaultVideoTutorialView(isPlaying: $isPlayingSetAsDefaultVideo, onPiPStarted: {
-            model.setDefaultBrowserAction()
-        })
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
-            Logger.onboarding.debug("[Onboarding] - Will Enter Foreground. Is Playing Set Default Tutorial Video:  \(isPlayingSetAsDefaultVideo)")
-            if isPlayingSetAsDefaultVideo {
-                model.completedSetDefaultBrowserAction()
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var setDefaultBrowserTutorialView: some View {
-        // Position the 'Set Default Browser' video tutorial behind the onboarding background.
-        // When we want to show the PiP video to the user we will start playing and then deeplink into the settings.
-        // We explicitly not call the associated function associated with `.browsersComparisonDialog` because it will enrol the user in the experiment. We want to enrol the user in the experiment when they tap the CTA button.
-        if case .browsersComparisonDialog = model.state.intro?.type {
-            setAsDefaultTutorialVideoView
-                .frame(width: 300, height: 100) // Fixed size prevents stretching in ZStack and smooths PiP transition. PiP size is auto-determined by OS.
-        } else {
-            EmptyView()
-        }
     }
 
     private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {
@@ -317,7 +280,7 @@ private enum Metrics {
     static let daxDialogDelay: TimeInterval = 2.0
     static let daxDialogVisibilityDelay: TimeInterval = 0.5
     static let comparisonChartAnimationDuration = 0.25
-    static let dialogVerticalOffsetPercentage = MetricBuilder<CGFloat>(value: 0.1).smallIphone(0.01)
+    static let dialogVerticalOffsetPercentage = MetricBuilder<CGFloat>(default: 0.1).iPhoneSmallScreen(0.01)
     static let progressBarTrailingPadding: CGFloat = 16.0
     static let progressBarTopPadding: CGFloat = 12.0
 }
@@ -340,12 +303,25 @@ private extension View {
 
 // MARK: - Preview
 
-#Preview("Onboarding - Light") {
-    OnboardingView(model: .init(pixelReporter: OnboardingPixelReporter()))
-        .preferredColorScheme(.light)
-}
+struct OnboardingView_Previews: PreviewProvider {
+    class MockDaxDialogDisabling: ContextualDaxDialogDisabling {
+        func disableContextualDaxDialogs() {}
+    }
 
-#Preview("Onboarding - Dark") {
-    OnboardingView(model: .init(pixelReporter: OnboardingPixelReporter()))
-        .preferredColorScheme(.dark)
+    static var previews: some View  {
+        ForEach(ColorScheme.allCases, id: \.self) {
+            OnboardingView(
+                model: .init(
+                    pixelReporter: OnboardingPixelReporter(),
+                    systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManager(
+                        playerView: UIView(),
+                        videoPlayer: VideoPlayerCoordinator(configuration: VideoPlayerConfiguration()),
+                        eventMapper: SystemSettingsPiPTutorialPixelHandler(),
+                    ),
+                    daxDialogsManager: MockDaxDialogDisabling()
+                )
+            )
+            .preferredColorScheme($0)
+        }
+    }
 }

@@ -49,8 +49,9 @@ struct SubscriptionEmailView: View {
         NavigationLink(destination: LazyView(SubscriptionITPView().navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
-        if DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
-            NavigationLink(destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: DataBrokerProtectionIOSManager.shared!).navigationViewStyle(.stack)),
+        if viewModel.isPIREnabled,
+           let dbpManager = DataBrokerProtectionIOSManager.shared {
+            NavigationLink(destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: dbpManager).navigationViewStyle(.stack)),
                            isActive: $isShowingDBP,
                            label: { EmptyView() })
         } else {

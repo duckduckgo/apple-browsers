@@ -311,8 +311,8 @@ public extension MetricBuilder {
     @MainActor
     func build(v: UserInterfaceSizeClass?, h: UserInterfaceSizeClass?) -> T {
         let screenBounds = self.screenBounds ?? UIScreen.main.bounds
-        let minWidth = min(screenBounds.width, screenBounds.height)
-        let isIphoneSmallScreen = minWidth < 375
+        let maxSizeValue = max(screenBounds.width, screenBounds.height)
+        let isIphoneSmallScreen = maxSizeValue <= 667 // iPhone SE
 
         if isIphoneSmallScreen {
             return buildIPhoneSmallScreenMetrics(v: v, h: h)

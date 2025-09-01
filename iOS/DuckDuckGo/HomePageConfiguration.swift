@@ -26,21 +26,25 @@ import Bookmarks
 import os.log
 
 final class HomePageConfiguration: HomePageMessagesConfiguration {
-    
+
     // MARK: - Messages
     
     private var homeMessageStorage: HomeMessageStorage
     private var remoteMessagingClient: RemoteMessagingClient
     private let privacyProDataReporter: PrivacyProDataReporting
+    private let isStillOnboarding: () -> Bool
 
     var homeMessages: [HomeMessage] = []
 
     init(variantManager: VariantManager? = nil,
          remoteMessagingClient: RemoteMessagingClient,
-         privacyProDataReporter: PrivacyProDataReporting) {
+         privacyProDataReporter: PrivacyProDataReporting,
+         isStillOnboarding: @escaping () -> Bool
+    ) {
         homeMessageStorage = HomeMessageStorage(variantManager: variantManager)
         self.remoteMessagingClient = remoteMessagingClient
         self.privacyProDataReporter = privacyProDataReporter
+        self.isStillOnboarding = isStillOnboarding
         homeMessages = buildHomeMessages()
     }
 
@@ -51,7 +55,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     private func buildHomeMessages() -> [HomeMessage] {
         var messages = homeMessageStorage.messagesToBeShown
 
-        if DaxDialogs.shared.isStillOnboarding() {
+        if isStillOnboarding() {
             return messages
         }
 
@@ -75,10 +79,10 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         case .remoteMessage(let remoteMessage):
             Logger.remoteMessaging.info("Home message dismissed: \(remoteMessage.id)")
             await remoteMessagingClient.store.dismissRemoteMessage(withID: remoteMessage.id)
-
             if let index = homeMessages.firstIndex(of: homeMessage) {
                 homeMessages.remove(at: index)
             }
+            NotificationCenter.default.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
         default:
             break
         }

@@ -19,6 +19,7 @@
 
 import XCTest
 import Foundation
+import PrivacyDashboard
 @testable import DuckDuckGo
 
 final class ContextualOnboardingPresenterMock: ContextualOnboardingPresenting {
@@ -37,6 +38,7 @@ final class ContextualOnboardingPresenterMock: ContextualOnboardingPresenting {
 }
 
 final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyProPromotionCoordinating, ContextualDaxDialogDisabling {
+    
     var expectation: XCTestExpectation?
     private(set) var didCallSetTryAnonymousSearchMessageSeen = false
     private(set) var didCallSetTryVisitSiteMessageSeen = false
@@ -55,6 +57,8 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyPro
     var isShowingSearchSuggestions: Bool = false
     var isShowingSitesSuggestions: Bool = false
     var isShowingPrivacyProPromotion: Bool = false
+    var shouldShowFireButtonPulse: Bool = false
+    var isAddFavoriteFlow: Bool = false
 
     func setTryAnonymousSearchMessageSeen() {
         didCallSetTryAnonymousSearchMessageSeen = true
@@ -98,4 +102,95 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyPro
     func disableContextualDaxDialogs() {
         didCallDisableDaxDialogs = true
     }
+
+    func isStillOnboarding() -> Bool {
+        false
+    }
+
+    func fireButtonPulseCancelled() {
+
+    }
+
+    func resumeRegularFlow() {
+
+    }
+
+    func clearHeldURLData() {
+
+    }
+
+    func fireButtonPulseStarted() {
+
+    }
+
+    func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyDashboard.PrivacyInfo) -> DuckDuckGo.DaxDialogs.BrowsingSpec? {
+        nil
+    }
+
+    func overrideShownFlagFor(_ spec: DuckDuckGo.DaxDialogs.BrowsingSpec, flag: Bool) {
+
+    }
+}
+
+// Use to fill parameter list in injection.
+class DummyDaxDialogsManager: DaxDialogsManaging {
+    var isShowingFireDialog: Bool = false
+
+    var shouldShowPrivacyButtonPulse: Bool = false
+
+    var isShowingSearchSuggestions: Bool = false
+
+    var isShowingSitesSuggestions: Bool = false
+
+    var shouldShowFireButtonPulse: Bool = false
+
+    var isAddFavoriteFlow: Bool = false
+
+    var isShowingPrivacyProPromotion: Bool = false
+
+    var privacyProPromotionDialogSeen: Bool = false
+
+    func setTryAnonymousSearchMessageSeen() { }
+
+    func setTryVisitSiteMessageSeen() {}
+
+    func setSearchMessageSeen() {}
+
+    func setFireEducationMessageSeen() {}
+
+    func clearedBrowserData() {}
+
+    func setFinalOnboardingDialogSeen() {}
+
+    func setPrivacyButtonPulseSeen() { }
+
+    func setDaxDialogDismiss() {}
+
+    func enableAddFavoriteFlow() {}
+
+    func isStillOnboarding() -> Bool {
+        false
+    }
+
+    func fireButtonPulseCancelled() {}
+
+    func resumeRegularFlow() {}
+
+    func clearHeldURLData() {}
+
+    func fireButtonPulseStarted() {}
+
+    func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyDashboard.PrivacyInfo) -> DuckDuckGo.DaxDialogs.BrowsingSpec? {
+        nil
+    }
+
+    func overrideShownFlagFor(_ spec: DuckDuckGo.DaxDialogs.BrowsingSpec, flag: Bool) {}
+
+    func nextHomeScreenMessageNew() -> DuckDuckGo.DaxDialogs.HomeScreenSpec? {
+        nil
+    }
+
+    func dismiss() {}
+
+    func disableContextualDaxDialogs() {}
 }

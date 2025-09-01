@@ -43,14 +43,6 @@ final class NetworkProtectionDNSSettingsViewModel: ObservableObject {
 
     @Published public var isApplyButtonEnabled = false
 
-    var isRiskySitesProtectionFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection)
-    }
-
-    var didRiskySitesProtectionDefaultToTrue: Bool {
-        settings.didBlockRiskyDomainsDefaultToTrue
-    }
-
     init(settings: VPNSettings, controller: TunnelController, featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.settings = settings
         self.controller = controller

@@ -1,0 +1,427 @@
+{
+  "smartling" : {
+    "string_format" : "icu",
+    "translate_paths" : [
+    {
+      "path" : "*/title",
+      "key" : "{*}/title",
+      "instruction" : "*/note"
+    }]
+  },
+  "skipButton" : {
+    "title" : "Ignorer",
+    "note" : "Used to advance to the next step in the process"
+  },
+  "getStartedButton" : {
+    "title" : "Commencer",
+    "note" : "Button text in the button used to start the process"
+  },
+  "gotIt" : {
+    "title" : "J'ai compris",
+    "note" : "Button text used to confirm understanding of a particular step, used as an action to proceed"
+  },
+  "startBrowsing" : {
+    "title" : "Commencer la navigation",
+    "note" : "Used as the final step in the process - to indicate that the next step will be using the browser"
+  },
+  "somethingWentWrong" : {
+    "title" : "Une erreur s'est produite",
+    "note" : "A message shown when the application experienced a crash"
+  },
+  "youCanChangeYourChoicesAnyTimeInSettings" : {
+    "title" : "Vous pouvez modifier vos choix à tout moment dans <a>Réglages</a>.",
+    "note" : "This is a statement with inline link, informing users that they can alter their preferences in `Settings` anytime. Please maintain the position of the opening `<a>` and closing `</a>` tag since they are used to create a link for the enclosed word only."
+  },
+  "welcome_title" : {
+    "title" : "Bienvenue sur DuckDuckGo !",
+    "note" : "Page title for the first step in the process"
+  },
+  "getStarted_title" : {
+    "title" : "Marre d'être suivi(e) en ligne ?{newline}Nous pouvons vous aider !",
+    "note" : "Page title indicating that DuckDuckGo can help against online trackers. Please adjust `{newline}` placement ensuring visual balance and readability."
+  },
+  "privateByDefault_title" : {
+    "title" : "Contrairement à d'autres{newline}navigateurs, DuckDuckGo est doté par défaut d'une fonction de confidentialité",
+    "note" : "Page title indicating that this application is private by default, requiring little to no user configuration. Please adjust `{newline}` placement ensuring visual balance and readability."
+  },
+  "cleanerBrowsing_title" : {
+    "title" : "La confidentialité est aussi synonyme{newline}de moins de moins de publicités et de popups.",
+    "note" : "Page title highlighting that DuckDuckGo shows less advertisements and popups. Please adjust `{newline}` placement ensuring visual balance and readability."
+  },
+  "systemSettings_title" : {
+    "title" : "Faites de la confidentialité votre priorité",
+    "note" : "Page title used in lists of toggle & switches that enable or disable particular privacy features"
+  },
+  "customize_title" : {
+    "title" : "Personnalisez votre expérience",
+    "note" : "Page title used in lists of toggle & switches that enable or disable particular features"
+  },
+  "customize_subtitle" : {
+    "title" : "Faites fonctionner DuckDuckGo comme bon vous semble.",
+    "note" : "Shown under the main page title as encouragement to enable particular features"
+  },
+  "summary_title" : {
+    "title" : "Tout est prêt !",
+    "note" : "Page title of the summary page. Indicates that all steps are complete"
+  },
+  "nextButton" : {
+    "title" : "Suivant",
+    "note" : "Button text used to advance to the next step"
+  },
+  "row_search_title" : {
+    "title" : "Recherche privée",
+    "note" : "Title for the search feature status row, shows the status of the private search feature."
+  },
+  "row_search_desc" : {
+    "title" : "Nous ne vous suivons pas. Jamais.",
+    "note" : "Description for the search feature status row, emphasizes privacy."
+  },
+  "row_search_summary" : {
+    "title" : "Recherche privée",
+    "note" : "Summary title for the private search feature."
+  },
+  "row_trackingProtection_title" : {
+    "title" : "Protection avancée contre le pistage",
+    "note" : "Title for the tracking protection feature status row."
+  },
+  "row_trackingProtection_desc" : {
+    "title" : "Nous bloquons la plupart des traqueurs avant même leur chargement.",
+    "note" : "Description for the tracking protection feature status row, emphasizes proactive blocking."
+  },
+  "row_trackingProtection_summary" : {
+    "title" : "Protection avancée contre le pistage",
+    "note" : "Summary title for the tracking protection feature."
+  },
+  "row_cookieManagement_title" : {
+    "title" : "Blocage automatique des popups pour cookies",
+    "note" : "Title for the cookie management feature status row."
+  },
+  "row_cookieManagement_desc" : {
+    "title" : "Nous refusons les cookies facultatifs pour vous et masquons les popups.",
+    "note" : "Description for the cookie management feature status row, emphasizes automated protection."
+  },
+  "row_cookieManagement_summary" : {
+    "title" : "Blocage automatique des popups pour cookies",
+    "note" : "Summary title for the automatic cookie pop-up blocking feature."
+  },
+  "row_fewerAds_title" : {
+    "title" : "En naviguant sur le web",
+    "note" : "Title for the fewer ads feature status row gist, clarifies where the feature is relevant."
+  },
+  "row_fewerAds_summary" : {
+    "title" : "Moins de publicités et de popups",
+    "note" : "Summary title for the fewer ads feature, describes the intended effect."
+  },
+  "row_fewerAds_desc" : {
+    "title" : "Notre blocage des traqueurs élimine la plupart des publicités.",
+    "note" : "Description for the fewer ads feature status row, explains how the feature works."
+  },
+  "row_duckPlayer_summary" : {
+    "title" : "YouTube sans distractions",
+    "note" : "Summary title for the Duck Player feature, emphasizes a cleaner experience."
+  },
+  "row_duckPlayer_title" : {
+    "title" : "En regardant YouTube",
+    "note" : "Title for the Duck Player feature status row, clarifies where the feature is relevant."
+  },
+  "row_duckPlayer_desc" : {
+    "title" : "Appliquez les paramètres de confidentialité les plus stricts de YouTube par défaut. Regardez des vidéos en profitant d'une expérience de visionnage épurée, sans publicités personnalisées.",
+    "note" : "Description for the Duck Player feature status row, states the feature's purpose and execution."
+  },
+  "row_dock_title" : {
+    "title" : "Gardez DuckDuckGo dans votre barre des tâches",
+    "note" : "Suggests users to keep DuckDuckGo in their taskbar for quick access."
+  },
+  "row_dock_summary" : {
+    "title" : "Épingler à la barre des tâches",
+    "note" : "The text shown on the button to perform the action to pin DuckDuckGo to the taskbar."
+  },
+  "row_dock_desc" : {
+    "title" : "Accédez plus rapidement à DuckDuckGo.",
+    "note" : "Description for keeping DuckDuckGo in the taskbar, emphasizes on speed and ease of access."
+  },
+  "row_dock_accept" : {
+    "title" : "Épingler à la barre des tâches",
+    "note" : "The text shown in the button to confirm pinning DuckDuckGo to the taskbar."
+  },
+  "row_dock_macos_title" : {
+    "title" : "Garder DuckDuckGo dans votre Dock",
+    "note" : "Suggests users to keep DuckDuckGo in their Dock for quick access."
+  },
+  "row_dock_macos_accept" : {
+    "title" : "Garder dans le Dock",
+    "note" : "The text shown on the button to perform the action to keep DuckDuckGo in the users Dock."
+  },
+  "row_import_title" : {
+    "title" : "Emportez tout avec vous",
+    "note" : "Title for importing user data (bookmarks, favorites, passwords) to DuckDuckGo from other browsers."
+  },
+  "row_import_summary" : {
+    "title" : "Importez vos données",
+    "note" : "Summary title for the import feature, refers to personal browser data."
+  },
+  "row_import_desc" : {
+    "title" : "Importez les signets, les favoris et les mots de passe.",
+    "note" : "Description for the import feature, lists specific items that can be imported."
+  },
+  "row_import_accept" : {
+    "title" : "Importer",
+    "note" : "The text shown in the button to perform the import action."
+  },
+  "row_default-browser_title" : {
+    "title" : "Changez de navigateur par défaut",
+    "note" : "Title for the default browser suggestion, encourages users to make DuckDuckGo their primary browser."
+  },
+  "row_default-browser_summary" : {
+    "title" : "Navigateur par défaut",
+    "note" : "Summary title for the default browser switch feature."
+  },
+  "row_default-browser_desc" : {
+    "title" : "Naviguez toujours de manière confidentielle par défaut.",
+    "note" : "Description for the default browser switch feature, emphasizes privacy."
+  },
+  "row_default-browser_accept" : {
+    "title" : "Définir par défaut",
+    "note" : "The text shown in the button to perform the action to make DuckDuckGo the default browser."
+  },
+  "row_bookmarks_title" : {
+    "title" : "Placez vos signets à portée de main",
+    "note" : "Title for the bookmarks bar feature, suggests placing bookmarks in an easily accessible location."
+  },
+  "row_bookmarks_summary" : {
+    "title" : "Barre des signets",
+    "note" : "Summary title for the bookmarks bar."
+  },
+  "row_bookmarks_desc" : {
+    "title" : "Affichez une barre de signets avec tous vos favoris.",
+    "note" : "Description for the bookmarks bar feature, describes the outcome."
+  },
+  "row_bookmarks_accept" : {
+    "title" : "Afficher la barre des signets",
+    "note" : "The text shown on the button to show the bookmarks bar."
+  },
+  "row_session-restore_title" : {
+    "title" : "Reprenez là où vous en étiez",
+    "note" : "Title for the session restoring feature, suggests resuming from the point where the user last stopped."
+  },
+  "row_session-restore_summary" : {
+    "title" : "Reprise de session",
+    "note" : "Summary title for the session restore feature."
+  },
+  "row_session-restore_desc" : {
+    "title" : "Redémarrez toujours avec toutes les fenêtres de votre dernière session.",
+    "note" : "Description for the session restoring feature, elaborates on its functionality."
+  },
+  "row_session-restore_accept" : {
+    "title" : "Activer la reprise de session",
+    "note" : "The text shown on the button to enable the session restore feature."
+  },
+  "row_home-shortcut_title" : {
+    "title" : "Ajoutez un raccourci à votre page d'accueil",
+    "note" : "Title for the home button feature, suggests adding a shortcut to the homepage for easy access."
+  },
+  "row_home-shortcut_summary" : {
+    "title" : "Bouton d'accueil",
+    "note" : "Summary title for the home button, refers to a toolbar feature."
+  },
+  "row_home-shortcut_desc" : {
+    "title" : "Affichez un bouton d'accueil dans votre barre d'outils.",
+    "note" : "Description for the home button feature, outlines the outcome."
+  },
+  "row_home-shortcut_accept" : {
+    "title" : "Afficher le bouton d'accueil",
+    "note" : "The text shown on the button to show the home button."
+  },
+  "beforeAfter_fewerAds_show" : {
+    "title" : "Voir avec le blocage des traqueurs",
+    "note" : "Option for comparing browsing with and without tracker blocking."
+  },
+  "beforeAfter_fewerAds_hide" : {
+    "title" : "Voir sans le blocage des traqueurs",
+    "note" : "Option for comparing browsing with and without tracker blocking."
+  },
+  "beforeAfter_duckPlayer_show" : {
+    "title" : "Voir avec Duck Player",
+    "note" : "Option for comparing YouTube viewing experience with and without Duck Player."
+  },
+  "beforeAfter_duckPlayer_hide" : {
+    "title" : "Voir sans Duck Player",
+    "note" : "Option for comparing YouTube viewing experience with and without Duck Player."
+  },
+  "getStarted_title_v3" : {
+    "title" : "Bonjour.{paragraph}Prêt pour un navigateur plus rapide{newline}qui vous protège ?",
+    "note" : "Introductory text when a user starts the onboarding process. `{paragraph}` and `{newline}` should not be translated. Please adjust `{newline}` placement ensuring visual balance and readability."
+  },
+  "getStartedButton_v3" : {
+    "title" : "C'est parti !",
+    "note" : "Button label prompting user to start the onboarding process."
+  },
+  "protectionsActivated_title" : {
+    "title" : "Protections activées !",
+    "note" : "Title for a page that shows all the protections offered by the DuckDuckGo browser and how they compare to other browsers."
+  },
+  "makeDefaultButton" : {
+    "title" : "Faites de DuckDuckGo votre application de navigateur par défaut",
+    "note" : "Button label prompting user to set DuckDuckGo as their default browser."
+  },
+  "makeDefaultAccept_title" : {
+    "title" : "Excellent ! J’espérais que vous me choisiriez.",
+    "note" : "Page title shown if a user chose to make DuckDuckGo their default browser."
+  },
+  "taskbar_title" : {
+    "title" : "Vous voulez que je reste dans la barre des tâches ?",
+    "note" : "Title for a page that asks the user to add the DuckDuckGo browser to their Windows taskbar."
+  },
+  "dock_title" : {
+    "title" : "Vous voulez que je reste dans le box ?",
+    "note" : "Title for a page that asks the user to add the DuckDuckGo browser to their dock on macOS."
+  },
+  "duckPlayer_title" : {
+    "title" : "YouTube vous inonde de publicités ? Pas avec Duck Player !",
+    "note" : "Title for a page that shows the benefits of using the Duck Player feature to watch YouTube videos more privately."
+  },
+  "duckPlayer_subtitle" : {
+    "title" : "Pas de publicités ciblées. Aucune recommandation ciblée. Juste votre vidéo.",
+    "note" : "Subtitle for a page that shows the benefits of using the Duck Player feature to watch YouTube videos more privately."
+  },
+  "customize_title_v3" : {
+    "title" : "Personnalisons quelques éléments…",
+    "note" : "Title for a page that allows the user to customize specific settings in the DuckDuckGo browser."
+  },
+  "customize_subtitle_v3" : {
+    "title" : "Configurez les choses exactement comme vous le souhaitez.",
+    "note" : "Subtitle for a page that allows the user to customize specific settings in the DuckDuckGo browser."
+  },
+  "systemSettings_title_v3" : {
+    "title" : "Laissez-nous vous aider à tout installer !",
+    "note" : "Title for a page that allows the user to customize system settings for the DuckDuckGo browser"
+  },
+  "systemSettings_subtitle_v3" : {
+    "title" : "Il est facile de faire de moi votre navigateur de référence.",
+    "note" : "Subtitle for a page that allows the user to customize system settings for the DuckDuckGo browser"
+  },
+  "row_bookmarks_title_v3" : {
+    "title" : "Affichez une barre de signets avec vos sites préférés",
+    "note" : "Heading for a toggle that puts the bookmarks bar withing easy reach of the user."
+  },
+  "row_session-restore_title_v3" : {
+    "title" : "Restaurez les sites Web précédents au démarrage",
+    "note" : "Heading for a toggle that restores the user's previously open tabs when relaunching the browser."
+  },
+  "row_home-shortcut_title_v3" : {
+    "title" : "Ajoutez un raccourci vers votre page d'accueil dans la barre d'outils",
+    "note" : "Heading for a toggle that adds the user's homepage to the browser toolbar."
+  },
+  "row_default-browser_title_v3" : {
+    "title" : "Faites de DuckDuckGo votre navigateur par défaut",
+    "note" : "Title for the default browser suggestion, encourages users to make DuckDuckGo their primary browser."
+  },
+  "row_import_title_v3" : {
+    "title" : "Importez les signets et les mots de passe",
+    "note" : "Title for importing user data (bookmarks, passwords) to DuckDuckGo from other browsers."
+  },
+  "row_import_summary_v3" : {
+    "title" : "Le cryptage sur l'appareil permet de sécuriser vos mots de passe.",
+    "note" : "Explanation of additional security benefits of importing user's passwords into DuckDuckGo."
+  },
+  "row_import_accept_v3" : {
+    "title" : "Importer dès maintenant",
+    "note" : "The text shown in the button to perform the import action."
+  },
+  "row_taskbar_title_v3" : {
+    "title" : "Gardez DuckDuckGo dans votre barre des tâches",
+    "note" : "Suggests users to keep DuckDuckGo in their taskbar for quick access."
+  },
+  "row_taskbar_summary_v3" : {
+    "title" : "Choisissez « Oui » lorsque vous y êtes invité en bas à droite.",
+    "note" : "Instructs the user to add DuckDuckGo to their taskbar by clicking Yes on a dialog screen."
+  },
+  "row_dock_title_v3" : {
+    "title" : "Garder DuckDuckGo dans votre Dock",
+    "note" : "Suggests users to keep DuckDuckGo in their dock for quick access."
+  },
+  "row_dock_summary_v3" : {
+    "title" : "Accédez plus rapidement à DuckDuckGo.",
+    "note" : "Instructs the user to add DuckDuckGo to their taskbar by clicking Yes on a dialog screen."
+  },
+  "row_placebo-ad-blocking_title_v3" : {
+    "title" : "Bloquez encore plus de publicités",
+    "note" : "Title for the enhanced ad blocking setting."
+  },
+  "row_aggressive-ad-blocking_title_v3" : {
+    "title" : "Bloquez encore plus de publicités, y compris sur YouTube",
+    "note" : "Title for the enhanced ad blocking setting."
+  },
+  "row_ad-blocking_desc_v3" : {
+    "title" : "Le blocage publicitaire amélioré arrête encore plus de publicités.",
+    "note" : "Description for the enhanced ad blocking setting."
+  },
+  "row_ad-blocking_accept_v3" : {
+    "title" : "Activer le blocage publicitaire amélioré",
+    "note" : "Button text to enable enhanced ad blocking."
+  },
+  "row_youtube-ad-blocking_title_v3" : {
+    "title" : "Regardez YouTube sans publicité",
+    "note" : "Title for the YouTube ad blocking setting."
+  },
+  "row_youtube-ad-blocking_desc_v3" : {
+    "title" : "Pas de publicités, juste votre vidéo.",
+    "note" : "Description for the YouTube ad blocking setting."
+  },
+  "row_youtube-ad-blocking_accept_v3" : {
+    "title" : "Bloquer les publicités",
+    "note" : "Button text to enable YouTube ad blocking."
+  },
+  "comparison_searchPrivately" : {
+    "title" : "Faire une recherche privée par défaut",
+    "note" : "The description of a browser privacy feature in the comparison table."
+  },
+  "comparison_blockTrackers" : {
+    "title" : "Bloquer les traqueurs tiers",
+    "note" : "The description of a browser privacy feature in the comparison table."
+  },
+  "comparison_blockCookies" : {
+    "title" : "Bloquez les fenêtres contextuelles de cookies",
+    "note" : "The description of a browser privacy feature in the comparison table."
+  },
+  "comparison_blockAds" : {
+    "title" : "Bloquez les publicités ciblées",
+    "note" : "The description of a browser privacy feature in the comparison table."
+  },
+  "comparison_eraseData" : {
+    "title" : "Supprimez les données de navigation d'un seul clic",
+    "note" : "The description of a browser privacy feature in the comparison table."
+  },
+  "comparison_privateYoutube" : {
+    "title" : "Profitez de YouTube sans publicités ciblées",
+    "note" : "The description of a browser privacy feature in the comparison table."
+  },
+  "comparison_youtubeAdFree" : {
+    "title" : "Regardez YouTube sans publicité",
+    "note" : "The description of a browser privacy feature in the comparison table when ad-blocking is enabled."
+  },
+  "comparison_fullSupport" : {
+    "title" : "Protection importante",
+    "note" : "The level of protection offered by a browser on a specific feature in the comparison table."
+  },
+  "comparison_partialSupport" : {
+    "title" : "Protection limitée",
+    "note" : "The level of protection offered by a browser on a specific feature in the comparison table."
+  },
+  "comparison_notSupported" : {
+    "title" : "Aucune protection",
+    "note" : "The level of protection offered by a browser on a specific feature in the comparison table."
+  },
+  "browser_DuckDuckGo" : {
+    "title" : "DuckDuckGo",
+    "note" : "Brand name of the DuckDuckGo browser"
+  },
+  "browser_Chrome" : {
+    "title" : "Chrome",
+    "note" : "Brand name of the Google Chrome browser"
+  },
+  "browser_Safari" : {
+    "title" : "Safari",
+    "note" : "Brand name of the Apple Safari browser"
+  }
+}

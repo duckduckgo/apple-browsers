@@ -28,7 +28,7 @@ import UserNotifications
 import DataBrokerProtectionCore
 import WebKit
 import BackgroundTasks
-import SwiftUICore
+import SwiftUI
 
 public class DefaultOperationEventsHandler: EventMapping<JobEvent> {
 
@@ -60,7 +60,7 @@ public class DataBrokerProtectionIOSManagerProvider {
 
     public static func iOSManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
-                                  featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
+                                  featureFlagger: DBPFeatureFlagging,
                                   pixelKit: PixelKit,
                                   subscriptionManager: DataBrokerProtectionSubscriptionManager,
                                   quickLinkOpenURLHandler: @escaping (URL) -> Void,
@@ -137,6 +137,7 @@ public class DataBrokerProtectionIOSManagerProvider {
             dataBrokerProtectionSettings: dbpSettings,
             emailService: emailService,
             captchaService: captchaService,
+            featureFlagger: featureFlagger,
             vpnBypassService: nil,
             jobSortPredicate: BrokerJobDataComparators.byPriorityForBackgroundTask
         )
@@ -173,7 +174,7 @@ public final class DataBrokerProtectionIOSManager {
     public static var shared: DataBrokerProtectionIOSManager?
 
     public let database: DataBrokerProtectionRepository
-    private let queueManager: BrokerProfileJobQueueManaging
+    private var queueManager: BrokerProfileJobQueueManaging
     private let jobDependencies: BrokerProfileJobDependencyProviding
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
@@ -183,7 +184,7 @@ public final class DataBrokerProtectionIOSManager {
     private let maxBackgroundTaskWaitTime: TimeInterval
     private let minBackgroundTaskWaitTime: TimeInterval
     private let feedbackViewCreator: () -> (any View)
-    private let featureFlagger: RemoteBrokerDeliveryFeatureFlagging
+    private let featureFlagger: DBPFeatureFlagging
     private let settings: DataBrokerProtectionSettings
     private let subscriptionManager: DataBrokerProtectionSubscriptionManager
     private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
@@ -196,11 +197,13 @@ public final class DataBrokerProtectionIOSManager {
         guard let vault = try? vaultFactory.makeVault(reporter: nil) else {
             return nil
         }
+        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+
         return RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                        settings: settings,
                                        vault: vault,
                                        authenticationManager: authenticationManager,
-                                       localBrokerProvider: nil)
+                                       localBrokerProvider: localBrokerService)
     }()
 
     public var hasScheduledBackgroundJob: Bool {
@@ -223,7 +226,7 @@ public final class DataBrokerProtectionIOSManager {
          maxBackgroundTaskWaitTime: TimeInterval = Constants.defaultMaxBackgroundTaskWaitTime,
          minBackgroundTaskWaitTime: TimeInterval = Constants.defaultMinBackgroundTaskWaitTime,
          feedbackViewCreator: @escaping () -> (any View),
-         featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
+         featureFlagger: DBPFeatureFlagging,
          settings: DataBrokerProtectionSettings,
          subscriptionManager: DataBrokerProtectionSubscriptionManager
     ) {
@@ -241,6 +244,8 @@ public final class DataBrokerProtectionIOSManager {
         self.featureFlagger = featureFlagger
         self.settings = settings
         self.subscriptionManager = subscriptionManager
+
+        self.queueManager.delegate = self
 
         registerBackgroundTaskHandler()
     }
@@ -284,8 +289,7 @@ public final class DataBrokerProtectionIOSManager {
                 Logger.dataBrokerProtection.log("Scheduling background task successful")
             } catch {
                 Logger.dataBrokerProtection.log("Scheduling background task failed with error: \(error)")
-// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
-                self.iOSPixelsHandler.fire(.backgroundTaskSchedulingFailed(error: error, deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+                self.iOSPixelsHandler.fire(.backgroundTaskSchedulingFailed(error: error))
             }
 #endif
         }
@@ -293,18 +297,44 @@ public final class DataBrokerProtectionIOSManager {
 
     private func handleBGProcessingTask(task: BGTask) {
         Logger.dataBrokerProtection.log("Background task started")
-// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
-        iOSPixelsHandler.fire(.backgroundTaskStarted(deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-        let startTime = Date.now
+        iOSPixelsHandler.fire(.backgroundTaskStarted)
+        let startDate = Date.now
+        let sessionId = UUID().uuidString
+        
+        // Record started event
+        do {
+            let event = BackgroundTaskEvent(
+                sessionId: sessionId,
+                eventType: .started,
+                timestamp: startDate,
+                metadata: nil
+            )
+            try database.recordBackgroundTaskEvent(event)
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to record background task start event: \(error.localizedDescription, privacy: .public)")
+        }
 
         task.expirationHandler = {
             self.queueManager.stop()
 
-            let timeTaken = Date.now.timeIntervalSince(startTime)
+            let timeTaken = Date.now.timeIntervalSince(startDate)
             Logger.dataBrokerProtection.log("Background task expired with time taken: \(timeTaken)")
-// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
-            self.iOSPixelsHandler.fire(.backgroundTaskExpired(duration: timeTaken * 1000.0,
-                                                              deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+            self.iOSPixelsHandler.fire(.backgroundTaskExpired(duration: timeTaken * 1000.0))
+
+            // Record terminated event
+            let duration = Date.now.timeIntervalSince(startDate) * 1000.0
+            do {
+                let event = BackgroundTaskEvent(
+                    sessionId: sessionId,
+                    eventType: .terminated,
+                    timestamp: Date.now,
+                    metadata: BackgroundTaskEvent.Metadata(durationInMs: duration)
+                )
+                try self.database.recordBackgroundTaskEvent(event)
+            } catch {
+                Logger.dataBrokerProtection.error("Failed to record background task terminated event: \(error.localizedDescription, privacy: .public)")
+            }
+            
             self.scheduleBGProcessingTask()
             task.setTaskCompleted(success: false)
         }
@@ -317,12 +347,24 @@ public final class DataBrokerProtectionIOSManager {
             }
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
                 Logger.dataBrokerProtection.log("All operations completed in background task")
-                let timeTaken = Date.now.timeIntervalSince(startTime)
+                let timeTaken = Date.now.timeIntervalSince(startDate)
                 Logger.dataBrokerProtection.log("Background task finshed all operations with time taken: \(timeTaken)")
-// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
                 self.iOSPixelsHandler.fire(.backgroundTaskEndedHavingCompletedAllJobs(
-                    duration: timeTaken * 1000.0,
-                    deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+                    duration: timeTaken * 1000.0))
+
+                // Record completed event
+                let duration = Date.now.timeIntervalSince(startDate) * 1000.0
+                do {
+                    let event = BackgroundTaskEvent(
+                        sessionId: sessionId,
+                        eventType: .completed,
+                        timestamp: Date.now,
+                        metadata: BackgroundTaskEvent.Metadata(durationInMs: duration)
+                    )
+                    try self.database.recordBackgroundTaskEvent(event)
+                } catch {
+                    Logger.dataBrokerProtection.error("Failed to record background task completed event: \(error.localizedDescription, privacy: .public)")
+                }
 
                 self.scheduleBGProcessingTask()
                 task.setTaskCompleted(success: true)
@@ -348,7 +390,7 @@ public final class DataBrokerProtectionIOSManager {
         // Otherwise → clamp to [minBackgroundTaskWaitTime, maxBackgroundTaskWaitTime]
         return min(max(jobDate, minBackgroundTaskWaitDate), maxBackgroundTaskWaitDate)
     }
-
+    
     /// Used by the iOS PIR debug menu to reset tester data.
     public func deleteAllData() throws {
         try database.deleteProfileData()
@@ -393,6 +435,14 @@ public final class DataBrokerProtectionIOSManager {
     /// Used by the iOS PIR debug menu to check if jobs are currently running.
     public var isRunningJobs: Bool {
         return queueManager.debugRunningStatusString == "running"
+    }
+
+    public func tryToFireWeeklyPixels() {
+        let eventPixels = DataBrokerProtectionEventPixels(
+            database: jobDependencies.database,
+            handler: jobDependencies.pixelHandler
+        )
+        eventPixels.tryToFireWeeklyPixels()
     }
 
     // MARK: - Run Prerequisites
@@ -484,5 +534,15 @@ extension DataBrokerProtectionIOSManager: DBPUIViewModelDelegate {
     
     public func matchRemovedByUser(with id: Int64) throws {
         try database.matchRemovedByUser(id)
+    }
+}
+
+extension DataBrokerProtectionIOSManager: BrokerProfileJobQueueManagerDelegate {
+    public func queueManagerWillEnqueueOperations(_ queueManager: BrokerProfileJobQueueManaging) {
+        Task {
+            do {
+                try await brokerUpdater?.checkForUpdates()
+            }
+        }
     }
 }

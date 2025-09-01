@@ -21,17 +21,19 @@ public class ActionsHandler {
 
     var captchaTransactionId: CaptchaTransactionId?
 
-    public let step: Step
+    public let stepType: StepType
+    private var actions: [Action]
 
     public init(step: Step) {
-        self.step = step
+        self.stepType = step.type
+        self.actions = step.actions
     }
 
     public func currentAction() -> Action? {
         guard let lastExecutedActionIndex = self.lastExecutedActionIndex else { return nil }
 
-        if lastExecutedActionIndex < step.actions.count {
-            return step.actions[lastExecutedActionIndex]
+        if lastExecutedActionIndex < actions.count {
+            return actions[lastExecutedActionIndex]
         } else {
             return nil
         }
@@ -41,16 +43,25 @@ public class ActionsHandler {
         guard let lastExecutedActionIndex = self.lastExecutedActionIndex else {
             // If last executed action index is nil. Means we didn't execute any action, so we return the first action.
             self.lastExecutedActionIndex = 0
-            return step.actions.first
+            return actions.first
         }
 
         let nextActionIndex = lastExecutedActionIndex + 1
 
-        if nextActionIndex < step.actions.count {
+        if nextActionIndex < actions.count {
             self.lastExecutedActionIndex = nextActionIndex
-            return step.actions[nextActionIndex]
+            return actions[nextActionIndex]
         } else {
             return nil // No more actions to execute
         }
     }
+
+    public func insert(actions: [Action]) {
+        if let lastExecutedActionIndex, (lastExecutedActionIndex + 1) < self.actions.count {
+            self.actions.insert(contentsOf: actions, at: lastExecutedActionIndex + 1)
+        } else {
+            self.actions.append(contentsOf: actions)
+        }
+    }
+
 }

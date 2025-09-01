@@ -187,6 +187,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         XCTAssertNil(response)
         XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionPurchaseCalled)
         XCTAssertEqual(mockNavigationDelegate.purchaseOrigin, origin)
+        XCTAssertEqual(mockNavigationDelegate.purchaseFeaturePage, "duckai")
     }
 
     @MainActor
@@ -195,6 +196,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         XCTAssertNil(response)
         XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionPurchaseCalled)
         XCTAssertNil(mockNavigationDelegate.purchaseOrigin)
+        XCTAssertEqual(mockNavigationDelegate.purchaseFeaturePage, "duckai")
     }
 
     // MARK: - Auth Update Push Tests
@@ -261,6 +263,7 @@ class MockNavigationDelegate: SubscriptionUserScriptNavigationDelegate {
     var navigateToSubscriptionActivationCalled = false
     var navigateToSubscriptionPurchaseCalled = false
     var purchaseOrigin: String?
+    var purchaseFeaturePage: String?
 
     func navigateToSettings() {
         navigateToSettingsCalled = true
@@ -270,9 +273,10 @@ class MockNavigationDelegate: SubscriptionUserScriptNavigationDelegate {
         navigateToSubscriptionActivationCalled = true
     }
 
-    func navigateToSubscriptionPurchase(origin: String?) {
+    func navigateToSubscriptionPurchase(origin: String?, featurePage: String?) {
         navigateToSubscriptionPurchaseCalled = true
         purchaseOrigin = origin
+        purchaseFeaturePage = featurePage
     }
 }
 

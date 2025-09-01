@@ -40,6 +40,62 @@ extension WKWebView {
         return value(forKey: Self.committedURLKey) as? URL
     }
 
+#if _SESSION_STATE_WITH_FILTER_ENABLED
+
+    @nonobjc
+    @available(macOS, deprecated: 12.0)
+    public func sessionStateData() -> Data? {
+        guard self.responds(to: Selector.sessionStateData) else {
+            assertionFailure("\(Self.self) does not respond to _sessionStateData")
+            return nil
+        }
+
+        return self.perform(Selector.sessionStateData)?.takeUnretainedValue() as? Data
+    }
+
+    @nonobjc
+    @available(macOS, deprecated: 12.0)
+    public func restoreSessionState(from data: Data) {
+        guard self.responds(to: Selector.restoreFromSessionStateData) else {
+            assertionFailure("\(Self.self) does not respond to _restoreFromSessionStateData:")
+            return
+        }
+
+        self.perform(Selector.restoreFromSessionStateData, with: data)
+    }
+
+    public typealias SessionStateFilterBlockType = @convention(block) (WKBackForwardListItem) -> Bool
+    @nonobjc
+    public func sessionState(withFilter filter: @escaping SessionStateFilterBlockType) -> Any? {
+        guard self.responds(to: Selector.sessionStateWithFilter) else {
+            assertionFailure("\(Self.self) does not respond to _sessionStateWithFilter:")
+            return nil
+        }
+
+        let result = self.perform(Selector.sessionStateWithFilter, with: filter)?.takeUnretainedValue()
+        return result
+    }
+
+    @discardableResult
+    @nonobjc
+    public func restoreSessionState(from sessionState: Any, andNavigate shouldNavigate: Bool) -> WKNavigation? {
+        guard self.responds(to: Selector.restoreSessionStateAndNavigate) else {
+            assertionFailure("\(Self.self) does not respond to _restoreSessionState:andNavigate:")
+            return nil
+        }
+        let result = self.perform(Selector.restoreSessionStateAndNavigate, with: sessionState, with: shouldNavigate ? true : nil)?.takeUnretainedValue() as? WKNavigation
+        return result
+    }
+
+    enum Selector {
+        static let sessionStateData = NSSelectorFromString("_sessionStateData")
+        static let restoreFromSessionStateData = NSSelectorFromString("_restoreFromSessionStateData:")
+        static let sessionStateWithFilter = NSSelectorFromString("_sessionStateWithFilter:")
+        static let restoreSessionStateAndNavigate = NSSelectorFromString("_restoreSessionState:andNavigate:")
+    }
+
+#endif
+
 #if !_MAIN_FRAME_NAVIGATION_ENABLED
 
     static let swizzleLoadMethodOnce: Void = {

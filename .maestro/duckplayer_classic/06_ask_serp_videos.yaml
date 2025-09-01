@@ -1,0 +1,56 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - ipad
+    - duckplayer_classic
+
+---
+
+# Load constants
+- runFlow:
+    file: shared/constants.yaml
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+# Open Settings
+- runFlow: 
+    file: shared/open_settings.yaml
+
+- tapOn:
+    id: chevron.up.chevron.down
+
+# Set to "Open Automatically"
+- tapOn: ${output.askLabel}
+
+# Close Settings
+- runFlow: 
+    file: shared/close_settings.yaml
+
+# Load SERP URL
+- runFlow: 
+    file: shared/load_serp_url.yaml
+
+# Tap Videos
+- tapOn: ${output.videosTabLabel}
+
+# Wait for results to load
+- waitForAnimationToEnd
+
+# Tap on video in organic results
+- tapOn: 
+    text: ${output.videoTitle}
+
+# Wait for results to load
+- waitForAnimationToEnd
+
+# Tap on video in organic results
+- tapOn: 
+    text: ${output.watchInDuckPlayerLabel}
+
+# Wait for results to load
+- waitForAnimationToEnd
+
+# Verify Duck Player Classic opens automatically
+- runFlow:
+    file: shared/duckplayer_is_visible.yaml

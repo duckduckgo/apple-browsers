@@ -35,7 +35,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
 
     public let privacyConfig: PrivacyConfigurationManaging
     public let prefs: ContentScopeProperties
-    public let query: BrokerProfileQueryData
+    public let context: SubJobContextProviding
     public let emailService: EmailServiceProtocol
     public let captchaService: CaptchaServiceProtocol
     public let cookieHandler: CookieHandler
@@ -51,12 +51,14 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public var postLoadingSiteStartTime: Date?
     public let executionConfig: BrokerJobExecutionConfig
+    public let featureFlagger: DBPFeatureFlagging
 
     public init(privacyConfig: PrivacyConfigurationManaging,
                 prefs: ContentScopeProperties,
-                query: BrokerProfileQueryData,
+                context: SubJobContextProviding,
                 emailService: EmailServiceProtocol,
                 captchaService: CaptchaServiceProtocol,
+                featureFlagger: DBPFeatureFlagging,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
                 operationAwaitTime: TimeInterval = 3,
                 clickAwaitTime: TimeInterval = 0,
@@ -67,7 +69,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     ) {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
-        self.query = query
+        self.context = context
         self.emailService = emailService
         self.captchaService = captchaService
         self.operationAwaitTime = operationAwaitTime
@@ -77,6 +79,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         self.cookieHandler = cookieHandler
         self.pixelHandler = pixelHandler
         self.executionConfig = executionConfig
+        self.featureFlagger = featureFlagger
     }
 
     @MainActor
@@ -103,9 +106,9 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                 }
 
                 task = Task {
-                    await initialize(handler: webViewHandler, isFakeBroker: query.dataBroker.isFakeBroker, showWebView: showWebView)
+                    await initialize(handler: webViewHandler, isFakeBroker: context.dataBroker.isFakeBroker, showWebView: showWebView)
                     do {
-                        let scanStep = try query.dataBroker.scanStep()
+                        let scanStep = try context.dataBroker.scanStep()
                         if let actionsHandler = actionsHandler {
                             self.actionsHandler = actionsHandler
                         } else {
@@ -151,21 +154,26 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
 
     public func executeNextStep() async {
         resetRetriesCount()
-        Logger.action.debug("SCAN Waiting \(self.operationAwaitTime, privacy: .public) seconds...")
+        Logger.action.debug(loggerContext(), message: "Waiting \(self.operationAwaitTime) seconds...")
 
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
 
         let shouldContinue = self.shouldRunNextStep()
         if let action = actionsHandler?.nextAction(), shouldContinue {
-            Logger.action.debug("Next action: \(String(describing: action.actionType.rawValue), privacy: .public)")
+            Logger.action.debug(loggerContext(for: action), message: "Next action")
             await runNextAction(action)
         } else {
-            Logger.action.debug("Releasing the web view")
+            Logger.action.debug(loggerContext(), message: "Releasing the web view")
             await webViewHandler?.finish() // If we executed all steps we release the web view
 
             if !shouldContinue {
+                Logger.action.debug(loggerContext(), message: "Job cancelled")
                 failed(with: DataBrokerProtectionError.cancelled)
             }
         }
+    }
+
+    private func loggerContext(for action: Action? = nil) -> PIRActionLogContext {
+        .init(stepType: .scan, broker: context.dataBroker, attemptId: stageCalculator.attemptId, action: action)
     }
 }

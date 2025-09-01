@@ -58,7 +58,7 @@ final class WindowsManager {
     class func openNewWindow(with tabCollectionViewModel: TabCollectionViewModel? = nil,
                              aiChatSidebarProvider: AIChatSidebarProviding = Application.appDelegate.aiChatSidebarProvider,
                              fireCoordinator: FireCoordinator = Application.appDelegate.fireCoordinator,
-                             burnerMode: BurnerMode = .regular,
+                             burnerMode: BurnerMode? = nil,
                              droppingPoint: NSPoint? = nil,
                              contentSize: NSSize? = nil,
                              showWindow: Bool = true,
@@ -66,10 +66,13 @@ final class WindowsManager {
                              lazyLoadTabs: Bool = false,
                              isMiniaturized: Bool = false,
                              isMaximized: Bool = false,
-                             isFullscreen: Bool = false) -> MainWindow? {
+                             isFullscreen: Bool = false) -> NSWindow? {
+        // Determine effective burner mode based on user preference
+        let effectiveBurnerMode = burnerModeForNewWindow(burnerMode: burnerMode)
+        assert(tabCollectionViewModel == nil || tabCollectionViewModel!.isPopup == popUp)
         let mainWindowController = makeNewWindow(tabCollectionViewModel: tabCollectionViewModel,
                                                  popUp: popUp,
-                                                 burnerMode: burnerMode,
+                                                 burnerMode: effectiveBurnerMode,
                                                  autofillPopoverPresenter: autofillPopoverPresenter,
                                                  fireCoordinator: fireCoordinator,
                                                  aiChatSidebarProvider: aiChatSidebarProvider)
@@ -111,17 +114,34 @@ final class WindowsManager {
             mainWindowController.mainViewController.tabCollectionViewModel.setUpLazyLoadingIfNeeded()
         }
 
-        return mainWindowController.window as? MainWindow
+        return mainWindowController.window
+    }
+
+    private class func burnerModeForNewWindow(burnerMode: BurnerMode?) -> BurnerMode {
+        if let burnerMode {
+            return burnerMode
+        } else {
+            return burnerModeByDefault()
+        }
+    }
+
+    private class func burnerModeByDefault() -> BurnerMode {
+        // Use user preference for default window type
+        if let appDelegate = NSApp.delegate as? AppDelegate {
+            return appDelegate.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled ? BurnerMode(isBurner: true) : .regular
+        } else {
+            return .regular
+        }
     }
 
     @discardableResult
-    class func openNewWindow(with tab: Tab, droppingPoint: NSPoint? = nil, contentSize: NSSize? = nil, showWindow: Bool = true, popUp: Bool = false) -> MainWindow? {
-        let tabCollection = TabCollection()
+    class func openNewWindow(with tab: Tab, droppingPoint: NSPoint? = nil, contentSize: NSSize? = nil, showWindow: Bool = true, popUp: Bool = false) -> NSWindow? {
+        let tabCollection = TabCollection(isPopup: popUp)
         tabCollection.append(tab: tab)
 
         let tabCollectionViewModel: TabCollectionViewModel = {
             if popUp {
-                return .init(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, burnerMode: tab.burnerMode)
+                return .init(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, burnerMode: tab.burnerMode, windowControllersManager: Application.appDelegate.windowControllersManager)
             }
             return .init(tabCollection: tabCollection, burnerMode: tab.burnerMode)
         }()
@@ -135,12 +155,16 @@ final class WindowsManager {
     }
 
     @discardableResult
-    class func openNewWindow(with initialUrl: URL, source: Tab.TabContent.URLSource, isBurner: Bool, parentTab: Tab? = nil, droppingPoint: NSPoint? = nil, showWindow: Bool = true) -> MainWindow? {
-        openNewWindow(with: Tab(content: .contentFromURL(initialUrl, source: source), parentTab: parentTab, shouldLoadInBackground: true, burnerMode: BurnerMode(isBurner: isBurner)), droppingPoint: droppingPoint, showWindow: showWindow)
+    class func openNewWindow(with initialUrl: URL, source: Tab.TabContent.URLSource, isBurner: Bool? = nil, parentTab: Tab? = nil, droppingPoint: NSPoint? = nil, showWindow: Bool = true) -> NSWindow? {
+        if let isBurner = isBurner {
+            return openNewWindow(with: Tab(content: .contentFromURL(initialUrl, source: source), parentTab: parentTab, shouldLoadInBackground: true, burnerMode: BurnerMode(isBurner: isBurner)), droppingPoint: droppingPoint, showWindow: showWindow)
+        } else {
+            return openNewWindow(with: Tab(content: .contentFromURL(initialUrl, source: source), parentTab: parentTab, shouldLoadInBackground: true, burnerMode: burnerModeByDefault()), droppingPoint: droppingPoint, showWindow: showWindow)
+        }
     }
 
     @discardableResult
-    class func openNewWindow(with tabCollection: TabCollection, isBurner: Bool, droppingPoint: NSPoint? = nil, contentSize: NSSize? = nil, popUp: Bool = false) -> NSWindow? {
+    class func openNewWindow(with tabCollection: TabCollection, isBurner: Bool, droppingPoint: NSPoint? = nil, contentSize: NSSize? = nil) -> NSWindow? {
         let burnerMode = BurnerMode(isBurner: isBurner)
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection, burnerMode: burnerMode)
         defer {
@@ -150,18 +174,21 @@ final class WindowsManager {
                              burnerMode: burnerMode,
                              droppingPoint: droppingPoint,
                              contentSize: contentSize,
-                             popUp: popUp)
+                             popUp: tabCollection.isPopup)
     }
 
     private static let defaultPopUpWidth: CGFloat = 1024
     private static let defaultPopUpHeight: CGFloat = 752
 
-    class func openPopUpWindow(with tab: Tab, origin: NSPoint?, contentSize: NSSize?) {
-        if let mainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
+    @discardableResult
+    class func openPopUpWindow(with tab: Tab, origin: NSPoint?, contentSize: NSSize?, forcePopup: Bool = false) -> NSWindow? {
+        if !forcePopup,
+           let mainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
            mainWindowController.window?.styleMask.contains(.fullScreen) == true,
            mainWindowController.window?.isPopUpWindow == false {
 
             mainWindowController.mainViewController.tabCollectionViewModel.insert(tab, selected: true)
+            return mainWindowController.window
 
         } else {
             let screenFrame = (self.findPositioningSourceWindow(for: tab)?.screen ?? .main)?.visibleFrame ?? NSScreen.fallbackHeadlessScreenFrame
@@ -182,7 +209,7 @@ final class WindowsManager {
                 NSPoint(x: origin.x + contentSize.width / 2, y: origin.y)
             }
 
-            self.openNewWindow(with: tab, droppingPoint: droppingPoint, contentSize: contentSize, popUp: true)
+            return self.openNewWindow(with: tab, droppingPoint: droppingPoint, contentSize: contentSize, popUp: true)
         }
     }
 
@@ -192,8 +219,9 @@ final class WindowsManager {
                                      autofillPopoverPresenter: AutofillPopoverPresenter,
                                      fireCoordinator: FireCoordinator,
                                      aiChatSidebarProvider: AIChatSidebarProviding) -> MainWindowController {
+        assert(tabCollectionViewModel == nil || tabCollectionViewModel!.isPopup == popUp)
         let mainViewController = MainViewController(
-            tabCollectionViewModel: tabCollectionViewModel ?? TabCollectionViewModel(burnerMode: burnerMode),
+            tabCollectionViewModel: tabCollectionViewModel ?? TabCollectionViewModel(isPopup: popUp, burnerMode: burnerMode),
             autofillPopoverPresenter: autofillPopoverPresenter,
             aiChatSidebarProvider: aiChatSidebarProvider,
             fireCoordinator: fireCoordinator
@@ -206,9 +234,9 @@ final class WindowsManager {
         } else { FireWindowSession?.none }
         return MainWindowController(
             mainViewController: mainViewController,
-            popUp: popUp,
             fireWindowSession: fireWindowSession,
-            fireViewModel: fireCoordinator.fireViewModel
+            fireViewModel: fireCoordinator.fireViewModel,
+            visualStyle: NSApp.delegateTyped.visualStyle
         )
     }
 

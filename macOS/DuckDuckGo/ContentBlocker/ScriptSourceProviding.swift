@@ -23,6 +23,7 @@ import BrowserServicesKit
 import Configuration
 import History
 import HistoryView
+import NewTabPage
 import TrackerRadarKit
 
 protocol ScriptSourceProviding {
@@ -34,6 +35,7 @@ protocol ScriptSourceProviding {
     var sessionKey: String? { get }
     var messageSecret: String? { get }
     var onboardingActionsManager: OnboardingActionsManaging? { get }
+    var newTabPageActionsManager: NewTabPageActionsManager? { get }
     var historyViewActionsManager: HistoryViewActionsManager? { get }
     var windowControllersManager: WindowControllersManagerProtocol { get }
     var currentCohorts: [ContentScopeExperimentData]? { get }
@@ -59,7 +61,8 @@ protocol ScriptSourceProviding {
         bookmarkManager: Application.appDelegate.bookmarkManager,
         historyCoordinator: Application.appDelegate.historyCoordinator,
         fireproofDomains: Application.appDelegate.fireproofDomains,
-        fireCoordinator: Application.appDelegate.fireCoordinator
+        fireCoordinator: Application.appDelegate.fireCoordinator,
+        newTabPageActionsManager: nil
     )
 }
 
@@ -67,6 +70,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     private(set) var contentBlockerRulesConfig: ContentBlockerUserScriptConfig?
     private(set) var surrogatesConfig: SurrogatesUserScriptConfig?
     private(set) var onboardingActionsManager: OnboardingActionsManaging?
+    private(set) var newTabPageActionsManager: NewTabPageActionsManager?
     private(set) var historyViewActionsManager: HistoryViewActionsManager?
     private(set) var autofillSourceProvider: AutofillUserScriptSourceProvider?
     private(set) var sessionKey: String?
@@ -100,6 +104,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          historyCoordinator: HistoryDataSource,
          fireproofDomains: DomainFireproofStatusProviding,
          fireCoordinator: FireCoordinator,
+         newTabPageActionsManager: NewTabPageActionsManager?
     ) {
 
         self.configStorage = configStorage
@@ -113,6 +118,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.historyCoordinator = historyCoordinator
         self.windowControllersManager = windowControllersManager
 
+        self.newTabPageActionsManager = newTabPageActionsManager
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
         self.surrogatesConfig = buildSurrogatesConfig()
         self.sessionKey = generateSessionKey()

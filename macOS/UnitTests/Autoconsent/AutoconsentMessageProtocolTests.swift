@@ -60,7 +60,8 @@ class AutoconsentMessageProtocolTests: XCTestCase {
                                                bookmarkManager: MockBookmarkManager(),
                                                historyCoordinator: CapturingHistoryDataSource(),
                                                fireproofDomains: MockFireproofDomains(domains: []),
-                                               fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld)
+                                               fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld),
+                                               newTabPageActionsManager: nil
                                               ),
             config: MockPrivacyConfiguration()
         )

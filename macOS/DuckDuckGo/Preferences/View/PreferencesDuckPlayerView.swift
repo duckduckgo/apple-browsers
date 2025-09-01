@@ -71,14 +71,17 @@ extension Preferences {
                         Text(UserText.duckPlayerAlwaysOpenInPlayer)
                             .padding(.bottom, 4)
                             .tag(DuckPlayerMode.enabled)
+                            .accessibilityIdentifier("DuckPlayerMode.enabled")
 
                         Text(UserText.duckPlayerShowPlayerButtons)
                             .padding(.bottom, 4)
                             .tag(DuckPlayerMode.alwaysAsk)
+                            .accessibilityIdentifier("DuckPlayerMode.alwaysAsk")
 
                         Text(UserText.duckPlayerOff)
                             .padding(.bottom, 4)
                             .tag(DuckPlayerMode.disabled)
+                            .accessibilityIdentifier("DuckPlayerMode.disabled")
 
                     }, label: {})
                     .pickerStyle(.radioGroup)

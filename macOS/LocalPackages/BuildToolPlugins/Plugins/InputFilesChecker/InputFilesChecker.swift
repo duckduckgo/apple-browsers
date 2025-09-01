@@ -44,12 +44,12 @@ let nonSandboxedExtraInputFiles: Set<InputFile> = Set([
     .init("UpdateController.swift", .source),
     .init("UpdateUserDriver.swift", .source),
     .init("DuckDuckGo VPN.app", .unknown),
-    .init("DuckDuckGo Personal Information Removal.app", .unknown),
+    .init("DuckDuckGo Personal Information Removal.app", .unknown)
 ] + extensionsInputFiles)
 
 let sandboxedExtraInputFiles: Set<InputFile> = Set([
     .init("AppStore.xcstrings", .resource),
-    .init("AppStoreInfoPlist.xcstrings", .resource),
+    .init("AppStoreInfoPlist.xcstrings", .resource)
 ])
 
 /**
@@ -76,7 +76,8 @@ let extraInputFiles: [TargetName: Set<InputFile>] = [
         .init("WebExtensionManagerTests.swift", .source),
         .init("WebExtensionPathsCacheMock.swift", .source),
         .init("WebExtensionLoaderMock.swift", .source),
-        .init("SupportedOSCheckerTests.swift", .source)
+        .init("SupportedOSCheckerTests.swift", .source),
+        .init("UpdateControllerTests.swift", .source)
     ],
 
     "Integration Tests": []

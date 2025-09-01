@@ -33,7 +33,7 @@ public extension OSStatus {
         case errSecAllocate:
             return "Failed to allocate memory"
         case errSecNotAvailable:
-            return "No keychain is available"
+            return "Keychain not available"
         case errSecReadOnly:
             return "Read only error"
         case errSecAuthFailed:

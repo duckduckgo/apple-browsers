@@ -104,7 +104,7 @@
 "widget.gallery.search.display.name" = "Etsi";
 
 /* Description of VPN widget in widget gallery */
-"widget.gallery.vpn.description" = "Tarkastele ja hallinnoi VPN-yhteyttäsi. Edellyttää Privacy Pro -tilauksen.";
+"widget.gallery.vpn.description" = "Tarkastele ja hallinnoi VPN-yhteyttäsi. Vaatii DuckDuckGo-tilauksen.";
 
 /* Display name for VPN widget in widget gallery */
 "widget.gallery.vpn.display.name" = "VPN";

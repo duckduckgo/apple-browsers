@@ -499,10 +499,10 @@
             </objects>
             <point key="canvasLocation" x="1904" y="2565"/>
         </scene>
-        <!--NetP-->
+        <!--VPN-->
         <scene sceneID="ml3-iJ-UAe">
             <objects>
-                <tableViewController storyboardIdentifier="NetworkProtectionDebugViewController" id="TDP-d3-gtB" customClass="NetworkProtectionDebugViewController" customModule="DuckDuckGo" customModuleProvider="target" sceneMemberID="viewController">
+                <tableViewController storyboardIdentifier="NetworkProtectionDebugViewController" title="VPN" id="TDP-d3-gtB" customClass="NetworkProtectionDebugViewController" customModule="DuckDuckGo" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="insetGrouped" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="18" estimatedSectionHeaderHeight="-1" sectionFooterHeight="18" estimatedSectionFooterHeight="-1" id="USF-eU-XuP">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -530,7 +530,7 @@
                             <outlet property="delegate" destination="TDP-d3-gtB" id="SBR-Ki-hep"/>
                         </connections>
                     </tableView>
-                    <navigationItem key="navigationItem" title="NetP" id="kFw-XD-90y"/>
+                    <navigationItem key="navigationItem" title="VPN" id="kFw-XD-90y"/>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Vw1-aJ-BgA" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>

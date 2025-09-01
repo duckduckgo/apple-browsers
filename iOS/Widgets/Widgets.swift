@@ -287,3 +287,16 @@ extension UIImage {
     }
 
 }
+
+extension TimelineEntry {
+
+    var isAIChatEnabled: Bool {
+        let userDefaults = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()
+        if let isEnabled = userDefaults.object(forKey: AppConfigurationKeyNames.isAIChatEnabled) as? Bool {
+            return isEnabled
+        }
+        // Respect the user decision or default to true of not made yet.
+        return true
+    }
+
+}

@@ -44,7 +44,7 @@ struct PlayerView: UIViewRepresentable {
     }
 }
 
-private final class PlayerUIView: UIView {
+final class PlayerUIView: UIView {
     let playerLayer = AVPlayerLayer()
 
     init(player: AVPlayer) {
@@ -71,13 +71,14 @@ struct PlayerView_Previews: PreviewProvider {
     @MainActor
     struct PlayerPreview: View {
         static let videoURL = Bundle.main.url(forResource: "add-to-dock-demo", withExtension: "mp4")!
-        @State var model = VideoPlayerCoordinator(url: Self.videoURL, configuration: .init(loopVideo: true))
+        @State var model = VideoPlayerCoordinator(configuration: VideoPlayerConfiguration())
 
         var body: some View {
             PlayerView(
                 coordinator: model
             )
             .onAppear(perform: {
+                model.loadAsset(url: Self.videoURL, shouldLoopVideo: true)
                 model.play()
             })
         }
@@ -86,5 +87,5 @@ struct PlayerView_Previews: PreviewProvider {
     static var previews: some View {
         PlayerPreview()
             .preferredColorScheme(.light)
-   }
+    }
 }

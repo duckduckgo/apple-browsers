@@ -70,7 +70,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             sendPixel: { _ in },
             openFilePanel: { nil },
             showAddImageFailedAlert: {},
-            visualStyle: VisualStyle.legacy
+            visualStyle: VisualStyle.current
         )
 
         windowControllersManager = WindowControllersManagerMock()
@@ -122,6 +122,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         firePixelCalls = []
         keyValueStore = nil
         notificationCenter = nil
+        tabsPreferences = nil
+        windowControllersManager = nil
     }
 
     func testWhenNewTabPageAppearsThenPixelIsSent() {

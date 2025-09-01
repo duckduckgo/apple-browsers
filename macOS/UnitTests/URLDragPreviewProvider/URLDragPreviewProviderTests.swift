@@ -47,7 +47,7 @@ final class URLDragPreviewProviderTests: XCTestCase {
             let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: .homeFavicon)
             let preview = snapshot(from: provider)
 
-            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.rawValue)
+            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.snapshotName)
         }
     }
 
@@ -57,7 +57,7 @@ final class URLDragPreviewProviderTests: XCTestCase {
             let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: nil)
             let preview = snapshot(from: provider)
 
-            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.rawValue)
+            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.snapshotName)
         }
     }
 
@@ -72,7 +72,7 @@ final class URLDragPreviewProviderTests: XCTestCase {
             )
             let preview = snapshot(from: provider)
 
-            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.rawValue)
+            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.snapshotName)
         }
     }
 
@@ -86,7 +86,7 @@ final class URLDragPreviewProviderTests: XCTestCase {
             )
             let preview = snapshot(from: provider)
 
-            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.rawValue)
+            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.snapshotName)
         }
     }
 
@@ -96,7 +96,7 @@ final class URLDragPreviewProviderTests: XCTestCase {
             let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: nil, width: 300)
             let preview = snapshot(from: provider)
 
-            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.rawValue)
+            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.snapshotName)
         }
     }
 
@@ -109,7 +109,7 @@ final class URLDragPreviewProviderTests: XCTestCase {
             )
             let preview = snapshot(from: provider)
 
-            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.rawValue)
+            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.snapshotName)
         }
     }
 
@@ -122,17 +122,18 @@ final class URLDragPreviewProviderTests: XCTestCase {
             )
             let preview = snapshot(from: provider)
 
-            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.rawValue)
+            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.snapshotName)
         }
     }
 
     func testTextPreviewWithFavicon() {
+
         for appearanceName: NSAppearance.Name in [.aqua, .darkAqua] {
             NSApp.appearance = .init(named: appearanceName)!
             let provider = URLDragPreviewProvider(text: "Custom Text Only Preview", favicon: .homeFavicon)
             let preview = snapshot(from: provider)
 
-            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.rawValue)
+            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.snapshotName)
         }
     }
 
@@ -141,5 +142,15 @@ final class URLDragPreviewProviderTests: XCTestCase {
 private class SnapshotWindow: NSWindow {
     override var backingScaleFactor: CGFloat {
         return 1.0
+    }
+}
+
+private extension NSAppearance.Name {
+    var snapshotName: String {
+        if #available(macOS 26, *) {
+            return self.rawValue + "_tahoe"
+        } else {
+            return self.rawValue
+        }
     }
 }

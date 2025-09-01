@@ -38,10 +38,8 @@ final class AppKeyValueFileStoreService {
     init() throws {
 
         guard let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            Pixel.fire(pixel: .keyValueFileStoreSupportDirAccessError)
-
             // Move app to Terminating state
-            throw Error.appSupportDirAccessError
+            throw TerminationError.keyValueFileStore(.appSupportDirAccessError)
         }
 
         do {
@@ -50,10 +48,8 @@ final class AppKeyValueFileStoreService {
             // Try to preload data, to break init flow immediately on access issue
             try _ = keyValueFilesStore.object(forKey: "any")
         } catch {
-            Pixel.fire(pixel: .keyValueFileStoreInitError)
-
             // Move app to Terminating state
-            throw Error.kvfsInitError
+            throw TerminationError.keyValueFileStore(.kvfsInitError)
         }
     }
 

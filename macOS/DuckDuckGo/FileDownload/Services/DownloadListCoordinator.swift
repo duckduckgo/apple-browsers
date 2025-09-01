@@ -56,6 +56,9 @@ final class DownloadListCoordinator {
     private let webViewProvider: (() -> WKWebView?)?
 
     private var items = [UUID: DownloadListItem]()
+    var downloadListItems: [DownloadListItem] {
+        Array(items.values)
+    }
 
     private var downloadsCancellable: AnyCancellable?
     private var downloadTaskCancellables = [WebKitDownloadTask: AnyCancellable]()
@@ -595,10 +598,6 @@ final class DownloadListCoordinator {
             return
         }
         item.progress?.cancel()
-    }
-
-    func cancelAll() {
-        items.values.forEach { $0.progress?.cancel() }
     }
 
     func sync() {

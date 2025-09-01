@@ -18,13 +18,14 @@
 //
 
 import SwiftUI
+import SystemSettingsPiPTutorial
 
 final class OnboardingIntroViewController: UIHostingController<OnboardingView>, Onboarding {
     weak var delegate: OnboardingDelegate?
     private let viewModel: OnboardingIntroViewModel
 
-    init(onboardingPixelReporter: OnboardingPixelReporting) {
-        viewModel = OnboardingIntroViewModel(pixelReporter: onboardingPixelReporter)
+    init(onboardingPixelReporter: OnboardingPixelReporting, systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging, daxDialogsManager: ContextualDaxDialogDisabling) {
+        viewModel = OnboardingIntroViewModel(pixelReporter: onboardingPixelReporter, systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager, daxDialogsManager: daxDialogsManager)
         let rootView = OnboardingView(model: viewModel)
         super.init(rootView: rootView)
         

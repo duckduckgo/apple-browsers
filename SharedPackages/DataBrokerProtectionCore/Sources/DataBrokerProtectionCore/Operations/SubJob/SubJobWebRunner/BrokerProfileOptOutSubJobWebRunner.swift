@@ -36,7 +36,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
 
     public let privacyConfig: PrivacyConfigurationManaging
     public let prefs: ContentScopeProperties
-    public let query: BrokerProfileQueryData
+    public let context: SubJobContextProviding
     public let emailService: EmailServiceProtocol
     public let captchaService: CaptchaServiceProtocol
     public let cookieHandler: CookieHandler
@@ -51,14 +51,16 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public var postLoadingSiteStartTime: Date?
     public let executionConfig: BrokerJobExecutionConfig
+    public let featureFlagger: DBPFeatureFlagging
 
     public var retriesCountOnError: Int = 3
 
     public init(privacyConfig: PrivacyConfigurationManaging,
                 prefs: ContentScopeProperties,
-                query: BrokerProfileQueryData,
+                context: SubJobContextProviding,
                 emailService: EmailServiceProtocol,
                 captchaService: CaptchaServiceProtocol,
+                featureFlagger: DBPFeatureFlagging,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
                 operationAwaitTime: TimeInterval = 3,
                 clickAwaitTime: TimeInterval = 40,
@@ -68,7 +70,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 shouldRunNextStep: @escaping () -> Bool) {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
-        self.query = query
+        self.context = context
         self.emailService = emailService
         self.captchaService = captchaService
         self.operationAwaitTime = operationAwaitTime
@@ -78,6 +80,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         self.cookieHandler = cookieHandler
         self.pixelHandler = pixelHandler
         self.executionConfig = executionConfig
+        self.featureFlagger = featureFlagger
     }
 
     public func optOut(profileQuery: BrokerProfileQueryData,
@@ -96,7 +99,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
 
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
-                self.extractedProfile = inputValue.merge(with: query.profileQuery)
+                self.extractedProfile = inputValue.merge(with: context.profileQuery)
                 self.continuation = continuation
 
                 guard self.shouldRunNextStep() else {
@@ -106,10 +109,10 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
 
                 task = Task {
                     await initialize(handler: webViewHandler,
-                                     isFakeBroker: query.dataBroker.isFakeBroker,
+                                     isFakeBroker: context.dataBroker.isFakeBroker,
                                      showWebView: showWebView)
 
-                    if let optOutStep = query.dataBroker.optOutStep() {
+                    if let optOutStep = context.dataBroker.optOutStep() {
                         if let actionsHandler = actionsHandler {
                             self.actionsHandler = actionsHandler
                         } else {
@@ -141,21 +144,29 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
 
     public func executeNextStep() async {
         resetRetriesCount()
-        Logger.action.debug("OPTOUT Waiting \(self.operationAwaitTime, privacy: .public) seconds...")
+        Logger.action.debug(loggerContext(), message: "Waiting \(self.operationAwaitTime) seconds...")
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
 
         let shouldContinue = self.shouldRunNextStep()
         if let action = actionsHandler?.nextAction(), shouldContinue {
             stageCalculator.setLastActionId(action.id)
+            Logger.action.debug(loggerContext(for: action), message: "Next action")
             await runNextAction(action)
         } else {
+            Logger.action.debug(loggerContext(), message: "Releasing the web view")
             await webViewHandler?.finish() // If we executed all steps we release the web view
 
             if shouldContinue {
+                Logger.action.debug(loggerContext(), message: "Job completed")
                 complete(())
             } else {
+                Logger.action.debug(loggerContext(), message: "Job canceled")
                 failed(with: DataBrokerProtectionError.cancelled)
             }
         }
+    }
+
+    private func loggerContext(for action: Action? = nil) -> PIRActionLogContext {
+        .init(stepType: .optOut, broker: context.dataBroker, attemptId: stageCalculator.attemptId, action: action)
     }
 }

@@ -32,6 +32,7 @@ final class NavigationActionBarViewModel: ObservableObject {
     @Published var isVoiceSearchEnabled: Bool = true
     @Published var hasUserInteractedWithText: Bool = false
     @Published var isCurrentTextValidURL: Bool = false
+    @Published var isKeyboardVisible: Bool = false
 
     // MARK: - Dependencies
     private let switchBarHandler: SwitchBarHandling
@@ -55,6 +56,7 @@ final class NavigationActionBarViewModel: ObservableObject {
 
         setupBindings()
         updateInitialState()
+        setupKeyboardObservers()
     }
 
     // MARK: - Private Methods
@@ -95,6 +97,22 @@ final class NavigationActionBarViewModel: ObservableObject {
         isVoiceSearchEnabled = switchBarHandler.isVoiceSearchEnabled
         hasUserInteractedWithText = false
         isCurrentTextValidURL = switchBarHandler.isCurrentTextValidURL
+    }
+    
+    private func setupKeyboardObservers() {
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.isKeyboardVisible = true
+            }
+            .store(in: &cancellables)
+        
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.isKeyboardVisible = false
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Public Methods

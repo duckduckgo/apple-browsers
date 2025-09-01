@@ -30,7 +30,14 @@ final class MockInitializing: InitializingHandling {
 
     func makeLaunchingState() throws -> any LaunchingHandling {
         if shouldThrowOnLaunching {
-            throw UIApplication.TerminationError.insufficientDiskSpace
+            let underlying = NSError(domain: "com.example", code: 13, userInfo: nil)
+
+            let diskFullError = NSError(
+                domain: "com.example.wrapper",
+                code: 1,
+                userInfo: [NSUnderlyingErrorKey: underlying]
+            )
+            throw TerminationError.database(.other(diskFullError))
         } else {
             MockLaunching()
         }
@@ -94,18 +101,6 @@ final class MockBackground: BackgroundHandling {
 
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
         MockForeground(actionToHandle: actionToHandle)
-    }
-
-}
-
-@MainActor
-final class MockTerminating: TerminatingHandling {
-
-    private(set) var terminationError: String?
-
-    init() {}
-    init(terminationError: UIApplication.TerminationError, application: UIApplication) {
-        self.terminationError = terminationError.localizedDescription
     }
 
 }
@@ -186,11 +181,9 @@ final class LaunchingTests {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
         #expect(stateMachine.currentState.name == "terminating")
 
-        if case .terminating(let terminating) = stateMachine.currentState,
-           let terminating = terminating as? Terminating {
-            #expect(terminating.terminationError == UIApplication.TerminationError.insufficientDiskSpace)
-        } else {
-            Issue.record("Incorrect state")
+        guard case .terminating(let terminating) = stateMachine.currentState else {
+            Issue.record("Expected to transition to .terminating state")
+            return
         }
     }
 

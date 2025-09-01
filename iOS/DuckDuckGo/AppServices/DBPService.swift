@@ -83,11 +83,15 @@ final class DBPService: NSObject {
     }
 }
 
-final class DBPFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging {
+final class DBPFeatureFlagger: DBPFeatureFlagging {
     private let appDependencies: DependencyProvider
 
     var isRemoteBrokerDeliveryFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
+    }
+
+    var isEmailConfirmationDecouplingFeatureOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
     }
 
     init(appDependencies: DependencyProvider) {

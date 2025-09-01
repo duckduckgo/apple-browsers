@@ -19,7 +19,7 @@
 import XCTest
 
 class AutocompleteTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var addBookmarkButton: XCUIElement!
     private var resetBookMarksMenuItem: XCUIElement!
     private var historyMenuBarItem: XCUIElement!
@@ -33,26 +33,25 @@ class AutocompleteTests: UITestCase {
 
     override class func setUp() {
         super.setUp()
-        UITests.firstRun()
         UITests.setAutocompleteToggleBeforeTestcaseRuns(true) // These tests require autocomplete to be on
     }
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
         addBookmarkButton = app.buttons["BookmarkDialogButtonsView.defaultButton"]
         resetBookMarksMenuItem = app.menuItems["MainMenu.resetBookmarks"]
         historyMenuBarItem = app.menuBarItems["History"]
         clearAllHistoryMenuItem = app.menuItems["HistoryMenu.clearAllHistory"]
-        addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
+        addressBarTextField = app.addressBar
         suggestionsTableView = app.tables["SuggestionViewController.tableView"]
         clearAllHistoryAlertClearButton = app.buttons["ClearAllHistoryAndDataAlert.clearButton"]
         fakeFireButton = app.buttons["FireViewController.fakeFireButton"]
         let siteTitleLength = 12
         siteTitleForBookmarkedSite = UITests.randomPageTitle(length: siteTitleLength)
         siteTitleForHistorySite = UITests.randomPageTitle(length: siteTitleLength)
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
         try resetAndArrangeBookmarksAndHistory() // Manually reset to a clean state
     }
 
@@ -207,7 +206,6 @@ private extension AutocompleteTests {
             app.windows.webViews[siteTitleForHistorySite].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
     }
 }

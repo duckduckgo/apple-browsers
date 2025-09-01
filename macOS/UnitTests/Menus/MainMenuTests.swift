@@ -341,11 +341,8 @@ class MainMenuTests: XCTestCase {
 
     @MainActor
     func testMainMenuInitializedWithTrueOpenFileFlag_ThenOpenFileMenuItemIsVisible() throws {
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.openFileMenuAction]
-
         let sut = MainMenu(
-            featureFlagger: featureFlagger,
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),

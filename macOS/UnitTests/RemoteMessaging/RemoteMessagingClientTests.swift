@@ -122,16 +122,18 @@ final class RemoteMessagingClientTests: XCTestCase {
     }
 
     private func makeClient() {
+        let appearancePreferences = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
         client = RemoteMessagingClient(
             remoteMessagingDatabase: remoteMessagingDatabase,
             configFetcher: MockRemoteMessagingConfigFetcher(),
             configMatcherProvider: RemoteMessagingConfigMatcherProvider(
                 bookmarksDatabase: bookmarksDatabase,
-                appearancePreferences: AppearancePreferences(
-                    persistor: AppearancePreferencesPersistorMock(),
-                    privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                    featureFlagger: MockFeatureFlagger()
-                ),
+                appearancePreferences: appearancePreferences,
+                startupPreferences: StartupPreferences(persistor: StartupPreferencesPersistorMock(), appearancePreferences: appearancePreferences),
                 pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
                 internalUserDecider: MockInternalUserDecider(),
                 statisticsStore: MockStatisticsStore(),

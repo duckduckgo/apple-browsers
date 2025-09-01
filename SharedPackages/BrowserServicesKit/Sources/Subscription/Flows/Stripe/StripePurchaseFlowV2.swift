@@ -21,6 +21,7 @@ import StoreKit
 import os.log
 import Networking
 import Common
+import PixelKit
 
 public enum StripePurchaseFlowError: DDGError {
     case noProductsFound
@@ -62,8 +63,10 @@ public enum StripePurchaseFlowError: DDGError {
 }
 
 public protocol StripePurchaseFlowV2 {
+    typealias PrepareResult = (purchaseUpdate: PurchaseUpdate, accountCreationDuration: WidePixel.MeasuredInterval?)
+
     func subscriptionOptions() async -> Result<SubscriptionOptionsV2, StripePurchaseFlowError>
-    func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PurchaseUpdate, StripePurchaseFlowError>
+    func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PrepareResult, StripePurchaseFlowError>
     func completeSubscriptionPurchase() async
 }
 
@@ -108,7 +111,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
                                               availableEntitlements: features))
     }
 
-    public func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PurchaseUpdate, StripePurchaseFlowError> {
+    public func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PrepareResult, StripePurchaseFlowError> {
         Logger.subscription.log("Preparing subscription purchase")
 
         await subscriptionManager.signOut(notifyUI: false)
@@ -117,15 +120,18 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
             if let subscriptionExpired = await isSubscriptionExpired(),
                subscriptionExpired == true,
                let tokenContainer = try? await subscriptionManager.getTokenContainer(policy: .localValid) {
-                return .success(PurchaseUpdate.redirect(withToken: tokenContainer.accessToken))
+                return .success((purchaseUpdate: PurchaseUpdate.redirect(withToken: tokenContainer.accessToken), accountCreationDuration: nil))
             } else {
-                return .success(PurchaseUpdate.redirect(withToken: ""))
+                return .success((purchaseUpdate: PurchaseUpdate.redirect(withToken: ""), accountCreationDuration: nil))
             }
         } else {
             do {
                 // Create account
+                var accountCreation = WidePixel.MeasuredInterval.startingNow()
                 let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded)
-                return .success(PurchaseUpdate.redirect(withToken: tokenContainer.accessToken))
+                accountCreation.complete()
+
+                return .success((purchaseUpdate: PurchaseUpdate.redirect(withToken: tokenContainer.accessToken), accountCreationDuration: accountCreation))
             } catch {
                 Logger.subscriptionStripePurchaseFlow.error("Account creation failed: \(error.localizedDescription, privacy: .public)")
                 return .failure(.accountCreationFailed(error))

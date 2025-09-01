@@ -94,6 +94,11 @@ struct Launching: LaunchingHandling {
         let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
+        let widePixelService = WidePixelService(
+            widePixel: AppDependencyProvider.shared.widePixel,
+            featureFlagger: featureFlagger,
+            subscriptionBridge: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+        )
 
         let daxDialogs = configuration.onboardingConfiguration.daxDialogs
 
@@ -170,13 +175,17 @@ struct Launching: LaunchingHandling {
                                statisticsService: statisticsService,
                                keyValueFileStoreService: appKeyValueFileStoreService,
                                defaultBrowserPromptService: defaultBrowserPromptService,
-                               systemSettingsPiPTutorialService: systemSettingsPiPTutorialService
+                               systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
+                               widePixelService: widePixelService
         )
 
         // Register background tasks that run after app is ready
         launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
                                                                    interactionStateSource: mainCoordinator.interactionStateSource,
                                                                    tabManager: mainCoordinator.tabManager))
+        
+        // Clean up wide pixel data at launch
+        launchTaskManager.register(task: WidePixelLaunchCleanupTask(widePixelService: widePixelService))
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window

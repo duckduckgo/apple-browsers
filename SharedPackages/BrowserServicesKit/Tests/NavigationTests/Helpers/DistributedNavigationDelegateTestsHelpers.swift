@@ -27,17 +27,14 @@ import XCTest
 
 @testable import Navigation
 
-@objc private protocol WebProcessPoolPrivate: AnyObject {
-    @objc(_setWebProcessCountLimit:) static func setWebProcessCountLimit(_ webProcessCountLimit: UInt)
-}
-
 @available(macOS 12.0, iOS 15.0, *)
 class DistributedNavigationDelegateTestsBase: XCTestCase {
+
+    let standardTimeout: TimeInterval = 15
 
     var navigationDelegateProxy: NavigationDelegateProxy!
 
     var navigationDelegate: DistributedNavigationDelegate { navigationDelegateProxy.delegate }
-    var testSchemeHandler: TestNavigationSchemeHandler! = TestNavigationSchemeHandler()
     var server: SafeHttpServer!
 
     var currentHistoryItemIdentityCancellable: AnyCancellable!
@@ -45,9 +42,9 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
 
     var _webView: WKWebView!
     @discardableResult
-    func withWebView<T>(do block: (WKWebView) throws -> T) rethrows -> T {
+    func withWebView<T>(testURLSchemeHandler: TestNavigationSchemeHandler? = nil, do block: (WKWebView) throws -> T) rethrows -> T {
         let webView = _webView ?? {
-            let webView = makeWebView()
+            let webView = makeWebView(testURLSchemeHandler: testURLSchemeHandler)
             _webView = webView
             return webView
         }()
@@ -72,12 +69,9 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
                 XCTFail("[\(testName)] unexpected event received: \($0)")
             })
         }
-
-        unsafeBitCast(WKProcessPool.self, to: WebProcessPoolPrivate.Type.self).setWebProcessCountLimit(5)
     }
 
     override func tearDown() {
-        self.testSchemeHandler = nil
         server.stop()
         server = nil
         self.navigationDelegate.responders.forEach { responder in
@@ -90,11 +84,16 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
                 let navigationDelegateProxyKey = UnsafeRawPointer(bitPattern: "navigationDelegateProxyKey".hashValue)!
                 objc_setAssociatedObject(_webView, navigationDelegateProxyKey, navigationDelegateProxy, .OBJC_ASSOCIATION_RETAIN)
             }
+            _webView.killWebContentProcess()
             self._webView = nil
         }
         navigationDelegateProxy = nil
         currentHistoryItemIdentityCancellable = nil
         history.removeAll()
+    }
+
+    func waitForExpectations() {
+        super.waitForExpectations(timeout: standardTimeout)
     }
 
 }
@@ -106,10 +105,13 @@ extension DistributedNavigationDelegateTestsBase {
         NavigationDelegateProxy(delegate: DistributedNavigationDelegate())
     }
 
-    func makeWebView() -> WKWebView {
+    func makeWebView(testURLSchemeHandler: TestNavigationSchemeHandler? = nil) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
-        configuration.setURLSchemeHandler(testSchemeHandler, forURLScheme: TestNavigationSchemeHandler.scheme)
+        if let testURLSchemeHandler {
+            configuration.setURLSchemeHandler(testURLSchemeHandler, forURLScheme: TestNavigationSchemeHandler.scheme)
+        }
+        configuration.preferences.setValue(false, forKey: "safeBrowsingEnabled")
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = navigationDelegateProxy

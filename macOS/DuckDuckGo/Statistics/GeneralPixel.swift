@@ -31,6 +31,7 @@ enum GeneralPixel: PixelKitEventV2 {
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
     case launch
     case dailyActiveUser(isDefault: Bool, isAddedToDock: Bool?)
+    case dailyFireWindowConfiguration(startupFireWindow: Bool, openFireWindowByDefault: Bool, fireAnimationEnabled: Bool)
 
     case navigation(NavigationKind)
     case navigationToExternalURL
@@ -546,6 +547,9 @@ enum GeneralPixel: PixelKitEventV2 {
 
         case .dailyActiveUser:
             return  "m_mac_daily_active_user"
+
+        case .dailyFireWindowConfiguration:
+            return "m_mac_fire_window_configuration"
 
         case .navigation:
             return "m_mac_navigation"
@@ -1266,6 +1270,13 @@ enum GeneralPixel: PixelKitEventV2 {
             }
 
             return params
+
+        case .dailyFireWindowConfiguration(let startupFireWindow, let openFireWindowByDefault, let fireAnimationEnabled):
+            return [
+                "startup_fire_window": startupFireWindow ? "true" : "false",
+                "open_fire_window_by_default": openFireWindowByDefault ? "true" : "false",
+                "fire_animation_enabled": fireAnimationEnabled ? "true" : "false"
+            ]
 
         case .navigation(let kind):
             return ["kind": kind.description]

@@ -38,7 +38,7 @@ class NavigationSessionRestorationTests: DistributedNavigationDelegateTestsBase 
         withWebView { webView in
             webView.interactionState = data.interactionStateData
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local, cachePolicy: .returnCacheDataElseLoad), .restore, src: main()),
@@ -59,7 +59,7 @@ class NavigationSessionRestorationTests: DistributedNavigationDelegateTestsBase 
         withWebView { webView in
             webView.interactionState = data.customSchemeInteractionStateData
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .willStart(Nav(action: .init(req(urls.aboutBlank, [:], cachePolicy: .returnCacheDataElseLoad), .restore, src: main()), .approved, isCurrent: false)),
@@ -82,7 +82,7 @@ class NavigationSessionRestorationTests: DistributedNavigationDelegateTestsBase 
         withWebView { webView in
             webView.interactionState = data.interactionStateData
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         let eDidFinish2 = expectation(description: "onDidFinish")
         responder(at: 0).onDidFinish = { _ in eDidFinish2.fulfill() }
@@ -90,7 +90,7 @@ class NavigationSessionRestorationTests: DistributedNavigationDelegateTestsBase 
         withWebView { webView in
             _=webView.goBack()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local1, cachePolicy: .returnCacheDataElseLoad), .backForw(-1), from: history[1], src: main(urls.local)),
@@ -117,7 +117,7 @@ class NavigationSessionRestorationTests: DistributedNavigationDelegateTestsBase 
         withWebView { webView in
             webView.interactionState = Data.sessionRestorationMagic + sessionState.plist
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         let eDidFinish2 = expectation(description: "onDidFinish")
         responder(at: 0).onDidFinish = { _ in eDidFinish2.fulfill() }
@@ -125,7 +125,7 @@ class NavigationSessionRestorationTests: DistributedNavigationDelegateTestsBase 
         withWebView { webView in
             _=webView.goForward()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local1, cachePolicy: .returnCacheDataElseLoad), .restore, src: main()),
@@ -153,7 +153,7 @@ class NavigationSessionRestorationTests: DistributedNavigationDelegateTestsBase 
         withWebView { webView in
             webView.interactionState = data.interactionStateData
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         server.middleware = [{ [data] request in
             return .ok(.html(data.html.utf8String()!))
@@ -166,13 +166,13 @@ class NavigationSessionRestorationTests: DistributedNavigationDelegateTestsBase 
         withWebView { webView in
             _=webView.goBack()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         eDidFinish = expectation(description: "onDidFinish 2")
         withWebView { webView in
             _=webView.goForward()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local, cachePolicy: .returnCacheDataElseLoad), .restore, src: main()),
@@ -208,7 +208,7 @@ class NavigationSessionRestorationTests: DistributedNavigationDelegateTestsBase 
         withWebView { webView in
             webView.interactionState = sessionState.interactionStateData
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         server.middleware = [{ [data] request in
             return .ok(.html(data.html.utf8String()!))
@@ -221,13 +221,13 @@ class NavigationSessionRestorationTests: DistributedNavigationDelegateTestsBase 
         withWebView { webView in
             _=webView.goForward()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         eDidFinish = expectation(description: "onDidFinish 2")
         withWebView { webView in
             _=webView.goBack()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local1, cachePolicy: .returnCacheDataElseLoad), .restore, src: main()),
@@ -260,7 +260,7 @@ class NavigationSessionRestorationTests: DistributedNavigationDelegateTestsBase 
         withWebView { webView in
             webView.interactionState = data.aboutBlankAfterRegularNavigationInteractionStateData
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .willStart(Nav(action: .init(req(urls.aboutBlank, [:], cachePolicy: .returnCacheDataElseLoad), .restore, src: main()), .approved, isCurrent: false)),

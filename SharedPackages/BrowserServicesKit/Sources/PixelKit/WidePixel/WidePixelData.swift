@@ -28,10 +28,14 @@ public protocol WidePixelData: Codable, WidePixelParameterProviding {
 }
 
 public enum WidePixelStatus: Codable, Equatable, CustomStringConvertible {
-    case success
+    case success(reason: String? = nil)
     case failure
     case cancelled
     case unknown(reason: String)
+
+    public static var success: WidePixelStatus {
+        return .success(reason: nil)
+    }
 
     public var description: String {
         switch self {
@@ -51,6 +55,10 @@ public enum WidePixelStatus: Codable, Equatable, CustomStringConvertible {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(description, forKey: .type)
 
+        if case let .success(reason) = self {
+            try container.encode(reason, forKey: .reason)
+        }
+
         if case let .unknown(reason) = self {
             try container.encode(reason, forKey: .reason)
         }
@@ -61,7 +69,9 @@ public enum WidePixelStatus: Codable, Equatable, CustomStringConvertible {
         let type = try container.decode(String.self, forKey: .type)
 
         switch type {
-        case "SUCCESS": self = .success
+        case "SUCCESS":
+            let reason = (try? container.decode(String.self, forKey: .reason)) ?? nil
+            self = .success(reason: reason)
         case "FAILURE": self = .failure
         case "CANCELLED": self = .cancelled
         case "UNKNOWN":
@@ -115,10 +125,12 @@ public struct WidePixelAppData: Codable {
     public var name: String
     public var version: String
     public var formFactor: String?
+    public var internalUser: Bool?
 
     public init(name: String = AppVersion.shared.name,
-                version: String = AppVersion.shared.versionAndBuildNumber,
-                formFactor: String? = nil) {
+                version: String = AppVersion.shared.versionNumber,
+                formFactor: String? = nil,
+                internalUser: Bool? = nil) {
         self.name = name
         self.version = version
 
@@ -127,6 +139,7 @@ public struct WidePixelAppData: Codable {
         #else
         self.formFactor = formFactor // Ignore the form factor on macOS, but allow it to be overriden for testing
         #endif
+        self.internalUser = internalUser
     }
 }
 
@@ -142,6 +155,10 @@ extension WidePixelAppData: WidePixelParameterProviding {
             parameters[WidePixelParameter.Global.formFactor] = formFactor
         }
 
+        if let internalUser {
+            parameters[WidePixelParameter.App.internalUser] = internalUser ? "true" : nil
+        }
+
         return parameters
     }
 
@@ -155,7 +172,7 @@ public struct WidePixelContextData: Codable {
     public var name: String?
     public var data: [String: String]?
 
-    public init(id: String, name: String? = nil, data: [String: String]? = nil) {
+    public init(id: String = UUID().uuidString, name: String? = nil, data: [String: String]? = nil) {
         self.id = id
         self.name = name
         self.data = data

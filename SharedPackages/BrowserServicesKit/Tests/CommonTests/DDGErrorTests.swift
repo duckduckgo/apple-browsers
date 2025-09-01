@@ -127,7 +127,7 @@ final class DDGErrorTests: XCTestCase {
 
     func testErrorsChainDescriptionWithSingleError() {
         let error = TestError.simpleError(code: 100, description: "Single error")
-        let description = error.errorsChainDebugDescription
+        let description = error.errorsChainDescription
 
         XCTAssertEqual(description, "- Single error")
     }
@@ -135,7 +135,7 @@ final class DDGErrorTests: XCTestCase {
     func testErrorsChainDescriptionWithMultipleErrors() {
         let error = TestError.errorWithUnderlying(code: 3, description: "Top error")
 
-        let description = error.errorsChainDebugDescription
+        let description = error.errorsChainDescription
         let expected = "- Top error\n- SimpleError(message: \"Underlying error\")"
 
         XCTAssertEqual(description, expected)
@@ -144,7 +144,7 @@ final class DDGErrorTests: XCTestCase {
     func testErrorsChainDescriptionWithMixedErrorTypes() {
         let ddgError = TestError.errorWithUnderlying(code: 100, description: "DDG error")
 
-        let description = ddgError.errorsChainDebugDescription
+        let description = ddgError.errorsChainDescription
 
         XCTAssertTrue(description.contains("- DDG error"))
         XCTAssertTrue(description.contains("- SimpleError(message: \"Underlying error\")"))

@@ -162,7 +162,7 @@ final class AutofillPreferencesModel: ObservableObject {
     @MainActor
     private func installBitwardenExtensionIfNeeded() {
         if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
-            let bitwardenExtensionPath = "file:///Applications/Bitwarden.app/Contents/PlugIns/safari.appex"
+            let bitwardenExtensionPath = WebExtensionIdentifier.bitwarden.defaultPath
 
             // Only install if not already installed
             if !WebExtensionManager.shared.webExtensionPaths.contains(bitwardenExtensionPath) {
@@ -176,7 +176,7 @@ final class AutofillPreferencesModel: ObservableObject {
     @MainActor
     private func uninstallBitwardenExtension() {
         if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
-            let bitwardenExtensionPath = "file:///Applications/Bitwarden.app/Contents/PlugIns/safari.appex"
+            let bitwardenExtensionPath = WebExtensionIdentifier.bitwarden.defaultPath
 
             if WebExtensionManager.shared.webExtensionPaths.contains(bitwardenExtensionPath) {
                 Task {

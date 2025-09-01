@@ -104,14 +104,14 @@ final class WebExtensionsDebugMenu: NSMenu {
     }
 
     @objc func installBitwardenExtension() {
-        let path = "file:///Applications/Bitwarden.app/Contents/PlugIns/safari.appex"
+        let path = WebExtensionIdentifier.bitwarden.defaultPath
         Task {
             await webExtensionManager.installExtension(path: path)
         }
     }
 
     @objc func installOnePasswordExtension() {
-        let path = "file:///Applications/1Password%20for%20Safari.app/Contents/PlugIns/1Password.appex"
+        let path = WebExtensionIdentifier.onePassword.defaultPath
         Task {
             await webExtensionManager.installExtension(path: path)
         }

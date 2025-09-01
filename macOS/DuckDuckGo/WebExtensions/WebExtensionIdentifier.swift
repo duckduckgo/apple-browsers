@@ -38,4 +38,13 @@ enum WebExtensionIdentifier {
             return nil
         }
     }
+
+    var defaultPath: String {
+        switch self {
+        case .bitwarden:
+            "file:///Applications/Bitwarden.app/Contents/PlugIns/safari.appex"
+        case .onePassword:
+            "file:///Applications/1Password%20for%20Safari.app/Contents/PlugIns/1Password.appex"
+        }
+    }
 }

@@ -85,7 +85,6 @@ extension SubscriptionPurchaseWidePixelData {
     public enum StatusReason: String {
         case partialData = "partial_data"
         case missingEntitlements = "missing_entitlements"
-        case networkErrorDelayedActivation = "network_error_delayed_activation"
         case missingEntitlementsDelayedActivation = "missing_entitlements_delayed_activation"
     }
 

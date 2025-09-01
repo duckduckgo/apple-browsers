@@ -61,8 +61,6 @@ final class PixelConfiguration {
         }
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger,
                                         eventTracker: ExperimentEventTracker(store: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
-
-
     }
 
 }

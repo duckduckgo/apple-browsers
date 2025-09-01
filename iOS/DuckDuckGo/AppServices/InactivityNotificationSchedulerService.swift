@@ -66,14 +66,6 @@ final class InactivityNotificationSchedulerService {
         }
     }
     
-    private func isFeatureEnabled() -> Bool {
-        return featureFlagger.isFeatureOn(.inactivityNotification)
-    }
-    
-    private func cancelPendingNotifications() {
-        userNotificationCenter.removePendingNotificationRequests(withIdentifiers: [Constants.notificationIdentifier])
-    }
-    
     func schedule() async {
         cancelPendingNotifications()
         await requestProvisionalAuthorizationIfNeeded()
@@ -104,16 +96,6 @@ final class InactivityNotificationSchedulerService {
         }
     }
     
-    private func buildUNNotificationRequest() -> UNNotificationRequest {
-        let daysInactive = makeDaysInactive()
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: .days(daysInactive), repeats: false)
-        return UNNotificationRequest(
-            identifier: Constants.notificationIdentifier,
-            content: makeUNNotificationContent(with: daysInactive),
-            trigger: trigger
-        )
-    }
-    
     func makeUNNotificationContent(with daysInactive: Int = Constants.defaultDaysInactive) -> UNNotificationContent {
         let content = UNMutableNotificationContent()
         content.title = UserText.inactivityNotificationTitle
@@ -137,6 +119,26 @@ final class InactivityNotificationSchedulerService {
         }
         
         return Constants.defaultDaysInactive
+    }
+    
+    // MARK: - Private
+    
+    private func isFeatureEnabled() -> Bool {
+        return featureFlagger.isFeatureOn(.inactivityNotification)
+    }
+    
+    private func cancelPendingNotifications() {
+        userNotificationCenter.removePendingNotificationRequests(withIdentifiers: [Constants.notificationIdentifier])
+    }
+    
+    private func buildUNNotificationRequest() -> UNNotificationRequest {
+        let daysInactive = makeDaysInactive()
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: .days(daysInactive), repeats: false)
+        return UNNotificationRequest(
+            identifier: Constants.notificationIdentifier,
+            content: makeUNNotificationContent(with: daysInactive),
+            trigger: trigger
+        )
     }
 }
 

@@ -70,7 +70,7 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         XCTAssertTrue(mockUserNotificationCenter.addedRequests.isEmpty)
     }
     
-    func test_resume_featureIsEnabled_cancelsAndReschedule() async {
+    func test_resume_featureIsEnabled_cancelsAndReschedule() async throws {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.inactivityNotification]
         
@@ -82,7 +82,7 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         XCTAssertEqual(mockUserNotificationCenter.addedRequests.count, 1)
         XCTAssertEqual(mockUserNotificationCenter.addedRequests.first?.identifier, InactivityNotificationSchedulerService.Constants.notificationIdentifier)
         
-        let notificationRequest = mockUserNotificationCenter.addedRequests.first!
+        let notificationRequest = try XCTUnwrap(mockUserNotificationCenter.addedRequests.first)
         XCTAssertEqual(notificationRequest.content.title, UserText.inactivityNotificationTitle)
         XCTAssertEqual(notificationRequest.content.body, UserText.inactivityNotificationBody)
         XCTAssertEqual(notificationRequest.trigger, UNTimeIntervalNotificationTrigger(timeInterval: .days(7), repeats: false))

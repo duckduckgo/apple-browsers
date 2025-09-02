@@ -774,8 +774,8 @@ internal extension Dictionary where Key == String, Value == String {
             params[PixelKit.Parameters.errorCode] = String(ddgError.errorCode)
             params[PixelKit.Parameters.errorDomain] = ddgError.errorDomain
 
-            // Add underlying errors
-            let underlyingErrors = ddgError.errorsChain
+            // Add underlying errors (skip first element which is the main error itself)
+            let underlyingErrors = Array(ddgError.errorsChain.dropFirst())
             var level = 0
             for underlyingError in underlyingErrors {
                 let errorCodeParameterName = PixelKit.Parameters.underlyingErrorCode + (level == 0 ? "" : String(level + 1))
@@ -814,6 +814,9 @@ internal extension Dictionary where Key == String, Value == String {
                 params[PixelKit.Parameters.underlyingErrorSQLiteExtendedCode] = "\(sqlExtendedErrorCode.intValue)"
             }
         }
+        
+        // Merge the collected parameters into self
+        self.merge(params) { _, new in new }
     }
 
     /// Recursive call to add underlying error information for non DDGErrors

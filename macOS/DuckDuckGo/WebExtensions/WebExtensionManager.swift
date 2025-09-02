@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Common
-import WebKit
 import BrowserServicesKit
+import Common
 import CryptoKit
+import Foundation
+import OSLog
+import WebKit
 
 @available(macOS 15.4, *)
 protocol WebExtensionManaging {
@@ -146,8 +147,8 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
 
             // Create and register handler if extension is known
             nativeMessagingCoordinator.createHandlerIfNeeded(for: loadResult.extensionIdentifier, context: loadResult.context)
-            if let extensionIdentifier = loadResult.extensionIdentifier {
-                print("[WebExtensionManager] Created native messaging handler for extension: \(extensionIdentifier)")
+            if let extensionIdentifier = loadResult.extensionIdentifier?.rawValue {
+                Logger.webExtensions.info("[WebExtensionManager] Created native messaging handler for extension: \(extensionIdentifier, privacy: .public)")
             }
         } catch {
             // This is temporary.  The actual handling of this error should be done outside of this manager.
@@ -176,7 +177,7 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         let identifierHash = identifierHash(forPath: path)
         if let context = controller.extensionContexts.first(where: { $0.uniqueIdentifier == identifierHash }) {
             nativeMessagingCoordinator.unregisterHandler(for: context)
-            print("[WebExtensionManager] Unregistered native messaging handler for extension")
+            Logger.webExtensions.info("[WebExtensionManager] Unregistered native messaging handler for extension")
         }
 
         do {
@@ -218,8 +219,8 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
             switch result {
             case .success(let loadResult):
                 nativeMessagingCoordinator.createHandlerIfNeeded(for: loadResult.extensionIdentifier, context: loadResult.context)
-                if let extensionIdentifier = loadResult.extensionIdentifier {
-                    print("[WebExtensionManager] Created native messaging handler for extension: \(extensionIdentifier)")
+                if let extensionIdentifier = loadResult.extensionIdentifier?.rawValue {
+                    Logger.webExtensions.info("[WebExtensionManager] Created native messaging handler for extension: \(extensionIdentifier, privacy: .public)")
                 }
             case .failure(let failure):
                 // If this is blocking from starting up the app, disable this

@@ -19,7 +19,7 @@
 import Foundation
 
 @available(macOS 15.4, *)
-enum WebExtensionIdentifier {
+enum WebExtensionIdentifier: String {
     case bitwarden
 
     static func identify(bundle: Bundle) -> WebExtensionIdentifier? {

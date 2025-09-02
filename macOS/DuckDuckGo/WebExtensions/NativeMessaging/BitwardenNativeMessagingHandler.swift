@@ -106,7 +106,7 @@ final class BitwardenNativeMessagingHandler: NativeMessagingHandling {
                     // This is for the app to lock the vault after a while - we do nothing here since we don't control the vault
                     return nil
                 default:
-                    print("[NativeMessaging] Unhandled command: \(command)")
+                    Logger.webExtensions.info("[NativeMessaging] Unhandled command: \(command, privacy: .private)")
                     return nil
                 }
             default:

@@ -17,6 +17,8 @@
 //
 
 import Foundation
+import Common
+import os.log
 
 public protocol EmailConfirmationJobProviding {
     func createEmailConfirmationJobs(showWebView: Bool,
@@ -31,12 +33,14 @@ public final class EmailConfirmationJobProvider: EmailConfirmationJobProviding {
                                             errorDelegate: EmailConfirmationErrorDelegate,
                                             jobDependencies: EmailConfirmationJobDependencyProviding) throws -> [EmailConfirmationJob] {
         let confirmations = try jobDependencies.database.fetchOptOutEmailConfirmationsWithLink()
+        Logger.dataBrokerProtection.log("Creating \(confirmations.count) email confirmation jobs")
 
         let sorted = confirmations.sorted { lhs, rhs in
             let date1 = lhs.emailConfirmationLinkObtainedOnBEDate ?? .distantFuture
             let date2 = rhs.emailConfirmationLinkObtainedOnBEDate ?? .distantFuture
             return date1 < date2
         }
+        Logger.dataBrokerProtection.log("Jobs sorted by link obtained date (oldest first)")
 
         return sorted.map { jobData in
             EmailConfirmationJob(jobData: jobData,

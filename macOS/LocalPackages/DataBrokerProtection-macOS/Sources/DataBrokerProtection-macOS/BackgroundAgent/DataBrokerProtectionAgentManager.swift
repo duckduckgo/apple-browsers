@@ -254,10 +254,12 @@ public final class DataBrokerProtectionAgentManager {
     }
 
     public func checkForEmailConfirmationData() async {
+        Logger.dataBrokerProtection.log("Agent manager triggering email confirmation data check")
         do {
             try await emailConfirmationDataService.checkForEmailConfirmationData()
+            Logger.dataBrokerProtection.log("Email confirmation data check completed")
         } catch {
-            // TODO
+            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error)")
         }
     }
 }

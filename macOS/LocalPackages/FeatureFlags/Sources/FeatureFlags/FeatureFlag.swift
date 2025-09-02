@@ -350,7 +350,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatTextSummarization:
             return .remoteReleasable(.subfeature(AIChatSubfeature.textSummarization))
         case .aiChatPageContext:
-            return .disabled
+            return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
         case .osSupportForceUnsupportedMessage:
             return .disabled
         case .osSupportForceWillSoonDropSupportMessage:

@@ -537,7 +537,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
     public override func load(options: StartupOptions) async throws {
         try await super.load(options: options)
-        
+
         // macOS-specific options
         try loadVPNSettings(from: options)
         loadAuthVersion(from: options)

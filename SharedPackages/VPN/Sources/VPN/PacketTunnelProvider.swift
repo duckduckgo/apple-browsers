@@ -284,7 +284,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private lazy var keyStore = NetworkProtectionKeychainKeyStore(keychainType: keychainType,
                                                                   errorEvents: debugEvents)
 
-    private let tokenHandlerProvider: () -> any SubscriptionTokenHandling
+    public let tokenHandlerProvider: () -> any SubscriptionTokenHandling
     @objc
     public static var isUsingAuthV2: Bool {
         get {

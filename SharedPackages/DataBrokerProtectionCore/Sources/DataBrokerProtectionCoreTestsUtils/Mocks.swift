@@ -1490,7 +1490,7 @@ public final class MockBrokerProfileJobQueueManager: BrokerProfileJobQueueManagi
     public var startScheduledAllOperationsIfPermittedCalledCompletion: (() -> Void)?
     public var startScheduledScanOperationsIfPermittedCalledCompletion: (() -> Void)?
 
-    public init(jobQueue: BrokerProfileJobQueue, jobProvider: BrokerProfileJobProviding, mismatchCalculator: MismatchCalculator, pixelHandler: Common.EventMapping<DataBrokerProtectionSharedPixels>) {
+    public init(jobQueue: BrokerProfileJobQueue, jobProvider: BrokerProfileJobProviding, emailConfirmationJobProvider: EmailConfirmationJobProviding, mismatchCalculator: MismatchCalculator, pixelHandler: Common.EventMapping<DataBrokerProtectionSharedPixels>) {
 
     }
 
@@ -1516,6 +1516,22 @@ public final class MockBrokerProfileJobQueueManager: BrokerProfileJobQueueManagi
     }
 
     public func stop() {
+    }
+}
+
+public final class MockEmailConfirmationJobProvider: EmailConfirmationJobProviding {
+    public var shouldThrowError = false
+    public var jobsToReturn: [EmailConfirmationJob] = []
+
+    public init() {}
+
+    public func createEmailConfirmationJobs(showWebView: Bool,
+                                             errorDelegate: EmailConfirmationErrorDelegate,
+                                             jobDependencies: EmailConfirmationJobDependencyProviding) throws -> [EmailConfirmationJob] {
+        if shouldThrowError {
+            throw NSError(domain: "test", code: 1, userInfo: nil)
+        }
+        return jobsToReturn
     }
 }
 

@@ -143,7 +143,10 @@ struct Launching: LaunchingHandling {
 
         systemSettingsPiPTutorialService.setPresenter(mainCoordinator)
         syncService.presenter = mainCoordinator.controller
-        let vpnService = VPNService(mainCoordinator: mainCoordinator)
+        
+        let notificationServiceManager = NotificationServiceManager(mainCoordinator: mainCoordinator)
+        
+        let vpnService = VPNService(mainCoordinator: mainCoordinator, notificationServiceManager: notificationServiceManager)
         let overlayWindowManager = OverlayWindowManager(window: window,
                                                         appSettings: appSettings,
                                                         voiceSearchHelper: voiceSearchHelper,
@@ -152,6 +155,11 @@ struct Launching: LaunchingHandling {
         let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
+        let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
+            featureFlagger: featureFlagger,
+            notificationServiceManager: notificationServiceManager,
+            privacyConfigurationManager: privacyConfigurationManager
+        )
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
@@ -176,6 +184,7 @@ struct Launching: LaunchingHandling {
                                keyValueFileStoreService: appKeyValueFileStoreService,
                                defaultBrowserPromptService: defaultBrowserPromptService,
                                systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
+                               inactivityNotificationSchedulerService: inactivityNotificationSchedulerService,
                                widePixelService: widePixelService
         )
 

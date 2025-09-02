@@ -106,7 +106,7 @@ enum UpdateCycleProgress: CustomStringConvertible {
 
 final class UpdateUserDriver: NSObject, SPUUserDriver {
     private var internalUserDecider: InternalUserDecider
-    private var areAutomaticUpdatesEnabled: Bool
+    var areAutomaticUpdatesEnabled: Bool
 
     // Resume the update process when the user explicitly chooses to do so
     private var onResuming: (() -> Void)? {
@@ -230,7 +230,15 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
 
     func showUpdaterError(_ error: any Error, acknowledgement: @escaping () -> Void) {
         Logger.updates.error("Updater encountered an error: \(error.localizedDescription, privacy: .public) (\(error.pixelParameters, privacy: .public))")
-        updateProgress = .updaterError(error)
+
+        let errorCode = (error as NSError).code
+
+        // SUResumeAppcastError means the update cycle was cancelled during installation
+        // which we don't want to treat as an error
+        if errorCode != Int(Sparkle.SUError.resumeAppcastError.rawValue) {
+            updateProgress = .updaterError(error)
+        }
+
         acknowledgement()
     }
 

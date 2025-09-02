@@ -84,7 +84,7 @@ public final class DBPUIViewModel {
             configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 
             if let dbpUIContentController = configuration.userContentController as? DBPUIUserContentController {
-                communicationLayer = dbpUIContentController.dbpUIUserScripts.dbpUICommunicationLayer
+                communicationLayer = dbpUIContentController.dbpUIUserScripts?.dbpUICommunicationLayer
             }
 
             return configuration

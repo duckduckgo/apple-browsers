@@ -69,14 +69,16 @@ public extension WKFrameInfo {
         }
 
         let symbol = callingSymbol()
-
-        // don‘t break twice
-        if !symbol.contains("WebExtensionDynamicScripts") && Self.ignoredRequestUsageSymbols.insert(symbol).inserted {
+        if !isWebExtensionSymbol(symbol) && Self.ignoredRequestUsageSymbols.insert(symbol).inserted {
             breakByRaisingSigInt("Don‘t use `WKFrameInfo.request` as it has incorrect nullability\n" +
                                  "Use `WKFrameInfo.safeRequest` instead")
         }
 
         return self.swizzledRequest() // call the original
+    }
+
+    private func isWebExtensionSymbol(_ symbol: String) -> Bool {
+        symbol.contains("WebExtension")
     }
 
 #else

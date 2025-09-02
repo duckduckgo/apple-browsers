@@ -19,7 +19,6 @@
 import Foundation
 import Common
 import WebKit
-import os.log
 import BrowserServicesKit
 import CryptoKit
 

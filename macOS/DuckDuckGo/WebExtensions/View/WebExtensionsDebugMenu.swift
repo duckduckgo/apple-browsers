@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import OSLog
 
 @available(macOS 15.4, *)
 final class WebExtensionsDebugMenu: NSMenu {
@@ -152,12 +153,12 @@ final class WebExtensionSubMenu: NSMenu {
     @MainActor
     @objc func openBackgroundInspector() {
         guard let context = webExtensionManager.context(forPath: webExtensionPath) else {
-            print("No context found for path: \(webExtensionPath)")
+            Logger.webExtensions.debug("No context found for path: \(self.webExtensionPath)")
             return
         }
 
         guard let webViewConfiguration = context.webViewConfiguration else {
-            print("No webViewConfiguration available for context")
+            Logger.webExtensions.debug("No webViewConfiguration available for context")
             return
         }
 
@@ -180,7 +181,7 @@ final class WebExtensionSubMenu: NSMenu {
             // Open the developer tools to show the inspector
             webView.openDeveloperTools()
         } else {
-            print("Failed to create a new window using WindowsManager")
+            Logger.webExtensions.debug("Failed to create a new window using WindowsManager")
         }
     }
 

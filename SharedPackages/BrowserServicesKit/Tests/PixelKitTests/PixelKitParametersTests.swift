@@ -19,6 +19,7 @@
 import XCTest
 @testable import PixelKit
 import PixelKitTestingUtilities
+import Common
 
 final class PixelKitParametersTests: XCTestCase {
 
@@ -38,10 +39,11 @@ final class PixelKitParametersTests: XCTestCase {
             nil
         }
 
-        var error: Error? {
+        var error: (any DDGError)? {
             switch self {
             case .errorEvent(let error):
-                error
+                // Wrap the error in DDGErrorPixelKitWrapper to make it compatible with DDGError
+                return PixelKit.DDGErrorPixelKitWrapper.wrapper(error)
             }
         }
     }

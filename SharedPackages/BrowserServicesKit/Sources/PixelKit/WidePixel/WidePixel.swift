@@ -28,6 +28,7 @@ public protocol WidePixelManaging {
     func startFlow<T: WidePixelData>(_ data: T)
     func updateFlow<T: WidePixelData>(_ data: T)
     func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock)
+    func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus) async throws -> Bool
     func discardFlow<T: WidePixelData>(_ data: T)
     func getAllFlowData<T: WidePixelData>(_ type: T.Type) -> [T]
 }
@@ -142,6 +143,20 @@ public final class WidePixel: WidePixelManaging {
                 report(.completeFailed(pixelName: T.pixelName, error: error), error: error, params: nil)
                 storage.delete(data)
                 onComplete(false, error)
+            }
+        }
+    }
+
+    @discardableResult
+    public func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus) async throws -> Bool {
+        return try await withCheckedThrowingContinuation { continuation in
+            completeFlow(data, status: status) { result, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+
+                continuation.resume(returning: result)
             }
         }
     }

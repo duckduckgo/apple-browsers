@@ -326,6 +326,7 @@ enum Preferences {
                     }
                 }
                 .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
+                .accessibilityIdentifier("Settings.ScrollView")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(visualStyle.colorsProvider.settingsBackgroundColor))

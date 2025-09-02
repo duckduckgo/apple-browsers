@@ -516,12 +516,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     open func load(options: StartupOptions) async throws {
         Logger.networkProtection.log("Loading startup options")
         loadKeyValidity(from: options)
+        loadTesterEnabled(from: options)
+#if os(macOS)
         loadSelectedEnvironment(from: options)
         loadSelectedServer(from: options)
         loadSelectedLocation(from: options)
         loadDNSSettings(from: options)
-        loadTesterEnabled(from: options)
-#if os(macOS)
         loadAuthVersion(from: options)
         if !Self.isUsingAuthV2 {
             try await loadAuthToken(from: options)
@@ -550,6 +550,18 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
     }
 
+    private func loadTesterEnabled(from options: StartupOptions) {
+        switch options.enableTester {
+        case .set(let value):
+            isConnectionTesterEnabled = value
+        case .useExisting:
+            break
+        case .reset:
+            isConnectionTesterEnabled = true
+        }
+    }
+
+#if os(macOS)
     private func loadSelectedEnvironment(from options: StartupOptions) {
         switch options.selectedEnvironment {
         case .set(let selectedEnvironment):
@@ -594,18 +606,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
     }
 
-    private func loadTesterEnabled(from options: StartupOptions) {
-        switch options.enableTester {
-        case .set(let value):
-            isConnectionTesterEnabled = value
-        case .useExisting:
-            break
-        case .reset:
-            isConnectionTesterEnabled = true
-        }
-    }
-
-#if os(macOS)
     private func loadAuthVersion(from options: StartupOptions) {
         switch options.isAuthV2Enabled {
         case .set(let newAuthVersion):

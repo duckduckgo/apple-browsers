@@ -293,12 +293,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             }
         }
 
-        options[NetworkProtectionOptionKey.selectedEnvironment] = settings.selectedEnvironment.rawValue as NSString
-
-        var dnsSettings = settings.dnsSettings
-        if let data = try? JSONEncoder().encode(dnsSettings) {
-            options[NetworkProtectionOptionKey.dnsSettings] = NSData(data: data)
-        }
 
         do {
             try tunnelManager.connection.startVPNTunnel(options: options)

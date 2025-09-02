@@ -537,6 +537,7 @@ extension SyncDialogController: SyncSettingsViewHandling {
                 presentDialog(for: .empty)
                 managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice, description: "")
             }
+            coordinationDelegate?.didEndFlow()
             return
         }
         if syncService.account != nil {

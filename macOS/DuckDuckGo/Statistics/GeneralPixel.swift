@@ -528,7 +528,7 @@ enum GeneralPixel: PixelKitEventV2 {
      * - App crashes after this pixel is fired.
      * - Useful for investigating the underlying error causing the failure.
      */
-    case userScriptLoadJSFailed(jsFile: String, path: String)
+    case userScriptLoadJSFailed(jsFile: String, path: String, error: Error)
 
     var name: String {
         switch self {
@@ -1428,11 +1428,11 @@ enum GeneralPixel: PixelKitEventV2 {
         case .updaterAborted(let reason):
             return ["reason": reason]
 
-        case let .userScriptLoadJSFailed(jsFile, path):
-            return [
-                PixelKit.Parameters.jsFile: jsFile,
-                PixelKit.Parameters.path: path
-            ]
+        case let .userScriptLoadJSFailed(jsFile, path, error):
+            var params = error.pixelParameters
+            params[PixelKit.Parameters.jsFile] = jsFile
+            params[PixelKit.Parameters.path] = path
+            return params
 
         default: return nil
         }

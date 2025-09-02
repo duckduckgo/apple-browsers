@@ -225,8 +225,7 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
             case .failure(let failure):
                 // If this is blocking from starting up the app, disable this
                 // assertion then go to Debug Menu > Web Extensions > Uninstall all extensions
-                // assertionFailure("Failed to load web extension \(pathsCache.cache): \(failure)")
-                break
+                assertionFailure("Failed to load web extension: \(failure)")
             }
         }
     }

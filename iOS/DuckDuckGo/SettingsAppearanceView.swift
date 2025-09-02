@@ -50,6 +50,13 @@ struct SettingsAppearanceView: View {
                                            selectedOption: viewModel.addressBarPositionBinding)
                 }
 
+                if viewModel.isRefreshButtonPositionEnabled {
+                    // Refresh Button Position
+                    SettingsPickerCellView(label: UserText.settingsRefreshButtonPositionTitle,
+                                           options: RefreshButtonPosition.allCases,
+                                           selectedOption: viewModel.refreshButtonPositionBinding)
+                }
+                
                 // Show Full Site Address
                 SettingsCellView(label: UserText.settingsFullURL,
                                  accessory: .toggle(isOn: viewModel.addressBarShowsFullURL))

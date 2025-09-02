@@ -63,14 +63,14 @@ final class DefaultVisualizeFireSettingsDecider: VisualizeFireSettingsDecider {
 
     var isOpenFireWindowByDefaultEnabled: Bool {
         if featureFlagger.isFeatureOn(.openFireWindowByDefault) {
-            return dataClearingPreferences.shouldOpenFireWindowbyDefault
+            return dataClearingPreferences.shouldOpenFireWindowByDefault
         } else {
             return false
         }
     }
 
     var shouldShowOpenFireWindowByDefaultPublisher: AnyPublisher<Bool, Never> {
-        dataClearingPreferences.$shouldOpenFireWindowbyDefault
+        dataClearingPreferences.$shouldOpenFireWindowByDefault
             .map { [weak self] openFireWindowByDefault in
                 guard let self = self else { return true }
 

@@ -126,6 +126,10 @@ final class SettingsViewModel: ObservableObject {
     var isUpdatedAIFeaturesSettingsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
+    
+    var isRefreshButtonPositionEnabled: Bool {
+        featureFlagger.isFeatureOn(.refreshButtonPosition)
+    }
 
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
@@ -186,6 +190,19 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: $0 == .top ? .settingsAddressBarTopSelected : .settingsAddressBarBottomSelected)
                 self.appSettings.currentAddressBarPosition = $0
                 self.state.addressBar.position = $0
+            }
+        )
+    }
+    
+    var refreshButtonPositionBinding: Binding<RefreshButtonPosition> {
+        Binding<RefreshButtonPosition>(
+            get: {
+                self.state.refreshButtonPosition
+            },
+            set: {
+                Pixel.fire(pixel: $0 == .addressBar ? .settingsRefreshButtonPositionAddressBar : .settingsRefreshButtonPositionMenu)
+                self.appSettings.currentRefreshButtonPosition = $0
+                self.state.refreshButtonPosition = $0
             }
         )
     }
@@ -580,6 +597,7 @@ extension SettingsViewModel {
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
+            refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,

@@ -47,6 +47,7 @@ final class AIChatPreferences: ObservableObject {
         showShortcutInApplicationMenu = storage.showShortcutInApplicationMenu
         showShortcutInAddressBar = storage.showShortcutInAddressBar
         openAIChatInSidebar = storage.openAIChatInSidebar
+        isPageContextEnabled = storage.isPageContextEnabled
 
         subscribeToShowInApplicationMenuSettingsChanges()
     }
@@ -97,6 +98,10 @@ final class AIChatPreferences: ObservableObject {
         featureFlagger.isFeatureOn(.aiChatSidebar)
     }
 
+    var shouldShowPageContextToggle: Bool {
+        featureFlagger.isFeatureOn(.aiChatPageContext)
+    }
+
     var shouldShowNewTabPageToggle: Bool {
         featureFlagger.isFeatureOn(.newTabPageOmnibar)
     }
@@ -121,6 +126,10 @@ final class AIChatPreferences: ObservableObject {
 
     @Published var openAIChatInSidebar: Bool {
         didSet { storage.openAIChatInSidebar = openAIChatInSidebar }
+    }
+
+    @Published var isPageContextEnabled: Bool {
+        didSet { storage.isPageContextEnabled = isPageContextEnabled }
     }
 
     @MainActor func openLearnMoreLink() {

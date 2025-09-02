@@ -118,7 +118,7 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared)
                 case .dataClearing:
                     DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences,
                                      startupModel: NSApp.delegateTyped.startupPreferences)
@@ -326,6 +326,7 @@ enum Preferences {
                     }
                 }
                 .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
+                .accessibilityIdentifier("Settings.ScrollView")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(visualStyle.colorsProvider.settingsBackgroundColor))
@@ -361,7 +362,7 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared)
                 case .dataClearing:
                     DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences, startupModel: NSApp.delegateTyped.startupPreferences)
                 case .privacyPro:

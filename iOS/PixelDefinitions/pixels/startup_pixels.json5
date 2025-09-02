@@ -17,7 +17,7 @@
         description: 'Fires daily to measure the status of the "Show keyboard on new tab" setting',
         owners: ['Bunn'],
         triggers: ['startup'],
-        suffixes: ['daily', 'platform', 'form_factor'],
+        suffixes: ['platform', 'form_factor'],
         parameters: [
             'appVersion',
             {
@@ -31,7 +31,7 @@
         description: 'Fires daily to measure the status of the "Show keyboard on app launch" setting',
         owners: ['Bunn'],
         triggers: ['startup'],
-        suffixes: ['daily', 'platform', 'form_factor'],
+        suffixes: ['platform', 'form_factor'],
         parameters: [
             'appVersion',
             {

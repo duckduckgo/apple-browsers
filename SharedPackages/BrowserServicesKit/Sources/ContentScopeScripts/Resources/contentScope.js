@@ -1311,7 +1311,7 @@
   function isGloballyDisabled(args) {
     return args.site.allowlisted || args.site.isBroken;
   }
-  var platformSpecificFeatures = ["navigatorInterface", "windowsPermissionUsage", "messageBridge", "favicon"];
+  var platformSpecificFeatures = ["navigatorInterface", "duckAiListener", "windowsPermissionUsage", "messageBridge", "favicon"];
   function isPlatformSpecificFeature(featureName) {
     return platformSpecificFeatures.includes(featureName);
   }
@@ -1352,6 +1352,7 @@
       "messageBridge",
       "duckPlayer",
       "duckPlayerNative",
+      "duckAiListener",
       "harmfulApis",
       "webCompat",
       "windowsPermissionUsage",
@@ -1361,11 +1362,11 @@
       "autofillPasswordImport",
       "favicon",
       "webTelemetry",
-      "scriptlets"
+      "pageContext"
     ]
   );
   var platformSupport = {
-    apple: ["webCompat", "duckPlayerNative", "scriptlets", ...baseFeatures],
+    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "duckAiListener"],
     "apple-isolated": [
       "duckPlayer",
       "duckPlayerNative",
@@ -1373,7 +1374,8 @@
       "performanceMetrics",
       "clickToLoad",
       "messageBridge",
-      "favicon"
+      "favicon",
+      "pageContext"
     ],
     android: [...baseFeatures, "webCompat", "breakageReporting", "duckPlayer", "messageBridge"],
     "android-broker-protection": ["brokerProtection"],
@@ -6918,2363 +6920,6 @@ ul.messages {
   };
   var duck_player_native_default = DuckPlayerNativeFeature;
 
-  // src/features/scriptlets.js
-  init_define_import_meta_trackerLookup();
-
-  // src/features/Scriptlets/src/scriptlets/set-cookie.js
-  init_define_import_meta_trackerLookup();
-
-  // src/features/Scriptlets/src/helpers/add-event-listener-utils.ts
-  init_define_import_meta_trackerLookup();
-  var validateType = (type) => {
-    return typeof type !== "undefined";
-  };
-  var validateListener = (listener) => {
-    return typeof listener !== "undefined" && (typeof listener === "function" || typeof listener === "object" && listener !== null && "handleEvent" in listener && typeof listener.handleEvent === "function");
-  };
-  var listenerToString = (listener) => {
-    return typeof listener === "function" ? listener.toString() : listener.handleEvent.toString();
-  };
-
-  // src/features/Scriptlets/src/helpers/number-utils.ts
-  init_define_import_meta_trackerLookup();
-  var nativeIsNaN = (num) => {
-    const native = Number.isNaN || window.isNaN;
-    return native(num);
-  };
-  var nativeIsFinite = (num) => {
-    const native = Number.isFinite || window.isFinite;
-    return native(num);
-  };
-  var getNumberFromString = (rawString) => {
-    const parsedDelay = parseInt(rawString, 10);
-    const validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
-    return validDelay;
-  };
-  function getRandomIntInclusive(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1) + min);
-  }
-
-  // src/features/Scriptlets/src/helpers/array-utils.ts
-  init_define_import_meta_trackerLookup();
-  var nodeListToArray = (nodeList) => {
-    const nodes = [];
-    for (let i = 0; i < nodeList.length; i += 1) {
-      nodes.push(nodeList[i]);
-    }
-    return nodes;
-  };
-
-  // src/features/Scriptlets/src/helpers/log-message.ts
-  init_define_import_meta_trackerLookup();
-  var logMessage = (source, message, forced = false, convertMessageToString = true) => {
-    const {
-      name,
-      verbose
-    } = source;
-    if (!forced && !verbose) {
-      return;
-    }
-    const nativeConsole = console.log;
-    if (!convertMessageToString) {
-      nativeConsole(`${name}:`, message);
-      return;
-    }
-    nativeConsole(`${name}: ${message}`);
-  };
-
-  // src/features/Scriptlets/src/helpers/hit.ts
-  init_define_import_meta_trackerLookup();
-  var hit = (source) => {
-    const ADGUARD_PREFIX = "[AdGuard]";
-    if (!source.verbose) {
-      return;
-    }
-    try {
-      const trace = console.trace.bind(console);
-      let label = `${ADGUARD_PREFIX} `;
-      if (source.engine === "corelibs") {
-        label += source.ruleText;
-      } else {
-        if (source.domainName) {
-          label += `${source.domainName}`;
-        }
-        if (source.args) {
-          label += `#%#//scriptlet('${source.name}', '${source.args.join("', '")}')`;
-        } else {
-          label += `#%#//scriptlet('${source.name}')`;
-        }
-      }
-      if (trace) {
-        trace(label);
-      }
-    } catch (e) {
-    }
-    if (typeof window.__debug === "function") {
-      window.__debug(source);
-    }
-  };
-
-  // src/features/Scriptlets/src/helpers/cookie-utils.ts
-  init_define_import_meta_trackerLookup();
-  var isValidCookiePath = (rawPath) => rawPath === "/" || rawPath === "none";
-  var getCookiePath = (rawPath) => {
-    if (rawPath === "/") {
-      return "path=/";
-    }
-    return "";
-  };
-  var serializeCookie = (name, rawValue, rawPath, domainValue = "", shouldEncodeValue = true) => {
-    const HOST_PREFIX = "__Host-";
-    const SECURE_PREFIX = "__Secure-";
-    const COOKIE_BREAKER = ";";
-    if (!shouldEncodeValue && `${rawValue}`.includes(COOKIE_BREAKER) || name.includes(COOKIE_BREAKER)) {
-      return null;
-    }
-    const value = shouldEncodeValue ? encodeURIComponent(rawValue) : rawValue;
-    let resultCookie = `${name}=${value}`;
-    if (name.startsWith(HOST_PREFIX)) {
-      resultCookie += "; path=/; secure";
-      if (domainValue) {
-        console.debug(
-          `Domain value: "${domainValue}" has been ignored, because is not allowed for __Host- prefixed cookies`
-        );
-      }
-      return resultCookie;
-    }
-    const path = getCookiePath(rawPath);
-    if (path) {
-      resultCookie += `; ${path}`;
-    }
-    if (name.startsWith(SECURE_PREFIX)) {
-      resultCookie += "; secure";
-    }
-    if (domainValue) {
-      resultCookie += `; domain=${domainValue}`;
-    }
-    return resultCookie;
-  };
-  var getLimitedCookieValue = (value) => {
-    if (!value) {
-      return null;
-    }
-    const allowedCookieValues = /* @__PURE__ */ new Set([
-      "true",
-      "t",
-      "false",
-      "f",
-      "yes",
-      "y",
-      "no",
-      "n",
-      "ok",
-      "on",
-      "off",
-      "accept",
-      "accepted",
-      "notaccepted",
-      "reject",
-      "rejected",
-      "allow",
-      "allowed",
-      "disallow",
-      "deny",
-      "enable",
-      "enabled",
-      "disable",
-      "disabled",
-      "necessary",
-      "required",
-      "hide",
-      "hidden",
-      "essential",
-      "nonessential",
-      "checked",
-      "unchecked",
-      "forbidden",
-      "forever"
-    ]);
-    let validValue;
-    if (allowedCookieValues.has(value.toLowerCase())) {
-      validValue = value;
-    } else if (/^\d+$/.test(value)) {
-      validValue = parseFloat(value);
-      if (nativeIsNaN(validValue)) {
-        return null;
-      }
-      if (Math.abs(validValue) < 0 || Math.abs(validValue) > 32767) {
-        return null;
-      }
-    } else {
-      return null;
-    }
-    return validValue;
-  };
-  var isCookieSetWithValue = (cookieString, name, value) => {
-    return cookieString.split(";").some((cookieStr) => {
-      const pos = cookieStr.indexOf("=");
-      if (pos === -1) {
-        return false;
-      }
-      const cookieName = cookieStr.slice(0, pos).trim();
-      const cookieValue = cookieStr.slice(pos + 1).trim();
-      return name === cookieName && value === cookieValue;
-    });
-  };
-  var getTrustedCookieOffsetMs = (offsetExpiresSec) => {
-    const ONE_YEAR_EXPIRATION_KEYWORD = "1year";
-    const ONE_DAY_EXPIRATION_KEYWORD = "1day";
-    const MS_IN_SEC = 1e3;
-    const SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
-    const SECONDS_IN_DAY = 24 * 60 * 60;
-    let parsedSec;
-    if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
-      parsedSec = SECONDS_IN_YEAR;
-    } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
-      parsedSec = SECONDS_IN_DAY;
-    } else {
-      parsedSec = Number.parseInt(offsetExpiresSec, 10);
-      if (Number.isNaN(parsedSec)) {
-        return null;
-      }
-    }
-    return parsedSec * MS_IN_SEC;
-  };
-
-  // src/features/Scriptlets/src/helpers/noop-utils.ts
-  init_define_import_meta_trackerLookup();
-  var noopFunc = () => {
-  };
-  var noopCallbackFunc = () => noopFunc;
-  var noopNull = () => null;
-  var trueFunc = () => true;
-  var falseFunc = () => false;
-  var noopArray = () => [];
-  var noopObject = () => ({});
-  var throwFunc = () => {
-    throw new Error();
-  };
-  var noopPromiseReject = () => Promise.reject();
-  var noopPromiseResolve = (responseBody = "{}", responseUrl = "", responseType = "basic") => {
-    if (typeof Response === "undefined") {
-      return;
-    }
-    const response = new Response(responseBody, {
-      headers: {
-        "Content-Length": `${responseBody.length}`
-      },
-      status: 200,
-      statusText: "OK"
-    });
-    if (responseType === "opaque") {
-      Object.defineProperties(response, {
-        body: { value: null },
-        status: { value: 0 },
-        ok: { value: false },
-        statusText: { value: "" },
-        url: { value: "" },
-        type: { value: responseType }
-      });
-    } else {
-      Object.defineProperties(response, {
-        url: { value: responseUrl },
-        type: { value: responseType }
-      });
-    }
-    return Promise.resolve(response);
-  };
-
-  // src/features/Scriptlets/src/helpers/object-utils.ts
-  init_define_import_meta_trackerLookup();
-  var isEmptyObject = (obj) => {
-    return Object.keys(obj).length === 0 && !obj.prototype;
-  };
-  function setPropertyAccess(object, property, descriptor) {
-    const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
-    if (currentDescriptor && !currentDescriptor.configurable) {
-      return false;
-    }
-    Object.defineProperty(object, property, descriptor);
-    return true;
-  }
-
-  // src/features/Scriptlets/src/helpers/script-source-utils.ts
-  init_define_import_meta_trackerLookup();
-
-  // src/features/Scriptlets/src/helpers/string-utils.ts
-  init_define_import_meta_trackerLookup();
-  var escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  var toRegExp = (rawInput) => {
-    const input = rawInput || "";
-    const DEFAULT_VALUE = ".?";
-    const FORWARD_SLASH = "/";
-    if (input === "") {
-      return new RegExp(DEFAULT_VALUE);
-    }
-    const delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
-    const flagsPart = input.substring(delimiterIndex + 1);
-    const regExpPart = input.substring(0, delimiterIndex + 1);
-    const isValidRegExpFlag = (flag) => {
-      if (!flag) {
-        return false;
-      }
-      try {
-        new RegExp("", flag);
-        return true;
-      } catch (ex) {
-        return false;
-      }
-    };
-    const getRegExpFlags = (regExpStr, flagsStr) => {
-      if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
-        return flagsStr;
-      }
-      return "";
-    };
-    const flags = getRegExpFlags(regExpPart, flagsPart);
-    if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
-      const regExpInput = flags ? regExpPart : input;
-      return new RegExp(regExpInput.slice(1, -1), flags);
-    }
-    const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    return new RegExp(escaped);
-  };
-  var isValidStrPattern = (input) => {
-    const FORWARD_SLASH = "/";
-    let str = escapeRegExp(input);
-    if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-      str = input.slice(1, -1);
-    }
-    let isValid;
-    try {
-      isValid = new RegExp(str);
-      isValid = true;
-    } catch (e) {
-      isValid = false;
-    }
-    return isValid;
-  };
-  var substringAfter = (str, separator) => {
-    if (!str) {
-      return str;
-    }
-    const index = str.indexOf(separator);
-    return index < 0 ? "" : str.substring(index + separator.length);
-  };
-  var substringBefore = (str, separator) => {
-    if (!str || !separator) {
-      return str;
-    }
-    const index = str.indexOf(separator);
-    return index < 0 ? str : str.substring(0, index);
-  };
-  var isValidMatchStr = (match) => {
-    const INVERT_MARKER = "!";
-    let str = match;
-    if (match?.startsWith(INVERT_MARKER)) {
-      str = match.slice(1);
-    }
-    return isValidStrPattern(str);
-  };
-  var isValidMatchNumber = (match) => {
-    const INVERT_MARKER = "!";
-    let str = match;
-    if (match?.startsWith(INVERT_MARKER)) {
-      str = match.slice(1);
-    }
-    const num = parseFloat(str);
-    return !nativeIsNaN(num) && nativeIsFinite(num);
-  };
-  var parseMatchArg = (match) => {
-    const INVERT_MARKER = "!";
-    const isInvertedMatch = match ? match?.startsWith(INVERT_MARKER) : false;
-    const matchValue = isInvertedMatch ? match.slice(1) : match;
-    const matchRegexp = toRegExp(matchValue);
-    return { isInvertedMatch, matchRegexp, matchValue };
-  };
-  var parseDelayArg = (delay) => {
-    const INVERT_MARKER = "!";
-    const isInvertedDelayMatch = delay?.startsWith(INVERT_MARKER);
-    const delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
-    const parsedDelay = parseInt(delayValue, 10);
-    const delayMatch = nativeIsNaN(parsedDelay) ? null : parsedDelay;
-    return { isInvertedDelayMatch, delayMatch };
-  };
-  function objectToString(obj) {
-    if (!obj || typeof obj !== "object") {
-      return String(obj);
-    }
-    if (isEmptyObject(obj)) {
-      return "{}";
-    }
-    return Object.entries(obj).map((pair) => {
-      const key = pair[0];
-      const value = pair[1];
-      let recordValueStr = value;
-      if (value instanceof Object) {
-        recordValueStr = `{ ${objectToString(value)} }`;
-      }
-      return `${key}:"${recordValueStr}"`;
-    }).join(" ");
-  }
-  function getRandomStrByLength(length) {
-    let result = "";
-    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~";
-    const charactersLength = characters.length;
-    for (let i = 0; i < length; i += 1) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-    return result;
-  }
-  function generateRandomResponse(customResponseText) {
-    let customResponse = customResponseText;
-    if (customResponse === "true") {
-      customResponse = Math.random().toString(36).slice(-10);
-      return customResponse;
-    }
-    customResponse = customResponse.replace("length:", "");
-    const rangeRegex = /^\d+-\d+$/;
-    if (!rangeRegex.test(customResponse)) {
-      return null;
-    }
-    let rangeMin = getNumberFromString(customResponse.split("-")[0]);
-    let rangeMax = getNumberFromString(customResponse.split("-")[1]);
-    if (!nativeIsFinite(rangeMin) || !nativeIsFinite(rangeMax)) {
-      return null;
-    }
-    if (rangeMin > rangeMax) {
-      const temp = rangeMin;
-      rangeMin = rangeMax;
-      rangeMax = temp;
-    }
-    const LENGTH_RANGE_LIMIT = 500 * 1e3;
-    if (rangeMax > LENGTH_RANGE_LIMIT) {
-      return null;
-    }
-    const length = getRandomIntInclusive(rangeMin, rangeMax);
-    customResponse = getRandomStrByLength(length);
-    return customResponse;
-  }
-
-  // src/features/Scriptlets/src/helpers/script-source-utils.ts
-  var shouldAbortInlineOrInjectedScript = (stackMatch, stackTrace) => {
-    const INLINE_SCRIPT_STRING = "inlineScript";
-    const INJECTED_SCRIPT_STRING = "injectedScript";
-    const INJECTED_SCRIPT_MARKER = "<anonymous>";
-    const isInlineScript = (match) => match.includes(INLINE_SCRIPT_STRING);
-    const isInjectedScript = (match) => match.includes(INJECTED_SCRIPT_STRING);
-    if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
-      return false;
-    }
-    let documentURL = window.location.href;
-    const pos = documentURL.indexOf("#");
-    if (pos !== -1) {
-      documentURL = documentURL.slice(0, pos);
-    }
-    const stackSteps = stackTrace.split("\n").slice(2).map((line) => line.trim());
-    const stackLines = stackSteps.map((line) => {
-      let stack;
-      const getStackTraceValues = /(.*?@)?(\S+)(:\d+)(:\d+)\)?$/.exec(line);
-      if (getStackTraceValues) {
-        let stackURL = getStackTraceValues[2];
-        const stackLine = getStackTraceValues[3];
-        const stackCol = getStackTraceValues[4];
-        if (stackURL?.startsWith("(")) {
-          stackURL = stackURL.slice(1);
-        }
-        if (stackURL?.startsWith(INJECTED_SCRIPT_MARKER)) {
-          stackURL = INJECTED_SCRIPT_STRING;
-          let stackFunction = getStackTraceValues[1] !== void 0 ? getStackTraceValues[1].slice(0, -1) : line.slice(0, getStackTraceValues.index).trim();
-          if (stackFunction?.startsWith("at")) {
-            stackFunction = stackFunction.slice(2).trim();
-          }
-          stack = `${stackFunction} ${stackURL}${stackLine}${stackCol}`.trim();
-        } else if (stackURL === documentURL) {
-          stack = `${INLINE_SCRIPT_STRING}${stackLine}${stackCol}`.trim();
-        } else {
-          stack = `${stackURL}${stackLine}${stackCol}`.trim();
-        }
-      } else {
-        stack = line;
-      }
-      return stack;
-    });
-    if (stackLines) {
-      for (let index = 0; index < stackLines.length; index += 1) {
-        if (isInlineScript(stackMatch) && stackLines[index].startsWith(INLINE_SCRIPT_STRING) && stackLines[index].match(toRegExp(stackMatch))) {
-          return true;
-        }
-        if (isInjectedScript(stackMatch) && stackLines[index].startsWith(INJECTED_SCRIPT_STRING) && stackLines[index].match(toRegExp(stackMatch))) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
-
-  // src/features/Scriptlets/src/helpers/prevent-utils.ts
-  init_define_import_meta_trackerLookup();
-  var isValidCallback = (callback) => {
-    return callback instanceof Function || typeof callback === "string";
-  };
-  var parseRawDelay = (delay) => {
-    const parsedDelay = Math.floor(parseInt(delay, 10));
-    return typeof parsedDelay === "number" && !nativeIsNaN(parsedDelay) ? parsedDelay : delay;
-  };
-  var isPreventionNeeded = ({
-    callback,
-    delay,
-    matchCallback,
-    matchDelay
-  }) => {
-    if (!isValidCallback(callback)) {
-      return false;
-    }
-    if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
-      return false;
-    }
-    const { isInvertedMatch, matchRegexp } = parseMatchArg(matchCallback);
-    const { isInvertedDelayMatch, delayMatch } = parseDelayArg(matchDelay);
-    const parsedDelay = parseRawDelay(delay);
-    let shouldPrevent = false;
-    const callbackStr = String(callback);
-    if (delayMatch === null) {
-      shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
-    } else if (!matchCallback) {
-      shouldPrevent = parsedDelay === delayMatch !== isInvertedDelayMatch;
-    } else {
-      shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch && parsedDelay === delayMatch !== isInvertedDelayMatch;
-    }
-    return shouldPrevent;
-  };
-
-  // src/features/Scriptlets/src/helpers/prevent-window-open-utils.ts
-  init_define_import_meta_trackerLookup();
-  var handleOldReplacement = (replacement) => {
-    let result;
-    if (!replacement) {
-      result = noopFunc;
-    } else if (replacement === "trueFunc") {
-      result = trueFunc;
-    } else if (replacement.includes("=")) {
-      const isProp = replacement.startsWith("{") && replacement.endsWith("}");
-      if (isProp) {
-        const propertyPart = replacement.slice(1, -1);
-        const propertyName = substringBefore(propertyPart, "=");
-        const propertyValue = substringAfter(propertyPart, "=");
-        if (propertyValue === "noopFunc") {
-          result = {};
-          result[propertyName] = noopFunc;
-        }
-      }
-    }
-    return result;
-  };
-  var createDecoy = (args) => {
-    let TagName;
-    ((TagName2) => {
-      TagName2["Object"] = "object";
-      TagName2["Iframe"] = "iframe";
-    })(TagName || (TagName = {}));
-    let UrlPropNameOf;
-    ((UrlPropNameOf2) => {
-      UrlPropNameOf2["Object"] = "data";
-      UrlPropNameOf2["Iframe"] = "src";
-    })(UrlPropNameOf || (UrlPropNameOf = {}));
-    const { replacement, url, delay } = args;
-    let tag;
-    if (replacement === "obj") {
-      tag = "object" /* Object */;
-    } else {
-      tag = "iframe" /* Iframe */;
-    }
-    const decoy = document.createElement(tag);
-    if (decoy instanceof HTMLObjectElement) {
-      decoy["data" /* Object */] = url;
-    } else if (decoy instanceof HTMLIFrameElement) {
-      decoy["src" /* Iframe */] = url;
-    }
-    decoy.style.setProperty("height", "1px", "important");
-    decoy.style.setProperty("position", "fixed", "important");
-    decoy.style.setProperty("top", "-1px", "important");
-    decoy.style.setProperty("width", "1px", "important");
-    document.body.appendChild(decoy);
-    setTimeout(() => decoy.remove(), delay * 1e3);
-    return decoy;
-  };
-  var getPreventGetter = (nativeGetter) => {
-    const preventGetter = (target, prop) => {
-      if (prop && prop === "closed") {
-        return false;
-      }
-      if (typeof nativeGetter === "function") {
-        return noopFunc;
-      }
-      return prop && target[prop];
-    };
-    return preventGetter;
-  };
-
-  // src/features/Scriptlets/src/helpers/match-stack.ts
-  init_define_import_meta_trackerLookup();
-
-  // src/features/Scriptlets/src/helpers/regexp-utils.ts
-  init_define_import_meta_trackerLookup();
-  var getNativeRegexpTest = () => {
-    const descriptor = Object.getOwnPropertyDescriptor(RegExp.prototype, "test");
-    const nativeRegexTest = descriptor?.value;
-    if (descriptor && typeof descriptor.value === "function") {
-      return nativeRegexTest;
-    }
-    throw new Error("RegExp.prototype.test is not a function");
-  };
-  var backupRegExpValues = () => {
-    try {
-      const arrayOfRegexpValues = [];
-      for (let index = 1; index < 10; index += 1) {
-        const value = `$${index}`;
-        if (!RegExp[value]) {
-          break;
-        }
-        arrayOfRegexpValues.push(RegExp[value]);
-      }
-      return arrayOfRegexpValues;
-    } catch (error) {
-      return [];
-    }
-  };
-  var restoreRegExpValues = (array) => {
-    if (!array.length) {
-      return;
-    }
-    try {
-      let stringPattern = "";
-      if (array.length === 1) {
-        stringPattern = `(${array[0]})`;
-      } else {
-        stringPattern = array.reduce((accumulator, currentValue, currentIndex) => {
-          if (currentIndex === 1) {
-            return `(${accumulator}),(${currentValue})`;
-          }
-          return `${accumulator},(${currentValue})`;
-        });
-      }
-      const regExpGroup = new RegExp(stringPattern);
-      array.toString().replace(regExpGroup, "");
-    } catch (error) {
-      const message = `Failed to restore RegExp values: ${error}`;
-      console.log(message);
-    }
-  };
-
-  // src/features/Scriptlets/src/helpers/match-stack.ts
-  var matchStackTrace = (stackMatch, stackTrace) => {
-    if (!stackMatch || stackMatch === "") {
-      return true;
-    }
-    const regExpValues = backupRegExpValues();
-    if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
-      if (regExpValues.length && regExpValues[0] !== RegExp.$1) {
-        restoreRegExpValues(regExpValues);
-      }
-      return true;
-    }
-    const stackRegexp = toRegExp(stackMatch);
-    const refinedStackTrace = stackTrace.split("\n").slice(2).map((line) => line.trim()).join("\n");
-    if (regExpValues.length && regExpValues[0] !== RegExp.$1) {
-      restoreRegExpValues(regExpValues);
-    }
-    return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
-  };
-
-  // src/features/Scriptlets/src/helpers/response-utils.ts
-  init_define_import_meta_trackerLookup();
-  var modifyResponse = (origResponse, replacement = {
-    body: "{}"
-  }) => {
-    const headers = {};
-    origResponse?.headers?.forEach((value, key) => {
-      headers[key] = value;
-    });
-    const modifiedResponse = new Response(replacement.body, {
-      status: origResponse.status,
-      statusText: origResponse.statusText,
-      headers
-    });
-    Object.defineProperties(modifiedResponse, {
-      url: {
-        value: origResponse.url
-      },
-      type: {
-        value: replacement.type || origResponse.type
-      }
-    });
-    return modifiedResponse;
-  };
-
-  // src/features/Scriptlets/src/helpers/request-utils.ts
-  init_define_import_meta_trackerLookup();
-  var getRequestProps = () => {
-    return [
-      "url",
-      "method",
-      "headers",
-      "body",
-      "credentials",
-      "cache",
-      "redirect",
-      "referrer",
-      "referrerPolicy",
-      "integrity",
-      "keepalive",
-      "signal",
-      "mode"
-    ];
-  };
-  var getRequestData = (request) => {
-    const requestInitOptions = getRequestProps();
-    const entries = requestInitOptions.map((key) => {
-      const value = request[key];
-      return [key, value];
-    });
-    return Object.fromEntries(entries);
-  };
-  var getFetchData = (args, nativeRequestClone) => {
-    const fetchPropsObj = {};
-    const resource = args[0];
-    let fetchUrl;
-    let fetchInit;
-    if (resource instanceof Request) {
-      const realData = nativeRequestClone.call(resource);
-      const requestData = getRequestData(realData);
-      fetchUrl = requestData.url;
-      fetchInit = requestData;
-    } else {
-      fetchUrl = resource;
-      fetchInit = args[1];
-    }
-    fetchPropsObj.url = fetchUrl;
-    if (fetchInit instanceof Object) {
-      const props = Object.keys(fetchInit);
-      props.forEach((prop) => {
-        fetchPropsObj[prop] = fetchInit[prop];
-      });
-    }
-    return fetchPropsObj;
-  };
-  var parseMatchProps = (propsToMatchStr) => {
-    const PROPS_DIVIDER = " ";
-    const PAIRS_MARKER = ":";
-    const isRequestProp = (prop) => {
-      return getRequestProps().includes(prop);
-    };
-    const propsObj = {};
-    const props = propsToMatchStr.split(PROPS_DIVIDER);
-    props.forEach((prop) => {
-      const dividerInd = prop.indexOf(PAIRS_MARKER);
-      const key = prop.slice(0, dividerInd);
-      if (isRequestProp(key)) {
-        const value = prop.slice(dividerInd + 1);
-        propsObj[key] = value;
-      } else {
-        propsObj.url = prop;
-      }
-    });
-    return propsObj;
-  };
-  var isValidParsedData = (data) => {
-    return Object.values(data).every((value) => isValidStrPattern(value));
-  };
-  var getMatchPropsData = (data) => {
-    const matchData = {};
-    const dataKeys = Object.keys(data);
-    dataKeys.forEach((key) => {
-      matchData[key] = toRegExp(data[key]);
-    });
-    return matchData;
-  };
-
-  // src/features/Scriptlets/src/helpers/storage-utils.ts
-  init_define_import_meta_trackerLookup();
-  var setStorageItem = (source, storage, key, value) => {
-    try {
-      storage.setItem(key, value);
-    } catch (e) {
-      const message = `Unable to set storage item due to: ${e.message}`;
-      logMessage(source, message);
-    }
-  };
-  var removeStorageItem = (source, storage, key) => {
-    try {
-      if (key.startsWith("/") && (key.endsWith("/") || key.endsWith("/i")) && isValidStrPattern(key)) {
-        const regExpKey = toRegExp(key);
-        const storageKeys = Object.keys(storage);
-        storageKeys.forEach((storageKey) => {
-          if (regExpKey.test(storageKey)) {
-            storage.removeItem(storageKey);
-          }
-        });
-      } else {
-        storage.removeItem(key);
-      }
-    } catch (e) {
-      const message = `Unable to remove storage item due to: ${e.message}`;
-      logMessage(source, message);
-    }
-  };
-  var getLimitedStorageItemValue = (value) => {
-    if (typeof value !== "string") {
-      throw new Error("Invalid value");
-    }
-    const allowedStorageValues = /* @__PURE__ */ new Set([
-      "undefined",
-      "false",
-      "true",
-      "null",
-      "",
-      "yes",
-      "no",
-      "on",
-      "off",
-      "accept",
-      "accepted",
-      "reject",
-      "rejected",
-      "allowed",
-      "denied",
-      "forbidden",
-      "forever"
-    ]);
-    let validValue;
-    if (allowedStorageValues.has(value.toLowerCase())) {
-      validValue = value;
-    } else if (value === "emptyArr") {
-      validValue = "[]";
-    } else if (value === "emptyObj") {
-      validValue = "{}";
-    } else if (/^\d+$/.test(value)) {
-      validValue = parseFloat(value);
-      if (nativeIsNaN(validValue)) {
-        throw new Error("Invalid value");
-      }
-      if (Math.abs(validValue) > 32767) {
-        throw new Error("Invalid value");
-      }
-    } else if (value === "$remove$") {
-      validValue = "$remove$";
-    } else {
-      throw new Error("Invalid value");
-    }
-    return validValue;
-  };
-
-  // src/features/Scriptlets/src/helpers/create-on-error-handler.ts
-  init_define_import_meta_trackerLookup();
-
-  // src/features/Scriptlets/src/helpers/random-id.ts
-  init_define_import_meta_trackerLookup();
-  function randomId() {
-    return Math.random().toString(36).slice(2, 9);
-  }
-
-  // src/features/Scriptlets/src/helpers/create-on-error-handler.ts
-  function createOnErrorHandler(rid) {
-    const nativeOnError = window.onerror;
-    return function onError(error, ...args) {
-      if (typeof error === "string" && error.includes(rid)) {
-        return true;
-      }
-      if (nativeOnError instanceof Function) {
-        return nativeOnError.apply(window, [error, ...args]);
-      }
-      return false;
-    };
-  }
-
-  // src/features/Scriptlets/src/helpers/get-descriptor-addon.ts
-  init_define_import_meta_trackerLookup();
-  function getDescriptorAddon() {
-    return {
-      isAbortingSuspended: false,
-      isolateCallback(cb, ...args) {
-        this.isAbortingSuspended = true;
-        try {
-          const result = cb(...args);
-          this.isAbortingSuspended = false;
-          return result;
-        } catch {
-          const rid = randomId();
-          this.isAbortingSuspended = false;
-          throw new ReferenceError(rid);
-        }
-      }
-    };
-  }
-
-  // src/features/Scriptlets/src/helpers/get-property-in-chain.ts
-  init_define_import_meta_trackerLookup();
-  function getPropertyInChain(base, chain) {
-    const pos = chain.indexOf(".");
-    if (pos === -1) {
-      return { base, prop: chain };
-    }
-    const prop = chain.slice(0, pos);
-    if (base === null) {
-      return { base, prop, chain };
-    }
-    const nextBase = base[prop];
-    chain = chain.slice(pos + 1);
-    if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
-      return { base, prop, chain };
-    }
-    if (nextBase === null) {
-      return { base, prop, chain };
-    }
-    if (nextBase !== void 0) {
-      return getPropertyInChain(nextBase, chain);
-    }
-    Object.defineProperty(base, prop, { configurable: true });
-    return { base, prop, chain };
-  }
-
-  // src/features/Scriptlets/src/helpers/match-request-props.ts
-  init_define_import_meta_trackerLookup();
-  var matchRequestProps = (source, propsToMatch, requestData) => {
-    if (propsToMatch === "" || propsToMatch === "*") {
-      return true;
-    }
-    let isMatched;
-    const parsedData = parseMatchProps(propsToMatch);
-    if (!isValidParsedData(parsedData)) {
-      logMessage(source, `Invalid parameter: ${propsToMatch}`);
-      isMatched = false;
-    } else {
-      const matchData = getMatchPropsData(parsedData);
-      const matchKeys = Object.keys(matchData);
-      isMatched = matchKeys.every((matchKey) => {
-        const matchValue = matchData[matchKey];
-        const dataValue = requestData[matchKey];
-        return Object.prototype.hasOwnProperty.call(requestData, matchKey) && typeof dataValue === "string" && matchValue?.test(dataValue);
-      });
-    }
-    return isMatched;
-  };
-
-  // src/features/Scriptlets/src/helpers/observer.ts
-  init_define_import_meta_trackerLookup();
-  var getAddedNodes = (mutations) => {
-    const nodes = [];
-    for (let i = 0; i < mutations.length; i += 1) {
-      const { addedNodes } = mutations[i];
-      for (let j2 = 0; j2 < addedNodes.length; j2 += 1) {
-        nodes.push(addedNodes[j2]);
-      }
-    }
-    return nodes;
-  };
-  var observeDocumentWithTimeout = (callback, options = { subtree: true, childList: true }, timeout = 1e4) => {
-    const documentObserver = new MutationObserver((mutations, observer) => {
-      observer.disconnect();
-      callback(mutations, observer);
-      observer.observe(document.documentElement, options);
-    });
-    documentObserver.observe(document.documentElement, options);
-    if (typeof timeout === "number") {
-      setTimeout(() => documentObserver.disconnect(), timeout);
-    }
-  };
-
-  // src/features/Scriptlets/src/helpers/parse-keyword-value.ts
-  init_define_import_meta_trackerLookup();
-  var parseKeywordValue = (rawValue) => {
-    const NOW_VALUE_KEYWORD = "$now$";
-    const CURRENT_DATE_KEYWORD = "$currentDate$";
-    const CURRENT_ISO_DATE_KEYWORD = "$currentISODate$";
-    let parsedValue = rawValue;
-    if (rawValue === NOW_VALUE_KEYWORD) {
-      parsedValue = Date.now().toString();
-    } else if (rawValue === CURRENT_DATE_KEYWORD) {
-      parsedValue = Date();
-    } else if (rawValue === CURRENT_ISO_DATE_KEYWORD) {
-      parsedValue = (/* @__PURE__ */ new Date()).toISOString();
-    }
-    return parsedValue;
-  };
-
-  // src/features/Scriptlets/src/helpers/node-text-utils.ts
-  init_define_import_meta_trackerLookup();
-
-  // src/features/Scriptlets/src/helpers/trusted-types-utils.ts
-  init_define_import_meta_trackerLookup();
-  var getTrustedTypesApi = (source) => {
-    const policyApi = source?.api?.policy;
-    if (policyApi) {
-      return policyApi;
-    }
-    const POLICY_NAME = "AGPolicy";
-    const trustedTypesWindow = window;
-    const trustedTypes = trustedTypesWindow.trustedTypes;
-    const isSupported = !!trustedTypes;
-    const TrustedTypeEnum = {
-      HTML: "TrustedHTML",
-      Script: "TrustedScript",
-      ScriptURL: "TrustedScriptURL"
-    };
-    if (!isSupported) {
-      return {
-        name: POLICY_NAME,
-        isSupported,
-        TrustedType: TrustedTypeEnum,
-        createHTML: (input) => input,
-        createScript: (input) => input,
-        createScriptURL: (input) => input,
-        create: (type, input) => input,
-        getAttributeType: () => null,
-        convertAttributeToTrusted: (tagName, attribute, value) => value,
-        getPropertyType: () => null,
-        convertPropertyToTrusted: (tagName, property, value) => value,
-        isHTML: () => false,
-        isScript: () => false,
-        isScriptURL: () => false
-      };
-    }
-    const policy = trustedTypes.createPolicy(POLICY_NAME, {
-      createHTML: (input) => input,
-      createScript: (input) => input,
-      createScriptURL: (input) => input
-    });
-    const createHTML = (input) => policy.createHTML(input);
-    const createScript = (input) => policy.createScript(input);
-    const createScriptURL = (input) => policy.createScriptURL(input);
-    const create = (type, input) => {
-      switch (type) {
-        case TrustedTypeEnum.HTML:
-          return createHTML(input);
-        case TrustedTypeEnum.Script:
-          return createScript(input);
-        case TrustedTypeEnum.ScriptURL:
-          return createScriptURL(input);
-        default:
-          return input;
-      }
-    };
-    const getAttributeType = trustedTypes.getAttributeType.bind(trustedTypes);
-    const convertAttributeToTrusted = (tagName, attribute, value, elementNS, attrNS) => {
-      const type = getAttributeType(tagName, attribute, elementNS, attrNS);
-      return type ? create(type, value) : value;
-    };
-    const getPropertyType = trustedTypes.getPropertyType.bind(trustedTypes);
-    const convertPropertyToTrusted = (tagName, property, value, elementNS) => {
-      const type = getPropertyType(tagName, property, elementNS);
-      return type ? create(type, value) : value;
-    };
-    const isHTML = trustedTypes.isHTML.bind(trustedTypes);
-    const isScript = trustedTypes.isScript.bind(trustedTypes);
-    const isScriptURL = trustedTypes.isScriptURL.bind(trustedTypes);
-    return {
-      name: POLICY_NAME,
-      isSupported,
-      TrustedType: TrustedTypeEnum,
-      createHTML,
-      createScript,
-      createScriptURL,
-      create,
-      getAttributeType,
-      convertAttributeToTrusted,
-      getPropertyType,
-      convertPropertyToTrusted,
-      isHTML,
-      isScript,
-      isScriptURL
-    };
-  };
-
-  // src/features/Scriptlets/src/helpers/node-text-utils.ts
-  var handleExistingNodes = (selector, handler, parentSelector) => {
-    const processNodes = (parent) => {
-      if (selector === "#text") {
-        const textNodes = nodeListToArray(parent.childNodes).filter((node) => node.nodeType === Node.TEXT_NODE);
-        handler(textNodes);
-      } else {
-        const nodes = nodeListToArray(parent.querySelectorAll(selector));
-        handler(nodes);
-      }
-    };
-    const parents = parentSelector ? document.querySelectorAll(parentSelector) : [document];
-    parents.forEach((parent) => processNodes(parent));
-  };
-  var handleMutations = (mutations, handler, selector, parentSelector) => {
-    const addedNodes = getAddedNodes(mutations);
-    if (selector && parentSelector) {
-      addedNodes.forEach(() => {
-        handleExistingNodes(selector, handler, parentSelector);
-      });
-    } else {
-      handler(addedNodes);
-    }
-  };
-  var isTargetNode = (node, nodeNameMatch, textContentMatch) => {
-    const { nodeName, textContent } = node;
-    const nodeNameLowerCase = nodeName.toLowerCase();
-    return textContent !== null && textContent !== "" && (nodeNameMatch instanceof RegExp ? nodeNameMatch.test(nodeNameLowerCase) : nodeNameMatch === nodeNameLowerCase) && (textContentMatch instanceof RegExp ? textContentMatch.test(textContent) : textContent.includes(textContentMatch));
-  };
-  var replaceNodeText = (source, node, pattern, replacement) => {
-    const { textContent } = node;
-    if (textContent) {
-      let modifiedText = textContent.replace(pattern, replacement);
-      if (node.nodeName === "SCRIPT") {
-        const trustedTypesApi = getTrustedTypesApi(source);
-        modifiedText = trustedTypesApi.createScript(modifiedText);
-      }
-      node.textContent = modifiedText;
-      hit(source);
-    }
-  };
-  var parseNodeTextParams = (nodeName, textMatch, pattern = null) => {
-    const REGEXP_START_MARKER = "/";
-    const isStringNameMatch = !(nodeName.startsWith(REGEXP_START_MARKER) && nodeName.endsWith(REGEXP_START_MARKER));
-    const selector = isStringNameMatch ? nodeName : "*";
-    const nodeNameMatch = isStringNameMatch ? nodeName : toRegExp(nodeName);
-    const textContentMatch = !textMatch.startsWith(REGEXP_START_MARKER) ? textMatch : toRegExp(textMatch);
-    let patternMatch;
-    if (pattern) {
-      patternMatch = !pattern.startsWith(REGEXP_START_MARKER) ? pattern : toRegExp(pattern);
-    }
-    return {
-      selector,
-      nodeNameMatch,
-      textContentMatch,
-      patternMatch
-    };
-  };
-
-  // src/features/Scriptlets/src/scriptlets/set-cookie.js
-  function setCookie(source, name, value, path = "/", domain = "") {
-    const validValue = getLimitedCookieValue(value);
-    if (validValue === null) {
-      logMessage(source, `Invalid cookie value: '${validValue}'`);
-      return;
-    }
-    if (!isValidCookiePath(path)) {
-      logMessage(source, `Invalid cookie path: '${path}'`);
-      return;
-    }
-    if (!document.location.origin.includes(domain)) {
-      logMessage(source, `Cookie domain not matched by origin: '${domain}'`);
-      return;
-    }
-    const cookieToSet = serializeCookie(name, validValue, path, domain);
-    if (!cookieToSet) {
-      logMessage(source, "Invalid cookie name or value");
-      return;
-    }
-    hit(source);
-    document.cookie = cookieToSet;
-  }
-  var setCookieNames = [
-    "set-cookie",
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    "set-cookie.js",
-    "ubo-set-cookie.js",
-    "ubo-set-cookie"
-  ];
-  setCookie.primaryName = setCookieNames[0];
-  setCookie.injections = [
-    hit,
-    logMessage,
-    nativeIsNaN,
-    isCookieSetWithValue,
-    getLimitedCookieValue,
-    serializeCookie,
-    isValidCookiePath,
-    getCookiePath
-  ];
-
-  // src/features/Scriptlets/src/scriptlets/trusted-set-cookie.js
-  init_define_import_meta_trackerLookup();
-  function trustedSetCookie(source, name, value, offsetExpiresSec = "", path = "/", domain = "") {
-    if (typeof name === "undefined") {
-      logMessage(source, "Cookie name should be specified");
-      return;
-    }
-    if (typeof value === "undefined") {
-      logMessage(source, "Cookie value should be specified");
-      return;
-    }
-    const parsedValue = parseKeywordValue(value);
-    if (!isValidCookiePath(path)) {
-      logMessage(source, `Invalid cookie path: '${path}'`);
-      return;
-    }
-    if (!document.location.origin.includes(domain)) {
-      logMessage(source, `Cookie domain not matched by origin: '${domain}'`);
-      return;
-    }
-    let cookieToSet = serializeCookie(name, parsedValue, path, domain, false);
-    if (!cookieToSet) {
-      logMessage(source, "Invalid cookie name or value");
-      return;
-    }
-    if (offsetExpiresSec) {
-      const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
-      if (!parsedOffsetMs) {
-        logMessage(source, `Invalid offsetExpiresSec value: ${offsetExpiresSec}`);
-        return;
-      }
-      const expires = Date.now() + parsedOffsetMs;
-      cookieToSet += `; expires=${new Date(expires).toUTCString()}`;
-    }
-    document.cookie = cookieToSet;
-    hit(source);
-  }
-  var trustedSetCookieNames = [
-    "trusted-set-cookie"
-    // trusted scriptlets support no aliases
-  ];
-  trustedSetCookie.primaryName = trustedSetCookieNames[0];
-  trustedSetCookie.injections = [
-    hit,
-    logMessage,
-    nativeIsNaN,
-    isCookieSetWithValue,
-    serializeCookie,
-    isValidCookiePath,
-    getTrustedCookieOffsetMs,
-    parseKeywordValue,
-    getCookiePath
-  ];
-
-  // src/features/Scriptlets/src/scriptlets/set-cookie-reload.js
-  init_define_import_meta_trackerLookup();
-  function setCookieReload(source, name, value, path = "/", domain = "") {
-    if (isCookieSetWithValue(document.cookie, name, value)) {
-      return;
-    }
-    const validValue = getLimitedCookieValue(value);
-    if (validValue === null) {
-      logMessage(source, `Invalid cookie value: '${value}'`);
-      return;
-    }
-    if (!isValidCookiePath(path)) {
-      logMessage(source, `Invalid cookie path: '${path}'`);
-      return;
-    }
-    if (!document.location.origin.includes(domain)) {
-      logMessage(source, `Cookie domain not matched by origin: '${domain}'`);
-      return;
-    }
-    const cookieToSet = serializeCookie(name, validValue, path, domain);
-    if (!cookieToSet) {
-      logMessage(source, "Invalid cookie name or value");
-      return;
-    }
-    document.cookie = cookieToSet;
-    hit(source);
-    if (isCookieSetWithValue(document.cookie, name, value)) {
-      window.location.reload();
-    }
-  }
-  var setCookieReloadNames = [
-    "set-cookie-reload",
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    "set-cookie-reload.js",
-    "ubo-set-cookie-reload.js",
-    "ubo-set-cookie-reload"
-  ];
-  setCookieReload.primaryName = setCookieReloadNames[0];
-  setCookieReload.injections = [
-    hit,
-    logMessage,
-    nativeIsNaN,
-    isCookieSetWithValue,
-    getLimitedCookieValue,
-    serializeCookie,
-    isValidCookiePath,
-    getCookiePath
-  ];
-
-  // src/features/Scriptlets/src/scriptlets/remove-cookie.js
-  init_define_import_meta_trackerLookup();
-  function removeCookie(source, match) {
-    const matchRegexp = toRegExp(match);
-    const removeCookieFromHost = (cookieName, hostName) => {
-      const cookieSpec = `${cookieName}=`;
-      const domain1 = `; domain=${hostName}`;
-      const domain2 = `; domain=.${hostName}`;
-      const path = "; path=/";
-      const expiration = "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      document.cookie = cookieSpec + expiration;
-      document.cookie = cookieSpec + domain1 + expiration;
-      document.cookie = cookieSpec + domain2 + expiration;
-      document.cookie = cookieSpec + path + expiration;
-      document.cookie = cookieSpec + domain1 + path + expiration;
-      document.cookie = cookieSpec + domain2 + path + expiration;
-      hit(source);
-    };
-    const rmCookie = () => {
-      document.cookie.split(";").forEach((cookieStr) => {
-        const pos = cookieStr.indexOf("=");
-        if (pos === -1) {
-          return;
-        }
-        const cookieName = cookieStr.slice(0, pos).trim();
-        if (!matchRegexp.test(cookieName)) {
-          return;
-        }
-        const hostParts = document.location.hostname.split(".");
-        for (let i = 0; i <= hostParts.length - 1; i += 1) {
-          const hostName = hostParts.slice(i).join(".");
-          if (hostName) {
-            removeCookieFromHost(cookieName, hostName);
-          }
-        }
-      });
-    };
-    rmCookie();
-    window.addEventListener("beforeunload", rmCookie);
-  }
-  var removeCookieNames = [
-    "remove-cookie",
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    "cookie-remover.js",
-    "ubo-cookie-remover.js",
-    "ubo-cookie-remover",
-    "remove-cookie.js",
-    "ubo-remove-cookie.js",
-    "ubo-remove-cookie",
-    "abp-cookie-remover"
-  ];
-  removeCookie.primaryName = removeCookieNames[0];
-  removeCookie.injections = [toRegExp, hit];
-
-  // src/features/Scriptlets/src/scriptlets/set-constant.js
-  init_define_import_meta_trackerLookup();
-  function setConstant(source, property, value, stack = "", valueWrapper = "", setProxyTrap = false) {
-    const uboAliases = [
-      "set-constant.js",
-      "ubo-set-constant.js",
-      "set.js",
-      "ubo-set.js",
-      "ubo-set-constant",
-      "ubo-set"
-    ];
-    if (uboAliases.includes(source.name)) {
-      if (stack.length !== 1 && !getNumberFromString(stack)) {
-        valueWrapper = stack;
-      }
-      stack = void 0;
-    }
-    if (!property || !matchStackTrace(stack, new Error().stack)) {
-      return;
-    }
-    let isProxyTrapSet = false;
-    const emptyArr = noopArray();
-    const emptyObj = noopObject();
-    let constantValue;
-    if (value === "undefined") {
-      constantValue = void 0;
-    } else if (value === "false") {
-      constantValue = false;
-    } else if (value === "true") {
-      constantValue = true;
-    } else if (value === "null") {
-      constantValue = null;
-    } else if (value === "emptyArr") {
-      constantValue = emptyArr;
-    } else if (value === "emptyObj") {
-      constantValue = emptyObj;
-    } else if (value === "noopFunc") {
-      constantValue = noopFunc;
-    } else if (value === "noopCallbackFunc") {
-      constantValue = noopCallbackFunc;
-    } else if (value === "trueFunc") {
-      constantValue = trueFunc;
-    } else if (value === "falseFunc") {
-      constantValue = falseFunc;
-    } else if (value === "throwFunc") {
-      constantValue = throwFunc;
-    } else if (value === "noopPromiseResolve") {
-      constantValue = noopPromiseResolve;
-    } else if (value === "noopPromiseReject") {
-      constantValue = noopPromiseReject;
-    } else if (/^\d+$/.test(value)) {
-      constantValue = parseFloat(value);
-      if (nativeIsNaN(constantValue)) {
-        return;
-      }
-      if (Math.abs(constantValue) > 32767) {
-        return;
-      }
-    } else if (value === "-1") {
-      constantValue = -1;
-    } else if (value === "") {
-      constantValue = "";
-    } else if (value === "yes") {
-      constantValue = "yes";
-    } else if (value === "no") {
-      constantValue = "no";
-    } else {
-      return;
-    }
-    const valueWrapperNames = [
-      "asFunction",
-      "asCallback",
-      "asResolved",
-      "asRejected"
-    ];
-    if (valueWrapperNames.includes(valueWrapper)) {
-      const valueWrappersMap = {
-        asFunction(v2) {
-          return () => v2;
-        },
-        asCallback(v2) {
-          return () => (() => v2);
-        },
-        asResolved(v2) {
-          return Promise.resolve(v2);
-        },
-        asRejected(v2) {
-          return Promise.reject(v2);
-        }
-      };
-      constantValue = valueWrappersMap[valueWrapper](constantValue);
-    }
-    let canceled = false;
-    const mustCancel = (value2) => {
-      if (canceled) {
-        return canceled;
-      }
-      canceled = value2 !== void 0 && constantValue !== void 0 && typeof value2 !== typeof constantValue && value2 !== null;
-      return canceled;
-    };
-    const trapProp = (base, prop, configurable, handler) => {
-      if (!handler.init(base[prop])) {
-        return false;
-      }
-      const origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-      let prevSetter;
-      if (origDescriptor instanceof Object) {
-        if (!origDescriptor.configurable) {
-          const message = `Property '${prop}' is not configurable`;
-          logMessage(source, message);
-          return false;
-        }
-        if (base[prop]) {
-          base[prop] = constantValue;
-        }
-        if (origDescriptor.set instanceof Function) {
-          prevSetter = origDescriptor.set;
-        }
-      }
-      Object.defineProperty(base, prop, {
-        configurable,
-        get() {
-          return handler.get();
-        },
-        set(a2) {
-          if (prevSetter !== void 0) {
-            prevSetter(a2);
-          }
-          if (a2 instanceof Object) {
-            const propertiesToCheck = property.split(".").slice(1);
-            if (setProxyTrap && !isProxyTrapSet) {
-              isProxyTrapSet = true;
-              a2 = new Proxy(a2, {
-                get: (target, propertyKey, val) => {
-                  propertiesToCheck.reduce((object, currentProp, index, array) => {
-                    const currentObj = object?.[currentProp];
-                    if (index === array.length - 1 && currentObj !== constantValue) {
-                      object[currentProp] = constantValue;
-                    }
-                    return currentObj || object;
-                  }, target);
-                  return Reflect.get(target, propertyKey, val);
-                }
-              });
-            }
-          }
-          handler.set(a2);
-        }
-      });
-      return true;
-    };
-    const setChainPropAccess = (owner, property2) => {
-      const chainInfo = getPropertyInChain(owner, property2);
-      const { base } = chainInfo;
-      const { prop, chain } = chainInfo;
-      const inChainPropHandler = {
-        factValue: void 0,
-        init(a2) {
-          this.factValue = a2;
-          return true;
-        },
-        get() {
-          return this.factValue;
-        },
-        set(a2) {
-          if (this.factValue === a2) {
-            return;
-          }
-          this.factValue = a2;
-          if (a2 instanceof Object) {
-            setChainPropAccess(a2, chain);
-          }
-        }
-      };
-      const endPropHandler = {
-        init(a2) {
-          if (mustCancel(a2)) {
-            return false;
-          }
-          return true;
-        },
-        get() {
-          return constantValue;
-        },
-        set(a2) {
-          if (!mustCancel(a2)) {
-            return;
-          }
-          constantValue = a2;
-        }
-      };
-      if (!chain) {
-        const isTrapped = trapProp(base, prop, false, endPropHandler);
-        if (isTrapped) {
-          hit(source);
-        }
-        return;
-      }
-      if (base !== void 0 && base[prop] === null) {
-        trapProp(base, prop, true, inChainPropHandler);
-        return;
-      }
-      if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
-        trapProp(base, prop, true, inChainPropHandler);
-      }
-      const propValue = owner[prop];
-      if (propValue instanceof Object || typeof propValue === "object" && propValue !== null) {
-        setChainPropAccess(propValue, chain);
-      }
-      trapProp(base, prop, true, inChainPropHandler);
-    };
-    setChainPropAccess(window, property);
-  }
-  var setConstantNames = [
-    "set-constant",
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    "set-constant.js",
-    "ubo-set-constant.js",
-    "set.js",
-    "ubo-set.js",
-    "ubo-set-constant",
-    "ubo-set",
-    "abp-override-property-read"
-  ];
-  setConstant.primaryName = setConstantNames[0];
-  setConstant.injections = [
-    hit,
-    logMessage,
-    getNumberFromString,
-    noopArray,
-    noopObject,
-    noopFunc,
-    noopCallbackFunc,
-    trueFunc,
-    falseFunc,
-    throwFunc,
-    noopPromiseReject,
-    noopPromiseResolve,
-    getPropertyInChain,
-    matchStackTrace,
-    nativeIsNaN,
-    isEmptyObject,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
-    shouldAbortInlineOrInjectedScript,
-    getNativeRegexpTest,
-    setPropertyAccess,
-    toRegExp,
-    backupRegExpValues,
-    restoreRegExpValues
-  ];
-
-  // src/features/Scriptlets/src/scriptlets/set-local-storage-item.js
-  init_define_import_meta_trackerLookup();
-  function setLocalStorageItem(source, key, value) {
-    if (typeof key === "undefined") {
-      logMessage(source, "Item key should be specified.");
-      return;
-    }
-    let validValue;
-    try {
-      validValue = getLimitedStorageItemValue(value);
-    } catch {
-      logMessage(source, `Invalid storage item value: '${value}'`);
-      return;
-    }
-    const { localStorage: localStorage2 } = window;
-    if (validValue === "$remove$") {
-      removeStorageItem(source, localStorage2, key);
-    } else {
-      setStorageItem(source, localStorage2, key, validValue);
-    }
-    hit(source);
-  }
-  var setLocalStorageItemNames = [
-    "set-local-storage-item",
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    "set-local-storage-item.js",
-    "ubo-set-local-storage-item.js",
-    "ubo-set-local-storage-item"
-  ];
-  setLocalStorageItem.primaryName = setLocalStorageItemNames[0];
-  setLocalStorageItem.injections = [
-    hit,
-    logMessage,
-    nativeIsNaN,
-    setStorageItem,
-    removeStorageItem,
-    getLimitedStorageItemValue,
-    // following helpers are needed for helpers above
-    isValidStrPattern,
-    toRegExp,
-    escapeRegExp
-  ];
-
-  // src/features/Scriptlets/src/scriptlets/abort-current-inline-script.js
-  init_define_import_meta_trackerLookup();
-  function abortCurrentInlineScript(source, property, search) {
-    const searchRegexp = toRegExp(search);
-    const rid = randomId();
-    const SRC_DATA_MARKER = "data:text/javascript;base64,";
-    const getCurrentScript = () => {
-      if ("currentScript" in document) {
-        return document.currentScript;
-      }
-      const scripts = document.getElementsByTagName("script");
-      return scripts[scripts.length - 1];
-    };
-    const ourScript = getCurrentScript();
-    const abort = () => {
-      const scriptEl = getCurrentScript();
-      if (!scriptEl) {
-        return;
-      }
-      let content = scriptEl.textContent;
-      try {
-        const textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").get;
-        content = textContentGetter.call(scriptEl);
-      } catch (e) {
-      }
-      if (content.length === 0 && typeof scriptEl.src !== "undefined" && scriptEl.src?.startsWith(SRC_DATA_MARKER)) {
-        const encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
-        content = window.atob(encodedContent);
-      }
-      if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
-        hit(source);
-        throw new ReferenceError(rid);
-      }
-    };
-    const setChainPropAccess = (owner, property2) => {
-      const chainInfo = getPropertyInChain(owner, property2);
-      let { base } = chainInfo;
-      const { prop, chain } = chainInfo;
-      if (base instanceof Object === false && base === null) {
-        const props = property2.split(".");
-        const propIndex = props.indexOf(prop);
-        const baseName = props[propIndex - 1];
-        const message = `The scriptlet had been executed before the ${baseName} was loaded.`;
-        logMessage(source, message);
-        return;
-      }
-      if (chain) {
-        const setter = (a2) => {
-          base = a2;
-          if (a2 instanceof Object) {
-            setChainPropAccess(a2, chain);
-          }
-        };
-        Object.defineProperty(owner, prop, {
-          get: () => base,
-          set: setter
-        });
-        return;
-      }
-      let currentValue = base[prop];
-      let origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-      if (origDescriptor instanceof Object === false || origDescriptor.get instanceof Function === false) {
-        currentValue = base[prop];
-        origDescriptor = void 0;
-      }
-      const descriptorWrapper = Object.assign(getDescriptorAddon(), {
-        currentValue,
-        get() {
-          if (!this.isAbortingSuspended) {
-            this.isolateCallback(abort);
-          }
-          if (origDescriptor instanceof Object) {
-            return origDescriptor.get.call(base);
-          }
-          return this.currentValue;
-        },
-        set(newValue) {
-          if (!this.isAbortingSuspended) {
-            this.isolateCallback(abort);
-          }
-          if (origDescriptor instanceof Object) {
-            origDescriptor.set.call(base, newValue);
-          } else {
-            this.currentValue = newValue;
-          }
-        }
-      });
-      setPropertyAccess(base, prop, {
-        // Call wrapped getter and setter to keep isAbortingSuspended & isolateCallback values
-        get() {
-          return descriptorWrapper.get.call(descriptorWrapper);
-        },
-        set(newValue) {
-          descriptorWrapper.set.call(descriptorWrapper, newValue);
-        }
-      });
-    };
-    setChainPropAccess(window, property);
-    window.onerror = createOnErrorHandler(rid).bind();
-  }
-  var abortCurrentInlineScriptNames = [
-    "abort-current-inline-script",
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    "abort-current-script.js",
-    "ubo-abort-current-script.js",
-    "acs.js",
-    "ubo-acs.js",
-    // "ubo"-aliases with no "js"-ending
-    "ubo-abort-current-script",
-    "ubo-acs",
-    // obsolete but supported aliases
-    "abort-current-inline-script.js",
-    "ubo-abort-current-inline-script.js",
-    "acis.js",
-    "ubo-acis.js",
-    "ubo-abort-current-inline-script",
-    "ubo-acis",
-    "abp-abort-current-inline-script"
-  ];
-  abortCurrentInlineScript.primaryName = abortCurrentInlineScriptNames[0];
-  abortCurrentInlineScript.injections = [
-    randomId,
-    setPropertyAccess,
-    getPropertyInChain,
-    toRegExp,
-    createOnErrorHandler,
-    hit,
-    logMessage,
-    isEmptyObject,
-    getDescriptorAddon
-  ];
-
-  // src/features/Scriptlets/src/scriptlets/abort-on-property-read.js
-  init_define_import_meta_trackerLookup();
-  function abortOnPropertyRead(source, property) {
-    if (!property) {
-      return;
-    }
-    const rid = randomId();
-    const abort = () => {
-      hit(source);
-      throw new ReferenceError(rid);
-    };
-    const setChainPropAccess = (owner, property2) => {
-      const chainInfo = getPropertyInChain(owner, property2);
-      let { base } = chainInfo;
-      const { prop, chain } = chainInfo;
-      if (chain) {
-        const setter = (a2) => {
-          base = a2;
-          if (a2 instanceof Object) {
-            setChainPropAccess(a2, chain);
-          }
-        };
-        Object.defineProperty(owner, prop, {
-          get: () => base,
-          set: setter
-        });
-        return;
-      }
-      setPropertyAccess(base, prop, {
-        get: abort,
-        set: () => {
-        }
-      });
-    };
-    setChainPropAccess(window, property);
-    window.onerror = createOnErrorHandler(rid).bind();
-  }
-  var abortOnPropertyReadNames = [
-    "abort-on-property-read",
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    "abort-on-property-read.js",
-    "ubo-abort-on-property-read.js",
-    "aopr.js",
-    "ubo-aopr.js",
-    "ubo-abort-on-property-read",
-    "ubo-aopr",
-    "abp-abort-on-property-read"
-  ];
-  abortOnPropertyRead.primaryName = abortOnPropertyReadNames[0];
-  abortOnPropertyRead.injections = [
-    randomId,
-    setPropertyAccess,
-    getPropertyInChain,
-    createOnErrorHandler,
-    hit,
-    isEmptyObject
-  ];
-
-  // src/features/Scriptlets/src/scriptlets/abort-on-property-write.js
-  init_define_import_meta_trackerLookup();
-  function abortOnPropertyWrite(source, property) {
-    if (!property) {
-      return;
-    }
-    const rid = randomId();
-    const abort = () => {
-      hit(source);
-      throw new ReferenceError(rid);
-    };
-    const setChainPropAccess = (owner, property2) => {
-      const chainInfo = getPropertyInChain(owner, property2);
-      let { base } = chainInfo;
-      const { prop, chain } = chainInfo;
-      if (chain) {
-        const setter = (a2) => {
-          base = a2;
-          if (a2 instanceof Object) {
-            setChainPropAccess(a2, chain);
-          }
-        };
-        Object.defineProperty(owner, prop, {
-          get: () => base,
-          set: setter
-        });
-        return;
-      }
-      setPropertyAccess(base, prop, { set: abort });
-    };
-    setChainPropAccess(window, property);
-    window.onerror = createOnErrorHandler(rid).bind();
-  }
-  var abortOnPropertyWriteNames = [
-    "abort-on-property-write",
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    "abort-on-property-write.js",
-    "ubo-abort-on-property-write.js",
-    "aopw.js",
-    "ubo-aopw.js",
-    "ubo-abort-on-property-write",
-    "ubo-aopw",
-    "abp-abort-on-property-write"
-  ];
-  abortOnPropertyWrite.primaryName = abortOnPropertyWriteNames[0];
-  abortOnPropertyWrite.injections = [
-    randomId,
-    setPropertyAccess,
-    getPropertyInChain,
-    createOnErrorHandler,
-    hit,
-    isEmptyObject
-  ];
-
-  // src/features/Scriptlets/src/scriptlets/prevent-addEventListener.js
-  init_define_import_meta_trackerLookup();
-  function preventAddEventListener(source, typeSearch, listenerSearch, additionalArgName, additionalArgValue) {
-    const typeSearchRegexp = toRegExp(typeSearch);
-    const listenerSearchRegexp = toRegExp(listenerSearch);
-    let elementToMatch;
-    if (additionalArgName) {
-      if (additionalArgName !== "elements") {
-        logMessage(source, `Invalid "additionalArgName": ${additionalArgName}
-Only "elements" is supported.`);
-        return;
-      }
-      if (!additionalArgValue) {
-        logMessage(source, '"additionalArgValue" is required.');
-        return;
-      }
-      elementToMatch = additionalArgValue;
-    }
-    const elementMatches = (element) => {
-      if (elementToMatch === void 0) {
-        return true;
-      }
-      if (elementToMatch === "window") {
-        return element === window;
-      }
-      if (elementToMatch === "document") {
-        return element === document;
-      }
-      if (element && element.matches && element.matches(elementToMatch)) {
-        return true;
-      }
-      return false;
-    };
-    const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
-    function addEventListenerWrapper(type, listener, ...args) {
-      let shouldPrevent = false;
-      if (validateType(type) && validateListener(listener)) {
-        shouldPrevent = typeSearchRegexp.test(type.toString()) && listenerSearchRegexp.test(listenerToString(listener)) && elementMatches(this);
-      }
-      if (shouldPrevent) {
-        hit(source);
-        return void 0;
-      }
-      let context = this;
-      if (this && this.constructor?.name === "Window" && this !== window) {
-        context = window;
-      }
-      return nativeAddEventListener.apply(context, [type, listener, ...args]);
-    }
-    const descriptor = {
-      configurable: true,
-      set: () => {
-      },
-      get: () => addEventListenerWrapper
-    };
-    Object.defineProperty(window.EventTarget.prototype, "addEventListener", descriptor);
-    Object.defineProperty(window, "addEventListener", descriptor);
-    Object.defineProperty(document, "addEventListener", descriptor);
-  }
-  var preventAddEventListenerNames = [
-    "prevent-addEventListener",
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    "addEventListener-defuser.js",
-    "ubo-addEventListener-defuser.js",
-    "aeld.js",
-    "ubo-aeld.js",
-    "ubo-addEventListener-defuser",
-    "ubo-aeld",
-    "abp-prevent-listener"
-  ];
-  preventAddEventListener.primaryName = preventAddEventListenerNames[0];
-  preventAddEventListener.injections = [
-    hit,
-    toRegExp,
-    validateType,
-    validateListener,
-    listenerToString,
-    logMessage
-  ];
-
-  // src/features/Scriptlets/src/scriptlets/prevent-window-open.js
-  init_define_import_meta_trackerLookup();
-  function preventWindowOpen(source, match = "*", delay, replacement) {
-    const nativeOpen = window.open;
-    const isNewSyntax = match !== "0" && match !== "1";
-    const oldOpenWrapper = (str, ...args) => {
-      match = Number(match) > 0;
-      if (!isValidStrPattern(delay)) {
-        logMessage(source, `Invalid parameter: ${delay}`);
-        return nativeOpen.apply(window, [str, ...args]);
-      }
-      const searchRegexp = toRegExp(delay);
-      if (match !== searchRegexp.test(str)) {
-        return nativeOpen.apply(window, [str, ...args]);
-      }
-      hit(source);
-      return handleOldReplacement(replacement);
-    };
-    const newOpenWrapper = (url, ...args) => {
-      const shouldLog = replacement && replacement.includes("log");
-      if (shouldLog) {
-        const argsStr = args && args.length > 0 ? `, ${args.join(", ")}` : "";
-        const message = `${url}${argsStr}`;
-        logMessage(source, message, true);
-        hit(source);
-      }
-      let shouldPrevent = false;
-      if (match === "*") {
-        shouldPrevent = true;
-      } else if (isValidMatchStr(match)) {
-        const { isInvertedMatch, matchRegexp } = parseMatchArg(match);
-        shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
-      } else {
-        logMessage(source, `Invalid parameter: ${match}`);
-        shouldPrevent = false;
-      }
-      if (shouldPrevent) {
-        const parsedDelay = parseInt(delay, 10);
-        let result;
-        if (nativeIsNaN(parsedDelay)) {
-          result = noopNull();
-        } else {
-          const decoyArgs = { replacement, url, delay: parsedDelay };
-          const decoy = createDecoy(decoyArgs);
-          let popup = decoy.contentWindow;
-          if (typeof popup === "object" && popup !== null) {
-            Object.defineProperty(popup, "closed", { value: false });
-            Object.defineProperty(popup, "opener", { value: window });
-            Object.defineProperty(popup, "frameElement", { value: null });
-          } else {
-            const nativeGetter = decoy.contentWindow && decoy.contentWindow.get;
-            Object.defineProperty(decoy, "contentWindow", {
-              get: getPreventGetter(nativeGetter)
-            });
-            popup = decoy.contentWindow;
-          }
-          result = popup;
-        }
-        hit(source);
-        return result;
-      }
-      return nativeOpen.apply(window, [url, ...args]);
-    };
-    window.open = isNewSyntax ? newOpenWrapper : oldOpenWrapper;
-    window.open.toString = nativeOpen.toString.bind(nativeOpen);
-  }
-  var preventWindowOpenNames = [
-    "prevent-window-open",
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    "window.open-defuser.js",
-    "ubo-window.open-defuser.js",
-    "ubo-window.open-defuser",
-    "nowoif.js",
-    "ubo-nowoif.js",
-    "ubo-nowoif",
-    "no-window-open-if.js",
-    "ubo-no-window-open-if.js",
-    "ubo-no-window-open-if"
-  ];
-  preventWindowOpen.primaryName = preventWindowOpenNames[0];
-  preventWindowOpen.injections = [
-    hit,
-    isValidStrPattern,
-    escapeRegExp,
-    isValidMatchStr,
-    toRegExp,
-    nativeIsNaN,
-    parseMatchArg,
-    handleOldReplacement,
-    createDecoy,
-    getPreventGetter,
-    noopNull,
-    logMessage,
-    noopFunc,
-    trueFunc,
-    substringBefore,
-    substringAfter
-  ];
-
-  // src/features/Scriptlets/src/scriptlets/prevent-setTimeout.js
-  init_define_import_meta_trackerLookup();
-  function preventSetTimeout(source, matchCallback, matchDelay) {
-    const shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
-    const handlerWrapper = (target, thisArg, args) => {
-      const callback = args[0];
-      const delay = args[1];
-      let shouldPrevent = false;
-      if (shouldLog) {
-        hit(source);
-        logMessage(source, `setTimeout(${String(callback)}, ${delay})`, true);
-      } else {
-        shouldPrevent = isPreventionNeeded({
-          callback,
-          delay,
-          matchCallback,
-          matchDelay
-        });
-      }
-      if (shouldPrevent) {
-        hit(source);
-        args[0] = noopFunc;
-      }
-      return target.apply(thisArg, args);
-    };
-    const setTimeoutHandler = {
-      apply: handlerWrapper
-    };
-    window.setTimeout = new Proxy(window.setTimeout, setTimeoutHandler);
-  }
-  var preventSetTimeoutNames = [
-    "prevent-setTimeout",
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    "no-setTimeout-if.js",
-    // new implementation of setTimeout-defuser.js
-    "ubo-no-setTimeout-if.js",
-    "nostif.js",
-    // new short name of no-setTimeout-if
-    "ubo-nostif.js",
-    "ubo-no-setTimeout-if",
-    "ubo-nostif",
-    // old scriptlet names which should be supported as well.
-    // should be removed eventually.
-    // do not remove until other filter lists maintainers use them
-    "setTimeout-defuser.js",
-    "ubo-setTimeout-defuser.js",
-    "ubo-setTimeout-defuser",
-    "std.js",
-    "ubo-std.js",
-    "ubo-std"
-  ];
-  preventSetTimeout.primaryName = preventSetTimeoutNames[0];
-  preventSetTimeout.injections = [
-    hit,
-    noopFunc,
-    isPreventionNeeded,
-    logMessage,
-    // following helpers should be injected as helpers above use them
-    parseMatchArg,
-    parseDelayArg,
-    toRegExp,
-    nativeIsNaN,
-    isValidCallback,
-    isValidMatchStr,
-    escapeRegExp,
-    isValidStrPattern,
-    nativeIsFinite,
-    isValidMatchNumber,
-    parseRawDelay
-  ];
-
-  // src/features/Scriptlets/src/scriptlets/remove-node-text.js
-  init_define_import_meta_trackerLookup();
-  function removeNodeText(source, nodeName, textMatch, parentSelector) {
-    const {
-      selector,
-      nodeNameMatch,
-      textContentMatch
-    } = parseNodeTextParams(nodeName, textMatch);
-    const handleNodes = (nodes) => nodes.forEach((node) => {
-      const shouldReplace = isTargetNode(
-        node,
-        nodeNameMatch,
-        textContentMatch
-      );
-      if (shouldReplace) {
-        const ALL_TEXT_PATTERN = /^.*$/s;
-        const REPLACEMENT = "";
-        replaceNodeText(source, node, ALL_TEXT_PATTERN, REPLACEMENT);
-      }
-    });
-    if (document.documentElement) {
-      handleExistingNodes(selector, handleNodes, parentSelector);
-    }
-    observeDocumentWithTimeout((mutations) => handleMutations(mutations, handleNodes, selector, parentSelector));
-  }
-  var removeNodeTextNames = [
-    "remove-node-text",
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    "remove-node-text.js",
-    "ubo-remove-node-text.js",
-    "rmnt.js",
-    "ubo-rmnt.js",
-    "ubo-remove-node-text",
-    "ubo-rmnt"
-  ];
-  removeNodeText.primaryName = removeNodeTextNames[0];
-  removeNodeText.injections = [
-    observeDocumentWithTimeout,
-    handleExistingNodes,
-    handleMutations,
-    replaceNodeText,
-    isTargetNode,
-    parseNodeTextParams,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
-    hit,
-    nodeListToArray,
-    getAddedNodes,
-    toRegExp,
-    getTrustedTypesApi
-  ];
-
-  // src/features/Scriptlets/src/scriptlets/prevent-fetch.js
-  init_define_import_meta_trackerLookup();
-  function preventFetch(source, propsToMatch, responseBody = "emptyObj", responseType) {
-    if (typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
-      return;
-    }
-    const nativeRequestClone = Request.prototype.clone;
-    let strResponseBody;
-    if (responseBody === "" || responseBody === "emptyObj") {
-      strResponseBody = "{}";
-    } else if (responseBody === "emptyArr") {
-      strResponseBody = "[]";
-    } else if (responseBody === "emptyStr") {
-      strResponseBody = "";
-    } else if (responseBody === "true" || responseBody.match(/^length:\d+-\d+$/)) {
-      strResponseBody = generateRandomResponse(responseBody);
-    } else {
-      logMessage(source, `Invalid responseBody parameter: '${responseBody}'`);
-      return;
-    }
-    const isResponseTypeSpecified = typeof responseType !== "undefined";
-    const isResponseTypeSupported = (responseType2) => {
-      const SUPPORTED_TYPES = [
-        "basic",
-        "cors",
-        "opaque"
-      ];
-      return SUPPORTED_TYPES.includes(responseType2);
-    };
-    if (isResponseTypeSpecified && !isResponseTypeSupported(responseType)) {
-      logMessage(source, `Invalid responseType parameter: '${responseType}'`);
-      return;
-    }
-    const getResponseType = (request) => {
-      try {
-        const { mode } = request;
-        if (mode === void 0 || mode === "cors" || mode === "no-cors") {
-          const fetchURL = new URL(request.url);
-          if (fetchURL.origin === document.location.origin) {
-            return "basic";
-          }
-          return mode === "no-cors" ? "opaque" : "cors";
-        }
-      } catch (error) {
-        logMessage(source, `Could not determine response type: ${error}`);
-      }
-      return void 0;
-    };
-    const handlerWrapper = async (target, thisArg, args) => {
-      let shouldPrevent = false;
-      const fetchData = getFetchData(args, nativeRequestClone);
-      if (typeof propsToMatch === "undefined") {
-        logMessage(source, `fetch( ${objectToString(fetchData)} )`, true);
-        hit(source);
-        return Reflect.apply(target, thisArg, args);
-      }
-      shouldPrevent = matchRequestProps(source, propsToMatch, fetchData);
-      if (shouldPrevent) {
-        hit(source);
-        let finalResponseType;
-        try {
-          finalResponseType = responseType || getResponseType(fetchData);
-          const origResponse = await Reflect.apply(target, thisArg, args);
-          if (!origResponse.ok) {
-            return noopPromiseResolve(strResponseBody, fetchData.url, finalResponseType);
-          }
-          return modifyResponse(
-            origResponse,
-            {
-              body: strResponseBody,
-              type: finalResponseType
-            }
-          );
-        } catch (ex) {
-          return noopPromiseResolve(strResponseBody, fetchData.url, finalResponseType);
-        }
-      }
-      return Reflect.apply(target, thisArg, args);
-    };
-    const fetchHandler = {
-      apply: handlerWrapper
-    };
-    fetch = new Proxy(fetch, fetchHandler);
-  }
-  var preventFetchNames = [
-    "prevent-fetch",
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    "prevent-fetch.js",
-    "ubo-prevent-fetch.js",
-    "ubo-prevent-fetch",
-    "no-fetch-if.js",
-    "ubo-no-fetch-if.js",
-    "ubo-no-fetch-if"
-  ];
-  preventFetch.primaryName = preventFetchNames[0];
-  preventFetch.injections = [
-    hit,
-    getFetchData,
-    objectToString,
-    matchRequestProps,
-    logMessage,
-    noopPromiseResolve,
-    modifyResponse,
-    toRegExp,
-    isValidStrPattern,
-    escapeRegExp,
-    isEmptyObject,
-    getRequestData,
-    getRequestProps,
-    parseMatchProps,
-    isValidParsedData,
-    getMatchPropsData,
-    generateRandomResponse,
-    nativeIsFinite,
-    nativeIsNaN,
-    getNumberFromString,
-    getRandomIntInclusive,
-    getRandomStrByLength
-  ];
-
-  // src/features/scriptlets.js
-  var Scriptlets = class extends ContentFeature {
-    init() {
-      if (isBeingFramed()) {
-        return;
-      }
-      const source = {
-        verbose: false
-      };
-      const scriptlets = this.getFeatureSetting("scriptlets");
-      for (const scriptlet of scriptlets) {
-        source.name = scriptlet.name;
-        source.args = Object.values(scriptlet.attrs);
-        this.runScriptlet(scriptlet, source);
-      }
-    }
-    runScriptlet(scriptlet, source) {
-      const attrs = scriptlet.attrs || {};
-      this.addDebugFlag();
-      if (scriptlet.name === "setCookie") {
-        setCookie(source, attrs.name, attrs.value, attrs.path, attrs.domain);
-      }
-      if (scriptlet.name === "trustedSetCookie") {
-        trustedSetCookie(source, attrs.name, attrs.value, attrs.path, attrs.domain);
-      }
-      if (scriptlet.name === "setCookieReload") {
-        setCookieReload(source, attrs.name, attrs.value, attrs.path, attrs.domain);
-      }
-      if (scriptlet.name === "removeCookie") {
-        removeCookie(source, attrs.match);
-      }
-      if (scriptlet.name === "setConstant") {
-        setConstant(source, attrs.property, attrs.value, attrs.stack, attrs.valueWrapper, attrs.setProxyTrap);
-      }
-      if (scriptlet.name === "setLocalStorageItem") {
-        setLocalStorageItem(source, attrs.key, attrs.value);
-      }
-      if (scriptlet.name === "abortCurrentInlineScript") {
-        abortCurrentInlineScript(source, attrs.property, attrs.search);
-      }
-      if (scriptlet.name === "abortOnPropertyRead") {
-        abortOnPropertyRead(source, attrs.property);
-      }
-      if (scriptlet.name === "abortOnPropertyWrite") {
-        abortOnPropertyWrite(source, attrs.property);
-      }
-      if (scriptlet.name === "preventAddEventListener") {
-        preventAddEventListener(source, attrs.typeSearch, attrs.listenerSearch, attrs.additionalArgName, attrs.additionalArgValue);
-      }
-      if (scriptlet.name === "preventWindowOpen") {
-        preventWindowOpen(source, attrs.match, attrs.delay, attrs.replacement);
-      }
-      if (scriptlet.name === "preventSetTimeout") {
-        preventSetTimeout(source, attrs.matchCallback, attrs.matchDelay);
-      }
-      if (scriptlet.name === "removeNodeText") {
-        removeNodeText(source, attrs.nodeName, attrs.textMatch, attrs.parentSelector);
-      }
-      if (scriptlet.name === "preventFetch") {
-        preventFetch(source, attrs.propsToMatch, attrs.responseBody, attrs.responseType);
-      }
-    }
-  };
-  var scriptlets_default = Scriptlets;
-
   // src/features/fingerprinting-audio.js
   init_define_import_meta_trackerLookup();
 
@@ -11272,11 +8917,445 @@ Only "elements" is supported.`);
     }
   };
 
+  // src/features/duck-ai-listener.js
+  init_define_import_meta_trackerLookup();
+  var DuckAiListener = class extends ContentFeature {
+    constructor() {
+      super(...arguments);
+      /** @type {HTMLTextAreaElement | null} */
+      __publicField(this, "textBox", null);
+      /** @type {Object | null} */
+      __publicField(this, "pageData", null);
+      /** @type {any} */
+      __publicField(this, "bridge", null);
+      /** @type {HTMLButtonElement | null} */
+      __publicField(this, "button", null);
+      /** @type {boolean} */
+      __publicField(this, "isPageContextEnabled", true);
+      /** @type {string | null} */
+      __publicField(this, "lastInjectedContext", null);
+      /**
+       * Logging utility for this feature
+       */
+      __publicField(this, "log", {
+        info: (...args) => {
+          if (this.isDebug) {
+            console.log("DuckAiListener:", ...args);
+          }
+        },
+        warn: (...args) => {
+          if (this.isDebug) {
+            console.warn("DuckAiListener:", ...args);
+          }
+        },
+        error: (...args) => {
+          if (this.isDebug) {
+            console.error("DuckAiListener:", ...args);
+          }
+        }
+      });
+    }
+    init() {
+      if (!this.shouldActivate()) {
+        return;
+      }
+      this.log.info("Initializing on duckduckgo.com");
+      if (document.readyState === "complete") {
+        this.setup();
+      } else {
+        document.addEventListener("DOMContentLoaded", this.setup.bind(this));
+      }
+    }
+    async setup() {
+      this.createButtonUI();
+      await this.setupMessageBridge();
+      this.setupTextBoxDetection();
+    }
+    /**
+     * Check if this feature should be active on the current domain
+     * @returns {boolean}
+     */
+    shouldActivate() {
+      if (isBeingFramed()) {
+        return false;
+      }
+      if (window.location.hostname === "duckduckgo.com") {
+        const url = new URL(window.location.href);
+        return url.searchParams.has("duckai");
+      }
+      return false;
+    }
+    /**
+     * Create the page context button in the input field
+     */
+    createButtonUI() {
+      const imageInput = document.querySelector('input[name="image"]');
+      if (!imageInput) {
+        this.setupButtonInsertionObserver();
+        return;
+      }
+      this.insertButton(
+        /** @type {HTMLElement} */
+        imageInput
+      );
+    }
+    /**
+     * Set up mutation observer to find input[name="image"] and insert button
+     */
+    setupButtonInsertionObserver() {
+      const observer = new MutationObserver((_2, obs) => {
+        const imageInput = document.querySelector('input[name="image"]');
+        if (imageInput) {
+          this.insertButton(
+            /** @type {HTMLElement} */
+            imageInput
+          );
+          obs.disconnect();
+        }
+      });
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    }
+    /**
+     * Insert the page context button adjacent to existing button container
+     * @param {HTMLElement} imageInput - The input[name="image"] element to position after
+     */
+    insertButton(imageInput) {
+      const inputContainer = imageInput.closest("div");
+      if (!inputContainer) {
+        this.log.warn("Could not find input container");
+        return;
+      }
+      const parentContainer = inputContainer.parentNode;
+      if (!parentContainer) {
+        this.log.warn("Could not find parent container");
+        return;
+      }
+      let buttonGroupWrapper = (
+        /** @type {HTMLElement | null} */
+        parentContainer.querySelector("#duck-ai-button-group-wrapper")
+      );
+      if (buttonGroupWrapper) {
+        this.log.info("Button wrapper already exists, updating button");
+        const existingButton = buttonGroupWrapper.querySelector("#duck-ai-context-button");
+        if (existingButton) {
+          existingButton.remove();
+        }
+      } else {
+        buttonGroupWrapper = document.createElement("div");
+        buttonGroupWrapper.id = "duck-ai-button-group-wrapper";
+        buttonGroupWrapper.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            `;
+        const existingWrapper = document.createElement("div");
+        existingWrapper.id = "duck-ai-existing-controls-wrapper";
+        existingWrapper.style.cssText = "flex: 1;";
+        existingWrapper.appendChild(inputContainer);
+        buttonGroupWrapper.appendChild(existingWrapper);
+        parentContainer.appendChild(buttonGroupWrapper);
+      }
+      this.button = document.createElement("button");
+      this.button.type = "button";
+      this.button.id = "duck-ai-context-button";
+      this.button.innerHTML = `
+            <svg width="16" height="14" viewBox="0 0 16 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 0C14.2091 4.27829e-08 16 1.79086 16 4V10C16 12.2091 14.2091 14 12 14H4C1.79086 14 9.6639e-08 12.2091 0 10V4C9.66449e-08 1.79086 1.79086 8.05326e-08 4 0H12ZM4 1.25C2.48122 1.25 1.25 2.48122 1.25 4V10C1.25 11.5188 2.48122 12.75 4 12.75H12C13.5188 12.75 14.75 11.5188 14.75 10V5.3125C14.75 4.7257 14.2743 4.25 13.6875 4.25H10.427C9.1625 4.24998 8.00656 3.53554 7.44104 2.40454C7.08727 1.697 6.36405 1.25002 5.573 1.25H4ZM7.375 9C7.72018 9 8 9.27982 8 9.625C8 9.97018 7.72018 10.25 7.375 10.25H3.625C3.27982 10.25 3 9.97018 3 9.625C3 9.27982 3.27982 9 3.625 9H7.375ZM9.375 6C9.72018 6 10 6.27982 10 6.625C10 6.97018 9.72018 7.25 9.375 7.25H3.625C3.27982 7.25 3 6.97018 3 6.625C3 6.27982 3.27982 6 3.625 6H9.375ZM8.17761 1.25C8.3237 1.43222 8.45191 1.63137 8.55896 1.84546C8.91273 2.553 9.63595 2.99998 10.427 3H13.6875C14.0239 3 14.3435 3.07189 14.6318 3.20105C14.2895 2.07196 13.2409 1.25 12 1.25H8.17761Z" fill="currentColor"/>
+            </svg>
+        `;
+      this.button.title = "Toggle page context injection";
+      this.button.style.cssText = `
+            box-sizing: border-box;
+            clip-rule: evenodd;
+            color: rgb(204, 204, 204);
+            color-scheme: light dark;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            fill: currentColor;
+            fill-rule: evenodd;
+            font-feature-settings: normal;
+            font-kerning: auto;
+            font-optical-sizing: auto;
+            font-size: 14.4px;
+            font-size-adjust: none;
+            font-style: normal;
+            font-weight: 700;
+            font-width: 100%;
+            height: 28px;
+            letter-spacing: -0.00875px;
+            line-height: 14.4px;
+            text-align: center;
+            text-indent: 0px;
+            text-shadow: none;
+            text-transform: none;
+            transform-box: view-box;
+            width: 28px;
+            word-spacing: 0px;
+            border: none;
+            background: transparent;
+            padding: 0;
+            border-radius: 50%;
+            flex-shrink: 0;
+            color: rgb(102, 102, 102); /* Default light mode color */
+        `;
+      if (window.matchMedia) {
+        const colorSchemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+        colorSchemeQuery.addEventListener("change", () => {
+          this.updateButtonAppearance();
+        });
+      }
+      this.button.addEventListener("mouseenter", () => {
+        if (this.button) {
+          const isDark = this.isDarkMode();
+          if (isDark) {
+            this.button.style.backgroundColor = "rgba(255, 255, 255, 0.18)";
+            this.button.style.color = "rgb(255, 255, 255)";
+          } else {
+            this.button.style.backgroundColor = "rgba(0, 0, 0, 0.08)";
+            this.button.style.color = "rgb(51, 51, 51)";
+          }
+        }
+      });
+      this.button.addEventListener("mouseleave", () => {
+        if (this.button) {
+          this.updateButtonAppearance();
+        }
+      });
+      this.button.addEventListener("click", this.handleButtonClick.bind(this));
+      buttonGroupWrapper.appendChild(this.button);
+      this.updateButtonAppearance();
+      this.log.info("Created page context button with wrapper structure");
+    }
+    /**
+     * Handle button click to toggle page context
+     */
+    handleButtonClick() {
+      if (!this.button) return;
+      this.isPageContextEnabled = !this.isPageContextEnabled;
+      if (this.isPageContextEnabled) {
+        if (this.pageData && this.pageData.content) {
+          this.insertContextIntoTextBox(this.pageData.content);
+        }
+      } else {
+        this.clearContextFromTextBox();
+      }
+    }
+    /**
+     * Determine if dark mode is preferred
+     * @returns {boolean}
+     */
+    isDarkMode() {
+      return window?.matchMedia("(prefers-color-scheme: dark)")?.matches;
+    }
+    /**
+     * Update button appearance based on enabled state and theme
+     */
+    updateButtonAppearance() {
+      if (!this.button) return;
+      const isDark = this.isDarkMode();
+      if (this.isPageContextEnabled) {
+        if (isDark) {
+          this.button.style.backgroundColor = "rgba(255, 255, 255, 0.18)";
+          this.button.style.color = "rgb(255, 255, 255)";
+        } else {
+          this.button.style.backgroundColor = "rgba(0, 0, 0, 0.08)";
+          this.button.style.color = "rgb(51, 51, 51)";
+        }
+      } else {
+        this.button.style.backgroundColor = "transparent";
+        if (isDark) {
+          this.button.style.color = "rgb(204, 204, 204)";
+        } else {
+          this.button.style.color = "rgb(102, 102, 102)";
+        }
+      }
+    }
+    /**
+     * Clear context from text box if it matches the current context
+     */
+    clearContextFromTextBox() {
+      this.findTextBox();
+      if (!this.textBox || !this.lastInjectedContext) {
+        return;
+      }
+      const currentValue = this.textBox.value.trim();
+      const lastContext = this.lastInjectedContext.trim();
+      if (currentValue === lastContext) {
+        this.log.info("Clearing injected context from text box");
+        this.setReactTextAreaValue(this.textBox, "");
+      }
+    }
+    /**
+     * Set up message bridge using the same pattern as fake-duck-ai
+     */
+    async setupMessageBridge() {
+      try {
+        if (!navigator.duckduckgo) {
+          this.log.warn("navigator.duckduckgo not available");
+          return;
+        }
+        const featureName = "aiChat";
+        if (!navigator.duckduckgo.createMessageBridge) {
+          this.log.warn("createMessageBridge not available");
+          return;
+        }
+        this.bridge = navigator.duckduckgo.createMessageBridge(featureName);
+        if (!this.bridge) {
+          this.log.warn("Failed to create message bridge");
+          return;
+        }
+        this.log.info("Created message bridge successfully");
+        try {
+          const getPageContext = await this.bridge.request("getPageContext");
+          this.log.info("Initial page context:", getPageContext);
+          this.handlePageContextData(getPageContext);
+        } catch (error) {
+          this.log.info("No initial page context available:", error);
+        }
+        this.bridge.subscribe("submitPageContext", (event) => {
+          this.log.info("Received page context update:", event);
+          this.handlePageContextData(event);
+        });
+      } catch (error) {
+        this.log.error("Error setting up message bridge:", error);
+      }
+    }
+    /**
+     * Handle page context data from bridge communication (matches fake-duck-ai exactly)
+     * @param {Object} data - The received page context data
+     */
+    handlePageContextData(data) {
+      try {
+        if (data.serializedPageData) {
+          const pageDataParsed = JSON.parse(data.serializedPageData);
+          this.log.info("Parsed page data:", pageDataParsed);
+          if (pageDataParsed.content) {
+            this.pageData = pageDataParsed;
+            this.insertContextIntoTextBox(pageDataParsed.content);
+          }
+        }
+      } catch (error) {
+        this.log.error("Error parsing page context data:", error);
+      }
+    }
+    /**
+     * Set up detection of the text box on the page
+     */
+    setupTextBoxDetection() {
+      this.findTextBox();
+      if (this.textBox && this.pageData) {
+        this.insertContextIntoTextBox(this.pageData.content);
+      }
+      if (!this.textBox) {
+        this.setupTextBoxMutationObserver();
+      }
+    }
+    /**
+     * Set up mutation observer for text box detection
+     */
+    setupTextBoxMutationObserver() {
+      const config = { childList: true, subtree: true };
+      this.mutationObserver = null;
+      const callback = (_2, observer) => {
+        this.findTextBox();
+        if (this.textBox && this.pageData) {
+          this.insertContextIntoTextBox(this.pageData.content);
+          observer.disconnect();
+        }
+      };
+      this.mutationObserver = new MutationObserver(callback);
+      this.mutationObserver.observe(document.body, config);
+    }
+    /**
+     * Find the AI chat text box
+     */
+    findTextBox() {
+      const element = document.querySelector('textarea[name="user-prompt"]');
+      if (element && element instanceof HTMLTextAreaElement) {
+        if (this.textBox !== element) {
+          this.textBox = element;
+          this.log.info("Found AI text box");
+        }
+      } else if (this.textBox) {
+        this.textBox = null;
+        this.log.info("AI text box not found");
+      }
+    }
+    /**
+     * Insert context into the text box
+     * @param {string} context - The context to insert
+     */
+    insertContextIntoTextBox(context) {
+      if (!context || typeof context !== "string") {
+        this.log.warn("Invalid context provided for insertion");
+        return;
+      }
+      if (!this.isPageContextEnabled) {
+        this.log.info("Context injection disabled");
+        return;
+      }
+      this.findTextBox();
+      if (!this.textBox) {
+        this.log.info("No text box found for context insertion");
+        return;
+      }
+      this.log.info("Inserting context into text box");
+      const contextValue = context.slice(0, 2e3);
+      this.setReactTextAreaValue(this.textBox, contextValue);
+      this.lastInjectedContext = contextValue;
+      this.textBox.focus();
+      this.textBox.scrollTop = 0;
+      this.log.info("Successfully inserted context", this.textBox.value);
+      this.log.info(this.textBox);
+    }
+    /**
+     * Set textarea value in a React-compatible way
+     * Based on the approach from broker-protection/actions/fill-form.js
+     * @param {HTMLTextAreaElement} textarea - The textarea element
+     * @param {string} value - The value to set
+     */
+    setReactTextAreaValue(textarea, value) {
+      try {
+        const originalSet = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+        if (!originalSet || typeof originalSet.call !== "function") {
+          this.log.warn("Cannot access original value setter, falling back to direct assignment");
+          textarea.value = value;
+          return;
+        }
+        textarea.dispatchEvent(new Event("keydown", { bubbles: true }));
+        originalSet.call(textarea, value);
+        const events = [
+          new Event("input", { bubbles: true }),
+          new Event("keyup", { bubbles: true }),
+          new Event("change", { bubbles: true })
+        ];
+        events.forEach((ev) => textarea.dispatchEvent(ev));
+        originalSet.call(textarea, value);
+        events.forEach((ev) => textarea.dispatchEvent(ev));
+      } catch (error) {
+        this.log.error("Error setting React textarea value:", error);
+        textarea.value = value;
+      }
+    }
+    /**
+     * Auto-resize a textarea based on content
+     * @param {HTMLTextAreaElement} textarea
+     */
+    autoResizeTextArea(textarea) {
+      const lines = Math.ceil(textarea.value.length / 50) || 1;
+      textarea.style.height = lines * 24 + "px";
+    }
+  };
+
   // ddg:platformFeatures:ddg:platformFeatures
   var ddg_platformFeatures_default = {
     ddg_feature_webCompat: web_compat_default,
     ddg_feature_duckPlayerNative: duck_player_native_default,
-    ddg_feature_scriptlets: scriptlets_default,
     ddg_feature_fingerprintingAudio: FingerprintingAudio,
     ddg_feature_fingerprintingBattery: FingerprintingBattery,
     ddg_feature_fingerprintingCanvas: FingerprintingCanvas,
@@ -11289,7 +9368,8 @@ Only "elements" is supported.`);
     ddg_feature_navigatorInterface: NavigatorInterface,
     ddg_feature_elementHiding: ElementHiding,
     ddg_feature_exceptionHandler: ExceptionHandler,
-    ddg_feature_apiManipulation: ApiManipulation
+    ddg_feature_apiManipulation: ApiManipulation,
+    ddg_feature_duckAiListener: DuckAiListener
   };
 
   // src/url-change.js

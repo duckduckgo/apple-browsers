@@ -22,9 +22,9 @@
         "Bash(git fetch:*)",
         "Bash(domain:github.com)",
         "WebFetch(domain:raw.githubusercontent.com)",
-        "set -e -o pipefail && xcodebuild **",
-        "xcodebuild **",
-        "xcrun simctl*"
+        "Bash(set -e -o pipefail && xcodebuild:*)",
+        "Bash(xcodebuild:*)",
+        "Bash(xcrun simctl:*)"
       ],
       "deny": []
     },

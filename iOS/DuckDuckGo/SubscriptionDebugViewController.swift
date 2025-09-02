@@ -415,7 +415,7 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     private func clearAuthDataV2() {
         Task {
-            await subscriptionManagerV1.signOut(notifyUI: true, userInitiated: false)
+            await subscriptionManagerV2.signOut(notifyUI: true, userInitiated: false)
             showAlert(title: "Data cleared!")
         }
     }

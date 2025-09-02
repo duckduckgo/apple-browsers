@@ -43,11 +43,11 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
 
     /// Create a snapshot with explicit values
     public init(registrationKeyValidity: VPNSettings.RegistrationKeyValidity,
-         selectedEnvironment: VPNSettings.SelectedEnvironment,
-         selectedServer: VPNSettings.SelectedServer,
-         selectedLocation: VPNSettings.SelectedLocation,
-         dnsSettings: NetworkProtectionDNSSettings,
-         excludeLocalNetworks: Bool) {
+                selectedEnvironment: VPNSettings.SelectedEnvironment,
+                selectedServer: VPNSettings.SelectedServer,
+                selectedLocation: VPNSettings.SelectedLocation,
+                dnsSettings: NetworkProtectionDNSSettings,
+                excludeLocalNetworks: Bool) {
         self.registrationKeyValidity = registrationKeyValidity
         self.selectedEnvironment = selectedEnvironment
         self.selectedServer = selectedServer

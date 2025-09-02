@@ -130,7 +130,9 @@ class FireWindowByDefaultTests: UITestCase {
         app.typeKey("n", modifierFlags: [.command, .shift])
         openSite(pageTitle: "Page #1")
 
-        app.terminate()
+        // Quit the application
+        app.typeKey("q", modifierFlags: [.command])
+        app.launch()
 
         assertRestoredSession()
     }
@@ -228,12 +230,11 @@ class FireWindowByDefaultTests: UITestCase {
     }
 
     private func assertRestoredSession() {
-        let newApp = XCUIApplication.setUp(featureFlags: ["openFireWindowByDefault": true])
         XCTAssertTrue(
-            newApp.windows.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "App window didn't become available in a reasonable timeframe."
         )
 
-        XCTAssertTrue(newApp.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(app.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 }

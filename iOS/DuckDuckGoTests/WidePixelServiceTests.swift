@@ -230,7 +230,7 @@ final class WidePixelServiceTests: XCTestCase {
         service.sendAbandonedPixels { abandonedPixelExpectation.fulfill() }
         wait(for: [abandonedPixelExpectation], timeout: 5.0)
 
-        let delayedPixelExpectation = expectation(description: "sendAbandonedPixels completion called")
+        let delayedPixelExpectation = expectation(description: "sendDelayedPixels completion called")
         service.sendDelayedPixels { delayedPixelExpectation.fulfill() }
         wait(for: [delayedPixelExpectation], timeout: 5.0)
         

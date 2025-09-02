@@ -2,15 +2,15 @@
     m_settings_refresh_button_address_bar: {
         description: 'Fires when the user sets the refresh button position to the address bar in settings',
         owners: ['pikorddg'],
-        triggers: ['user_submitted'],
+        triggers: ['other'],
         suffixes: ['platform', 'form_factor', 'daily'],
-        parameters: [],
+        parameters: ['appVersion'],
     },
     m_settings_refresh_button_position_menu: {
         description: 'Fires when the user sets the refresh button position to the menu in settings',
         owners: ['pikorddg'],
-        triggers: ['user_submitted'],
+        triggers: ['other'],
         suffixes: ['platform', 'form_factor', 'daily'],
-        parameters: [],
+        parameters: ['appVersion'],
     },
 }

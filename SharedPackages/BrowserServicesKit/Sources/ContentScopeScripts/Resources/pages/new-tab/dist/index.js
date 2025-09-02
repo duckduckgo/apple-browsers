@@ -1614,7 +1614,7 @@
     )), /* @__PURE__ */ _("defs", null, /* @__PURE__ */ _("linearGradient", { id: "Search-Find-Color-16_svg__b", x1: "8", x2: "8", y1: "0", y2: "16", gradientUnits: "userSpaceOnUse" }, /* @__PURE__ */ _("stop", { "stop-color": "#557FF3" }), /* @__PURE__ */ _("stop", { offset: "1", "stop-color": "#2B55CA" })), /* @__PURE__ */ _("clipPath", { id: "Search-Find-Color-16_svg__a" }, /* @__PURE__ */ _("path", { fill: "#fff", d: "M0 0h16v16H0z" }))));
   }
   function SearchOnDarkColorIcon(props) {
-    return /* @__PURE__ */ _("svg", { width: "16", height: "16", fill: "none", viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", ...props }, /* @__PURE__ */ _("g", { "clip-path": "url(#Search-Find-OnDark-Color-16_svg__a)" }, /* @__PURE__ */ _("path", { fill: "#444", d: "M13 7A6 6 0 1 1 1 7a6 6 0 0 1 12 0Z" }), /* @__PURE__ */ _(
+    return /* @__PURE__ */ _("svg", { width: "16", height: "16", fill: "none", viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", ...props }, /* @__PURE__ */ _("g", { "clip-path": "url(#Search-Find-OnDark-Color-16_svg__a)" }, /* @__PURE__ */ _("path", { fill: "#000", d: "M13 7A6 6 0 1 1 1 7a6 6 0 0 1 12 0Z", opacity: ".2" }), /* @__PURE__ */ _(
       "path",
       {
         fill: "#fff",
@@ -1920,14 +1920,14 @@
   function CustomizerMenuPositionedFixed({ children }) {
     return /* @__PURE__ */ _("div", { class: Customizer_default.lowerRightFixed }, children);
   }
-  function useCustomizer({ title, id, icon, toggle, visibility, index: index2 }) {
+  function useCustomizer({ title, id, icon, toggle, visibility, index: index2, enabled }) {
     y2(() => {
       const handler = (e4) => {
-        e4.detail.register({ title, id, icon, toggle, visibility, index: index2 });
+        e4.detail.register({ title, id, icon, toggle, visibility, index: index2, enabled });
       };
       window.addEventListener(OPEN_EVENT, handler);
       return () => window.removeEventListener(OPEN_EVENT, handler);
-    }, [title, id, icon, toggle, visibility, index2]);
+    }, [title, id, icon, toggle, visibility, index2, enabled]);
     y2(() => {
       window.dispatchEvent(new Event(UPDATE_EVENT));
       return () => {
@@ -6743,7 +6743,7 @@
     );
     const { id, visibility, toggle, index: index2 } = useVisibility();
     const title = t4("favorites_menu_title");
-    useCustomizer({ title, id, icon: /* @__PURE__ */ _(Shield, null), toggle, visibility: visibility.value, index: index2 });
+    useCustomizer({ title, id, icon: /* @__PURE__ */ _(Shield, null), toggle, visibility: visibility.value, index: index2, enabled: true });
     if (visibility.value === "hidden") {
       return null;
     }
@@ -8784,7 +8784,7 @@
          * @param {T} args.value
          */
         update({ id, value: value2 }) {
-          if (string(id) && string(value2)) {
+          if (string(id)) {
             __privateGet(this, _values).set(id, value2);
           }
         }
@@ -8826,7 +8826,7 @@
         byId(id) {
           if (typeof id !== "string") return null;
           const value2 = __privateGet(this, _values).get(id);
-          if (!value2 || !string(value2)) return null;
+          if (value2 === void 0) return null;
           return value2;
         }
         print() {
@@ -8996,20 +8996,20 @@
 
   // pages/new-tab/app/omnibar/components/OmnibarConsumer.js
   function OmnibarConsumer() {
-    const { state } = x2(OmnibarContext);
+    const { state, setEnableAi } = x2(OmnibarContext);
     const { current } = useTabState();
-    if (state.status === "ready") {
-      return /* @__PURE__ */ _(OmnibarReadyState, { config: state.config, key: current.value, tabId: current.value });
-    }
-    return null;
+    const { visibility } = useVisibility();
+    if (state.status !== "ready") return null;
+    const visible = visibility.value === "visible";
+    return /* @__PURE__ */ _(k, null, state.config.showAiSetting && /* @__PURE__ */ _(AiSetting, { enableAi: state.config?.enableAi === true, setEnableAi, omnibarVisible: visible }), visible && /* @__PURE__ */ _(OmnibarReadyState, { config: state.config, key: current.value, tabId: current.value }));
   }
   function OmnibarReadyState({ config, tabId }) {
     const { enableAi = true, showAiSetting = true, mode: defaultMode } = config;
-    const { setEnableAi, setMode } = x2(OmnibarContext);
+    const { setMode } = x2(OmnibarContext);
     const modeForCurrentTab = useModeWithLocalPersistence(tabId, defaultMode);
-    return /* @__PURE__ */ _(k, null, showAiSetting && /* @__PURE__ */ _(AiSetting, { enableAi, setEnableAi }), /* @__PURE__ */ _(Omnibar, { mode: modeForCurrentTab, setMode, enableAi: showAiSetting && enableAi, tabId }));
+    return /* @__PURE__ */ _(Omnibar, { mode: modeForCurrentTab, setMode, enableAi: showAiSetting && enableAi, tabId });
   }
-  function AiSetting({ enableAi, setEnableAi }) {
+  function AiSetting({ enableAi, setEnableAi, omnibarVisible }) {
     const { t: t4 } = useTypedTranslationWith(
       /** @type {Strings} */
       {}
@@ -9020,8 +9020,12 @@
       id: `_${id}-toggleAi`,
       icon: /* @__PURE__ */ _(ArrowIndentCenteredIcon, { style: { color: "var(--ntp-icons-tertiary)" } }),
       toggle: () => setEnableAi(!enableAi),
-      visibility: enableAi ? "visible" : "hidden",
-      index: index2 + 0.1
+      /**
+       * Duck.ai is only ever shown as 'visible' (eg: switch is checked) if the omnibar is also visible.
+       */
+      visibility: omnibarVisible && enableAi ? "visible" : "hidden",
+      index: index2 + 0.1,
+      enabled: omnibarVisible
     });
     return null;
   }
@@ -9049,8 +9053,8 @@
     );
     const sectionTitle = t4("omnibar_menuTitle");
     const { visibility, id, toggle, index: index2 } = useVisibility();
-    useCustomizer({ title: sectionTitle, id, icon: /* @__PURE__ */ _(SearchIcon, null), toggle, visibility: visibility.value, index: index2 });
-    return /* @__PURE__ */ _(PersistentTextInputProvider, null, /* @__PURE__ */ _(PersistentModeProvider, null, visibility.value === "visible" && /* @__PURE__ */ _(OmnibarProvider, null, /* @__PURE__ */ _(OmnibarConsumer, null))));
+    useCustomizer({ title: sectionTitle, id, icon: /* @__PURE__ */ _(SearchIcon, null), toggle, visibility: visibility.value, index: index2, enabled: true });
+    return /* @__PURE__ */ _(PersistentTextInputProvider, null, /* @__PURE__ */ _(PersistentModeProvider, null, /* @__PURE__ */ _(OmnibarProvider, null, /* @__PURE__ */ _(OmnibarConsumer, null))));
   }
   var init_OmnibarCustomized = __esm({
     "pages/new-tab/app/omnibar/components/OmnibarCustomized.js"() {
@@ -27537,7 +27541,7 @@
     );
     const sectionTitle = t4("protections_menuTitle");
     const { visibility, id, toggle, index: index2 } = useVisibility();
-    useCustomizer({ title: sectionTitle, id, icon: /* @__PURE__ */ _(DuckFoot, null), toggle, visibility: visibility.value, index: index2 });
+    useCustomizer({ title: sectionTitle, id, icon: /* @__PURE__ */ _(DuckFoot, null), toggle, visibility: visibility.value, index: index2, enabled: true });
     if (visibility.value === "hidden") {
       return null;
     }
@@ -28274,7 +28278,8 @@
       icon: /* @__PURE__ */ _(DuckFoot, null),
       visibility: isOpen ? "visible" : "hidden",
       toggle: (_id) => setOpen((prev) => !prev),
-      index: index2
+      index: index2,
+      enabled: true
     });
     return /* @__PURE__ */ _("div", null, isOpen && /* @__PURE__ */ _(Debug, { telemetry: telemetry2, isOpen: true }));
   }
@@ -28784,7 +28789,7 @@
   };
 
   // shared/components/Switch/Switch.js
-  function Switch({ checked = false, platformName, size, theme, ...props }) {
+  function Switch({ checked = false, platformName, size, theme, inputProps, ...props }) {
     const { onChecked, onUnchecked, ariaLabel, pending } = props;
     function change(e4) {
       if (e4.target.checked === true) {
@@ -28802,7 +28807,8 @@
         "aria-label": ariaLabel,
         class: Switch_default.input,
         checked,
-        onChange: change
+        onChange: change,
+        ...inputProps
       }
     ), /* @__PURE__ */ _("span", { class: Switch_default.switch, style: "transition-duration: 130ms;transition-delay: 0ms;" }));
   }
@@ -28816,6 +28822,7 @@
     list: "VisibilityMenu_list",
     embedded: "VisibilityMenu_embedded",
     menuItemLabel: "VisibilityMenu_menuItemLabel",
+    title: "VisibilityMenu_title",
     menuItemLabelEmbedded: "VisibilityMenu_menuItemLabelEmbedded",
     svg: "VisibilityMenu_svg"
   };
@@ -28825,7 +28832,7 @@
     const platformName = usePlatformName();
     const { browser } = x2(CustomizerThemesContext);
     return /* @__PURE__ */ _("ul", { className: (0, import_classnames16.default)(VisibilityMenu_default.list, VisibilityMenu_default.embedded) }, rows.map((row) => {
-      return /* @__PURE__ */ _("li", { key: row.id }, /* @__PURE__ */ _("div", { class: (0, import_classnames16.default)(VisibilityMenu_default.menuItemLabel, VisibilityMenu_default.menuItemLabelEmbedded) }, /* @__PURE__ */ _("span", { className: VisibilityMenu_default.svg }, row.icon), /* @__PURE__ */ _("span", null, row.title ?? row.id), /* @__PURE__ */ _(
+      return /* @__PURE__ */ _("li", { key: row.id }, /* @__PURE__ */ _("div", { class: (0, import_classnames16.default)(VisibilityMenu_default.menuItemLabel, VisibilityMenu_default.menuItemLabelEmbedded) }, /* @__PURE__ */ _("span", { class: VisibilityMenu_default.svg }, row.icon), /* @__PURE__ */ _("span", { class: VisibilityMenu_default.title }, row.title ?? row.id), /* @__PURE__ */ _(
         Switch,
         {
           theme: browser.value,
@@ -28835,7 +28842,10 @@
           onChecked: () => row.toggle?.(row.id),
           onUnchecked: () => row.toggle?.(row.id),
           ariaLabel: `Toggle ${row.title}`,
-          pending: false
+          pending: false,
+          inputProps: {
+            disabled: row.enabled === false
+          }
         }
       )));
     }));
@@ -29891,6 +29901,45 @@
   init_utils2();
   init_CustomizerMenu();
   init_signals_module();
+  init_Icons2();
+  var ROWS = [
+    {
+      id: "omnibar",
+      title: "Search",
+      icon: /* @__PURE__ */ _(SearchIcon, null),
+      toggle: noop("toggle search"),
+      visibility: "visible",
+      index: 1,
+      enabled: true
+    },
+    {
+      id: "omnibar-toggleAi",
+      title: "Duck.ai",
+      icon: /* @__PURE__ */ _(ArrowIndentCenteredIcon, { style: { color: "var(--ntp-icons-tertiary)" } }),
+      toggle: noop("toggle Duck.ai"),
+      visibility: "visible",
+      index: 1.1,
+      enabled: true
+    },
+    {
+      id: "favorites",
+      title: "Favorites",
+      icon: /* @__PURE__ */ _(Shield, null),
+      toggle: noop("toggle favorites"),
+      visibility: "hidden",
+      index: 0,
+      enabled: true
+    },
+    {
+      id: "privacyStats",
+      title: "Privacy Stats",
+      icon: /* @__PURE__ */ _(DuckFoot, null),
+      toggle: noop("toggle favorites"),
+      visibility: "visible",
+      index: 1,
+      enabled: true
+    }
+  ];
   var customizerExamples = {
     "customizer.backgroundSection": {
       factory: () => {
@@ -29931,27 +29980,21 @@
       }
     },
     "customizer-menu": {
+      factory: () => /* @__PURE__ */ _(MaxContent, null, /* @__PURE__ */ _(CustomizerButton, { isOpen: true, kind: "menu" }), /* @__PURE__ */ _("br", null), /* @__PURE__ */ _("div", { style: "width: 206px; border: 1px dotted black" }, /* @__PURE__ */ _(EmbeddedVisibilityMenu, { rows: ROWS })))
+    },
+    "customizer-menu-disabled-item": {
       factory: () => /* @__PURE__ */ _(MaxContent, null, /* @__PURE__ */ _(CustomizerButton, { isOpen: true, kind: "menu" }), /* @__PURE__ */ _("br", null), /* @__PURE__ */ _("div", { style: "width: 206px; border: 1px dotted black" }, /* @__PURE__ */ _(
         EmbeddedVisibilityMenu,
         {
-          rows: [
-            {
-              id: "favorites",
-              title: "Favorites",
-              icon: "star",
-              toggle: noop("toggle favorites"),
-              visibility: "hidden",
-              index: 0
-            },
-            {
-              id: "privacyStats",
-              title: "Privacy Stats",
-              icon: "shield",
-              toggle: noop("toggle favorites"),
-              visibility: "visible",
-              index: 1
+          rows: ROWS.map((row) => {
+            if (row.id === "omnibar") {
+              return { ...row, visibility: "hidden" };
             }
-          ]
+            if (row.id === "omnibar-toggleAi") {
+              return { ...row, enabled: false, visibility: "hidden" };
+            }
+            return row;
+          })
         }
       )))
     }

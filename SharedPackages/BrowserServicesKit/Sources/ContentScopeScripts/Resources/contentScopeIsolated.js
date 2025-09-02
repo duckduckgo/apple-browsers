@@ -2028,6 +2028,15 @@
       createCustomEvent("sendMessageProxy" + messageSecret, { detail: JSON.stringify({ messageType, options }) })
     );
   }
+  function isDuckAi() {
+    const tabUrl = getTabUrl();
+    const domains = ["duckduckgo.com", "duck.ai", "duck.co"];
+    if (tabUrl?.hostname && domains.includes(tabUrl?.hostname)) {
+      const url = new URL(tabUrl?.href);
+      return url.searchParams.has("duckai");
+    }
+    return false;
+  }
 
   // src/features.js
   init_define_import_meta_trackerLookup();
@@ -15398,7 +15407,7 @@ ul.messages {
       __publicField(this, "listenForUrlChanges", true);
     }
     init() {
-      if (this.isDuckAi()) {
+      if (isDuckAi()) {
         return;
       }
       this.setupMessageHandlers();
@@ -15409,16 +15418,9 @@ ul.messages {
       window.addEventListener("hashchange", () => {
         this.handleContentCollectionRequest({});
       });
-    }
-    isDuckAi() {
-      if (window?.top?.location?.hostname === "duckduckgo.com") {
-        return true;
-      }
-      if (window.location.hostname === "duckduckgo.com") {
-        const url = new URL(window.location.href);
-        return url.searchParams.has("duckai");
-      }
-      return false;
+      window.addEventListener("pageshow", () => {
+        this.handleContentCollectionRequest({});
+      });
     }
     /**
      * @param {NavigationType} _navigationType
@@ -15477,6 +15479,7 @@ ul.messages {
         }
       }
       const content = {
+        favicon: getFaviconList(),
         title: this.getPageTitle(),
         metaDescription: this.getMetaDescription(),
         content: this.getMainContent(options),

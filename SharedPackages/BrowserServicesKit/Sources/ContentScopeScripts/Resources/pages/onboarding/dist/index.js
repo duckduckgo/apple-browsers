@@ -10279,7 +10279,7 @@
   };
 
   // shared/components/Switch/Switch.js
-  function Switch({ checked = false, platformName, size, theme, ...props }) {
+  function Switch({ checked = false, platformName, size, theme, inputProps, ...props }) {
     const { onChecked, onUnchecked, ariaLabel, pending } = props;
     function change(e3) {
       if (e3.target.checked === true) {
@@ -10297,7 +10297,8 @@
         "aria-label": ariaLabel,
         class: Switch_default.input,
         checked,
-        onChange: change
+        onChange: change,
+        ...inputProps
       }
     ), /* @__PURE__ */ _("span", { class: Switch_default.switch, style: "transition-duration: 130ms;transition-delay: 0ms;" }));
   }

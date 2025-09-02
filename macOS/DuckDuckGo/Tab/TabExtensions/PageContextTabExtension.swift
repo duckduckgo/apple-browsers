@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import BrowserServicesKit
 import Combine
 import Foundation
 import Navigation
@@ -40,6 +41,7 @@ final class PageContextTabExtension {
     private var userScriptCancellables = Set<AnyCancellable>()
     private let tabID: TabIdentifier
     private var content: Tab.TabContent = .none
+    private let featureFlagger: FeatureFlagger
     private let aiChatSidebarProvider: AIChatSidebarProviding
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     private let isLoadedInSidebar: Bool
@@ -57,11 +59,13 @@ final class PageContextTabExtension {
         webViewPublisher: some Publisher<WKWebView, Never>,
         contentPublisher: some Publisher<Tab.TabContent, Never>,
         tabID: TabIdentifier,
+        featureFlagger: FeatureFlagger,
         aiChatSidebarProvider: AIChatSidebarProviding,
         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
         isLoadedInSidebar: Bool
     ) {
         self.tabID = tabID
+        self.featureFlagger = featureFlagger
         self.aiChatSidebarProvider = aiChatSidebarProvider
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.isLoadedInSidebar = isLoadedInSidebar
@@ -97,7 +101,7 @@ final class PageContextTabExtension {
                 /// This closure is responsible for passing cached page context to the newly displayed sidebar.
                 /// It's only called when sidebar for tabID is non-nil.
                 /// Additionally, we're only calling `handle` if there's a cached page context.
-                guard let self, let cachedPageContext else {
+                guard let self, let cachedPageContext, aiChatMenuConfiguration.shouldAutomaticallySendPageContext else {
                     return
                 }
                 handle(cachedPageContext)
@@ -105,12 +109,15 @@ final class PageContextTabExtension {
             .store(in: &cancellables)
 
         aiChatMenuConfiguration.valuesChangedPublisher
-            .map { aiChatMenuConfiguration.isPageContextEnabled }
+            .map { aiChatMenuConfiguration.shouldAutomaticallySendPageContext }
             .removeDuplicates()
             .filter { $0 }
             .sink { [weak self] _ in
+                guard let self else {
+                    return
+                }
                 /// Proactively collect page context when page context setting was enabled
-                self?.collectPageContextIfNeeded()
+                collectPageContextIfNeeded()
             }
             .store(in: &cancellables)
     }
@@ -134,7 +141,7 @@ final class PageContextTabExtension {
     /// We always cache the latest context, and if sidebar is open,
     /// we're passing the context to it.
     private func handle(_ pageContext: AIChatPageContextData) {
-        guard aiChatMenuConfiguration.isPageContextEnabled else {
+        guard featureFlagger.isFeatureOn(.aiChatPageContext) else {
             return
         }
         cachedPageContext = pageContext
@@ -144,7 +151,7 @@ final class PageContextTabExtension {
     }
 
     private func collectPageContextIfNeeded() {
-        guard case .url = content, aiChatMenuConfiguration.isPageContextEnabled else {
+        guard case .url = content, aiChatMenuConfiguration.shouldAutomaticallySendPageContext else {
             return
         }
         pageContextUserScript?.collect()

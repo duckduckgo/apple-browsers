@@ -8942,7 +8942,7 @@ ul.messages {
       /** @type {HTMLElement | null} */
       __publicField(this, "contextChip", null);
       /** @type {boolean} */
-      __publicField(this, "isPageContextEnabled", true);
+      __publicField(this, "shouldAutomaticallySendPageContext", true);
       /** @type {boolean} */
       __publicField(this, "hasContextBeenUsed", false);
       /** @type {string | null} */
@@ -9310,8 +9310,8 @@ ul.messages {
      */
     handleButtonClick() {
       if (!this.button || this.hasContextBeenUsed) return;
-      this.isPageContextEnabled = !this.isPageContextEnabled;
-      if (this.isPageContextEnabled) {
+      this.shouldAutomaticallySendPageContext = !this.shouldAutomaticallySendPageContext;
+      if (this.shouldAutomaticallySendPageContext) {
         if (this.pageData && this.pageData.content) {
           this.createContextChip();
         }
@@ -9322,7 +9322,7 @@ ul.messages {
         }
       }
       this.updateButtonAppearance();
-      this.log.info("Page context toggled:", this.isPageContextEnabled);
+      this.log.info("Page context toggled:", this.shouldAutomaticallySendPageContext);
     }
     /**
      * Determine if dark mode is preferred
@@ -9345,7 +9345,7 @@ ul.messages {
         } else {
           this.button.style.color = "rgb(204, 204, 204)";
         }
-      } else if (this.isPageContextEnabled) {
+      } else if (this.shouldAutomaticallySendPageContext) {
         if (isDark) {
           this.button.style.backgroundColor = "rgba(255, 255, 255, 0.18)";
           this.button.style.color = "rgb(255, 255, 255)";
@@ -9448,9 +9448,9 @@ ul.messages {
      */
     handleSendMessage() {
       this.log.info("handleSendMessage called");
-      if (!this.isPageContextEnabled || this.hasContextBeenUsed || !this.pageData?.content) {
+      if (!this.shouldAutomaticallySendPageContext || this.hasContextBeenUsed || !this.pageData?.content) {
         this.log.info("Context attachment blocked:", {
-          isPageContextEnabled: this.isPageContextEnabled,
+          shouldAutomaticallySendPageContext: this.shouldAutomaticallySendPageContext,
           hasContextBeenUsed: this.hasContextBeenUsed,
           hasPageData: !!this.pageData,
           hasContent: !!this.pageData?.content

@@ -36,8 +36,8 @@ public protocol AIChatPreferencesStorage {
     var openAIChatInSidebar: Bool { get set }
     var openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> { get }
 
-    var isPageContextEnabled: Bool { get set }
-    var isPageContextEnabledPublisher: AnyPublisher<Bool, Never> { get }
+    var shouldAutomaticallySendPageContext: Bool { get set }
+    var shouldAutomaticallySendPageContextPublisher: AnyPublisher<Bool, Never> { get }
 
     func reset()
 }
@@ -66,8 +66,8 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDefaults.openAIChatInSidebarPublisher
     }
 
-    public var isPageContextEnabledPublisher: AnyPublisher<Bool, Never> {
-        userDefaults.isPageContextEnabledPublisher
+    public var shouldAutomaticallySendPageContextPublisher: AnyPublisher<Bool, Never> {
+        userDefaults.shouldAutomaticallySendPageContextPublisher
     }
 
     public init(userDefaults: UserDefaults = .standard,
@@ -101,9 +101,9 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         set { userDefaults.openAIChatInSidebar = newValue }
     }
 
-    public var isPageContextEnabled: Bool {
-        get { userDefaults.isPageContextEnabled }
-        set { userDefaults.isPageContextEnabled = newValue }
+    public var shouldAutomaticallySendPageContext: Bool {
+        get { userDefaults.shouldAutomaticallySendPageContext }
+        set { userDefaults.shouldAutomaticallySendPageContext = newValue }
     }
 
     public func reset() {
@@ -112,7 +112,7 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDefaults.showAIChatShortcutInApplicationMenu = UserDefaults.showAIChatShortcutInApplicationMenuDefaultValue
         userDefaults.showAIChatShortcutInAddressBar = UserDefaults.showAIChatShortcutInAddressBarDefaultValue
         userDefaults.openAIChatInSidebar = UserDefaults.openAIChatInSidebarDefaultValue
-        userDefaults.isPageContextEnabled = UserDefaults.isPageContextEnabledDefaultValue
+        userDefaults.shouldAutomaticallySendPageContext = UserDefaults.shouldAutomaticallySendPageContextDefaultValue
     }
 }
 
@@ -123,7 +123,7 @@ private extension UserDefaults {
         static let showAIChatShortcutInApplicationMenu = "aichat.showAIChatShortcutInApplicationMenu"
         static let showAIChatShortcutInAddressBar = "aichat.showAIChatShortcutInAddressBar"
         static let openAIChatInSidebar = "aichat.openAIChatInSidebar"
-        static let isPageContextEnabled = "aichat.pageContextEnabled"
+        static let shouldAutomaticallySendPageContext = "aichat.automaticallySendPageContext"
     }
 
     static let isAIFeaturesEnabledDefaultValue = true
@@ -131,7 +131,7 @@ private extension UserDefaults {
     static let showAIChatShortcutInApplicationMenuDefaultValue = true
     static let showAIChatShortcutInAddressBarDefaultValue = true
     static let openAIChatInSidebarDefaultValue = true
-    static let isPageContextEnabledDefaultValue = true
+    static let shouldAutomaticallySendPageContextDefaultValue = false
 
     @objc dynamic var isAIFeaturesEnabled: Bool {
         get {
@@ -188,14 +188,14 @@ private extension UserDefaults {
         }
     }
 
-    @objc dynamic var isPageContextEnabled: Bool {
+    @objc dynamic var shouldAutomaticallySendPageContext: Bool {
         get {
-            value(forKey: Keys.isPageContextEnabled) as? Bool ?? Self.isPageContextEnabledDefaultValue
+            value(forKey: Keys.shouldAutomaticallySendPageContext) as? Bool ?? Self.shouldAutomaticallySendPageContextDefaultValue
         }
 
         set {
-            guard newValue != isPageContextEnabled else { return }
-            set(newValue, forKey: Keys.isPageContextEnabled)
+            guard newValue != shouldAutomaticallySendPageContext else { return }
+            set(newValue, forKey: Keys.shouldAutomaticallySendPageContext)
         }
     }
 
@@ -219,8 +219,8 @@ private extension UserDefaults {
         publisher(for: \.openAIChatInSidebar).eraseToAnyPublisher()
     }
 
-    var isPageContextEnabledPublisher: AnyPublisher<Bool, Never> {
-        publisher(for: \.isPageContextEnabled).eraseToAnyPublisher()
+    var shouldAutomaticallySendPageContextPublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.shouldAutomaticallySendPageContext).eraseToAnyPublisher()
     }
 }
 #endif

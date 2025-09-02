@@ -103,6 +103,16 @@ final class PageContextTabExtension {
                 handle(cachedPageContext)
             }
             .store(in: &cancellables)
+
+        aiChatMenuConfiguration.valuesChangedPublisher
+            .map { aiChatMenuConfiguration.isPageContextEnabled }
+            .removeDuplicates()
+            .filter { $0 }
+            .sink { [weak self] _ in
+                /// Proactively collect page context when page context setting was enabled
+                self?.collectPageContextIfNeeded()
+            }
+            .store(in: &cancellables)
     }
 
     private func subscribeToCollectionResult() {

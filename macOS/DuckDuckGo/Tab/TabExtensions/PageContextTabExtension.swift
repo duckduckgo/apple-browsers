@@ -97,7 +97,7 @@ final class PageContextTabExtension {
                 /// This closure is responsible for passing cached page context to the newly displayed sidebar.
                 /// It's only called when sidebar for tabID is non-nil.
                 /// Additionally, we're only calling `handle` if there's a cached page context.
-                guard let self, let cachedPageContext else {
+                guard let self, let cachedPageContext, aiChatMenuConfiguration.isPageContextEnabled else {
                     return
                 }
                 handle(cachedPageContext)

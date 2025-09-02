@@ -103,15 +103,14 @@ final class BitwardenNativeMessagingHandler: NativeMessagingHandling {
                 case "biometricUnlockAvailable":
                     return self.handleBiometricUnlockAvailable()
                 case "sleep":
-                    // The Bitwarden extension returns no message here
+                    // This is for the app to lock the vault after a while - we do nothing here since we don't control the vault
                     return nil
                 default:
                     print("[NativeMessaging] Unhandled command: \(command)")
                     return nil
                 }
             default:
-                // Fire a pixel to report an application we want to support
-                print("Unknown application")
+                Logger.webExtensions.fault("Bitwarden native messaging called for unknown application: \(applicationIdentifier ?? "nil")")
             }
         }
 

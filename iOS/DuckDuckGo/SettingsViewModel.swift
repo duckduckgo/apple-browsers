@@ -200,7 +200,7 @@ final class SettingsViewModel: ObservableObject {
                 self.state.refreshButtonPosition
             },
             set: {
-                DailyPixel.fireDaily($0 == .addressBar ? .settingsRefreshButtonPositionAddressBar : .settingsRefreshButtonPositionMenu)
+                Pixel.fire(pixel: $0 == .addressBar ? .settingsRefreshButtonPositionAddressBar : .settingsRefreshButtonPositionMenu)
                 self.appSettings.currentRefreshButtonPosition = $0
                 self.state.refreshButtonPosition = $0
             }

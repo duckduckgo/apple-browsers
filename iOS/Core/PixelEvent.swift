@@ -1428,7 +1428,7 @@ extension Pixel.Event {
         case .settingsNextStepsAddWidget: return "m_settings_next_steps_add_widget"
         case .settingsMoreSearchSettings: return "m_settings_more_search_settings"
         case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
-        case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_address_bar"
+        case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
             
 

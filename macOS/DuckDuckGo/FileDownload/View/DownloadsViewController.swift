@@ -134,6 +134,7 @@ final class DownloadsViewController: NSViewController {
         tableView.delegate = self
         tableView.dataSource = self
         tableView.menu = setUpContextMenu()
+        tableView.setAccessibilityIdentifier("DownloadsViewController.table")
 
         scrollView.contentView = clipView
 

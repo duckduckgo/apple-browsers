@@ -7,6 +7,51 @@ keywords: ["Swift", "iOS", "macOS", "MVVM", "SwiftUI", "privacy", "architecture"
 
 # DuckDuckGo Browser Development Rules Overview
 
+## 🛑 CRITICAL: STOP IMMEDIATELY WHEN TOLD
+
+**MANDATORY BEHAVIOR**: When user says ANY of:
+- "stop"
+- "wtf" 
+- "u doing wrong"
+- "what u doing now"
+- "why [doing something]"
+- Any variation indicating to stop or questioning current action
+
+**IMMEDIATELY STOP** the current action:
+1. Do NOT continue with tool calls
+2. Do NOT continue explanations  
+3. Do NOT try to "fix" things
+4. Just acknowledge briefly and wait for new instructions
+
+## 📝 DOCUMENTATION EDITING RULE
+
+**CRITICAL: When updating coding rules and documentation:**
+- **ALWAYS edit markdown files directly using file editing tools**
+- **NEVER use MCP tools to create or update documentation**
+- **This ensures proper version control and maintains documentation integrity**
+
+## 🔍 DOCUMENTATION LOOKUP PROTOCOL
+
+**MANDATORY: Always follow this exact sequence when looking for documentation:**
+
+1. **FIRST**: Call `doc_bot()` for any task - this is non-negotiable
+2. **SECOND**: Call `get_document_index()` to see ALL available documents with exact filenames
+3. **THIRD**: Use `read_specific_document("exact-filename.md")` with the EXACT filename from the index
+4. **NEVER**: Make claims about "documentation says" without actually reading the full document
+5. **NEVER**: Use search snippets alone - always read the complete relevant documentation
+
+**Common Mistake Pattern to Avoid:**
+```
+❌ WRONG: search_documentation() → assume content → make statements
+✅ CORRECT: doc_bot() → get_document_index() → read_specific_document() → accurate information
+```
+
+**Why This Protocol Exists:**
+- Search results show document **titles**, not **filenames**
+- Document titles like "Development Commands & Build Instructions" have filenames like `development-commands.md`
+- Reading incomplete search snippets leads to wrong conclusions
+- The document index shows the exact filenames needed for `read_specific_document()`
+
 ## Project Context
 This is the DuckDuckGo browser for iOS and macOS, built with privacy-first principles, modern Swift patterns, and cross-platform architecture.
 
@@ -46,7 +91,8 @@ This is the DuckDuckGo browser for iOS and macOS, built with privacy-first princ
 - `macos-system-integration.md` - macOS system services and extensions
 
 ### Specialized Development
-- `testing.md` - Testing patterns and requirements
+- `testing.md` - Testing patterns and requirements and xcodebuild commands
+- `ui-testing.md` - UI testing guidelines and best practices for macOS browser
 - `performance-optimization.md` - Performance best practices
 - `shared-packages.md` - Cross-platform package development
 - `analytics-patterns.md` - Pixel analytics and event tracking
@@ -72,11 +118,41 @@ This is the DuckDuckGo browser for iOS and macOS, built with privacy-first princ
 ## Critical Don'ts (from anti-patterns.md)
 - ❌ NEVER commit, push changes, create or delete branches on git or trigger github actions without EXPLICIT user permission
 - ❌ NEVER run tests without EXPLICIT user permission or if user explicitly asked to in their prompt
-- ❌ NEVER use singletons except for truly global state
+- ❌ NEVER use `.shared` singletons - use dependency injection instead
 - ❌ NEVER hardcode colors/icons (use DesignResourcesKit)
 - ❌ NEVER update UI without @MainActor
 - ❌ NEVER ignore privacy implications
 - ❌ NEVER force unwrap without justification
+- ❌ NEVER use `print()` statements - use appropriate Logger extensions instead
+
+## Logging Guidelines
+
+**NEVER use `print()` in production code. ALWAYS use appropriate Logger extensions:**
+
+```swift
+import os.log
+
+✅ // GOOD: Use Logger extensions for different contexts
+Logger.general.debug("Service state changed: \(newState)")
+Logger.network.info("HTTP request completed: \(response.statusCode)")
+Logger.ui.debug("View layout updated with \(items.count) items")
+
+❌ // BAD: Using print() statements
+print("Service state changed")  // Never use print()
+print("DEBUG: \(someValue)")    // Use Logger.debug() instead
+```
+
+**Available Logger categories:**
+- `Logger.general` - General app functionality
+- `Logger.network` - Network requests and responses  
+- `Logger.ui` - UI updates and user interactions
+- `Logger.tests` - Test-specific logging (import `os.log` in tests)
+
+**Benefits of Logger extensions:**
+- Structured logging with categories and levels
+- Better performance than print() statements
+- Automatic log collection and filtering
+- Integration with system logging infrastructure
 
 ## Dependency Injection Pattern (iOS)
 ```swift
@@ -104,16 +180,17 @@ Image(systemName: "bookmark")
 ```
 
 ## When to Consult Specific Rules
-- **New ViewModels**: `architecture.md` + `swiftui-style.md`
+- **New ViewModels**: `architecture.md` + `swiftui-style.md` + `anti-patterns.md`
 - **Network calls**: `performance-optimization.md` + `privacy-security.md`
 - **Settings/Preferences**: Platform-specific rules + `property-wrappers.md`
 - **Feature flags**: `feature-flags.md`
 - **Analytics/Tracking**: `analytics-patterns.md` + `privacy-security.md`
 - **Advanced SwiftUI**: `swiftui-advanced.md`
 - **Testing**: `testing.md` + `anti-patterns.md`
+- **UI Testing**: `ui-testing.md` + `testing.md`
 - **Cross-platform code**: `shared-packages.md`
-- **WebView integration**: `webkit-browser.md`
-- **macOS windows**: `macos-window-management.md`
+- **WebView integration**: `webkit-browser.md` + `anti-patterns.md`
+- **macOS windows**: `macos-window-management.md` + `anti-patterns.md`
 - **macOS system features**: `macos-system-integration.md`
 
 ## Code Review Checklist
@@ -165,6 +242,13 @@ echo "3. Push to remote?"
 ```
 
 **These rules have NO exceptions. Always ask before executing git or test commands.**
+
+## Communication Style
+
+- Keep responses concise and focused on the task
+- Avoid enthusiastic language like "Perfect!", "You are absolutely right!", "Excellent!"
+- Keep work summaries brief - focus on what was changed, not how great it is
+- Let the code quality speak for itself rather than using excessive praise
 
 ---
 

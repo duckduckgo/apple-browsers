@@ -65,12 +65,12 @@ final class SpecialErrorPageTabExtension {
         self.closeTab = closeTab
 
         webViewPublisher.sink { [weak self] webView in
-            MainActor.assumeIsolated {
+            MainActor.assumeMainThread {
                 self?.webView = webView
             }
         }.store(in: &cancellables)
         scriptsPublisher.sink { [weak self] scripts in
-            MainActor.assumeIsolated {
+            MainActor.assumeMainThread {
                 self?.specialErrorPageUserScript = scripts.specialErrorPageUserScript
                 self?.specialErrorPageUserScript?.delegate = self
             }

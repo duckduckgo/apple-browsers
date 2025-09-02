@@ -37,6 +37,7 @@ public class Tab: NSObject, NSCoding {
         static let viewed = "viewed"
         static let desktop = "desktop"
         static let lastViewedDate = "lastViewedDate"
+        static let daxEasterEggLogoURL = "daxEasterEggLogoURL"
     }
 
     private var observersHolder = [WeaklyHeldTabObserver]()
@@ -70,17 +71,26 @@ public class Tab: NSObject, NSCoding {
             notifyObservers()
         }
     }
+    
+    /// URL of the Dax Easter Egg logo for this tab, displayed in the privacy icon and used for full-screen presentation.
+    var daxEasterEggLogoURL: String? {
+        didSet {
+            Logger.daxEasterEgg.debug("Tab model - Setting logo URL: \(self.daxEasterEggLogoURL ?? "nil") for tab [\(self.uid)]")
+        }
+    }
 
     public init(uid: String? = nil,
                 link: Link? = nil,
                 viewed: Bool = false,
                 desktop: Bool = AppWidthObserver.shared.isLargeWidth,
-                lastViewedDate: Date? = nil) {
+                lastViewedDate: Date? = nil,
+                daxEasterEggLogoURL: String? = nil) {
         self.uid = uid ?? UUID().uuidString
         self.link = link
         self.viewed = viewed
         self.isDesktop = desktop
         self.lastViewedDate = lastViewedDate
+        self.daxEasterEggLogoURL = daxEasterEggLogoURL
     }
 
     public convenience required init?(coder decoder: NSCoder) {
@@ -89,15 +99,22 @@ public class Tab: NSObject, NSCoding {
         let viewed = decoder.containsValue(forKey: NSCodingKeys.viewed) ? decoder.decodeBool(forKey: NSCodingKeys.viewed) : true
         let desktop = decoder.containsValue(forKey: NSCodingKeys.desktop) ? decoder.decodeBool(forKey: NSCodingKeys.desktop) : false
         let lastViewedDate = decoder.containsValue(forKey: NSCodingKeys.lastViewedDate) ? decoder.decodeObject(forKey: NSCodingKeys.lastViewedDate) as? Date : nil
-        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate)
+        let daxEasterEggLogoURL = decoder.decodeObject(forKey: NSCodingKeys.daxEasterEggLogoURL) as? String
+        
+        Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
+        
+        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL)
     }
 
     public func encode(with coder: NSCoder) {
+        Logger.daxEasterEgg.debug("Tab encode - Saving logo URL: \(self.daxEasterEggLogoURL ?? "nil") for tab [\(self.uid)]")
+        
         coder.encode(uid, forKey: NSCodingKeys.uid)
         coder.encode(link, forKey: NSCodingKeys.link)
         coder.encode(viewed, forKey: NSCodingKeys.viewed)
         coder.encode(isDesktop, forKey: NSCodingKeys.desktop)
         coder.encode(lastViewedDate, forKey: NSCodingKeys.lastViewedDate)
+        coder.encode(daxEasterEggLogoURL, forKey: NSCodingKeys.daxEasterEggLogoURL)
     }
 
     public override func isEqual(_ other: Any?) -> Bool {

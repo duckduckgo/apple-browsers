@@ -664,6 +664,526 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssertIdentical(preloader.tabToReturn, viewModel.tabCollection.tabs.last!)
     }
 
+    // MARK: - Popup behavior
+
+    @MainActor
+    func testPopupVMAppendNewTabRedirectsAndDoesNotGrowTabs() {
+        let initialTab = Tab(content: .newtab)
+        let tabCollection = TabCollection(tabs: [initialTab], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, windowControllersManager: windowControllersManager)
+
+        vm.appendNewTab(with: .newtab, selected: true)
+
+        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(windowControllersManager.showTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openCalls, [])
+        XCTAssertEqual(windowControllersManager.openTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openWindowCalls, [
+            .init(
+                contents: [.newtab],
+                burnerMode: .regular,
+                droppingPoint: nil,
+                contentSize: nil,
+                showWindow: true,
+                popUp: false,
+                lazyLoadTabs: false,
+                isMiniaturized: false,
+                isMaximized: false,
+                isFullscreen: false
+            )
+        ])
+    }
+
+    @MainActor
+    func testPopupVMAppendNewUnselectedTabRedirectsAndDoesNotGrowTabs() {
+        let initialTab = Tab(content: .newtab)
+        let tabCollection = TabCollection(tabs: [initialTab], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, windowControllersManager: windowControllersManager)
+
+        vm.appendNewTab(with: .settings(pane: .about), selected: false)
+
+        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(windowControllersManager.showTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openCalls, [])
+        XCTAssertEqual(windowControllersManager.openTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openWindowCalls, [
+            .init(
+                contents: [.settings(pane: .about)],
+                burnerMode: .regular,
+                droppingPoint: nil,
+                contentSize: nil,
+                showWindow: true,
+                popUp: false,
+                lazyLoadTabs: false,
+                isMiniaturized: false,
+                isMaximized: false,
+                isFullscreen: false
+            )
+        ])
+    }
+
+    @MainActor
+    func testPopupVM_WhenAppendingTabWithoutParent_OpensInNewWindow() {
+        // Given: A popup window with a tab that has no parent
+        let initialTab = Tab(content: .newtab)
+        let tabCollection = TabCollection(tabs: [initialTab], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, windowControllersManager: windowControllersManager)
+
+        // When: Trying to add a new tab
+        let newTab = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui))
+        vm.append(tab: newTab, selected: true)
+
+        // Then: The tab should be opened in a new window and not added to popup
+        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+
+        // Verify correct window manager calls
+        XCTAssertEqual(windowControllersManager.showTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openCalls, [])
+        XCTAssertEqual(windowControllersManager.openTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openWindowCalls, [
+            .init(
+                contents: [.url(.duckDuckGo, credential: nil, source: .ui)],
+                burnerMode: .regular,
+                droppingPoint: nil,
+                contentSize: nil,
+                showWindow: true,
+                popUp: false,
+                lazyLoadTabs: false,
+                isMiniaturized: false,
+                isMaximized: false,
+                isFullscreen: false
+            )
+        ])
+    }
+
+    @MainActor
+    func testPopupVM_WhenAppendingTabWithParent_OpensAfterParentTabInheritingBurnerMode() {
+        // Given: A popup window with a tab that has a parent in burner mode
+        let burnerMode = BurnerMode(isBurner: true)
+        let parentTab = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui), burnerMode: burnerMode)
+        let initialTab = Tab(content: .newtab, parentTab: parentTab, burnerMode: burnerMode)
+        let tabCollection = TabCollection(tabs: [initialTab], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, burnerMode: burnerMode, windowControllersManager: windowControllersManager)
+
+        // When: Trying to add a new tab
+        let newTab = Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui), burnerMode: burnerMode)
+        vm.append(tab: newTab, selected: true)
+
+        // Then: The tab should be opened after the parent tab and not added to popup
+        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+
+        // Verify correct window manager calls
+        XCTAssertEqual(windowControllersManager.showTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openCalls, [])
+        XCTAssertEqual(windowControllersManager.openWindowCalls, [])
+        XCTAssertEqual(windowControllersManager.openTabCalls, [
+            .init(tab: newTab, parentTab: parentTab, selected: true)
+        ])
+    }
+
+    @MainActor
+    func testPopupVM_WhenAppendingNonBurnerTabFromBurnerPopUp_OpensNewWindowWithRegularMode() {
+        // Given: A popup window with a tab that has a parent in burner mode
+        let burnerMode = BurnerMode(isBurner: true)
+        let parentTab = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui), burnerMode: burnerMode)
+        let initialTab = Tab(content: .newtab, parentTab: parentTab, burnerMode: burnerMode)
+        let tabCollection = TabCollection(tabs: [initialTab], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, burnerMode: burnerMode, windowControllersManager: windowControllersManager)
+
+        // When: Trying to add a new tab
+        let newTab = Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui))
+        vm.append(tab: newTab, selected: true)
+
+        // Then: The tab should be opened after the parent tab and not added to popup
+        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+
+        // Verify correct window manager calls
+        XCTAssertEqual(windowControllersManager.showTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openCalls, [])
+        XCTAssertEqual(windowControllersManager.openWindowCalls, [
+            .init(
+                contents: [newTab.content],
+                burnerMode: .regular,
+                droppingPoint: nil,
+                contentSize: nil,
+                showWindow: true,
+                popUp: false,
+                lazyLoadTabs: false,
+                isMiniaturized: false,
+                isMaximized: false,
+                isFullscreen: false
+            )
+        ])
+        XCTAssertEqual(windowControllersManager.openTabCalls, [])
+    }
+
+    @MainActor
+    func testPopupVM_WhenAppendingMultipleTabsWithSameParent_OpensAllAfterParent() {
+        // Given: A popup window with a tab that has a parent
+        let parentTab = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui))
+        let initialTab = Tab(content: .newtab, parentTab: parentTab)
+        let tabCollection = TabCollection(tabs: [initialTab], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, windowControllersManager: windowControllersManager)
+
+        // When: Trying to add multiple tabs
+        let tabs = [
+            Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui)),
+            Tab(content: .url(.aboutDuckDuckGo, credential: nil, source: .ui)),
+            Tab(content: .bookmarks)
+        ]
+        vm.append(tabs: tabs, andSelect: true)
+
+        // Then: The tabs should be opened after the parent tab and not added to popup
+        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+
+        // Verify correct window manager calls
+        XCTAssertEqual(windowControllersManager.showTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openCalls, [])
+        XCTAssertEqual(windowControllersManager.openWindowCalls, [])
+        XCTAssertEqual(windowControllersManager.openTabCalls, [
+            .init(tab: tabs[0], parentTab: parentTab, selected: false),
+            .init(tab: tabs[1], parentTab: parentTab, selected: false),
+            .init(tab: tabs[2], parentTab: parentTab, selected: true),
+        ])
+    }
+
+    @MainActor
+    func testPopupVM_WhenAppendingTabsWithDifferentParents_OpensInCorrectLocations() {
+        // Given: A popup window with a tab that has a parent
+        let parentTab1 = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui))
+        let parentTab2 = Tab(content: .url(.aboutDuckDuckGo, credential: nil, source: .ui))
+        let initialTab = Tab(content: .newtab, parentTab: parentTab1)
+        let tabCollection = TabCollection(tabs: [initialTab], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, windowControllersManager: windowControllersManager)
+
+        // When: Trying to add tabs with different parents and no parent
+        let tabs = [
+            Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui), parentTab: parentTab1),
+            Tab(content: .url(.aboutDuckDuckGo, credential: nil, source: .ui), parentTab: parentTab2),
+            Tab(content: .bookmarks) // No parent
+        ]
+        vm.append(tabs: tabs, andSelect: true)
+
+        // Then: The tabs should be opened in appropriate locations and not added to popup
+        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+
+        // Verify window manager calls
+        XCTAssertEqual(windowControllersManager.showTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openCalls, [])
+        XCTAssertEqual(windowControllersManager.openTabCalls, [
+            .init(tab: tabs[0], parentTab: parentTab1, selected: false),
+            .init(tab: tabs[1], parentTab: parentTab2, selected: false),
+            .init(tab: tabs[2], parentTab: parentTab1, selected: true),
+        ])
+        XCTAssertEqual(windowControllersManager.openWindowCalls, [])
+    }
+
+    @MainActor
+    func testPopupVM_WhenDuplicatingTab_OpensInCorrectLocation() {
+        // Given: A popup window with a tab that has a parent
+        let parentTab = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui))
+        let initialTab = Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui), parentTab: parentTab)
+        let tabCollection = TabCollection(tabs: [initialTab], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, windowControllersManager: windowControllersManager)
+
+        // When: Trying to duplicate a tab
+        vm.duplicateTab(at: .unpinned(0))
+
+        // Then: The tab should be opened in the correct location and not added to popup
+        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+
+        // Verify window manager calls
+        XCTAssertEqual(windowControllersManager.showTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openCalls, [])
+        XCTAssertEqual(windowControllersManager.openTabCalls, [
+            .init(tab: initialTab, parentTab: parentTab, selected: true)
+        ])
+        XCTAssertEqual(windowControllersManager.openWindowCalls, [])
+    }
+
+    @MainActor
+    func testPopupVM_WhenInsertingNewTabAfterParent_OpensInCorrectLocationInheritingBurnerMode() throws {
+        // Given: A popup window with a tab that has a parent in burner mode
+        let burnerMode = BurnerMode(isBurner: true)
+        let parentTab = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui), burnerMode: burnerMode)
+        let initialTab = Tab(content: .newtab, parentTab: parentTab, burnerMode: burnerMode)
+        let tabCollection = TabCollection(tabs: [initialTab], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, burnerMode: burnerMode, windowControllersManager: windowControllersManager)
+
+        // When: Trying to insert a new tab after parent
+        vm.insertNewTab(after: parentTab, with: .url(.duckDuckGoEmail, credential: nil, source: .ui), selected: true)
+
+        // Then: The tab should be opened in the correct location and not added to popup
+        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+
+        // Verify window manager calls
+        XCTAssertEqual(windowControllersManager.showTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openCalls, [])
+
+        let insertedTab = try XCTUnwrap(windowControllersManager.openTabCalls.first?.tab)
+        XCTAssertNotEqual(insertedTab, initialTab)
+        XCTAssertNotEqual(insertedTab, parentTab)
+
+        XCTAssertEqual(insertedTab.content, .url(.duckDuckGoEmail, credential: nil, source: .ui))
+        XCTAssertEqual(insertedTab.burnerMode, burnerMode)
+        XCTAssertEqual(insertedTab.parentTab, nil)
+
+        XCTAssertEqual(windowControllersManager.openTabCalls, [
+            .init(tab: insertedTab, parentTab: parentTab, selected: true)
+        ])
+        XCTAssertEqual(windowControllersManager.openWindowCalls, [])
+    }
+
+    @MainActor
+    func testPopupVM_WhenInsertingTabAtIndex_OpensInCorrectLocation() {
+        // Given: A popup window with a tab that has a parent
+        let parentTab = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui))
+        let initialTab = Tab(content: .newtab, parentTab: parentTab)
+        let tabCollection = TabCollection(tabs: [initialTab], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, windowControllersManager: windowControllersManager)
+
+        // When: Trying to insert a tab at index
+        let newTab = Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui), parentTab: parentTab)
+        vm.insert(newTab, at: .unpinned(1), selected: true)
+
+        // Then: The tab should be opened in the correct location and not added to popup
+        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+
+        // Verify window manager calls
+        XCTAssertEqual(windowControllersManager.showTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openCalls, [])
+        XCTAssertEqual(windowControllersManager.openTabCalls, [
+            .init(tab: newTab, parentTab: parentTab, selected: true)
+        ])
+        XCTAssertEqual(windowControllersManager.openWindowCalls, [])
+    }
+
+    @MainActor
+    func testPopupVM_WhenInsertingTabAfterParentTab_OpensInCorrectLocation() {
+        // Given: A popup window with a tab that has a parent
+        let parentTab = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui))
+        let initialTab = Tab(content: .newtab, parentTab: parentTab)
+        let tabCollection = TabCollection(tabs: [initialTab], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, windowControllersManager: windowControllersManager)
+
+        // When: Trying to insert a tab after parent
+        let newTab = Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui))
+        vm.insert(newTab, after: parentTab, selected: true)
+
+        // Then: The tab should be opened in the correct location and not added to popup
+        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+
+        // Verify window manager calls
+        XCTAssertEqual(windowControllersManager.showTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openCalls, [])
+        XCTAssertEqual(windowControllersManager.openTabCalls, [
+            .init(tab: newTab, parentTab: parentTab, selected: true)
+        ])
+        XCTAssertEqual(windowControllersManager.openWindowCalls, [])
+    }
+
+    @MainActor
+    func testPopupVM_WhenInsertingTabWithoutParent_OpensInNewWindowWithRegularBurnerMode() {
+        // Given: A popup window with a tab that has no parent, in burner mode
+        let burnerMode = BurnerMode(isBurner: true)
+        let initialTab = Tab(content: .newtab, burnerMode: burnerMode)
+        let tabCollection = TabCollection(tabs: [initialTab], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, burnerMode: burnerMode, windowControllersManager: windowControllersManager)
+
+        // When: Trying to insert a tab without parent
+        let newTab = Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui))
+        vm.insert(newTab, selected: true)
+
+        // Then: The tab should be opened in a new window and not added to popup
+        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+
+        // Verify window manager calls
+        XCTAssertEqual(windowControllersManager.showTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openCalls, [])
+        XCTAssertEqual(windowControllersManager.openTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openWindowCalls, [
+            .init(
+                contents: [newTab.content],
+                burnerMode: .regular,
+                droppingPoint: nil,
+                contentSize: nil,
+                showWindow: true,
+                popUp: false,
+                lazyLoadTabs: false,
+                isMiniaturized: false,
+                isMaximized: false,
+                isFullscreen: false
+            )
+        ])
+    }
+
+    @MainActor
+    func testPopupVM_WhenInsertingBurnerTabWithoutParent_OpensInNewWindowWithCorrectBurnerMode() {
+        // Given: A popup window with a tab that has no parent, in burner mode
+        let burnerMode = BurnerMode(isBurner: true)
+        let initialTab = Tab(content: .newtab, burnerMode: burnerMode)
+        let tabCollection = TabCollection(tabs: [initialTab], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, burnerMode: burnerMode, windowControllersManager: windowControllersManager)
+
+        // When: Trying to insert a tab without parent
+        let newTab = Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui), burnerMode: burnerMode)
+        vm.insert(newTab, selected: true)
+
+        // Then: The tab should be opened in a new window and not added to popup
+        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+
+        // Verify window manager calls
+        XCTAssertEqual(windowControllersManager.showTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openCalls, [])
+        XCTAssertEqual(windowControllersManager.openTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openWindowCalls, [
+            .init(
+                contents: [newTab.content],
+                burnerMode: burnerMode,
+                droppingPoint: nil,
+                contentSize: nil,
+                showWindow: true,
+                popUp: false,
+                lazyLoadTabs: false,
+                isMiniaturized: false,
+                isMaximized: false,
+                isFullscreen: false
+            )
+        ])
+    }
+
+    @MainActor
+    func testPopupVM_WhenInsertOrAppendNewTab_OpensInCorrectLocationInheritingBurnerMode() throws {
+        // Given: A popup window with a tab that has a parent in burner mode
+        let burnerMode = BurnerMode(isBurner: true)
+        let parentTab = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui), burnerMode: burnerMode)
+        let initialTab = Tab(content: .newtab, parentTab: parentTab, burnerMode: burnerMode)
+        let tabCollection = TabCollection(tabs: [initialTab], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, burnerMode: burnerMode, windowControllersManager: windowControllersManager)
+
+        // When: Trying to insert or append a new tab
+        vm.insertOrAppendNewTab()
+
+        // Then: The tab should be opened in the correct location and not added to popup
+        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+
+        // Verify window manager calls
+        XCTAssertEqual(windowControllersManager.showTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openCalls, [])
+
+        let insertedTab = try XCTUnwrap(windowControllersManager.openTabCalls.first?.tab)
+        XCTAssertNotEqual(insertedTab, initialTab)
+        XCTAssertNotEqual(insertedTab, parentTab)
+
+        XCTAssertEqual(insertedTab.content, .newtab)
+        XCTAssertEqual(insertedTab.burnerMode, burnerMode)
+        XCTAssertEqual(insertedTab.parentTab, nil)
+
+        XCTAssertEqual(windowControllersManager.openTabCalls, [
+            .init(tab: insertedTab, parentTab: parentTab, selected: true)
+        ])
+        XCTAssertEqual(windowControllersManager.openWindowCalls, [])
+    }
+
+    @MainActor
+    func testPopupVM_WhenAppendingTabsWithDifferentBurnerModes_OpensInCorrectLocations() {
+        // Given: A popup window with a tab that has a parent in burner mode
+        let burnerMode1 = BurnerMode(isBurner: true)
+        let burnerMode2 = BurnerMode(isBurner: true)
+        let burnerMode3 = BurnerMode(isBurner: true)
+        let parentTab1 = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui), burnerMode: burnerMode1)
+        let parentTab2 = Tab(content: .url(.aboutDuckDuckGo, credential: nil, source: .ui), burnerMode: burnerMode2)
+        let initialTab = Tab(content: .newtab, parentTab: parentTab1, burnerMode: burnerMode1)
+        let tabCollection = TabCollection(tabs: [initialTab], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, burnerMode: burnerMode1, windowControllersManager: windowControllersManager)
+
+        // When: Trying to add tabs with different parents and burner modes
+        let tabs = [
+            Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui), parentTab: parentTab1, burnerMode: burnerMode1),
+            Tab(content: .url(.aboutDuckDuckGo, credential: nil, source: .ui), parentTab: parentTab2, burnerMode: burnerMode2),
+            Tab(content: .url(.duckDuckGoAutocomplete, credential: nil, source: .ui), parentTab: parentTab2, burnerMode: burnerMode3),
+            Tab(content: .url(.duckDuckGoEmailLogin, credential: nil, source: .ui), parentTab: parentTab2, burnerMode: .regular),
+        ]
+        vm.append(tabs: tabs, andSelect: true)
+
+        // Then: The tabs should be opened in appropriate locations and not added to popup
+        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+
+        // Verify window manager calls
+        XCTAssertEqual(windowControllersManager.showTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openCalls, [])
+        XCTAssertEqual(windowControllersManager.openTabCalls, [
+            .init(tab: tabs[0], parentTab: parentTab1, selected: false),
+            .init(tab: tabs[1], parentTab: parentTab2, selected: false),
+        ])
+        XCTAssertEqual(windowControllersManager.openWindowCalls, [
+            .init(
+                contents: [.url(.duckDuckGoAutocomplete, credential: nil, source: .ui)],
+                burnerMode: burnerMode3,
+                droppingPoint: nil,
+                contentSize: nil,
+                showWindow: true,
+                popUp: false,
+                lazyLoadTabs: false,
+                isMiniaturized: false,
+                isMaximized: false,
+                isFullscreen: false
+            ),
+            .init(
+                contents: [.url(.duckDuckGoEmailLogin, credential: nil, source: .ui)],
+                burnerMode: .regular,
+                droppingPoint: nil,
+                contentSize: nil,
+                showWindow: true,
+                popUp: false,
+                lazyLoadTabs: false,
+                isMiniaturized: false,
+                isMaximized: false,
+                isFullscreen: false
+            ),
+        ])
+    }
+
+    @MainActor
+    func testPopupVM_WhenInsertOrAppendingTabWithParent_OpensInCorrectLocationInheritingBurnerMode() {
+        // Given: A popup window with a tab that has a parent in burner mode
+        let burnerMode = BurnerMode(isBurner: true)
+        let parentTab = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui), burnerMode: burnerMode)
+        let initialTab = Tab(content: .newtab, parentTab: parentTab, burnerMode: burnerMode)
+        let tabCollection = TabCollection(tabs: [initialTab], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, burnerMode: burnerMode, windowControllersManager: windowControllersManager)
+
+        // When: Trying to insert or append a tab with parent
+        let newTab = Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui), parentTab: parentTab, burnerMode: burnerMode)
+        vm.insertOrAppend(tab: newTab, selected: true)
+
+        // Then: The tab should be opened in the correct location and not added to popup
+        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+
+        // Verify window manager calls
+        XCTAssertEqual(windowControllersManager.showTabCalls, [])
+        XCTAssertEqual(windowControllersManager.openCalls, [])
+        XCTAssertEqual(windowControllersManager.openTabCalls, [
+            .init(tab: newTab, parentTab: parentTab, selected: true)
+        ])
+        XCTAssertEqual(windowControllersManager.openWindowCalls, [])
+    }
 }
 
 fileprivate extension TabCollectionViewModel {

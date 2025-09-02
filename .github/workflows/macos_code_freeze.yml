@@ -13,7 +13,7 @@ on:
         type: string
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: 'macos-release'
   cancel-in-progress: false
 
 jobs:

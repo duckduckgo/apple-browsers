@@ -2359,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Poista selaustiedot yhdellä painikkeella";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Estä kolmannen osapuolen seuraimet";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2884,6 +2884,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Näppäimistö";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Lue lisää";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Anna DuckDuckGon hallinnoida evästeiden hallinnan ponnahdusikkunoita";
 
@@ -3034,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Asetukset";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Auttaa estämään kolmannen osapuolen seurantalaitteet, jotka yrittävät naamioida itsensä verkkosivustolla DNS:n avulla.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Suojaa DNS CNAME -naamioitumiselta";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Estää Facebook-sisällön (esimerkiksi Facebook-kommenttiwidgetien) seurannan muilla kuin Facebook-sivustoilla.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Facebook-seurannan suojaus";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Auttaa estämään seurantayrityksiä hankkimasta selaimestasi ja laitteestasi yksilöllisiä tunnisteita, joiden avulla ne seuraavat sinua verkossa.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Estää sormenjälkien seurannan";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Vanhentaa automaattisesti ensimmäisen osapuolen evästeet 30 päivän kuluttua, jotta sivustot eivät voi seurata sinua loputtomiin, kun olet kirjautunut ulos.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Vanhentaa ensimmäisen osapuolen evästeet";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Korvaa Googlen AMP-linkit alkuperäisen julkaisijan sivustolla.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Estää Googlen AMP-seurannan";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Estää Googlen kirjautumisponnahdusikkunat sivustoissa, joita Google ei omista.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Estää Googlen kirjautumisponnahdusikkunat";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Poistaa seurantaparametrit linkeistä estääkseen kolmansia osapuolia seuraamasta toimintaasi eri sivustoilla.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Estää linkkien seurannan";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Auttaa estämään yrityksiä tunnistamasta verkkosivustoa, jossa viimeksi vierailit.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Suojaa viittausseurannalta";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Estää tunkeilevat seurantatoiminnot ennen niiden latautumista, mikä eliminoi tehokkaasti seurantaa käyttävät mainokset.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Estää kohdennetut mainokset";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Auttaa estämään kolmannen osapuolen evästeitä, jotka seuraavat sinua sivustolta toiselle, estämällä kolmannen osapuolen seurantatoimintoja latautumasta.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Estää kolmannen osapuolen seuraimet";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Suojaamattomat sivustot";
 
@@ -3046,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Verkkoseurannan suojaus";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Web Tracking Protections on aina käytössä";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo estää piilotetut seurantalaitteet automaattisesti, kun selaat verkkoa.\n[Lue lisää] (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Näin suojaamme sinua";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "DuckDuckGo-selain tarjoaa aina käytössä olevan seurantasuojauksen. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Valitse vaihtoehto, joka parhaiten kuvaa ongelmaa.";
@@ -3608,7 +3680,7 @@
 "vpn.settings.control.with.siri" = "Valvo VPN:ää Sirin avulla.";
 
 /* Disclaimer for the DNS Server section on the DNS Server screen */
-"vpn.settings.dns.section-disclaimer" = "Mukautetun DNS-palvelimen käyttö voi vaikuttaa selausnopeuteen ja altistaa toimintasi kolmansille osapuolille, jos palvelin ei ole turvallinen tai luotettava.";
+"vpn.settings.dns.section-disclaimer" = "Mukautetun DNS-palvelimen käyttö voi vaikuttaa selausnopeuksiin ja altistaa toimintasi kolmansille osapuolille, jos palvelin ei ole turvallinen tai luotettava.";
 
 /* Header text for the DNS section on the VPN Settings screen */
 "vpn.settings.dns.section-header" = "DNS";

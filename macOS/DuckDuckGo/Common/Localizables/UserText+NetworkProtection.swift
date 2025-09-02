@@ -308,7 +308,7 @@ extension UserText {
 
     static let vpnDnsServerIPv4Description = NSLocalizedString("vpn.dns.server.ipv4.description", value: "IPv4 Address:", comment: "Description of the IPv4 text field")
 
-    static let vpnDnsServerIPv4Disclaimer = NSLocalizedString("vpn.dns.server.disclaimer", value: "Using a custom DNS server can impact browsing speeds and expose your activity to third parties if the server isn't secure or reliable.", comment: "Disclaimer for the custom DNS server option")
+    static let vpnDnsServerIPv4Disclaimer = NSLocalizedString("vpn.dns.server.disclaimer", value: "Using a custom DNS server can impact browsing speeds and expose your activity to 3rd parties if the server isn't secure or reliable.", comment: "Disclaimer for the custom DNS server option")
 
     static let vpnDnsServerApplyButtonTitle = NSLocalizedString("vpn.dns.server.apply.button.title", value: "Apply", comment: "Title for the Apply custom DNS server button")
 

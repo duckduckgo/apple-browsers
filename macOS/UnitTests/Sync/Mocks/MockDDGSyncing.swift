@@ -74,7 +74,13 @@ class MockDDGSyncing: DDGSyncing {
     func initializeIfNeeded() {
     }
 
+    var createAccountCallback: ((String, String) -> Void)?
+    var createAccountError: Error?
     func createAccount(deviceName: String, deviceType: String) async throws {
+        if let createAccountError {
+            throw createAccountError
+        }
+        createAccountCallback?(deviceName, deviceType)
     }
 
     var stubLogin: [RegisteredDevice] = []
@@ -102,18 +108,38 @@ class MockDDGSyncing: DDGSyncing {
         spyDisconnectCalled()
     }
 
+    var disconnectDeviceCallback: ((String) -> Void)?
+    var disconnectDeviceError: Error?
     func disconnect(deviceId: String) async throws {
+        if let disconnectDeviceError {
+            throw disconnectDeviceError
+        }
+        disconnectDeviceCallback?(deviceId)
     }
 
+    var fetchDevicesCallback: (() -> Void)?
     func fetchDevices() async throws -> [RegisteredDevice] {
+        fetchDevicesCallback?()
         return registeredDevices
     }
 
+    var updateDeviceNameCallback: ((String) -> Void)?
+    var updateDeviceNameError: Error?
     func updateDeviceName(_ name: String) async throws -> [RegisteredDevice] {
+        if let updateDeviceNameError {
+            throw updateDeviceNameError
+        }
+        updateDeviceNameCallback?(name)
         return []
     }
 
+    var deleteAccountCallback: (() -> Void)?
+    var deleteAccountError: Error?
     func deleteAccount() async throws {
+        if let deleteAccountError {
+            throw deleteAccountError
+        }
+        deleteAccountCallback?()
     }
 
     var serverEnvironment: ServerEnvironment = .production

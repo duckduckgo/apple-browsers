@@ -23,6 +23,30 @@ extension URL {
 
     static let testsServer = URL(string: "http://localhost:8085/")!
 
+    /// Build a local download URL that returns random data with appropriate headers.
+    /// Size examples: "512", "100KB", "1MB", "500MB", "2GB"
+    static func testsDownload(size: String) -> URL {
+        return URL.testsServer.appendingPathComponent("download/").appendingPathComponent(size)
+    }
+
+    /// Convenience to build a download URL with a desired filename/content type/disposition.
+    /// - Parameters:
+    ///   - size: e.g., "1MB"
+    ///   - filename: when provided, adds Content-Disposition; filename=...
+    ///   - contentType: defaults to application/octet-stream
+    ///   - disposition: e.g., "attachment" (default) or "inline"
+    /// - Returns: URL ready to be loaded by the app under test
+    static func testsDownload(size: String,
+                              filename: String? = nil,
+                              contentType: String = "application/octet-stream",
+                              disposition: String = "attachment") -> URL {
+        var headers: [String: String] = ["Content-Type": contentType]
+        if let filename, !filename.isEmpty {
+            headers["Content-Disposition"] = "\(disposition); filename=\(filename)"
+        }
+        return testsDownload(size: size).appendingTestParameters(headers: headers)
+    }
+
     /// used for Tests Server mock HTTP requests creation (see tests-server/main.swift)
     /**
      - Parameter status: HTTP status code returned by the server, defaults to 200.
@@ -73,7 +97,7 @@ extension URL {
         }
     }
 
-    private func appendingParameter(name: String, value: String, allowedReservedCharacters: CharacterSet? = nil) -> URL {
+    func appendingParameter(name: String, value: String, allowedReservedCharacters: CharacterSet? = nil) -> URL {
         let queryItem = URLQueryItem(percentEncodingName: name,
                                      value: value,
                                      withAllowedCharacters: allowedReservedCharacters)

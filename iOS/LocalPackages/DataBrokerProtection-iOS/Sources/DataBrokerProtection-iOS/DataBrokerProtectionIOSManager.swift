@@ -60,7 +60,7 @@ public class DataBrokerProtectionIOSManagerProvider {
 
     public static func iOSManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
-                                  featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
+                                  featureFlagger: DBPFeatureFlagging,
                                   pixelKit: PixelKit,
                                   subscriptionManager: DataBrokerProtectionSubscriptionManager,
                                   quickLinkOpenURLHandler: @escaping (URL) -> Void,
@@ -137,6 +137,7 @@ public class DataBrokerProtectionIOSManagerProvider {
             dataBrokerProtectionSettings: dbpSettings,
             emailService: emailService,
             captchaService: captchaService,
+            featureFlagger: featureFlagger,
             vpnBypassService: nil,
             jobSortPredicate: BrokerJobDataComparators.byPriorityForBackgroundTask
         )
@@ -183,7 +184,7 @@ public final class DataBrokerProtectionIOSManager {
     private let maxBackgroundTaskWaitTime: TimeInterval
     private let minBackgroundTaskWaitTime: TimeInterval
     private let feedbackViewCreator: () -> (any View)
-    private let featureFlagger: RemoteBrokerDeliveryFeatureFlagging
+    private let featureFlagger: DBPFeatureFlagging
     private let settings: DataBrokerProtectionSettings
     private let subscriptionManager: DataBrokerProtectionSubscriptionManager
     private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
@@ -225,7 +226,7 @@ public final class DataBrokerProtectionIOSManager {
          maxBackgroundTaskWaitTime: TimeInterval = Constants.defaultMaxBackgroundTaskWaitTime,
          minBackgroundTaskWaitTime: TimeInterval = Constants.defaultMinBackgroundTaskWaitTime,
          feedbackViewCreator: @escaping () -> (any View),
-         featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
+         featureFlagger: DBPFeatureFlagging,
          settings: DataBrokerProtectionSettings,
          subscriptionManager: DataBrokerProtectionSubscriptionManager
     ) {

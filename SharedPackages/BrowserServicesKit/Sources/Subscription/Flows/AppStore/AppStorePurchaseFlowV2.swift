@@ -149,7 +149,7 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
         case .failure(let error):
             Logger.subscriptionAppStorePurchaseFlow.error("purchaseSubscription error: \(error.localizedDescription, privacy: .public)")
 
-            await subscriptionManager.signOut(notifyUI: false, userInitiated: false) // TBD see if true is needed
+            await subscriptionManager.signOut(notifyUI: false, userInitiated: false)
 
             switch error {
             case .purchaseCancelledByUser:

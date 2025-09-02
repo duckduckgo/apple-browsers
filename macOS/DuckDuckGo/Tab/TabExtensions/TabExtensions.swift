@@ -81,11 +81,13 @@ protocol TabExtensionDependencies {
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
     var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable { get }
     var newTabPageShownPixelSender: NewTabPageShownPixelSender { get }
+    var aiChatSidebarProvider: AIChatSidebarProviding { get }
 }
 
 // swiftlint:disable:next large_tuple
 typealias TabExtensionsBuilderArguments = (
     tabIdentifier: UInt64,
+    tabID: String,
     isTabPinned: () -> Bool,
     isTabBurner: Bool,
     isTabLoadedInSidebar: Bool,
@@ -241,6 +243,16 @@ extension TabExtensionsBuilder {
             AIChatTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
                                webViewPublisher: args.webViewFuture,
                                isLoadedInSidebar: args.isTabLoadedInSidebar)
+        }
+
+        add {
+            PageContextTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
+                                    webViewPublisher: args.webViewFuture,
+                                    contentPublisher: args.contentPublisher,
+                                    tabID: args.tabID,
+                                    aiChatSidebarProvider: dependencies.aiChatSidebarProvider,
+                                    aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration,
+                                    isLoadedInSidebar: args.isTabLoadedInSidebar)
         }
 
         add {

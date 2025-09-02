@@ -1930,9 +1930,6 @@
     }, [title, id, icon, toggle, visibility, index2]);
     y2(() => {
       window.dispatchEvent(new Event(UPDATE_EVENT));
-      return () => {
-        window.dispatchEvent(new Event(UPDATE_EVENT));
-      };
     }, [visibility]);
   }
   var OPEN_EVENT, UPDATE_EVENT;
@@ -2345,8 +2342,8 @@
          * @param {FavoritesOpenAction['target']} target
          * @internal
          */
-        openFavorite(id, url8, target) {
-          this.ntp.messaging.notify("favorites_open", { id, url: url8, target });
+        openFavorite(id, url7, target) {
+          this.ntp.messaging.notify("favorites_open", { id, url: url7, target });
         }
         /**
          * @internal
@@ -2527,9 +2524,9 @@
       [service]
     );
     const openFavorite = q2(
-      (id, url8, target) => {
+      (id, url7, target) => {
         if (!service.current) return;
-        service.current.openFavorite(id, url8, target);
+        service.current.openFavorite(id, url7, target);
       },
       [service]
     );
@@ -5142,7 +5139,7 @@
       );
     }, [instanceId, favorites2]);
   }
-  function useItemState(url8, id, opts) {
+  function useItemState(url7, id, opts) {
     const instanceId = x2(InstanceIdContext);
     const ref = A2(null);
     const [state, setState] = d2(
@@ -5157,9 +5154,9 @@
       if (opts.kind === "draggable") {
         draggableCleanup = draggable({
           element: el,
-          getInitialData: () => ({ type: "grid-item", url: url8, id, instanceId }),
+          getInitialData: () => ({ type: "grid-item", url: url7, id, instanceId }),
           getInitialDataForExternal: () => ({
-            "text/plain": url8,
+            "text/plain": url7,
             [DDG_MIME_TYPE]: id
           }),
           onDragStart: () => setState({ type: "dragging" }),
@@ -5195,7 +5192,7 @@
           },
           getData: ({ input }) => {
             return attachClosestEdge(
-              { url: url8, id },
+              { url: url7, id },
               {
                 element: el,
                 input,
@@ -5221,7 +5218,7 @@
           element: el,
           getData: ({ input }) => {
             return attachClosestEdge(
-              { url: url8, id },
+              { url: url7, id },
               {
                 element: el,
                 input,
@@ -5250,7 +5247,7 @@
           onDrop: () => setState({ type: "idle" })
         })
       );
-    }, [instanceId, url8, id, opts.kind, opts.class, opts.theme]);
+    }, [instanceId, url7, id, opts.kind, opts.class, opts.theme]);
     return { ref, state };
   }
   function getInstanceId() {
@@ -5675,14 +5672,14 @@
     const index2 = hash % BigInt(arrayLength);
     return Number(index2 < 0 ? -index2 : index2);
   }
-  function urlToColor(url8) {
-    if (typeof url8 !== "string") return null;
-    if (urlToColorCache.has(url8)) {
-      return urlToColorCache.get(url8);
+  function urlToColor(url7) {
+    if (typeof url7 !== "string") return null;
+    if (urlToColorCache.has(url7)) {
+      return urlToColorCache.get(url7);
     }
-    const index2 = getArrayIndex(url8, EMPTY_FAVICON_TEXT_BACKGROUND_COLOR_BRUSHES.length);
+    const index2 = getArrayIndex(url7, EMPTY_FAVICON_TEXT_BACKGROUND_COLOR_BRUSHES.length);
     const color = EMPTY_FAVICON_TEXT_BACKGROUND_COLOR_BRUSHES[index2];
-    urlToColorCache.set(url8, color);
+    urlToColorCache.set(url7, color);
     return color;
   }
   var EMPTY_FAVICON_TEXT_BACKGROUND_COLOR_BRUSHES, urlToColorCache;
@@ -5857,8 +5854,8 @@
          * @param {number} props.index
          * @param {boolean} props.animateItems
          */
-        function Tile2({ url: url8, etldPlusOne, faviconSrc, faviconMax, theme, index: index2, title, id, visibility, animateItems }) {
-          const { state, ref } = useItemState(url8, id, {
+        function Tile2({ url: url7, etldPlusOne, faviconSrc, faviconMax, theme, index: index2, title, id, visibility, animateItems }) {
+          const { state, ref } = useItemState(url7, id, {
             kind: "draggable",
             class: Tile_default.preview,
             theme
@@ -5869,7 +5866,7 @@
             {
               class: Tile_default.item,
               tabindex: 0,
-              href: url8,
+              href: url7,
               "data-id": id,
               "data-index": index2,
               "data-edge": "closestEdge" in state && state.closestEdge,
@@ -7742,9 +7739,6 @@
     }, [ntp]);
     return service;
   }
-  function useOmnibarService() {
-    return x2(OmnibarServiceContext);
-  }
   var OmnibarContext, OmnibarServiceContext;
   var init_OmnibarProvider = __esm({
     "pages/new-tab/app/omnibar/components/OmnibarProvider.js"() {
@@ -7973,20 +7967,20 @@
       case "phrase":
         return { kind: "searchDuckDuckGo" };
       case "website": {
-        const url8 = parseURL(selectedSuggestion.url);
-        if (!url8) return null;
-        return { kind: "visit", url: formatURL(url8, { scheme: false, trailingSlash: false, search: false, hash: false }) };
+        const url7 = parseURL(selectedSuggestion.url);
+        if (!url7) return null;
+        return { kind: "visit", url: formatURL(url7, { scheme: false, trailingSlash: false, search: false, hash: false }) };
       }
       case "bookmark":
       case "historyEntry":
       case "internalPage": {
         const title = getSuggestionTitle(selectedSuggestion, term);
         const autocompletion = getSuggestionCompletionString(selectedSuggestion, term);
-        const url8 = parseURL(selectedSuggestion.url);
+        const url7 = parseURL(selectedSuggestion.url);
         if (title && title !== autocompletion) {
           return { kind: "raw", text: title };
-        } else if (url8) {
-          return { kind: "visit", url: formatURL(url8, { scheme: false, trailingSlash: false, search: false, hash: false }) };
+        } else if (url7) {
+          return { kind: "visit", url: formatURL(url7, { scheme: false, trailingSlash: false, search: false, hash: false }) };
         } else {
           return null;
         }
@@ -8000,22 +7994,22 @@
       case "phrase":
         return suggestion.phrase;
       case "website": {
-        const url8 = parseURL(suggestion.url);
-        if (url8) {
-          return formatURLForTerm(url8, term);
+        const url7 = parseURL(suggestion.url);
+        if (url7) {
+          return formatURLForTerm(url7, term);
         } else {
           return "";
         }
       }
       case "historyEntry": {
-        const url8 = parseURL(suggestion.url);
-        const searchQuery = url8 ? getDuckDuckGoSearchQuery(url8) : "";
+        const url7 = parseURL(suggestion.url);
+        const searchQuery = url7 ? getDuckDuckGoSearchQuery(url7) : "";
         if (searchQuery) {
           return searchQuery;
         } else if (suggestion.title) {
           return suggestion.title;
-        } else if (url8) {
-          return formatURLForTerm(url8, term);
+        } else if (url7) {
+          return formatURLForTerm(url7, term);
         } else {
           return "";
         }
@@ -8031,8 +8025,8 @@
       case "historyEntry":
       case "bookmark":
       case "internalPage": {
-        const url8 = parseURL(suggestion.url);
-        const urlString = url8 ? formatURLForTerm(url8, term) : "";
+        const url7 = parseURL(suggestion.url);
+        const urlString = url7 ? formatURLForTerm(url7, term) : "";
         if (startsWithIgnoreCase(urlString, term)) {
           return urlString;
         } else {
@@ -8052,66 +8046,66 @@
         return null;
       case "historyEntry":
       case "bookmark": {
-        const url8 = parseURL(suggestion.url);
-        if (!url8) return null;
-        return { kind: "raw", text: formatURL(url8, { scheme: false, www: false, trailingSlash: false }) };
+        const url7 = parseURL(suggestion.url);
+        if (!url7) return null;
+        return { kind: "raw", text: formatURL(url7, { scheme: false, www: false, trailingSlash: false }) };
       }
       case "internalPage":
         return { kind: "duckDuckGo" };
     }
   }
-  function parseURL(string2) {
+  function parseURL(string) {
     try {
-      return new URL(string2);
+      return new URL(string);
     } catch {
     }
     try {
-      return new URL(`https://${string2}`);
+      return new URL(`https://${string}`);
     } catch {
     }
     return null;
   }
-  function formatURL(url8, { scheme = true, www = true, trailingSlash = true, search = true, hash = true } = {}) {
+  function formatURL(url7, { scheme = true, www = true, trailingSlash = true, search = true, hash = true } = {}) {
     let result = "";
     if (scheme) {
-      result += `${url8.protocol}//`;
+      result += `${url7.protocol}//`;
     }
-    if (!www && startsWithIgnoreCase(url8.host, "www.")) {
-      result += url8.host.slice(4);
+    if (!www && startsWithIgnoreCase(url7.host, "www.")) {
+      result += url7.host.slice(4);
     } else {
-      result += url8.host;
+      result += url7.host;
     }
-    if (!trailingSlash && url8.pathname.endsWith("/")) {
-      result += url8.pathname.slice(0, -1);
+    if (!trailingSlash && url7.pathname.endsWith("/")) {
+      result += url7.pathname.slice(0, -1);
     } else {
-      result += url8.pathname;
+      result += url7.pathname;
     }
     if (search) {
-      result += url8.search;
+      result += url7.search;
     }
     if (hash) {
-      result += url8.hash;
+      result += url7.hash;
     }
     return result;
   }
-  function formatURLForTerm(url8, term) {
-    const scheme = `${url8.protocol}//`;
+  function formatURLForTerm(url7, term) {
+    const scheme = `${url7.protocol}//`;
     const isTypingScheme = startsWithIgnoreCase(scheme, term) || startsWithIgnoreCase(term, scheme);
     const termWithoutScheme = startsWithIgnoreCase(term, scheme) ? term.slice(scheme.length) : term;
     const isTypingWww = startsWithIgnoreCase("www.", termWithoutScheme) || startsWithIgnoreCase(termWithoutScheme, "www.");
-    const isTypingHost = startsWithIgnoreCase(url8.host, term) || startsWithIgnoreCase(term, url8.host);
-    return formatURL(url8, {
+    const isTypingHost = startsWithIgnoreCase(url7.host, term) || startsWithIgnoreCase(term, url7.host);
+    return formatURL(url7, {
       scheme: term !== "" && isTypingScheme && !isTypingHost,
       www: termWithoutScheme !== "" && isTypingWww,
       trailingSlash: termWithoutScheme.endsWith("/")
     });
   }
-  function getDuckDuckGoSearchQuery(url8) {
-    const isDuckDuckGoSearch = url8.hostname === "duckduckgo.com" && (url8.pathname === "/" || !url8.pathname) && url8.searchParams.has("q");
-    return isDuckDuckGoSearch ? url8.searchParams.get("q") ?? "" : "";
+  function getDuckDuckGoSearchQuery(url7) {
+    const isDuckDuckGoSearch = url7.hostname === "duckduckgo.com" && (url7.pathname === "/" || !url7.pathname) && url7.searchParams.has("q");
+    return isDuckDuckGoSearch ? url7.searchParams.get("q") ?? "" : "";
   }
-  function startsWithIgnoreCase(string2, searchString) {
-    return string2.toLowerCase().startsWith(searchString.toLowerCase());
+  function startsWithIgnoreCase(string, searchString) {
+    return string.toLowerCase().startsWith(searchString.toLowerCase());
   }
   var init_utils3 = __esm({
     "pages/new-tab/app/omnibar/utils.js"() {
@@ -8668,288 +8662,16 @@
     }
   });
 
-  // pages/new-tab/app/tabs/tabs.service.js
-  var TabsService;
-  var init_tabs_service = __esm({
-    "pages/new-tab/app/tabs/tabs.service.js"() {
-      "use strict";
-      init_service();
-      TabsService = class {
-        /**
-         * @param {import("../../src/index.js").NewTabPage} ntp - The internal data feed, expected to have a `subscribe` method.
-         * @param {Tabs} tabs
-         * @internal
-         */
-        constructor(ntp, tabs) {
-          this.ntp = ntp;
-          this.tabsService = new Service(
-            {
-              subscribe: (cb) => ntp.messaging.subscribe("tabs_onDataUpdate", cb)
-            },
-            tabs
-          );
-        }
-        name() {
-          return "TabsService";
-        }
-        /**
-         * @param {(evt: {data: Tabs, source: import('../service.js').InvocationSource}) => void} cb
-         * @internal
-         */
-        onData(cb) {
-          return this.tabsService.onData(cb);
-        }
-        /**
-         * @internal
-         */
-        destroy() {
-          this.tabsService.destroy();
-        }
-        /**
-         * @returns {Tabs}
-         */
-        snapshot() {
-          if (!this.tabsService.data) throw new Error("unreachable");
-          return this.tabsService.data;
-        }
-      };
-      /** @type {Tabs} */
-      __publicField(TabsService, "DEFAULT", {
-        tabId: "unknown",
-        tabIds: ["unknown"]
-      });
-    }
-  });
-
-  // pages/new-tab/app/tabs/TabsProvider.js
-  function TabsProvider({ children, service }) {
-    const tabs = useSignal(service.snapshot());
-    y2(() => {
-      return service.onData(({ data: data2 }) => {
-        tabs.value = data2;
-      });
-    }, [service, tabs]);
-    return /* @__PURE__ */ _(TabsStateContext.Provider, { value: tabs }, children);
-  }
-  function useTabState() {
-    const tabs = x2(TabsStateContext);
-    const current = useComputed(() => tabs.value.tabId);
-    const all2 = useComputed(() => tabs.value.tabIds);
-    return { current, all: all2 };
-  }
-  function TabsDebug() {
-    const theme = x2(CustomizerThemesContext);
-    const state = useTabState();
-    return /* @__PURE__ */ _("pre", { style: "width: 200px; position: fixed; top: 0; left: 0;", "data-theme": theme.main }, /* @__PURE__ */ _("code", { style: "color: var(--ntp-text-normal)" }, JSON.stringify(state, null, 2)));
-  }
-  var TabsStateContext;
-  var init_TabsProvider = __esm({
-    "pages/new-tab/app/tabs/TabsProvider.js"() {
-      "use strict";
-      init_preact_module();
-      init_hooks_module();
-      init_CustomizerProvider();
-      init_signals_module();
-      init_tabs_service();
-      TabsStateContext = K(d3(
-        /** @type {Tabs} */
-        TabsService.DEFAULT
-      ));
-    }
-  });
-
-  // pages/new-tab/app/tabs/PersistentValue.js
-  function string(input) {
-    if (typeof input !== "string") return "";
-    if (input.trim().length < 1) return "";
-    return input;
-  }
-  var _values, PersistentValue;
-  var init_PersistentValue = __esm({
-    "pages/new-tab/app/tabs/PersistentValue.js"() {
-      "use strict";
-      PersistentValue = class {
-        constructor() {
-          /** @type {Map<string, T>} */
-          __privateAdd(this, _values, /* @__PURE__ */ new Map());
-        }
-        name() {
-          return "PersistentValue";
-        }
-        /**
-         * Updates the value associated with a given identifier.
-         *
-         * @param {object} args
-         * @param {string} args.id
-         * @param {T} args.value
-         */
-        update({ id, value: value2 }) {
-          if (string(id) && string(value2)) {
-            __privateGet(this, _values).set(id, value2);
-          }
-        }
-        /**
-         * Updates the value with every entry
-         *
-         * @param {object} args
-         * @param {T} args.value
-         */
-        updateAll({ value: value2 }) {
-          for (const [key2] of __privateGet(this, _values)) {
-            __privateGet(this, _values).set(key2, value2);
-          }
-        }
-        /**
-         * @param {object} params
-         * @param {string[]} params.preserve
-         */
-        prune({ preserve }) {
-          for (const key2 of __privateGet(this, _values).keys()) {
-            if (!preserve.includes(key2)) {
-              __privateGet(this, _values).delete(key2);
-            }
-          }
-        }
-        /**
-         * @param {object} args
-         * @param {string} args.id
-         */
-        remove({ id }) {
-          if (string(id)) {
-            __privateGet(this, _values).delete(id);
-          }
-        }
-        /**
-         * @param {string|null|undefined} id
-         * @return {T | null}
-         */
-        byId(id) {
-          if (typeof id !== "string") return null;
-          const value2 = __privateGet(this, _values).get(id);
-          if (!value2 || !string(value2)) return null;
-          return value2;
-        }
-        print() {
-          for (const [key2, value2] of __privateGet(this, _values)) {
-            console.log(`key: ${key2}, value: ${value2}`);
-          }
-          console.log("--");
-        }
-      };
-      _values = new WeakMap();
-    }
-  });
-
-  // pages/new-tab/app/omnibar/components/PersistentOmnibarValuesProvider.js
-  function PersistentTextInputProvider({ children }) {
-    const [value2] = d2(() => (
-      /** @type {PersistentValue<string>} */
-      new PersistentValue()
-    ));
-    const { all: all2 } = useTabState();
-    y2(() => {
-      return all2.subscribe((tabIds) => {
-        value2?.prune({ preserve: tabIds });
-      });
-    }, [all2, value2]);
-    return /* @__PURE__ */ _(TextInputContext.Provider, { value: value2 }, children);
-  }
-  function PersistentModeProvider({ children }) {
-    const [value2] = d2(() => (
-      /** @type {PersistentValue<Mode>} */
-      new PersistentValue()
-    ));
-    const { all: all2 } = useTabState();
-    y2(() => {
-      return all2.subscribe((tabIds) => {
-        value2?.prune({ preserve: tabIds });
-      });
-    }, [all2, value2]);
-    return /* @__PURE__ */ _(ModeContext.Provider, { value: value2 }, children);
-  }
-  function useQueryWithLocalPersistence(tabId) {
-    const terms = x2(TextInputContext);
-    invariant(
-      x2(OmnibarContext).state.status === "ready",
-      "Cannot use `useQueryWithLocalPersistence` without Omnibar Service being ready."
-    );
-    const [query, setQuery] = d2(() => terms?.byId(tabId) || "");
-    const setter = q2(
-      (term) => {
-        if (tabId) {
-          terms?.update({ id: tabId, value: term });
-        }
-        setQuery(term);
-      },
-      [tabId, terms]
-    );
-    return (
-      /** @type {const} */
-      [query, setter]
-    );
-  }
-  function useModeWithLocalPersistence(tabId, defaultMode) {
-    const values2 = x2(ModeContext);
-    const [mode, setState] = d2(() => {
-      const prev = values2?.byId(tabId);
-      if (prev) return prev;
-      if (tabId && defaultMode) {
-        values2?.update({ id: tabId, value: defaultMode });
-      }
-      return defaultMode;
-    });
-    invariant(
-      x2(OmnibarContext).state.status === "ready",
-      "Cannot use `useQueryWithPersistence` without Omnibar Service being ready."
-    );
-    const service = useOmnibarService();
-    y2(() => {
-      if (!service) return;
-      return service.onConfig((v4) => {
-        if (!tabId) return;
-        if (v4.source === "manual") {
-          values2?.update({ id: tabId, value: v4.data.mode });
-        }
-        if (v4.data.enableAi === false) {
-          values2?.updateAll({ value: "search" });
-        }
-        setState(v4.data.mode);
-      });
-    }, [service, tabId, values2, defaultMode]);
-    return mode;
-  }
-  function invariant(condition, message) {
-    if (condition) return;
-    if (message) throw new Error("Invariant failed: " + message);
-    throw new Error("Invariant failed");
-  }
-  var TextInputContext, ModeContext;
-  var init_PersistentOmnibarValuesProvider = __esm({
-    "pages/new-tab/app/omnibar/components/PersistentOmnibarValuesProvider.js"() {
-      "use strict";
-      init_preact_module();
-      init_hooks_module();
-      init_OmnibarProvider();
-      init_TabsProvider();
-      init_PersistentValue();
-      TextInputContext = K(
-        /** @type {PersistentValue<string>|null} */
-        null
-      );
-      ModeContext = K(
-        /** @type {PersistentValue<Mode>|null} */
-        null
-      );
-    }
-  });
-
   // pages/new-tab/app/omnibar/components/Omnibar.js
-  function Omnibar({ mode, setMode, enableAi, tabId }) {
+  function Omnibar({ mode, setMode, enableAi }) {
     const { t: t4 } = useTypedTranslationWith(
       /** @type {Strings} */
       {}
     );
-    const [query, setQuery] = useQueryWithLocalPersistence(tabId);
+    const [query, setQuery] = d2(
+      /** @type {String} */
+      ""
+    );
     const [resetKey, setResetKey] = d2(0);
     const [autoFocus, setAutoFocus] = d2(false);
     const { openSuggestion, submitSearch, submitChat } = x2(OmnibarContext);
@@ -8990,24 +8712,20 @@
       init_SearchFormProvider();
       init_SuggestionsList2();
       init_TabSwitcher2();
-      init_PersistentOmnibarValuesProvider();
     }
   });
 
   // pages/new-tab/app/omnibar/components/OmnibarConsumer.js
   function OmnibarConsumer() {
     const { state } = x2(OmnibarContext);
-    const { current } = useTabState();
     if (state.status === "ready") {
-      return /* @__PURE__ */ _(OmnibarReadyState, { config: state.config, key: current.value, tabId: current.value });
+      return /* @__PURE__ */ _(OmnibarReadyState, { config: state.config });
     }
     return null;
   }
-  function OmnibarReadyState({ config, tabId }) {
-    const { enableAi = true, showAiSetting = true, mode: defaultMode } = config;
+  function OmnibarReadyState({ config: { enableAi = true, showAiSetting = true, mode } }) {
     const { setEnableAi, setMode } = x2(OmnibarContext);
-    const modeForCurrentTab = useModeWithLocalPersistence(tabId, defaultMode);
-    return /* @__PURE__ */ _(k, null, showAiSetting && /* @__PURE__ */ _(AiSetting, { enableAi, setEnableAi }), /* @__PURE__ */ _(Omnibar, { mode: modeForCurrentTab, setMode, enableAi: showAiSetting && enableAi, tabId }));
+    return /* @__PURE__ */ _(k, null, showAiSetting && /* @__PURE__ */ _(AiSetting, { enableAi, setEnableAi }), /* @__PURE__ */ _(Omnibar, { mode, setMode, enableAi: showAiSetting && enableAi }));
   }
   function AiSetting({ enableAi, setEnableAi }) {
     const { t: t4 } = useTypedTranslationWith(
@@ -9036,8 +8754,6 @@
       init_Omnibar2();
       init_OmnibarProvider();
       init_Icons2();
-      init_PersistentOmnibarValuesProvider();
-      init_TabsProvider();
     }
   });
 
@@ -9050,7 +8766,10 @@
     const sectionTitle = t4("omnibar_menuTitle");
     const { visibility, id, toggle, index: index2 } = useVisibility();
     useCustomizer({ title: sectionTitle, id, icon: /* @__PURE__ */ _(SearchIcon, null), toggle, visibility: visibility.value, index: index2 });
-    return /* @__PURE__ */ _(PersistentTextInputProvider, null, /* @__PURE__ */ _(PersistentModeProvider, null, visibility.value === "visible" && /* @__PURE__ */ _(OmnibarProvider, null, /* @__PURE__ */ _(OmnibarConsumer, null))));
+    if (visibility.value === "hidden") {
+      return null;
+    }
+    return /* @__PURE__ */ _(OmnibarProvider, null, /* @__PURE__ */ _(OmnibarConsumer, null));
   }
   var init_OmnibarCustomized = __esm({
     "pages/new-tab/app/omnibar/components/OmnibarCustomized.js"() {
@@ -9062,7 +8781,6 @@
       init_preact_module();
       init_OmnibarConsumer();
       init_Icons2();
-      init_PersistentOmnibarValuesProvider();
     }
   });
 
@@ -9574,61 +9292,61 @@
         /**
          * @param {string} url
          */
-        addFavorite(url8) {
+        addFavorite(url7) {
           this.dataService.update((old) => {
             return {
               ...old,
               activity: old.activity.map((item) => {
-                if (item.url === url8) return { ...item, favorite: true };
+                if (item.url === url7) return { ...item, favorite: true };
                 return item;
               })
             };
           });
-          this.ntp.messaging.notify("activity_addFavorite", { url: url8 });
+          this.ntp.messaging.notify("activity_addFavorite", { url: url7 });
         }
         /**
          * @param {string} url
          */
-        removeFavorite(url8) {
+        removeFavorite(url7) {
           this.dataService.update((old) => {
             return {
               ...old,
               activity: old.activity.map((item) => {
-                if (item.url === url8) return { ...item, favorite: false };
+                if (item.url === url7) return { ...item, favorite: false };
                 return item;
               })
             };
           });
-          this.ntp.messaging.notify("activity_removeFavorite", { url: url8 });
+          this.ntp.messaging.notify("activity_removeFavorite", { url: url7 });
         }
         /**
          * @param {string} url
          * @return {Promise<import('../../types/new-tab.js').ConfirmBurnResponse>}
          */
-        confirmBurn(url8) {
-          return this.ntp.messaging.request("activity_confirmBurn", { url: url8 });
+        confirmBurn(url7) {
+          return this.ntp.messaging.request("activity_confirmBurn", { url: url7 });
         }
         /**
          * @param {string} url
          */
-        remove(url8) {
+        remove(url7) {
           this.dataService.update((old) => {
             return {
               ...old,
               activity: old.activity.filter((item) => {
-                return item.url !== url8;
+                return item.url !== url7;
               }),
-              urls: old.urls.filter((x3) => x3 !== url8)
+              urls: old.urls.filter((x3) => x3 !== url7)
             };
           });
-          this.ntp.messaging.notify("activity_removeItem", { url: url8 });
+          this.ntp.messaging.notify("activity_removeItem", { url: url7 });
         }
         /**
          * @param {string} url
          * @param {import('../../types/new-tab.js').OpenTarget} target
          */
-        openUrl(url8, target) {
-          this.ntp.messaging.notify("activity_open", { url: url8, target });
+        openUrl(url7, target) {
+          this.ntp.messaging.notify("activity_open", { url: url7, target });
         }
         onBurnComplete(cb) {
           if (!this.burns) throw new Error("unreachable");
@@ -10072,11 +9790,11 @@
       };
     });
     const doneBurning = q2(
-      (url8) => {
-        if (url8) {
+      (url7) => {
+        if (url7) {
           r3(() => {
-            burning.value = burning.value.filter((x3) => x3 !== url8);
-            exiting.value = exiting.value.concat(url8);
+            burning.value = burning.value.filter((x3) => x3 !== url7);
+            exiting.value = exiting.value.concat(url7);
           });
         }
       },
@@ -10295,12 +10013,12 @@
         target.closest("button[value][data-action]")
       );
       if (anchor) {
-        const url8 = anchor.dataset.url;
-        if (!url8) return;
+        const url7 = anchor.dataset.url;
+        if (!url7) return;
         event.preventDefault();
         event.stopImmediatePropagation();
         const openTarget = eventToTarget(event, platformName);
-        service.openUrl(url8, openTarget);
+        service.openUrl(url7, openTarget);
       } else if (button) {
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -10431,13 +10149,13 @@
   });
 
   // pages/new-tab/app/activity/components/ActivityItem.js
-  function Controls({ canBurn, url: url8, title }) {
+  function Controls({ canBurn, url: url7, title }) {
     const { t: t4 } = useTypedTranslationWith(
       /** @type {enStrings} */
       {}
     );
     const { activity } = x2(NormalizedDataContext);
-    const favorite = useComputed(() => activity.value.favorites[url8]);
+    const favorite = useComputed(() => activity.value.favorites[url7]);
     const favoriteTitle = favorite.value ? t4("activity_favoriteRemove", { domain: title }) : t4("activity_favoriteAdd", { domain: title });
     const secondaryTitle = canBurn ? t4("activity_burn", { domain: title }) : t4("activity_itemRemove", { domain: title });
     return /* @__PURE__ */ _("div", { className: Activity_default.controls }, /* @__PURE__ */ _(
@@ -10447,7 +10165,7 @@
         title: favoriteTitle,
         "data-action": favorite.value ? ACTION_REMOVE_FAVORITE : ACTION_ADD_FAVORITE,
         "data-title": title,
-        value: url8,
+        value: url7,
         type: "button"
       },
       favorite.value ? /* @__PURE__ */ _(StarFilled, null) : /* @__PURE__ */ _(Star, null)
@@ -10457,7 +10175,7 @@
         class: (0, import_classnames10.default)(Activity_default.icon, Activity_default.controlIcon, Activity_default.disableWhenBusy),
         title: secondaryTitle,
         "data-action": canBurn ? ACTION_BURN : ACTION_REMOVE,
-        value: url8,
+        value: url7,
         type: "button"
       },
       canBurn ? /* @__PURE__ */ _(Fire, null) : /* @__PURE__ */ _(Cross, null)
@@ -10494,8 +10212,8 @@
          * @param {number} props.faviconMax
          * @param {string} props.etldPlusOne
          */
-        function ActivityItem2({ canBurn, documentVisibility, title, url: url8, favoriteSrc, faviconMax, etldPlusOne, children }) {
-          return /* @__PURE__ */ _("li", { key: url8, class: (0, import_classnames10.default)(Activity_default.item), "data-testid": "ActivityItem" }, /* @__PURE__ */ _("div", { class: Activity_default.heading }, /* @__PURE__ */ _("a", { class: Activity_default.title, href: url8, "data-url": url8 }, /* @__PURE__ */ _("span", { className: Activity_default.favicon, "data-url": url8 }, documentVisibility === "visible" && /* @__PURE__ */ _(
+        function ActivityItem2({ canBurn, documentVisibility, title, url: url7, favoriteSrc, faviconMax, etldPlusOne, children }) {
+          return /* @__PURE__ */ _("li", { key: url7, class: (0, import_classnames10.default)(Activity_default.item), "data-testid": "ActivityItem" }, /* @__PURE__ */ _("div", { class: Activity_default.heading }, /* @__PURE__ */ _("a", { class: Activity_default.title, href: url7, "data-url": url7 }, /* @__PURE__ */ _("span", { className: Activity_default.favicon, "data-url": url7 }, documentVisibility === "visible" && /* @__PURE__ */ _(
             FaviconWithState,
             {
               faviconSrc: favoriteSrc,
@@ -10507,7 +10225,7 @@
               fallback: DDG_FALLBACK_ICON,
               fallbackDark: DDG_FALLBACK_ICON_DARK
             }
-          )), title), /* @__PURE__ */ _(Controls, { canBurn, url: url8, title })), /* @__PURE__ */ _("div", { class: Activity_default.body }, children));
+          )), title), /* @__PURE__ */ _(Controls, { canBurn, url: url7, title })), /* @__PURE__ */ _("div", { class: Activity_default.body }, children));
         }
       );
     }
@@ -10998,8 +10716,8 @@
               var blob = new Blob(["var _workerSelf = self; self.onmessage = ", fn2.toString()], {
                 type: "text/javascript"
               });
-              var url8 = URL.createObjectURL(blob);
-              return new Worker(url8);
+              var url7 = URL.createObjectURL(blob);
+              return new Worker(url7);
             }
             workerFn = fn2;
             return workerProxy;
@@ -16677,11 +16395,11 @@
             }
             return this.fonts[0];
           }
-          function getCodePoint(string2) {
+          function getCodePoint(string) {
             var codePoint = 0;
-            var first = string2.charCodeAt(0);
+            var first = string.charCodeAt(0);
             if (first >= 55296 && first <= 56319) {
-              var second = string2.charCodeAt(1);
+              var second = string.charCodeAt(1);
               if (second >= 56320 && second <= 57343) {
                 codePoint = (first - 55296) * 1024 + second - 56320 + 65536;
               }
@@ -16698,15 +16416,15 @@
           function isVariationSelector(charCode) {
             return charCode === VARIATION_SELECTOR_16_CODE_POINT;
           }
-          function isRegionalCode(string2) {
-            var codePoint = getCodePoint(string2);
+          function isRegionalCode(string) {
+            var codePoint = getCodePoint(string);
             if (codePoint >= REGIONAL_CHARACTER_A_CODE_POINT && codePoint <= REGIONAL_CHARACTER_Z_CODE_POINT) {
               return true;
             }
             return false;
           }
-          function isFlagEmoji(string2) {
-            return isRegionalCode(string2.substr(0, 2)) && isRegionalCode(string2.substr(2, 2));
+          function isFlagEmoji(string) {
+            return isRegionalCode(string.substr(0, 2)) && isRegionalCode(string.substr(2, 2));
           }
           function isCombinedCharacter(_char3) {
             return combinedCharacters.indexOf(_char3) !== -1;
@@ -26826,7 +26544,7 @@
   __export(BurnAnimationLottieWeb_exports, {
     BurnAnimation: () => BurnAnimation
   });
-  function BurnAnimation({ url: url8, doneBurning }) {
+  function BurnAnimation({ url: url7, doneBurning }) {
     const ref = A2(
       /** @type {Lottie} */
       null
@@ -26838,7 +26556,7 @@
       let timer2 = null;
       const publish = (_reason) => {
         if (finished) return;
-        doneBurning(url8);
+        doneBurning(url7);
         finished = true;
         clearTimeout(timer2);
       };
@@ -26863,7 +26581,7 @@
           publish("unmount occurred");
         }
       };
-    }, [url8, json, doneBurning]);
+    }, [url7, json, doneBurning]);
     return /* @__PURE__ */ _("div", { ref, "data-lottie-player": true });
   }
   var import_lottie_web;
@@ -26878,14 +26596,14 @@
   });
 
   // pages/new-tab/app/activity/components/ActivityItemAnimationWrapper.js
-  function ActivityItemAnimationWrapper({ children, url: url8 }) {
+  function ActivityItemAnimationWrapper({ children, url: url7 }) {
     const ref = A2(
       /** @type {HTMLDivElement|null} */
       null
     );
     const { exiting, burning, showBurnAnimation, doneBurning } = x2(ActivityBurningSignalContext);
-    const isBurning = useComputed(() => burning.value.some((x3) => x3 === url8));
-    const isExiting = useComputed(() => exiting.value.some((x3) => x3 === url8));
+    const isBurning = useComputed(() => burning.value.some((x3) => x3 === url7));
+    const isExiting = useComputed(() => exiting.value.some((x3) => x3 === url7));
     _2(() => {
       let canceled = false;
       let sent = false;
@@ -26908,7 +26626,7 @@
           window.dispatchEvent(
             new CustomEvent("done-exiting", {
               detail: {
-                url: url8,
+                url: url7,
                 reason: "animation completed"
               }
             })
@@ -26924,11 +26642,11 @@
       return () => {
         canceled = true;
       };
-    }, [isBurning.value, isExiting.value, url8]);
-    return /* @__PURE__ */ _("div", { class: (0, import_classnames11.default)(Activity_default.anim, isBurning.value && Activity_default.burning), ref }, !isExiting.value && children, !isExiting.value && isBurning.value && showBurnAnimation && /* @__PURE__ */ _(P3, { fallback: null }, /* @__PURE__ */ _(BurnAnimationLazy, { url: url8, doneBurning })), !isExiting.value && isBurning.value && !showBurnAnimation && /* @__PURE__ */ _(NullBurner, { url: url8, doneBurning }));
+    }, [isBurning.value, isExiting.value, url7]);
+    return /* @__PURE__ */ _("div", { class: (0, import_classnames11.default)(Activity_default.anim, isBurning.value && Activity_default.burning), ref }, !isExiting.value && children, !isExiting.value && isBurning.value && showBurnAnimation && /* @__PURE__ */ _(P3, { fallback: null }, /* @__PURE__ */ _(BurnAnimationLazy, { url: url7, doneBurning })), !isExiting.value && isBurning.value && !showBurnAnimation && /* @__PURE__ */ _(NullBurner, { url: url7, doneBurning }));
   }
-  function NullBurner({ url: url8, doneBurning }) {
-    y2(() => doneBurning(url8), [url8]);
+  function NullBurner({ url: url7, doneBurning }) {
+    y2(() => doneBurning(url7), [url7]);
     return null;
   }
   var import_classnames11, BurnAnimationLazy;
@@ -32346,8 +32064,6 @@
   // pages/new-tab/app/index.js
   init_DocumentVisibility();
   init_utils();
-  init_tabs_service();
-  init_TabsProvider();
   async function init(root2, messaging2, telemetry2, baseEnvironment2) {
     const result = await callWithRetry(() => messaging2.initialSetup());
     if ("error" in result) {
@@ -32378,7 +32094,6 @@
       return renderComponents(root2, environment, settings, strings);
     }
     const entryPoints = await resolveEntryPoints(init2.widgets, didCatch);
-    const tabs = new TabsService(messaging2, init2.tabs || TabsService.DEFAULT);
     const widgetConfigAPI = new WidgetConfigService(messaging2, init2.widgetConfigs);
     const customizerData2 = init2.customizer || {
       userColor: null,
@@ -32412,7 +32127,7 @@
               widgets: init2.widgets,
               entryPoints
             },
-            /* @__PURE__ */ _(TabsProvider, { service: tabs }, environment.urlParams.has("tabs.debug") && /* @__PURE__ */ _(TabsDebug, null), /* @__PURE__ */ _(App, null))
+            /* @__PURE__ */ _(App, null)
           ))))))))
         )
       ),
@@ -32635,12 +32350,8 @@
   // pages/new-tab/app/omnibar/mocks/omnibar.mock-transport.js
   var url5 = typeof window !== "undefined" ? new URL(window.location.href) : new URL("https://example.com");
 
-  // pages/new-tab/app/tabs/tabs.mock-transport.js
-  init_tabs_service();
-  var url6 = new URL(window.location.href);
-
   // pages/new-tab/app/mock-transport.js
-  var url7 = new URL(window.location.href);
+  var url6 = new URL(window.location.href);
 
   // pages/new-tab/src/index.js
   var NewTabPage = class {

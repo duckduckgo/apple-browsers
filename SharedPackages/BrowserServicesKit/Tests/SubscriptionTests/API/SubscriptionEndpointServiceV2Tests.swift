@@ -153,7 +153,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         do {
             _ = try await endpointService.getProducts()
             XCTFail("Expected invalidResponse error")
-        } catch Networking.APIRequestV2.Error.emptyResponseBody {
+        } catch Networking.APIRequestV2Error.emptyResponseBody {
             // Success
         } catch {
             XCTFail("Unexpected error: \(error)")
@@ -273,7 +273,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
         static let authorizationHeader = ["Authorization": "Bearer TOKEN"]
 
-//        static let unknownServerError = APIServiceError.serverError(statusCode: 401, error: "unknown_error")
+//        static let unknownServerError = APIServiceError.serverError(statusCode: 401, errorCode: "unknown_error")
     }
 
     var apiService: MockAPIService!

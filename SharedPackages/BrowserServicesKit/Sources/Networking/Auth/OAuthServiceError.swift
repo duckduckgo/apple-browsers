@@ -17,20 +17,21 @@
 //
 
 import Foundation
+import Common
 
-public enum OAuthServiceError: Error, LocalizedError, Equatable {
+public enum OAuthServiceError: DDGError {
     case authAPIError(code: OAuthRequest.BodyErrorCode)
     case apiServiceError(Error)
     case invalidRequest
     case invalidResponseCode(HTTPStatusCode)
     case missingResponseValue(String)
 
-    public var errorDescription: String? {
+    public var description: String {
         switch self {
         case .authAPIError(let code):
             "Auth API responded with error \(code.rawValue) - \(code.description)"
         case .apiServiceError(let error):
-            "API service error - \(error.localizedDescription)"
+            "API service error - \(String(describing: error))"
         case .invalidRequest:
             "Failed to generate the API request"
         case .invalidResponseCode(let code):
@@ -40,8 +41,30 @@ public enum OAuthServiceError: Error, LocalizedError, Equatable {
         }
     }
 
-    public var localizedDescription: String {
-        errorDescription ?? "Unknown"
+    public var errorDomain: String { "com.duckduckgo.networking.OAuthServiceError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .authAPIError:
+            return 11200
+        case .apiServiceError:
+            return 11201
+        case .invalidRequest:
+            return 11202
+        case .invalidResponseCode:
+            return 11203
+        case .missingResponseValue:
+            return 11204
+        }
+    }
+
+    public var underlyingError: Error? {
+        switch self {
+        case .apiServiceError(let error):
+            return error
+        default:
+            return nil
+        }
     }
 
     public static func == (lhs: OAuthServiceError, rhs: OAuthServiceError) -> Bool {
@@ -49,7 +72,7 @@ public enum OAuthServiceError: Error, LocalizedError, Equatable {
         case (.authAPIError(let lhsCode), .authAPIError(let rhsCode)):
             return lhsCode == rhsCode
         case (.apiServiceError(let lhsError), .apiServiceError(let rhsError)):
-            return lhsError.localizedDescription == rhsError.localizedDescription
+            return String(describing: lhsError) == String(describing: rhsError)
         case (.invalidRequest, .invalidRequest):
             return true
         case (.invalidResponseCode(let lhsCode), .invalidResponseCode(let rhsCode)):

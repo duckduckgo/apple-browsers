@@ -107,6 +107,14 @@ extension Preferences {
                                         Picker("", selection: $startupModel.startupWindowType) {
                                             ForEach(StartupWindowType.allCases, id: \.self) { windowType in
                                                 Text(windowType.displayName).tag(windowType)
+                                                    .accessibilityIdentifier({
+                                                        switch windowType {
+                                                        case .window:
+                                                            "PreferencesGeneralView.stateRestorePicker.openANewWindow.regular"
+                                                        case .fireWindow:
+                                                            "PreferencesGeneralView.stateRestorePicker.openANewWindow.fireWindow"
+                                                        }
+                                                    }())
                                             }
                                         }
                                         .pickerStyle(.menu)
@@ -116,7 +124,6 @@ extension Preferences {
                                 }
                                 .tag(false)
                                 .padding(.bottom, 4)
-                                .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.openANewWindow")
                             } else {
                                 Text(UserText.showHomePage).tag(false)
                                     .padding(.bottom, 4)
@@ -129,7 +136,7 @@ extension Preferences {
                         .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                         .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker")
 
-                        if (dataClearingModel.isAutoClearEnabled || dataClearingModel.shouldOpenFireWindowbyDefault) && startupModel.restorePreviousSession {
+                        if (dataClearingModel.isAutoClearEnabled || dataClearingModel.shouldOpenFireWindowByDefault) && startupModel.restorePreviousSession {
                             VStack(alignment: .leading, spacing: 1) {
                                 TextMenuItemCaption(UserText.disableAutoClearToEnableSessionRestore)
                                 TextButton(UserText.showDataClearingSettings) {

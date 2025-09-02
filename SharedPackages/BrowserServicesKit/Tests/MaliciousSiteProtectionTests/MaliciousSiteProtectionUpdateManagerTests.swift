@@ -594,7 +594,7 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
 
     func testWhenUpdateDataApiFails_AndInitialLocalDatasetIsEmpty_AndErrorIsNoInternetConnection_ThenSendFailedToFetchDatasetsPixel() async {
         // GIVEN
-        apiClient.loadRequestError = APIRequestV2.Error.urlSession(URLError(.notConnectedToInternet))
+        apiClient.loadRequestError = APIRequestV2Error.urlSession(URLError(.notConnectedToInternet))
         updateManager = MaliciousSiteProtection.UpdateManager(apiClient: apiClient, dataManager: dataManager, eventMapping: mockEventMapping, updateIntervalProvider: { self.updateIntervalProvider($0) }, supportedThreatsProvider: { return self.isScamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam } })
         XCTAssertTrue(mockEventMapping.events.isEmpty)
 
@@ -614,7 +614,7 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
     func testWhenUpdateDataApiFails_AndInitialLocalDatasetIsNotEmpty_AndErrorIsNoInternetConnection_ThenDoNotSendFailedToFetchDatasetsPixel() async throws {
         // GIVEN
         try await dataManager.store(HashPrefixSet(revision: 3, items: []), for: .hashPrefixes(threatKind: .phishing))
-        apiClient.loadRequestError = APIRequestV2.Error.urlSession(URLError(.notConnectedToInternet))
+        apiClient.loadRequestError = APIRequestV2Error.urlSession(URLError(.notConnectedToInternet))
         updateManager = MaliciousSiteProtection.UpdateManager(apiClient: apiClient, dataManager: dataManager, eventMapping: mockEventMapping, updateIntervalProvider: { self.updateIntervalProvider($0) }, supportedThreatsProvider: { return self.isScamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam } })
         XCTAssertTrue(mockEventMapping.events.isEmpty)
 

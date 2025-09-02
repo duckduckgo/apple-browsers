@@ -36,7 +36,7 @@ public final class SubscriptionEndpointServiceMockV2: SubscriptionEndpointServic
 
     public func clearSubscription() {}
 
-    public var getProductsResult: Result<[GetProductsItem], APIRequestV2.Error>?
+    public var getProductsResult: Result<[GetProductsItem], APIRequestV2Error>?
     public func getProducts() async throws -> [Subscription.GetProductsItem] {
         switch getProductsResult! {
         case .success(let result): return result
@@ -56,7 +56,7 @@ public final class SubscriptionEndpointServiceMockV2: SubscriptionEndpointServic
         }
     }
 
-    public var getCustomerPortalURLResult: Result<GetCustomerPortalURLResponse, APIRequestV2.Error>?
+    public var getCustomerPortalURLResult: Result<GetCustomerPortalURLResponse, APIRequestV2Error>?
     public func getCustomerPortalURL(accessToken: String, externalID: String) async throws -> Subscription.GetCustomerPortalURLResponse {
         switch getCustomerPortalURLResult! {
         case .success(let result): return result
@@ -64,7 +64,7 @@ public final class SubscriptionEndpointServiceMockV2: SubscriptionEndpointServic
         }
     }
 
-    public var confirmPurchaseResult: Result<ConfirmPurchaseResponseV2, APIRequestV2.Error>?
+    public var confirmPurchaseResult: Result<ConfirmPurchaseResponseV2, APIRequestV2Error>?
     public func confirmPurchase(accessToken: String, signature: String, additionalParams: [String: String]?) async throws -> Subscription.ConfirmPurchaseResponseV2 {
         switch confirmPurchaseResult! {
         case .success(let result): return result

@@ -43,13 +43,11 @@ final class InactivityNotificationSchedulerService {
     // MARK: - Debug Playground
     
     private var playgroundMode: Bool = false
-#if DEBUG
     enum DEBUG_VARIABLES {
         static var secondsInactive: Int = 7
         static var title: String = UserText.inactivityNotificationTitle
         static var body: String = UserText.inactivityNotificationBody
     }
-#endif
     
     init(featureFlagger: FeatureFlagger,
          notificationServiceManager: NotificationServiceManaging,
@@ -64,7 +62,6 @@ final class InactivityNotificationSchedulerService {
         self.userNotificationCenter.delegate = notificationServiceManager
     }
     
-#if DEBUG
     /// Playground Initializer
     convenience init() {
         self.init(
@@ -74,7 +71,6 @@ final class InactivityNotificationSchedulerService {
         )
         self.playgroundMode = true
     }
-#endif
     
     // MARK: - Public
     
@@ -120,11 +116,9 @@ final class InactivityNotificationSchedulerService {
     }
     
     func makeUNNotificationContent(with daysInactive: Int = Constants.defaultDaysInactive) -> UNNotificationContent {
-        #if DEBUG
         if playgroundMode {
             return makeDebugUNNotificationContent()
         }
-        #endif
         
         let content = UNMutableNotificationContent()
         
@@ -162,11 +156,9 @@ final class InactivityNotificationSchedulerService {
     }
     
     private func buildUNNotificationRequest() -> UNNotificationRequest {
-        #if DEBUG
         if playgroundMode {
             return buildDebugUNNotificationRequest()
         }
-        #endif
         
         let daysInactive = makeDaysInactive()
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: .days(daysInactive), repeats: false)
@@ -178,7 +170,6 @@ final class InactivityNotificationSchedulerService {
     }
 }
 
-#if DEBUG
 /// Playground Utils
 extension InactivityNotificationSchedulerService {
     func schedule(with title: String, body: String, secondsInactive: Int) {
@@ -206,7 +197,6 @@ extension InactivityNotificationSchedulerService {
         )
     }
 }
-#endif
 
 extension Logger {
     static var pushNotification = { Logger(subsystem: "Push Notification", category: "") }()

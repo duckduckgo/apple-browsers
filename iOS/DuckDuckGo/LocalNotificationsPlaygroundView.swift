@@ -55,16 +55,18 @@ struct LocalNotificationsPlaygroundView: View {
                         Text(verbatim: model.useScheduler ? "InactivityNotificationScheduler only schedules provisional notification for .provisional or .notDetermined status. The notification will not be scheduled or delivered. Remove and reinstall the app to reset." : "Ensure Notifications are Enabled in Settings")
                             .font(.caption)
                             .foregroundStyle(.red)
-                        Button(
-                            action: {
-                                Task {
-                                    await UIApplication.shared.openAppNotificationSettings()
+                        if !model.useScheduler {
+                            Button(
+                                action: {
+                                    Task {
+                                        await UIApplication.shared.openAppNotificationSettings()
+                                    }
+                                },
+                                label: {
+                                    Text(verbatim: "Open Settings...")
                                 }
-                            },
-                            label: {
-                                Text(verbatim: "Open Settings...")
-                            }
-                        )
+                            )
+                        }
                     }
                 case .notDetermined:
                     Text(verbatim: model.useScheduler ? "InactivityNotificationScheduler only schedules provisional notification. No prompt will be shown, and the notification will be delivered silently." : "The system will automatically prompt for permission when scheduling an alert notification. For provisional notifications, no prompt is shown, and the notification is delivered silently.")

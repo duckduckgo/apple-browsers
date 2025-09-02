@@ -40,7 +40,8 @@ final class InactivityNotificationSchedulerService {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let userNotificationCenter: UNUserNotificationCenterRepresentable
     
-    /// Flag for use in playground
+    // MARK: - Debug Playground
+    
     private var playgroundMode: Bool = false
 #if DEBUG
     enum DEBUG_VARIABLES {
@@ -119,16 +120,13 @@ final class InactivityNotificationSchedulerService {
     }
     
     func makeUNNotificationContent(with daysInactive: Int = Constants.defaultDaysInactive) -> UNNotificationContent {
-        let content = UNMutableNotificationContent()
-        
         #if DEBUG
         if playgroundMode {
-            content.title = DEBUG_VARIABLES.title
-            content.body  = DEBUG_VARIABLES.body
-            content.userInfo = ["secondsInactive": DEBUG_VARIABLES.secondsInactive]
-            return content
+            return makeDebugUNNotificationContent()
         }
         #endif
+        
+        let content = UNMutableNotificationContent()
         
         content.title = UserText.inactivityNotificationTitle
         content.body = UserText.inactivityNotificationBody
@@ -166,11 +164,7 @@ final class InactivityNotificationSchedulerService {
     private func buildUNNotificationRequest() -> UNNotificationRequest {
         #if DEBUG
         if playgroundMode {
-            return UNNotificationRequest(
-                identifier: Constants.notificationIdentifier,
-                content: makeUNNotificationContent(),
-                trigger: UNTimeIntervalNotificationTrigger(timeInterval: .seconds(DEBUG_VARIABLES.secondsInactive), repeats: false)
-            )
+            return buildDebugUNNotificationRequest()
         }
         #endif
         
@@ -185,7 +179,7 @@ final class InactivityNotificationSchedulerService {
 }
 
 #if DEBUG
-/// Playground Scheduler
+/// Playground Utils
 extension InactivityNotificationSchedulerService {
     func schedule(with title: String, body: String, secondsInactive: Int) {
         DEBUG_VARIABLES.title = title
@@ -194,6 +188,22 @@ extension InactivityNotificationSchedulerService {
         Task {
             await schedule()
         }
+    }
+    
+    private func makeDebugUNNotificationContent() -> UNNotificationContent {
+        let content = UNMutableNotificationContent()
+        content.title = DEBUG_VARIABLES.title
+        content.body  = DEBUG_VARIABLES.body
+        content.userInfo = ["secondsInactive": DEBUG_VARIABLES.secondsInactive]
+        return content
+    }
+
+    private func buildDebugUNNotificationRequest() -> UNNotificationRequest {
+        return UNNotificationRequest(
+            identifier: Constants.notificationIdentifier,
+            content: makeUNNotificationContent(),
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: .seconds(DEBUG_VARIABLES.secondsInactive), repeats: false)
+        )
     }
 }
 #endif

@@ -29,14 +29,12 @@ struct LocalNotificationsPlaygroundView: View {
             Section {
                 Toggle(isOn: $model.useScheduler) {
                     Text("Use Scheduler")
-                        .bold()
                 }
             } header: {
                 Text(verbatim: "Mode:")
             } footer: {
                 (Text("Test through ") + Text(model.useScheduler ? "InactivityNotificationScheduler" : "UNUserNotificationCenter").bold())
                     .font(.caption)
-                    .foregroundStyle(.red)
             }
             
             Section {
@@ -46,14 +44,15 @@ struct LocalNotificationsPlaygroundView: View {
             } footer: {
                 switch model.notificationAuthStatus {
                 case .granted:
-                    Text(verbatim: model.useScheduler ? "InacitivityNotificationScheduler only schedules provisional notification for .provisional or .notDetermined status. The notification will not be delivered" : "The user accepted receiving notifications when prompted or upon deciding to keep provisional notifications.")
+                    Text(verbatim: model.useScheduler ? "InactivityNotificationScheduler only schedules provisional notification for .provisional or .notDetermined status. The notification will not be scheduled or delivered. Remove and reinstall the app to reset." : "The user accepted receiving notifications when prompted or upon deciding to keep provisional notifications.")
                         .font(.caption)
+                        .foregroundStyle(model.useScheduler ? .red : .secondary)
                 case .provisional:
                     Text(verbatim: "The system has automatically granted the app temporary permission to post noninterruptive notifications. They will be delivered silently in control")
                         .font(.caption)
                 case .denied:
                     VStack(alignment: .leading)  {
-                        Text(verbatim: model.useScheduler ? "InacitivityNotificationScheduler only schedules provisional notification for .provisional or .notDeterimed status. The notification will not be delivered" : "Ensure Notifications are Enabled in Settings")
+                        Text(verbatim: model.useScheduler ? "InactivityNotificationScheduler only schedules provisional notification for .provisional or .notDetermined status. The notification will not be scheduled or delivered. Remove and reinstall the app to reset." : "Ensure Notifications are Enabled in Settings")
                             .font(.caption)
                             .foregroundStyle(.red)
                         Button(
@@ -68,7 +67,7 @@ struct LocalNotificationsPlaygroundView: View {
                         )
                     }
                 case .notDetermined:
-                    Text(verbatim: model.useScheduler ? "InacitivityNotificationScheduler only schedules provisional notification. No prompt will be shown, and the notification is delivered silently." : "The system will automatically prompt for permission when scheduling an alert notification. For provisional notifications, no prompt is shown, and the notification is delivered silently.")
+                    Text(verbatim: model.useScheduler ? "InactivityNotificationScheduler only schedules provisional notification. No prompt will be shown, and the notification will be delivered silently." : "The system will automatically prompt for permission when scheduling an alert notification. For provisional notifications, no prompt is shown, and the notification is delivered silently.")
                         .font(.caption)
                 }
             }
@@ -163,6 +162,7 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
 
     @Published var notificationType: NotificationType = .provisional
     @Published var notificationSchedulingTime: Int = 5
+    
     @Published var useScheduler: Bool = false
 
     private var cancellable: AnyCancellable?
@@ -195,13 +195,8 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
     }
     
     func fillDefaultContent() {
-        if useScheduler {
-            notificationTitle = UserText.inactivityNotificationTitle
-            notificationMessage = UserText.inactivityNotificationBody
-        } else {
-            notificationTitle = Self.defaultTitle
-            notificationMessage = Self.defaultBody
-        }
+        notificationTitle = useScheduler ? UserText.inactivityNotificationTitle : Self.defaultTitle
+        notificationMessage = useScheduler ? UserText.inactivityNotificationBody : Self.defaultBody
     }
     
     func clearAllContent() {

@@ -124,7 +124,10 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
             configurationManager: configurationManager,
             privacyConfigurationManager: privacyConfigurationManager,
             featureFlagger: DBPFeatureFlagger(configurationManager: configurationManager,
-                                              privacyConfigurationManager: privacyConfigurationManager),
+                                              privacyConfigurationManager: privacyConfigurationManager,
+                                              allowOverrides: { [weak privacyConfigurationManager] in
+                                                  privacyConfigurationManager?.internalUserDecider.isInternalUser ?? false || AppVersion.runType == .uiTests
+                                              }),
             vpnBypassService: VPNBypassService()
         )
         manager?.agentFinishedLaunching()

@@ -1063,7 +1063,7 @@ class DownloadsUITests: UITestCase {
         let prefs = app.preferencesWindow
 
         app.preferencesGoToGeneralPane()
-        app.preferencesSetRestorePreviousSession(enabled: restorePreviousSession, in: prefs)
+        app.preferencesSetRestorePreviousSession(to: restorePreviousSession ? .restoreLastSession : .newWindow, in: prefs)
         app.setSwitchToNewTabWhenOpened(enabled: switchToNewTabWhenOpened)
         app.setOpenDownloadsPopupOnCompletion(enabled: openDownloadsPopupOnCompletion)
         app.setAlwaysAskWhereToSaveFiles(enabled: alwaysAskWhereToSave)

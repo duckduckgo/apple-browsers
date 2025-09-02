@@ -1065,7 +1065,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func fireDailyFireWindowConfigurationPixel() {
         PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfiguration(
             startupFireWindow: startupPreferences.startupWindowType == .fireWindow,
-            openFireWindowByDefault: dataClearingPreferences.shouldOpenFireWindowbyDefault,
+            openFireWindowByDefault: dataClearingPreferences.shouldOpenFireWindowByDefault,
             fireAnimationEnabled: dataClearingPreferences.isFireAnimationEnabled
         )), frequency: .daily)
     }

@@ -95,3 +95,58 @@ public protocol ErrorWithPixelParameters {
 
     var errorParameters: [String: String] { get }
 }
+
+public extension Error {
+
+    @available(*, deprecated, message: "Consider refactoring using DDGError underlyingError chain")
+    var pixelParameters: [String: String] {
+        var params = [String: String]()
+
+        if let errorWithUserInfo = self as? ErrorWithPixelParameters {
+            params = errorWithUserInfo.errorParameters
+        }
+
+        let nsError = self as NSError
+
+        params[PixelKit.Parameters.errorCode] = "\(nsError.code)"
+        params[PixelKit.Parameters.errorDomain] = nsError.domain
+
+        let underlyingErrorParameters = self.underlyingErrorParameters(for: nsError)
+        params.merge(underlyingErrorParameters) { first, _ in
+            return first
+        }
+
+        if let sqlErrorCode = nsError.userInfo["SQLiteResultCode"] as? NSNumber {
+            params[PixelKit.Parameters.underlyingErrorSQLiteCode] = "\(sqlErrorCode.intValue)"
+        }
+
+        if let sqlExtendedErrorCode = nsError.userInfo["SQLiteExtendedResultCode"] as? NSNumber {
+            params[PixelKit.Parameters.underlyingErrorSQLiteExtendedCode] = "\(sqlExtendedErrorCode.intValue)"
+        }
+
+        return params
+    }
+
+    /// Recursive call to add underlying error information
+    ///
+    private func underlyingErrorParameters(for nsError: NSError, level: Int = 0) -> [String: String] {
+        if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
+            let errorCodeParameterName = PixelKit.Parameters.underlyingErrorCode + (level == 0 ? "" : String(level + 1))
+            let errorDomainParameterName = PixelKit.Parameters.underlyingErrorDomain + (level == 0 ? "" : String(level + 1))
+
+            let currentUnderlyingErrorParameters = [
+                errorCodeParameterName: "\(underlyingError.code)",
+                errorDomainParameterName: underlyingError.domain
+            ]
+
+            // Check if the underlying error has an underlying error of its own
+            let additionalParameters = underlyingErrorParameters(for: underlyingError, level: level + 1)
+
+            return currentUnderlyingErrorParameters.merging(additionalParameters) { first, _ in
+                return first // Doesn't really matter as there should be no conflict of parameters
+            }
+        }
+
+        return [:]
+    }
+}

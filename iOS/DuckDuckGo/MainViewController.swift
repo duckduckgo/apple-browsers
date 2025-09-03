@@ -133,6 +133,7 @@ class MainViewController: UIViewController {
     private var vpnCancellables = Set<AnyCancellable>()
     private var feedbackCancellable: AnyCancellable?
     private var aiChatCancellables = Set<AnyCancellable>()
+    private var refreshButtonCancellables = Set<AnyCancellable>()
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     let privacyProDataReporter: PrivacyProDataReporting
@@ -390,6 +391,7 @@ class MainViewController: UIViewController {
         subscribeToNetworkProtectionEvents()
         subscribeToUnifiedFeedbackNotifications()
         subscribeToAIChatSettingsEvents()
+        subscribeToRefreshButtonSettingsEvents()
 
         checkSubscriptionEntitlements()
 
@@ -457,6 +459,19 @@ class MainViewController: UIViewController {
         DailyPixel.fireDaily(.aiChatExperimentalAddressBarIsEnabledDaily,
                              withAdditionalParameters: [isEnabledParam: isEnableValue])
         
+    }
+    
+    private func fireKeyboardSettingsPixels() {
+        let keyboardSettings = KeyboardSettings()
+        let isEnabledParam = "is_enabled"
+        
+        let onNewTabValue = "\(keyboardSettings.onNewTab)"
+        DailyPixel.fireDaily(.keyboardSettingsOnNewTabEnabledDaily,
+                             withAdditionalParameters: [isEnabledParam: onNewTabValue])
+        
+        let onAppLaunchValue = "\(keyboardSettings.onAppLaunch)"
+        DailyPixel.fireDaily(.keyboardSettingsOnAppLaunchEnabledDaily,
+                             withAdditionalParameters: [isEnabledParam: onAppLaunchValue])
     }
 
     private func installSwipeTabs() {
@@ -1090,6 +1105,7 @@ class MainViewController: UIViewController {
     
     func onForeground() {
         fireExperimentalAddressBarPixel()
+        fireKeyboardSettingsPixels()
         skipSERPFlow = true
         
         // Show Fire Pulse only if Privacy button pulse should not be shown. In control group onboarding `shouldShowPrivacyButtonPulse` is always false.
@@ -1837,6 +1853,26 @@ class MainViewController: UIViewController {
                 WidgetCenter.shared.reloadAllTimelines()
             }
             .store(in: &aiChatCancellables)
+    }
+    
+    private func subscribeToRefreshButtonSettingsEvents() {
+        NotificationCenter.default.publisher(for: AppUserDefaults.Notifications.refreshButtonSettingsChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshOmniBar()
+            }
+            .store(in: &refreshButtonCancellables)
+        
+        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+        
+        overridesHandler.flagDidChangePublisher
+            .filter { $0.0 == .refreshButtonPosition }
+            .sink { [weak self] _ in
+                self?.refreshOmniBar()
+            }
+            .store(in: &refreshButtonCancellables)
     }
 
     private func subscribeToNetworkProtectionEvents() {

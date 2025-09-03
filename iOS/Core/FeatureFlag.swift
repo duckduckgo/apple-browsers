@@ -131,7 +131,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209304767941984?focus=true
     case scheduledSetDefaultBrowserPrompts
 
-    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210716028790591?focus=true
+    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1210716028790591?focus=true
     case scheduledSetDefaultBrowserPromptsForInactiveUsers
 
     case subscriptionRebranding
@@ -171,6 +171,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211127159784126?focus=true
     case subscriptionPurchaseWidePixelMeasurement
+    
+    /// https://app.asana.com/1/137249556945/project/1210947754188321/task/1210869716452616?focus=true
+    case refreshButtonPosition
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -235,7 +238,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .inactivityNotification,
              .daxEasterEggLogos,
              .dbpEmailConfirmationDecoupling,
-             .subscriptionPurchaseWidePixelMeasurement:
+             .subscriptionPurchaseWidePixelMeasurement,
+             .refreshButtonPosition:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -424,6 +428,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.daxEasterEggLogos))
         case .subscriptionPurchaseWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
+        case .refreshButtonPosition:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.refreshButtonPosition))
         }
     }
 }

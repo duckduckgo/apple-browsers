@@ -15,27 +15,32 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-import XCTest
-import Combine
+
 import AIChat
+import Combine
+import FeatureFlags
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 class AIChatMenuConfigurationTests: XCTestCase {
     var configuration: AIChatMenuConfiguration!
     var mockStorage: MockAIChatPreferencesStorage!
     var remoteSettings: MockRemoteAISettings!
+    var featureFlagger: MockFeatureFlagger!
 
     override func setUp() {
         super.setUp()
         mockStorage = MockAIChatPreferencesStorage()
         remoteSettings = MockRemoteAISettings()
-        configuration = AIChatMenuConfiguration(storage: mockStorage, remoteSettings: remoteSettings, featureFlagger: MockFeatureFlagger())
+        featureFlagger = MockFeatureFlagger()
+        configuration = AIChatMenuConfiguration(storage: mockStorage, remoteSettings: remoteSettings, featureFlagger: featureFlagger)
     }
 
     override func tearDown() {
         configuration = nil
         mockStorage = nil
         remoteSettings = nil
+        featureFlagger = nil
         super.tearDown()
     }
 
@@ -120,6 +125,21 @@ class AIChatMenuConfigurationTests: XCTestCase {
         cancellable.cancel()
     }
 
+    func testIsPageContextEnabledPublisherValuesChangedPublisher() {
+        let expectation = self.expectation(description: "Values changed publisher should emit a value.")
+
+        let cancellable = configuration.valuesChangedPublisher.sink { value in
+            expectation.fulfill()
+        }
+
+        mockStorage.updateIsPageContextEnabledPublisher(to: true)
+
+        waitForExpectations(timeout: 1) { error in
+            XCTAssertNil(error, "Values changed publisher did not emit a value in time.")
+        }
+        cancellable.cancel()
+    }
+
     func testShouldNotDisplayAddressBarShortcutWhenDisabled() {
         mockStorage.showShortcutInAddressBar = false
         let result = configuration.shouldDisplayAddressBarShortcut
@@ -133,6 +153,7 @@ class AIChatMenuConfigurationTests: XCTestCase {
         mockStorage.showShortcutInAddressBar = true
         mockStorage.openAIChatInSidebar = true
         mockStorage.didDisplayAIChatAddressBarOnboarding = true
+        mockStorage.isPageContextEnabled = true
 
         mockStorage.reset()
 
@@ -141,6 +162,7 @@ class AIChatMenuConfigurationTests: XCTestCase {
         XCTAssertFalse(mockStorage.showShortcutInAddressBar, "Address bar shortcut should be reset to false.")
         XCTAssertFalse(mockStorage.openAIChatInSidebar, "Open AI Chat in sidebar should be reset to false.")
         XCTAssertFalse(mockStorage.didDisplayAIChatAddressBarOnboarding, "Address bar onboarding popover should be reset to false.")
+        XCTAssertFalse(mockStorage.isPageContextEnabled, "Page Context should be reset to false.")
     }
 
     func testShouldDisplayAddressBarShortcutWhenRemoteFlagAndStorageAreTrue() {
@@ -169,12 +191,39 @@ class AIChatMenuConfigurationTests: XCTestCase {
         XCTAssertTrue(result, "New Tab Page shortcut should be displayed when storage is true.")
     }
 
-    func testShouldOpenAIChatInSidebarPublisherWhenStorageAreTrue() {
+    func testShouldOpenAIChatInSidebarPublisherWhenStorageIsTrue() {
         mockStorage.openAIChatInSidebar = true
 
         let result = configuration.shouldOpenAIChatInSidebar
 
         XCTAssertTrue(result, "Open AI Chat in sidebar should be displayed when storage is true.")
+    }
+
+    func testIsPageContextPublisherPublisherWhenFeatureFlagAndStorageAreTrue() {
+        featureFlagger.featuresStub = [FeatureFlag.aiChatPageContext.rawValue: true]
+        mockStorage.isPageContextEnabled = true
+
+        let result = configuration.isPageContextEnabled
+
+        XCTAssertTrue(result, "Page Context should be enabled when storage is true.")
+    }
+
+    func testIsPageContextPublisherPublisherWhenFeatureFlagIsFalseAndStorageIsTrue() {
+        featureFlagger.featuresStub = [:]
+        mockStorage.isPageContextEnabled = true
+
+        let result = configuration.isPageContextEnabled
+
+        XCTAssertFalse(result, "Page Context should be disabled when storage is true and feature flag is disabled.")
+    }
+
+    func testIsPageContextPublisherPublisherWhenFeatureFlagIsTrueAndStorageIsFalse() {
+        featureFlagger.featuresStub = [FeatureFlag.aiChatPageContext.rawValue: true]
+        mockStorage.isPageContextEnabled = false
+
+        let result = configuration.isPageContextEnabled
+
+        XCTAssertFalse(result, "Page Context should be disabled when storage is false and feature flag is enabled.")
     }
 }
 
@@ -211,11 +260,18 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         }
     }
 
+    var isPageContextEnabled: Bool = false {
+        didSet {
+            isPageContextEnabledSubject.send(isPageContextEnabled)
+        }
+    }
+
     private var isAIFeaturesEnabledSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutOnNewTabPageSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutInApplicationMenuSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutInAddressBarSubject = PassthroughSubject<Bool, Never>()
     private var openAIChatInSidebarSubject = PassthroughSubject<Bool, Never>()
+    private var isPageContextEnabledSubject = PassthroughSubject<Bool, Never>()
 
     var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> {
         isAIFeaturesEnabledSubject.eraseToAnyPublisher()
@@ -237,6 +293,10 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         openAIChatInSidebarSubject.eraseToAnyPublisher()
     }
 
+    var isPageContextEnabledPublisher: AnyPublisher<Bool, Never> {
+        isPageContextEnabledSubject.eraseToAnyPublisher()
+    }
+
     func reset() {
         isAIFeaturesEnabled = true
         showShortcutOnNewTabPage = false
@@ -244,6 +304,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         showShortcutInAddressBar = false
         didDisplayAIChatAddressBarOnboarding = false
         openAIChatInSidebar = false
+        isPageContextEnabled = false
     }
 
     func updateNewTabPageShortcutDisplay(to value: Bool) {
@@ -260,6 +321,10 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
 
     func updateOpenAIChatInSidebarPublisher(to value: Bool) {
         openAIChatInSidebar = value
+    }
+
+    func updateIsPageContextEnabledPublisher(to value: Bool) {
+        isPageContextEnabled = value
     }
 }
 

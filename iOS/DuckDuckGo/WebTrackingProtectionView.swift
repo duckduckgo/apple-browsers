@@ -160,7 +160,8 @@ struct WebTrackingProtectionFeatureGrid: View {
             FeatureGridView(
                 features: features,
                 layoutStyle: layoutStyle,
-                columns: columnCount
+                columns: columnCount,
+                borderWidth: 1
             )
         }
         .listRowInsets(EdgeInsets())

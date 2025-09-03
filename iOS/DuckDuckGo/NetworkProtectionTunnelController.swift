@@ -293,7 +293,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             }
         }
 
-
         do {
             try tunnelManager.connection.startVPNTunnel(options: options)
             UniquePixel.fire(pixel: .networkProtectionNewUser, includedParameters: [.appVersion, .atb]) { error in

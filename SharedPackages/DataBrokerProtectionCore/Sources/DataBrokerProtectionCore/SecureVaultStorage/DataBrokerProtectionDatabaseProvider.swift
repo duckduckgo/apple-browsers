@@ -127,7 +127,7 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
                                                      key: Data,
                                                      migrationProvider: T.Type = DefaultDataBrokerProtectionDatabaseMigrationsProvider.self,
                                                      reporter: SecureVaultReporting? = nil) throws -> DefaultDataBrokerProtectionDatabaseProvider {
-        try DefaultDataBrokerProtectionDatabaseProvider(file: file, key: key, registerMigrationsHandler: migrationProvider.v7Migrations, reporter: reporter)
+        try DefaultDataBrokerProtectionDatabaseProvider(file: file, key: key, registerMigrationsHandler: migrationProvider.v8Migrations, reporter: reporter)
     }
 
     public init(file: URL,

@@ -113,7 +113,18 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
         if let vault = self.vault {
             let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
             repository.lastCheckedVersion = nil
-            resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.1", schedulingConfig: .mock, optOutUrl: "", eTag: "")]
+            resources.brokersList = [
+                .init(id: 1,
+                      name: "Broker",
+                      url: "broker.com",
+                      steps: [Step](),
+                      version: "1.0.1",
+                      schedulingConfig: .mock,
+                      optOutUrl: "",
+                      eTag: "",
+                      removedAt: nil
+                     )
+            ]
             vault.shouldReturnOldVersionBroker = true
 
             try await sut.checkForUpdates()
@@ -131,7 +142,18 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
         if let vault = self.vault {
             let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
             repository.lastCheckedVersion = nil
-            resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.1", schedulingConfig: .mock, optOutUrl: "", eTag: "")]
+            resources.brokersList = [
+                .init(id: 1,
+                      name: "Broker",
+                      url: "broker.com",
+                      steps: [Step](),
+                      version: "1.0.1",
+                      schedulingConfig: .mock,
+                      optOutUrl: "",
+                      eTag: "",
+                      removedAt: nil
+                     )
+            ]
             vault.shouldReturnNewVersionBroker = true
 
             try await sut.checkForUpdates()
@@ -148,7 +170,18 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
         if let vault = self.vault {
             let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
             repository.lastCheckedVersion = nil
-            resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.0", schedulingConfig: .mock, optOutUrl: "", eTag: "")]
+            resources.brokersList = [
+                .init(id: 1,
+                      name: "Broker",
+                      url: "broker.com",
+                      steps: [Step](),
+                      version: "1.0.0",
+                      schedulingConfig: .mock,
+                      optOutUrl: "",
+                      eTag: "",
+                      removedAt: nil
+                     )
+            ]
             vault.profileQueries = [.mock]
 
             try await sut.checkForUpdates()

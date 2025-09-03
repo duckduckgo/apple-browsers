@@ -18,7 +18,6 @@
 
 import Foundation
 import PixelKit
-import Common
 
 /// Pixels to understand domain exclusion engagement
 ///

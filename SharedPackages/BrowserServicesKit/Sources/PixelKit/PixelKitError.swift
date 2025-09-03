@@ -1,7 +1,7 @@
 //
-//  NonStandardEvent.swift
+//  PixelKitError.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,25 +17,26 @@
 //
 
 import Foundation
+import Common
 
-/// This custom event is used for special cases, like pixels with non-standard names and uses, these pixels are sent as is and the names remain unchanged
-public final class NonStandardEvent: PixelKitEventV2 {
+public enum PixelKitError: DDGError {
+    case doubleError
 
-    let event: PixelKitEventV2
+    // MARK: - DDGError Conformance
 
-    public init(_ event: PixelKitEventV2) {
-        self.event = event
+    public var errorDomain: String { "com.duckduckgo.pixelkit" }
+
+    public var errorCode: Int {
+        switch self {
+        case .doubleError: return 2001
+        }
     }
 
-    public var name: String {
-        event.name
-    }
+    public var underlyingError: Error? { nil }
 
-    public var parameters: [String: String]? {
-        event.parameters
-    }
-
-    public var error: Error? {
-        event.error
+    public var description: String {
+        switch self {
+        case .doubleError: return "Providing an error in both PixelKitEventV2 and PixelKit.fire(withError:) is not supported."
+        }
     }
 }

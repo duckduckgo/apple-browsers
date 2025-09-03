@@ -233,14 +233,33 @@ public final class PixelKit {
 
         let newError: (any DDGError)?
 
+        /*
+         We have 2 options here:
+         - The event is a PixelKitEvent: We handle the error passed in this call
+         - The event is a PixelKitEventV2: We only consider the error in the returned by the PixelKitEventV2 `var error` and assert if an error is also passed to this function
+         */
+
         if let event = event as? PixelKitEventV2,
-           let error = event.error {
+           let eventError = event.error {
 
             // For v2 events we only consider the error specified in the event
             // and purposely ignore the parameter in this call.
             // This is to encourage moving the error over to the protocol error
             // instead of still relying on the parameter of this call.
-            newError = error
+
+            guard error == nil else {
+                let throwingError = PixelKitError.doubleError
+                assertionFailure(throwingError.description)
+                logger.error("\(throwingError.description, privacy: .public)")
+                onComplete(false, throwingError)
+                return
+            }
+
+            if let ddgError = eventError as? any DDGError {
+                newError = ddgError
+            } else {
+                newError = DDGErrorPixelKitWrapper.wrapper(eventError)
+            }
         } else {
             newError = error
         }

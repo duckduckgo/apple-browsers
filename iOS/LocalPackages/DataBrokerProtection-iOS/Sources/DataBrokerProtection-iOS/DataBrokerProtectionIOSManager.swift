@@ -298,12 +298,12 @@ public final class DataBrokerProtectionIOSManager {
                 }
 
                 request.earliestBeginDate = earliestBeginDate
-                Logger.dataBrokerProtection.log("PIR Background Task: Scheduling next task for \(earliestBeginDate)")
+                Logger.dataBrokerProtection.log("PIR Background Task: Scheduling next task for \(earliestBeginDate, privacy: .public)")
 
                 try BGTaskScheduler.shared.submit(request)
                 Logger.dataBrokerProtection.log("Scheduling background task successful")
             } catch {
-                Logger.dataBrokerProtection.log("Scheduling background task failed with error: \(error)")
+                Logger.dataBrokerProtection.log("Scheduling background task failed with error: \(error, privacy: .public)")
                 self.iOSPixelsHandler.fire(.backgroundTaskSchedulingFailed(error: error))
             }
 #endif
@@ -333,7 +333,7 @@ public final class DataBrokerProtectionIOSManager {
             self.queueManager.stop()
 
             let timeTaken = Date.now.timeIntervalSince(startDate)
-            Logger.dataBrokerProtection.log("Background task expired with time taken: \(timeTaken)")
+            Logger.dataBrokerProtection.log("Background task expired with time taken: \(timeTaken, privacy: .public)")
             self.iOSPixelsHandler.fire(.backgroundTaskExpired(duration: timeTaken * 1000.0))
 
             // Record terminated event
@@ -366,7 +366,7 @@ public final class DataBrokerProtectionIOSManager {
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
                 Logger.dataBrokerProtection.log("All operations completed in background task")
                 let timeTaken = Date.now.timeIntervalSince(startDate)
-                Logger.dataBrokerProtection.log("Background task finshed all operations with time taken: \(timeTaken)")
+                Logger.dataBrokerProtection.log("Background task finshed all operations with time taken: \(timeTaken, privacy: .public)")
                 self.iOSPixelsHandler.fire(.backgroundTaskEndedHavingCompletedAllJobs(
                     duration: timeTaken * 1000.0))
 
@@ -396,7 +396,7 @@ public final class DataBrokerProtectionIOSManager {
             try await emailConfirmationDataService.checkForEmailConfirmationData()
             Logger.dataBrokerProtection.log("Email confirmation data check completed")
         } catch {
-            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error)")
+            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
         }
     }
 

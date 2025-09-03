@@ -260,7 +260,7 @@ public final class DataBrokerProtectionAgentManager {
             try await emailConfirmationDataService.checkForEmailConfirmationData()
             Logger.dataBrokerProtection.log("Email confirmation data check completed")
         } catch {
-            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error)")
+            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
         }
     }
 }

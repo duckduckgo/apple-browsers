@@ -276,7 +276,7 @@ private extension BrokerProfileJobQueueManager {
                 errorDelegate: self,
                 jobDependencies: emailConfirmationDependencies
             )
-            Logger.dataBrokerProtection.log("Adding \(emailJobs.count) email confirmation jobs to queue")
+            Logger.dataBrokerProtection.log("Adding \(emailJobs.count, privacy: .public) email confirmation jobs to queue")
 
             for job in emailJobs {
                 jobQueue.addOperation(job)
@@ -286,7 +286,7 @@ private extension BrokerProfileJobQueueManager {
                 Logger.dataBrokerProtection.log("Email confirmation jobs enqueued successfully")
             }
         } catch {
-            Logger.dataBrokerProtection.error("Failed to create email confirmation jobs: \(error)")
+            Logger.dataBrokerProtection.error("Failed to create email confirmation jobs: \(error, privacy: .public)")
         }
     }
 

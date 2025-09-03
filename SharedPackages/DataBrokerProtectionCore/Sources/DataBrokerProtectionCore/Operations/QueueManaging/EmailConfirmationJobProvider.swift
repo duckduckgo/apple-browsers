@@ -33,7 +33,7 @@ public final class EmailConfirmationJobProvider: EmailConfirmationJobProviding {
                                             errorDelegate: EmailConfirmationErrorDelegate,
                                             jobDependencies: EmailConfirmationJobDependencyProviding) throws -> [EmailConfirmationJob] {
         let confirmations = try jobDependencies.database.fetchOptOutEmailConfirmationsWithLink()
-        Logger.dataBrokerProtection.log("Creating \(confirmations.count) email confirmation jobs")
+        Logger.dataBrokerProtection.log("Creating \(confirmations.count, privacy: .public) email confirmation jobs")
 
         let sorted = confirmations.sorted { lhs, rhs in
             let date1 = lhs.emailConfirmationLinkObtainedOnBEDate ?? .distantFuture

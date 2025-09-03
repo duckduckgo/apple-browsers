@@ -70,7 +70,7 @@ public struct RadioButtonConfiguration {
         borderWidth: CGFloat = 1,
         cornerRadius: CGFloat = 16,
         horizontalPadding: CGFloat = 16,
-        verticalPadding: CGFloat = 14,
+        verticalPadding: CGFloat = 16,
         spacing: CGFloat = 6,
         checkboxSize: CGFloat = 24,
         layout: RadioButtonLayout = .vertical,
@@ -105,7 +105,6 @@ public class RadioButtonViewModel: ObservableObject {
     let items: [RadioButtonItem]
     @Published public var selectedItem: RadioButtonItem?
     let configuration: RadioButtonConfiguration
-    let allowsDeselection: Bool
 
     /// Creates a new ViewModel for the radio button view.
     ///
@@ -113,28 +112,18 @@ public class RadioButtonViewModel: ObservableObject {
     ///   - items: An array of items to display in the radio button group.
     ///   - selectedItem: The initially selected item (optional).
     ///   - configuration: The configuration for customizing the radio buttons' appearance.
-    ///   - allowsDeselection: Whether tapping a selected item will deselect it. Defaults to false.
     public init(
         items: [RadioButtonItem],
         selectedItem: RadioButtonItem? = nil,
-        configuration: RadioButtonConfiguration = RadioButtonConfiguration(),
-        allowsDeselection: Bool = false
+        configuration: RadioButtonConfiguration = RadioButtonConfiguration()
     ) {
         self.items = items
         self.selectedItem = selectedItem
         self.configuration = configuration
-        self.allowsDeselection = allowsDeselection
     }
 
-    /// Updates the selected item.
-    ///
-    /// - Parameter item: The item to select, or nil to deselect all.
     public func selectItem(_ item: RadioButtonItem) {
-        if allowsDeselection && selectedItem?.id == item.id {
-            selectedItem = nil
-        } else {
-            selectedItem = item
-        }
+        selectedItem = item
     }
 }
 
@@ -214,45 +203,77 @@ private struct RadioButtonRow: View {
 
     var body: some View {
         HStack(spacing: configuration.spacing) {
-            (isSelected ? configuration.selectedCheckboxImage : configuration.unselectedCheckboxImage)
-                .resizable()
-                .renderingMode(.template)
-                .font(.system(size: configuration.checkboxSize))
-                .foregroundColor(isSelected ? configuration.selectedCheckboxColor : configuration.unselectedCheckboxColor)
-                .frame(width: configuration.checkboxSize, height: configuration.checkboxSize)
-                .flexibleFrame(horizontal: false, vertical: false)
-
-            Text(item.text)
-                .font(configuration.font)
-                .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
-                .multilineTextAlignment(configuration.layout == .horizontal ? .center : .leading)
-                .lineLimit(configuration.layout == .horizontal ? 1 : nil)
-                .truncationMode(.tail)
-                .frame(maxWidth: .infinity, alignment: configuration.layout == .horizontal ? .center : .leading)
-
             if configuration.layout == .vertical {
-                Spacer()
+                verticalRowContent
+            } else {
+                horizontalRowContent
             }
         }
-        .padding(.horizontal, configuration.horizontalPadding)
+        .padding(.horizontal, configuration.layout == .vertical ? configuration.horizontalPadding : 0)
         .padding(.vertical, configuration.verticalPadding)
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: configuration.cornerRadius)
-                .fill(isSelected ? configuration.selectedBackgroundColor : configuration.unselectedBackgroundColor)
+                .fill(backgroundColor)
         )
         .overlay(
             RoundedRectangle(cornerRadius: configuration.cornerRadius)
-                .stroke(
-                    isSelected ? configuration.selectedBorderColor : configuration.unselectedBorderColor,
-                    lineWidth: configuration.borderWidth
-                )
+                .stroke(borderColor, lineWidth: configuration.borderWidth)
         )
         .contentShape(Rectangle()) // This makes the entire area tappable
         .onTapGesture {
             action()
         }
         .animation(.easeInOut(duration: 0.1), value: isSelected)
+    }
+
+    private var backgroundColor: Color {
+        isSelected ? configuration.selectedBackgroundColor : configuration.unselectedBackgroundColor
+    }
+
+    private var borderColor: Color {
+        isSelected ? configuration.selectedBorderColor : configuration.unselectedBorderColor
+    }
+
+    @ViewBuilder
+    private var verticalRowContent: some View {
+        (isSelected ? configuration.selectedCheckboxImage : configuration.unselectedCheckboxImage)
+            .resizable()
+            .renderingMode(.template)
+            .font(.system(size: configuration.checkboxSize))
+            .foregroundColor(isSelected ? configuration.selectedCheckboxColor : configuration.unselectedCheckboxColor)
+            .frame(width: configuration.checkboxSize, height: configuration.checkboxSize)
+            .flexibleFrame(horizontal: false, vertical: false)
+
+        Text(item.text)
+            .font(configuration.font)
+            .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+        Spacer()
+    }
+
+    @ViewBuilder
+    private var horizontalRowContent: some View {
+        Spacer()
+
+        (isSelected ? configuration.selectedCheckboxImage : configuration.unselectedCheckboxImage)
+            .resizable()
+            .renderingMode(.template)
+            .font(.system(size: configuration.checkboxSize))
+            .foregroundColor(isSelected ? configuration.selectedCheckboxColor : configuration.unselectedCheckboxColor)
+            .frame(width: configuration.checkboxSize, height: configuration.checkboxSize)
+            .flexibleFrame(horizontal: false, vertical: false)
+
+        Text(item.text)
+            .font(configuration.font)
+            .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
+            .multilineTextAlignment(.center)
+            .lineLimit(1)
+            .truncationMode(.tail)
+
+        Spacer()
     }
 }
 
@@ -312,13 +333,11 @@ public extension RadioButtonView {
     ///   - options: An array of text strings to create radio button items.
     ///   - selectedIndex: The index of the initially selected item (optional).
     ///   - configuration: The configuration for customizing appearance.
-    ///   - allowsDeselection: Whether tapping a selected item will deselect it.
     ///   - onSelectionChanged: Callback when selection changes, providing the selected item and its index.
     init(
         options: [String],
         selectedIndex: Int? = nil,
         configuration: RadioButtonConfiguration = RadioButtonConfiguration(),
-        allowsDeselection: Bool = false,
         onSelectionChanged: @escaping (RadioButtonItem?, Int?) -> Void = { _, _ in }
     ) {
         let items = options.map { RadioButtonItem(text: $0) }
@@ -330,7 +349,6 @@ public extension RadioButtonView {
             items: items,
             selectedItem: selectedItem,
             configuration: configuration,
-            allowsDeselection: allowsDeselection,
             onSelectionChanged: onSelectionChanged
         )
 
@@ -347,7 +365,6 @@ private class CallbackRadioButtonViewModel: RadioButtonViewModel {
         items: [RadioButtonItem],
         selectedItem: RadioButtonItem? = nil,
         configuration: RadioButtonConfiguration = RadioButtonConfiguration(),
-        allowsDeselection: Bool = false,
         onSelectionChanged: @escaping (RadioButtonItem?, Int?) -> Void
     ) {
         self.onSelectionChanged = onSelectionChanged
@@ -355,7 +372,6 @@ private class CallbackRadioButtonViewModel: RadioButtonViewModel {
             items: items,
             selectedItem: selectedItem,
             configuration: configuration,
-            allowsDeselection: allowsDeselection
         )
     }
 

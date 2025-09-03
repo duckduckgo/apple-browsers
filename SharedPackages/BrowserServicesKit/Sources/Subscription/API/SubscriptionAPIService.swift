@@ -21,21 +21,21 @@ import Common
 import os.log
 import Networking
 
-public enum APIServiceError: Swift.Error, LocalizedError {
+public enum APIServiceError: DDGError {
     case decodingError
     case encodingError
-    case serverError(statusCode: Int, error: String?)
+    case serverError(statusCode: Int, errorCode: String?)
     case unknownServerError
     case connectionError
     case invalidToken
 
-    public var errorDescription: String? {
+    public var description: String {
         switch self {
         case .decodingError:
             return "Decoding error"
         case .encodingError:
             return "Encoding error"
-        case .serverError(statusCode: let statusCode, error: let error):
+        case .serverError(statusCode: let statusCode, errorCode: let error):
             return "Server error (\(statusCode)): \(error ?? "No error description provided")"
         case .unknownServerError:
             return "Unknown server error"
@@ -46,8 +46,17 @@ public enum APIServiceError: Swift.Error, LocalizedError {
         }
     }
 
-    public var localizedDescription: String {
-        errorDescription ?? "Unknown"
+    public var errorDomain: String { "com.duckduckgo.subscription.APIServiceError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .decodingError: 12500
+        case .encodingError: 12501
+        case .serverError: 12502
+        case .unknownServerError: 12503
+        case .connectionError:  12504
+        case .invalidToken: 12505
+        }
     }
 }
 
@@ -113,7 +122,7 @@ public struct DefaultSubscriptionAPIService: SubscriptionAPIService {
 
                 let errorLogMessage = "/\(endpoint) \(httpResponse.statusCode): \(errorString ?? "")"
                 Logger.subscription.error("Service error: \(errorLogMessage, privacy: .public)")
-                return .failure(.serverError(statusCode: httpResponse.statusCode, error: errorString))
+                return .failure(.serverError(statusCode: httpResponse.statusCode, errorCode: errorString))
             }
         } catch {
             Logger.subscription.error("Service error: \(error.localizedDescription, privacy: .public)")

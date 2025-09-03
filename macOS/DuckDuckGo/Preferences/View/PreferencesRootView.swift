@@ -533,6 +533,10 @@ enum Preferences {
                     .appendingParameter(name: AttributionParameter.origin,
                                         value: SubscriptionFunnelOrigin.appSettings.rawValue)
                 showTab(.subscription(url))
+
+                if subscriptionURL == .purchase {
+                    PixelKit.fire(PrivacyProPixel.privacyProOfferScreenImpression)
+                }
             }
         }
     }

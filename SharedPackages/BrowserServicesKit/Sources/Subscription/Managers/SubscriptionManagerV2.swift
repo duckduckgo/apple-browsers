@@ -22,7 +22,7 @@ import Common
 import os.log
 import Networking
 
-public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
+public enum SubscriptionManagerError: DDGError {
     /// The app has no `TokenContainer`
     case noTokenAvailable
     /// There was a failure wile retrieving, updating or creating the `TokenContainer`
@@ -33,28 +33,43 @@ public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
 
     public static func == (lhs: SubscriptionManagerError, rhs: SubscriptionManagerError) -> Bool {
         switch (lhs, rhs) {
-        case (.noTokenAvailable, .noTokenAvailable):
-            return true
         case (.errorRetrievingTokenContainer(let lhsError), .errorRetrievingTokenContainer(let rhsError)):
-            return lhsError?.localizedDescription == rhsError?.localizedDescription
+            return String(describing: lhsError) == String(describing: rhsError)
         case (.confirmationHasInvalidSubscription, .confirmationHasInvalidSubscription),
-            (.noProductsFound, .noProductsFound):
+            (.noProductsFound, .noProductsFound),
+            (.noTokenAvailable, .noTokenAvailable):
             return true
         default:
             return false
         }
     }
 
-    public var errorDescription: String? {
+    public var description: String {
         switch self {
-        case .noTokenAvailable:
-            "No token available"
+        case .noTokenAvailable: "No token available"
+        case .errorRetrievingTokenContainer(error: let error): "Error retrieving token container: \(String(describing: error))"
+        case .confirmationHasInvalidSubscription: "Confirmation has an invalid subscription"
+        case .noProductsFound: "No products found"
+        }
+    }
+
+    public var errorDomain: String { "com.duckduckgo.subscription.SubscriptionManagerError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .noTokenAvailable: 12000
+        case .errorRetrievingTokenContainer: 12001
+        case .confirmationHasInvalidSubscription: 12002
+        case .noProductsFound: 12003
+        }
+    }
+
+    public var underlyingError: (any Error)? {
+        switch self {
         case .errorRetrievingTokenContainer(error: let error):
-            "Error retrieving token container: \(String(describing: error))"
-        case .confirmationHasInvalidSubscription:
-            "Confirmation has an invalid subscription"
-        case .noProductsFound:
-            "No products found"
+            return error
+        default:
+            return nil
         }
     }
 }

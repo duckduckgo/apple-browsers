@@ -60,7 +60,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
                 switch overrideTokenResponse {
                 case .success(let token):
                     self.mockOAuthClient.internalCurrentTokenContainer = token
-                case .failure(let error):
+                case .failure:
                     self.mockOAuthClient.internalCurrentTokenContainer = nil
                 }
             }
@@ -123,8 +123,10 @@ class SubscriptionManagerV2Tests: XCTestCase {
         mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
         do {
             try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
+        } catch SubscriptionEndpointServiceError.noData {
+
         } catch {
-            XCTAssertEqual(error.localizedDescription, SubscriptionEndpointServiceError.noData.localizedDescription)
+            XCTFail("Unexpected error: \(error)")
         }
     }
 

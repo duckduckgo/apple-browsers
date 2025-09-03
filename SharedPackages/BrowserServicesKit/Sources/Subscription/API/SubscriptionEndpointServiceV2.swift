@@ -42,10 +42,28 @@ public struct GetSubscriptionFeaturesResponseV2: Decodable {
     public let features: [SubscriptionEntitlement]
 }
 
-public enum SubscriptionEndpointServiceError: Error, Equatable {
+public enum SubscriptionEndpointServiceError: DDGError {
     case noData
     case invalidRequest
     case invalidResponseCode(HTTPStatusCode)
+
+    public var description: String {
+        switch self {
+        case .noData: "No data returned from the server."
+        case .invalidRequest: "Invalid request."
+        case .invalidResponseCode(let code): "Invalid response code: \(code)"
+        }
+    }
+
+    public var errorDomain: String { "com.duckduckgo.subscription.SubscriptionEndpointServiceError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .noData: 12300
+        case .invalidRequest: 12301
+        case .invalidResponseCode: 12302
+        }
+    }
 }
 
 /// Defines the caching strategy used when retrieving a `PrivacyProSubscription`.

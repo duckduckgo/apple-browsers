@@ -157,6 +157,11 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         favoritesModel.onFavoriteURLSelected = { [weak self] favorite in
             guard let self else { return }
 
+            // Handle shortcuts for internal testing
+            if let favUrl = favorite.url, let url = URL(string: favUrl), InternalUserCommands().handle(url: url) {
+                return
+            }
+
             delegate?.newTabPageDidSelectFavorite(self, favorite: favorite)
         }
 

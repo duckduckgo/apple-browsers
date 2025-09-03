@@ -1253,33 +1253,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertTrue(true, "Notification observer was properly cleaned up")
     }
 
-    @MainActor
-    func testSchedulePlayerCleanup_ClearsPlayerViewModel() {
-        // Given
-        let videoID = "test123"
-        _ = sut.presentDuckPlayer(
-            videoID: videoID,
-            source: .youtube,
-            in: mockHostViewController,
-            title: nil,
-            timestamp: nil
-        )
-        
-        XCTAssertNotNil(sut.playerViewModel)
-        
-        // When - Simulate navigation away which triggers cleanup
-        sut.playerViewModel?.youtubeNavigationRequestPublisher.send(URL.youtube(videoID))
-        
-        // Wait for cleanup using helper method
-        waitForCondition(
-            condition: { [weak sut] in sut?.playerViewModel == nil },
-            description: "Player view model should be cleaned up"
-        )
-        
-        // Then
-        XCTAssertNil(sut.playerViewModel, "Player view model should be cleaned up")
-    }
-
     // MARK: - Pill Impression Pixel Tests
 
     @MainActor

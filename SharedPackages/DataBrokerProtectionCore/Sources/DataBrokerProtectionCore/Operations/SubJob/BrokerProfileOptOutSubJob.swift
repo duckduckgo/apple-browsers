@@ -146,22 +146,8 @@ struct BrokerProfileOptOutSubJob {
                 stageDurationCalculator.fireOptOutValidate()
                 stageDurationCalculator.fireOptOutSubmitSuccess(tries: tries)
 
-                let updater = OperationPreferredDateUpdater(database: dependencies.database)
-                try updater.updateChildrenBrokerForParentBroker(brokerProfileQueryData.dataBroker, profileQueryId: profileQueryId)
-
-                try dependencies.database.addAttempt(extractedProfileId: extractedProfileId,
-                                                     attemptUUID: stageDurationCalculator.attemptId,
-                                                     dataBroker: stageDurationCalculator.dataBroker,
-                                                     lastStageDate: stageDurationCalculator.lastStateTime,
-                                                     startTime: stageDurationCalculator.startTime)
-                try dependencies.database.add(.init(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested))
-                try incrementOptOutAttemptCountIfNeeded(
-                    database: dependencies.database,
-                    brokerId: brokerId,
-                    profileQueryId: profileQueryId,
-                    extractedProfileId: extractedProfileId
-                )
-            }
+            let updater = OperationPreferredDateUpdater(database: dependencies.database)
+            try updater.updateChildrenBrokerForParentBroker(brokerProfileQueryData.dataBroker, profileQueryId: profileQueryId)
         } catch {
             // 9. Catch errors from the opt-out job and report them:
             let tries = try? fetchTotalNumberOfOptOutAttempts(database: dependencies.database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)

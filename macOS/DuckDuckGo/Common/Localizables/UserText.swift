@@ -477,6 +477,7 @@ struct UserText {
     // Misc
 
     static let aiChatShowOnNewTabPageBarToggle = NSLocalizedString("duckai.show-on-new-tab-page.toggle", value: "Show on New Tab Page", comment: "A checkbox to control AI Chat shortcut visibility on the New Tab Page")
+    static let aiChatShowInSearchBoxOnNewTabPageBarToggle = NSLocalizedString("duckai.show-in-search-box-on-new-tab-page.toggle", value: "Show in Search box on New Tab Page", comment: "A checkbox to control AI Chat shortcut visibility in a search box on the New Tab Page")
     static let aiChatShowInAddressBarToggle = NSLocalizedString("duckai.show-in-address-bar.toggle", value: "Show Duck.ai shortcut in the address bar", comment: "Show AI Chat in the address bar")
     static let aiChatShowInApplicationMenuToggle = NSLocalizedString("duckai.show-in-application-menu.toggle-setting", value: "Show Duck.ai shortcuts in menus", comment: "Show Duck.ai in application menus")
     static let aiChatOpenInSidebarToggle = NSLocalizedString("duckai.open-in-sidebar.toggle-setting", value: "Open Duck.ai in the sidebar", comment: "Settings option to open Duck.ai in the sidebar")
@@ -640,6 +641,9 @@ struct UserText {
     static let importDataImportTypeTitleSelected = NSLocalizedString("import.browser.data.import-type.title.collapsed", value: "Import selected data", comment: "Import Browser Data dialog title for option to choose what to import in collapsed state")
     static let importDataImportTypeSubtitleBookmarksAndPasswords = NSLocalizedString("import.browser.data.import-type.subtitle.bookmarks.and.passwords", value: "Bookmarks and passwords", comment: "Import Browser Data dialog subtitle for option to choose what to import in collapsed state")
     static let importDataImportTypeSubtitleNone = NSLocalizedString("import.browser.data.import-type.subtitle.none", value: "None", comment: "Import Browser Data dialog subtitle for option to choose what to import in collapsed state")
+    static let importDataSelectProfileTitle = NSLocalizedString("import.browser.data.select.profile.title", value: "Select profile:", comment: "Title for the data import browser profile picker")
+    static let importDataSelectionSyncButtonTitle = NSLocalizedString("import.browser.data.selection.sync.button.title", value: "Sync from DuckDuckGo on another device", comment: "Import Browser Data dialog button title to sync imported data at selection stage")
+    static let importDataCompleteSyncButtonTitle = NSLocalizedString("import.browser.data.complete.sync.button.title", value: "Sync to DuckDuckGo on Mobile", comment: "Import Browser Data dialog button title to sync imported data at completion stage")
 
     static let exportLogins = NSLocalizedString("export.logins.data", value: "Export Passwords…", comment: "Opens Export Logins Data dialog")
     static let exportBookmarks = NSLocalizedString("export.bookmarks.menu.item", value: "Export Bookmarks…", comment: "Export bookmarks menu item")
@@ -1330,6 +1334,9 @@ struct UserText {
     static let showDownloadsShortcut = NSLocalizedString("pinning.show-downloads-shortcut", value: "Show Downloads Shortcut", comment: "Menu item for showing the downloads shortcut")
     static let hideDownloadsShortcut = NSLocalizedString("pinning.hide-downloads-shortcut", value: "Hide Downloads Shortcut", comment: "Menu item for hiding the downloads shortcut")
 
+    static let showShareShortcut = NSLocalizedString("pinning.show-share-shortcut", value: "Show Share Shortcut", comment: "Menu item for showing the share shortcut")
+    static let hideShareShortcut = NSLocalizedString("pinning.hide-share-shortcut", value: "Hide Share Shortcut", comment: "Menu item for hiding the share shortcut")
+
     static let showNetworkProtectionShortcut = NSLocalizedString("pinning.show-netp-shortcut", value: "Show VPN Shortcut", comment: "Menu item for showing the NetP shortcut")
     static let hideNetworkProtectionShortcut = NSLocalizedString("pinning.hide-netp-shortcut", value: "Hide VPN Shortcut", comment: "Menu item for hiding the NetP shortcut")
 
@@ -1358,7 +1365,9 @@ struct UserText {
     static let bookmarksSortByNameDescending = NSLocalizedString("bookmarks.sort.name.desc", value: "Descending", comment: "Button to sort bookmarks by name descending")
 
     static let bookmarksEmptyStateTitle = NSLocalizedString("bookmarks.empty.state.title", value: "No bookmarks yet", comment: "Title displayed in Bookmark Manager when there is no bookmarks yet")
-    static let bookmarksEmptyStateMessage = NSLocalizedString("bookmarks.empty.state.message", value: "If your bookmarks are saved in another browser, you can import them into DuckDuckGo.", comment: "Text displayed in Bookmark Manager when there is no bookmarks yet")
+    static let bookmarksEmptyStateMessage = NSLocalizedString("bookmarks.empty.state.message2", value: "Import bookmarks from another browser or sync them on DuckDuckGo across your devices.", comment: "Text displayed in Bookmark Manager when there is no bookmarks yet")
+    static let bookmarksEmptyStateImportButtonTitle = NSLocalizedString("bookmarks.empty.state.importButton.title", value: "Import Bookmarks", comment: "")
+    static let bookmarksEmptyStateSyncButtonTitle = NSLocalizedString("bookmarks.empty.state.syncButton.title", value: "Sync Bookmarks", comment: "")
 
     static let bookmarksEmptySearchResultStateTitle = NSLocalizedString("bookmarks.empty.search.resukt..state.title", value: "No bookmarks found", comment: "Title displayed in Bookmark Panel when there is no bookmarks that match the search query")
     static let bookmarksEmptySearchResultStateMessage = NSLocalizedString("bookmarks.empty.search.result.state.message", value: "Try different search terms.", comment: "Text displayed in Bookmark Panel when there is no bookmarks that match the search query")
@@ -1469,6 +1478,7 @@ struct UserText {
     // Favorites
     static let newTabFavoriteSectionTitle = NSLocalizedString("newTab.favorites.section.title", value: "Favorites", comment: "Title of the Favorites section in the home page")
     static let newTabOmnibarSectionTitle = NSLocalizedString("newTab.favorites.section.omnibar", value: "Search", comment: "Title of the Search section in the home page")
+    static let newTabAIChatSectionTitle = NSLocalizedString("newTab.aichat.section.title", value: "Duck.ai", comment: "Title of the Duck.ai section in the home page")
 
     // Set Up
     static let newTabSetUpDefaultBrowserCardTitle = NSLocalizedString("newTab.setup.default.browser.title", value: "Default to Privacy", comment: "Title of the Default Browser card of the Set Up section in the home page")
@@ -1635,6 +1645,7 @@ struct UserText {
                 static let addBookmark = NSLocalizedString("bookmarks.dialog.action.addBookmark", value: "Add Bookmark", comment: "CTA title for adding a Bookmark")
                 static let addFolder = NSLocalizedString("bookmarks.dialog.action.addFolder", value: "Add Folder", comment: "CTA title for adding a Folder")
                 static let addAllBookmarks = NSLocalizedString("bookmarks.dialog.action.addAllBookmarks", value: "Save Bookmarks", comment: "CTA title for saving multiple Bookmarks at once")
+                static let syncBookmarks = NSLocalizedString("bookmarks.dialog.action.syncBookmarks", value: "Sync Bookmarks Across Devices", comment: "CTA title for syncing bookmarks")
             }
         }
     }

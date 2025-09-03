@@ -20,6 +20,7 @@ import Foundation
 import StoreKit
 import os.log
 import Networking
+import PixelKit
 
 public enum AppStorePurchaseFlowError: Swift.Error, Equatable, LocalizedError {
     case noProductsFound
@@ -74,7 +75,9 @@ public enum AppStorePurchaseFlowError: Swift.Error, Equatable, LocalizedError {
 @available(macOS 12.0, iOS 15.0, *)
 public protocol AppStorePurchaseFlowV2 {
     typealias TransactionJWS = String
-    func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<TransactionJWS, AppStorePurchaseFlowError>
+    typealias PurchaseResult = (transactionJWS: TransactionJWS, accountCreationDuration: WidePixel.MeasuredInterval?)
+
+    func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<PurchaseResult, AppStorePurchaseFlowError>
 
     /// Completes the subscription purchase by validating the transaction.
     ///
@@ -100,10 +103,12 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
         self.appStoreRestoreFlow = appStoreRestoreFlow
     }
 
-    public func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<TransactionJWS, AppStorePurchaseFlowError> {
+    public func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<PurchaseResult, AppStorePurchaseFlowError> {
         Logger.subscriptionAppStorePurchaseFlow.log("Purchasing Subscription")
 
         var externalID: String?
+        var accountCreationDuration: WidePixel.MeasuredInterval?
+
         if let existingExternalID = await getExpiredSubscriptionID() {
             Logger.subscriptionAppStorePurchaseFlow.log("External ID retrieved from expired subscription")
             externalID = existingExternalID
@@ -118,7 +123,10 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
             case .failure(let error):
                 Logger.subscriptionAppStorePurchaseFlow.log("Failed to restore an account from a past purchase: \(error.localizedDescription, privacy: .public)")
                 do {
+                    var creationStart = WidePixel.MeasuredInterval.startingNow()
                     externalID = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded).decodedAccessToken.externalID
+                    creationStart.complete()
+                    accountCreationDuration = creationStart
                 } catch Networking.OAuthClientError.missingTokenContainer {
                     Logger.subscriptionStripePurchaseFlow.error("Failed to create a new account: \(error.localizedDescription, privacy: .public)")
                     return .failure(.accountCreationFailed(error))
@@ -137,7 +145,7 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
         // Make the purchase
         switch await storePurchaseManager.purchaseSubscription(with: subscriptionIdentifier, externalID: externalID) {
         case .success(let transactionJWS):
-            return .success(transactionJWS)
+            return .success((transactionJWS: transactionJWS, accountCreationDuration: accountCreationDuration))
         case .failure(let error):
             Logger.subscriptionAppStorePurchaseFlow.error("purchaseSubscription error: \(error.localizedDescription, privacy: .public)")
 

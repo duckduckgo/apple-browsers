@@ -21,6 +21,7 @@ import Combine
 import Common
 import Foundation
 import Navigation
+import PixelKit
 import WebKit
 
 #if SPARKLE
@@ -147,7 +148,7 @@ extension ReleaseNotesValues {
         self.automaticUpdate = automaticUpdate
     }
 
-    init(from updateController: UpdateController) {
+    init(from updateController: UpdateController, pixelKit: PixelKit? = PixelKit.shared) {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
@@ -176,6 +177,8 @@ extension ReleaseNotesValues {
                           automaticUpdate: updateController.areAutomaticUpdatesEnabled)
                 return
             }
+
+            pixelKit?.fire(GeneralPixel.releaseNotesEmpty, frequency: .dailyAndCount)
 
             self.init(status: updateController.updateProgress.toStatus,
                       currentVersion: currentVersion,

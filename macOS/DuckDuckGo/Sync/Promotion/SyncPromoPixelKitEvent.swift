@@ -44,3 +44,14 @@ enum SyncPromoPixelKitEvent: PixelKitEventV2 {
         NonStandardEvent(self)
     }
 }
+
+enum SyncDeviceButtonTouchpoint: String {
+    case moreMenu
+    case bookmarkAdded
+    case bookmarksListEmpty
+    case bookmarksManagementEmpty
+    case bookmarksBar
+    case passwordsEmpty
+    case dataImportStart
+    case dataImportFinish
+}

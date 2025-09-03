@@ -30,6 +30,8 @@ extension DefaultSubscriptionFeatureAvailability {
             Application.appDelegate.featureFlagger.isFeatureOn(.paidAIChat)
         }, supportsAlternateStripePaymentFlowStatusProvider: {
             Application.appDelegate.featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow)
+        }, isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: {
+            Application.appDelegate.featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement)
         })
     }
 }

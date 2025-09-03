@@ -50,9 +50,9 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     @Published
-    var shouldOpenFireWindowbyDefault: Bool {
+    var shouldOpenFireWindowByDefault: Bool {
         didSet {
-            persistor.shouldOpenFireWindowbyDefault = shouldOpenFireWindowbyDefault
+            persistor.shouldOpenFireWindowByDefault = shouldOpenFireWindowByDefault
         }
     }
 
@@ -107,7 +107,7 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         isAutoClearEnabled = persistor.autoClearEnabled
         isWarnBeforeClearingEnabled = persistor.warnBeforeClearingEnabled
         isFireAnimationEnabled = persistor.isFireAnimationEnabled
-        shouldOpenFireWindowbyDefault = persistor.shouldOpenFireWindowbyDefault
+        shouldOpenFireWindowByDefault = persistor.shouldOpenFireWindowByDefault
     }
 
     private var persistor: FireButtonPreferencesPersistor
@@ -123,7 +123,7 @@ protocol FireButtonPreferencesPersistor {
     var autoClearEnabled: Bool { get set }
     var warnBeforeClearingEnabled: Bool { get set }
     var isFireAnimationEnabled: Bool { get set }
-    var shouldOpenFireWindowbyDefault: Bool { get set }
+    var shouldOpenFireWindowByDefault: Bool { get set }
 }
 
 struct FireButtonPreferencesUserDefaultsPersistor: FireButtonPreferencesPersistor {
@@ -141,7 +141,7 @@ struct FireButtonPreferencesUserDefaultsPersistor: FireButtonPreferencesPersisto
     var isFireAnimationEnabled: Bool
 
     @UserDefaultsWrapper(key: .openFireWindowByDefault, defaultValue: false)
-    var shouldOpenFireWindowbyDefault: Bool
+    var shouldOpenFireWindowByDefault: Bool
 
 }
 

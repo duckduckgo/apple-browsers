@@ -62,7 +62,7 @@ final class Application: NSApplication {
         self.mainMenu = mainMenu
 
         // Subscribe to Fire Window preference changes to update menu dynamically
-        fireWindowPreferenceCancellable = delegate.dataClearingPreferences.$shouldOpenFireWindowbyDefault
+        fireWindowPreferenceCancellable = delegate.dataClearingPreferences.$shouldOpenFireWindowByDefault
             .dropFirst()
             .sink { [weak mainMenu] isFireWindowDefault in
                 mainMenu?.updateMenuItemsPositionForFireWindowDefault(isFireWindowDefault)

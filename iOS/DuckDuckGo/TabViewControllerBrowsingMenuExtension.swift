@@ -62,14 +62,6 @@ extension TabViewController {
 
         let copyEntry = buildCopyEntry()
 
-        let reloadEntry = BrowsingMenuEntry.regular(name: UserText.actionRefresh,
-                                                    image: DesignSystemImages.Glyphs.Size24.reload,
-                                                    action: { [weak self] in
-            guard let self = self else { return }
-            Pixel.fire(pixel: .browsingMenuReload)
-            self.reload()
-        })
-
         if shouldShowAIChatInMenu {
             let chatEntry = buildChatEntry(withSmallIcon: false)
 
@@ -209,6 +201,17 @@ extension TabViewController {
 
         if let entry = self.buildUseNewDuckAddressEntry(forLink: link) {
             entries.append(entry)
+        }
+
+        if featureFlagger.isFeatureOn(.refreshButtonPosition) && appSettings.currentRefreshButtonPosition.isEnabledForBrowsingMenu {
+            let refreshEntry = BrowsingMenuEntry.regular(name: UserText.actionRefreshPage,
+                                                         image: DesignSystemImages.Glyphs.Size16.reload,
+                                                         action: { [weak self] in
+                guard let self = self else { return }
+                Pixel.fire(pixel: .browsingMenuRefreshPage)
+                self.reload()
+            })
+            entries.append(refreshEntry)
         }
 
         if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView) {

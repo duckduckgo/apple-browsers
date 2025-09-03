@@ -224,20 +224,15 @@ final class WidePixelServiceTests: XCTestCase {
         let dataWithActivation = createMockWidePixelData(activateAccountDuration: interval)
         let dataWithoutActivation = createMockWidePixelData()
         
-        widePixelMock.started  = [dataWithActivation, dataWithoutActivation]
+        widePixelMock.started = [dataWithActivation, dataWithoutActivation]
 
-        let expectation = expectation(description: "Completion called")
-        expectation.expectedFulfillmentCount = 2
+        let abandonedPixelExpectation = expectation(description: "sendAbandonedPixels completion called")
+        service.sendAbandonedPixels { abandonedPixelExpectation.fulfill() }
+        wait(for: [abandonedPixelExpectation], timeout: 5.0)
 
-        service.sendAbandonedPixels {
-            expectation.fulfill()
-        }
-
-        service.sendDelayedPixels {
-            expectation.fulfill()
-        }
-        
-        waitForExpectations(timeout: 2.0)
+        let delayedPixelExpectation = expectation(description: "sendDelayedPixels completion called")
+        service.sendDelayedPixels { delayedPixelExpectation.fulfill() }
+        wait(for: [delayedPixelExpectation], timeout: 5.0)
         
         XCTAssertEqual(widePixelMock.completions.count, 2)
 

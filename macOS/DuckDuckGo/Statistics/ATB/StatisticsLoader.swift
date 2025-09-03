@@ -55,13 +55,16 @@ final class StatisticsLoader {
         self.fireAppRetentionExperimentPixels = fireAppRetentionExperimentPixels
     }
 
-    func refreshRetentionAtb(isSearch: Bool, completion: @escaping Completion = {}) {
+    func refreshRetentionAtb(isSearch: Bool,
+                             isDuckAI: Bool,
+                             completion: @escaping Completion = {})
+    {
         load {
             dispatchPrecondition(condition: .onQueue(.main))
 
             if isSearch {
                 self.refreshSearchRetentionAtb {
-                    self.refreshRetentionAtb(isSearch: false) {
+                    self.refreshRetentionAtb(isSearch: false, isDuckAI: false) {
                         completion()
                     }
                 }
@@ -72,6 +75,9 @@ final class StatisticsLoader {
                     self.fireDailyOsVersionCounterPixel()
                 }
                 self.fireDockPixel()
+                if isDuckAI {
+                    self.refreshDuckAIRetentionAtb()
+                }
             } else if !self.statisticsStore.isAppRetentionFiredToday {
                 self.refreshAppRetentionAtb(completion: completion)
                 self.fireAppRetentionExperimentPixels()
@@ -226,6 +232,44 @@ final class StatisticsLoader {
                 self.statisticsStore.lastAppRetentionRequestDate = Date()
                 self.storeUpdateVersionIfPresent(atb)
                 self.updateUsageSegmentationWithAtb(atb, activityType: .appUse)
+            }
+
+            completion()
+        }
+    }
+
+    func refreshDuckAIRetentionAtb(completion: @escaping Completion = {}) {
+        dispatchPrecondition(condition: .onQueue(.main))
+
+        guard let atbWithVariant = statisticsStore.atbWithVariant,
+              let duckAIRetentionAtb = statisticsStore.duckAIRetentionAtb ?? statisticsStore.atb
+        else {
+            requestInstallStatistics {
+                self.updateUsageSegmentationAfterInstall(activityType: .duckAI)
+                completion()
+            }
+            return
+        }
+
+        Logger.atb.debug("Requesting Duck.ai retention ATB")
+
+        let url = URL.duckAIAtb(atbWithVariant: atbWithVariant, setAtb: duckAIRetentionAtb)
+        let configuration = APIRequest.Configuration(url: url)
+        let request = APIRequest(configuration: configuration, urlSession: URLSession.session(useMainThreadCallbackQueue: true))
+        request.fetch { (response, error) in
+            if let error = error {
+                Logger.atb.error("Duck.ai atb request failed with error \(error.localizedDescription)")
+                completion()
+                return
+            }
+
+            Logger.atb.debug("Duck.ai retention ATB request succeeded")
+
+            if let data = response?.data, let atb  = try? self.parser.convert(fromJsonData: data) {
+                self.statisticsStore.duckAIRetentionAtb = atb.version
+                self.storeUpdateVersionIfPresent(atb)
+                self.updateUsageSegmentationWithAtb(atb, activityType: .duckAI)
+//                NotificationCenter.default.post(name: .searchDAU, object: nil, userInfo: nil)
             }
 
             completion()

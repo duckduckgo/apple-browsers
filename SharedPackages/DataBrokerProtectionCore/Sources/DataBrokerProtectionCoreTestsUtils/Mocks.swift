@@ -631,6 +631,10 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         return brokers
     }
 
+    public func fetchAllNonRemovedBrokers() throws -> [DataBroker] {
+        return brokers
+    }
+
     public func save(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64 {
         wasSaveProfileQueryCalled = true
         return 1
@@ -869,6 +873,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var lastHistoryEventToReturn: HistoryEvent?
     public var lastPreferredRunDateOnScan: Date?
     public var lastPreferredRunDateOnOptOut: Date?
+    public var lastShouldFilterRemovedBrokers: Bool?
     public var submittedSuccessfullyDate: Date?
     public var extractedProfileRemovedDate: Date?
     public var extractedProfilesFromBroker = [ExtractedProfile]()
@@ -954,14 +959,20 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    public func fetchAllBrokerProfileQueryData() throws -> [BrokerProfileQueryData] {
+    public func fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: Bool = true) throws -> [BrokerProfileQueryData] {
         wasFetchAllBrokerProfileQueryDataCalled = true
+        lastShouldFilterRemovedBrokers = shouldFilterRemovedBrokers
 
         if let fetchAllBrokerProfileQueryDataError {
             throw fetchAllBrokerProfileQueryDataError
         }
 
-        return brokerProfileQueryDataToReturn
+        // Simulate the filtering behavior
+        if shouldFilterRemovedBrokers {
+            return brokerProfileQueryDataToReturn.filter { !$0.dataBroker.isRemoved }
+        } else {
+            return brokerProfileQueryDataToReturn
+        }
     }
 
     public func fetchAllDataBrokers() throws -> [DataBrokerProtectionCore.DataBroker] {
@@ -1129,6 +1140,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasFetchLastHistoryEventCalled = false
         fetchAllBrokerProfileQueryDataError = nil
         lastHistoryEventToReturn = nil
+        lastShouldFilterRemovedBrokers = nil
         lastPreferredRunDateOnScan = nil
         lastPreferredRunDateOnOptOut = nil
         extractedProfileRemovedDate = nil
@@ -2228,7 +2240,7 @@ public extension ExtractedProfileDB {
 }
 
 public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProvider {
-   public static var didCallV2Migrations = false
+    public static var didCallV2Migrations = false
     public static var didCallV3Migrations = false
     public static var didCallV4Migrations = false
     public static var didCallV5Migrations = false
@@ -2370,6 +2382,28 @@ public extension DataBroker {
         )
     }
 
+    static var removedMock: DataBroker {
+        DataBroker(
+            id: 2,
+            name: "Removed Test broker",
+            url: "removedtestbroker.com",
+            steps: [
+                Step(type: .scan, actions: [Action]()),
+                Step(type: .optOut, actions: [Action]())
+            ],
+            version: "1.0",
+            schedulingConfig: DataBrokerScheduleConfig(
+                retryError: 0,
+                confirmOptOutScan: 0,
+                maintenanceScan: 0,
+                maxAttempts: -1
+            ),
+            optOutUrl: "",
+            eTag: "",
+            removedAt: Date()
+        )
+    }
+
     static var mockWithParentOptOut: DataBroker {
         DataBroker(
             id: 1,
@@ -2495,6 +2529,75 @@ public extension DataBroker {
             optOutUrl: "",
             eTag: "",
             removedAt: nil
+        )
+    }
+
+    static func mockWithId(_ id: Int64, url: String, removedAt: Date?) -> DataBroker {
+        DataBroker(
+            id: id,
+            name: "Test broker \(id)",
+            url: url,
+            steps: [
+                Step(type: .scan, actions: [Action]()),
+                Step(type: .optOut, actions: [Action]())
+            ],
+            version: "1.0",
+            schedulingConfig: DataBrokerScheduleConfig(
+                retryError: 0,
+                confirmOptOutScan: 0,
+                maintenanceScan: 0,
+                maxAttempts: -1
+            ),
+            mirrorSites: [],
+            optOutUrl: "",
+            eTag: "",
+            removedAt: removedAt
+        )
+    }
+}
+
+public extension ScanJobData {
+    static var mockWithRecentScan: ScanJobData {
+        .init(
+            brokerId: 1,
+            profileQueryId: 1,
+            preferredRunDate: nil,
+            historyEvents: [HistoryEvent.mock(type: .scanStarted, date: Date())]
+        )
+    }
+
+    static var mockWithOldScan: ScanJobData {
+        .init(
+            brokerId: 1,
+            profileQueryId: 1,
+            preferredRunDate: nil,
+            historyEvents: [HistoryEvent.mock(type: .scanStarted, date: Calendar.current.date(byAdding: .day, value: -10, to: Date()) ?? Date())]
+        )
+    }
+}
+
+public extension OptOutJobData {
+    static var mockWithSuccessfulOptOut: OptOutJobData {
+        .init(
+            brokerId: 1,
+            profileQueryId: 1,
+            createdDate: Date(),
+            historyEvents: [HistoryEvent.mock(type: .optOutConfirmed, date: Date())],
+            attemptCount: 1,
+            submittedSuccessfullyDate: Date(),
+            extractedProfile: .mockWithoutRemovedDate
+        )
+    }
+
+    static var mockWithInProgressOptOut: OptOutJobData {
+        .init(
+            brokerId: 1,
+            profileQueryId: 1,
+            createdDate: Date(),
+            historyEvents: [HistoryEvent.mock(type: .optOutRequested, date: Date())],
+            attemptCount: 1,
+            submittedSuccessfullyDate: Date(),
+            extractedProfile: .mockWithoutRemovedDate
         )
     }
 }

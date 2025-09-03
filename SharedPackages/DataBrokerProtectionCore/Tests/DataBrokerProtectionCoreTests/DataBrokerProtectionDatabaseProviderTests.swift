@@ -403,6 +403,106 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         XCTAssertNoThrow(try sut.deleteProfileData())
         XCTAssertTrue(try sut.db.allTablesAreEmpty())
     }
+
+    func testWhenFetchAllNonRemovedBrokers_thenFiltersCorrectly() throws {
+        // Given
+        let freshVaultURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
+            directoryName: "DBP",
+            fileName: "Fresh-Test-Vault.db"
+        )
+        try? FileManager.default.removeItem(at: freshVaultURL)
+
+        // When:
+        let freshProvider = try DefaultDataBrokerProtectionDatabaseProvider(
+            file: freshVaultURL,
+            key: key,
+            registerMigrationsHandler: Migrations.v8Migrations
+        )
+
+        let activeBroker = BrokerDB.random(name: "ActiveBroker", removedAt: nil)
+        let removedBroker = BrokerDB.random(name: "RemovedBroker", removedAt: Date())
+
+        // When
+        let _ = try freshProvider.save(activeBroker)
+        let _ = try freshProvider.save(removedBroker)
+
+        let allBrokers = try freshProvider.fetchAllBrokers()
+        let nonRemovedBrokers = try freshProvider.fetchAllNonRemovedBrokers()
+
+        // Then
+        XCTAssertEqual(allBrokers.count, 2, "Should fetch all brokers including removed ones")
+        XCTAssertEqual(nonRemovedBrokers.count, 1, "Should only fetch non-removed brokers")
+        XCTAssertEqual(nonRemovedBrokers.first?.name, "ActiveBroker", "Should only return active broker")
+        XCTAssertNil(nonRemovedBrokers.first?.removedAt, "Returned broker should not have removedAt set")
+
+        // Cleanup
+        try? FileManager.default.removeItem(at: freshVaultURL)
+    }
+
+    func testWhenFetchAllNonRemovedBrokers_thenReturnsAllBrokers() throws {
+        // Given
+        let freshVaultURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
+            directoryName: "DBP",
+            fileName: "Fresh-Test-Vault.db"
+        )
+        try? FileManager.default.removeItem(at: freshVaultURL)
+
+        // When:
+        let freshProvider = try DefaultDataBrokerProtectionDatabaseProvider(
+            file: freshVaultURL,
+            key: key,
+            registerMigrationsHandler: Migrations.v8Migrations
+        )
+
+        let broker1 = BrokerDB.random(name: "ActiveBroker1", removedAt: nil)
+        let broker2 = BrokerDB.random(name: "ActiveBroker2", removedAt: nil)
+
+        // When
+        let _ = try freshProvider.save(broker1)
+        let _ = try freshProvider.save(broker2)
+
+        let allBrokers = try freshProvider.fetchAllBrokers()
+        let nonRemovedBrokers = try freshProvider.fetchAllNonRemovedBrokers()
+
+        // Then
+        XCTAssertEqual(allBrokers.count, 2, "Should fetch all brokers")
+        XCTAssertEqual(nonRemovedBrokers.count, 2, "Should fetch all brokers when none are removed")
+        XCTAssertEqual(allBrokers.count, nonRemovedBrokers.count, "Counts should match when no brokers are removed")
+
+        try? FileManager.default.removeItem(at: freshVaultURL)
+    }
+
+    func testWhenFetchAllNonRemovedBrokers_thenReturnsEmptyArray() throws {
+        // Given
+        let freshVaultURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
+            directoryName: "DBP",
+            fileName: "Fresh-Test-Vault.db"
+        )
+        try? FileManager.default.removeItem(at: freshVaultURL)
+
+        // When:
+        let freshProvider = try DefaultDataBrokerProtectionDatabaseProvider(
+            file: freshVaultURL,
+            key: key,
+            registerMigrationsHandler: Migrations.v8Migrations
+        )
+
+        let removedBroker1 = BrokerDB.random(name: "RemovedBroker1", removedAt: Date())
+        let removedBroker2 = BrokerDB.random(name: "RemovedBroker2", removedAt: Date())
+
+        // When
+        let _ = try freshProvider.save(removedBroker1)
+        let _ = try freshProvider.save(removedBroker2)
+
+        let allBrokers = try freshProvider.fetchAllBrokers()
+        let nonRemovedBrokers = try freshProvider.fetchAllNonRemovedBrokers()
+
+        // Then
+        XCTAssertEqual(allBrokers.count, 2, "Should fetch all brokers including removed ones")
+        XCTAssertEqual(nonRemovedBrokers.count, 0, "Should return empty array when all brokers are removed")
+
+        try? FileManager.default.removeItem(at: freshVaultURL)
+    }
 }
 
 private extension DatabaseWriter {

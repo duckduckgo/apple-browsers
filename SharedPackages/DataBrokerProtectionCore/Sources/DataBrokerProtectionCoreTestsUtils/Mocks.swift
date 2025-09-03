@@ -978,18 +978,26 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         return ProfileQuery.mock
     }
 
+    public var recordsAwaitingLink: [OptOutEmailConfirmationJobData] = []
+
     public func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData] {
-        return []
+        return recordsAwaitingLink
     }
 
     public func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData] {
         return []
     }
 
-    public func updateOptOutEmailConfirmationLink(_ link: String?, emailConfirmationLinkObtainedOnBEDate: Date?, profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
+    public func updateOptOutEmailConfirmationLink(_ link: String?,
+                                                   emailConfirmationLinkObtainedOnBEDate: Date?,
+                                                   profileQueryId: Int64,
+                                                   brokerId: Int64,
+                                                   extractedProfileId: Int64) throws {
     }
 
-    public func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
+    public func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64,
+                                                              brokerId: Int64,
+                                                              extractedProfileId: Int64) throws {
     }
 
     public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) {
@@ -1661,10 +1669,14 @@ public final class MockBrokerProfileJobErrorDelegate: BrokerProfileJobErrorDeleg
 }
 
 public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
-    public var isRemoteBrokerDeliveryFeatureOn = true
-    public var isEmailConfirmationDecouplingFeatureOn = false
+    public let isRemoteBrokerDeliveryFeatureOn: Bool
+    public let isEmailConfirmationDecouplingFeatureOn: Bool
 
-    public init() {}
+    public init(isRemoteBrokerDeliveryFeatureOn: Bool = true,
+                isEmailConfirmationDecouplingFeatureOn: Bool = false) {
+        self.isRemoteBrokerDeliveryFeatureOn = isRemoteBrokerDeliveryFeatureOn
+        self.isEmailConfirmationDecouplingFeatureOn = isEmailConfirmationDecouplingFeatureOn
+    }
 }
 
 public final class MockOperationEventsHandler: EventMapping<JobEvent> {

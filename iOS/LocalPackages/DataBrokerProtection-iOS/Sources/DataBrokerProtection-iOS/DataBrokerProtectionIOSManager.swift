@@ -387,11 +387,11 @@ public final class DataBrokerProtectionIOSManager {
         }
     }
 
-    private func checkForEmailConfirmationData() async {
+    public func checkForEmailConfirmationData() async {
         do {
             try await emailConfirmationDataService.checkForEmailConfirmationData()
         } catch {
-            // TODO
+            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
         }
     }
 

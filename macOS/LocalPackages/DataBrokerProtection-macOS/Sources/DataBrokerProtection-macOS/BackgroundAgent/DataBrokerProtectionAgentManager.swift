@@ -255,7 +255,7 @@ public final class DataBrokerProtectionAgentManager {
         do {
             try await emailConfirmationDataService.checkForEmailConfirmationData()
         } catch {
-            // TODO
+            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
         }
     }
 }
@@ -314,7 +314,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
             let emailConfirmationDataService = activityScheduler.dataSource?.emailConfirmationDataServiceForDataBrokerProtectionBackgroundActivityScheduler(activityScheduler)
             try await emailConfirmationDataService?.checkForEmailConfirmationData()
         } catch {
-            // TODO
+            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
         }
         await startScheduledOperations()
     }
@@ -470,6 +470,13 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
                                                     jobDependencies: jobDependencies,
                                                     errorHandler: nil,
                                                     completion: nil))
+    }
+
+    public func checkForEmailConfirmationData() {
+        Task {
+            Logger.dataBrokerProtection.log("Checking for email confirmation data from debug menu...")
+            await checkForEmailConfirmationData()
+        }
     }
 
     public func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {

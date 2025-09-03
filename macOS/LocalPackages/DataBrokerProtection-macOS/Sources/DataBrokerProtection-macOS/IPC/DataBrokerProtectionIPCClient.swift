@@ -146,6 +146,16 @@ extension DataBrokerProtectionIPCClient: IPCServerInterface {
         })
     }
 
+    public func checkForEmailConfirmationData() {
+        xpc.execute(call: { server in
+            server.checkForEmailConfirmationData()
+        }, xpcReplyErrorHandler: { error in
+            Logger.dataBrokerProtection.error("Error checking for email confirmation data: \(error.localizedDescription)")
+            // Intentional no-op as there's no completion block
+            // If you add a completion block, please remember to call it here too!
+        })
+    }
+
     public func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {
         await withCheckedContinuation { continuation in
             xpc.execute(call: { server in

@@ -186,13 +186,15 @@ public struct DBPUIDataBroker: Codable, Hashable {
     public let date: Double?
     public let parentURL: String?
     public let optOutUrl: String
+    public let removedAt: Double?
 
-    public init(name: String, url: String, date: Double? = nil, parentURL: String?, optOutUrl: String) {
+    public init(name: String, url: String, date: Double? = nil, parentURL: String?, optOutUrl: String, removedAt: Double? = nil) {
         self.name = name
         self.url = url
         self.date = date
         self.parentURL = parentURL
         self.optOutUrl = optOutUrl
+        self.removedAt = removedAt
     }
 
     public func hash(into hasher: inout Hasher) {
@@ -207,6 +209,7 @@ public extension DBPUIDataBroker {
         self.date = date?.timeIntervalSince1970
         parentURL = dataBroker.parent
         optOutUrl = dataBroker.optOutUrl
+        removedAt = dataBroker.removedAt?.timeIntervalSince1970
     }
 
     init(from mirrorSite: MirrorSite, parentBroker: DataBroker, withDate date: Date? = nil) {
@@ -215,6 +218,7 @@ public extension DBPUIDataBroker {
         self.date = date?.timeIntervalSince1970
         parentURL = parentBroker.url
         optOutUrl = parentBroker.optOutUrl
+        removedAt = parentBroker.removedAt?.timeIntervalSince1970
     }
 
     static func brokerWithMirrorSites(from broker: DataBroker, withDate date: Date? = nil) -> [Self] {

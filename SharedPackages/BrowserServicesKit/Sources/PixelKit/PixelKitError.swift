@@ -50,9 +50,12 @@ public enum PixelKitError: DDGError {
 
     public static func == (lhs: PixelKitError, rhs: PixelKitError) -> Bool {
         switch (lhs, rhs) {
-            case (.doubleError, .doubleError): return true
-        case (.externalError(let lhs), .externalError(let rhs)): return String(describing: lhs) == String(describing: rhs)
-        default: return false
+        case (.doubleError, .doubleError):
+            return true
+        case (.externalError(let lhs), .externalError(let rhs)):
+            return String(describing: lhs) == String(describing: rhs)
+        default:
+            return false
         }
     }
 }

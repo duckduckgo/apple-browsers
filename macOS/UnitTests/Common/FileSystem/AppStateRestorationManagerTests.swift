@@ -192,4 +192,5 @@ private class MockStartupPreferencesPersistor: StartupPreferencesPersistor {
     var restorePreviousSession: Bool = false
     var launchToCustomHomePage: Bool = false
     var customHomePageURL: String = ""
+    var startupWindowType: StartupWindowType = .window
 }

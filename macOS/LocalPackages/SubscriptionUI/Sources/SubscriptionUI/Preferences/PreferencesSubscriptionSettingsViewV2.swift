@@ -26,6 +26,7 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
 
     @ObservedObject var model: PreferencesSubscriptionSettingsModelV2
     @State private var showingRemoveConfirmationDialog = false
+    @State private var showingInternalSubscriptionAlert = false
 
     @State private var manageSubscriptionSheet: ManageSubscriptionSheet?
     private var isSubscriptionRebrandingOn: () -> Bool
@@ -78,6 +79,9 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
         }
         .sheet(isPresented: $showingRemoveConfirmationDialog) {
             removeConfirmationDialog
+        }
+        .sheet(isPresented: $showingInternalSubscriptionAlert) {
+            internalSubscriptionAlert
         }
         .sheet(item: $manageSubscriptionSheet) { sheet in
             switch sheet {
@@ -167,6 +171,8 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
                             manageSubscriptionSheet = sheet
                         case .navigateToManageSubscription(let navigationAction):
                             navigationAction()
+                        case .showInternalSubscriptionAlert:
+                            showingInternalSubscriptionAlert.toggle()
                         }
                     }
                 }
@@ -234,6 +240,17 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
                 Text(UserText.removeSubscriptionDialogConfirm)
                     .foregroundColor(.red)
             })
+        })
+        .frame(width: 320)
+    }
+
+    @ViewBuilder
+    private var internalSubscriptionAlert: some View {
+        SubscriptionDialog(imageName: "Privacy-Pro-128",
+                           title: UserText.changeSubscriptionDialogTitle,
+                           description: UserText.changeSubscriptionDialogInternalMessage,
+                           buttons: {
+            Button(UserText.okButtonTitle) { showingInternalSubscriptionAlert = false }
         })
         .frame(width: 320)
     }

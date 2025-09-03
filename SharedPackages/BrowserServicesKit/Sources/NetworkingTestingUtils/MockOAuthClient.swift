@@ -121,7 +121,7 @@ public class MockOAuthClient: OAuthClient {
         }
     }
 
-    public func removeLocalAccount() {}
+    public func removeLocalAccount() throws {}
 
     public var changeAccountEmailResponse: Result<String, Error>!
     public func changeAccount(email: String?) async throws -> String {

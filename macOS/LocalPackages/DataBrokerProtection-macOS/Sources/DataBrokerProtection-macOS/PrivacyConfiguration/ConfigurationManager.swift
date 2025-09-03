@@ -35,7 +35,7 @@ public final class ConfigurationManager: DefaultConfigurationManager {
     private let privacyConfigManager: DBPPrivacyConfigurationManager
 
     public init(privacyConfigManager: DBPPrivacyConfigurationManager,
-                fetcher: ConfigurationFetching = ConfigurationFetcher(store: ConfigurationStore(), eventMapping: configurationDebugEvents),
+                fetcher: ConfigurationFetching,
                 store: ConfigurationStoring = ConfigurationStore(),
                 defaults: KeyValueStoring = UserDefaults.config) {
         self.privacyConfigManager = privacyConfigManager

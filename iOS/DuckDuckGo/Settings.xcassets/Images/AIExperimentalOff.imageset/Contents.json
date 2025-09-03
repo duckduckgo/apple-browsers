@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "AIExperimentalOff.svg",
+      "filename" : "Mobile-SearchBox-WithAI.pdf",
       "idiom" : "universal"
     },
     {
@@ -11,7 +11,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "AIExperimentalOff 1.svg",
+      "filename" : "Mobile-SearchBox-WithAI-OnDark.pdf",
       "idiom" : "universal"
     }
   ],

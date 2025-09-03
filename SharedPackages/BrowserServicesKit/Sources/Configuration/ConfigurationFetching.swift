@@ -40,21 +40,25 @@ public final class ConfigurationFetcher: ConfigurationFetching {
 
     private var store: ConfigurationStoring
     private let validator: ConfigurationValidating
-    private let urlSession: URLSession
+    private let configurationURLProvider: ConfigurationURLProviding
+    private let sessionProvider: () -> URLSession
 
     public convenience init(store: ConfigurationStoring,
-                            urlSession: URLSession = .shared,
+                            urlSession: @autoclosure @escaping () -> URLSession = URLSession.shared,
+                            configurationURLProvider: ConfigurationURLProviding,
                             eventMapping: EventMapping<ConfigurationDebugEvents>? = nil) {
         let validator = ConfigurationValidator(eventMapping: eventMapping)
-        self.init(store: store, validator: validator)
+        self.init(store: store, validator: validator, sessionProvider: urlSession, configurationURLProvider: configurationURLProvider)
     }
 
     init(store: ConfigurationStoring,
          validator: ConfigurationValidating,
-         urlSession: URLSession = .shared) {
+         sessionProvider: @escaping () -> URLSession,
+         configurationURLProvider: ConfigurationURLProviding) {
         self.store = store
         self.validator = validator
-        self.urlSession = urlSession
+        self.sessionProvider = sessionProvider
+        self.configurationURLProvider = configurationURLProvider
     }
 
     /**
@@ -69,7 +73,7 @@ public final class ConfigurationFetcher: ConfigurationFetching {
     */
     public func fetch(_ configuration: Configuration, isDebug: Bool = false) async throws {
         let requirements: APIResponseRequirements = isDebug ? .requireNonEmptyData : .default
-        let fetchResult = try await fetch(from: configuration.url, withEtag: etag(for: configuration), requirements: requirements)
+        let fetchResult = try await fetch(from: configurationURLProvider.url(for: configuration), withEtag: etag(for: configuration), requirements: requirements)
         if let data = fetchResult.data {
             try validator.validate(data, for: configuration)
         }
@@ -95,7 +99,7 @@ public final class ConfigurationFetcher: ConfigurationFetching {
         try await withThrowingTaskGroup(of: (Configuration, ConfigurationFetchResult).self) { group in
             configurations.forEach { configuration in
                 group.addTask {
-                    let fetchResult = try await self.fetch(from: configuration.url, withEtag: self.etag(for: configuration), requirements: .all)
+                    let fetchResult = try await self.fetch(from: self.configurationURLProvider.url(for: configuration), withEtag: self.etag(for: configuration), requirements: .all)
                     if let data = fetchResult.data {
                         try self.validator.validate(data, for: configuration)
                     }
@@ -125,7 +129,7 @@ public final class ConfigurationFetcher: ConfigurationFetching {
         let configuration = APIRequest.Configuration(url: url,
                                                      headers: APIRequest.Headers(etag: etag),
                                                      cachePolicy: .reloadIgnoringLocalCacheData)
-        let request = APIRequest(configuration: configuration, requirements: requirements, urlSession: urlSession)
+        let request = APIRequest(configuration: configuration, requirements: requirements, urlSession: sessionProvider())
         let (data, response) = try await request.fetch()
         return (response.etag ?? "", data)
     }

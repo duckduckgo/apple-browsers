@@ -19,7 +19,7 @@
 import XCTest
 
 class BrowsingHistoryTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var historyMenuBarItem: XCUIElement!
     private var clearAllHistoryMenuItem: XCUIElement!
     private var clearAllHistoryAlertClearButton: XCUIElement!
@@ -27,21 +27,16 @@ class BrowsingHistoryTests: UITestCase {
     private var addressBarTextField: XCUIElement!
     private let lengthForRandomPageTitle = 8
 
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
-
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
         historyMenuBarItem = app.menuBarItems["History"]
         clearAllHistoryMenuItem = app.menuItems["HistoryMenu.clearAllHistory"]
         clearAllHistoryAlertClearButton = app.buttons["ClearAllHistoryAndDataAlert.clearButton"]
         fakeFireButton = app.buttons["FireViewController.fakeFireButton"]
-        addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        addressBarTextField = app.addressBar
+        app.enforceSingleWindow()
 
         XCTAssertTrue(
             historyMenuBarItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -108,8 +103,7 @@ class BrowsingHistoryTests: UITestCase {
             app.windows.webViews[historyPageTitleExpectedToBeFirstInTodayHistory].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close all windows
-        app.typeKey("n", modifierFlags: .command) // New window
+        app.enforceSingleWindow()
         XCTAssertTrue(
             historyMenuBarItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "History menu bar item didn't appear in a reasonable timeframe."
@@ -135,15 +129,14 @@ class BrowsingHistoryTests: UITestCase {
             app.windows.webViews[titleOfFirstTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
-        app.typeKey("t", modifierFlags: .command)
+        app.openNewTab()
 
         addressBarTextField.typeURL(urlForSecondTab)
         XCTAssertTrue(
             app.windows.webViews[titleOfSecondTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close all windows
-        app.typeKey("n", modifierFlags: .command) // New window
+        app.enforceSingleWindow()
         XCTAssertTrue(
             historyMenuBarItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "History menu bar item didn't appear in a reasonable timeframe."
@@ -160,7 +153,7 @@ class BrowsingHistoryTests: UITestCase {
             app.windows.webViews[titleOfFirstTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Restored visited tab 1 wasn't available with the expected title in a reasonable timeframe."
         )
-        app.typeKey("w", modifierFlags: [.command])
+        app.closeCurrentTab()
         XCTAssertTrue(
             app.windows.webViews[titleOfSecondTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Restored visited tab 2 wasn't available with the expected title in a reasonable timeframe."

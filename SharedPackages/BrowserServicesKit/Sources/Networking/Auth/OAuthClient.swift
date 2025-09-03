@@ -18,8 +18,9 @@
 
 import Foundation
 import os.log
+import Common
 
-public enum OAuthClientError: Error, LocalizedError, Equatable {
+public enum OAuthClientError: DDGError {
     case internalError(String)
     case missingTokenContainer
     case unauthenticated
@@ -27,10 +28,10 @@ public enum OAuthClientError: Error, LocalizedError, Equatable {
     case authMigrationNotPerformed
     case unknownAccount
 
-    public var errorDescription: String? {
+    public var description: String {
         switch self {
-        case .internalError(let error):
-            return "Internal error: \(error)"
+        case .internalError(let errorDescription):
+            return "Internal error: \(errorDescription)"
         case .missingTokenContainer:
             return "No tokens available"
         case .unauthenticated:
@@ -44,8 +45,23 @@ public enum OAuthClientError: Error, LocalizedError, Equatable {
         }
     }
 
-    public var localizedDescription: String {
-        errorDescription ?? "Unknown"
+    public var errorDomain: String { "com.duckduckgo.networking.OAuthClientError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .internalError:
+            return 11000
+        case .missingTokenContainer:
+            return 11001
+        case .unauthenticated:
+            return 11002
+        case .invalidTokenRequest:
+            return 11003
+        case .authMigrationNotPerformed:
+            return 11004
+        case .unknownAccount:
+            return 11005
+        }
     }
 }
 
@@ -109,7 +125,7 @@ public protocol OAuthClient {
     func migrateV1Token() async throws
 
     /// Use the TokenContainer provided
-    func adopt(tokenContainer: TokenContainer)
+    func adopt(tokenContainer: TokenContainer) throws
 
     // Creates a TokenContainer with the provided access token and refresh token, decodes them and returns the container
     func decode(accessToken: String, refreshToken: String) async throws -> TokenContainer
@@ -130,7 +146,7 @@ public protocol OAuthClient {
     func logout() async throws
 
     /// Remove the tokens container stored locally
-    func removeLocalAccount()
+    func removeLocalAccount() throws
 }
 
 final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
@@ -270,7 +286,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 Logger.OAuthClient.error("Failed to refresh token: unknownAccount")
                 throw OAuthClientError.unknownAccount
             } catch {
-                Logger.OAuthClient.error("Failed to refresh token: \(error.localizedDescription, privacy: .public)")
+                Logger.OAuthClient.error("Failed to refresh token: \(String(describing: error), privacy: .public)")
                 throw error
             }
 
@@ -284,7 +300,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                     try tokenStorage.saveTokenContainer(tokenContainer)
                     return tokenContainer
                 } catch {
-                    Logger.OAuthClient.fault("Failed to create account: \(error.localizedDescription, privacy: .public)")
+                    Logger.OAuthClient.fault("Failed to create account: \(String(describing: error), privacy: .public)")
                     throw error
                 }
             }
@@ -314,7 +330,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 throw OAuthClientError.authMigrationNotPerformed
             }
 
-            guard let legacyTokenStorage else {
+            guard var legacyTokenStorage else {
                 Logger.OAuthClient.fault("Auth migration attempted without a LegacyTokenStorage")
                 throw OAuthClientError.authMigrationNotPerformed
             }
@@ -328,16 +344,17 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             try await exchange(accessTokenV1: legacyToken)
             Logger.OAuthClient.log("Tokens migrated successfully")
 
-            // NOTE: We don't remove the old token to allow roll back to Auth V1
+            // After releasing Auth V2 at 100% we are now deleting the Auth V1 token.
+            legacyTokenStorage.token = nil
         }
 
         migrationOngoingTask = task
         return try await task.value
     }
 
-    public func adopt(tokenContainer: TokenContainer) {
+    public func adopt(tokenContainer: TokenContainer) throws {
         Logger.OAuthClient.log("Adopting TokenContainer")
-        try? tokenStorage.saveTokenContainer(tokenContainer)
+        try tokenStorage.saveTokenContainer(tokenContainer)
     }
 
     // MARK: Create
@@ -380,7 +397,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     public func logout() async throws {
         let existingToken = try tokenStorage.getTokenContainer()?.accessToken
-        removeLocalAccount()
+        try removeLocalAccount()
 
         // Also removing V1
         Logger.OAuthClient.log("Removing V1 token")
@@ -394,8 +411,8 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
     }
 
-    public func removeLocalAccount() {
+    public func removeLocalAccount() throws {
         Logger.OAuthClient.log("Removing local account")
-        try? tokenStorage.saveTokenContainer(nil)
+        try tokenStorage.saveTokenContainer(nil)
     }
 }

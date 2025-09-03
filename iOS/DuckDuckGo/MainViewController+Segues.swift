@@ -256,12 +256,20 @@ extension MainViewController {
         }
     }
 
-    func segueToSettingsAIChat() {
+    func segueToSettingsAIChat(completion: (() -> Void)? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            $0.triggerDeepLinkNavigation(to: .aiChat)
-        }
+        launchSettings(completion: { _ in
+            completion?()
+        }, deepLinkTarget: .aiChat)
+    }
+
+    func segueToSettingsPrivateSearch(completion: (() -> Void)? = nil) {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings(completion: { _ in
+            completion?()
+        }, deepLinkTarget: .privateSearch)
     }
 
     func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil) {
@@ -302,6 +310,7 @@ extension MainViewController {
                                                             syncPausedStateManager: syncPausedStateManager,
                                                             fireproofing: fireproofing,
                                                             websiteDataManager: websiteDataManager,
+                                                            customConfigurationURLProvider: customConfigurationURLProvider,
                                                             keyValueStore: keyValueStore,
                                                             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                             daxDialogsManager: daxDialogsManager)
@@ -370,6 +379,7 @@ extension MainViewController {
             tabManager: self.tabManager,
             tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
             fireproofing: self.fireproofing,
+            customConfigurationURLProvider: customConfigurationURLProvider,
             keyValueStore: self.keyValueStore,
             systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager,
             daxDialogManager: self.daxDialogsManager))

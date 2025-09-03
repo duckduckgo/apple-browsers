@@ -69,10 +69,6 @@ final class VPNPreferencesModel: ObservableObject {
         }
     }
 
-    var isRiskySitesProtectionFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection)
-    }
-
     /// Whether new app exclusions should be shown
     ///
     var showExclusionsFeature: Bool {
@@ -124,10 +120,6 @@ final class VPNPreferencesModel: ObservableObject {
                 updateDNSSettings()
             }
         }
-    }
-
-    var didRiskySitesProtectionDefaultToTrue: Bool {
-        settings.didBlockRiskyDomainsDefaultToTrue
     }
 
     private let vpnXPCClient: VPNControllerXPCClient

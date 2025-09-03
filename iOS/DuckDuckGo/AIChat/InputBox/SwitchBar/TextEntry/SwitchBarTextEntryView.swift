@@ -131,6 +131,7 @@ class SwitchBarTextEntryView: UIView {
     private func setupButtonsView() {
         buttonsView.onClearTapped = { [weak self] in
             self?.handler.clearText()
+            self?.handler.clearButtonTapped()
         }
     }
 
@@ -154,17 +155,17 @@ class SwitchBarTextEntryView: UIView {
     // MARK: - UI Updates
 
     private func updateForCurrentMode() {
+        textView.keyboardType = .webSearch
+
         switch currentMode {
         case .search:
             placeholderLabel.text = UserText.searchDuckDuckGo
-            textView.keyboardType = .webSearch
             textView.returnKeyType = .search
             textView.autocapitalizationType = .none
             textView.autocorrectionType = .no
             textView.spellCheckingType = .no
         case .aiChat:
             placeholderLabel.text = UserText.searchInputFieldPlaceholderDuckAI
-            textView.keyboardType = .default
             textView.returnKeyType = .go
             textView.autocapitalizationType = .sentences
             textView.autocorrectionType = .default
@@ -225,6 +226,11 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
+    private func isUnexpandedURL() -> Bool {
+        return !hasBeenInteractedWith && isURL
+    }
+
     private func updateTextViewHeight() {
 
         let size = textView.systemLayoutSizeFitting(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude))
@@ -233,7 +239,10 @@ class SwitchBarTextEntryView: UIView {
         // Reset defaults
         textView.textContainer.lineBreakMode = .byWordWrapping
 
-        if !hasBeenInteractedWith && isURL { // https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
+        if isUnexpandedURL() ||
+            // https://app.asana.com/1/137249556945/project/392891325557410/task/1210916875279070?focus=true
+            textView.text.isBlank {
+            
             heightConstraint?.constant = Constants.minHeight
             textView.isScrollEnabled = false
             textView.showsVerticalScrollIndicator = false

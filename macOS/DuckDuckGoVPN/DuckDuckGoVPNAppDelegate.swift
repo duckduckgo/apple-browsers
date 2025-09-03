@@ -164,7 +164,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         self.accessTokenStorage = accessTokenStorage
         self.tunnelSettings = VPNSettings(defaults: .netP)
         self.tunnelSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
-        self.configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, store: configurationStore)
+        self.configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: VPNAgentConfigurationURLProvider(), eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
         super.init()
 
         var tokenFound: Bool
@@ -495,7 +495,6 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         vpnNotificationsObserver.startObservingVPNStatusChanges()
 
         // Setup Remote Configuration
-        Configuration.setURLProvider(VPNAgentConfigurationURLProvider())
         configurationManager.start()
         // Load cached config (if any)
         privacyConfigurationManager.reload(etag: configurationStore.loadEtag(for: .privacyConfiguration), data: configurationStore.loadData(for: .privacyConfiguration))

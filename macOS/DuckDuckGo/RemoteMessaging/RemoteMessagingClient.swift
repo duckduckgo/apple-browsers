@@ -67,6 +67,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         bookmarksDatabase: CoreDataDatabase,
         database: CoreDataDatabase,
         appearancePreferences: AppearancePreferences,
+        startupPreferences: StartupPreferences,
         pinnedTabsManagerProvider: PinnedTabsManagerProviding,
         internalUserDecider: InternalUserDecider,
         configurationStore: ConfigurationStoring,
@@ -74,12 +75,14 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         remoteMessagingStoreProvider: RemoteMessagingStoreProviding = DefaultRemoteMessagingStoreProvider(),
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         featureFlagger: FeatureFlagger,
+        configurationURLProvider: ConfigurationURLProviding,
         visualStyle: VisualStyleProviding
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
             database: database,
             bookmarksDatabase: bookmarksDatabase,
             appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
             internalUserDecider: internalUserDecider,
             subscriptionManager: subscriptionManager,
@@ -90,6 +93,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             remoteMessagingDatabase: remoteMessagingDatabase,
             configMatcherProvider: provider,
             configurationStore: configurationStore,
+            configurationURLProvider: configurationURLProvider,
             remoteMessagingAvailabilityProvider: remoteMessagingAvailabilityProvider
         )
     }
@@ -98,6 +102,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         remoteMessagingDatabase: CoreDataDatabase,
         configMatcherProvider: RemoteMessagingConfigMatcherProviding,
         configurationStore: ConfigurationStoring,
+        configurationURLProvider: ConfigurationURLProviding,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
         remoteMessagingStoreProvider: RemoteMessagingStoreProviding = DefaultRemoteMessagingStoreProvider()
     ) {
@@ -105,6 +110,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             configurationFetcher: ConfigurationFetcher(
                 store: configurationStore,
                 urlSession: .session(),
+                configurationURLProvider: configurationURLProvider,
                 eventMapping: ConfigurationManager.configurationDebugEvents
             ),
             configurationStore: configurationStore

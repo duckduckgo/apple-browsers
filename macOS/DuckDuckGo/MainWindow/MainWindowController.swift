@@ -45,7 +45,6 @@ final class MainWindowController: NSWindowController {
     @MainActor
     init(window: NSWindow? = nil,
          mainViewController: MainViewController,
-         popUp: Bool,
          fireWindowSession: FireWindowSession? = nil,
          fireViewModel: FireViewModel,
          visualStyle: VisualStyleProviding) {
@@ -55,6 +54,7 @@ final class MainWindowController: NSWindowController {
 
         assert(window == nil || [.unitTests, .integrationTests].contains(AppVersion.runType),
                "Window should not be set in non-test environment")
+        let popUp = mainViewController.tabCollectionViewModel.isPopup
         let window = window ?? (popUp
             ? PopUpWindow(frame: frame)
             : MainWindow(frame: frame))

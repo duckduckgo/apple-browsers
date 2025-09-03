@@ -177,7 +177,7 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     func adopt(tokenContainer: TokenContainer) async throws
 
     /// Remove the stored token container and the legacy token
-    func removeLocalAccount()
+    func removeLocalAccount() throws
 }
 
 /// Single entry point for everything related to Subscription. This manager is disposable, every time something related to the environment changes this need to be recreated.
@@ -280,6 +280,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     public func loadInitialData() async {
         Logger.subscription.log("Loading initial data...")
+
         do {
             _ = try? await getTokenContainer(policy: .localValid)
             let subscription = try await getSubscription(cachePolicy: .remoteFirst)
@@ -511,7 +512,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
         try await tokenRecoveryHandler()
 
-        guard let currentTokenContainer = try? oAuthClient.currentTokenContainer(),
+        guard let currentTokenContainer = try oAuthClient.currentTokenContainer(),
               !currentTokenContainer.decodedRefreshToken.isExpired() else {
             Logger.subscription.log("Recovery failed: the refresh token is missing or still expired after the recovery attempt.")
             throw SubscriptionManagerError.noTokenAvailable
@@ -534,18 +535,18 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     public func adopt(tokenContainer: TokenContainer) async throws {
         Logger.subscription.log("Adopting token container")
-        oAuthClient.adopt(tokenContainer: tokenContainer)
+        try oAuthClient.adopt(tokenContainer: tokenContainer)
         // It’s important to force refresh the token to immediately branch from the one received.
         // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
         let refreshedTokenContainer = try await oAuthClient.getTokens(policy: .localForceRefresh)
-            cachedIsUserAuthenticated = true
-            cachedUserEntitlements = refreshedTokenContainer.decodedAccessToken.subscriptionEntitlements
+        cachedIsUserAuthenticated = true
+        cachedUserEntitlements = refreshedTokenContainer.decodedAccessToken.subscriptionEntitlements
         }
 
-    public func removeLocalAccount() {
+    public func removeLocalAccount() throws {
         Logger.subscription.log("Removing local account")
             cachedIsUserAuthenticated = false
-        oAuthClient.removeLocalAccount()
+        try oAuthClient.removeLocalAccount()
     }
 
     public func signOut(notifyUI: Bool) async {
@@ -588,8 +589,8 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             let currentSubscription = try await getSubscription(cachePolicy: .remoteFirst)
             availableFeatures = currentSubscription.features ?? []
         } else {
-            let currentSubscription = try? await getSubscription(cachePolicy: .cacheFirst)
-            availableFeatures = currentSubscription?.features ?? []
+            let currentSubscription = try await getSubscription(cachePolicy: .cacheFirst)
+            availableFeatures = currentSubscription.features ?? []
         }
 
         return availableFeatures

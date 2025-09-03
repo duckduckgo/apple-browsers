@@ -527,7 +527,7 @@ extension URLRequest: TestComparable {
         ?? compare("httpMethod", lhs.httpMethod, rhs.httpMethod)
         ?? compare("allHTTPHeaderFields", Headers(lhs.allHTTPHeaderFields), Headers(rhs.allHTTPHeaderFields))
         ?? compare("cachePolicy", lhs.cachePolicy, rhs.cachePolicy)
-        ?? compare("timeoutInterval", lhs.timeoutInterval, rhs.timeoutInterval)
+        // not comparing timeout since it may be 0 for local resources or cached pages on macOS Tahoe
     }
 
 }

@@ -242,6 +242,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     }
 
     private func shouldAllowWebViewBackNavigationForURL(currentURL: URL) -> Bool {
+        return !currentURL.shouldPreventBackNavigation &&
         !isCurrentURL(matching: .purchase) &&
         !isCurrentURL(matching: .welcome) &&
         !isCurrentURL(matching: .activationFlowSuccess) &&

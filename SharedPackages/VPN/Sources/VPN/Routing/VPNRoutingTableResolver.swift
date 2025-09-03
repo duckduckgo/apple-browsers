@@ -63,7 +63,9 @@ struct VPNRoutingTableResolver {
 
     private func dnsRoutes() -> [IPAddressRange] {
         dnsServers.map { server in
-            return IPAddressRange(address: server.address, networkPrefixLength: 32)
+            // Use correct prefix length for single host routes
+            let prefixLength: UInt8 = server.address is IPv4Address ? 32 : 128
+            return IPAddressRange(address: server.address, networkPrefixLength: prefixLength)
         }
     }
 }

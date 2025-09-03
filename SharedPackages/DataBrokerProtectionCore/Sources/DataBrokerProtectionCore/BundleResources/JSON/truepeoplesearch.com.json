@@ -1,7 +1,7 @@
 {
   "name": "TruePeopleSearch",
   "url": "truepeoplesearch.com",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "parent": "peoplefinders.com",
   "addedDatetime": 1703138400000,
   "optOutUrl": "https://www.truepeoplesearch.com/removal",
@@ -64,5 +64,6 @@
     "confirmOptOutScan": 72,
     "maintenanceScan": 120,
     "maxAttempts": -1
-  }
+  },
+  "removedAt": null
 }

@@ -126,6 +126,10 @@ final class SettingsViewModel: ObservableObject {
     var isUpdatedAIFeaturesSettingsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
+    
+    var isRefreshButtonPositionEnabled: Bool {
+        featureFlagger.isFeatureOn(.refreshButtonPosition)
+    }
 
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
@@ -186,6 +190,19 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: $0 == .top ? .settingsAddressBarTopSelected : .settingsAddressBarBottomSelected)
                 self.appSettings.currentAddressBarPosition = $0
                 self.state.addressBar.position = $0
+            }
+        )
+    }
+    
+    var refreshButtonPositionBinding: Binding<RefreshButtonPosition> {
+        Binding<RefreshButtonPosition>(
+            get: {
+                self.state.refreshButtonPosition
+            },
+            set: {
+                Pixel.fire(pixel: $0 == .addressBar ? .settingsRefreshButtonPositionAddressBar : .settingsRefreshButtonPositionMenu)
+                self.appSettings.currentRefreshButtonPosition = $0
+                self.state.refreshButtonPosition = $0
             }
         )
     }
@@ -580,6 +597,7 @@ extension SettingsViewModel {
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
+            refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
@@ -630,7 +648,7 @@ extension SettingsViewModel {
 
     private func updateRecentlyVisitedSitesVisibility() {
         withAnimation {
-            shouldShowRecentlyVisitedSites = historyManager.isHistoryFeatureEnabled() && state.autocomplete
+            shouldShowRecentlyVisitedSites = state.autocomplete
         }
     }
 
@@ -839,16 +857,28 @@ extension SettingsViewModel {
 
     func openMoreSearchSettings() {
         Pixel.fire(pixel: .settingsMoreSearchSettings)
-        urlOpener.open(URL.searchSettings)
+        let url = URL.searchSettings.appendingParameter(name: SERPSettingsConstants.returnParameterKey,
+                                                        value: SERPSettingsConstants.privateSearch)
+        urlOpener.open(url)
     }
 
     func openAssistSettings() {
         Pixel.fire(pixel: .settingsOpenAssistSettings)
-        urlOpener.open(URL.assistSettings)
+        let url = URL.assistSettings.appendingParameter(name: SERPSettingsConstants.returnParameterKey,
+                                                        value: SERPSettingsConstants.aiFeatures)
+        urlOpener.open(url)
     }
 
     func openAIChat() {
         urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
+    }
+    
+    func openWebTrackingProtectionLearnMore() {
+        urlOpener.open(URL.webTrackingProtection)
+    }
+    
+    func openGPCLearnMore() {
+        urlOpener.open(URL.gpcLearnMore)
     }
 
     var shouldDisplayDuckPlayerContingencyMessage: Bool {
@@ -963,6 +993,7 @@ extension SettingsViewModel {
         case restoreFlow
         case duckPlayer
         case aiChat
+        case privateSearch
         case subscriptionSettings
         // Add other cases as needed
 
@@ -975,6 +1006,7 @@ extension SettingsViewModel {
             case .restoreFlow: return "restoreFlow"
             case .duckPlayer: return "duckPlayer"
             case .aiChat: return "aiChat"
+            case .privateSearch: return "privateSearch"
             case .subscriptionSettings: return "subscriptionSettings"
             // Ensure all cases are covered
             }
@@ -984,7 +1016,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .subscriptionSettings:
+            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings:
                 return .navigationLink
             }
         }

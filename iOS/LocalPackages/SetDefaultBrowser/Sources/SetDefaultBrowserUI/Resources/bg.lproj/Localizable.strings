@@ -7,6 +7,15 @@
 /* (No Comment) */
 "setDefaultBrowser.modal.cta.cancel" = "Затваряне";
 
+/* The tile of the button the user can use to set the browser as default. */
+"setDefaultBrowser.modal.inactive-user.cta.primary.title" = "Отваряй връзки с DuckDuckGo";
+
+/* The title of the button to dismiss the prompt. */
+"setDefaultBrowser.modal.inactive-user.cta.secondary.title" = "Може би по-късно";
+
+/* Title of the a page inviting the inactive user to use the DuckDuckGo browser as default browser */
+"setDefaultBrowser.modal.inactive-user.title" = "DuckDuckGo има защити, които другите браузъри нямат.";
+
 /* Set Default Browser Modal Sheet Message. */
 "setDefaultBrowser.modal.message" = "Направете ни браузър по подразбиране, за да отваряте връзките към сайтове в DuckDuckGo.";
 

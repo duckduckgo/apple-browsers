@@ -35,7 +35,7 @@ final class MockOmniBar: OmniBar {
     
     func updateQuery(_ query: String?) { }
     func refreshText(forUrl url: URL?, forceFullURL: Bool) { }
-    func beginEditing() { }
+    func beginEditing(animated: Bool) { }
     func endEditing() { }
     func showSeparator() { }
     func hideSeparator() { }
@@ -64,6 +64,7 @@ final class MockOmniBar: OmniBar {
     func resetPrivacyIcon(for url: URL?) { }
     func cancelAllAnimations() { }
     func completeAnimationForDaxDialog() { }
+    func setDaxEasterEggLogoURL(_ logoURL: String?) { }
     
     final class MockOmniBarView: UIView, OmniBarView {
         required init?(coder: NSCoder) {

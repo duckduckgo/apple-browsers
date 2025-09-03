@@ -24,6 +24,7 @@ extension Preferences {
 
     struct DataClearingView: View {
         @ObservedObject var model: DataClearingPreferences
+        @ObservedObject var startupModel: StartupPreferences
 
         var body: some View {
             PreferencePane(UserText.dataClearing) {
@@ -41,7 +42,31 @@ extension Preferences {
 
                 }
 
-                // SECTION 2: Enable/Disable Fire Animation
+                // SECTION 2: Fire Window Default
+                if model.shouldShowOpenFirewindowByDefaultSection {
+                    PreferencePaneSection(UserText.fireWindow) {
+                        PreferencePaneSubSection {
+                            ToggleMenuItem(UserText.openFireWindowByDefault, isOn: $model.shouldOpenFireWindowByDefault)
+                                .accessibilityIdentifier("PreferencesDataClearingView.openFireWindowByDefault")
+
+                            if model.shouldOpenFireWindowByDefault && startupModel.restorePreviousSession {
+                                VStack(alignment: .leading, spacing: 1) {
+                                    TextMenuItemCaption(UserText.fireWindowSessionRestoreWarning)
+                                    TextButton(UserText.showStartupSettings) {
+                                        model.show(url: .settingsPane(.general))
+                                    }
+                                }
+                                .padding(.leading, 19)
+                            }
+
+                            VStack(alignment: .leading, spacing: 1) {
+                                TextMenuItemCaption(UserText.openFireWindowByDefaultExplanation(newFireWindowShortcut: "⌘N", newRegularWindowShortcut: "⇧⌘N"))
+                            }
+                        }
+                    }
+                }
+
+                // SECTION 3: Enable/Disable Fire Animation
                 if model.shouldShowDisableFireAnimationSection {
                     PreferencePaneSection(UserText.fireAnimationSectionHeader) {
                         PreferencePaneSubSection {
@@ -50,7 +75,7 @@ extension Preferences {
                     }
                 }
 
-                // SECTION 3: Fireproof Site
+                // SECTION 4: Fireproof Site
                 PreferencePaneSection(UserText.fireproofSites) {
 
                     PreferencePaneSubSection {

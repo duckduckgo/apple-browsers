@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Šaukiniai";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Tinkinkite savo mėgstamiausius ir pagrindines funkcijas. Pertvarkykite elementus arba paslėpkite juos, kad užtikrintumėte tvarką.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Jūsų naujo skirtuko puslapis yra... Atnaujintas!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Mėgstami";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Šaukiniai";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Rodyti, slėpti ir pertvarkyti skiltis naujame skirtuko puslapyje";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "SKILTYS";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "ŠAUKINIAI";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Tinkinti naujo skirtuko puslapį";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Žymės";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Atsisiuntimai";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Slaptažodžiai";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Nustatymai";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Bet kurioje interneto svetainėje atidarykite ••• meniu ir pasirinkite **Pridėti mėgstamą**, kad pridėtumėte naujame skirtuko puslapyje.";
-
 /* No comment provided by engineer. */
 "No results found" = "Rezultatų nerasta";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Vykdykite paiešką privačiai pagal numatytąjį nustatymą";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "„DuckDuckGo“ taip pat turi %1$@, prieinamą su %2$@ ir %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "pažangus, privatus dirbtinis intelektas";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "pasirenkama mokama prenumerata";
@@ -2395,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Vienu mygtuku ištrink naršymo duomenis";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokuoja trečiųjų šalių stebėjimo priemones";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2698,6 +2662,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Ieškoti arba įvesti adresą";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Paklausk „Duck.ai“";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Paieška";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Antrinis / antrasis veiksmas";
 
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Rodyti visą svetainės adresą";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Numatytasis)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Eksperimentinis)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Išbandykite mūsų eksperimentinę parinktį ir užduokite klausimą „Duck.ai“ tiesiai iš adreso juostos.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Paieška ir „Duck.ai“";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Tik paieška";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "„Duck.ai“ sparčiųjų klavišų valdymas";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "„Duck.ai“ spartieji klavišai";
@@ -2892,6 +2883,9 @@
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klaviatūra";
+
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Sužinoti daugiau";
 
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Leiskite „DuckDuckGo“ valdyti sutikimo su slapukais iššokančiuosius langus";
@@ -3043,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Nustatymai";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Padeda blokuoti trečiųjų šalių sekimo priemones, kurios bando pasislėpti svetainėje naudodamos DNS.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Apsauga nuo DNS CNAME slėpimo";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Išjungia „Facebook“ turinio, pvz., „Facebook“ komentarų valdiklių, stebėjimą ne „Facebook“ svetainėse.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Apsauga nuo „Facebook“ sekimo";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Padeda neleisti stebėjimo įmonėms gauti unikalius identifikatorius apie jūsų naršyklę ir įrenginį, kuriuos jie naudoja sekti jus visame internete.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Apsaugo nuo pirštų atspaudų sekimo";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Automatiškai nutraukia 1‑osios šalies slapukų galiojimą po 30 dienų, kad svetainės negalėtų neribotą laiką sekti jūsų, kai esate atsijungę.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Panaikina pirmosios šalies slapukų galiojimą";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Pakeičia „Google AMP“ nuorodas į originalią leidėjo svetainę.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blokuoja „Google“ AMP sekimą";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blokuoja „Google“ prisijungimo iššokančiuosius langus svetainėse, kurios nepriklauso „Google“.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blokuoja „Google“ prisijungimo iššokančiuosius langus";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Pašalinami nuorodose esantys sekimo parametrai, kad trečiosios šalys negalėtų sekti jūsų elgesio svetainėse.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blokuoja nuorodų sekimą";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Padeda neleisti įmonėms identifikuoti paskutinę aplankytą svetainę.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Apsaugo nuo nukreipiančiojo sekimo";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Blokuoja invazines sekimo priemones prieš jas įkeliant, todėl veiksmingai pašalina skelbimus, taikomus pagal sekimą.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blokuoja tikslines reklamas";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Padeda blokuoti 3‑iųjų šalių slapukus, kurie seka jus iš vienos svetainės į kitą, neleidžiant įkelti 3‑iųjų šalių sekimo įrenginių.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blokuoja trečiųjų šalių stebėjimo priemones";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Neapsaugotos svetainės";
 
@@ -3055,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Apsauga nuo žiniatinklio sekimo";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Žiniatinklio sekimo apsauga visada įjungta";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "„DuckDuckGo“ automatiškai blokuoja paslėptas stebėjimo priemones naršant internete.\n[Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Kaip jus saugome";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "\"DuckDuckGo\" naršyklėje yra visada aktyvi stebėjimo apsauga. [Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Pasirinkite parinktį, kuri geriausiai apibūdina iškilusią problemą.";
@@ -3193,8 +3256,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Gaukite atsakymus į dažniausiai užduodamus klausimus arba susisiekite su „Privacy Pro“ palaikymo tarnyba mūsų pagalbos puslapiuose.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Siųsti atsiliepimą";
+/* Share Feedback Button */
+"subscription.feedback" = "Bendrinti atsiliepimą";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Atšaukti";

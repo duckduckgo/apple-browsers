@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Zkratky";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Přizpůsob si oblíbené záložky a časté funkce. Přeskládej je nebo je skryj, ať je všechno přehledné.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Stránka nové karty je... úplně nová!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Oblíbené";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Zkratky";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Zobrazení, skrytí a změna pořadí oddílů na stránce nové karty";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "ODDÍLY";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "ZKRATKY";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Přizpůsobení karty s novou stránkou";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Záložky";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Stahování";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Hesla";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Nastavení";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Na libovolném webu otevři nabídku ••• a vyber **Přidat do oblíbených**. Web se ti přidá na stránku nové karty.";
-
 /* No comment provided by engineer. */
 "No results found" = "Nebyly nalezeny žádné výsledky";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Soukromé vyhledávání ve výchozím nastavení";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo má také %1$@, které je dostupné s %2$@ a %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "pokročilou soukromou AI";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "volitelného předplatného";
@@ -2395,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Vymaž údaje o prohlížení jedním tlačítkem";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokuj trackery třetích stran";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2698,6 +2662,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Vyhledejte nebo zadejte adresu";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Zeptej se Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Hledat";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Sekundární / druhá akce";
 
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Zobrazovat celou adresu webu";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Výchozí)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Experimentální)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Vyzkoušej naši experimentální možnost zeptat se Duck.ai přímo z adresního řádku.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Vyhledávání a Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Jen vyhledávání";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Spravovat zkratky Duck.ai";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Zkratky Duck.ai";
@@ -2892,6 +2883,9 @@
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klávesnice";
+
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Více informací";
 
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Nechat správu oken pro souhlas s cookies na DuckDuckGo";
@@ -3043,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Nastavení";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Pomáhá blokovat trackery třetích stran, které se snaží maskovat na webu pomocí DNS.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Chrání před maskováním DNS CNAME";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Znemožní sledování u obsahu na Facebooku, jako jsou widgety pro komentáře na webech, které nejsou součástí Facebooku.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Ochrana před sledováním na Facebooku";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Brání tomu, aby společnosti, které sledují uživatele, získávaly jedinečné údaje o tvém prohlížeči a zařízení, takže nebudou moct sledovat tvůj pohyb po internetu.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Brání vytváření digitálních stop";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Automaticky nechá po 30 dnech vypršet cookies první strany, aby tě stránky nemohly po odhlášení sledovat donekonečna.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Ukončí platnost souborů cookie první strany";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Nahradí odkazy Google AMP webem původního vydavatele.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blokuje sledování pomocí stránek AMP na Googlu";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blokuje vyskakovací okna pro přihlášení na Google na webech, které Google nevlastní.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blokuje vyskakovací okna pro přihlášení na Google";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Odstraní parametry sledování v odkazech, aby třetí strany nemohly sledovat tvoje chování napříč weby.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blokuje sledování přes odkazy";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Brání tomu, aby společnosti mohly zjistit, jaká byla tvoje naposledy navštívená webová stránka.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Chrání před sledováním poslední navštívené stránky";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Zablokuje invazivní trackery ještě před jejich načtením, čímž účinně eliminuje reklamy, které tě pronásledují.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blokuje cílené reklamy";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Pomáhá blokovat cookies třetích stran, které se tě snaží sledovat napříč různými weby tím, že brání načítání trackerů třetích stran.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blokuje trackery třetích stran";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Nechráněné stránky";
 
@@ -3055,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Ochrana před sledováním na webu";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Ochrana Web Tracking Protections je vždy zapnutá";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo automaticky blokuje skryté trackery při procházení webu.\n[Více informací](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Jak tě chráníme";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "Prohlížeč DuckDuckGo poskytuje ochranu proti sledování, která je neustále zapnutá. [Více informací](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Vyber možnost, která nejlíp popisuje tvůj problém.";
@@ -3193,8 +3256,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Získej odpovědi na časté otázky nebo přes naše stránky nápovědy kontaktuj podporu služby Privacy Pro.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Odeslat zpětnou vazbu";
+/* Share Feedback Button */
+"subscription.feedback" = "Podělte se o zpětnou vazbu";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Zrušit";

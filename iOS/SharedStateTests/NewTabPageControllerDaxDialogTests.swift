@@ -25,6 +25,7 @@ import Core
 import SwiftUI
 import Persistence
 import BrowserServicesKit
+@testable import Configuration
 
 final class NewTabPageControllerDaxDialogTests: XCTestCase {
 
@@ -47,14 +48,13 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             database: db,
             errorEvents: nil,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
-            duckPlayerStorage: MockDuckPlayerStorage())
+            duckPlayerStorage: MockDuckPlayerStorage(),
+            configurationURLProvider: MockConfigurationURLProvider())
         let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter(), isStillOnboarding: { true })
         hvc = NewTabPageViewController(
             tab: Tab(),
-            isNewTabPageCustomizationEnabled: false,
             interactionModel: MockFavoritesListInteracting(),
             homePageMessagesConfiguration: homePageConfiguration,
-            variantManager: variantManager,
             newTabDialogFactory: dialogFactory,
             daxDialogsManager: specProvider,
             faviconLoader: EmptyFaviconLoading(),

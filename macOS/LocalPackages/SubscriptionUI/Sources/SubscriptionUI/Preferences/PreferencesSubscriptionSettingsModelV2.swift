@@ -148,13 +148,19 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
     enum ChangePlanOrBillingAction {
         case presentSheet(ManageSubscriptionSheet)
         case navigateToManageSubscription(() -> Void)
+        case showInternalSubscriptionAlert
     }
 
     @MainActor
     func changePlanOrBillingAction() async -> ChangePlanOrBillingAction {
         userEventHandler(.didClickChangePlanOrBilling)
 
-        switch subscriptionPlatform {
+        guard let platform = subscriptionPlatform else {
+            assertionFailure("Missing or unknown subscriptionPlatform")
+            return .navigateToManageSubscription { }
+        }
+
+        switch platform {
         case .apple:
             return .navigateToManageSubscription { [weak self] in
                 self?.changePlanOrBilling(for: .appStore)
@@ -165,9 +171,8 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
             return .navigateToManageSubscription { [weak self] in
                 self?.changePlanOrBilling(for: .stripe)
             }
-        default:
-            assertionFailure("Missing or unknown subscriptionPlatform")
-            return .navigateToManageSubscription { }
+        case .unknown:
+            return .showInternalSubscriptionAlert
         }
     }
 

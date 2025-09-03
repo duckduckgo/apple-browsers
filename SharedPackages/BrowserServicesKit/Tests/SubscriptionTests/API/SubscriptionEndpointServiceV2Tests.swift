@@ -153,7 +153,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         do {
             _ = try await endpointService.getProducts()
             XCTFail("Expected invalidResponse error")
-        } catch Networking.APIRequestV2.Error.emptyResponseBody {
+        } catch Networking.APIRequestV2Error.emptyResponseBody {
             // Success
         } catch {
             XCTFail("Unexpected error: \(error)")

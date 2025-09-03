@@ -18,22 +18,28 @@
 
 import Foundation
 import CommonCrypto
+import Common
 
 /// Helper that generates codes used in the OAuth2 authentication process
 struct OAuthCodesGenerator {
 
-    public enum OAuthCodesGeneratorError: Error, LocalizedError {
+    public enum OAuthCodesGeneratorError: DDGError {
         case failedToLoadRandomBytes(Int32)
 
-        public var errorDescription: String? {
+        public var description: String {
             switch self {
             case .failedToLoadRandomBytes(let errorCode):
                 return "Failed to load random bytes \(errorCode)"
             }
         }
 
-        public var localizedDescription: String {
-            errorDescription ?? "Unknown"
+        public var errorDomain: String { "com.duckduckgo.networking.OAuthCodesGenerator" }
+
+        public var errorCode: Int {
+            switch self {
+            case .failedToLoadRandomBytes:
+                return 11100
+            }
         }
     }
 

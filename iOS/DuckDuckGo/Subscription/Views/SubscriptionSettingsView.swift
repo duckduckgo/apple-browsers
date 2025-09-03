@@ -42,6 +42,7 @@ struct SubscriptionSettingsView: View {
     var viewPlans: (() -> Void)?
     @State var isShowingStripeView = false
     @State var isShowingGoogleView = false
+    @State var isShowingInternalSubscriptionNotice = false
     @State var isShowingRemovalNotice = false
     @State var isShowingFAQView = false
     @State var isShowingLearnMoreView = false
@@ -176,6 +177,13 @@ struct SubscriptionSettingsView: View {
                     if let stripeViewModel = viewModel.state.stripeViewModel {
                         SubscriptionExternalLinkView(viewModel: stripeViewModel, title: UserText.subscriptionManagePlan)
                     }
+                }
+
+                .alert(isPresented: $isShowingInternalSubscriptionNotice) {
+                    Alert(
+                        title: Text(UserText.subscriptionManageInternalTitle),
+                        message: Text(UserText.subscriptionManageInternalMessage)
+                    )
                 }
 
                 removeFromDeviceView
@@ -346,7 +354,15 @@ struct SubscriptionSettingsView: View {
         .onChange(of: isShowingStripeView) { value in
             viewModel.displayStripeView(value)
         }
-        
+
+        // Internal subscription binding
+        .onChange(of: viewModel.state.isShowingInternalSubscriptionNotice) { value in
+            isShowingInternalSubscriptionNotice = value
+        }
+        .onChange(of: isShowingInternalSubscriptionNotice) { value in
+            viewModel.displayInternalSubscriptionNotice(value)
+        }
+
         // Removal Notice
         .onChange(of: viewModel.state.isShowingRemovalNotice) { value in
             isShowingRemovalNotice = value
@@ -438,6 +454,7 @@ struct SubscriptionSettingsViewV2: View {
 
     @State var isShowingStripeView = false
     @State var isShowingGoogleView = false
+    @State var isShowingInternalSubscriptionNotice = false
     @State var isShowingRemovalNotice = false
     @State var isShowingFAQView = false
     @State var isShowingLearnMoreView = false
@@ -550,6 +567,13 @@ struct SubscriptionSettingsViewV2: View {
                     if let stripeViewModel = viewModel.state.stripeViewModel {
                         SubscriptionExternalLinkView(viewModel: stripeViewModel, title: UserText.subscriptionManagePlan)
                     }
+                }
+
+                .alert(isPresented: $isShowingInternalSubscriptionNotice) {
+                    Alert(
+                        title: Text(UserText.subscriptionManageInternalTitle),
+                        message: Text(UserText.subscriptionManageInternalMessage)
+                    )
                 }
 
                 removeFromDeviceView
@@ -773,6 +797,14 @@ struct SubscriptionSettingsViewV2: View {
         }
         .onChange(of: isShowingStripeView) { value in
             viewModel.displayStripeView(value)
+        }
+
+        // Internal subscription binding
+        .onChange(of: viewModel.state.isShowingInternalSubscriptionNotice) { value in
+            isShowingInternalSubscriptionNotice = value
+        }
+        .onChange(of: isShowingInternalSubscriptionNotice) { value in
+            viewModel.displayInternalSubscriptionNotice(value)
         }
 
         // Removal Notice

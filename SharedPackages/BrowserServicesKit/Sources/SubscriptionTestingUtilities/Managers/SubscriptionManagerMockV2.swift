@@ -123,7 +123,7 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
         resultTokenContainer = nil
     }
 
-    public func removeLocalAccount() {
+    public func removeLocalAccount() throws {
         resultTokenContainer = nil
     }
 

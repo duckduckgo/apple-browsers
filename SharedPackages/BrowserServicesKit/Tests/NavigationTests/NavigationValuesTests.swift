@@ -48,7 +48,7 @@ class NavigationValuesTests: DistributedNavigationDelegateTestsBase {
             XCTAssertEqual(prefs.preferredContentMode, .recommended)
             e.fulfill()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         responder(at: 0).onNavigationAction = { _, prefs in
             prefs.userAgent = "allow_ua"
@@ -63,7 +63,7 @@ class NavigationValuesTests: DistributedNavigationDelegateTestsBase {
             XCTAssertEqual(prefs.preferredContentMode, .mobile)
             e.fulfill()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         responder(at: 0).onNavigationAction = { _, prefs in
             prefs.userAgent = nil
@@ -79,7 +79,7 @@ class NavigationValuesTests: DistributedNavigationDelegateTestsBase {
             XCTAssertEqual(prefs.preferredContentMode, .desktop)
             e.fulfill()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         responder(at: 0).onNavigationAction = { _, prefs in
             prefs.userAgent = "download_ua"
@@ -94,7 +94,7 @@ class NavigationValuesTests: DistributedNavigationDelegateTestsBase {
             XCTAssertEqual(prefs.preferredContentMode, .recommended)
             e.fulfill()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         responder(at: 0).onNavigationAction = { _, prefs in
             prefs.userAgent = "next_ua"
@@ -109,7 +109,7 @@ class NavigationValuesTests: DistributedNavigationDelegateTestsBase {
             XCTAssertEqual(prefs.preferredContentMode, .mobile)
             e.fulfill()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
     }
 
     @MainActor
@@ -125,7 +125,7 @@ class NavigationValuesTests: DistributedNavigationDelegateTestsBase {
             return .cancel
         }
         navigationDelegate.webView(webView, decidePolicyFor: navAction, preferences: WKWebpagePreferences()) { _, _ in }
-        waitForExpectations(timeout: 1)
+        waitForExpectations()
 
         navAction = WKNavigationActionMock(sourceFrame: .mock(for: webView, isMain: false), targetFrame: nil, navigationType: .formResubmitted, request: req(urls.local)).navigationAction
         e = expectation(description: "decisionHandler 2 called")
@@ -135,7 +135,7 @@ class NavigationValuesTests: DistributedNavigationDelegateTestsBase {
             return .cancel
         }
         navigationDelegate.webView(webView, decidePolicyFor: navAction, preferences: WKWebpagePreferences()) { _, _ in }
-        waitForExpectations(timeout: 1)
+        waitForExpectations()
 
         navAction = WKNavigationActionMock(sourceFrame: .mock(for: webView, isMain: false), targetFrame: nil, navigationType: .linkActivated, request: req(urls.local)).navigationAction
         e = expectation(description: "decisionHandler 2 called")
@@ -149,7 +149,7 @@ class NavigationValuesTests: DistributedNavigationDelegateTestsBase {
             return .cancel
         }
         navigationDelegate.webView(webView, decidePolicyFor: navAction, preferences: WKWebpagePreferences()) { _, _ in }
-        waitForExpectations(timeout: 1)
+        waitForExpectations()
 
 #if os(macOS)
         navAction = WKNavigationActionMock(sourceFrame: .mock(for: webView, isMain: false), targetFrame: nil, navigationType: .linkActivated, request: req(urls.local), buttonNumber: 4).navigationAction
@@ -161,7 +161,7 @@ class NavigationValuesTests: DistributedNavigationDelegateTestsBase {
             return .cancel
         }
         navigationDelegate.webView(webView, decidePolicyFor: navAction, preferences: WKWebpagePreferences()) { _, _ in }
-        waitForExpectations(timeout: 1)
+        waitForExpectations()
 #endif
 
         navAction = WKNavigationActionMock(sourceFrame: .mock(for: webView, isMain: false), targetFrame: nil, navigationType: .reload, request: req(urls.local)).navigationAction
@@ -172,7 +172,7 @@ class NavigationValuesTests: DistributedNavigationDelegateTestsBase {
             return .cancel
         }
         navigationDelegate.webView(webView, decidePolicyFor: navAction, preferences: WKWebpagePreferences()) { _, _ in }
-        waitForExpectations(timeout: 1)
+        waitForExpectations()
 
 #if _IS_USER_INITIATED_ENABLED
         navAction = WKNavigationActionMock(sourceFrame: .mock(for: webView, isMain: false), targetFrame: nil, navigationType: .other, request: req(urls.local), isUserInitiated: true).navigationAction
@@ -183,7 +183,7 @@ class NavigationValuesTests: DistributedNavigationDelegateTestsBase {
             return .cancel
         }
         navigationDelegate.webView(webView, decidePolicyFor: navAction, preferences: WKWebpagePreferences()) { _, _ in }
-        waitForExpectations(timeout: 1)
+        waitForExpectations()
 #endif
     }
 
@@ -202,7 +202,7 @@ class NavigationValuesTests: DistributedNavigationDelegateTestsBase {
             return .cancel
         }
         navigationDelegate.webView(webView, decidePolicyFor: navAction, preferences: WKWebpagePreferences()) { _, _ in }
-        waitForExpectations(timeout: 1)
+        waitForExpectations()
 
         navAction = WKNavigationActionMock(sourceFrame: .mock(for: webView, isMain: false), targetFrame: nil, navigationType: .other, request: req(urls.local), isUserInitiated: false, modifierFlags: [.option, .shift]).navigationAction
         e = expectation(description: "decisionHandler 2 called")
@@ -213,7 +213,7 @@ class NavigationValuesTests: DistributedNavigationDelegateTestsBase {
             return .cancel
         }
         navigationDelegate.webView(webView, decidePolicyFor: navAction, preferences: WKWebpagePreferences()) { _, _ in }
-        waitForExpectations(timeout: 1)
+        waitForExpectations()
     }
 #endif
 

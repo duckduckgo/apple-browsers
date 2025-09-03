@@ -113,6 +113,9 @@ class TabViewController: UIViewController {
         get { return findInPageScript?.findInPage }
         set { findInPageScript?.findInPage = newValue }
     }
+    
+    var daxEasterEggHandler: DaxEasterEggHandling?
+    var logoCache: DaxEasterEggLogoCaching = DaxEasterEggLogoCache()
 
     let favicons = Favicons.shared
     let progressWorker = WebProgressWorker()
@@ -965,13 +968,28 @@ class TabViewController: UIViewController {
         load(url: url.applyingSearchHeaderParams())
     }
     
-    private func shouldReissueSearch(for url: URL) -> Bool {
+        private func shouldReissueSearch(for url: URL) -> Bool {
         guard url.isDuckDuckGoSearch else { return false }
-        return !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
+        
+        var shouldReissue = !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
+        
+        // Only check DuckAI params if the feature flag is enabled
+        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+            shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
+        }
+        
+        return shouldReissue
     }
     
     private func reissueSearchWithRequiredParams(for url: URL) {
-        let mobileSearch = url.applyingStatsParams()
+        var mobileSearch = url.applyingStatsParams()
+        
+        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+            mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
+        }
+        
         reissueNavigationWithSearchHeaderParams(for: mobileSearch)
     }
     
@@ -1433,6 +1451,9 @@ extension TabViewController: WKNavigationDelegate {
         let httpsForced = tld.domain(lastUpgradedURL?.host) == tld.domain(webView.url?.host)
         onWebpageDidStartLoading(httpsForced: httpsForced)
         textZoomCoordinator.onNavigationCommitted(applyToWebView: webView)
+        
+        // Check cache for instant logo display during back navigation
+        checkDaxEasterEggCacheIfDuckDuckGoSearch(webView)
     }
 
     private func onWebpageDidStartLoading(httpsForced: Bool) {
@@ -1578,6 +1599,7 @@ extension TabViewController: WKNavigationDelegate {
         adClickAttributionLogic.onDidFinishNavigation(host: webView.url?.host)
         hideProgressIndicator()
         onWebpageDidFinishLoading()
+        extractDaxEasterEggLogoIfDuckDuckGoSearch(webView)
         instrumentation.didLoadURL()
         checkLoginDetectionAfterNavigation()
         trackSecondSiteVisitIfNeeded(url: webView.url)
@@ -1659,6 +1681,58 @@ extension TabViewController: WKNavigationDelegate {
         }
         
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
+    }
+    
+    /// Check cache for DaxEasterEgg logo on commit (instant display for back navigation)
+    private func checkDaxEasterEggCacheIfDuckDuckGoSearch(_ webView: WKWebView) {
+        guard featureFlagger.isFeatureOn(.daxEasterEggLogos) else { return }
+        
+        guard let url = webView.url, url.isDuckDuckGoSearch else {
+            // Clear logo when navigating away from DuckDuckGo search
+            if tabModel.daxEasterEggLogoURL != nil {
+                delegate?.tab(self, didExtractDaxEasterEggLogoURL: nil)
+            }
+            return
+        }
+        
+        // Check cache for instant logo display
+        if let searchQuery = url.searchQuery,
+           let cachedLogoURL = logoCache.getLogo(for: searchQuery) {
+            Logger.daxEasterEgg.debug("Using cached logo on commit for query '\(searchQuery)': \(cachedLogoURL)")
+            delegate?.tab(self, didExtractDaxEasterEggLogoURL: cachedLogoURL)
+        }
+    }
+    
+    /// Trigger DaxEasterEgg extraction with cache fallback on DuckDuckGo search pages
+    private func extractDaxEasterEggLogoIfDuckDuckGoSearch(_ webView: WKWebView) {
+        guard featureFlagger.isFeatureOn(.daxEasterEggLogos) else { return }
+        
+        guard let url = webView.url, url.isDuckDuckGoSearch else {
+            // Clear logo when navigating away from DuckDuckGo search
+            if tabModel.daxEasterEggLogoURL != nil {
+                delegate?.tab(self, didExtractDaxEasterEggLogoURL: nil)
+            }
+            return
+        }
+        
+        // Check cache first - if found, use it and skip extraction
+        if let searchQuery = url.searchQuery,
+           let cachedLogoURL = logoCache.getLogo(for: searchQuery) {
+            Logger.daxEasterEgg.debug("Using cached logo on finish for query '\(searchQuery)': \(cachedLogoURL)")
+            delegate?.tab(self, didExtractDaxEasterEggLogoURL: cachedLogoURL)
+            return
+        }
+        
+        // Cache miss - proceed with JavaScript extraction
+        // Ensure handler is created for new tabs that navigate directly to DuckDuckGo
+        if daxEasterEggHandler == nil {
+            daxEasterEggHandler = DaxEasterEggHandler(webView: webView, logoCache: logoCache)
+            daxEasterEggHandler?.delegate = self
+            Logger.daxEasterEgg.debug("Created DaxEasterEggHandler for new tab")
+        }
+        
+        Logger.daxEasterEgg.debug("Extracting for tab - URL: \(url.absoluteString)")
+        daxEasterEggHandler?.extractLogosForCurrentPage()
     }
 
     func trackSecondSiteVisitIfNeeded(url: URL?) {
@@ -1782,7 +1856,7 @@ extension TabViewController: WKNavigationDelegate {
 
         if isError {
             showBars(animated: true)
-            privacyInfo = nil
+            privacyInfo = PrivacyInfo(url: .empty, parentEntity: nil, protectionStatus: .init(unprotectedTemporary: false, enabledFeatures: [], allowlisted: false, denylisted: false), isSpecialErrorPageVisible: true)
             onPrivacyInfoChanged()
         }
         
@@ -2703,6 +2777,18 @@ extension TabViewController: UIGestureRecognizerDelegate {
 }
 
 // MARK: - UserContentControllerDelegate
+extension TabViewController: DaxEasterEggDelegate {
+    
+    func daxEasterEggHandler(_ handler: DaxEasterEggHandling, didFindLogoURL logoURL: String?, for pageURL: String) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            
+            Logger.daxEasterEgg.debug("Handler found logo - Page: \(pageURL), Logo: \(logoURL ?? "nil")")
+            self.delegate?.tab(self, didExtractDaxEasterEggLogoURL: logoURL)
+        }
+    }
+}
+
 extension TabViewController: UserContentControllerDelegate {
 
     var userScripts: UserScripts? {
@@ -2735,6 +2821,14 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
         userScripts.contentScopeUserScript.delegate = self
+        userScripts.serpSettingsUserScript.delegate = self
+        userScripts.serpSettingsUserScript.webView = webView
+        
+        // Setup DaxEasterEgg handler only for DuckDuckGo search pages
+        if daxEasterEggHandler == nil, let url = webView.url, url.isDuckDuckGoSearch {
+            daxEasterEggHandler = DaxEasterEggHandler(webView: webView, logoCache: logoCache)
+            daxEasterEggHandler?.delegate = self
+        }
 
         // Special Error Page (SSL, Malicious Site protection)
         specialErrorPageNavigationHandler.setUserScript(userScripts.specialErrorPageUserScript)
@@ -3734,4 +3828,24 @@ extension TabViewController {
             }
             .store(in: &cancellables)
     }
+}
+
+extension TabViewController: SERPSettingsUserScriptDelegate {
+
+    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
+        guard let mainVC = parent as? MainViewController else { return }
+        mainVC.segueToSettingsPrivateSearch {
+            mainVC.closeTab(self.tabModel)
+            mainVC.showBars()
+        }
+    }
+    
+    func serpSettingsUserScriptDidRequestToOpenDuckAISettings(_ userScript: SERPSettingsUserScript) {
+        guard let mainVC = parent as? MainViewController else { return }
+        mainVC.segueToSettingsAIChat {
+            mainVC.closeTab(self.tabModel)
+            mainVC.showBars()
+        }
+    }
+
 }

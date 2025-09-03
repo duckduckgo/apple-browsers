@@ -1,7 +1,7 @@
 {
   "name": "TruthRecord",
   "url": "truthrecord.org",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.truthrecord.org/opt_out/name/landing_page",
   "steps": [
@@ -207,5 +207,6 @@
     "maintenanceScan": 120,
     "maxAttempts": -1
   },
-  "addedDatetime": 1738343339817
+  "addedDatetime": 1738343339817,
+  "removedAt": null
 }

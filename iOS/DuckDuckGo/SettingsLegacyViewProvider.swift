@@ -25,6 +25,7 @@ import BrowserServicesKit
 import SyncUI_iOS
 import Persistence
 import Common
+import Configuration
 import SystemSettingsPiPTutorial
 
 class SettingsLegacyViewProvider: ObservableObject {
@@ -43,6 +44,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let syncPausedStateManager: any SyncPausedStateManaging
     let fireproofing: Fireproofing
     let websiteDataManager: WebsiteDataManaging
+    let customConfigurationURLProvider: CustomConfigurationURLProviding
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     let daxDialogsManager: DaxDialogsManaging
@@ -55,6 +57,7 @@ class SettingsLegacyViewProvider: ObservableObject {
          syncPausedStateManager: any SyncPausedStateManaging,
          fireproofing: Fireproofing,
          websiteDataManager: WebsiteDataManaging,
+         customConfigurationURLProvider: CustomConfigurationURLProviding,
          keyValueStore: ThrowingKeyValueStoring,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          daxDialogsManager: DaxDialogsManaging) {
@@ -66,6 +69,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.syncPausedStateManager = syncPausedStateManager
         self.fireproofing = fireproofing
         self.websiteDataManager = websiteDataManager
+        self.customConfigurationURLProvider = customConfigurationURLProvider
         self.keyValueStore = keyValueStore
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
@@ -121,6 +125,7 @@ class SettingsLegacyViewProvider: ObservableObject {
             tabManager: self.tabManager,
             tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
             fireproofing: self.fireproofing,
+            customConfigurationURLProvider: self.customConfigurationURLProvider,
             keyValueStore: self.keyValueStore,
             systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager,
             daxDialogManager: self.daxDialogsManager))

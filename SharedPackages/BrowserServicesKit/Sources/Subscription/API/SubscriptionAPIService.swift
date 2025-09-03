@@ -24,7 +24,7 @@ import Networking
 public enum APIServiceError: DDGError {
     case decodingError
     case encodingError
-    case serverError(statusCode: Int, errorCode: String?)
+    case serverError(statusCode: Int, statusDescription: String?)
     case unknownServerError
     case connectionError
     case invalidToken
@@ -35,7 +35,7 @@ public enum APIServiceError: DDGError {
             return "Decoding error"
         case .encodingError:
             return "Encoding error"
-        case .serverError(statusCode: let statusCode, errorCode: let error):
+        case .serverError(statusCode: let statusCode, statusDescription: let error):
             return "Server error (\(statusCode)): \(error ?? "No error description provided")"
         case .unknownServerError:
             return "Unknown server error"
@@ -122,7 +122,7 @@ public struct DefaultSubscriptionAPIService: SubscriptionAPIService {
 
                 let errorLogMessage = "/\(endpoint) \(httpResponse.statusCode): \(errorString ?? "")"
                 Logger.subscription.error("Service error: \(errorLogMessage, privacy: .public)")
-                return .failure(.serverError(statusCode: httpResponse.statusCode, errorCode: errorString))
+                return .failure(.serverError(statusCode: httpResponse.statusCode, statusDescription: errorString))
             }
         } catch {
             Logger.subscription.error("Service error: \(error.localizedDescription, privacy: .public)")

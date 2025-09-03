@@ -31,7 +31,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         static let productID = UUID().uuidString
         static let transactionJWS = "dGhpcyBpcyBub3QgYSByZWFsIEFw(...)cCBTdG9yZSB0cmFuc2FjdGlvbiBKV1M="
 
-        static let unknownServerError = APIServiceError.serverError(statusCode: 401, errorCode: "unknown_error")
+        static let unknownServerError = APIServiceError.serverError(statusCode: 401, statusDescription: "unknown_error")
     }
 
     var accountManager: AccountManagerMock!

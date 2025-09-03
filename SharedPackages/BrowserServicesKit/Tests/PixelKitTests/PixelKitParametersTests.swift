@@ -39,11 +39,10 @@ final class PixelKitParametersTests: XCTestCase {
             nil
         }
 
-        var error: (any DDGError)? {
+        var error: Error? {
             switch self {
             case .errorEvent(let error):
-                // Wrap the error in DDGErrorPixelKitWrapper to make it compatible with DDGError
-                return PixelKit.DDGErrorPixelKitWrapper.wrapper(error)
+                error
             }
         }
     }

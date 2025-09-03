@@ -133,6 +133,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Local inactivity provisional notifications delivered to Notification Center.
     // https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
     case inactivityNotification
+
+    /// https://app.asana.com/1/137249556945/project/1210947754188321/task/1210869716452616?focus=true
+    case refreshButtonPosition
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -208,6 +211,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to disable all AI Chat related functionality
     case globalToggle
+
+    /// Adds support for passing currently visible website context to the sidebar
+    case pageContext
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -266,6 +272,8 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canScanUrlBasedSyncSetupBarcodes
     case canInterceptSyncSetupUrls
     case syncSetupBarcodeIsUrlBased
+    case refactorOfSyncPreferences
+    case newSyncEntryPoints
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {
@@ -291,6 +299,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionRebranding
     case vpnToolbarUpsell
     case supportsAlternateStripePaymentFlow
+    case subscriptionPurchaseWidePixelMeasurement
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

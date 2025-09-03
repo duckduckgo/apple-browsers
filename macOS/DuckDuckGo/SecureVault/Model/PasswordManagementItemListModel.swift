@@ -301,11 +301,23 @@ final class PasswordManagementItemListModel: ObservableObject {
     }
 
     var emptyStateMessageDescription: String {
-        autofillPreferences.isAutoLockEnabled ? UserText.pmEmptyStateDefaultDescription : UserText.pmEmptyStateDefaultDescriptionAutolockOff
+        if sortDescriptor.category == .logins {
+            return autofillPreferences.isAutoLockEnabled ? UserText.pmEmptyStateDefaultDescription : UserText.pmEmptyStateDefaultDescriptionAutolockOff
+        } else {
+            return autofillPreferences.isAutoLockEnabled ? "Passwords and credit cards are encrypted. Nobody but you can see them, not even us." : "Passwords and credit cards are encrypted."
+        }
     }
 
     var emptyStateMessageLinkText: String {
         UserText.learnMore
+    }
+
+    var emptyStateImportButtonText: String {
+        sortDescriptor.category == .logins ? UserText.pmEmptyStateDefaultButtonTitle : UserText.pmEmptyStateDefaultButtonTitleAllItems
+    }
+
+    var emptyStateSyncButtonText: String {
+        sortDescriptor.category == .logins ? UserText.pmEmptyStateSecondaryButtonTitle : UserText.pmEmptyStateSecondaryButtonTitleAllItems
     }
 
     var emptyStateMessageLinkURL: URL {

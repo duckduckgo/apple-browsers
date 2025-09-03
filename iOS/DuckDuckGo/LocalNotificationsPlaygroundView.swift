@@ -27,49 +27,35 @@ struct LocalNotificationsPlaygroundView: View {
     var body: some View {
         List {
             Section {
-                Toggle(isOn: $model.useScheduler) {
-                    Text("Use Scheduler")
-                }
-            } header: {
-                Text(verbatim: "Mode:")
-            } footer: {
-                (Text("Test through ") + Text(model.useScheduler ? "InactivityNotificationScheduler" : "UNUserNotificationCenter").bold())
-                    .font(.caption)
-            }
-            
-            Section {
                 Text(model.notificationAuthStatus.description)
             } header: {
                 Text(verbatim: "Authorization Status:")
             } footer: {
                 switch model.notificationAuthStatus {
                 case .granted:
-                    Text(verbatim: model.useScheduler ? "InactivityNotificationScheduler only schedules provisional notification for .provisional or .notDetermined status. The notification will not be scheduled or delivered. Remove and reinstall the app to reset." : "The user accepted receiving notifications when prompted or upon deciding to keep provisional notifications.")
+                    Text(verbatim: "The user accepted receiving notifications when prompted or upon deciding to keep provisional notifications.")
                         .font(.caption)
-                        .foregroundStyle(model.useScheduler ? .red : .secondary)
                 case .provisional:
                     Text(verbatim: "The system has automatically granted the app temporary permission to post noninterruptive notifications. They will be delivered silently in control")
                         .font(.caption)
                 case .denied:
                     VStack(alignment: .leading)  {
-                        Text(verbatim: model.useScheduler ? "InactivityNotificationScheduler only schedules provisional notification for .provisional or .notDetermined status. The notification will not be scheduled or delivered. Remove and reinstall the app to reset." : "Ensure Notifications are Enabled in Settings")
+                        Text(verbatim: "Ensure Notifications are Enabled in Settings")
                             .font(.caption)
                             .foregroundStyle(.red)
-                        if !model.useScheduler {
-                            Button(
-                                action: {
-                                    Task {
-                                        await UIApplication.shared.openAppNotificationSettings()
-                                    }
-                                },
-                                label: {
-                                    Text(verbatim: "Open Settings...")
+                        Button(
+                            action: {
+                                Task {
+                                    await UIApplication.shared.openAppNotificationSettings()
                                 }
-                            )
-                        }
+                            },
+                            label: {
+                                Text(verbatim: "Open Settings...")
+                            }
+                        )
                     }
                 case .notDetermined:
-                    Text(verbatim: model.useScheduler ? "InactivityNotificationScheduler only schedules provisional notification. No prompt will be shown, and the notification will be delivered silently." : "The system will automatically prompt for permission when scheduling an alert notification. For provisional notifications, no prompt is shown, and the notification is delivered silently.")
+                    Text(verbatim: "The system will automatically prompt for permission when scheduling an alert notification. For provisional notifications, no prompt is shown, and the notification is delivered silently.")
                         .font(.caption)
                 }
             }
@@ -110,12 +96,6 @@ struct LocalNotificationsPlaygroundView: View {
                         Text(verbatim: "Type:")
                     }
                 )
-                .disabled(model.useScheduler)
-                .onChange(of: model.useScheduler) { useScheduler in
-                    if useScheduler {
-                        model.notificationType = .provisional
-                    }
-                }
 
                 Picker(
                     selection: $model.notificationSchedulingTime,
@@ -152,7 +132,6 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
     private static let testNotificationIdentifier = "com.duckduckgo.ios.testLocalNotification"
 
     private let center = UNUserNotificationCenter.current()
-    private let scheduler = InactivityNotificationSchedulerService()
     
     private static let defaultTitle = "Tracker Blocked"
     private static let defaultBody = "We stopped 5 trackers from following you."
@@ -164,8 +143,6 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
 
     @Published var notificationType: NotificationType = .provisional
     @Published var notificationSchedulingTime: Int = 5
-    
-    @Published var useScheduler: Bool = false
 
     private var cancellable: AnyCancellable?
 
@@ -180,10 +157,6 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
     }
 
     func sendLocalNotification() {
-        if useScheduler {
-            scheduler.schedule(with: notificationTitle, body: notificationMessage, secondsInactive: notificationSchedulingTime)
-            return
-        }
         Task {
             let options: UNAuthorizationOptions = notificationType == .provisional ? [.provisional] : [.alert]
             do {
@@ -197,8 +170,8 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
     }
     
     func fillDefaultContent() {
-        notificationTitle = useScheduler ? UserText.inactivityNotificationTitle : Self.defaultTitle
-        notificationMessage = useScheduler ? UserText.inactivityNotificationBody : Self.defaultBody
+        notificationTitle = Self.defaultTitle
+        notificationMessage = Self.defaultBody
     }
     
     func clearAllContent() {

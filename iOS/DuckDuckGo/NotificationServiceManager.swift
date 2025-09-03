@@ -27,9 +27,9 @@ protocol NotificationServiceManaging: UNUserNotificationCenterDelegate {}
 
 final class NotificationServiceManager: NSObject, NotificationServiceManaging {
     
-    private let mainCoordinator: MainCoordinator?
+    private let mainCoordinator: MainCoordinator
     
-    init(mainCoordinator: MainCoordinator? = nil) {
+    init(mainCoordinator: MainCoordinator) {
         self.mainCoordinator = mainCoordinator
         super.init()
     }
@@ -69,7 +69,6 @@ private extension NotificationServiceManager {
     
     @MainActor
     func handleVPNNotification() {
-        guard let mainCoordinator else { return }
         mainCoordinator.presentNetworkProtectionStatusSettingsModal()
     }
 }

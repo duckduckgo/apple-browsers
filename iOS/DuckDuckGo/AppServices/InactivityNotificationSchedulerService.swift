@@ -98,7 +98,6 @@ final class InactivityNotificationSchedulerService {
     
     func makeUNNotificationContent(with daysInactive: Int = Constants.defaultDaysInactive) -> UNNotificationContent {
         let content = UNMutableNotificationContent()
-        
         content.title = UserText.inactivityNotificationTitle
         content.body = UserText.inactivityNotificationBody
         content.userInfo = [Constants.daysInactiveSettingKey: daysInactive]

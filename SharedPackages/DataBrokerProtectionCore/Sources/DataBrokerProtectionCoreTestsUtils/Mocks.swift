@@ -989,15 +989,15 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     }
 
     public func updateOptOutEmailConfirmationLink(_ link: String?,
-                                                   emailConfirmationLinkObtainedOnBEDate: Date?,
-                                                   profileQueryId: Int64,
-                                                   brokerId: Int64,
-                                                   extractedProfileId: Int64) throws {
+                                                  emailConfirmationLinkObtainedOnBEDate: Date?,
+                                                  profileQueryId: Int64,
+                                                  brokerId: Int64,
+                                                  extractedProfileId: Int64) throws {
     }
 
     public func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64,
-                                                              brokerId: Int64,
-                                                              extractedProfileId: Int64) throws {
+                                                             brokerId: Int64,
+                                                             extractedProfileId: Int64) throws {
     }
 
     public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) {
@@ -2020,8 +2020,8 @@ extension SecureStorageError: @retroactive Equatable {
         case (.keystoreUpdateError(let status1), .keystoreUpdateError(let status2)):
             return status1 == status2
         case (.authRequired, .authRequired), (.invalidPassword, .invalidPassword),
-            (.noL1Key, .noL1Key), (.noL2Key, .noL2Key), (.duplicateRecord, .duplicateRecord),
-            (.generalCryptoError, .generalCryptoError), (.encodingFailed, .encodingFailed):
+             (.noL1Key, .noL1Key), (.noL2Key, .noL2Key), (.duplicateRecord, .duplicateRecord),
+             (.generalCryptoError, .generalCryptoError), (.encodingFailed, .encodingFailed):
             return true
         default:
             return false
@@ -2135,8 +2135,8 @@ private extension Data {
     }
 
     static func randomEventData(length: Int) -> Data {
-            return .randomStringData(length: length)
-        }
+        return .randomStringData(length: length)
+    }
 }
 
 extension Date {
@@ -2151,16 +2151,16 @@ public extension ProfileQueryDB {
     static func random(withProfileIds profileIds: [Int64]) -> [ProfileQueryDB] {
         profileIds.map {
             ProfileQueryDB(id: nil, profileId: $0,
-                                         first: .randomStringData(length: 4),
-                                         last: .randomStringData(length: 4),
-                                         middle: nil,
-                                         suffix: nil,
-                                         city: .randomStringData(length: 4),
-                                         state: .randomStringData(length: 4), street: .randomStringData(length: 4),
-                                         zipCode: nil,
-                                         phone: nil,
-                                         birthYear: Data.randomBirthdateData(),
-                                         deprecated: Bool.random())
+                           first: .randomStringData(length: 4),
+                           last: .randomStringData(length: 4),
+                           middle: nil,
+                           suffix: nil,
+                           city: .randomStringData(length: 4),
+                           state: .randomStringData(length: 4), street: .randomStringData(length: 4),
+                           zipCode: nil,
+                           phone: nil,
+                           birthYear: Data.randomBirthdateData(),
+                           deprecated: Bool.random())
         }
     }
 }
@@ -2241,7 +2241,7 @@ public extension ExtractedProfileDB {
 }
 
 public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProvider {
-   public static var didCallV2Migrations = false
+    public static var didCallV2Migrations = false
     public static var didCallV3Migrations = false
     public static var didCallV4Migrations = false
     public static var didCallV5Migrations = false

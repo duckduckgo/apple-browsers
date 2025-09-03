@@ -19,6 +19,7 @@
 
 import UIKit.UIApplication
 import Core
+import Persistence
 
 enum TerminationError: Error {
 
@@ -90,6 +91,7 @@ struct Terminating: TerminatingHandling {
                 mode = error.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(debugMessage: "DB init failed: \(error.localizedDescription)")
             }
         case .bookmarksDatabase(let error):
+            recordBookmarkDatabaseError(error)
             pixel = .bookmarksCouldNotLoadDatabase
             errorToReport = error
             mode = error.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(debugMessage: "Bookmarks DB init failed: \(error.localizedDescription)")
@@ -152,4 +154,21 @@ private extension Error {
         return false
     }
 
+}
+
+// MARK: - Error Tracking
+
+private func recordBookmarkDatabaseError(_ error: Error) {
+    guard let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
+          let keyValueStore = try? KeyValueFileStore(location: appSupportDir, name: "AppKeyValueStore") else {
+        return
+    }
+    
+    let errorInfo: [String: Any] = [
+        "timestamp": Date(),
+        "domain": (error as NSError).domain,
+        "code": (error as NSError).code
+    ]
+    
+    try? keyValueStore.set(errorInfo, forKey: "BookmarksValidator.lastBookmarkError")
 }

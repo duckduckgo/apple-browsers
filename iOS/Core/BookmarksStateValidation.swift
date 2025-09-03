@@ -39,15 +39,15 @@ public class BookmarksStateValidator: BookmarksStateValidation {
     public enum ValidationError {
         case bookmarksStructureLost
         case bookmarksStructureNotRecovered
-        case bookmarksStructureBroken(additionalParams: [String: String])
+        case bookmarksStructureBroken
         case validatorError(Error)
     }
 
     let keyValueStore: KeyValueStoring
-    let errorHandler: (ValidationError) -> Void
+    let errorHandler: (ValidationError, [String: String]?) -> Void
 
     public init(keyValueStore: KeyValueStoring,
-                errorHandler: @escaping (ValidationError) -> Void) {
+                errorHandler: @escaping (ValidationError, [String: String]?) -> Void) {
         self.keyValueStore = keyValueStore
         self.errorHandler = errorHandler
     }
@@ -60,11 +60,16 @@ public class BookmarksStateValidator: BookmarksStateValidation {
         do {
             let count = try context.count(for: fetch)
             if count == 0 {
-                errorHandler(validationError)
+                switch validationError {
+                case .bookmarksStructureLost:
+                    errorHandler(.bookmarksStructureLost, generateDiagnosticParameters())
+                default:
+                    errorHandler(validationError, nil)
+                }
                 return false
             }
         } catch {
-            errorHandler(.validatorError(error))
+            errorHandler(.validatorError(error), nil)
         }
 
         return true
@@ -95,10 +100,55 @@ public class BookmarksStateValidator: BookmarksStateValidation {
 
                 additionalParams["is-marked-as-initialized"] = isMarkedAsInitialized ? "true" : "false"
 
-                errorHandler(.bookmarksStructureBroken(additionalParams: additionalParams))
+                errorHandler(.bookmarksStructureBroken, additionalParams)
             }
         } catch {
-            errorHandler(.validatorError(error))
+            errorHandler(.validatorError(error), nil)
         }
     }
+    
+    private func generateDiagnosticParameters() -> [String: String] {
+        var params = [String: String]()
+        
+        params["sync-enabled"] = "\(isSyncEnabled)"
+
+        // Add recent bookmark error information
+        if let recentBookmarkError = getRecentBookmarkError() {
+            params["recent-bookmark-error-domain"] = recentBookmarkError.domain
+            params["recent-bookmark-error-code"] = "\(recentBookmarkError.code)"
+        }
+        
+        return params
+    }
+    
+    // MARK: - Diagnostic Helper Methods
+    
+    private var isSyncEnabled: Bool {
+        let syncEnabledKey = "com.duckduckgo.sync.enabled"
+        return UserDefaults.standard.object(forKey: syncEnabledKey) != nil
+    }
+
+    private func getRecentBookmarkError() -> (domain: String, code: Int)? {
+        let bookmarkErrorKey = "BookmarksValidator.lastBookmarkError"
+        let maxAgeHours: TimeInterval = 24 // 1 day
+
+        // Check KeyValueFileStore for bookmark error
+        guard let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
+              let keyValueFileStore = try? KeyValueFileStore(location: appSupportDir, name: "AppKeyValueStore"),
+              let errorInfo = (try? keyValueFileStore.object(forKey: bookmarkErrorKey)) as? [String: Any],
+              let timestamp = errorInfo["timestamp"] as? Date,
+              let domain = errorInfo["domain"] as? String,
+              let code = errorInfo["code"] as? Int else {
+            return nil
+        }
+        
+        // Check if error is recent (within 1 day)
+        let hoursSinceError = Date().timeIntervalSince(timestamp) / 3600
+        guard hoursSinceError <= maxAgeHours else {
+            return nil
+        }
+        
+        return (domain: domain, code: code)
+    }
+
 }

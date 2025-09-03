@@ -38,9 +38,9 @@ final class PersistentStoresConfiguration {
         self.application = application
     }
 
-    func configure() throws {
+    func configure() throws -> Bool {
         try loadDatabase()
-        try loadAndMigrateBookmarksDatabase()
+        return try loadAndMigrateBookmarksDatabase()
     }
 
     private func loadDatabase() throws {
@@ -58,11 +58,12 @@ final class PersistentStoresConfiguration {
         }
     }
 
-    private func loadAndMigrateBookmarksDatabase() throws {
-        let result = BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: bookmarksDatabase)
+    private func loadAndMigrateBookmarksDatabase() throws -> Bool {
+        let (result, isMissingStructure) = BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: bookmarksDatabase)
         if case .failure(let error) = result {
             throw TerminationError.bookmarksDatabase(error)
         }
+        return isMissingStructure
     }
 
 }

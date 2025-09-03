@@ -80,7 +80,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
                                          showWebView: false,
                                          errorDelegate: MockBrokerProfileJobErrorDelegate(),
                                          jobDependencies: mockDependencies)
-	
+
         // Then
         XCTAssert(result.count == 3)
     }
@@ -138,10 +138,10 @@ final class BrokerProfileJobProviderTests: XCTestCase {
 
         // When
         let result = try sut.createJobs(with: .all,
-                                       withPriorityDate: nil,
-                                       showWebView: false,
-                                       errorDelegate: MockBrokerProfileJobErrorDelegate(),
-                                       jobDependencies: mockDependencies)
+                                        withPriorityDate: nil,
+                                        showWebView: false,
+                                        errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                        jobDependencies: mockDependencies)
 
         // Then
         XCTAssertEqual(result.count, 0, "Should not create jobs for removed brokers")
@@ -197,10 +197,10 @@ final class BrokerProfileJobProviderTests: XCTestCase {
 
         // When
         let result = try sut.createJobs(with: .all,
-                                       withPriorityDate: nil,
-                                       showWebView: false,
-                                       errorDelegate: MockBrokerProfileJobErrorDelegate(),
-                                       jobDependencies: mockDependencies)
+                                        withPriorityDate: nil,
+                                        showWebView: false,
+                                        errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                        jobDependencies: mockDependencies)
 
         // Then
         XCTAssertTrue(mockDatabase.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData")
@@ -210,7 +210,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
         XCTAssertEqual(result.count, 2, "Should create jobs only for active brokers")
     }
 
-    func testProvideJobs_differentJobTypes_allFilterRemovedBrokers() throws {
+    func testProvideJobs_allFilterRemovedBrokers() throws {
         // Given
         let activeBrokerData : BrokerProfileQueryData = BrokerProfileQueryData(
             dataBroker: .mock,
@@ -237,19 +237,16 @@ final class BrokerProfileJobProviderTests: XCTestCase {
             mockDatabase.lastShouldFilterRemovedBrokers = nil
 
             let result = try sut.createJobs(with: jobType,
-                                           withPriorityDate: nil,
-                                           showWebView: false,
-                                           errorDelegate: MockBrokerProfileJobErrorDelegate(),
-                                           jobDependencies: mockDependencies)
+                                            withPriorityDate: nil,
+                                            showWebView: false,
+                                            errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                            jobDependencies: mockDependencies)
 
             XCTAssertTrue(mockDatabase.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData for \(jobType)")
             XCTAssertEqual(mockDatabase.lastShouldFilterRemovedBrokers, true, "Should request filtering for job type \(jobType)")
 
             // Should create at most 1 job (for active broker only)
             XCTAssertLessThanOrEqual(result.count, 1, "Should create at most 1 job for \(jobType)")
-            if !result.isEmpty {
-                // Note: Cannot access private dataBrokerID, but job creation count validates filtering
-            }
         }
     }
 }

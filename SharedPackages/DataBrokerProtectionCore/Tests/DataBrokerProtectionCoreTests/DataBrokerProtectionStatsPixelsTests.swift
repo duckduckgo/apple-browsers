@@ -714,7 +714,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         handler.clear()
     }
 
-    func testWhenTryToFireStatsPixels_andRemovedBrokersExist_thenExcludesRemovedBrokersFromStats() throws {
+    func testWhenTryToFireStatsPixels_thenExcludesRemovedBrokersFromStats() throws {
         // Given
         let database = MockDatabase()
 
@@ -747,7 +747,6 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         database.brokerProfileQueryDataToReturn = [activeBrokerData, removedBrokerData]
 
-        // Set up repository to trigger weekly stats pixel firing
         let repository = MockDataBrokerProtectionStatsPixelsRepository()
         repository.latestStatsWeeklyPixelDate = eightDaysAgo
 
@@ -773,7 +772,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         XCTAssertFalse(globalPixels.isEmpty, "Should fire global stats pixels")
     }
 
-    func testWhenFireCustomStatsPixelsIfNeeded_andRemovedBrokersExist_thenExcludesRemovedBrokersFromCustomStats() throws {
+    func testWhenFireCustomStatsPixelsIfNeeded_thenExcludesRemovedBrokersFromCustomStats() throws {
         // Given
         let repository = MockDataBrokerProtectionStatsPixelsRepository()
         repository._customStatsPixelsLastSentTimestamp = Date.nowMinus(hours: 25)
@@ -817,10 +816,10 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         XCTAssertTrue(repository.didSetCustomStatsPixelsLastSentTimestamp, "Should update timestamp after firing")
     }
 
-    func testWhenWeeklyStatsPixelsAreFired_andMixedActiveRemovedBrokersExist_thenOnlyCountsActiveBrokers() throws {
+    func testWhenWeeklyStatsPixelsAreFired_thenOnlyCountsActiveBrokers() throws {
         // Given
         let database = MockDatabase()
-        // Set up proper scan history events with dates to trigger pixel firing
+
         let eightDaysAgo = Calendar.current.date(byAdding: .day, value: -8, to: Date())!
         let historyEventsForScanOperation: [HistoryEvent] = [
             .init(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: eightDaysAgo),
@@ -891,10 +890,9 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         XCTAssertFalse(weeklyStatsPixels.isEmpty, "Should fire weekly stats pixels")
 
-        // Stats should only reflect the active broker's 2 opt-outs, not the removed broker's 2
+        // Stats should only reflect the active broker opt-outs
         for pixel in weeklyStatsPixels {
             if let successfulOptOuts = pixel.params?["num_optoutsuccess"] {
-                // Should only count active broker's 1 successful opt-out, not removed broker's 2
                 XCTAssertEqual(successfulOptOuts, "1", "Global stats should exclude removed broker opt-outs")
             }
         }

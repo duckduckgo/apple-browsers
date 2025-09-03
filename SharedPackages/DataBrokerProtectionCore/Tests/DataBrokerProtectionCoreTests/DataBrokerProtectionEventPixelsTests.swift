@@ -733,7 +733,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
     }
     #endif
 
-    func testWhenFireWeeklyReportPixels_andRemovedBrokersExist_thenExcludesRemovedBrokersFromReport() {
+    func testWhenFireWeeklyReportPixels_thenExcludesRemovedBrokersFromReport() {
         // Given
         let activeBrokerData = BrokerProfileQueryData(
             dataBroker: .mock,
@@ -742,7 +742,6 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
             optOutJobData: [.mockWithSuccessfulOptOut]
         )
 
-        // Create removed broker mock (using manually created DataBroker since we need removedAt)
         let removedBroker = DataBroker(
             id: 2,
             name: "RemovedBroker",
@@ -791,7 +790,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         }
     }
 
-    func testWhenWeeklyReportPixels_scanCoverage_andRemovedBrokersExist_thenExcludesRemovedBrokersFromCoverage() {
+    func testWhenWeeklyReportPixels_thenExcludesRemovedBrokersFromCoverage() {
         // Given
         let activeBroker1 = BrokerProfileQueryData(
             dataBroker: .mock,

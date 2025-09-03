@@ -74,7 +74,7 @@ public struct UserText {
 
     public static let actionManageFavorites = NSLocalizedString("action.manage.favorites", value: "Manage", comment: "Button label for managing favorites")
     public static let actionOK = NSLocalizedString("action.ok", value: "OK", comment: "Button label for OK action")
-    public static let actionRefreshPage = NSLocalizedString("action.title.refreshPage", value: "Refresh Page", comment: "Refresh page action")
+    public static let actionRefreshPage = NSLocalizedString("action.title.refreshPage", value: "Reload Page", comment: "Refresh page action")
     
     public static let voiceoverSuggestionTypeWebsite = NSLocalizedString("voiceover.suggestion.type.website", value: "Open website", comment: "Open suggested website action accessibility title")
     public static let voiceoverSuggestionTypeBookmark = NSLocalizedString("voiceover.suggestion.type.bookmark", value: "Bookmark", comment: "Voice-over title for a Bookmark suggestion. Noun")
@@ -1366,7 +1366,7 @@ public struct UserText {
     public static let settingsText = NSLocalizedString("settings.text.size", value: "Default Text Zoom", comment: "Settings screen cell text for text size")
     public static let settingsAddressBar = NSLocalizedString("settings.appearance.address.bar", value: "Address Bar Position", comment: "Settings screen cell text for addess bar position")
     public static let settingsFullURL = NSLocalizedString("settings.address.full.url", value: "Show Full Site Address", comment: "Settings screen cell title for toggling full URL visibility in address bar")
-    public static let settingsRefreshButtonPositionTitle = NSLocalizedString("settings.refreshButton.position.title", value: "Refresh Button Position", comment: "Settings screen cell text for setting the refresh button position.")
+    public static let settingsRefreshButtonPositionTitle = NSLocalizedString("settings.refreshButton.position.title", value: "Reload Button Position", comment: "Settings screen cell text for setting the refresh button position.")
     public static let settingsRefreshButtonPositionAddressBar = NSLocalizedString("settings.refreshButton.position.addressBar", value: "Address Bar", comment: "Settings screen option to set refresh button in the address bar")
     public static let settingsRefreshButtonPositionMenu = NSLocalizedString("settings.refreshButton.position.menu", value: "Menu", comment: "Settings screen option to set refresh button in the menu")
 

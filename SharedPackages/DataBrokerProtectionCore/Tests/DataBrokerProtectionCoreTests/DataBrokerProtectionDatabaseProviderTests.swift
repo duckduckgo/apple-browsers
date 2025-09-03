@@ -77,6 +77,9 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         MockMigrationsProvider.didCallV3Migrations = false
         MockMigrationsProvider.didCallV4Migrations = false
         MockMigrationsProvider.didCallV5Migrations = false
+        MockMigrationsProvider.didCallV6Migrations = false
+        MockMigrationsProvider.didCallV7Migrations = false
+        MockMigrationsProvider.didCallV8Migrations = false
     }
 
     func testV3MigrationCleansUpOrphanedRecords_andResultsInNoDataIntegrityIssues() throws {
@@ -242,6 +245,157 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
 
         // Then
         XCTAssertEqual(optOut.attemptCount, 0)
+    }
+
+    func testV8Migration() throws {
+        // Given
+        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: Migrations.v8Migrations))
+
+        // When
+        let brokers = try sut.fetchAllBrokers()
+        let broker = brokers.first!
+
+        // Then
+        XCTAssertNil(broker.removedAt, "New removedAt field should default to nil")
+    }
+
+    func testV8Migration_schemaHasRemovedAtColumn() throws {
+        // Given
+        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: Migrations.v8Migrations))
+
+        // When/Then
+        try sut.db.read { db in
+            let columns = try db.columns(in: BrokerDB.databaseTableName)
+            let hasRemovedAtColumn = columns.contains { $0.name == "removedAt" }
+            XCTAssertTrue(hasRemovedAtColumn, "removedAt column should exist after v8 migration")
+
+            // Verify it's nullable
+            let removedAtColumn = columns.first { $0.name == "removedAt" }
+            XCTAssertTrue(removedAtColumn?.isNotNull == false, "removedAt column should be nullable")
+        }
+    }
+
+    func testV8Migration_canSetAndRetrieveRemovedAt() throws {
+        // Given
+        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: Migrations.v8Migrations))
+
+        // When: Create broker with removedAt date
+        let testDate = Date()
+        let newBroker = BrokerDB.random(name: "TestBroker", removedAt: testDate)
+        let brokerId = try sut.save(newBroker)
+
+        // Then: Can retrieve the date correctly
+        let savedBroker = try sut.fetchBroker(with: brokerId)
+        XCTAssertNotNil(savedBroker?.removedAt)
+        XCTAssertEqual(savedBroker!.removedAt!.timeIntervalSince1970,
+                       testDate.timeIntervalSince1970, accuracy: 1.0)
+    }
+
+    func testV8Migration_preservesExistingBrokerData() throws {
+        // Given: Capture existing broker data before migration
+        let existingBrokers = try sut.fetchAllBrokers()
+        let firstBroker = existingBrokers.first!
+        let originalName = firstBroker.name
+        let originalJSON = firstBroker.json
+        let originalVersion = firstBroker.version
+
+        // When: Apply v8 migration
+        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: Migrations.v8Migrations))
+
+        // Then: All original data preserved
+        let migratedBrokers = try sut.fetchAllBrokers()
+        XCTAssertEqual(migratedBrokers.count, existingBrokers.count, "Broker count should be preserved")
+
+        let migratedBroker = migratedBrokers.first { $0.id == firstBroker.id }!
+        XCTAssertEqual(migratedBroker.name, originalName)
+        XCTAssertEqual(migratedBroker.json, originalJSON)
+        XCTAssertEqual(migratedBroker.version, originalVersion)
+        XCTAssertNil(migratedBroker.removedAt, "Existing brokers should have nil removedAt")
+    }
+
+    func testV8Migration_freshInstallDirectlyToV8() throws {
+        // Given: Fresh database (no test-vault.sql data)
+        let freshVaultURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
+            directoryName: "DBP",
+            fileName: "Fresh-V8-Test-Vault.db"
+        )
+
+        // When: Create database directly with v8 migrations (fresh install scenario)
+        let freshProvider = try DefaultDataBrokerProtectionDatabaseProvider(
+            file: freshVaultURL,
+            key: key,
+            registerMigrationsHandler: Migrations.v8Migrations
+        )
+
+        // Then: Schema should be correct and ready for use
+        try freshProvider.db.read { db in
+            let hasRemovedAtColumn = try db.tableExists(BrokerDB.databaseTableName) &&
+                db.columns(in: BrokerDB.databaseTableName).contains { $0.name == "removedAt" }
+            XCTAssertTrue(hasRemovedAtColumn, "removedAt column should exist in fresh v8 install")
+        }
+
+        // And: Should be able to create brokers with removedAt
+        let testBroker = BrokerDB.random(name: "FreshTestBroker", removedAt: Date())
+        let brokerId = try freshProvider.save(testBroker)
+
+        let savedBroker = try freshProvider.fetchBroker(with: brokerId)
+        XCTAssertNotNil(savedBroker?.removedAt, "Should be able to save removedAt in fresh install")
+
+        // Cleanup
+        try? FileManager.default.removeItem(at: freshVaultURL)
+    }
+
+    func testV8Migration_updateFromV7ToV8() throws {
+        // Given: Database explicitly at v7 (simulating previous app version)
+        let updateVaultURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
+            directoryName: "DBP",
+            fileName: "V7-to-V8-Update-Test-Vault.db"
+        )
+
+        // Create and populate v7 database
+        let v7Provider = try DefaultDataBrokerProtectionDatabaseProvider(
+            file: updateVaultURL,
+            key: key,
+            registerMigrationsHandler: Migrations.v7Migrations
+        )
+
+        // Add some test data to v7 database (manual insert without removedAt column)
+        let v7BrokerId: Int64 = try v7Provider.db.write { db in
+            try db.execute(sql: "INSERT INTO broker (name, json, version, url, eTag) VALUES (?, ?, ?, ?, ?)",
+                           arguments: [
+                            "V7TestBroker",
+                            try! JSONSerialization.data(withJSONObject: [:], options: []),
+                            "1.0.0",
+                            "www.v7testbroker.com",
+                            "v7-etag"
+                           ])
+            return db.lastInsertedRowID
+        }
+        let v7BrokerCount = try v7Provider.fetchAllBrokers().count
+
+        // When: Update to v8 (simulating app update)
+        let v8Provider = try DefaultDataBrokerProtectionDatabaseProvider(
+            file: updateVaultURL,
+            key: key,
+            registerMigrationsHandler: Migrations.v8Migrations
+        )
+
+        // Then: v7 data preserved and v8 schema available
+        let v8Brokers = try v8Provider.fetchAllBrokers()
+        XCTAssertEqual(v8Brokers.count, v7BrokerCount, "Broker count should be preserved during v7→v8 update")
+
+        let updatedBroker = try v8Provider.fetchBroker(with: v7BrokerId)!
+        XCTAssertNil(updatedBroker.removedAt, "Existing v7 brokers should have nil removedAt after update")
+
+        // And: Can use new v8 functionality
+        let newV8Broker = BrokerDB.random(name: "NewV8TestBroker", removedAt: Date())
+        let newBrokerId = try v8Provider.save(newV8Broker)
+
+        let savedNewBroker = try v8Provider.fetchBroker(with: newBrokerId)
+        XCTAssertNotNil(savedNewBroker?.removedAt, "Should be able to use removedAt field after v7→v8 update")
+
+        // Cleanup
+        try? FileManager.default.removeItem(at: updateVaultURL)
     }
 
     func testDeleteAllDataSucceedsInRemovingAllData() throws {

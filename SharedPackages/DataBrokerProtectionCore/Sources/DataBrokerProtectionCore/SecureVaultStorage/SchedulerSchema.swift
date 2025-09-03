@@ -96,6 +96,7 @@ public struct BrokerDB: Codable {
     let version: String
     let url: String
     let eTag: String
+    let removedAt: Date?
 }
 
 extension BrokerDB: PersistableRecord, FetchableRecord {
@@ -109,6 +110,7 @@ extension BrokerDB: PersistableRecord, FetchableRecord {
         case version
         case url
         case eTag
+        case removedAt
     }
 
     public init(row: Row) throws {
@@ -122,6 +124,11 @@ extension BrokerDB: PersistableRecord, FetchableRecord {
         } else {
             eTag = Self.missingETagValue
         }
+        if row.hasColumn(Columns.removedAt.rawValue) {
+            removedAt = row[Columns.removedAt]
+        } else {
+            removedAt = nil
+        }
     }
 
     public func encode(to container: inout PersistenceContainer) throws {
@@ -131,6 +138,7 @@ extension BrokerDB: PersistableRecord, FetchableRecord {
         container[Columns.version] = version
         container[Columns.url] = url
         container[Columns.eTag] = eTag
+        container[Columns.removedAt] = removedAt
     }
 }
 

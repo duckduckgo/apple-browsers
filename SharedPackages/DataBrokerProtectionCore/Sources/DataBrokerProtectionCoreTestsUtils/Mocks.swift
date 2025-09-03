@@ -2139,7 +2139,8 @@ public final class MockActionsHandler: ActionsHandler {
     public var didCallNextAction = false
 
     public init() {
-        super.init(stepType: .scan, actions: [])
+        let step = Step(type: .scan, actions: [])
+        super.init(stepType: step.type, actions: step.actions)
     }
 
     public override func nextAction() -> (any Action)? {

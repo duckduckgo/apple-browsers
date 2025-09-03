@@ -32,12 +32,6 @@ public struct DataBrokerScheduleConfig: Codable, Sendable {
     var hoursUntilNextOptOutAttempt: Int {
         maintenanceScan
     }
-
-    // Used for opt-outs with email confirmation step following the decoupling changes
-    // https://app.asana.com/1/137249556945/project/481882893211075/task/1211046211583710?focus=true
-    var hoursUntilNextAttemptForOptOutWithEmailConfirmation: Int {
-        maintenanceScan
-    }
 }
 
 extension Int {
@@ -287,5 +281,10 @@ extension DataBroker {
 
     var type: DataBrokerHierarchy {
         parent == nil ? .parent : .child
+    }
+
+    public func requiresEmailConfirmationDuringOptOut() -> Bool {
+        guard let optOutStep = optOutStep() else { return false }
+        return optOutStep.actions.contains { $0 is EmailConfirmationAction }
     }
 }

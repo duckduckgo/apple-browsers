@@ -508,7 +508,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forScan(step)
 
         await sut.runNextAction(expectationAction)
         XCTAssertEqual(sut.retriesCountOnError, 1)
@@ -668,7 +668,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forScan(step)
 
         // Simulate condition success in scan step
         await sut.conditionSuccess(actions: [])

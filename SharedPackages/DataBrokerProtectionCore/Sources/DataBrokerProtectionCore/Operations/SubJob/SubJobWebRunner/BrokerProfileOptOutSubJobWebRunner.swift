@@ -116,7 +116,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                         if let actionsHandler = actionsHandler {
                             self.actionsHandler = actionsHandler
                         } else {
-                            self.actionsHandler = ActionsHandler(step: optOutStep, isEmailConfirmationDecouplingFeatureOn: featureFlagger.isEmailConfirmationDecouplingFeatureOn)
+                            self.actionsHandler = ActionsHandler(step: optOutStep)
                         }
 
                         if self.shouldRunNextStep() {

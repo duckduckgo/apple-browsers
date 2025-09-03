@@ -155,7 +155,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
         )
 
-        let actionsHandler = try ActionsHandler.forEmailConfirmationContinuation(optOutStep)
+        let actionsHandler = ActionsHandler(step: optOutStep)
 
         let webRunner = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: jobDependencies.privacyConfig,

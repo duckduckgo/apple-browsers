@@ -250,7 +250,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        sut.actionsHandler = ActionsHandler(step: step)
         sut.actionsHandler?.captchaTransactionId = "transactionId"
 
         await sut.runNextAction(solveCaptchaAction)
@@ -274,7 +274,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             executionConfig: BrokerJobExecutionConfig(),
             shouldRunNextStep: { true }
         )
-        let actionsHandler = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let actionsHandler = ActionsHandler(step: step)
         actionsHandler.captchaTransactionId = "transactionId"
         captchaService.shouldThrow = true
 
@@ -307,7 +307,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        sut.actionsHandler = ActionsHandler(step: step)
 
         await sut.captchaInformation(captchaInfo: getCaptchaResponse)
 
@@ -334,7 +334,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         sut.resetRetriesCount()
         captchaService.shouldThrow = true
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        sut.actionsHandler = ActionsHandler(step: step)
 
         await sut.captchaInformation(captchaInfo: getCaptchaResponse)
 
@@ -508,7 +508,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        sut.actionsHandler = ActionsHandler(step: step)
 
         await sut.runNextAction(expectationAction)
         XCTAssertEqual(sut.retriesCountOnError, 1)
@@ -612,7 +612,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        sut.actionsHandler = ActionsHandler(step: step)
 
         // Simulate condition success
         await sut.conditionSuccess(actions: [])
@@ -639,7 +639,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        sut.actionsHandler = ActionsHandler(step: step)
 
         // Execute the condition action to set it as current action
         _ = sut.actionsHandler?.nextAction()
@@ -668,7 +668,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        sut.actionsHandler = ActionsHandler(step: step)
 
         // Simulate condition success in scan step
         await sut.conditionSuccess(actions: [])
@@ -695,7 +695,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        sut.actionsHandler = ActionsHandler(step: step)
 
         // Execute the expectation action to set it as current action
         _ = sut.actionsHandler?.nextAction()
@@ -728,7 +728,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        sut.actionsHandler = ActionsHandler(step: step)
 
         // Simulate condition success with follow-up actions
         await sut.conditionSuccess(actions: [followUpAction])
@@ -760,7 +760,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        sut.actionsHandler = ActionsHandler(step: step)
 
         // First condition succeeds
         await sut.conditionSuccess(actions: [])
@@ -805,7 +805,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
                 shouldRunNextStep: { true }
             )
             sut.webViewHandler = webViewHandler
-            sut.actionsHandler = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+            sut.actionsHandler = ActionsHandler(step: step)
             mockStageCalculator.clear()
 
             // Execute the condition action to set it as current action
@@ -837,7 +837,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        sut.actionsHandler = ActionsHandler(step: step)
 
         // First call success
         await sut.conditionSuccess(actions: [])
@@ -871,7 +871,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        sut.actionsHandler = ActionsHandler(step: step)
 
         // Execute multiple condition successes
         await sut.conditionSuccess(actions: [])

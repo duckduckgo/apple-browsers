@@ -28,8 +28,8 @@ final class ActionsHandlerTests: XCTestCase {
         let scanStep = Step(type: .scan, actions: [])
         let optOutStep = Step(type: .optOut, actions: [])
 
-        let scanSut = ActionsHandler(step: scanStep, isEmailConfirmationDecouplingFeatureOn: false)
-        let optOutSut = ActionsHandler(step: optOutStep, isEmailConfirmationDecouplingFeatureOn: false)
+        let scanSut = ActionsHandler(step: scanStep)
+        let optOutSut = ActionsHandler(step: optOutStep)
 
         XCTAssertEqual(scanSut.stepType, .scan)
         XCTAssertEqual(optOutSut.stepType, .optOut)
@@ -39,7 +39,7 @@ final class ActionsHandlerTests: XCTestCase {
 
     func testWhenStepHasNoActions_thenNilIsReturned() {
         let step = Step(type: .scan, actions: [Action]())
-        let sut = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let sut = ActionsHandler(step: step)
 
         XCTAssertNil(sut.nextAction())
     }
@@ -48,7 +48,7 @@ final class ActionsHandlerTests: XCTestCase {
         let firstAction = NavigateAction(id: "navigate", actionType: .navigate, url: "url", ageRange: [String](), dataSource: nil)
         let secondAction = NavigateAction(id: "navigate", actionType: .navigate, url: "url", ageRange: [String](), dataSource: nil)
         let step = Step(type: .scan, actions: [firstAction, secondAction])
-        let sut = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let sut = ActionsHandler(step: step)
 
         _ = sut.nextAction() // Returns the first action
         _ = sut.nextAction() // Returns the second action
@@ -60,7 +60,7 @@ final class ActionsHandlerTests: XCTestCase {
         let firstAction = NavigateAction(id: "navigate", actionType: .navigate, url: "url", ageRange: [String](), dataSource: nil)
         let secondAction = NavigateAction(id: "navigate", actionType: .navigate, url: "url", ageRange: [String](), dataSource: nil)
         let step = Step(type: .scan, actions: [firstAction, secondAction])
-        let sut = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let sut = ActionsHandler(step: step)
 
         _ = sut.nextAction() // Returns the first action
         let action = sut.nextAction() // Returns the second and last action
@@ -72,14 +72,14 @@ final class ActionsHandlerTests: XCTestCase {
 
     func testWhenNoActionExecuted_thenCurrentActionReturnsNil() {
         let step = createStepWithActions(["action1", "action2"])
-        let sut = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let sut = ActionsHandler(step: step)
 
         XCTAssertNil(sut.currentAction())
     }
 
     func testWhenFirstActionExecuted_thenCurrentActionReturnsFirstAction() {
         let step = createStepWithActions(["action1", "action2"])
-        let sut = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let sut = ActionsHandler(step: step)
 
         let firstAction = sut.nextAction()
         let currentAction = sut.currentAction()
@@ -91,7 +91,7 @@ final class ActionsHandlerTests: XCTestCase {
 
     func testWhenMiddleActionExecuted_thenCurrentActionReturnsMiddleAction() {
         let step = createStepWithActions(["action1", "action2", "action3"])
-        let sut = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let sut = ActionsHandler(step: step)
 
         _ = sut.nextAction() // Execute first action
         let secondAction = sut.nextAction() // Execute second action
@@ -103,7 +103,7 @@ final class ActionsHandlerTests: XCTestCase {
 
     func testWhenLastActionExecuted_thenCurrentActionReturnsLastAction() {
         let step = createStepWithActions(["action1", "action2"])
-        let sut = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let sut = ActionsHandler(step: step)
 
         _ = sut.nextAction() // Execute first action
         let lastAction = sut.nextAction() // Execute last action
@@ -115,7 +115,7 @@ final class ActionsHandlerTests: XCTestCase {
 
     func testWhenEmptyActionsArray_thenCurrentActionReturnsNil() {
         let step = createStepWithActions([])
-        let sut = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let sut = ActionsHandler(step: step)
         _ = sut.nextAction()
 
         XCTAssertNil(sut.currentAction())
@@ -123,7 +123,7 @@ final class ActionsHandlerTests: XCTestCase {
 
     func testWhenCurrentActionCalledMultipleTimes_thenReturnsSameAction() {
         let step = createStepWithActions(["action1", "action2"])
-        let sut = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let sut = ActionsHandler(step: step)
 
         _ = sut.nextAction()
         let firstCall = sut.currentAction()
@@ -139,7 +139,7 @@ final class ActionsHandlerTests: XCTestCase {
 
     func testWhenInsertingActionsWithNoExecutedAction_thenActionsAppendedToEnd() {
         let step = createStepWithActions(["original1", "original2"])
-        let sut = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let sut = ActionsHandler(step: step)
 
         let newActions = [createTestAction(id: "new1"), createTestAction(id: "new2")]
         sut.insert(actions: newActions)
@@ -153,7 +153,7 @@ final class ActionsHandlerTests: XCTestCase {
 
     func testWhenInsertingActionsAfterFirstActionExecuted_thenActionsInsertedAtCorrectPosition() {
         let step = createStepWithActions(["original1", "original2", "original3"])
-        let sut = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let sut = ActionsHandler(step: step)
 
         _ = sut.nextAction()
 
@@ -170,7 +170,7 @@ final class ActionsHandlerTests: XCTestCase {
 
     func testWhenInsertingActionsAfterMiddleActionExecuted_thenActionsInsertedAtCorrectPosition() {
         let step = createStepWithActions(["original1", "original2", "original3", "original4"])
-        let sut = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let sut = ActionsHandler(step: step)
 
         _ = sut.nextAction() // Execute first action (original1)
         _ = sut.nextAction() // Execute second action (original2)
@@ -187,7 +187,7 @@ final class ActionsHandlerTests: XCTestCase {
 
     func testWhenInsertingSingleAction_thenActionInsertedCorrectly() {
         let step = createStepWithActions(["original1"])
-        let sut = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let sut = ActionsHandler(step: step)
 
         _ = sut.nextAction()
 
@@ -200,7 +200,7 @@ final class ActionsHandlerTests: XCTestCase {
 
     func testWhenInsertingEmptyArray_thenNoActionsAdded() {
         let step = createStepWithActions(["original1"])
-        let sut = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let sut = ActionsHandler(step: step)
 
         _ = sut.nextAction()
 
@@ -211,7 +211,7 @@ final class ActionsHandlerTests: XCTestCase {
 
     func testInsertingActionsPreservesCurrentActionState() {
         let step = createStepWithActions(["original1", "original2"])
-        let sut = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let sut = ActionsHandler(step: step)
 
         _ = sut.nextAction() // Execute first action
         let currentBeforeInsert = sut.currentAction()
@@ -227,7 +227,7 @@ final class ActionsHandlerTests: XCTestCase {
 
     func testWhenInsertingActionsMultipleTimes_thenSubsequentActionsAreRunNext() {
         let step = createStepWithActions(["original1"])
-        let sut = ActionsHandler(step: step, isEmailConfirmationDecouplingFeatureOn: false)
+        let sut = ActionsHandler(step: step)
 
         _ = sut.nextAction()
 

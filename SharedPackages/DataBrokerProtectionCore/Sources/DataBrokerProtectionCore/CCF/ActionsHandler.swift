@@ -24,9 +24,9 @@ public class ActionsHandler {
     public let stepType: StepType
     private var actions: [Action]
 
-    public init(stepType: StepType, actions: [Action]) {
-        self.stepType = stepType
-        self.actions = actions
+    public init(step: Step) {
+        self.stepType = step.type
+        self.actions = step.actions
     }
 
     public func currentAction() -> Action? {

@@ -90,6 +90,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
     private var authState: SyncAuthState = .initializing {
         didSet {
             guard
+                featureFlagger.isNewSyncEntryPointsFeatureOn,
                 case .inactive = authState,
                 !wasDimissed,
                 !wasPresentationCountLimitReached,

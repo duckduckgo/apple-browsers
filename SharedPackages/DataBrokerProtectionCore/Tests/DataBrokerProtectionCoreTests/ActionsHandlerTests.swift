@@ -240,6 +240,54 @@ final class ActionsHandlerTests: XCTestCase {
         XCTAssertNil(sut.nextAction())
     }
 
+    func testWhenOptOutHaltsAtEmailConfirmation_thenStopsBeforeEmailConfirmationAction() {
+        let action1 = createTestAction(id: "navigate1")
+        let action2 = createTestAction(id: "navigate2")
+        let emailAction = EmailConfirmationAction(id: "email", actionType: .emailConfirmation, pollingTime: 1, dataSource: nil)
+        let action3 = createTestAction(id: "navigate3")
+        let action4 = createTestAction(id: "navigate4")
+
+        let step = Step(type: .optOut, actions: [action1, action2, emailAction, action3, action4])
+        let sut = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: true)
+
+        XCTAssertEqual(sut.nextAction()?.id, "navigate1")
+        XCTAssertEqual(sut.nextAction()?.id, "navigate2")
+        XCTAssertNil(sut.nextAction())
+    }
+
+    func testWhenOptOutDoesNotHaltAtEmailConfirmation_thenIncludesAllActions() {
+        let action1 = createTestAction(id: "navigate1")
+        let action2 = createTestAction(id: "navigate2")
+        let emailAction = EmailConfirmationAction(id: "email", actionType: .emailConfirmation, pollingTime: 1, dataSource: nil)
+        let action3 = createTestAction(id: "navigate3")
+        let action4 = createTestAction(id: "navigate4")
+
+        let step = Step(type: .optOut, actions: [action1, action2, emailAction, action3, action4])
+        let sut = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+
+        XCTAssertEqual(sut.nextAction()?.id, "navigate1")
+        XCTAssertEqual(sut.nextAction()?.id, "navigate2")
+        XCTAssertEqual(sut.nextAction()?.id, "email")
+        XCTAssertEqual(sut.nextAction()?.id, "navigate3")
+        XCTAssertEqual(sut.nextAction()?.id, "navigate4")
+        XCTAssertNil(sut.nextAction())
+    }
+
+    func testWhenEmailConfirmationContinuation_thenStartsAfterEmailConfirmationAction() throws {
+        let action1 = createTestAction(id: "navigate1")
+        let action2 = createTestAction(id: "navigate2")
+        let emailAction = EmailConfirmationAction(id: "email", actionType: .emailConfirmation, pollingTime: 1, dataSource: nil)
+        let action3 = createTestAction(id: "navigate3")
+        let action4 = createTestAction(id: "navigate4")
+
+        let step = Step(type: .optOut, actions: [action1, action2, emailAction, action3, action4])
+        let sut = try ActionsHandler.forEmailConfirmationContinuation(step)
+
+        XCTAssertEqual(sut.nextAction()?.id, "navigate3")
+        XCTAssertEqual(sut.nextAction()?.id, "navigate4")
+        XCTAssertNil(sut.nextAction())
+    }
+
     // MARK: - Test Helpers
 
     private func createTestAction(id: String) -> NavigateAction {

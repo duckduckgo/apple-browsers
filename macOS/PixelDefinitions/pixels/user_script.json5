@@ -18,7 +18,7 @@
             },
             {
                 key: 'path',
-                description: 'Path to the JS file that failed to load.'
+                description: 'Path to the JS file that failed to load.',
                 type: 'string',
             },
         ],

@@ -57,6 +57,7 @@ protocol DependencyProvider {
     var serverInfoObserver: ConnectionServerInfoObserver { get }
     var vpnSettings: VPNSettings { get }
     var persistentPixel: PersistentPixelFiring { get }
+    var widePixel: WidePixelManaging { get }
 
     // Subscription
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge { get }
@@ -110,6 +111,7 @@ final class AppDependencyProvider: DependencyProvider {
     let vpnSettings = VPNSettings(defaults: .networkProtectionGroupDefaults)
     let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
     let persistentPixel: PersistentPixelFiring = PersistentPixel()
+    let widePixel: WidePixelManaging = WidePixel()
 
     private init() {
 #if DEBUG

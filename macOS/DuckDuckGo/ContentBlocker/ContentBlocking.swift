@@ -66,6 +66,7 @@ final class AppContentBlocking {
     convenience init(
         database: CoreDataDatabase,
         internalUserDecider: InternalUserDecider,
+        featureFlagger: FeatureFlagger,
         configurationStore: ConfigurationStore,
         contentScopeExperimentsManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
         onboardingNavigationDelegate: OnboardingNavigating,
@@ -87,6 +88,7 @@ final class AppContentBlocking {
         self.init(
             privacyConfigurationManager: privacyConfigurationManager,
             internalUserDecider: internalUserDecider,
+            featureFlagger: featureFlagger,
             configurationStore: configurationStore,
             contentScopeExperimentsManager: contentScopeExperimentsManager(),
             onboardingNavigationDelegate: onboardingNavigationDelegate,
@@ -105,6 +107,7 @@ final class AppContentBlocking {
     init(
         privacyConfigurationManager: PrivacyConfigurationManager,
         internalUserDecider: InternalUserDecider,
+        featureFlagger: FeatureFlagger,
         configurationStore: ConfigurationStore,
         contentScopeExperimentsManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
         onboardingNavigationDelegate: OnboardingNavigating,
@@ -141,6 +144,7 @@ final class AppContentBlocking {
                                                   webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared,
                                                   experimentManager: contentScopeExperimentsManager(),
                                                   tld: tld,
+                                                  featureFlagger: featureFlagger,
                                                   onboardingNavigationDelegate: onboardingNavigationDelegate,
                                                   appearancePreferences: appearancePreferences,
                                                   startupPreferences: startupPreferences,

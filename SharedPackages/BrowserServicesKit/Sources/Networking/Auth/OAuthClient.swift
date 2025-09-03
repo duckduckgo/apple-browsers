@@ -18,8 +18,9 @@
 
 import Foundation
 import os.log
+import Common
 
-public enum OAuthClientError: Error, LocalizedError, Equatable {
+public enum OAuthClientError: DDGError {
     case internalError(String)
     case missingTokenContainer
     case unauthenticated
@@ -27,10 +28,10 @@ public enum OAuthClientError: Error, LocalizedError, Equatable {
     case authMigrationNotPerformed
     case unknownAccount
 
-    public var errorDescription: String? {
+    public var description: String {
         switch self {
-        case .internalError(let error):
-            return "Internal error: \(error)"
+        case .internalError(let errorDescription):
+            return "Internal error: \(errorDescription)"
         case .missingTokenContainer:
             return "No tokens available"
         case .unauthenticated:
@@ -44,8 +45,23 @@ public enum OAuthClientError: Error, LocalizedError, Equatable {
         }
     }
 
-    public var localizedDescription: String {
-        errorDescription ?? "Unknown"
+    public var errorDomain: String { "com.duckduckgo.networking.OAuthClientError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .internalError:
+            return 11000
+        case .missingTokenContainer:
+            return 11001
+        case .unauthenticated:
+            return 11002
+        case .invalidTokenRequest:
+            return 11003
+        case .authMigrationNotPerformed:
+            return 11004
+        case .unknownAccount:
+            return 11005
+        }
     }
 }
 
@@ -270,7 +286,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 Logger.OAuthClient.error("Failed to refresh token: unknownAccount")
                 throw OAuthClientError.unknownAccount
             } catch {
-                Logger.OAuthClient.error("Failed to refresh token: \(error.localizedDescription, privacy: .public)")
+                Logger.OAuthClient.error("Failed to refresh token: \(String(describing: error), privacy: .public)")
                 throw error
             }
 
@@ -284,7 +300,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                     try tokenStorage.saveTokenContainer(tokenContainer)
                     return tokenContainer
                 } catch {
-                    Logger.OAuthClient.fault("Failed to create account: \(error.localizedDescription, privacy: .public)")
+                    Logger.OAuthClient.fault("Failed to create account: \(String(describing: error), privacy: .public)")
                     throw error
                 }
             }

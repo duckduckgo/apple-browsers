@@ -94,6 +94,11 @@ struct Launching: LaunchingHandling {
         let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
+        let widePixelService = WidePixelService(
+            widePixel: AppDependencyProvider.shared.widePixel,
+            featureFlagger: featureFlagger,
+            subscriptionBridge: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+        )
 
         let daxDialogs = configuration.onboardingConfiguration.daxDialogs
 
@@ -138,7 +143,10 @@ struct Launching: LaunchingHandling {
 
         systemSettingsPiPTutorialService.setPresenter(mainCoordinator)
         syncService.presenter = mainCoordinator.controller
-        let vpnService = VPNService(mainCoordinator: mainCoordinator)
+        
+        let notificationServiceManager = NotificationServiceManager(mainCoordinator: mainCoordinator)
+        
+        let vpnService = VPNService(mainCoordinator: mainCoordinator, notificationServiceManager: notificationServiceManager)
         let overlayWindowManager = OverlayWindowManager(window: window,
                                                         appSettings: appSettings,
                                                         voiceSearchHelper: voiceSearchHelper,
@@ -147,6 +155,11 @@ struct Launching: LaunchingHandling {
         let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
+        let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
+            featureFlagger: featureFlagger,
+            notificationServiceManager: notificationServiceManager,
+            privacyConfigurationManager: privacyConfigurationManager
+        )
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
@@ -170,13 +183,18 @@ struct Launching: LaunchingHandling {
                                statisticsService: statisticsService,
                                keyValueFileStoreService: appKeyValueFileStoreService,
                                defaultBrowserPromptService: defaultBrowserPromptService,
-                               systemSettingsPiPTutorialService: systemSettingsPiPTutorialService
+                               systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
+                               inactivityNotificationSchedulerService: inactivityNotificationSchedulerService,
+                               widePixelService: widePixelService
         )
 
         // Register background tasks that run after app is ready
         launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
                                                                    interactionStateSource: mainCoordinator.interactionStateSource,
                                                                    tabManager: mainCoordinator.tabManager))
+        
+        // Clean up wide pixel data at launch
+        launchTaskManager.register(task: WidePixelLaunchCleanupTask(widePixelService: widePixelService))
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window

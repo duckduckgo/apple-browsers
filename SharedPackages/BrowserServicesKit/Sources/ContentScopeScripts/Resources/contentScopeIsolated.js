@@ -1703,7 +1703,11 @@
     return false;
   }
   function isFeatureBroken(args, feature) {
-    return isPlatformSpecificFeature(feature) ? !args.site.enabledFeatures.includes(feature) : args.site.isBroken || args.site.allowlisted || !args.site.enabledFeatures.includes(feature);
+    const isFeatureEnabled = args.site.enabledFeatures?.includes(feature) ?? false;
+    if (isPlatformSpecificFeature(feature)) {
+      return !isFeatureEnabled;
+    }
+    return args.site.isBroken || args.site.allowlisted || !isFeatureEnabled;
   }
   function camelcase(dashCaseText) {
     return dashCaseText.replace(/-(.)/g, (_2, letter) => {
@@ -1751,10 +1755,11 @@
     switch (configSettingType) {
       case "object":
         if (Array.isArray(configSetting)) {
-          configSetting = processAttrByCriteria(configSetting);
-          if (configSetting === void 0) {
+          const selectedSetting = processAttrByCriteria(configSetting);
+          if (selectedSetting === void 0) {
             return defaultValue;
           }
+          return processAttr(selectedSetting, defaultValue);
         }
         if (!configSetting.type) {
           return defaultValue;
@@ -1763,9 +1768,16 @@
           if (configSetting.functionName && functionMap[configSetting.functionName]) {
             return functionMap[configSetting.functionName];
           }
+          if (configSetting.functionValue) {
+            const functionValue = configSetting.functionValue;
+            return () => processAttr(functionValue, void 0);
+          }
         }
         if (configSetting.type === "undefined") {
           return void 0;
+        }
+        if (configSetting.async) {
+          return DDGPromise.resolve(configSetting.value);
         }
         return configSetting.value;
       default:
@@ -1940,6 +1952,18 @@
     }
     return false;
   }
+  function isMaxSupportedVersion(maxSupportedVersion, currentVersion) {
+    if (typeof currentVersion === "string" && typeof maxSupportedVersion === "string") {
+      if (satisfiesMinVersion(currentVersion, maxSupportedVersion)) {
+        return true;
+      }
+    } else if (typeof currentVersion === "number" && typeof maxSupportedVersion === "number") {
+      if (maxSupportedVersion >= currentVersion) {
+        return true;
+      }
+    }
+    return false;
+  }
   function processConfig(data2, userList, preferences, platformSpecificFeatures2 = []) {
     const topLevelHostname = getTabHostname();
     const site = computeLimitedSiteObject();
@@ -1992,7 +2016,7 @@
   function isGloballyDisabled(args) {
     return args.site.allowlisted || args.site.isBroken;
   }
-  var platformSpecificFeatures = ["windowsPermissionUsage", "messageBridge", "favicon"];
+  var platformSpecificFeatures = ["navigatorInterface", "duckAiListener", "windowsPermissionUsage", "messageBridge", "favicon"];
   function isPlatformSpecificFeature(featureName) {
     return platformSpecificFeatures.includes(featureName);
   }
@@ -2003,6 +2027,15 @@
     return originalWindowDispatchEvent && originalWindowDispatchEvent(
       createCustomEvent("sendMessageProxy" + messageSecret, { detail: JSON.stringify({ messageType, options }) })
     );
+  }
+  function isDuckAi() {
+    const tabUrl = getTabUrl();
+    const domains = ["duckduckgo.com", "duck.ai", "duck.co"];
+    if (tabUrl?.hostname && domains.includes(tabUrl?.hostname)) {
+      const url = new URL(tabUrl?.href);
+      return url.searchParams.has("duckai");
+    }
+    return false;
   }
 
   // src/features.js
@@ -2033,6 +2066,7 @@
       "messageBridge",
       "duckPlayer",
       "duckPlayerNative",
+      "duckAiListener",
       "harmfulApis",
       "webCompat",
       "windowsPermissionUsage",
@@ -2042,11 +2076,11 @@
       "autofillPasswordImport",
       "favicon",
       "webTelemetry",
-      "scriptlets"
+      "pageContext"
     ]
   );
   var platformSupport = {
-    apple: ["webCompat", "duckPlayerNative", "scriptlets", ...baseFeatures],
+    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "duckAiListener"],
     "apple-isolated": [
       "duckPlayer",
       "duckPlayerNative",
@@ -2054,11 +2088,23 @@
       "performanceMetrics",
       "clickToLoad",
       "messageBridge",
-      "favicon"
+      "favicon",
+      "pageContext"
     ],
     android: [...baseFeatures, "webCompat", "breakageReporting", "duckPlayer", "messageBridge"],
     "android-broker-protection": ["brokerProtection"],
     "android-autofill-password-import": ["autofillPasswordImport"],
+    "android-adsjs": [
+      "apiManipulation",
+      "webCompat",
+      "fingerprintingHardware",
+      "fingerprintingScreenSize",
+      "fingerprintingTemporaryStorage",
+      "fingerprintingAudio",
+      "fingerprintingBattery",
+      "gpc",
+      "breakageReporting"
+    ],
     windows: [
       "cookie",
       ...baseFeatures,
@@ -3073,6 +3119,247 @@
     }
   };
 
+  // ../messaging/lib/android-adsjs.js
+  init_define_import_meta_trackerLookup();
+  var AndroidAdsjsMessagingTransport = class {
+    /**
+     * @param {AndroidAdsjsMessagingConfig} config
+     * @param {MessagingContext} messagingContext
+     * @internal
+     */
+    constructor(config2, messagingContext) {
+      this.messagingContext = messagingContext;
+      this.config = config2;
+      this.config.sendInitialPing(messagingContext);
+    }
+    /**
+     * @param {NotificationMessage} msg
+     */
+    notify(msg) {
+      try {
+        this.config.sendMessageThrows?.(msg);
+      } catch (e) {
+        console.error(".notify failed", e);
+      }
+    }
+    /**
+     * @param {RequestMessage} msg
+     * @return {Promise<any>}
+     */
+    request(msg) {
+      return new Promise((resolve, reject) => {
+        const unsub = this.config.subscribe(msg.id, handler);
+        try {
+          this.config.sendMessageThrows?.(msg);
+        } catch (e) {
+          unsub();
+          reject(new Error("request failed to send: " + e.message || "unknown error"));
+        }
+        function handler(data2) {
+          if (isResponseFor(msg, data2)) {
+            if (data2.result) {
+              resolve(data2.result || {});
+              return unsub();
+            }
+            if (data2.error) {
+              reject(new Error(data2.error.message));
+              return unsub();
+            }
+            unsub();
+            throw new Error("unreachable: must have `result` or `error` key by this point");
+          }
+        }
+      });
+    }
+    /**
+     * @param {Subscription} msg
+     * @param {(value: unknown | undefined) => void} callback
+     */
+    subscribe(msg, callback) {
+      const unsub = this.config.subscribe(msg.subscriptionName, (data2) => {
+        if (isSubscriptionEventFor(msg, data2)) {
+          callback(data2.params || {});
+        }
+      });
+      return () => {
+        unsub();
+      };
+    }
+  };
+  var AndroidAdsjsMessagingConfig = class {
+    /**
+     * @param {object} params
+     * @param {Record<string, any>} params.target
+     * @param {boolean} params.debug
+     * @param {string} params.objectName - the object name for addWebMessageListener
+     */
+    constructor(params) {
+      /** @type {{
+       * postMessage: (message: string) => void,
+       * addEventListener: (type: string, listener: (event: MessageEvent) => void) => void,
+       * } | null} */
+      __publicField(this, "_capturedHandler");
+      this.target = params.target;
+      this.debug = params.debug;
+      this.objectName = params.objectName;
+      this.listeners = new globalThis.Map();
+      this._captureGlobalHandler();
+      this._setupEventListener();
+    }
+    /**
+     * The transport can call this to transmit a JSON payload along with a secret
+     * to the native Android handler via postMessage.
+     *
+     * Note: This can throw - it's up to the transport to handle the error.
+     *
+     * @type {(json: object) => void}
+     * @throws
+     * @internal
+     */
+    sendMessageThrows(message) {
+      if (!this.objectName) {
+        throw new Error("Object name not set for WebMessageListener");
+      }
+      if (this._capturedHandler && this._capturedHandler.postMessage) {
+        this._capturedHandler.postMessage(JSON.stringify(message));
+      } else {
+        throw new Error("postMessage not available");
+      }
+    }
+    /**
+     * A subscription on Android is just a named listener. All messages from
+     * android -> are delivered through a single function, and this mapping is used
+     * to route the messages to the correct listener.
+     *
+     * Note: Use this to implement request->response by unsubscribing after the first
+     * response.
+     *
+     * @param {string} id
+     * @param {(msg: MessageResponse | SubscriptionEvent) => void} callback
+     * @returns {() => void}
+     * @internal
+     */
+    subscribe(id, callback) {
+      this.listeners.set(id, callback);
+      return () => {
+        this.listeners.delete(id);
+      };
+    }
+    /**
+     * Accept incoming messages and try to deliver it to a registered listener.
+     *
+     * This code is defensive to prevent any single handler from affecting another if
+     * it throws (producer interference).
+     *
+     * @param {MessageResponse | SubscriptionEvent} payload
+     * @internal
+     */
+    _dispatch(payload) {
+      if (!payload) return this._log("no response");
+      if ("id" in payload) {
+        if (this.listeners.has(payload.id)) {
+          this._tryCatch(() => this.listeners.get(payload.id)?.(payload));
+        } else {
+          this._log("no listeners for ", payload);
+        }
+      }
+      if ("subscriptionName" in payload) {
+        if (this.listeners.has(payload.subscriptionName)) {
+          this._tryCatch(() => this.listeners.get(payload.subscriptionName)?.(payload));
+        } else {
+          this._log("no subscription listeners for ", payload);
+        }
+      }
+    }
+    /**
+     *
+     * @param {(...args: any[]) => any} fn
+     * @param {string} [context]
+     */
+    _tryCatch(fn, context = "none") {
+      try {
+        return fn();
+      } catch (e) {
+        if (this.debug) {
+          console.error("AndroidAdsjsMessagingConfig error:", context);
+          console.error(e);
+        }
+      }
+    }
+    /**
+     * @param {...any} args
+     */
+    _log(...args) {
+      if (this.debug) {
+        console.log("AndroidAdsjsMessagingConfig", ...args);
+      }
+    }
+    /**
+     * Capture the global handler and remove it from the global object.
+     */
+    _captureGlobalHandler() {
+      const { target, objectName } = this;
+      if (Object.prototype.hasOwnProperty.call(target, objectName)) {
+        this._capturedHandler = target[objectName];
+        delete target[objectName];
+      } else {
+        this._capturedHandler = null;
+        this._log("Android adsjs messaging interface not available", objectName);
+      }
+    }
+    /**
+     * Set up event listener for incoming messages from the captured handler.
+     */
+    _setupEventListener() {
+      if (!this._capturedHandler || !this._capturedHandler.addEventListener) {
+        this._log("No event listener support available");
+        return;
+      }
+      this._capturedHandler.addEventListener("message", (event) => {
+        try {
+          const data2 = (
+            /** @type {MessageEvent} */
+            event.data
+          );
+          if (typeof data2 === "string") {
+            const parsedData = JSON.parse(data2);
+            this._dispatch(parsedData);
+          }
+        } catch (e) {
+          this._log("Error processing incoming message:", e);
+        }
+      });
+    }
+    /**
+     * Send an initial ping message to the platform to establish communication.
+     * This is a fire-and-forget notification that signals the JavaScript side is ready.
+     * Only sends in top context (not in frames) and if the messaging interface is available.
+     *
+     * @param {MessagingContext} messagingContext
+     * @returns {boolean} true if ping was sent, false if in frame or interface not ready
+     */
+    sendInitialPing(messagingContext) {
+      if (isBeingFramed()) {
+        this._log("Skipping initial ping - running in frame context");
+        return false;
+      }
+      try {
+        const message = new RequestMessage({
+          id: "initialPing",
+          context: messagingContext.context,
+          featureName: "messaging",
+          method: "initialPing"
+        });
+        this.sendMessageThrows(message);
+        this._log("Initial ping sent successfully");
+        return true;
+      } catch (e) {
+        this._log("Failed to send initial ping:", e);
+        return false;
+      }
+    }
+  };
+
   // ../messaging/lib/typed-messages.js
   init_define_import_meta_trackerLookup();
 
@@ -3203,6 +3490,9 @@
     }
     if (config2 instanceof AndroidMessagingConfig) {
       return new AndroidMessagingTransport(config2, messagingContext);
+    }
+    if (config2 instanceof AndroidAdsjsMessagingConfig) {
+      return new AndroidAdsjsMessagingTransport(config2, messagingContext);
     }
     if (config2 instanceof TestTransportConfig) {
       return new TestTransport(config2, messagingContext);
@@ -4499,6 +4789,7 @@
      * @property {string[] | string} [domain]
      * @property {object} [urlPattern]
      * @property {object} [minSupportedVersion]
+     * @property {object} [maxSupportedVersion]
      * @property {object} [experiment]
      * @property {string} [experiment.experimentName]
      * @property {string} [experiment.cohort]
@@ -4506,6 +4797,7 @@
      * @property {boolean} [context.frame] - true if the condition applies to frames
      * @property {boolean} [context.top] - true if the condition applies to the top frame
      * @property {string} [injectName] - the inject name to match against (e.g., "apple-isolated")
+     * @property {boolean} [internal] - true if the condition applies to internal builds
      */
     /**
      * Takes multiple conditional blocks and returns true if any apply.
@@ -4531,7 +4823,9 @@
         urlPattern: this._matchUrlPatternConditional,
         experiment: this._matchExperimentConditional,
         minSupportedVersion: this._matchMinSupportedVersion,
-        injectName: this._matchInjectNameConditional
+        maxSupportedVersion: this._matchMaxSupportedVersion,
+        injectName: this._matchInjectNameConditional,
+        internal: this._matchInternalConditional
       };
       for (const key in conditionBlock) {
         if (!conditionChecks[key]) {
@@ -4623,6 +4917,17 @@
       return conditionBlock.injectName === currentInjectName;
     }
     /**
+     * Takes a condition block and returns true if the internal state matches the condition.
+     * @param {ConditionBlock} conditionBlock
+     * @returns {boolean}
+     */
+    _matchInternalConditional(conditionBlock) {
+      if (conditionBlock.internal === void 0) return false;
+      const isInternal = __privateGet(this, _args)?.platform?.internal;
+      if (isInternal === void 0) return false;
+      return Boolean(conditionBlock.internal) === Boolean(isInternal);
+    }
+    /**
      * Takes a condition block and returns true if the platform version satisfies the `minSupportedFeature`
      * @param {ConditionBlock} conditionBlock
      * @returns {boolean}
@@ -4630,6 +4935,15 @@
     _matchMinSupportedVersion(conditionBlock) {
       if (!conditionBlock.minSupportedVersion) return false;
       return isSupportedVersion(conditionBlock.minSupportedVersion, __privateGet(this, _args)?.platform?.version);
+    }
+    /**
+     * Takes a condition block and returns true if the platform version satisfies the `maxSupportedFeature`
+     * @param {ConditionBlock} conditionBlock
+     * @returns {boolean}
+     */
+    _matchMaxSupportedVersion(conditionBlock) {
+      if (!conditionBlock.maxSupportedVersion) return false;
+      return isMaxSupportedVersion(conditionBlock.maxSupportedVersion, __privateGet(this, _args)?.platform?.version);
     }
     /**
      * Return the settings object for a feature
@@ -4661,11 +4975,12 @@
      * ```
      * This also supports domain overrides as per `getFeatureSetting`.
      * @param {string} featureKeyName
+     * @param {'enabled' | 'disabled'} [defaultState]
      * @param {string} [featureName]
      * @returns {boolean}
      */
-    getFeatureSettingEnabled(featureKeyName, featureName) {
-      const result = this.getFeatureSetting(featureKeyName, featureName);
+    getFeatureSettingEnabled(featureKeyName, defaultState, featureName) {
+      const result = this.getFeatureSetting(featureKeyName, featureName) || defaultState;
       if (typeof result === "object") {
         return result.state === "enabled";
       }
@@ -4786,6 +5101,11 @@
        * @type {boolean}
        */
       __publicField(this, "listenForUrlChanges", false);
+      /**
+       * Set this to true if you wish to get update calls (legacy).
+       * @type {boolean}
+       */
+      __publicField(this, "listenForUpdateChanges", false);
       /** @type {ImportMeta} */
       __privateAdd(this, _importConfig);
       this.setArgs(this.args);
@@ -14405,6 +14725,7 @@ ul.messages {
       super(...arguments);
       /** @type {MessagingContext} */
       __privateAdd(this, _messagingContext);
+      __publicField(this, "listenForUpdateChanges", true);
     }
     async init(args) {
       if (!this.messaging) {
@@ -15073,6 +15394,222 @@ ul.messages {
     });
   }
 
+  // src/features/page-context.js
+  init_define_import_meta_trackerLookup();
+  var MSG_PAGE_CONTEXT_COLLECT = "collect";
+  var MSG_PAGE_CONTEXT_RESPONSE = "collectionResult";
+  var MSG_PAGE_CONTEXT_ERROR = "collectionError";
+  var PageContext = class extends ContentFeature {
+    constructor() {
+      super(...arguments);
+      __publicField(this, "collectionCache", /* @__PURE__ */ new Map());
+      __publicField(this, "lastSentContent", null);
+      __publicField(this, "listenForUrlChanges", true);
+    }
+    init() {
+      if (isDuckAi()) {
+        return;
+      }
+      this.setupMessageHandlers();
+      this.setupContentCollection();
+      window.addEventListener("DOMContentLoaded", () => {
+        this.handleContentCollectionRequest({});
+      });
+      window.addEventListener("hashchange", () => {
+        this.handleContentCollectionRequest({});
+      });
+      window.addEventListener("pageshow", () => {
+        this.handleContentCollectionRequest({});
+      });
+    }
+    /**
+     * @param {NavigationType} _navigationType
+     */
+    urlChanged(_navigationType) {
+      this.handleContentCollectionRequest({});
+    }
+    setupMessageHandlers() {
+      this.messaging.subscribe(MSG_PAGE_CONTEXT_COLLECT, (data2) => {
+        this.handleContentCollectionRequest(data2);
+      });
+    }
+    setupContentCollection() {
+      if (document.body) {
+        this.setup();
+      } else {
+        window.addEventListener(
+          "DOMContentLoaded",
+          () => {
+            this.setup();
+          },
+          { once: true }
+        );
+      }
+    }
+    setup() {
+      this.observeContentChanges();
+    }
+    observeContentChanges() {
+      if (window.MutationObserver) {
+        const observer = new MutationObserver((_mutations) => {
+          this.invalidateCache();
+        });
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+          characterData: true
+        });
+      }
+    }
+    handleContentCollectionRequest(data2) {
+      try {
+        const options = data2?.options || {};
+        const content = this.collectPageContent(options);
+        this.sendContentResponse(content);
+      } catch (error) {
+        this.sendErrorResponse(error);
+      }
+    }
+    collectPageContent(options = {}) {
+      const cacheKey = this.getCacheKey(options);
+      if (this.collectionCache.has(cacheKey)) {
+        const cached = this.collectionCache.get(cacheKey);
+        if (Date.now() - cached.timestamp < 3e4) {
+          return cached.data;
+        }
+      }
+      const content = {
+        favicon: getFaviconList(),
+        title: this.getPageTitle(),
+        metaDescription: this.getMetaDescription(),
+        content: this.getMainContent(options),
+        headings: this.getHeadings(),
+        links: this.getLinks(),
+        images: options.includeImages !== false ? this.getImages() : void 0,
+        timestamp: Date.now(),
+        url: window.location.href
+      };
+      this.collectionCache.set(cacheKey, {
+        data: content,
+        timestamp: Date.now()
+      });
+      return content;
+    }
+    getPageTitle() {
+      return document.title || "";
+    }
+    getMetaDescription() {
+      const metaDesc = document.querySelector('meta[name="description"]');
+      return metaDesc ? metaDesc.getAttribute("content") || "" : "";
+    }
+    getMainContent(options = {}) {
+      const maxLength = options.maxContentLength || this.getFeatureSetting("maxContentLength") || 1e5;
+      const selectors = options.contentSelectors || this.getFeatureSetting("contentSelectors") || ["p", "h1", "h2", "h3", "article", "section"];
+      const excludeSelectors = options.excludeSelectors || this.getFeatureSetting("excludeSelectors") || [
+        ".ad",
+        ".sidebar",
+        ".footer",
+        ".nav",
+        ".header",
+        "script",
+        "style",
+        "link",
+        "meta",
+        "noscript",
+        "svg",
+        "canvas"
+      ];
+      let content = "";
+      const mainContent = document.querySelector("main, article, .content, .main, #content, #main");
+      const contentRoot = mainContent || document.body;
+      if (contentRoot) {
+        const clone = (
+          /** @type {Element} */
+          contentRoot.cloneNode(true)
+        );
+        excludeSelectors.forEach((selector) => {
+          const elements = clone.querySelectorAll(selector);
+          elements.forEach((el) => el.remove());
+        });
+        selectors.forEach((selector) => {
+          const elements = clone.querySelectorAll(selector);
+          elements.forEach((el) => {
+            const text2 = el.textContent?.trim();
+            if (text2 && text2.length > 10) {
+              content += text2 + "\n\n";
+            }
+          });
+        });
+      }
+      if (content.length > maxLength) {
+        content = content.substring(0, maxLength) + "...";
+      }
+      return content.trim();
+    }
+    getHeadings() {
+      const headings = [];
+      const headingElements = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
+      headingElements.forEach((heading) => {
+        const level = parseInt(heading.tagName.charAt(1));
+        const text2 = heading.textContent?.trim();
+        if (text2) {
+          headings.push({ level, text: text2 });
+        }
+      });
+      return headings;
+    }
+    getLinks() {
+      const links = [];
+      const linkElements = document.querySelectorAll("a[href]");
+      linkElements.forEach((link) => {
+        const text2 = link.textContent?.trim();
+        const href = link.getAttribute("href");
+        if (text2 && href && text2.length > 0) {
+          links.push({ text: text2, href });
+        }
+      });
+      return links;
+    }
+    getImages() {
+      const images = [];
+      const imgElements = document.querySelectorAll("img");
+      imgElements.forEach((img) => {
+        const alt = img.getAttribute("alt") || "";
+        const src = img.getAttribute("src") || "";
+        if (src) {
+          images.push({ alt, src });
+        }
+      });
+      return images;
+    }
+    getCacheKey(options) {
+      return JSON.stringify({
+        url: window.location.href,
+        options
+      });
+    }
+    invalidateCache() {
+      this.collectionCache.clear();
+    }
+    sendContentResponse(content) {
+      if (this.lastSentContent && this.lastSentContent === content) {
+        return;
+      }
+      this.lastSentContent = content;
+      this.messaging.notify(MSG_PAGE_CONTEXT_RESPONSE, {
+        // TODO: This is a hack to get the data to the browser. We should probably not be paying this cost.
+        serializedPageData: JSON.stringify(content)
+      });
+    }
+    sendErrorResponse(error) {
+      this.messaging.notify(MSG_PAGE_CONTEXT_ERROR, {
+        success: false,
+        error: error.message || "Unknown error occurred",
+        timestamp: Date.now()
+      });
+    }
+  };
+
   // ddg:platformFeatures:ddg:platformFeatures
   var ddg_platformFeatures_default = {
     ddg_feature_duckPlayer: DuckPlayerFeature,
@@ -15081,7 +15618,8 @@ ul.messages {
     ddg_feature_performanceMetrics: PerformanceMetrics,
     ddg_feature_clickToLoad: ClickToLoad,
     ddg_feature_messageBridge: message_bridge_default,
-    ddg_feature_favicon: favicon_default
+    ddg_feature_favicon: favicon_default,
+    ddg_feature_pageContext: PageContext
   };
 
   // src/url-change.js
@@ -15150,6 +15688,9 @@ ul.messages {
       if (featuresToLoad.includes(featureName)) {
         const ContentFeature2 = ddg_platformFeatures_default["ddg_feature_" + featureName];
         const featureInstance = new ContentFeature2(featureName, importConfig, args);
+        if (!featureInstance.getFeatureSettingEnabled("additionalCheck", "enabled")) {
+          continue;
+        }
         featureInstance.callLoad();
         features.push({ featureName, featureInstance });
       }
@@ -15167,6 +15708,9 @@ ul.messages {
     const resolvedFeatures = await Promise.all(features);
     resolvedFeatures.forEach(({ featureInstance, featureName }) => {
       if (!isFeatureBroken(args, featureName) || alwaysInitExtensionFeatures(args, featureName)) {
+        if (!featureInstance.getFeatureSettingEnabled("additionalCheck", "enabled")) {
+          return;
+        }
         featureInstance.callInit(args);
         if (featureInstance.listenForUrlChanges || featureInstance.urlChanged) {
           registerForURLChanges((navigationType) => {
@@ -15191,7 +15735,7 @@ ul.messages {
   async function updateFeaturesInner(args) {
     const resolvedFeatures = await Promise.all(features);
     resolvedFeatures.forEach(({ featureInstance, featureName }) => {
-      if (!isFeatureBroken(initArgs, featureName) && featureInstance.update) {
+      if (!isFeatureBroken(initArgs, featureName) && featureInstance.listenForUpdateChanges) {
         featureInstance.update(args);
       }
     });

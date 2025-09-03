@@ -212,7 +212,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
         let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper,
-                                                storage: UserDefaults.standard)
+                                                storage: UserDefaults.standard, aiChatSettings: aiChatSettings)
 
         guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty else {
             return switchBarHandler

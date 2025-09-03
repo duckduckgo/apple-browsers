@@ -22,6 +22,7 @@ import Combine
 import Persistence
 import Core
 import UIKit
+import AIChat
 
 // MARK: - TextEntryMode Enum
 public enum TextEntryMode: String, CaseIterable {
@@ -68,6 +69,8 @@ final class SwitchBarHandler: SwitchBarHandling {
     // MARK: - Dependencies
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let storage: KeyValueStoring
+    private let aiChatSettings: AIChatSettingsProvider
+    private let funnelState: AIChatFunnelStateProviding
 
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
@@ -116,9 +119,12 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
     private var backgroundObserver: NSObjectProtocol?
 
-    init(voiceSearchHelper: VoiceSearchHelperProtocol, storage: KeyValueStoring) {
+    init(voiceSearchHelper: VoiceSearchHelperProtocol, storage: KeyValueStoring, aiChatSettings: AIChatSettingsProvider, funnelState: AIChatFunnelStateProviding = AIChatFunnelState(storage: UserDefaults.standard)) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
+        self.aiChatSettings = aiChatSettings
+        self.funnelState = funnelState
+        
         
         // Set up app lifecycle observers to reset session flags
         backgroundObserver = NotificationCenter.default.addObserver(
@@ -140,6 +146,9 @@ final class SwitchBarHandler: SwitchBarHandling {
     func submitText(_ text: String) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        
+        // Mark funnel progression based on submission mode and fire pixel
+        markAndFireFunnelSubmission(mode: currentToggleState)
         
         updateModeUsage(currentToggleState)
         textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
@@ -166,11 +175,46 @@ final class SwitchBarHandler: SwitchBarHandling {
     }
 
     func markUserInteraction() {
+        let isFirstInteraction = !hasUserInteractedWithText
         hasUserInteractedWithText = true
+        
+        // Check if this is the first interaction ever after enabling the feature
+        if isFirstInteraction && !funnelState.hasEverInteractedAfterEnable {
+            funnelState.markFirstInteraction()
+            DailyPixel.fire(pixel: .aiChatExperimentalOmnibarFirstInteraction)
+        }
     }
 
     func clearButtonTapped() {
         clearButtonTappedSubject.send(())
+    }
+    
+    
+    /// Mark funnel progression when user submits text and fire pixel
+    private func markAndFireFunnelSubmission(mode: TextEntryMode) {
+        switch mode {
+        case .search:
+            // Mark and fire first search submission
+            if !funnelState.hasEverSubmittedSearch {
+                funnelState.markFirstSearchSubmission()
+                DailyPixel.fire(pixel: .aiChatExperimentalOmnibarFirstSearchSubmission)
+            }
+            
+        case .aiChat:
+            // Mark and fire first prompt submission
+            if !funnelState.hasEverSubmittedPrompt {
+                funnelState.markFirstPromptSubmission()
+                DailyPixel.fire(pixel: .aiChatExperimentalOmnibarFirstPromptSubmission)
+            }
+        }
+        
+        // Check if user has now achieved full conversion (used both modes)
+        if funnelState.hasEverSubmittedSearch &&
+           funnelState.hasEverSubmittedPrompt &&
+           !funnelState.hasAchievedFullConversion {
+            funnelState.markFullConversion()
+            DailyPixel.fire(pixel: .aiChatExperimentalOmnibarFullConversionUser)
+        }
     }
 
     func saveToggleState() {

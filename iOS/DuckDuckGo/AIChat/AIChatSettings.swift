@@ -52,16 +52,20 @@ final class AIChatSettings: AIChatSettingsProvider {
     private let keyValueStore: KeyValueStoring
     private let notificationCenter: NotificationCenter
     private let featureFlagger: FeatureFlagger
+    private let funnelState: AIChatFunnelStateProviding
+    
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
          notificationCenter: NotificationCenter = .default,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         funnelState: AIChatFunnelStateProviding = AIChatFunnelState(storage: UserDefaults.standard)) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.debugSettings = debugSettings
         self.keyValueStore = keyValueStore
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
+        self.funnelState = funnelState
     }
 
     // MARK: - Public
@@ -167,8 +171,15 @@ final class AIChatSettings: AIChatSettingsProvider {
 
         if enable {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsSearchInputTurnedOn)
+            // Mark and send pixel for first-time feature enablement for funnel
+            if !funnelState.hasEverEnabledFeature {
+                funnelState.markFirstFeatureEnable()
+                DailyPixel.fire(pixel: .aiChatExperimentalOmnibarFirstEnabled)
+            }
         } else {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsSearchInputTurnedOff)
+            // Reset funnel storage when feature is disabled
+            resetFunnelStorage()
         }
     }
 
@@ -192,6 +203,14 @@ final class AIChatSettings: AIChatSettingsProvider {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsTabManagerTurnedOff)
         }
     }
+    
+    /// Mark and send pixel when user first views the AI Chat settings page containing the new input toggle
+    func markAndSendSettingsPageViewed() {
+        if !funnelState.hasEverViewedSettings {
+            funnelState.markFirstSettingsView()
+            DailyPixel.fire(pixel: .aiChatExperimentalOmnibarFirstSettingsViewed)
+        }
+    }
 
     // MARK: - Private
 
@@ -206,6 +225,11 @@ final class AIChatSettings: AIChatSettingsProvider {
             Pixel.fire(pixel: .aiChatNoRemoteSettingsFound(settings: value.rawValue))
             return value.defaultValue
         }
+    }
+    
+    /// Reset all funnel storage when the new input feature is disabled
+    private func resetFunnelStorage() {
+        funnelState.resetAllFunnelState()
     }
 }
 

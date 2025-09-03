@@ -141,7 +141,7 @@
 		1D9A4E5A2B43213B00F449E2 /* TabSnapshotExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9A4E592B43213B00F449E2 /* TabSnapshotExtension.swift */; };
 		1D9A4E5B2B43213B00F449E2 /* TabSnapshotExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9A4E592B43213B00F449E2 /* TabSnapshotExtension.swift */; };
 		1D9EB3152D43C24C004B7270 /* WebExtensionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9EB3132D43C243004B7270 /* WebExtensionManagerTests.swift */; };
-		1D9EB3172D43C2CF004B7270 /* WebExtensionPathsCacheMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9EB3162D43C2CA004B7270 /* WebExtensionPathsCacheMock.swift */; };
+		1D9EB3172D43C2CF004B7270 /* WebExtensionPathsStoringMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9EB3162D43C2CA004B7270 /* WebExtensionPathsStoringMock.swift */; };
 		1D9EB31B2D43C2F7004B7270 /* WebExtensionLoaderMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9EB3192D43C2F3004B7270 /* WebExtensionLoaderMock.swift */; };
 		1D9FDEB72B9B5D150040B78C /* SearchPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9FDEB62B9B5D150040B78C /* SearchPreferencesTests.swift */; };
 		1D9FDEB82B9B5D150040B78C /* SearchPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9FDEB62B9B5D150040B78C /* SearchPreferencesTests.swift */; };
@@ -2173,6 +2173,9 @@
 		7BB4BC642C5BC13D00E06FC8 /* ActiveSiteInfoPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BB4BC622C5BC13D00E06FC8 /* ActiveSiteInfoPublisher.swift */; };
 		7BB4BC6A2C5CD96200E06FC8 /* ActiveDomainPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BB4BC692C5CD96200E06FC8 /* ActiveDomainPublisher.swift */; };
 		7BB4BC6B2C5CD96200E06FC8 /* ActiveDomainPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BB4BC692C5CD96200E06FC8 /* ActiveDomainPublisher.swift */; };
+		7BBAA08F2E684A8D0041BCE2 /* WebExtensionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9EB3132D43C243004B7270 /* WebExtensionManagerTests.swift */; };
+		7BBAA0902E684AAE0041BCE2 /* WebExtensionPathsStoringMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9EB3162D43C2CA004B7270 /* WebExtensionPathsStoringMock.swift */; };
+		7BBAA0912E684AB40041BCE2 /* WebExtensionLoaderMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9EB3192D43C2F3004B7270 /* WebExtensionLoaderMock.swift */; };
 		7BBD45B12A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBD45B02A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift */; };
 		7BBD45B22A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBD45B02A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift */; };
 		7BBE2B7B2B61663C00697445 /* NetworkProtectionProxy in Frameworks */ = {isa = PBXBuildFile; productRef = 7BBE2B7A2B61663C00697445 /* NetworkProtectionProxy */; };
@@ -4104,7 +4107,7 @@
 		1D9A37662BD8EA8800EBC58D /* DockPositionProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockPositionProvider.swift; sourceTree = "<group>"; };
 		1D9A4E592B43213B00F449E2 /* TabSnapshotExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSnapshotExtension.swift; sourceTree = "<group>"; };
 		1D9EB3132D43C243004B7270 /* WebExtensionManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionManagerTests.swift; sourceTree = "<group>"; };
-		1D9EB3162D43C2CA004B7270 /* WebExtensionPathsCacheMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionPathsCacheMock.swift; sourceTree = "<group>"; };
+		1D9EB3162D43C2CA004B7270 /* WebExtensionPathsStoringMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionPathsStoringMock.swift; sourceTree = "<group>"; };
 		1D9EB3192D43C2F3004B7270 /* WebExtensionLoaderMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionLoaderMock.swift; sourceTree = "<group>"; };
 		1D9FDEB62B9B5D150040B78C /* SearchPreferencesTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchPreferencesTests.swift; sourceTree = "<group>"; };
 		1D9FDEB92B9B5E090040B78C /* WebTrackingProtectionPreferencesTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebTrackingProtectionPreferencesTests.swift; sourceTree = "<group>"; };
@@ -6483,7 +6486,7 @@
 			isa = PBXGroup;
 			children = (
 				1D9EB3132D43C243004B7270 /* WebExtensionManagerTests.swift */,
-				1D9EB3162D43C2CA004B7270 /* WebExtensionPathsCacheMock.swift */,
+				1D9EB3162D43C2CA004B7270 /* WebExtensionPathsStoringMock.swift */,
 				1D9EB3192D43C2F3004B7270 /* WebExtensionLoaderMock.swift */,
 			);
 			path = WebExtensions;
@@ -13832,6 +13835,7 @@
 				3706FDDF293F661700E42796 /* BookmarkSidebarTreeControllerTests.swift in Sources */,
 				3706FDE0293F661700E42796 /* TabIndexTests.swift in Sources */,
 				9F26060F2B85E17D00819292 /* AddEditBookmarkDialogCoordinatorViewModelTests.swift in Sources */,
+				7BBAA0912E684AB40041BCE2 /* WebExtensionLoaderMock.swift in Sources */,
 				CD34F0C22C886482006826BE /* MaliciousSiteProtectionMocks.swift in Sources */,
 				3706FDE1293F661700E42796 /* AdjacentItemEnumeratorTests.swift in Sources */,
 				4B9DB0572A983B55000927DB /* MockNotificationService.swift in Sources */,
@@ -14011,6 +14015,7 @@
 				37A0BA2E2D747C5C00130447 /* CapturingHistoryViewBookmarksHandler.swift in Sources */,
 				3706FE2A293F661700E42796 /* SafariVersionReaderTests.swift in Sources */,
 				31031EB82CC94C6E00684340 /* AIChatRemoteSettingsTests.swift in Sources */,
+				7BBAA0902E684AAE0041BCE2 /* WebExtensionPathsStoringMock.swift in Sources */,
 				3706FE2B293F661700E42796 /* AtbParserTests.swift in Sources */,
 				3706FE2C293F661700E42796 /* PermissionStoreMock.swift in Sources */,
 				3706FE2D293F661700E42796 /* ChromiumFaviconsReaderTests.swift in Sources */,
@@ -14183,6 +14188,7 @@
 				56504F0F2E0D9A8C00333A1E /* MockSubscriptionTabsShowing.swift in Sources */,
 				569277C529DEE09D00B633EF /* ContinueSetUpModelTests.swift in Sources */,
 				9F15567F2DDC3FA200A35DBA /* MockDefaultBrowserAndDockPromptFeatureFlagger.swift in Sources */,
+				7BBAA08F2E684A8D0041BCE2 /* WebExtensionManagerTests.swift in Sources */,
 				CD89DD622C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift in Sources */,
 				3706FE76293F661700E42796 /* MockSecureVault.swift in Sources */,
 				F1AFDBD92C23221700710F2C /* SubscriptionAppStoreRestorerTests.swift in Sources */,
@@ -15610,7 +15616,6 @@
 				9F33445E2BBFA77F0040CBEB /* BookmarksBarVisibilityManager.swift in Sources */,
 				4B9292D92667124B00AD2C21 /* BookmarkListTreeControllerDataSource.swift in Sources */,
 				B65536A62685B82B00085A79 /* Permissions.swift in Sources */,
-				1D948CBA2D0AF2D60046A189 /* NativeMessagingHandler.swift in Sources */,
 				EE3ED86F2E561B770026B962 /* DismissableSyncDeviceButtonModel.swift in Sources */,
 				AAC82C60258B6CB5009B6B42 /* TabPreviewWindowController.swift in Sources */,
 				AAC5E4E425D6BA9C007F5990 /* NSSizeExtension.swift in Sources */,
@@ -15988,7 +15993,7 @@
 				B6106BAF26A7C6180013B453 /* PermissionStoreMock.swift in Sources */,
 				4B98D27A28D95F1A003C2B6F /* ChromiumFaviconsReaderTests.swift in Sources */,
 				9F0660732BECC71200B8EEF1 /* SubscriptionAttributionPixelHandlerTests.swift in Sources */,
-				1D9EB3172D43C2CF004B7270 /* WebExtensionPathsCacheMock.swift in Sources */,
+				1D9EB3172D43C2CF004B7270 /* WebExtensionPathsStoringMock.swift in Sources */,
 				986189E62A7CFB3E001B4519 /* LocalBookmarkStoreSavingTests.swift in Sources */,
 				AA652CD325DDA6E9009059CC /* LocalBookmarkManagerTests.swift in Sources */,
 				7BAC0C312DF84292008D26EC /* SupportedOSCheckerTests.swift in Sources */,

@@ -24,7 +24,7 @@ import BrowserServicesKit
 @available(macOS 15.4, *)
 final class WebExtensionManagerTests: XCTestCase {
 
-    var pathsCachingMock: WebExtensionPathsCachingMock!
+    var pathsStoringMock: WebExtensionPathsStoringMock!
     var webExtensionLoadingMock: WebExtensionLoadingMock!
     var internalUserStore = MockInternalUserStoring()
     var featureFlaggerMock: MockFeatureFlagger!
@@ -32,7 +32,7 @@ final class WebExtensionManagerTests: XCTestCase {
     override func setUp() {
         super.setUp()
 
-        pathsCachingMock = WebExtensionPathsCachingMock()
+        pathsStoringMock = WebExtensionPathsStoringMock()
         webExtensionLoadingMock = WebExtensionLoadingMock()
         featureFlaggerMock = MockFeatureFlagger()
         featureFlaggerMock.internalUserDecider = DefaultInternalUserDecider(store: internalUserStore)
@@ -40,49 +40,46 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     override func tearDown() {
-        pathsCachingMock = nil
+        pathsStoringMock = nil
         webExtensionLoadingMock = nil
         featureFlaggerMock = nil
 
         super.tearDown()
     }
 
-    func testWhenExtensionIsAdded_ThenPathIsCached() {
+    func testWhenExtensionIsAdded_ThenPathIsStored() async {
         let webExtensionManager = WebExtensionManager(
-            webExtensionPathsCache: pathsCachingMock,
+            installationStore: pathsStoringMock,
             webExtensionLoader: webExtensionLoadingMock,
-            internalUserDecider: featureFlaggerMock.internalUserDecider,
             featureFlagger: featureFlaggerMock
         )
 
         let path = "/path/to/extension"
-        webExtensionManager.addExtension(path: path)
-        XCTAssertTrue(pathsCachingMock.addCalled)
-        XCTAssertEqual(pathsCachingMock.addedURL, path)
+        await webExtensionManager.installExtension(path: path)
+        XCTAssertTrue(pathsStoringMock.addCalled)
+        XCTAssertEqual(pathsStoringMock.addedURL, path)
     }
 
-    func testWhenExtensionIsRemoved_ThenPathIsRemovedFromCache() {
+    func testWhenExtensionIsRemoved_ThenPathIsRemovedFromStore() async {
         let webExtensionManager = WebExtensionManager(
-            webExtensionPathsCache: pathsCachingMock,
+            installationStore: pathsStoringMock,
             webExtensionLoader: webExtensionLoadingMock,
-            internalUserDecider: featureFlaggerMock.internalUserDecider,
             featureFlagger: featureFlaggerMock
         )
 
         let path = "/path/to/extension"
-        webExtensionManager.removeExtension(path: path)
-        XCTAssertTrue(pathsCachingMock.removeCalled)
-        XCTAssertEqual(pathsCachingMock.removedURL, path)
+        await webExtensionManager.installExtension(path: path)
+        XCTAssertTrue(pathsStoringMock.removeCalled)
+        XCTAssertEqual(pathsStoringMock.removedURL, path)
     }
 
-    func testWhenWebExtensionsAreLoaded_ThenPathsAreFetchedFromCache() {
+    func testWhenWebExtensionsAreLoaded_ThenPathsAreFetchedFromStore() {
         let paths = ["/path/to/extension1", "/path/to/extension2"]
-        pathsCachingMock.cache = paths
+        pathsStoringMock.paths = paths
 
         _ = WebExtensionManager(
-            webExtensionPathsCache: pathsCachingMock,
+            installationStore: pathsStoringMock,
             webExtensionLoader: webExtensionLoadingMock,
-            internalUserDecider: featureFlaggerMock.internalUserDecider,
             featureFlagger: featureFlaggerMock
         )
 
@@ -90,28 +87,26 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertEqual(webExtensionLoadingMock.loadedPaths, paths)
     }
 
-    func testThatWebExtensionPaths_ReturnsPathsFromCache() {
+    func testThatWebExtensionPaths_ReturnsPathsFromStore() {
         let webExtensionManager = WebExtensionManager(
-            webExtensionPathsCache: pathsCachingMock,
+            installationStore: pathsStoringMock,
             webExtensionLoader: webExtensionLoadingMock,
-            internalUserDecider: featureFlaggerMock.internalUserDecider,
             featureFlagger: featureFlaggerMock
         )
 
         let paths = ["/path/to/extension1", "/path/to/extension2"]
-        pathsCachingMock.cache = paths
+        pathsStoringMock.paths = paths
         let resultPaths = webExtensionManager.webExtensionPaths
         XCTAssertEqual(resultPaths, paths)
     }
 
     func testWhenExtensionsAreEnabled_ThenFeatureFlagAndInternalUserStatusAreChecked() {
-        featureFlaggerMock.isFeatureOn = true
+        featureFlaggerMock.enabledFeatureFlags.append(.webExtensions)
         internalUserStore.isInternalUser = true
 
         let webExtensionManager = WebExtensionManager(
-            webExtensionPathsCache: pathsCachingMock,
+            installationStore: pathsStoringMock,
             webExtensionLoader: webExtensionLoadingMock,
-            internalUserDecider: featureFlaggerMock.internalUserDecider,
             featureFlagger: featureFlaggerMock
         )
 
@@ -119,34 +114,31 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     func testWhenExtensionsAreDisabled_ThenLoadWebExtensionsDoesNothing() {
-        featureFlaggerMock.isFeatureOn = false
         internalUserStore.isInternalUser = true
 
         let webExtensionManager = WebExtensionManager(
-            webExtensionPathsCache: pathsCachingMock,
+            installationStore: pathsStoringMock,
             webExtensionLoader: webExtensionLoadingMock,
-            internalUserDecider: featureFlaggerMock.internalUserDecider,
             featureFlagger: featureFlaggerMock
         )
 
         XCTAssertFalse(webExtensionManager.areExtenstionsEnabled)
         XCTAssertFalse(webExtensionLoadingMock.loadWebExtensionsCalled)
-        XCTAssertTrue(webExtensionManager.extensions.isEmpty)
+        XCTAssertTrue(webExtensionManager.loadedExtensions.isEmpty)
     }
 
     func testWhenUserIsNotInternal_ThenLoadWebExtensionsDoesNothing() {
-        featureFlaggerMock.isFeatureOn = true
+        featureFlaggerMock.enabledFeatureFlags.append(.webExtensions)
         internalUserStore.isInternalUser = false
 
         let webExtensionManager = WebExtensionManager(
-            webExtensionPathsCache: pathsCachingMock,
+            installationStore: pathsStoringMock,
             webExtensionLoader: webExtensionLoadingMock,
-            internalUserDecider: featureFlaggerMock.internalUserDecider,
             featureFlagger: featureFlaggerMock
         )
 
         XCTAssertFalse(webExtensionManager.areExtenstionsEnabled)
         XCTAssertFalse(webExtensionLoadingMock.loadWebExtensionsCalled)
-        XCTAssertTrue(webExtensionManager.extensions.isEmpty)
+        XCTAssertTrue(webExtensionManager.loadedExtensions.isEmpty)
     }
 }

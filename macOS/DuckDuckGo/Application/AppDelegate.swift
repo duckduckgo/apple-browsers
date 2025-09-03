@@ -130,6 +130,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let fireCoordinator: FireCoordinator
     let permissionManager: PermissionManager
 
+    @available(macOS 15.4, *)
+    lazy var webExtensionManager: WebExtensionManaging = {
+        return WebExtensionManager(featureFlagger: featureFlagger)
+    }()
+
     private var updateProgressCancellable: AnyCancellable?
 
     @MainActor

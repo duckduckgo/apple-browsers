@@ -57,9 +57,6 @@ let extraInputFiles: [TargetName: Set<InputFile>] = [
         .init("BWEncryptionTests.swift", .source),
         .init("UpdateCheckStateTests.swift", .source),
         .init("WKWebViewPrivateMethodsAvailabilityTests.swift", .source),
-        .init("WebExtensionManagerTests.swift", .source),
-        .init("WebExtensionPathsCacheMock.swift", .source),
-        .init("WebExtensionLoaderMock.swift", .source),
         .init("SupportedOSCheckerTests.swift", .source),
         .init("UpdateControllerTests.swift", .source)
     ],

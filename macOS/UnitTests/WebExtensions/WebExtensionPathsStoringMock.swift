@@ -1,5 +1,5 @@
 //
-//  WebExtensionPathsCacheMock.swift
+//  WebExtensionPathsStoringMock.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,9 +19,9 @@
 @testable import DuckDuckGo_Privacy_Browser
 
 @available(macOS 15.4, *)
-final class WebExtensionPathsCachingMock: WebExtensionPathsCaching {
+final class WebExtensionPathsStoringMock: WebExtensionPathsStoring {
 
-    var cache: [String] = []
+    var paths: [String] = []
 
     var addCalled = false
     var addedURL: String?

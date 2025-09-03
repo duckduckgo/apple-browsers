@@ -90,6 +90,8 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     }
 
     private func runJob() async {
+        Logger.dataBrokerProtection.log("Starting email confirmation job for broker: \(self.jobData.brokerId), profile: \(self.jobData.extractedProfileId)")
+
         guard let emailConfirmationLink = jobData.emailConfirmationLink,
               let linkURL = URL(string: emailConfirmationLink) else {
             Logger.dataBrokerProtection.error("Email confirmation job started without valid link")
@@ -118,9 +120,12 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         while attemptCount < Self.maxRetries {
             if isCancelled { return }
 
+            Logger.dataBrokerProtection.log("Email confirmation attempt \(attemptCount + 1) of \(Self.maxRetries)")
+
             do {
                 try await executeEmailConfirmation(with: linkURL, broker: broker, extractedProfile: extractedProfile)
                 try await markAsSuccessful()
+                Logger.dataBrokerProtection.log("Email confirmation completed successfully")
                 return
             } catch {
                 attemptCount += 1
@@ -128,7 +133,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
                 if attemptCount < Self.maxRetries {
                     try? await incrementAttemptCount()
-                    
+
                     let waitTimeBeforeRetry: TimeInterval = 3
                     try? await Task.sleep(nanoseconds: UInt64(waitTimeBeforeRetry) * 1_000_000_000)
                 }
@@ -161,7 +166,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             privacyConfig: jobDependencies.privacyConfig,
             prefs: jobDependencies.contentScopeProperties,
             context: JobContext(dataBroker: broker, profileQuery: profileQuery),
-            emailService: jobDependencies.emailService,
+            emailConfirmationService: jobDependencies.emailConfirmationService,
             captchaService: jobDependencies.captchaService,
             featureFlagger: jobDependencies.featureFlagger,
             stageCalculator: stageDurationCalculator,
@@ -202,6 +207,8 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     }
 
     private func markAsSuccessful() async throws {
+        Logger.dataBrokerProtection.log("Marking email confirmation as successful, transitioning to optOutRequested")
+
         try jobDependencies.database.deleteOptOutEmailConfirmation(
             profileQueryId: jobData.profileQueryId,
             brokerId: jobData.brokerId,

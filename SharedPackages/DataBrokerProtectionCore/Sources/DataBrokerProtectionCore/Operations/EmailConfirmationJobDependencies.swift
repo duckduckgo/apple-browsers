@@ -27,6 +27,7 @@ public protocol EmailConfirmationJobDependencyProviding {
     var executionConfig: BrokerJobExecutionConfig { get }
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
     var emailService: EmailServiceProtocol { get }
+    var emailConfirmationService: EmailConfirmationDataServiceProvider { get }
     var captchaService: CaptchaServiceProtocol { get }
     var vpnBypassService: VPNBypassFeatureProvider? { get }
     var featureFlagger: DBPFeatureFlagging { get }
@@ -39,6 +40,7 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
     public let executionConfig: BrokerJobExecutionConfig
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public let emailService: EmailServiceProtocol
+    public let emailConfirmationService: EmailConfirmationDataServiceProvider
     public let captchaService: CaptchaServiceProtocol
     public let vpnBypassService: VPNBypassFeatureProvider?
     public let featureFlagger: DBPFeatureFlagging
@@ -50,6 +52,7 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.executionConfig = brokerDependencies.executionConfig
         self.pixelHandler = brokerDependencies.pixelHandler
         self.emailService = brokerDependencies.emailService
+        self.emailConfirmationService = brokerDependencies.emailConfirmationService
         self.captchaService = brokerDependencies.captchaService
         self.vpnBypassService = brokerDependencies.vpnBypassService
         self.featureFlagger = brokerDependencies.featureFlagger
@@ -61,6 +64,7 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
                 executionConfig: BrokerJobExecutionConfig,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 emailService: EmailServiceProtocol,
+                emailConfirmationService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 vpnBypassService: VPNBypassFeatureProvider?,
                 featureFlagger: DBPFeatureFlagging) {
@@ -70,6 +74,7 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.executionConfig = executionConfig
         self.pixelHandler = pixelHandler
         self.emailService = emailService
+        self.emailConfirmationService = emailConfirmationService
         self.captchaService = captchaService
         self.vpnBypassService = vpnBypassService
         self.featureFlagger = featureFlagger

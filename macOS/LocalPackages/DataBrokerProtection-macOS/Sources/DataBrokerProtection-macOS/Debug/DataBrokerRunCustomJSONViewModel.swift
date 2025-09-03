@@ -150,6 +150,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     let brokers: [DataBroker]
 
     private let emailService: EmailService
+    private let emailConfirmationService: EmailConfirmationDataServiceProvider
     private let captchaService: CaptchaService
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels> = EventMapping { event, _, _, _ in
@@ -230,6 +231,18 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
         let vault = try! vaultFactory.makeVault(reporter: reporter)
+
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(), pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: MockLocalBrokerJSONService())
+
+        let emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
+                                           settings: dbpSettings,
+                                           servicePixel: backendServicePixels)
+        self.emailConfirmationService = EmailConfirmationDataService(database: database,
+                                                                     emailServiceV0: emailService,
+                                                                     emailServiceV1: emailServiceV1,
+                                                                     featureFlagger: featureFlagger,
+                                                                     pixelHandler: sharedPixelsHandler)
+
         self.brokers = try! vault.fetchAllBrokers()
     }
 
@@ -247,7 +260,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     let debugScanJob = DebugScanJob(privacyConfig: self.privacyConfigManager,
                                                     prefs: self.contentScopeProperties,
                                                     context: queryData,
-                                                    emailService: self.emailService,
+                                                    emailConfirmationService: self.emailConfirmationService,
                                                     captchaService: self.captchaService,
                                                     featureFlagger: self.featureFlagger) {
                         true
@@ -311,7 +324,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     private func append(_ result: DebugScanReturnValue) -> String {
         var resultsText = ""
 
-        if let meta = result.meta{
+        if let meta = result.meta {
             do {
                 let jsonData = try JSONSerialization.data(withJSONObject: meta, options: [])
                 let decoder = JSONDecoder()
@@ -414,7 +427,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 privacyConfig: self.privacyConfigManager,
                                 prefs: self.contentScopeProperties,
                                 context: query,
-                                emailService: self.emailService,
+                                emailConfirmationService: self.emailConfirmationService,
                                 captchaService: self.captchaService,
                                 featureFlagger: self.featureFlagger,
                                 stageDurationCalculator: FakeStageDurationCalculator(),
@@ -468,7 +481,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     privacyConfig: self.privacyConfigManager,
                     prefs: self.contentScopeProperties,
                     context: brokerProfileQueryData,
-                    emailService: self.emailService,
+                    emailConfirmationService: self.emailConfirmationService,
                     captchaService: self.captchaService,
                     featureFlagger: self.featureFlagger,
                     stageCalculator: FakeStageDurationCalculator(),
@@ -740,3 +753,8 @@ extension ScrapedData {
     }
 }
 // swiftlint:enable force_try
+
+private struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
+    func bundledBrokers() throws -> [DataBroker]? { [] }
+    func checkForUpdates() async throws {}
+}

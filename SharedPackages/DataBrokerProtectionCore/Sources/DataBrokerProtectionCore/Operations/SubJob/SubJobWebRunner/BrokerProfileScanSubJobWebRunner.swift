@@ -36,7 +36,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public let privacyConfig: PrivacyConfigurationManaging
     public let prefs: ContentScopeProperties
     public let context: SubJobContextProviding
-    public let emailService: EmailServiceProtocol
+    public let emailConfirmationService: EmailConfirmationDataServiceProvider
     public let captchaService: CaptchaServiceProtocol
     public let cookieHandler: CookieHandler
     public let stageCalculator: StageDurationCalculator
@@ -56,7 +56,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public init(privacyConfig: PrivacyConfigurationManaging,
                 prefs: ContentScopeProperties,
                 context: SubJobContextProviding,
-                emailService: EmailServiceProtocol,
+                emailConfirmationService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
@@ -70,7 +70,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         self.privacyConfig = privacyConfig
         self.prefs = prefs
         self.context = context
-        self.emailService = emailService
+        self.emailConfirmationService = emailConfirmationService
         self.captchaService = captchaService
         self.operationAwaitTime = operationAwaitTime
         self.stageCalculator = stageDurationCalculator

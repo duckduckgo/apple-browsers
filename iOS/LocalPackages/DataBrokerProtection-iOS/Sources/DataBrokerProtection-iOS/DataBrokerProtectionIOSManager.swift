@@ -146,6 +146,7 @@ public class DataBrokerProtectionIOSManagerProvider {
             eventsHandler: eventsHandler,
             dataBrokerProtectionSettings: dbpSettings,
             emailService: emailService,
+            emailConfirmationService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: featureFlagger,
             vpnBypassService: nil,

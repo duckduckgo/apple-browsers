@@ -314,7 +314,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
             let emailConfirmationDataService = activityScheduler.dataSource?.emailConfirmationDataServiceForDataBrokerProtectionBackgroundActivityScheduler(activityScheduler)
             try await emailConfirmationDataService?.checkForEmailConfirmationData()
         } catch {
-            // TODO
+            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
         }
         await startScheduledOperations()
     }

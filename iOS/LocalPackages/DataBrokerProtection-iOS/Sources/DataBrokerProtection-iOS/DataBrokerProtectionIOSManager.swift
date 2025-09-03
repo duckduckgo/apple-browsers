@@ -391,7 +391,7 @@ public final class DataBrokerProtectionIOSManager {
         do {
             try await emailConfirmationDataService.checkForEmailConfirmationData()
         } catch {
-            // TODO
+            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
         }
     }
 

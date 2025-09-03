@@ -21,12 +21,19 @@ import Common
 import Algorithms
 
 public protocol EmailConfirmationDataServiceProvider {
-    func getEmailAndSaveToDatabase(dataBrokerId: Int64,
-                                   dataBrokerURL: String,
-                                   profileQueryId: Int64,
-                                   extractedProfileId: Int64,
-                                   attemptId: UUID) async throws -> EmailData
+    func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64,
+                                             dataBrokerURL: String,
+                                             profileQueryId: Int64,
+                                             extractedProfileId: Int64,
+                                             attemptId: UUID) async throws -> EmailData
     func checkForEmailConfirmationData() async throws
+
+    @available(*, deprecated, message: "Use checkForEmailConfirmationData() instead")
+    func getConfirmationLink(from email: String,
+                             numberOfRetries: Int,
+                             pollingInterval: TimeInterval,
+                             attemptId: UUID,
+                             shouldRunNextStep: @escaping () -> Bool) async throws -> URL
 }
 
 public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider {
@@ -48,20 +55,34 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
         self.pixelHandler = pixelHandler
     }
 
-    public func getEmailAndSaveToDatabase(dataBrokerId: Int64,
-                                          dataBrokerURL: String,
-                                          profileQueryId: Int64,
-                                          extractedProfileId: Int64,
-                                          attemptId: UUID) async throws -> EmailData {
+    public func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64,
+                                                    dataBrokerURL: String,
+                                                    profileQueryId: Int64,
+                                                    extractedProfileId: Int64,
+                                                    attemptId: UUID) async throws -> EmailData {
         let emailData = try await emailServiceV0.getEmail(dataBrokerURL: dataBrokerURL, attemptId: attemptId)
 
-        try database.saveOptOutEmailConfirmation(profileQueryId: profileQueryId,
-                                                 brokerId: dataBrokerId,
-                                                 extractedProfileId: extractedProfileId,
-                                                 generatedEmail: emailData.emailAddress,
-                                                 attemptID: attemptId.uuidString)
+        if featureFlagger.isEmailConfirmationDecouplingFeatureOn {
+            try database.saveOptOutEmailConfirmation(profileQueryId: profileQueryId,
+                                                     brokerId: dataBrokerId,
+                                                     extractedProfileId: extractedProfileId,
+                                                     generatedEmail: emailData.emailAddress,
+                                                     attemptID: attemptId.uuidString)
+        }
 
         return emailData
+    }
+
+    public func getConfirmationLink(from email: String,
+                                    numberOfRetries: Int,
+                                    pollingInterval: TimeInterval,
+                                    attemptId: UUID,
+                                    shouldRunNextStep: @escaping () -> Bool) async throws -> URL {
+        try await emailServiceV0.getConfirmationLink(from: email,
+                                                     numberOfRetries: numberOfRetries,
+                                                     pollingInterval: pollingInterval,
+                                                     attemptId: attemptId,
+                                                     shouldRunNextStep: shouldRunNextStep)
     }
 
     public func checkForEmailConfirmationData() async throws {

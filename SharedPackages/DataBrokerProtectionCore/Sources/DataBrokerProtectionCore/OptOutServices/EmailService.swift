@@ -42,8 +42,6 @@ public struct EmailData: Decodable {
 
 public protocol EmailServiceProtocol {
     func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData
-
-    @available(*, deprecated, message: "Use EmailServiceV1Protocol.fetchEmailData instead")
     func getConfirmationLink(from email: String,
                              numberOfRetries: Int,
                              pollingInterval: TimeInterval,

@@ -68,9 +68,9 @@
     "title" : "Repetir atualização",
     "note" : "Label for a button that retries applying the failed update"
   },
-  "forSubscribers" : {
-    "title" : "Para subscritores do DuckDuckGo",
-    "note" : "Heading label for release notes specific to DuckDuckGo Subscribers"
+  "forPrivacyProSubscribers" : {
+    "title" : "Para subscritores do Privacy Pro",
+    "note" : "Heading label for release notes specific to Privacy Pro Subscribers (do not translate Privacy Pro)"
   },
   "new" : {
     "title" : "Novo",

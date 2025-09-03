@@ -784,8 +784,9 @@ extension Pixel {
         case debugBookmarksStructureNotRecovered
         case debugBookmarksInvalidRoots
         case debugBookmarksValidationFailed
-        case debugBookmarksStructureLostAfterCrash
-
+                case debugBookmarksStructureLostAfterCrash
+        case debugBookmarksSyncAttemptedToDeleteRoot
+        
         case debugBookmarksPendingDeletionFixed
         case debugBookmarksPendingDeletionRepairError
 
@@ -2009,6 +2010,7 @@ extension Pixel.Event {
         case .debugBookmarksInvalidRoots: return "m_d_bookmarks_invalid_roots"
         case .debugBookmarksValidationFailed: return "m_d_bookmarks_validation_failed"
         case .debugBookmarksStructureLostAfterCrash: return "m_debug_bookmarks_structure_lost_after_crash"
+        case .debugBookmarksSyncAttemptedToDeleteRoot: return "m_debug_bookmarks_sync_attempted_to_delete_root"
 
         case .debugBookmarksPendingDeletionFixed: return "m_debug_bookmarks_pending_deletion_fixed"
         case .debugBookmarksPendingDeletionRepairError: return "m_debug_bookmarks_pending_deletion_repair_error"

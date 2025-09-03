@@ -78,6 +78,5 @@ struct SessionRestorePromptView: View {
         .padding(.top, 8)
         .padding(.bottom, 16)
         .frame(width: Const.width)
-        .background(Color(.interfaceBackground))
     }
 }

@@ -41,7 +41,7 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
         guard let mockLoadResult = mockLoadResult else {
             // Create a default mock result for testing
             let mockExtension = try await WKWebExtension(resourceBaseURL: URL(fileURLWithPath: path))
-            let mockContext = WKWebExtensionContext(webExtension: mockExtension)
+            let mockContext = await WKWebExtensionContext(for: mockExtension)
             return WebExtensionLoadResult(context: mockContext, path: path)
         }
 

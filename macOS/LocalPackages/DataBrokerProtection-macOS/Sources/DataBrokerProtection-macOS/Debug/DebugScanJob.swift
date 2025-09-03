@@ -125,7 +125,7 @@ final class DebugScanJob: SubJobWebRunning {
                     if let actionsHandler = actionsHandler {
                         self.actionsHandler = actionsHandler
                     } else {
-                        self.actionsHandler = ActionsHandler.forScan(scanStep)
+                        self.actionsHandler = ActionsHandler(step: scanStep, isEmailConfirmationDecouplingFeatureOn: featureFlagger.isEmailConfirmationDecouplingFeatureOn)
                     }
                     if self.shouldRunNextStep() {
                         await executeNextStep()

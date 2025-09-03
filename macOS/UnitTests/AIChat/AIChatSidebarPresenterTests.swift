@@ -663,7 +663,11 @@ class MockAIChatSidebarHosting: AIChatSidebarHosting {
 
 class MockAIChatSidebarProvider: AIChatSidebarProviding {
     var sidebarWidth: CGFloat = 400
-    var sidebarsByTab: AIChatSidebarsByTab = [:]
+    @Published var sidebarsByTab: AIChatSidebarsByTab = [:]
+
+    var sidebarsByTabPublisher: AnyPublisher<DuckDuckGo_Privacy_Browser.AIChatSidebarsByTab, Never> {
+        $sidebarsByTab.eraseToAnyPublisher()
+    }
 
     private var _isShowingSidebar: [TabIdentifier: Bool] = [:]
 

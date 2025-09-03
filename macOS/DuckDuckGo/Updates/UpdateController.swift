@@ -146,7 +146,12 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         willSet {
             if newValue != areAutomaticUpdatesEnabled {
                 userDriver?.cancelAndDismissCurrentUpdate()
-                updater = nil
+
+                if useLegacyAutoRestartLogic {
+                    updater = nil
+                } else {
+                    updater?.resetUpdateCycle()
+                }
             }
         }
         didSet {
@@ -308,14 +313,17 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         }
 
         userDriver?.cancelAndDismissCurrentUpdate()
-        updater = nil
+        if useLegacyAutoRestartLogic {
+            updater = nil
+        } else {
+            updater?.resetUpdateCycle()
+        }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             guard let self,
-                  let updater = try? configureUpdater(needsUpdateCheck: true) else {
+                  let updater = try? configureUpdater() else {
                 return
             }
-            self.updater = updater
 
             if skipRollout {
                 updater.checkForUpdates()
@@ -387,20 +395,25 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         return Date().timeIntervalSince(updateValidityStartDate) > threshold
     }
 
-    // Resets the updater state, configures it with dependencies/settings
+    // Configures the updater
     //
-    // - Parameters:
-    //   - needsUpdateCheck: A flag indicating whether to perform a new appcast check.
-    //     Set to `true` if the pending update might be obsolete.
-    //     Defaults to `false`
-    private func configureUpdater(needsUpdateCheck: Bool = false) throws -> SPUUpdater? {
+    @discardableResult
+    private func configureUpdater() throws -> SPUUpdater? {
         // Workaround to reset the updater state
         cachedUpdateResult = nil
         latestUpdate = nil
 
-        userDriver = UpdateUserDriver(internalUserDecider: internalUserDecider,
-                                      areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
-        guard let userDriver else { return nil }
+        if !useLegacyAutoRestartLogic, let userDriver {
+            userDriver.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
+        } else {
+            userDriver = UpdateUserDriver(internalUserDecider: internalUserDecider,
+                                          areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
+        }
+
+        guard let userDriver,
+              updater == nil else {
+            return nil
+        }
 
         let updater = SPUUpdater(hostBundle: Bundle.main, applicationBundle: Bundle.main, userDriver: userDriver, delegate: self)
 
@@ -494,10 +507,14 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         }
 
         userDriver.cancelAndDismissCurrentUpdate()
-        updater = nil
+        if useLegacyAutoRestartLogic {
+            updater = nil
+        } else {
+            updater?.resetUpdateCycle()
+        }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            _ = try? self?.configureUpdater(needsUpdateCheck: true)
+            _ = try? self?.configureUpdater()
             self?.checkForUpdateSkippingRollout()
         }
     }
@@ -522,6 +539,8 @@ extension UpdateController: SPUUpdaterDelegate {
         Logger.updates.error("Updater did abort with error: \(error.localizedDescription, privacy: .public) (\(error.pixelParameters, privacy: .public))")
         let errorCode = (error as NSError).code
         guard ![Int(Sparkle.SUError.noUpdateError.rawValue),
+                // Triggered when the user cancels the update during installation
+                Int(Sparkle.SUError.resumeAppcastError.rawValue),
                 Int(Sparkle.SUError.installationCanceledError.rawValue),
                 Int(Sparkle.SUError.runningTranslocated.rawValue),
                 Int(Sparkle.SUError.downloadError.rawValue)].contains(errorCode) else {
@@ -539,6 +558,7 @@ extension UpdateController: SPUUpdaterDelegate {
         // Any unrecognized strings will be sent with "unknown", and will need to be debugged further as it means there
         // is a Sparkle error that isn't being accounted for in this list.
         let knownErrorPrefixes = [
+            "Failed to resume installing update.",
             "Package installer failed to launch.",
             "Guided package installer failed to launch",
             "Guided package installer returned non-zero exit status",

@@ -407,7 +407,6 @@ struct DataImportViewModel {
         let sendReport = reportSenderFactory()
         sendReport(reportModel)
     }
-
 }
 
 @MainActor
@@ -704,6 +703,15 @@ extension DataImportViewModel {
             }
         } else {
             return .cancel
+        }
+    }
+
+    var shouldShowSyncFooterButton: Bool {
+        switch screen {
+        case .summary, .shortcuts:
+            return true
+        default:
+            return false
         }
     }
 

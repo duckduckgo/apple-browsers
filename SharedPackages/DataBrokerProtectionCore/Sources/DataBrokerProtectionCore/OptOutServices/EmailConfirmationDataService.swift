@@ -87,7 +87,10 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
     }
 
     public func checkForEmailConfirmationData() async throws {
+        guard featureFlagger.isEmailConfirmationDecouplingFeatureOn else { return }
+
         Logger.dataBrokerProtection.log("Checking for email confirmation data...")
+
         let recordsAwaitingLink = try database.fetchOptOutEmailConfirmationsAwaitingLink()
         Logger.dataBrokerProtection.log("Found \(recordsAwaitingLink.count, privacy: .public) records awaiting email confirmation links")
 

@@ -142,47 +142,10 @@ final class WebExtensionSubMenu: NSMenu {
 
         buildItems {
             NSMenuItem(title: "Remove the extension", action: #selector(uninstallExtension), target: self)
-            NSMenuItem(title: "Open Background Inspector", action: #selector(openBackgroundInspector), target: self)
         }
     }
 
     @objc func uninstallExtension() {
         try? webExtensionManager.uninstallExtension(path: webExtensionPath)
     }
-
-    @MainActor
-    @objc func openBackgroundInspector() {
-        guard let context = webExtensionManager.context(forPath: webExtensionPath) else {
-            Logger.webExtensions.debug("No context found for path: \(self.webExtensionPath)")
-            return
-        }
-
-        guard let webViewConfiguration = context.webViewConfiguration else {
-            Logger.webExtensions.debug("No webViewConfiguration available for context")
-            return
-        }
-
-        // Construct the URL for background.html
-        let backgroundURL = context.baseURL.appendingPathComponent("background.html")
-
-        // Use WindowsManager to create a standard popup window
-        let tabCollection = TabCollectionViewModel()
-        if let window = WindowsManager.openNewWindow(with: tabCollection) {
-            let webView = WebView(frame: .zero, configuration: webViewConfiguration)
-            window.contentViewController?.view = webView
-            window.setContentSize(NSSize(width: 800, height: 600))
-            window.title = "Background Inspector"
-            window.makeKeyAndOrderFront(nil)
-
-            // Load the URL in the new WebView
-            let request = URLRequest(url: backgroundURL)
-            webView.load(request)
-
-            // Open the developer tools to show the inspector
-            webView.openDeveloperTools()
-        } else {
-            Logger.webExtensions.debug("Failed to create a new window using WindowsManager")
-        }
-    }
-
 }

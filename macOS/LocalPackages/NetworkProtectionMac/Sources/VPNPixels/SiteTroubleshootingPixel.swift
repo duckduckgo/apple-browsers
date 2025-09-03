@@ -39,6 +39,8 @@ public enum SiteTroubleshootingPixel: VPNPixel {
         }
     }
 
+    public var error: (any Error)? { nil }
+
     public var parameters: [String: String]? {
         switch self {
         case .reportIssues(let domain):

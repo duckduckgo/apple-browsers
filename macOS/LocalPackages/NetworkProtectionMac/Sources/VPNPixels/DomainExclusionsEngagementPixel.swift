@@ -57,4 +57,6 @@ public enum DomainExclusionsEngagementPixel: VPNPixel {
             return [:]
         }
     }
+
+    public var error: (any Error)? { nil }
 }

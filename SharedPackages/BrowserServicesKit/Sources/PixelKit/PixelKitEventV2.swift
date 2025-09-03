@@ -31,11 +31,6 @@ public protocol PixelKitEventV2: PixelKitEvent {
     var error: Error? { get }
 }
 
-public extension PixelKitEventV2 {
-
-    var error: Error? { nil }
-}
-
 /// Protocol to support mocking pixel firing.
 ///
 /// We're adding support for `PixelKitEventV2` events strategically because adding support for earlier pixels

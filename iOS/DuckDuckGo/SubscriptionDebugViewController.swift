@@ -408,14 +408,14 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     private func clearAuthDataV1() {
         Task {
-            await subscriptionManagerV1.signOut(notifyUI: true, userInitiated: false)
+            await subscriptionManagerV1.signOut(notifyUI: true)
             showAlert(title: "Data cleared!")
         }
     }
 
     private func clearAuthDataV2() {
         Task {
-            await subscriptionManagerV2.signOut(notifyUI: true, userInitiated: false)
+            await subscriptionManagerV2.signOut(notifyUI: true)
             showAlert(title: "Data cleared!")
         }
     }
@@ -633,7 +633,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         newSubscriptionEnvironment.serviceEnvironment = environment
 
         if newSubscriptionEnvironment.serviceEnvironment != currentSubscriptionEnvironment.serviceEnvironment {
-            await AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.signOut(notifyUI: true, userInitiated: false)
+            await AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.signOut(notifyUI: true)
 
             // Save Subscription environment
             DefaultSubscriptionManager.save(subscriptionEnvironment: newSubscriptionEnvironment, userDefaults: subscriptionUserDefaults)

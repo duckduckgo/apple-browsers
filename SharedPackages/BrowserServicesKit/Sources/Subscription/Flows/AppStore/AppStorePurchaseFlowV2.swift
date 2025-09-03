@@ -206,7 +206,7 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
         Logger.subscriptionAppStorePurchaseFlow.log("Recovering Subscription From Dead Token")
 
         // Clear everything, the token is unrecoverable
-        await subscriptionManager.signOut(notifyUI: true, userInitiated: false)
+        await subscriptionManager.signOut(notifyUI: true)
 
         switch await appStoreRestoreFlow.restoreAccountFromPastPurchase() {
         case .success:

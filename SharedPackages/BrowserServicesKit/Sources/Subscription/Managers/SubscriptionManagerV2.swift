@@ -180,6 +180,12 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     func removeLocalAccount() throws
 }
 
+extension SubscriptionManagerV2 {
+    func signOut(notifyUI: Bool) async {
+        await signOut(notifyUI: notifyUI, userInitiated: false)
+    }
+}
+
 /// Single entry point for everything related to Subscription. This manager is disposable, every time something related to the environment changes this need to be recreated.
 public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 

@@ -36,6 +36,7 @@ public protocol DataBrokerProtectionDatabaseMigrationsProvider {
     static var v6Migrations: (inout DatabaseMigrator) throws -> Void { get }
     static var v7Migrations: (inout DatabaseMigrator) throws -> Void { get }
     static var v8Migrations: (inout DatabaseMigrator) throws -> Void { get }
+    static var v9Migrations: (inout DatabaseMigrator) throws -> Void { get }
 }
 
 public final class DefaultDataBrokerProtectionDatabaseMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProvider {
@@ -94,6 +95,18 @@ public final class DefaultDataBrokerProtectionDatabaseMigrationsProvider: DataBr
         migrator.registerMigration("v6", migrate: migrateV6(database:))
         migrator.registerMigration("v7", migrate: migrateV7(database:))
         migrator.registerMigration("v8", migrate: migrateV8(database:))
+    }
+
+    public static var v9Migrations: (inout DatabaseMigrator) throws -> Void = { migrator in
+        migrator.registerMigration("v1", migrate: migrateV1(database:))
+        migrator.registerMigration("v2", migrate: migrateV2(database:))
+        migrator.registerMigration("v3", migrate: migrateV3(database:))
+        migrator.registerMigration("v4", migrate: migrateV4(database:))
+        migrator.registerMigration("v5", migrate: migrateV5(database:))
+        migrator.registerMigration("v6", migrate: migrateV6(database:))
+        migrator.registerMigration("v7", migrate: migrateV7(database:))
+        migrator.registerMigration("v8", migrate: migrateV8(database:))
+        migrator.registerMigration("v9", migrate: migrateV9(database:))
     }
 
     static func migrateV1(database: Database) throws {
@@ -344,6 +357,12 @@ public final class DefaultDataBrokerProtectionDatabaseMigrationsProvider: DataBr
     }
 
     static func migrateV8(database: Database) throws {
+        try database.alter(table: BrokerDB.databaseTableName) {
+            $0.add(column: BrokerDB.Columns.removedAt.name, .datetime)
+        }
+    }
+
+    static func migrateV9(database: Database) throws {
         try database.create(table: OptOutEmailConfirmationDB.databaseTableName) {
             $0.primaryKey([
                 OptOutEmailConfirmationDB.Columns.profileQueryId.name,
@@ -370,6 +389,7 @@ public final class DefaultDataBrokerProtectionDatabaseMigrationsProvider: DataBr
             $0.column(OptOutEmailConfirmationDB.Columns.emailConfirmationLinkObtainedOnBEDate.name, .datetime)
             $0.column(OptOutEmailConfirmationDB.Columns.emailConfirmationAttemptCount.name, .integer).notNull().defaults(to: 0)
         }
+
     }
 
     private static func deleteOrphanedRecords(database: Database) throws {

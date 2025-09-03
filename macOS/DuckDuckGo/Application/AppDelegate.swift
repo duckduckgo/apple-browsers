@@ -102,7 +102,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var autoClearHandler: AutoClearHandler!
     private(set) var autofillPixelReporter: AutofillPixelReporter?
 
-    private(set) var syncDataProviders: SyncDataProviders!
+    private(set) var syncDataProviders: SyncDataProviders?
     private(set) var syncService: DDGSyncing?
     private var isSyncInProgressCancellable: AnyCancellable?
     private var syncFeatureFlagsCancellable: AnyCancellable?
@@ -234,6 +234,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return DataBrokerProtectionSubscriptionEventHandler(featureDisabler: DataBrokerProtectionFeatureDisabler(),
                                                             authenticationManager: authManager,
                                                             pixelHandler: DataBrokerProtectionMacOSPixelsHandler())
+    }()
+
+    // MARK: - Wide Pixel Service
+
+    private lazy var widePixelService: WidePixelService = {
+        return WidePixelService(
+            widePixel: WidePixel(),
+            featureFlagger: featureFlagger,
+            subscriptionBridge: subscriptionAuthV1toV2Bridge
+        )
     }()
 
     private var didFinishLaunching = false
@@ -580,7 +590,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 privacyConfigurationManager: privacyConfigurationManager,
                 purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform,
                 paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
-                supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) }
+                supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) },
+                isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) }
             ),
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger
@@ -632,6 +643,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let contentBlocking = AppContentBlocking(
                 privacyConfigurationManager: privacyConfigurationManager,
                 internalUserDecider: internalUserDecider,
+                featureFlagger: featureFlagger,
                 configurationStore: configurationStore,
                 contentScopeExperimentsManager: self.contentScopeExperimentsManager,
                 onboardingNavigationDelegate: windowControllersManager,
@@ -654,6 +666,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let contentBlocking = AppContentBlocking(
             privacyConfigurationManager: privacyConfigurationManager,
             internalUserDecider: internalUserDecider,
+            featureFlagger: featureFlagger,
             configurationStore: configurationStore,
             contentScopeExperimentsManager: self.contentScopeExperimentsManager,
             onboardingNavigationDelegate: windowControllersManager,
@@ -992,6 +1005,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         freemiumDBPScanResultPolling = DefaultFreemiumDBPScanResultPolling(dataManager: DataBrokerProtectionManager.shared.dataManager, freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPScanResultPolling?.startPollingOrObserving()
 
+        widePixelService.sendAbandonedPixels { }
+
         PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
     }
 
@@ -1052,7 +1067,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func fireDailyFireWindowConfigurationPixel() {
         PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfiguration(
             startupFireWindow: startupPreferences.startupWindowType == .fireWindow,
-            openFireWindowByDefault: dataClearingPreferences.shouldOpenFireWindowbyDefault,
+            openFireWindowByDefault: dataClearingPreferences.shouldOpenFireWindowByDefault,
             fireAnimationEnabled: dataClearingPreferences.isFireAnimationEnabled
         )), frequency: .daily)
     }
@@ -1169,7 +1184,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Sync
 
-    private func startupSync() {
+    @MainActor private func startupSync() {
 #if DEBUG
         let defaultEnvironment = ServerEnvironment.development
 #else
@@ -1322,14 +1337,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             PixelKit.fire(GeneralPixel.emailEnabledInitial, frequency: .legacyInitial)
         }
 
-        if let object = notification.object as? EmailManager, let emailManager = syncDataProviders.settingsAdapter.emailManager, object !== emailManager {
+        if let object = notification.object as? EmailManager, let emailManager = syncDataProviders?.settingsAdapter.emailManager, object !== emailManager {
             syncService?.scheduler.notifyDataChanged()
         }
     }
 
     private func emailDidSignOutNotification(_ notification: Notification) {
         PixelKit.fire(NonStandardEvent(NonStandardPixel.emailDisabled))
-        if let object = notification.object as? EmailManager, let emailManager = syncDataProviders.settingsAdapter.emailManager, object !== emailManager {
+        if let object = notification.object as? EmailManager, let emailManager = syncDataProviders?.settingsAdapter.emailManager, object !== emailManager {
             syncService?.scheduler.notifyDataChanged()
         }
     }

@@ -67,7 +67,7 @@ public struct EmailDataResponseItemV1: Codable {
     }
 
     public var confirmationLink: String? {
-        data.first(where: { $0.name == "confirmationLink" })?.value
+        data.first(where: { $0.name == "link" })?.value
     }
 
     public var linkObtainedOnBEDate: Date? {

@@ -42,6 +42,32 @@ enum AddressBarPosition: String, CaseIterable, CustomStringConvertible {
     }
 }
 
+enum RefreshButtonPosition: String, CaseIterable, CustomStringConvertible {
+    case addressBar
+    case menu
+    
+    var description: String {
+        return descriptionText
+    }
+    
+    var descriptionText: String {
+        switch self {
+        case .addressBar:
+            return UserText.settingsRefreshButtonPositionAddressBar
+        case .menu:
+            return UserText.settingsRefreshButtonPositionMenu
+        }
+    }
+    
+    var isEnabledForAddressBar: Bool {
+        self == .addressBar
+    }
+    
+    var isEnabledForBrowsingMenu: Bool {
+        self == .menu
+    }
+}
+
 protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var autocomplete: Bool { get set }
     var recentlyVisitedSites: Bool { get set }
@@ -58,6 +84,7 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     
     var currentFireButtonAnimation: FireButtonAnimationType { get set }
     var currentAddressBarPosition: AddressBarPosition { get set }
+    var currentRefreshButtonPosition: RefreshButtonPosition { get set }
     var showFullSiteAddress: Bool { get set }
 
     var defaultTextZoomLevel: TextZoomLevel { get set }

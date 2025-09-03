@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Core
 
 @MainActor
 protocol KeyboardPresenting {
@@ -37,6 +38,9 @@ final class KeyboardPresenter: KeyboardPresenting {
 
     func showKeyboardOnLaunch(lastBackgroundDate: Date? = nil) {
         guard KeyboardSettings().onAppLaunch && shouldShowKeyboardOnLaunch(lastBackgroundDate: lastBackgroundDate) else { return }
+        
+        DailyPixel.fireDailyAndCount(pixel: .keyboardOnAppLaunchUsedDaily)
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             self.mainViewController.enterSearch()
         }

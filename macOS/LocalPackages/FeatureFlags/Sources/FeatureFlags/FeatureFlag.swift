@@ -114,6 +114,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1210012162616039?focus=true
     case aiChatTextSummarization
 
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210921598044116?focus=true
+    case aiChatPageContext
+
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case osSupportForceUnsupportedMessage
 
@@ -164,6 +167,15 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1211122605729911?focus=true
     case duckAISearchParameter
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211148305864314?focus=true
+    case refactorOfSyncPreferences
+
+    /// https://app.asana.com/1/137249556945/project/1202926619870900/task/1211148305864315?focus=true
+    case newSyncEntryPoints
+
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211127159784126?focus=true
+    case subscriptionPurchaseWidePixelMeasurement
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -176,7 +188,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .importChromeShortcuts,
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
-                .supportsAlternateStripePaymentFlow:
+                .supportsAlternateStripePaymentFlow,
+                .refactorOfSyncPreferences,
+                .newSyncEntryPoints,
+                .subscriptionPurchaseWidePixelMeasurement:
             true
         default:
             false
@@ -223,6 +238,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatGlobalSwitch,
 				.aiChatSidebar,
                 .aiChatTextSummarization,
+                .aiChatPageContext,
                 .shortHistoryMenu,
                 .subscriptionRebranding,
                 .importChromeShortcuts,
@@ -234,10 +250,13 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newFeedbackForm,
                 .vpnToolbarUpsell,
                 .supportsAlternateStripePaymentFlow,
-                .openFireWindowByDefault,
                 .restoreSessionPrompt,
+                .openFireWindowByDefault,
                 .duckAISearchParameter,
-                .dbpEmailConfirmationDecoupling:
+                .refactorOfSyncPreferences,
+                .newSyncEntryPoints,
+                .dbpEmailConfirmationDecoupling,
+                .subscriptionPurchaseWidePixelMeasurement:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -330,6 +349,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatTextSummarization:
             return .remoteReleasable(.subfeature(AIChatSubfeature.textSummarization))
+        case .aiChatPageContext:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
         case .osSupportForceUnsupportedMessage:
             return .disabled
         case .osSupportForceWillSoonDropSupportMessage:
@@ -364,6 +385,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .duckAISearchParameter:
             return .enabled
+        case .subscriptionPurchaseWidePixelMeasurement:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
+        case .refactorOfSyncPreferences:
+            return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
+        case .newSyncEntryPoints:
+            return .remoteReleasable(.subfeature(SyncSubfeature.newSyncEntryPoints))
         }
     }
 }

@@ -41,7 +41,6 @@ public struct StandardButtonStyle: ButtonStyle {
             .background(backgroundColor)
             .foregroundColor(labelColor)
             .cornerRadius(5)
-
     }
 }
 

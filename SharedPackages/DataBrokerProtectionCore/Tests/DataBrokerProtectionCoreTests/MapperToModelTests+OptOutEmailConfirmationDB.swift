@@ -20,13 +20,13 @@ import XCTest
 @testable import DataBrokerProtectionCore
 
 final class MapperOptOutEmailConfirmationTests: XCTestCase {
-    
+
     private var mapperToDB = MapperToDB { data in
-        ROT13.string(String(data: data, encoding: .utf8)!).data(using: .utf8)!
+        String(data: data, encoding: .utf8)!.rot13().data(using: .utf8)!
     }
 
     private var mapperToModel = MapperToModel { data in
-        ROT13.string(String(data: data, encoding: .utf8)!).data(using: .utf8)!
+        String(data: data, encoding: .utf8)!.rot13().data(using: .utf8)!
     }
 
     func testMappingCompleteOptOutEmailConfirmation() throws {
@@ -40,7 +40,7 @@ final class MapperOptOutEmailConfirmationTests: XCTestCase {
             emailConfirmationLinkObtainedOnBEDate: Date(),
             emailConfirmationAttemptCount: 3
         )
-        
+
         let dbModel = try mapperToDB.mapToDB(original)
         XCTAssertEqual(dbModel.brokerId, original.brokerId)
         XCTAssertEqual(dbModel.profileQueryId, original.profileQueryId)
@@ -61,7 +61,7 @@ final class MapperOptOutEmailConfirmationTests: XCTestCase {
         XCTAssertEqual(result.emailConfirmationLinkObtainedOnBEDate, original.emailConfirmationLinkObtainedOnBEDate)
         XCTAssertEqual(result.emailConfirmationAttemptCount, original.emailConfirmationAttemptCount)
     }
-    
+
     func testMappingOptOutEmailConfirmation_withoutEmailConfirmationLink() throws {
         let original = OptOutEmailConfirmationJobData(
             brokerId: 123,
@@ -73,7 +73,7 @@ final class MapperOptOutEmailConfirmationTests: XCTestCase {
             emailConfirmationLinkObtainedOnBEDate: nil,
             emailConfirmationAttemptCount: 0
         )
-        
+
         let dbModel = try mapperToDB.mapToDB(original)
         XCTAssertNil(dbModel.emailConfirmationLink)
 
@@ -84,26 +84,18 @@ final class MapperOptOutEmailConfirmationTests: XCTestCase {
     }
 }
 
-/// From: https://www.hackingwithswift.com/example-code/strings/how-to-calculate-the-rot13-of-a-string
-struct ROT13 {
-    // create a dictionary that will store our character mapping
-    private static var key = [Character: Character]()
+extension String {
+    func rot13() -> String {
+        let uppercase = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        let lowercase = Array("abcdefghijklmnopqrstuvwxyz")
 
-    // create arrays of all uppercase and lowercase letters
-    private static let uppercase = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-    private static let lowercase = Array("abcdefghijklmnopqrstuvwxyz")
-
-    static func string(_ string: String) -> String {
-        // if this is the first time the method is being called, calculate the ROT13 key dictionary
-        if ROT13.key.isEmpty {
-            for i in 0 ..< 26 {
-                ROT13.key[ROT13.uppercase[i]] = ROT13.uppercase[(i + 13) % 26]
-                ROT13.key[ROT13.lowercase[i]] = ROT13.lowercase[(i + 13) % 26]
-            }
+        var key = [Character: Character]()
+        for i in 0 ..< 26 {
+            key[uppercase[i]] = uppercase[(i + 13) % 26]
+            key[lowercase[i]] = lowercase[(i + 13) % 26]
         }
 
-        // now return the transformed string
-        let transformed = string.map { ROT13.key[$0] ?? $0 }
+        let transformed = self.map { key[$0] ?? $0 }
         return String(transformed)
     }
 }

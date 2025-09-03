@@ -94,6 +94,9 @@
 /* Refresh action - button shown in alert */
 "action.title.refresh" = "Refresh";
 
+/* Refresh page action */
+"action.title.refreshPage" = "Refresh Page";
+
 /* Remove Favorite action */
 "action.title.remove.favorite" = "Remove Favorite";
 
@@ -2832,6 +2835,15 @@ Take back control of your personal information with the browser designed for dat
 
 /* Explanation in Settings how the private search feature works */
 "settings.private.search.explanation" = "DuckDuckGo Private Search is your default search engine, so you can search the web without being tracked.";
+
+/* Settings screen option to set refresh button in the address bar */
+"settings.refreshButton.position.addressBar" = "Address Bar";
+
+/* Settings screen option to set refresh button in the menu */
+"settings.refreshButton.position.menu" = "Menu";
+
+/* Settings screen cell text for setting the refresh button position. */
+"settings.refreshButton.position.title" = "Refresh Button Position";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Search Settings";

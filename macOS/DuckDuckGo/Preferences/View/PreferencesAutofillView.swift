@@ -92,7 +92,7 @@ extension Preferences {
                 }
 
                 // SECTION 1: Password Manager
-                if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
+                if #available(macOS 15.4, *), WebExtensionManager.areExtenstionsEnabled {
                     // New logic: Only show if user has choices
                     if shouldShowPasswordManagerSection {
                         PreferencePaneSection(UserText.autofillPasswordManager) {
@@ -268,11 +268,11 @@ extension Preferences {
         @available(macOS 15.4, *)
         private var shouldShowBitwardenExtensionOption: Bool {
             let url = URL(string: WebExtensionIdentifier.bitwarden.defaultPath)!
-            return WebExtensionManager.shared.areExtenstionsEnabled && FileManager.default.fileExists(atPath: url.path)
+            return WebExtensionManager.areExtenstionsEnabled && FileManager.default.fileExists(atPath: url.path)
         }
 
         private var shouldShowImportExportButtons: Bool {
-            if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
+            if #available(macOS 15.4, *), WebExtensionManager.areExtenstionsEnabled {
                 // New logic: Only when DuckDuckGo is selected
                 return model.passwordManager == .duckduckgo
             } else {

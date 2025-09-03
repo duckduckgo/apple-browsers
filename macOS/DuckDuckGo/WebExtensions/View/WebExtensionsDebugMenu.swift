@@ -27,14 +27,14 @@ final class WebExtensionsDebugMenu: NSMenu {
     private let installExtensionMenuItem = NSMenuItem(title: "Install web extension", action: nil)
     private let uninstallAllExtensionsMenuItem = NSMenuItem(title: "Uninstall all extensions", action: #selector(WebExtensionsDebugMenu.uninstallAllExtensions))
 
-    init(webExtensionManager: WebExtensionManaging = WebExtensionManager.shared) {
+    init(webExtensionManager: WebExtensionManaging) {
         self.webExtensionManager = webExtensionManager
         super.init(title: "")
 
         installExtensionMenuItem.submenu = makeInstallSubmenu()
-        installExtensionMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled
+        installExtensionMenuItem.isEnabled = true
         uninstallAllExtensionsMenuItem.target = self
-        uninstallAllExtensionsMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled && webExtensionManager.hasInstalledExtensions
+        uninstallAllExtensionsMenuItem.isEnabled = webExtensionManager.hasInstalledExtensions
 
         addItems()
     }
@@ -80,8 +80,8 @@ final class WebExtensionsDebugMenu: NSMenu {
 
         addItems()
 
-        installExtensionMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled
-        uninstallAllExtensionsMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled && webExtensionManager.hasInstalledExtensions
+        installExtensionMenuItem.isEnabled = true
+        uninstallAllExtensionsMenuItem.isEnabled = webExtensionManager.hasInstalledExtensions
     }
 
     @objc func selectAndLoadWebExtension() {
@@ -129,14 +129,12 @@ final class WebExtensionMenuItem: NSMenuItem {
 final class WebExtensionSubMenu: NSMenu {
 
     private let webExtensionPath: String
-    private let webExtensionManager: WebExtensionManaging
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    init(webExtensionPath: String, webExtensionManager: WebExtensionManaging = WebExtensionManager.shared) {
-        self.webExtensionManager = webExtensionManager
+    init(webExtensionPath: String) {
         self.webExtensionPath = webExtensionPath
         super.init(title: "")
 
@@ -146,6 +144,10 @@ final class WebExtensionSubMenu: NSMenu {
     }
 
     @objc func uninstallExtension() {
+        guard let webExtensionManager = NSApp.delegateTyped.webExtensionManager else {
+            return
+        }
+
         try? webExtensionManager.uninstallExtension(path: webExtensionPath)
     }
 }

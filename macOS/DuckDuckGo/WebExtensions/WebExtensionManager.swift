@@ -23,37 +23,57 @@ import Foundation
 import OSLog
 import WebKit
 
-@available(macOS 15.4, *)
 protocol WebExtensionManaging {
 
     typealias WebExtensionIdentifier = String
 
-    var areExtenstionsEnabled: Bool { get }
+    @available(macOS 15.4, *)
     var hasInstalledExtensions: Bool { get }
+
+    @available(macOS 15.4, *)
     var loadedExtensions: Set<WKWebExtensionContext> { get }
 
+    @available(macOS 15.4, *)
     @MainActor
     func loadInstalledExtensions() async
 
     // Adding and removing extensions
+    @available(macOS 15.4, *)
     var webExtensionPaths: [String] { get }
+
+    @available(macOS 15.4, *)
     func installExtension(path: String) async
+
+    @available(macOS 15.4, *)
     func uninstallExtension(path: String) throws
 
+    @available(macOS 15.4, *)
     @discardableResult
     func uninstallAllExtensions() -> [Result<Void, Error>]
 
     // Provides the extension name for the extension resource base path
+    @available(macOS 15.4, *)
     func extensionName(from path: String) -> String?
 
+    @available(macOS 15.4, *)
+    func extensionContext(for url: URL) -> WKWebExtensionContext?
+
     // Controller for tabs
+    @available(macOS 15.4, *)
     var controller: WKWebExtensionController { get }
 
     // Listening of events
+    @available(macOS 15.4, *)
     var eventsListener: WebExtensionEventsListening { get }
 
+    @available(macOS 15.4, *)
+    var extensionUpdates: AsyncStream<Void> { get }
+
+    @available(macOS 15.4, *)
     func context(forPath path: String) -> WKWebExtensionContext?
 
+    @available(macOS 15.4, *)
+    func toolbarButton(for context: WKWebExtensionContext) -> MouseOverButton
 }
 
 // Manages the initialization and ownership of key components: web extensions, contexts, and the controller
@@ -64,19 +84,15 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         case failedToUnloadWebExtension(_ error: Error)
     }
 
-    static let shared = WebExtensionManager(featureFlagger: NSApp.delegateTyped.featureFlagger)
-
     private var continuation: AsyncStream<Void>.Continuation?
     private(set) lazy var extensionUpdates = AsyncStream<Void> { [weak self] continuation in
         self?.continuation = continuation
     }
 
     init(installationStore: WebExtensionPathsStoring = WebExtensionPathsStore(),
-         webExtensionLoader: WebExtensionLoading = WebExtensionLoader(),
-         featureFlagger: FeatureFlagger) {
+         webExtensionLoader: WebExtensionLoading = WebExtensionLoader()) {
 
         self.installationStore = installationStore
-        self.featureFlagger = featureFlagger
         self.loader = webExtensionLoader
 
         super.init()
@@ -91,10 +107,8 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         internalSiteHandler.dataSource = self
     }
 
-    private let featureFlagger: FeatureFlagger
-
-    var areExtenstionsEnabled: Bool {
-        return featureFlagger.isFeatureOn(.webExtensions)
+    static var areExtenstionsEnabled: Bool {
+        NSApp.delegateTyped.webExtensionManager != nil
     }
 
     // Registers extension installation paths for persistence
@@ -208,8 +222,6 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
 
     @MainActor
     func loadInstalledExtensions() async {
-        guard areExtenstionsEnabled else { return }
-
         eventsListener.controller = controller
 
         let results = await loader.loadWebExtensions(from: installationStore.paths, into: controller)

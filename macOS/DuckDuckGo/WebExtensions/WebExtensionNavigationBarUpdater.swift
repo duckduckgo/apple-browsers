@@ -24,9 +24,9 @@ final class WebExtensionNavigationBarUpdater {
 
     private let container: NSStackView
     private var buttons = Set<MouseOverButton>()
-    private let webExtensionManager: WebExtensionManager
+    private let webExtensionManager: WebExtensionManaging
 
-    init(container: NSStackView, webExtensionManager: WebExtensionManager = .shared) {
+    init(container: NSStackView, webExtensionManager: WebExtensionManaging) {
         self.container = container
         self.webExtensionManager = webExtensionManager
     }

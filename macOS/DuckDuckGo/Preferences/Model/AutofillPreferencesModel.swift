@@ -70,7 +70,7 @@ final class AutofillPreferencesModel: ObservableObject {
 
             persistor.passwordManager = passwordManager
 
-            if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
+            if #available(macOS 15.4, *), NSApp.delegateTyped.webExtensionManager != nil {
                 // New logic with web extensions support
 
                 // Handle cleanup from previous value
@@ -161,13 +161,13 @@ final class AutofillPreferencesModel: ObservableObject {
 
     @MainActor
     private func installBitwardenExtensionIfNeeded() {
-        if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
             let bitwardenExtensionPath = WebExtensionIdentifier.bitwarden.defaultPath
 
             // Only install if not already installed
-            if !WebExtensionManager.shared.webExtensionPaths.contains(bitwardenExtensionPath) {
+            if !webExtensionManager.webExtensionPaths.contains(bitwardenExtensionPath) {
                 Task {
-                    await WebExtensionManager.shared.installExtension(path: bitwardenExtensionPath)
+                    await webExtensionManager.installExtension(path: bitwardenExtensionPath)
                 }
             }
         }
@@ -175,12 +175,12 @@ final class AutofillPreferencesModel: ObservableObject {
 
     @MainActor
     private func uninstallBitwardenExtension() {
-        if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
             let bitwardenExtensionPath = WebExtensionIdentifier.bitwarden.defaultPath
 
-            if WebExtensionManager.shared.webExtensionPaths.contains(bitwardenExtensionPath) {
+            if webExtensionManager.webExtensionPaths.contains(bitwardenExtensionPath) {
                 Task {
-                    try? WebExtensionManager.shared.uninstallExtension(path: bitwardenExtensionPath)
+                    try? webExtensionManager.uninstallExtension(path: bitwardenExtensionPath)
                 }
             }
         }

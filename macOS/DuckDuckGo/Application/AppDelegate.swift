@@ -130,11 +130,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let fireCoordinator: FireCoordinator
     let permissionManager: PermissionManager
 
-    @available(macOS 15.4, *)
-    lazy var webExtensionManager: WebExtensionManaging = {
-        return WebExtensionManager(featureFlagger: featureFlagger)
-    }()
-
     private var updateProgressCancellable: AnyCancellable?
 
     @MainActor
@@ -250,6 +245,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionBridge: subscriptionAuthV1toV2Bridge
         )
     }()
+
+    let webExtensionManager: WebExtensionManaging?
 
     private var didFinishLaunching = false
 
@@ -802,9 +799,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
         if #available(macOS 15.4, *), featureFlagger.isFeatureOn(.webExtensions) {
-            Task { @MainActor in
-                await WebExtensionManager.shared.loadInstalledExtensions()
+            let webExtensionManager = WebExtensionManager()
+            self.webExtensionManager = webExtensionManager
+
+            Task {
+                await webExtensionManager.loadInstalledExtensions()
             }
+        } else {
+            self.webExtensionManager = nil
         }
 
 #if !APPSTORE

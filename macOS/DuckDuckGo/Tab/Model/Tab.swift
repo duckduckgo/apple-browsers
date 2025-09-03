@@ -530,8 +530,8 @@ protocol NewWindowPolicyDecisionMaker {
             if navigationDelegate.currentNavigation == nil {
                 updateCanGoBackForward(withCurrentNavigation: nil)
             }
-            if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
-                WebExtensionManager.shared.eventsListener.didChangeTabProperties([.URL], for: self)
+            if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+                webExtensionManager.eventsListener.didChangeTabProperties([.URL], for: self)
             }
         }
     }
@@ -608,8 +608,8 @@ protocol NewWindowPolicyDecisionMaker {
 
     @Published var title: String? {
         didSet {
-            if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
-                WebExtensionManager.shared.eventsListener.didChangeTabProperties([.title], for: self)
+            if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+                webExtensionManager.eventsListener.didChangeTabProperties([.title], for: self)
             }
         }
     }
@@ -641,8 +641,8 @@ protocol NewWindowPolicyDecisionMaker {
 
     @Published private(set) var isLoading: Bool = false {
         didSet {
-            if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
-                WebExtensionManager.shared.eventsListener.didChangeTabProperties([.loading], for: self)
+            if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+                webExtensionManager.eventsListener.didChangeTabProperties([.loading], for: self)
             }
         }
     }
@@ -944,8 +944,8 @@ protocol NewWindowPolicyDecisionMaker {
         webView.audioState.toggle()
         objectWillChange.send()
 
-        if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
-            WebExtensionManager.shared.eventsListener.didChangeTabProperties([.muted], for: self)
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didChangeTabProperties([.muted], for: self)
         }
     }
 

@@ -127,7 +127,7 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
 #if APPSTORE
     var passwordManager: PasswordManager {
         get {
-            guard #available(macOS 15.4, *), WebExtensionManager.areExtenstionsEnabled else {
+            guard #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled else {
                 // Roll back to original behavior if web extensions are not supported
                 // (mostly as a safety measure for disabling the feature flag)
                 return .duckduckgo
@@ -142,7 +142,7 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
             return passwordManager
         }
         set {
-            guard #available(macOS 15.4, *), WebExtensionManager.areExtenstionsEnabled else {
+            guard #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled else {
                 // Roll back to original behavior if web extensions are not supported
                 // (mostly as a safety measure for disabling the feature flag)
                 return

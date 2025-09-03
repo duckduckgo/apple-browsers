@@ -89,25 +89,24 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         self?.continuation = continuation
     }
 
+    @MainActor
     init(installationStore: WebExtensionPathsStoring = WebExtensionPathsStore(),
          webExtensionLoader: WebExtensionLoading = WebExtensionLoader()) {
 
         self.installationStore = installationStore
         self.loader = webExtensionLoader
 
+        let controllerConfiguration = WKWebExtensionController.Configuration.default()
+        controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = UserAgent.brandedDefaultSuffix
+        controller = WKWebExtensionController(configuration: controllerConfiguration)
+
         super.init()
 
-        Task { @MainActor in
-            // Try to ensure the controller is initialized in the main actor, because otherwise
-            // the Main thread checker complains:
-            // Main Thread Checker: UI API called on a background thread: -[WKProcessPool .cxx_construct]
-            _ = controller
-        }
-
+        controller.delegate = self
         internalSiteHandler.dataSource = self
     }
 
-    static var areExtenstionsEnabled: Bool {
+    static var areExtensionsEnabled: Bool {
         NSApp.delegateTyped.webExtensionManager != nil
     }
 
@@ -123,13 +122,7 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     }
 
     // Controller manages a set of loaded extension contexts
-    lazy var controller: WKWebExtensionController = {
-        let controllerConfiguration = WKWebExtensionController.Configuration.default()
-        controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = UserAgent.brandedDefaultSuffix
-        let controller = WKWebExtensionController(configuration: controllerConfiguration)
-        controller.delegate = self
-        return controller
-    }()
+    let controller: WKWebExtensionController
 
     // Events listening
     var eventsListener: WebExtensionEventsListening = WebExtensionEventsListener()

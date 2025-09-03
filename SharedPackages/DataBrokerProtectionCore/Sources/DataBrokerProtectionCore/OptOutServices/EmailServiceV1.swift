@@ -172,10 +172,6 @@ public struct EmailServiceV1: EmailServiceV1Protocol {
             return
         }
 
-        guard items.count <= Constants.maxBatchSize else {
-            throw EmailErrorV1.batchSizeExceeded
-        }
-
         var urlComponents = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: true)
         urlComponents?.path += "\(Constants.endpointSubPath)/email-data/delete"
 

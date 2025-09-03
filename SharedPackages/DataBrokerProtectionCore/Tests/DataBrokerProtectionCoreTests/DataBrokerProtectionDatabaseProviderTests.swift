@@ -406,18 +406,7 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
 
     func testWhenFetchAllNonRemovedBrokers_thenFiltersCorrectly() throws {
         // Given
-        let freshVaultURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
-            directoryName: "DBP",
-            fileName: "Fresh-Test-Vault.db"
-        )
-        try? FileManager.default.removeItem(at: freshVaultURL)
-
-        // When:
-        let freshProvider = try DefaultDataBrokerProtectionDatabaseProvider(
-            file: freshVaultURL,
-            key: key,
-            registerMigrationsHandler: Migrations.v8Migrations
-        )
+        let (freshProvider, url) = try createFreshTestVault()
 
         let activeBroker = BrokerDB.random(name: "ActiveBroker", removedAt: nil)
         let removedBroker = BrokerDB.random(name: "RemovedBroker", removedAt: Date())
@@ -436,23 +425,12 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         XCTAssertNil(nonRemovedBrokers.first?.removedAt, "Returned broker should not have removedAt set")
 
         // Cleanup
-        try? FileManager.default.removeItem(at: freshVaultURL)
+        try? FileManager.default.removeItem(at: url)
     }
 
     func testWhenFetchAllNonRemovedBrokers_thenReturnsAllBrokers() throws {
         // Given
-        let freshVaultURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
-            directoryName: "DBP",
-            fileName: "Fresh-Test-Vault.db"
-        )
-        try? FileManager.default.removeItem(at: freshVaultURL)
-
-        // When:
-        let freshProvider = try DefaultDataBrokerProtectionDatabaseProvider(
-            file: freshVaultURL,
-            key: key,
-            registerMigrationsHandler: Migrations.v8Migrations
-        )
+        let (freshProvider, url) = try createFreshTestVault()
 
         let broker1 = BrokerDB.random(name: "ActiveBroker1", removedAt: nil)
         let broker2 = BrokerDB.random(name: "ActiveBroker2", removedAt: nil)
@@ -469,23 +447,12 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         XCTAssertEqual(nonRemovedBrokers.count, 2, "Should fetch all brokers when none are removed")
         XCTAssertEqual(allBrokers.count, nonRemovedBrokers.count, "Counts should match when no brokers are removed")
 
-        try? FileManager.default.removeItem(at: freshVaultURL)
+        try? FileManager.default.removeItem(at: url)
     }
 
     func testWhenFetchAllNonRemovedBrokers_thenReturnsEmptyArray() throws {
         // Given
-        let freshVaultURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
-            directoryName: "DBP",
-            fileName: "Fresh-Test-Vault.db"
-        )
-        try? FileManager.default.removeItem(at: freshVaultURL)
-
-        // When:
-        let freshProvider = try DefaultDataBrokerProtectionDatabaseProvider(
-            file: freshVaultURL,
-            key: key,
-            registerMigrationsHandler: Migrations.v8Migrations
-        )
+        let (freshProvider, url) = try createFreshTestVault()
 
         let removedBroker1 = BrokerDB.random(name: "RemovedBroker1", removedAt: Date())
         let removedBroker2 = BrokerDB.random(name: "RemovedBroker2", removedAt: Date())
@@ -501,7 +468,23 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         XCTAssertEqual(allBrokers.count, 2, "Should fetch all brokers including removed ones")
         XCTAssertEqual(nonRemovedBrokers.count, 0, "Should return empty array when all brokers are removed")
 
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    private func createFreshTestVault() throws -> (DefaultDataBrokerProtectionDatabaseProvider, URL) {
+        let freshVaultURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
+            directoryName: "DBP",
+            fileName: "Fresh-Test-Vault.db"
+        )
         try? FileManager.default.removeItem(at: freshVaultURL)
+
+        let freshProvider = try DefaultDataBrokerProtectionDatabaseProvider(
+            file: freshVaultURL,
+            key: key,
+            registerMigrationsHandler: Migrations.v8Migrations
+        )
+
+        return (freshProvider, freshVaultURL)
     }
 }
 

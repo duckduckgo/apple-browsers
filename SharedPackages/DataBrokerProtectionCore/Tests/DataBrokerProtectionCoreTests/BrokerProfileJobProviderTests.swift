@@ -85,7 +85,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
         XCTAssert(result.count == 3)
     }
 
-    func testWhenProvideSchedulesJobs_andRemovedBrokersExist_thenExcludesRemovedBrokersFromJobScheduling() throws {
+    func testWhenProvideJobs_andRemovedBrokersExist_thenExcludesRemovedBrokersFromJobScheduling() throws {
         // Given
         let activeBrokerData = BrokerProfileQueryData(
             dataBroker: .mock,
@@ -93,8 +93,6 @@ final class BrokerProfileJobProviderTests: XCTestCase {
             scanJobData: .mock,
             optOutJobData: [.mock(with: .mockWithoutRemovedDate)]
         )
-
-
 
         let removedBrokerData = BrokerProfileQueryData(
             dataBroker: .removedMock,

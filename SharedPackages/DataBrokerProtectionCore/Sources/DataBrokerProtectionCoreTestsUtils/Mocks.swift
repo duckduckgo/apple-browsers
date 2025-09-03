@@ -967,7 +967,6 @@ public final class MockDatabase: DataBrokerProtectionRepository {
             throw fetchAllBrokerProfileQueryDataError
         }
 
-        // Simulate the filtering behavior
         if shouldFilterRemovedBrokers {
             return brokerProfileQueryDataToReturn.filter { !$0.dataBroker.isRemoved }
         } else {

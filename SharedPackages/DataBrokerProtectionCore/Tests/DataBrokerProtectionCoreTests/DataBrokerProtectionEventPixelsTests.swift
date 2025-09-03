@@ -833,7 +833,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         // (excluding the removed broker from both numerator and denominator)
         if let scanningPixel = scanningPixels.first,
            let scanCoverage = scanningPixel.params?["scan_coverage"] {
-            XCTAssertEqual(scanCoverage, "50", "Scan coverage should exclude removed brokers from calculation")
+            XCTAssertEqual(scanCoverage, "50-75", "Scan coverage should exclude removed brokers from calculation")
         }
     }
 

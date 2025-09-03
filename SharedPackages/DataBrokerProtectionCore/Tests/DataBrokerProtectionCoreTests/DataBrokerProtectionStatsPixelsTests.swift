@@ -725,25 +725,36 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
                                                fourteenDaysConfirmationPixelFired: false,
                                                twentyOneDaysConfirmationPixelFired: false)
 
+        let eightDaysAgo = Calendar.current.date(byAdding: .day, value: -8, to: Date())!
+        let historyEventsForScanOperation: [HistoryEvent] = [
+            .init(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: eightDaysAgo),
+            .init(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 2), date: eightDaysAgo),
+        ]
+
         let activeBrokerData = BrokerProfileQueryData(
             dataBroker: .mock,
             profileQuery: .mock,
-            scanJobData: .mock,
+            scanJobData: .mockWith(historyEvents: historyEventsForScanOperation),
             optOutJobData: [optOutJobData]
         )
 
         let removedBrokerData = BrokerProfileQueryData(
             dataBroker: .removedMock,
             profileQuery: .mock,
-            scanJobData: .mock,
+            scanJobData: .mockWith(historyEvents: historyEventsForScanOperation),
             optOutJobData: [optOutJobData]
         )
 
         database.brokerProfileQueryDataToReturn = [activeBrokerData, removedBrokerData]
 
+        // Set up repository to trigger weekly stats pixel firing
+        let repository = MockDataBrokerProtectionStatsPixelsRepository()
+        repository.latestStatsWeeklyPixelDate = eightDaysAgo
+
         let sut = DataBrokerProtectionStatsPixels(
             database: database,
-            handler: handler
+            handler: handler,
+            repository: repository
         )
 
         // When
@@ -809,25 +820,66 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
     func testWhenWeeklyStatsPixelsAreFired_andMixedActiveRemovedBrokersExist_thenOnlyCountsActiveBrokers() throws {
         // Given
         let database = MockDatabase()
+        // Set up proper scan history events with dates to trigger pixel firing
+        let eightDaysAgo = Calendar.current.date(byAdding: .day, value: -8, to: Date())!
+        let historyEventsForScanOperation: [HistoryEvent] = [
+            .init(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: eightDaysAgo),
+            .init(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 3), date: eightDaysAgo),
+        ]
+
         let activeBrokerWithProfiles = BrokerProfileQueryData(
             dataBroker: .mock,
             profileQuery: .mock,
-            scanJobData: .mock,
-            optOutJobData: [.mockWithSuccessfulOptOut, .mockWithInProgressOptOut]
+            scanJobData: .mockWith(historyEvents: historyEventsForScanOperation),
+            optOutJobData: [
+                .init(
+                    brokerId: 1,
+                    profileQueryId: 1,
+                    createdDate: Date(),
+                    historyEvents: [HistoryEvent.mock(type: .optOutConfirmed, date: Date())],
+                    attemptCount: 1,
+                    submittedSuccessfullyDate: Date(),
+                    extractedProfile: .mockWithRemovedDate
+                ),
+                .mockWithInProgressOptOut
+            ]
         )
 
         let removedBrokerWithProfiles = BrokerProfileQueryData(
             dataBroker: .removedMock,
             profileQuery: .mock,
-            scanJobData: .mock,
-            optOutJobData: [.mockWithSuccessfulOptOut, .mockWithSuccessfulOptOut]
+            scanJobData: .mockWith(historyEvents: historyEventsForScanOperation),
+            optOutJobData: [
+                .init(
+                    brokerId: 2,
+                    profileQueryId: 1,
+                    createdDate: Date(),
+                    historyEvents: [HistoryEvent.mock(type: .optOutConfirmed, date: Date())],
+                    attemptCount: 1,
+                    submittedSuccessfullyDate: Date(),
+                    extractedProfile: .mockWithRemovedDate
+                ),
+                .init(
+                    brokerId: 2,
+                    profileQueryId: 2,
+                    createdDate: Date(),
+                    historyEvents: [HistoryEvent.mock(type: .optOutConfirmed, date: Date())],
+                    attemptCount: 1,
+                    submittedSuccessfullyDate: Date(),
+                    extractedProfile: .mockWithRemovedDate
+                )
+            ]
         )
 
         database.brokerProfileQueryDataToReturn = [activeBrokerWithProfiles, removedBrokerWithProfiles]
 
+        let repository = MockDataBrokerProtectionStatsPixelsRepository()
+        repository.latestStatsWeeklyPixelDate = eightDaysAgo
+
         let sut = DataBrokerProtectionStatsPixels(
             database: database,
-            handler: handler
+            handler: handler,
+            repository: repository
         )
 
         // When  

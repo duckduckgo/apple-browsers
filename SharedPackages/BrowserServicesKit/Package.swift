@@ -378,7 +378,8 @@ let package = Package(
             dependencies: [
                 "Common",
                 "Networking",
-                "UserScript"
+                "UserScript",
+                "PixelKit"
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -700,6 +701,7 @@ let package = Package(
         .testTarget(
             name: "SubscriptionTests",
             dependencies: [
+                "PixelKit",
                 "SharedObjCTestsUtils",
                 "Subscription",
                 "SubscriptionTestingUtilities",

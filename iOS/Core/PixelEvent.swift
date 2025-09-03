@@ -51,6 +51,10 @@ extension Pixel {
         case keyboardGoWhileOnNTP
         case keyboardGoWhileOnWebsite
         case keyboardGoWhileOnSERP
+        
+        case keyboardSettingsOnNewTabEnabledDaily
+        case keyboardSettingsOnAppLaunchEnabledDaily
+        case keyboardOnAppLaunchUsedDaily
 
         case forgetAllPressedBrowsing
         case forgetAllPressedTabSwitching
@@ -139,7 +143,6 @@ extension Pixel {
         case browsingMenuShare
         case browsingMenuCopy
         case browsingMenuPrint
-        case browsingMenuReload
         case browsingMenuListPrint
         case browsingMenuFindInPage
         case browsingMenuZoom
@@ -150,6 +153,7 @@ extension Pixel {
         case browsingMenuAutofill
         case browsingMenuAIChatNewTabPage
         case browsingMenuAIChatWebPage
+        case browsingMenuRefreshPage
 
         case addressBarShare
         case addressBarSettings
@@ -197,6 +201,8 @@ extension Pixel {
         case autocompleteClickSearchHistory
         case autocompleteClickSiteHistory
         case autocompleteClickOpenTab
+        case autocompleteAskAIChatLegacyExperience
+        case autocompleteAskAIChatExperimentalExperience
         case autocompleteDisplayedLocalBookmark
         case autocompleteDisplayedLocalFavorite
         case autocompleteDisplayedLocalHistory
@@ -1132,6 +1138,8 @@ extension Pixel {
         case settingsNextStepsAddAppToDock
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
+        case settingsRefreshButtonPositionAddressBar
+        case settingsRefreshButtonPositionMenu
 
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210619010364082)
         case settingsOpenAssistSettings
@@ -1272,6 +1280,16 @@ extension Pixel {
         case aiChatMetricSentPromptOngoingChat
         case aiChatInternalSwitchBarDisplayed
         case aiChatExperimentalAddressBarIsEnabledDaily
+        
+        // MARK: Experimental Omnibar Metrics
+        case aiChatExperimentalOmnibarShown
+        case aiChatExperimentalOmnibarPromptSubmitted
+        case aiChatExperimentalOmnibarQuerySubmitted
+        case aiChatExperimentalOmnibarModeSwitched
+        case aiChatExperimentalOmnibarSessionBothModes
+        case aiChatLegacyOmnibarShown
+        case aiChatLegacyOmnibarQuerySubmitted
+        case aiChatLegacyOmnibarAichatButtonPressed
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1331,6 +1349,9 @@ extension Pixel {
         case systemSettingsPiPTutorialFailedToLoadVideo
 
         case appDidTerminateWithUnhandledError
+        
+        // MARK: - Push Notifications
+        case inactiveUserProvisionalPushNotificationTapped
     }
 
 }
@@ -1355,6 +1376,10 @@ extension Pixel.Event {
         case .keyboardGoWhileOnNTP: return "m_keyboard_go_click_ntp"
         case .keyboardGoWhileOnWebsite: return "m_keyboard_go_click_website"
         case .keyboardGoWhileOnSERP: return "m_keyboard_go_click_serp"
+        
+        case .keyboardSettingsOnNewTabEnabledDaily: return "m_keyboard_settings_on_new_tab_enabled"
+        case .keyboardSettingsOnAppLaunchEnabledDaily: return "m_keyboard_settings_on_app_launch_enabled"
+        case .keyboardOnAppLaunchUsedDaily: return "m_keyboard_on_app_launch_used"
 
         case .forgetAllPressedBrowsing: return "mf_bp"
         case .forgetAllPressedTabSwitching: return "mf_tp"
@@ -1414,6 +1439,9 @@ extension Pixel.Event {
         case .settingsNextStepsAddWidget: return "m_settings_next_steps_add_widget"
         case .settingsMoreSearchSettings: return "m_settings_more_search_settings"
         case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
+        case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
+        case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
+            
 
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
@@ -1426,7 +1454,6 @@ extension Pixel.Event {
         case .browsingMenuToggleBrowsingMode: return "mb_dm"
         case .browsingMenuCopy: return "mb_cp"
         case .browsingMenuPrint: return "mb_pr"
-        case .browsingMenuReload: return "m_nav_menu_reload"
 
         case .browsingMenuFindInPage: return "mb_fp"
         case .browsingMenuZoom: return "m_menu_page_zoom_taps"
@@ -1435,6 +1462,7 @@ extension Pixel.Event {
         case .browsingMenuReportBrokenSite: return "mb_rb"
         case .browsingMenuFireproof: return "mb_f"
         case .browsingMenuAutofill: return "m_nav_autofill_menu_item_pressed"
+        case .browsingMenuRefreshPage: return "m_menu_refresh_page"
             
         case .browsingMenuShare: return "m_browsingmenu_share"
         case .browsingMenuListPrint: return "m_browsing_menu_list_print"
@@ -1491,6 +1519,10 @@ extension Pixel.Event {
         case .autocompleteClickSearchHistory: return "m_autocomplete_click_history_search"
         case .autocompleteClickSiteHistory: return "m_autocomplete_click_history_site"
         case .autocompleteClickOpenTab: return "m_autocomplete_click_switch_to_tab"
+
+        case .autocompleteAskAIChatLegacyExperience: return "m_autocomplete_click_askaichat_legacy"
+        case .autocompleteAskAIChatExperimentalExperience: return "m_autocomplete_click_askaichat_experimental"
+
         case .autocompleteDisplayedLocalBookmark: return "m_autocomplete_display_local_bookmark"
         case .autocompleteDisplayedLocalFavorite: return "m_autocomplete_display_local_favorite"
         case .autocompleteDisplayedLocalHistory: return "m_autocomplete_display_local_history"
@@ -2483,6 +2515,16 @@ extension Pixel.Event {
         case .aiChatMetricSentPromptOngoingChat: return "m_aichat_sent_prompt_ongoing_chat"
         case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
         case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
+        
+        // MARK: Experimental Omnibar Metrics
+        case .aiChatExperimentalOmnibarShown: return "m_aichat_experimental_omnibar_shown"
+        case .aiChatExperimentalOmnibarPromptSubmitted: return "m_aichat_experimental_omnibar_prompt_submitted"
+        case .aiChatExperimentalOmnibarQuerySubmitted: return "m_aichat_experimental_omnibar_query_submitted"
+        case .aiChatExperimentalOmnibarModeSwitched: return "m_aichat_experimental_omnibar_mode_switched"
+        case .aiChatExperimentalOmnibarSessionBothModes: return "m_aichat_experimental_omnibar_session_both_modes"
+        case .aiChatLegacyOmnibarShown: return "m_aichat_legacy_omnibar_shown"
+        case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
+        case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"
@@ -2591,6 +2633,9 @@ extension Pixel.Event {
         case .systemSettingsPiPTutorialFailedToLoadVideo: return "m_picture-in-picture-tutorial_failed-to-load-video"
 
         case .appDidTerminateWithUnhandledError: return "m_app-did-terminate-with-unhandled-error"
+            
+        // MARK: Push Notification
+        case .inactiveUserProvisionalPushNotificationTapped: return "m_push-notification_local-provisional_inactive-user-tap"
         }
     }
 }

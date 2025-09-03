@@ -818,6 +818,9 @@ h2 {
   background-color: var(--track-bg-color-checked-active);
   border-color: var(--track-border-color-checked-active);
 }
+.Switch_input[disabled] {
+  cursor: not-allowed;
+}
 .Switch_switch {
   box-sizing: border-box;
   inline-size: var(--switch-width);

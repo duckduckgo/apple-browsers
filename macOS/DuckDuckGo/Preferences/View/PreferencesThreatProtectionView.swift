@@ -64,8 +64,8 @@ extension Preferences {
                 PreferencePaneSection {
                     TextMenuItemHeader(UserText.scamBlockerTitle)
                     VStack(alignment: .leading, spacing: 1) {
-                        ToggleMenuItem(UserText.scamBlockerToggleLabel,
-                                       isOn: $model.isEnabled)
+                        ToggleMenuItem(UserText.scamBlockerToggleLabel, isOn: $model.isEnabled)
+                            .accessibilityIdentifier("Preferences.ThreatProtection.ScamBlockerToggle")
                         VStack(alignment: .leading, spacing: 1) {
                             TextButton(UserText.learnMore) {
                                 model.openNewTab(with: .maliciousSiteProtectionLearnMore)

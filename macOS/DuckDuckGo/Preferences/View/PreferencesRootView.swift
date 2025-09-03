@@ -118,9 +118,10 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared)
                 case .dataClearing:
-                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences)
+                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences,
+                                     startupModel: NSApp.delegateTyped.startupPreferences)
                 case .privacyPro:
                     SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:
@@ -325,6 +326,7 @@ enum Preferences {
                     }
                 }
                 .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
+                .accessibilityIdentifier("Settings.ScrollView")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(visualStyle.colorsProvider.settingsBackgroundColor))
@@ -360,9 +362,9 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared)
                 case .dataClearing:
-                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences)
+                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences, startupModel: NSApp.delegateTyped.startupPreferences)
                 case .privacyPro:
                     SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:
@@ -531,6 +533,10 @@ enum Preferences {
                     .appendingParameter(name: AttributionParameter.origin,
                                         value: SubscriptionFunnelOrigin.appSettings.rawValue)
                 showTab(.subscription(url))
+
+                if subscriptionURL == .purchase {
+                    PixelKit.fire(PrivacyProPixel.privacyProOfferScreenImpression)
+                }
             }
         }
     }

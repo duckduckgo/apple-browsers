@@ -133,6 +133,7 @@ class MainViewController: UIViewController {
     private var vpnCancellables = Set<AnyCancellable>()
     private var feedbackCancellable: AnyCancellable?
     private var aiChatCancellables = Set<AnyCancellable>()
+    private var refreshButtonCancellables = Set<AnyCancellable>()
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     let privacyProDataReporter: PrivacyProDataReporting
@@ -390,6 +391,7 @@ class MainViewController: UIViewController {
         subscribeToNetworkProtectionEvents()
         subscribeToUnifiedFeedbackNotifications()
         subscribeToAIChatSettingsEvents()
+        subscribeToRefreshButtonSettingsEvents()
 
         checkSubscriptionEntitlements()
 
@@ -457,6 +459,19 @@ class MainViewController: UIViewController {
         DailyPixel.fireDaily(.aiChatExperimentalAddressBarIsEnabledDaily,
                              withAdditionalParameters: [isEnabledParam: isEnableValue])
         
+    }
+    
+    private func fireKeyboardSettingsPixels() {
+        let keyboardSettings = KeyboardSettings()
+        let isEnabledParam = "is_enabled"
+        
+        let onNewTabValue = "\(keyboardSettings.onNewTab)"
+        DailyPixel.fireDaily(.keyboardSettingsOnNewTabEnabledDaily,
+                             withAdditionalParameters: [isEnabledParam: onNewTabValue])
+        
+        let onAppLaunchValue = "\(keyboardSettings.onAppLaunch)"
+        DailyPixel.fireDaily(.keyboardSettingsOnAppLaunchEnabledDaily,
+                             withAdditionalParameters: [isEnabledParam: onAppLaunchValue])
     }
 
     private func installSwipeTabs() {
@@ -998,15 +1013,16 @@ class MainViewController: UIViewController {
         viewCoordinator.logoContainer.isHidden = true
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
 
+        // This has to happen after the new tab controller is created so that it knows to set the buttons correctly
+        // ie remove back/forward and show bookmarks/passwords
+        // but also before any other UI updates so that data from the old tab doesn't find its way into the new one
+        refreshControls()
+
         if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
             omniBar.beginEditing(animated: true)
         }
 
         syncService.scheduler.requestSyncImmediately()
-
-        // This has to happen after the new tab controller is created so that it knows to set the buttons correctly
-        // ie remove back/forward and show bookmarks/passwords
-        refreshControls()
 
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
@@ -1089,6 +1105,7 @@ class MainViewController: UIViewController {
     
     func onForeground() {
         fireExperimentalAddressBarPixel()
+        fireKeyboardSettingsPixels()
         skipSERPFlow = true
         
         // Show Fire Pulse only if Privacy button pulse should not be shown. In control group onboarding `shouldShowPrivacyButtonPulse` is always false.
@@ -1837,6 +1854,26 @@ class MainViewController: UIViewController {
             }
             .store(in: &aiChatCancellables)
     }
+    
+    private func subscribeToRefreshButtonSettingsEvents() {
+        NotificationCenter.default.publisher(for: AppUserDefaults.Notifications.refreshButtonSettingsChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshOmniBar()
+            }
+            .store(in: &refreshButtonCancellables)
+        
+        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+        
+        overridesHandler.flagDidChangePublisher
+            .filter { $0.0 == .refreshButtonPosition }
+            .sink { [weak self] _ in
+                self?.refreshOmniBar()
+            }
+            .store(in: &refreshButtonCancellables)
+    }
 
     private func subscribeToNetworkProtectionEvents() {
         if !featureDiscovery.wasUsedBefore(.vpn) {
@@ -2314,6 +2351,9 @@ extension MainViewController: BrowserChromeDelegate {
             }
             loadUrlInNewTab(url, reuseExisting: tabId.map(ExistingTabReusePolicy.tabWithId) ?? .any, inheritedAttribution: .noAttribution)
 
+        case .askAIChat(let value):
+            openAIChat(value, autoSend: true)
+
         case .unknown(value: let value), .internalPage(title: let value, url: _, _):
             assertionFailure("Unknown suggestion: \(value)")
         }
@@ -2624,6 +2664,9 @@ extension MainViewController: OmniBarDelegate {
             }
         )
 
+        if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarAichatButtonPressed)
+        }
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromAddressBar)
     }
 
@@ -2701,7 +2744,7 @@ extension MainViewController: AutocompleteViewControllerDelegate {
 
     func autocomplete(pressedPlusButtonForSuggestion suggestion: Suggestion) {
         switch suggestion {
-        case .phrase(phrase: let phrase):
+        case .phrase(phrase: let phrase), .askAIChat(let phrase):
             viewCoordinator.omniBar.updateQuery(phrase)
         case .website(url: let url):
             if url.isDuckDuckGoSearch, let query = url.searchQuery {
@@ -2722,7 +2765,7 @@ extension MainViewController: AutocompleteViewControllerDelegate {
     func autocomplete(highlighted suggestion: Suggestion, for query: String) {
 
         switch suggestion {
-        case .phrase(phrase: let phrase):
+        case .phrase(phrase: let phrase), .askAIChat(let phrase):
             viewCoordinator.omniBar.text = phrase
             if phrase.hasPrefix(query) {
                 viewCoordinator.omniBar.selectTextToEnd(query.count)

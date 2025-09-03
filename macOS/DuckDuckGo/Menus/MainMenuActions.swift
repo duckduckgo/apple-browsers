@@ -449,19 +449,19 @@ extension AppDelegate {
 
     @objc func openImportBookmarksWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportView(isDataTypePickerExpanded: true).show()
+            DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
         }
     }
 
     @objc func openImportPasswordsWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportView(isDataTypePickerExpanded: true).show()
+            DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
         }
     }
 
     @objc func openImportBrowserDataWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportView(isDataTypePickerExpanded: false).show()
+            DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: false)
         }
     }
 
@@ -703,8 +703,10 @@ extension AppDelegate {
         DuckPlayerPreferences.shared.reset()
     }
 
+    @MainActor
     @objc func resetSyncPromoPrompts(_ sender: Any?) {
         SyncPromoManager().resetPromos()
+        DismissableSyncDeviceButtonModel.resetAllState(from: UserDefaults.standard)
     }
 
     @objc func resetAddToDockFeatureNotification(_ sender: Any?) {
@@ -995,6 +997,10 @@ extension MainViewController {
 
     @objc func toggleDownloadsShortcut(_ sender: Any) {
         LocalPinningManager.shared.togglePinning(for: .downloads)
+    }
+
+    @objc func toggleShareShortcut(_ sender: Any) {
+        LocalPinningManager.shared.togglePinning(for: .share)
     }
 
     @objc func toggleNetworkProtectionShortcut(_ sender: Any) {

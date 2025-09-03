@@ -483,6 +483,8 @@ class OmniBarViewController: UIViewController, OmniBar {
             }
             resignFirstResponder()
 
+            DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarQuerySubmitted)
+            
             if let url = URL(trimmedAddressBarString: query), url.isValid {
                 omniDelegate?.onOmniQuerySubmitted(url.absoluteString)
             } else {
@@ -670,6 +672,8 @@ extension OmniBarViewController: UITextFieldDelegate {
     }
 
     @objc func textFieldDidBeginEditing(_ textField: UITextField) {
+        DailyPixel.fire(pixel: .aiChatLegacyOmnibarShown)
+        
         DispatchQueue.main.async {
             let highlightText = self.omniDelegate?.onTextFieldDidBeginEditing(self.barView) ?? true
             self.refreshState(self.state.onEditingStartedState)

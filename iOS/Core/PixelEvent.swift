@@ -2647,7 +2647,7 @@ extension Pixel.Event {
         case .appDidTerminateWithUnhandledError: return "m_app-did-terminate-with-unhandled-error"
 
         // MARK: UserScript
-        case .userScriptLoadJSFailed: return "m_debug_user_script_load_js_failed"
+        case .userScriptLoadJSFailed: return "m_ios_debug_user_script_load_js_failed"
         }
     }
 }

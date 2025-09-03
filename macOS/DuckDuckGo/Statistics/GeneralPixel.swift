@@ -1235,7 +1235,7 @@ enum GeneralPixel: PixelKitEventV2 {
         case .usageSegments: return "retention_segments"
 
             // UserScript
-        case .userScriptLoadJSFailed: return "user_script_load_js_failed"
+        case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
 
         }
     }

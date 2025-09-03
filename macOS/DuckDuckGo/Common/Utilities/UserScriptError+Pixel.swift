@@ -25,7 +25,7 @@ extension UserScriptError {
         guard case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = self else {
             return
         }
-        pixelFiring?.fire(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, path: filePath, error: error), frequency: .dailyAndStandard)
+        pixelFiring?.fire(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, path: filePath, error: error))
         Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
     }
 }

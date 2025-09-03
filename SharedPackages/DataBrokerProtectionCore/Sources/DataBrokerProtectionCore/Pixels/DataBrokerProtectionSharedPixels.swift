@@ -286,7 +286,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .weeklyChildBrokerOrphanedOptOuts: return "dbp_weekly_child-broker_orphaned-optouts"
 
             // UserScript
-        case .userScriptLoadJSFailed: return "user_script_load_js_failed"
+        case .userScriptLoadJSFailed: return "debug_user_script_load_js_failed"
         }
     }
 
@@ -519,7 +519,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .failedToOpenDatabase(let error):
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndStandard, withNamePrefix: platform.pixelNamePrefix)
             case .userScriptLoadJSFailed(_, _, let error):
-                self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndStandard, withAdditionalParameters: parameters, withNamePrefix: platform.pixelNamePrefix)
+                self.pixelKit.fire(DebugEvent(event, error: error), withNamePrefix: platform.pixelNamePrefix)
             case .parentChildMatches,
                     .optOutStart,
                     .optOutEmailGenerate,

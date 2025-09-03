@@ -19,7 +19,6 @@
 import Foundation
 import Common
 import os.log
-import BrowserServicesKit
 
 struct BrokerProfileOptOutSubJob {
     private let dependencies: BrokerProfileJobDependencyProviding

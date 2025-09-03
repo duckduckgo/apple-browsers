@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import Common
 
 public extension PixelKit {
 

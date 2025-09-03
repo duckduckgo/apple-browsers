@@ -22,7 +22,7 @@ import Common
 
 public final class PixelKit {
     /// `true` if a request is fired, `false` otherwise
-    public typealias CompletionBlock = (Bool, Error?) -> Void
+    public typealias CompletionBlock = (Bool, (any Error)?) -> Void
 
     /// The frequency with which a pixel is sent to our endpoint.
     public enum Frequency {
@@ -856,7 +856,7 @@ internal extension Dictionary where Key == String, Value == String {
                 params[PixelKit.Parameters.underlyingErrorSQLiteExtendedCode] = "\(sqlExtendedErrorCode.intValue)"
             }
         }
-        
+
         // Merge the collected parameters into self
         self.merge(params) { _, new in new }
     }

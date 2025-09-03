@@ -21,6 +21,7 @@ import Common
 
 public enum PixelKitError: DDGError {
     case doubleError
+    case externalError(Error)
 
     // MARK: - DDGError Conformance
 
@@ -28,15 +29,30 @@ public enum PixelKitError: DDGError {
 
     public var errorCode: Int {
         switch self {
-        case .doubleError: return 2001
+        case .doubleError: return 0
+        case .externalError: return 1
         }
     }
 
-    public var underlyingError: Error? { nil }
+    public var underlyingError: Error? {
+        switch self {
+        case .doubleError: return nil
+        case .externalError(let underlyingError): return underlyingError
+        }
+    }
 
     public var description: String {
         switch self {
         case .doubleError: return "Providing an error in both PixelKitEventV2 and PixelKit.fire(withError:) is not supported."
+        case .externalError(let underlyingError): return "An external error occurred: \(underlyingError)"
+        }
+    }
+
+    public static func == (lhs: PixelKitError, rhs: PixelKitError) -> Bool {
+        switch (lhs, rhs) {
+            case (.doubleError, .doubleError): return true
+        case (.externalError(let lhs), .externalError(let rhs)): return String(describing: lhs) == String(describing: rhs)
+        default: return false
         }
     }
 }

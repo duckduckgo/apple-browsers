@@ -643,6 +643,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let contentBlocking = AppContentBlocking(
                 privacyConfigurationManager: privacyConfigurationManager,
                 internalUserDecider: internalUserDecider,
+                featureFlagger: featureFlagger,
                 configurationStore: configurationStore,
                 contentScopeExperimentsManager: self.contentScopeExperimentsManager,
                 onboardingNavigationDelegate: windowControllersManager,
@@ -665,6 +666,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let contentBlocking = AppContentBlocking(
             privacyConfigurationManager: privacyConfigurationManager,
             internalUserDecider: internalUserDecider,
+            featureFlagger: featureFlagger,
             configurationStore: configurationStore,
             contentScopeExperimentsManager: self.contentScopeExperimentsManager,
             onboardingNavigationDelegate: windowControllersManager,

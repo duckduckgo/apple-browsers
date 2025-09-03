@@ -21,27 +21,32 @@ import PixelKit
 import XCTest
 
 public final class WidePixelMock: WidePixelManaging {
-    public var started: [Any] = []
-    public var updates: [Any] = []
-    public var completions: [(Any, WidePixelStatus)] = []
-    public var discarded: [Any] = []
+    public var started: [WidePixelData] = []
+    public var updates: [WidePixelData] = []
+    public var completions: [(WidePixelData, WidePixelStatus)] = []
+    public var discarded: [WidePixelData] = []
 
     public init() {}
 
-    public func startFlow<T>(_ data: T) where T: WidePixelData {
+    public func startFlow<T: WidePixelData>(_ data: T) {
         started.append(data)
     }
 
-    public func updateFlow<T>(_ data: T) where T: WidePixelData {
+    public func updateFlow<T: WidePixelData>(_ data: T) {
         updates.append(data)
     }
 
-    public func completeFlow<T>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock) where T: WidePixelData {
+    public func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock) {
         completions.append((data, status))
         onComplete(true, nil)
     }
 
-    public func discardFlow<T>(_ data: T) where T: WidePixelData {
+    public func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus) async throws -> Bool {
+        completions.append((data, status))
+        return true
+    }
+
+    public func discardFlow<T: WidePixelData>(_ data: T) {
         discarded.append(data)
     }
 

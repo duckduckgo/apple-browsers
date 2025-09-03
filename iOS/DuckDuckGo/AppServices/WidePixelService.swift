@@ -95,7 +95,7 @@ final class WidePixelService {
                 continue
             }
 
-            widePixel.completeFlow(data, status: .unknown(reason: SubscriptionPurchaseWidePixelData.StatusReason.partialData.rawValue)) { _, _ in }
+            _ = try? await widePixel.completeFlow(data, status: .unknown(reason: SubscriptionPurchaseWidePixelData.StatusReason.partialData.rawValue))
         }
     }
     
@@ -114,7 +114,7 @@ final class WidePixelService {
                 data.activateAccountDuration = interval
 
                 let reason = SubscriptionPurchaseWidePixelData.StatusReason.missingEntitlementsDelayedActivation.rawValue
-                widePixel.completeFlow(data, status: .success(reason: reason)) { _, _ in }
+                _ = try? await widePixel.completeFlow(data, status: .success(reason: reason))
             } else {
                 let deadline = start.addingTimeInterval(activationTimeoutInterval)
                 if Date() < deadline {
@@ -124,7 +124,7 @@ final class WidePixelService {
 
                 // Timed out and still no entitlements → report unknown due to missing entitlements
                 let reason = SubscriptionPurchaseWidePixelData.StatusReason.missingEntitlements.rawValue
-                widePixel.completeFlow(data, status: .unknown(reason: reason)) { _, _ in }
+                _ = try? await widePixel.completeFlow(data, status: .unknown(reason: reason))
             }
         }
     }

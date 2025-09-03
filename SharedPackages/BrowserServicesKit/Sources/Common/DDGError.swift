@@ -90,8 +90,7 @@ public protocol DDGError: Error, Equatable, CustomNSError {
     /// This should be a unique string identifier that groups related errors together.
     /// Convention: Use reverse DNS notation (e.g., "com.duckduckgo.network")
     ///
-    /// - Important: This value should be consistent across all instances of the same error type.
-    static var errorDomain: String { get }
+    var errorDomain: String { get }
 
     /// A unique numeric identifier for this specific error within its domain.
     ///
@@ -153,6 +152,14 @@ public protocol DDGError: Error, Equatable, CustomNSError {
     ///
     /// - Note: For user-facing error messages, implement `LocalizedError`.
     var description: String { get }
+}
+
+/// Default implementations
+public extension DDGError {
+
+    var underlyingError: Error? { nil }
+
+    var localizedDescription: String { description }
 }
 
 // MARK: - Error Chain Traversal

@@ -256,6 +256,29 @@ public final class PixelKit {
              onComplete: onComplete)
     }
 
+    @available(*, deprecated, message: "Use of generic `withError: Error` in PixelKit is deprecated. Use `withDDGError: DDGError` instead.")
+    public func fire(_ event: Event,
+                     frequency: Frequency = .standard,
+                     withHeaders headers: [String: String]? = nil,
+                     withAdditionalParameters params: [String: String]? = nil,
+                     withError error: Error? = nil,
+                     withNamePrefix namePrefix: String? = nil,
+                     allowedQueryReservedCharacters: CharacterSet? = nil,
+                     includeAppVersionParameter: Bool = true,
+                     includePixelSourceParameter: Bool = true,
+                     onComplete: @escaping CompletionBlock = { _, _ in }) {
+        let wrappedError = error != nil ? DDGErrorPixelKitWrapper.wrapper(error) : nil
+        fire(event, frequency: frequency,
+             withHeaders: headers,
+             withAdditionalParameters: params,
+             withDDGError: wrappedError,
+             withNamePrefix: namePrefix,
+             allowedQueryReservedCharacters: allowedQueryReservedCharacters,
+             includeAppVersionParameter: includeAppVersionParameter,
+             includePixelSourceParameter: includePixelSourceParameter,
+             onComplete: onComplete)
+    }
+
     public static func fire(_ event: Event,
                             frequency: Frequency = .standard,
                             withHeaders headers: [String: String] = [:],
@@ -279,7 +302,7 @@ public final class PixelKit {
                           onComplete: onComplete)
     }
 
-    internal enum DDGErrorPixelKitWrapper: DDGError {
+    enum DDGErrorPixelKitWrapper: DDGError {
         case wrapper(Error?)
 
         var underlyingError: (any Error)? {
@@ -322,7 +345,7 @@ public final class PixelKit {
                             includePixelSourceParameter: Bool = true,
                             onComplete: @escaping CompletionBlock = { _, _ in }) {
 
-        let wrappedError = DDGErrorPixelKitWrapper.wrapper(error)
+        let wrappedError = error != nil ? DDGErrorPixelKitWrapper.wrapper(error) : nil
         Self.shared?.fire(event,
                           frequency: frequency,
                           withHeaders: headers,

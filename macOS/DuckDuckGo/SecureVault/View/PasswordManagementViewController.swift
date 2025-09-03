@@ -316,15 +316,11 @@ final class PasswordManagementViewController: NSViewController {
             toggleLockScreen(hidden: true)
             return
         }
-
-        fetchSecureVaultItems { [weak self] items in
-            guard let self else { return }
-            guard !items.isEmpty else {
-                toggleLockScreen(hidden: true)
-                return
-            }
-            promptForAuthentication()
+        guard !items.isEmpty else {
+            toggleLockScreen(hidden: true)
+            return
         }
+        promptForAuthentication()
     }
 
     private func promptForAuthentication() {

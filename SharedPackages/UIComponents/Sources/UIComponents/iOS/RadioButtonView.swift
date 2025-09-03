@@ -393,7 +393,7 @@ private class CallbackRadioButtonViewModel: RadioButtonViewModel {
             options: ["Option 1", "Option 2"],
             selectedIndex: 0
         )
-        
+
         Divider()
 
         RadioButtonView(
@@ -428,47 +428,6 @@ private class CallbackRadioButtonViewModel: RadioButtonViewModel {
                 verticalPadding: 16,
                 spacing: 12,
                 checkboxSize: 24
-            )
-        )
-    }
-    .padding()
-}
-
-#Preview("Horizontal Layout") {
-    VStack(spacing: 20) {
-        Text("Size Selection")
-            .font(.headline)
-
-        RadioButtonView(
-            options: ["Small", "Medium", "Large", "Extra Large"],
-            selectedIndex: 2,
-            configuration: RadioButtonConfiguration(
-                selectedBackgroundColor: .orange,
-                selectedBorderColor: .orange,
-                selectedCheckboxColor: .orange,
-                unselectedCheckboxColor: .gray,
-                selectedCheckboxImage: Image(systemName: "checkmark.circle.fill"),
-                unselectedCheckboxImage: Image(systemName: "circle"),
-                horizontalPadding: 12,
-                verticalPadding: 8,
-                layout: .horizontal,
-                buttonSpacing: 8
-            )
-        )
-
-        Text("Text Truncation Test")
-            .font(.headline)
-
-        RadioButtonView(
-            options: ["Very Long Option Name", "Another Long Text", "Short", "This is an extremely long option name that should truncate"],
-            selectedIndex: 0,
-            configuration: RadioButtonConfiguration(
-                selectedBackgroundColor: .blue,
-                selectedBorderColor: .blue,
-                horizontalPadding: 8,
-                verticalPadding: 6,
-                layout: .horizontal,
-                buttonSpacing: 6
             )
         )
     }

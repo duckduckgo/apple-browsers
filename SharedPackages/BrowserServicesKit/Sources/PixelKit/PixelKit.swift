@@ -348,7 +348,10 @@ public final class PixelKit {
         }
 
         static func == (lhs: PixelKit.DDGErrorPixelKitWrapper, rhs: PixelKit.DDGErrorPixelKitWrapper) -> Bool {
-            return true
+            switch (lhs, rhs) {
+            case (.wrapper(let lhs), .wrapper(let rhs)):
+                return String(describing: lhs) == String(describing: rhs)
+            }
         }
     }
 

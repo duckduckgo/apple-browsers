@@ -143,9 +143,6 @@ final class DDGErrorPixelComparisonTests: XCTestCase {
         let ddgEvent = TestEventWithDDGError(error: ddgError)
         pixelKit.fire(ddgEvent)
 
-        // Wait a bit to ensure first call completes
-        Thread.sleep(forTimeInterval: 0.01)
-
         // Fire pixel with standard Error (deprecated approach - need to use the fire method with error parameter)
         let standardEvent = TestEventWithStandardError(error: nil)  // Don't put error in event
         pixelKit.fire(standardEvent, withError: standardError)
@@ -194,9 +191,6 @@ final class DDGErrorPixelComparisonTests: XCTestCase {
         // Fire pixel with DDGError
         let ddgEvent = TestEventWithDDGError(error: ddgError)
         pixelKit.fire(ddgEvent)
-
-        // Wait a bit to ensure first call completes
-        Thread.sleep(forTimeInterval: 0.01)
 
         // Fire pixel with standard NSError (use withDDGError parameter to pass the error)
         let standardEvent = TestEventWithStandardError(error: nil)
@@ -262,9 +256,6 @@ final class DDGErrorPixelComparisonTests: XCTestCase {
         // Fire pixel with DDGError chain
         let ddgEvent = TestEventWithDDGError(error: topDDGError)
         pixelKit.fire(ddgEvent)
-
-        // Wait a bit to ensure first call completes
-        Thread.sleep(forTimeInterval: 0.01)
 
         // Fire pixel with NSError chain (use withDDGError parameter to pass the error)
         let standardEvent = TestEventWithStandardError(error: nil)

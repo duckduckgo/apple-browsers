@@ -387,7 +387,7 @@ public final class DataBrokerProtectionIOSManager {
         }
     }
 
-    private func checkForEmailConfirmationData() async {
+    public func checkForEmailConfirmationData() async {
         do {
             try await emailConfirmationDataService.checkForEmailConfirmationData()
         } catch {

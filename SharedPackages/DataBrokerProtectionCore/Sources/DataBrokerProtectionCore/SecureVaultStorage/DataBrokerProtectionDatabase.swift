@@ -28,9 +28,11 @@ public protocol DataBrokerProtectionRepository {
     func deleteProfileData() throws
 
     func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker]
+    func fetchBroker(with brokerId: Int64) throws -> DataBroker?
 
     func saveBroker(dataBroker: DataBroker) throws -> Int64
     func saveProfileQuery(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64
+    func fetchProfileQuery(with profileQueryId: Int64) throws -> ProfileQuery?
     func saveScanJob(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws
     func saveOptOutJob(optOut: OptOutJobData, extractedProfile: ExtractedProfile) throws
 
@@ -159,6 +161,24 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             return try vault.fetchChildBrokers(for: parentBroker)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchChildBrokers for parentBroker")
+            throw error
+        }
+    }
+
+    public func fetchBroker(with brokerId: Int64) throws -> DataBroker? {
+        do {
+            return try vault.fetchBroker(with: brokerId)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchBroker with brokerId")
+            throw error
+        }
+    }
+
+    public func fetchProfileQuery(with profileQueryId: Int64) throws -> ProfileQuery? {
+        do {
+            return try vault.fetchProfileQuery(with: profileQueryId)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchProfileQuery with profileQueryId")
             throw error
         }
     }

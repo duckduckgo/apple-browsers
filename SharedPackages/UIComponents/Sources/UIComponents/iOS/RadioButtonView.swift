@@ -56,7 +56,7 @@ public struct RadioButtonConfiguration {
     public var buttonSpacing: CGFloat
 
     public init(
-        font: Font = Font(UIFont.daxCaption().withSize(14)),
+        font: Font = Font(UIFont.daxCaption().withSize(12)),
         selectedTextColor: Color = .init(designSystemColor: .textLink),
         unselectedTextColor: Color = .init(designSystemColor: .textSecondary),
         selectedBackgroundColor: Color = .init(designSystemColor: .accent).opacity(0.2),
@@ -68,9 +68,9 @@ public struct RadioButtonConfiguration {
         selectedCheckboxImage: Image = Image(uiImage: DesignSystemImages.Glyphs.Size24.checkRecolorable),
         unselectedCheckboxImage: Image = Image(uiImage: DesignSystemImages.Glyphs.Size24.shapeCircle),
         borderWidth: CGFloat = 1,
-        cornerRadius: CGFloat = 16,
+        cornerRadius: CGFloat = 12,
         horizontalPadding: CGFloat = 16,
-        verticalPadding: CGFloat = 16,
+        verticalPadding: CGFloat = 14,
         spacing: CGFloat = 6,
         checkboxSize: CGFloat = 24,
         layout: RadioButtonLayout = .vertical,

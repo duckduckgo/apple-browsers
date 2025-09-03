@@ -88,13 +88,13 @@ extension String {
     func rot13() -> String {
         let uppercase = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
         let lowercase = Array("abcdefghijklmnopqrstuvwxyz")
-        
+
         var key = [Character: Character]()
         for i in 0 ..< 26 {
             key[uppercase[i]] = uppercase[(i + 13) % 26]
             key[lowercase[i]] = lowercase[(i + 13) % 26]
         }
-        
+
         let transformed = self.map { key[$0] ?? $0 }
         return String(transformed)
     }

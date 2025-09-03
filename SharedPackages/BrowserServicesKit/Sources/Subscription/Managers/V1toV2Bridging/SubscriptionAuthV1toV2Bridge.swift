@@ -53,6 +53,12 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
     func isUserEligibleForFreeTrial() -> Bool
 }
 
+extension SubscriptionAuthV1toV2Bridge {
+    func signOut(notifyUI: Bool) async {
+        await signOut(notifyUI: notifyUI, userInitiated: false)
+    }
+}
+
 extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
 
     public func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool {

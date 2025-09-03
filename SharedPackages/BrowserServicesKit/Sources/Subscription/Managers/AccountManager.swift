@@ -64,6 +64,11 @@ extension AccountManager {
     }
 
     public var isUserAuthenticated: Bool { accessToken != nil }
+
+    func signOut(skipNotification: Bool) {
+        signOut(skipNotification: skipNotification, userInitiated: false)
+    }
+
 }
 
 public final class DefaultAccountManager: AccountManager {

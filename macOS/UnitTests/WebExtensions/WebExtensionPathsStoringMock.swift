@@ -28,7 +28,7 @@ final class WebExtensionPathsStoringMock: WebExtensionPathsStoring {
     func add(_ url: String) {
         addCalled = true
         addedURL = url
-        cache.append(url)
+        paths.append(url)
     }
 
     var removeCalled = false
@@ -36,6 +36,6 @@ final class WebExtensionPathsStoringMock: WebExtensionPathsStoring {
     func remove(_ url: String) {
         removeCalled = true
         removedURL = url
-        cache.removeAll { $0 == url }
+        paths.removeAll { $0 == url }
     }
 }

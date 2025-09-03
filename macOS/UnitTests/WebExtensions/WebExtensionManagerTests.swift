@@ -59,14 +59,14 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertEqual(pathsStoringMock.addedURL, path)
     }
 
-    func testWhenExtensionIsRemoved_ThenPathIsRemovedFromStore() async {
+    func testWhenExtensionIsRemoved_ThenPathIsRemovedFromStore() async throws {
         let webExtensionManager = WebExtensionManager(
             installationStore: pathsStoringMock,
             webExtensionLoader: webExtensionLoadingMock
         )
 
         let path = "/path/to/extension"
-        await webExtensionManager.installExtension(path: path)
+        try webExtensionManager.uninstallExtension(path: path)
         XCTAssertTrue(pathsStoringMock.removeCalled)
         XCTAssertEqual(pathsStoringMock.removedURL, path)
     }

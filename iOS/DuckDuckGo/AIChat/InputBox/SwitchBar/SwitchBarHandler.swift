@@ -177,7 +177,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         let isFirstInteraction = !hasUserInteractedWithText
         hasUserInteractedWithText = true
         
-        // Check if this is the first interaction ever after enabling the feature
+        // Process first interaction funnel step (if this is the first text interaction in this session)
         if isFirstInteraction {
             funnelState.processStep(.firstInteraction)
         }
@@ -188,7 +188,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     }
     
     
-    /// Process funnel step when user submits text and fire pixel
+    /// Process funnel step when user submits text
     private func processSubmissionFunnelStep(mode: TextEntryMode) {
         switch mode {
         case .search:

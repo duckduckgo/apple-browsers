@@ -29,7 +29,6 @@ protocol AIChatFunnelStateProviding {
     var hasEverSubmittedSearch: Bool { get }
     var hasEverSubmittedPrompt: Bool { get }
     var hasAchievedFullConversion: Bool { get }
-    var lastKnownEnabledState: Bool { get }
     
     // MARK: - State Setting
     func markFirstSettingsView()
@@ -41,9 +40,6 @@ protocol AIChatFunnelStateProviding {
     
     // MARK: - Reset All Storage
     func resetAllFunnelState()
-    
-    // MARK: - Enabled State Management
-    func updateLastKnownEnabledState(_ enabled: Bool)
 }
 
 /// Manages state of user progression through the Discovery & Adoption Funnel for experimental omnibar
@@ -56,13 +52,12 @@ struct AIChatFunnelState: AIChatFunnelStateProviding {
     
     // MARK: - Private Keys
     private enum Keys {
-        static let hasEverViewedSettings = "FunnelTracking.hasEverViewedSettings"
-        static let hasEverEnabledFeature = "FunnelTracking.hasEverEnabledFeature"
-        static let hasEverInteractedAfterEnable = "FunnelTracking.hasEverInteractedAfterEnable"
-        static let hasEverSubmittedSearch = "FunnelTracking.hasEverSubmittedSearch"
-        static let hasEverSubmittedPrompt = "FunnelTracking.hasEverSubmittedPrompt"
-        static let hasAchievedFullConversion = "FunnelTracking.hasAchievedFullConversion"
-        static let lastKnownEnabledState = "FunnelTracking.lastKnownEnabledState"
+        static let hasEverViewedSettings = "FunnelState.hasEverViewedSettings"
+        static let hasEverEnabledFeature = "FunnelState.hasEverEnabledFeature"
+        static let hasEverInteractedAfterEnable = "FunnelState.hasEverInteractedAfterEnable"
+        static let hasEverSubmittedSearch = "FunnelState.hasEverSubmittedSearch"
+        static let hasEverSubmittedPrompt = "FunnelState.hasEverSubmittedPrompt"
+        static let hasAchievedFullConversion = "FunnelState.hasAchievedFullConversion"
     }
     
     // MARK: - State Checking
@@ -88,10 +83,6 @@ struct AIChatFunnelState: AIChatFunnelStateProviding {
     
     var hasAchievedFullConversion: Bool {
         storage.object(forKey: Keys.hasAchievedFullConversion) as? Bool ?? false
-    }
-    
-    var lastKnownEnabledState: Bool {
-        storage.object(forKey: Keys.lastKnownEnabledState) as? Bool ?? false
     }
     
     // MARK: - State Setting
@@ -127,11 +118,5 @@ struct AIChatFunnelState: AIChatFunnelStateProviding {
         storage.removeObject(forKey: Keys.hasEverSubmittedSearch)
         storage.removeObject(forKey: Keys.hasEverSubmittedPrompt)
         storage.removeObject(forKey: Keys.hasAchievedFullConversion)
-        storage.removeObject(forKey: Keys.lastKnownEnabledState)
-    }
-    
-    // MARK: - Enabled State Management
-    func updateLastKnownEnabledState(_ enabled: Bool) {
-        storage.set(enabled, forKey: Keys.lastKnownEnabledState)
     }
 }

@@ -44,61 +44,48 @@ final class AIChatFunnelStateTests: XCTestCase {
         XCTAssertFalse(funnelState.hasEverSubmittedSearch)
         XCTAssertFalse(funnelState.hasEverSubmittedPrompt)
         XCTAssertFalse(funnelState.hasAchievedFullConversion)
-        XCTAssertFalse(funnelState.lastKnownEnabledState)
     }
     
     func testMarkFirstSettingsView() throws {
         funnelState.markFirstSettingsView()
         
         XCTAssertTrue(funnelState.hasEverViewedSettings)
-        XCTAssertEqual(mockStorage.store["FunnelTracking.hasEverViewedSettings"] as? Bool, true)
+        XCTAssertEqual(mockStorage.store["FunnelState.hasEverViewedSettings"] as? Bool, true)
     }
     
     func testMarkFirstFeatureEnable() throws {
         funnelState.markFirstFeatureEnable()
         
         XCTAssertTrue(funnelState.hasEverEnabledFeature)
-        XCTAssertEqual(mockStorage.store["FunnelTracking.hasEverEnabledFeature"] as? Bool, true)
+        XCTAssertEqual(mockStorage.store["FunnelState.hasEverEnabledFeature"] as? Bool, true)
     }
     
     func testMarkFirstInteraction() throws {
         funnelState.markFirstInteraction()
         
         XCTAssertTrue(funnelState.hasEverInteractedAfterEnable)
-        XCTAssertEqual(mockStorage.store["FunnelTracking.hasEverInteractedAfterEnable"] as? Bool, true)
+        XCTAssertEqual(mockStorage.store["FunnelState.hasEverInteractedAfterEnable"] as? Bool, true)
     }
     
     func testMarkFirstSearchSubmission() throws {
         funnelState.markFirstSearchSubmission()
         
         XCTAssertTrue(funnelState.hasEverSubmittedSearch)
-        XCTAssertEqual(mockStorage.store["FunnelTracking.hasEverSubmittedSearch"] as? Bool, true)
+        XCTAssertEqual(mockStorage.store["FunnelState.hasEverSubmittedSearch"] as? Bool, true)
     }
     
     func testMarkFirstPromptSubmission() throws {
         funnelState.markFirstPromptSubmission()
         
         XCTAssertTrue(funnelState.hasEverSubmittedPrompt)
-        XCTAssertEqual(mockStorage.store["FunnelTracking.hasEverSubmittedPrompt"] as? Bool, true)
+        XCTAssertEqual(mockStorage.store["FunnelState.hasEverSubmittedPrompt"] as? Bool, true)
     }
     
     func testMarkFullConversion() throws {
         funnelState.markFullConversion()
         
         XCTAssertTrue(funnelState.hasAchievedFullConversion)
-        XCTAssertEqual(mockStorage.store["FunnelTracking.hasAchievedFullConversion"] as? Bool, true)
-    }
-    
-    func testUpdateLastKnownEnabledState() throws {
-        funnelState.updateLastKnownEnabledState(true)
-        
-        XCTAssertTrue(funnelState.lastKnownEnabledState)
-        XCTAssertEqual(mockStorage.store["FunnelTracking.lastKnownEnabledState"] as? Bool, true)
-        
-        funnelState.updateLastKnownEnabledState(false)
-        
-        XCTAssertFalse(funnelState.lastKnownEnabledState)
-        XCTAssertEqual(mockStorage.store["FunnelTracking.lastKnownEnabledState"] as? Bool, false)
+        XCTAssertEqual(mockStorage.store["FunnelState.hasAchievedFullConversion"] as? Bool, true)
     }
     
     func testResetAllFunnelState() throws {
@@ -108,7 +95,6 @@ final class AIChatFunnelStateTests: XCTestCase {
         funnelState.markFirstSearchSubmission()
         funnelState.markFirstPromptSubmission()
         funnelState.markFullConversion()
-        funnelState.updateLastKnownEnabledState(true)
         
         funnelState.resetAllFunnelState()
         
@@ -118,7 +104,6 @@ final class AIChatFunnelStateTests: XCTestCase {
         XCTAssertFalse(funnelState.hasEverSubmittedSearch)
         XCTAssertFalse(funnelState.hasEverSubmittedPrompt)
         XCTAssertFalse(funnelState.hasAchievedFullConversion)
-        XCTAssertFalse(funnelState.lastKnownEnabledState)
     }
     
     func testPersistenceAcrossInstances() throws {

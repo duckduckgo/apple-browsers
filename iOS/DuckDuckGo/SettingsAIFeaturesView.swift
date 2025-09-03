@@ -146,7 +146,7 @@ struct SettingsAIFeaturesView: View {
                                          withAdditionalParameters: viewModel.featureDiscovery.addToParams([:], forFeature: .aiChat))
             // Fire funnel pixel for first time viewing settings page with new input option
             if let aiChatSettings = viewModel.aiChatSettings as? AIChatSettings {
-                aiChatSettings.markAndSendSettingsPageViewed()
+                aiChatSettings.processSettingsViewedFunnelStep()
             }
         }
     }

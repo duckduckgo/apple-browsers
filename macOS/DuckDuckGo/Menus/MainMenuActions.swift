@@ -59,7 +59,7 @@ extension AppDelegate {
 
     @objc func newWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            WindowsManager.openNewWindow()
+            WindowsManager.openNewWindow(burnerMode: .regular)
         }
     }
 
@@ -85,6 +85,31 @@ extension AppDelegate {
     @objc func openLocation(_ sender: Any?) {
         DispatchQueue.main.async {
             WindowsManager.openNewWindow()
+        }
+    }
+
+    @objc func openFile(_ sender: Any?) {
+        DispatchQueue.main.async {
+            var window: NSWindow?
+
+            // If no window is opened, we open one when the user taps to open a file.
+            if self.windowControllersManager.lastKeyMainWindowController?.window == nil {
+                window = self.windowControllersManager.openNewWindow()
+            } else {
+                window = self.windowControllersManager.lastKeyMainWindowController?.window
+            }
+
+            guard let window = window else {
+                Logger.general.error("No key window available for file picker")
+                return
+            }
+
+            let openPanel = NSOpenPanel.openFilePanel()
+            openPanel.beginSheetModal(for: window) { [weak self] response in
+                guard response == .OK, let selectedURL = openPanel.url else { return }
+
+                self?.windowControllersManager.show(url: selectedURL, source: .ui, newTab: true)
+            }
         }
     }
 
@@ -424,19 +449,19 @@ extension AppDelegate {
 
     @objc func openImportBookmarksWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportView(isDataTypePickerExpanded: true).show()
+            DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
         }
     }
 
     @objc func openImportPasswordsWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportView(isDataTypePickerExpanded: true).show()
+            DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
         }
     }
 
     @objc func openImportBrowserDataWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportView(isDataTypePickerExpanded: false).show()
+            DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: false)
         }
     }
 
@@ -678,8 +703,10 @@ extension AppDelegate {
         DuckPlayerPreferences.shared.reset()
     }
 
+    @MainActor
     @objc func resetSyncPromoPrompts(_ sender: Any?) {
         SyncPromoManager().resetPromos()
+        DismissableSyncDeviceButtonModel.resetAllState(from: UserDefaults.standard)
     }
 
     @objc func resetAddToDockFeatureNotification(_ sender: Any?) {
@@ -970,6 +997,10 @@ extension MainViewController {
 
     @objc func toggleDownloadsShortcut(_ sender: Any) {
         LocalPinningManager.shared.togglePinning(for: .downloads)
+    }
+
+    @objc func toggleShareShortcut(_ sender: Any) {
+        LocalPinningManager.shared.togglePinning(for: .share)
     }
 
     @objc func toggleNetworkProtectionShortcut(_ sender: Any) {

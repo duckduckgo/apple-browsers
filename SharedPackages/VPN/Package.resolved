@@ -1,0 +1,86 @@
+{
+  "pins" : [
+    {
+      "identity" : "duckduckgo-autofill",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
+      "state" : {
+        "revision" : "252082be808ece0ab91d60a27e18bfcf10dcec1b",
+        "version" : "18.3.0"
+      }
+    },
+    {
+      "identity" : "gzipswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/1024jp/GzipSwift.git",
+      "state" : {
+        "revision" : "731037f6cc2be2ec01562f6597c1d0aa3fe6fd05",
+        "version" : "6.0.1"
+      }
+    },
+    {
+      "identity" : "jwt-kit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/vapor/jwt-kit.git",
+      "state" : {
+        "revision" : "c2595b9ad7f512d7f334830b4df1fed6e917946a",
+        "version" : "4.13.4"
+      }
+    },
+    {
+      "identity" : "privacy-dashboard",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/privacy-dashboard",
+      "state" : {
+        "revision" : "fd3b7e2d8194e265c537f227c706de7db3085da5",
+        "version" : "9.4.0"
+      }
+    },
+    {
+      "identity" : "punycodeswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/gumob/PunycodeSwift.git",
+      "state" : {
+        "revision" : "30a462bdb4398ea835a3585472229e0d74b36ba5",
+        "version" : "3.0.0"
+      }
+    },
+    {
+      "identity" : "swift-asn1",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-asn1.git",
+      "state" : {
+        "revision" : "f70225981241859eb4aa1a18a75531d26637c8cc",
+        "version" : "1.4.0"
+      }
+    },
+    {
+      "identity" : "swift-crypto",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-crypto.git",
+      "state" : {
+        "revision" : "334e682869394ee239a57dbe9262bff3cd9495bd",
+        "version" : "3.14.0"
+      }
+    },
+    {
+      "identity" : "sync_crypto",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/sync_crypto",
+      "state" : {
+        "revision" : "8dfdea29e325c6611d9b2b556e1d380252d54ba6",
+        "version" : "0.7.0"
+      }
+    },
+    {
+      "identity" : "trackerradarkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/TrackerRadarKit.git",
+      "state" : {
+        "revision" : "a3f0ade39904602aa45874a7d71db4fafa10f7d9",
+        "version" : "3.0.1"
+      }
+    }
+  ],
+  "version" : 2
+}

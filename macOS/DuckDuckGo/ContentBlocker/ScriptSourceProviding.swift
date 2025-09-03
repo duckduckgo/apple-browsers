@@ -30,6 +30,7 @@ import enum UserScript.UserScriptError
 
 protocol ScriptSourceProviding {
 
+    var featureFlagger: FeatureFlagger { get }
     var contentBlockerRulesConfig: ContentBlockerUserScriptConfig? { get }
     var surrogatesConfig: SurrogatesUserScriptConfig? { get }
     var privacyConfigurationManager: PrivacyConfigurationManaging { get }
@@ -56,6 +57,7 @@ protocol ScriptSourceProviding {
         trackerDataManager: Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager,
         experimentManager: Application.appDelegate.contentScopeExperimentsManager,
         tld: Application.appDelegate.tld,
+        featureFlagger: Application.appDelegate.featureFlagger,
         onboardingNavigationDelegate: Application.appDelegate.windowControllersManager,
         appearancePreferences: Application.appDelegate.appearancePreferences,
         startupPreferences: Application.appDelegate.startupPreferences,
@@ -79,6 +81,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     private(set) var messageSecret: String?
     private(set) var currentCohorts: [ContentScopeExperimentData]?
 
+    let featureFlagger: FeatureFlagger
     let configStorage: ConfigurationStoring
     let privacyConfigurationManager: PrivacyConfigurationManaging
     let contentBlockingManager: ContentBlockerRulesManagerProtocol
@@ -98,6 +101,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          trackerDataManager: TrackerDataManager,
          experimentManager: ContentScopeExperimentsManaging,
          tld: TLD,
+         featureFlagger: FeatureFlagger,
          onboardingNavigationDelegate: OnboardingNavigating,
          appearancePreferences: AppearancePreferences,
          startupPreferences: StartupPreferences,
@@ -116,6 +120,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.trackerDataManager = trackerDataManager
         self.experimentManager = experimentManager
         self.tld = tld
+        self.featureFlagger = featureFlagger
         self.bookmarkManager = bookmarkManager
         self.historyCoordinator = historyCoordinator
         self.windowControllersManager = windowControllersManager

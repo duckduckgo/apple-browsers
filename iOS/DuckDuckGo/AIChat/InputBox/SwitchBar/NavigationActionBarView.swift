@@ -257,7 +257,7 @@ final class NavigationActionBarView: UIView {
         let shouldShowMicButton = viewModel.shouldShowMicButton
         microphoneButton.isHidden = !shouldShowMicButton
         
-        let shouldShowNewLineButton = viewModel.isKeyboardVisible && viewModel.hasText
+        let shouldShowNewLineButton = viewModel.isKeyboardVisible && viewModel.hasText && !viewModel.isSearchMode
         newLineButton.isHidden = !shouldShowNewLineButton
         
         let shouldShowSearchButton = viewModel.hasText

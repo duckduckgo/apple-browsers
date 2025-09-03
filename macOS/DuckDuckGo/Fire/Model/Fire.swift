@@ -50,7 +50,7 @@ final class Fire {
     let tld: TLD
     let getVisitedLinkStore: () -> WKVisitedLinkStoreWrapper?
     let getPrivacyStats: () async -> PrivacyStatsCollecting
-    let visualizeFireAnimationDecider: VisualizeFireAnimationDecider
+    let visualizeFireAnimationDecider: VisualizeFireSettingsDecider
 
     private var dispatchGroup: DispatchGroup?
 
@@ -58,7 +58,7 @@ final class Fire {
         case specificDomains(_ domains: Set<String>, shouldPlayFireAnimation: Bool)
         case all
 
-        func shouldPlayFireAnimation(decider: VisualizeFireAnimationDecider) -> Bool {
+        func shouldPlayFireAnimation(decider: VisualizeFireSettingsDecider) -> Bool {
             switch self {
             case .all, .specificDomains(_, shouldPlayFireAnimation: true):
                 return decider.shouldShowFireAnimation
@@ -80,7 +80,7 @@ final class Fire {
                         selectedDomains: Set<String>,
                         customURLToOpen: URL?)
 
-        func shouldPlayFireAnimation(decider: VisualizeFireAnimationDecider) -> Bool {
+        func shouldPlayFireAnimation(decider: VisualizeFireSettingsDecider) -> Bool {
             switch self {
             // We don't present the fire animation if user burns from the privacy feed
             case .none:
@@ -113,7 +113,7 @@ final class Fire {
          secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
          getPrivacyStats: (() async -> PrivacyStatsCollecting)? = nil,
          getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil,
-         visualizeFireAnimationDecider: VisualizeFireAnimationDecider? = nil
+         visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
@@ -133,7 +133,7 @@ final class Fire {
         self.getPrivacyStats = getPrivacyStats ?? { NSApp.delegateTyped.privacyStats }
         self.getVisitedLinkStore = getVisitedLinkStore ?? { WKWebViewConfiguration.sharedVisitedLinkStore }
         self.autoconsentManagement = autoconsentManagement ?? AutoconsentManagement.shared
-        self.visualizeFireAnimationDecider = visualizeFireAnimationDecider ?? NSApp.delegateTyped.visualizeFireAnimationDecider
+        self.visualizeFireAnimationDecider = visualizeFireAnimationDecider ?? NSApp.delegateTyped.visualizeFireSettingsDecider
         if let stateRestorationManager = stateRestorationManager {
             self.stateRestorationManager = stateRestorationManager
         } else {

@@ -70,6 +70,13 @@ public final class VPNSettings {
             case .location(let location): return location
             }
         }
+
+        public var stringValue: String {
+            switch self {
+            case .nearest: return "nearest"
+            case .location: return "custom"
+            }
+        }
     }
 
     public enum SelectedEnvironment: String, Codable {

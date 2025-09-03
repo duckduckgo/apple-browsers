@@ -42,25 +42,25 @@ class NavigationBackForwardTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         eDidFinish = expectation(description: "onDidFinish 2")
         withWebView { webView in
             _=webView.load(req(urls.local1))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         eDidFinish = expectation(description: "onDidFinish back")
         withWebView { webView in
             _=webView.goBack()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         eDidFinish = expectation(description: "onDidFinish forw")
         withWebView { webView in
             _=webView.goForward()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             // #1
@@ -109,25 +109,25 @@ class NavigationBackForwardTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         eDidFinish = expectation(description: "onDidFinish 2")
         withWebView { webView in
             _=webView.load(req(urls.local1))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         eDidFinish = expectation(description: "onDidFinish back")
         withWebView { webView in
             webView.evaluateJavaScript("history.back()")
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         eDidFinish = expectation(description: "onDidFinish forw")
         withWebView { webView in
             webView.evaluateJavaScript("history.forward()")
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             // #1
@@ -178,7 +178,7 @@ class NavigationBackForwardTests: DistributedNavigationDelegateTestsBase {
             withWebView { webView in
                 _=webView.load(req(url))
             }
-            waitForExpectations(timeout: 5)
+            waitForExpectations()
         }
 
         responder(at: 0).clear()
@@ -187,13 +187,13 @@ class NavigationBackForwardTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.go(to: webView.backForwardList.item(at: -3)!)
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         eDidFinish = expectation(description: "onDidFinish forw")
         withWebView { webView in
             _=webView.go(to: webView.backForwardList.item(at: 3)!)
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local1, cachePolicy: .returnCacheDataElseLoad), .backForw(-3), from: history[5], src: main(urls.local4)),
@@ -239,7 +239,7 @@ class NavigationBackForwardTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         var eDidFinishLoadingFrame = expectation(description: "didFinishLoadingFrame 1")
         didFinishLoadingFrameHandler.didFinishLoadingFrame = { request, frame in
@@ -250,19 +250,19 @@ class NavigationBackForwardTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             webView.evaluateJavaScript("window.frames[0].location.href = '\(urls.local1.string)'")
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         eDidFinishLoadingFrame = expectation(description: "didFinishLoadingFrame back")
         withWebView { webView in
             _=webView.goBack()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         eDidFinishLoadingFrame = expectation(description: "didFinishLoadingFrame forw")
         withWebView { webView in
             _=webView.goForward()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         XCTAssertFalse(navAct(2).navigationAction.isTargetingNewWindow)
         XCTAssertFalse(navAct(3).navigationAction.isTargetingNewWindow)
@@ -322,7 +322,7 @@ class NavigationBackForwardTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             webView.interactionState = data.interactionStateData
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         var eDidFinishLoadingFrame = expectation(description: "didFinishLoadingFrame 1")
         didFinishLoadingFrameHandler.didFinishLoadingFrame = { request, frame in
@@ -333,31 +333,31 @@ class NavigationBackForwardTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             webView.evaluateJavaScript("window.frames[0].location.href = '\(urls.local1.string)'")
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         let expectClearCache = expectation(description: "cache cleared")
         WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: Date(timeIntervalSince1970: 0)) {
             expectClearCache.fulfill()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         eDidFinishLoadingFrame = expectation(description: "didFinishLoadingFrame back")
         withWebView { webView in
             _=webView.goBack()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         let expectClearCache2 = expectation(description: "cache cleared 2")
         WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: Date(timeIntervalSince1970: 0)) {
             expectClearCache2.fulfill()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         eDidFinishLoadingFrame = expectation(description: "didFinishLoadingFrame forw")
         withWebView { webView in
             _=webView.goForward()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             // #1 main nav

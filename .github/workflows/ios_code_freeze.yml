@@ -13,7 +13,7 @@ on:
         type: string
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: 'ios-release'
   cancel-in-progress: false
 
 jobs:
@@ -27,7 +27,9 @@ jobs:
 
     outputs:
       release_branch_name: ${{ steps.make_release_branch.outputs.release_branch_name }}
+      asana_task_id: ${{ steps.make_release_branch.outputs.asana_task_id }}
       asana_task_url: ${{ steps.make_release_branch.outputs.asana_task_url }}
+      commit_sha: ${{ steps.make_release_branch.outputs.commit_sha }}
 
     steps:
 
@@ -79,6 +81,8 @@ jobs:
     with:
       asana-task-url: ${{ needs.create_release_branch.outputs.asana_task_url }}
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+      commit-sha: ${{ needs.create_release_branch.outputs.commit_sha }}
+      measure-app-size: true
     secrets: inherit
 
   tag_and_merge:
@@ -87,6 +91,21 @@ jobs:
     uses: ./.github/workflows/ios_tag_release_update_asana.yml
     with:
       asana-task-url: ${{ needs.create_release_branch.outputs.asana_task_url }}
+      base-branch: ${{ github.ref_name }}
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+      commit-sha: ${{ needs.create_release_branch.outputs.commit_sha }}
       release-type: internal
+    secrets: inherit
+
+  report_failure:
+    name: Report Failure
+    needs: [ create_release_branch, run_tests, prepare_release, tag_and_merge ]
+    if: always() && (needs.run_tests.result == 'failure' || needs.prepare_release.result == 'failure' || needs.tag_and_merge.result == 'failure')
+    uses: ./.github/workflows/report_failed_release_workflow.yml
+    with:
+      asana-task-id: ${{ needs.create_release_branch.outputs.asana_task_id }}
+      branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+      commit-sha: ${{ needs.create_release_branch.outputs.commit_sha }}
+      platform: ios
+      workflow-name: "code freeze"
     secrets: inherit

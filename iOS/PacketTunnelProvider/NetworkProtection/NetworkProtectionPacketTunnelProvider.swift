@@ -128,7 +128,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             case .networkPathChanged(let newPath):
                 defaults.updateNetworkPath(with: newPath)
             }
-        case .reportLatency(result: let result):
+        case .reportLatency(result: let result, location: let location):
             vpnLogger.log(result)
 
             switch result {
@@ -139,6 +139,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                 DailyPixel.fireDailyAndCount(
                     pixel: .networkProtectionLatency(quality: quality.rawValue),
                     pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                    withAdditionalParameters: ["location": location.stringValue],
                     includedParameters: [.appVersion, .atb]
                 )
             }

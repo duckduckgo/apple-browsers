@@ -47,7 +47,9 @@ extension FeatureFlag: FeatureFlagCategorization {
         switch self {
         case .aiChatGlobalSwitch,
                 .aiChatSidebar,
-                .aiChatTextSummarization:
+                .aiChatTextSummarization,
+                .aiChatPageContext,
+                .duckAISearchParameter:
             return .duckAI
         case .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage:

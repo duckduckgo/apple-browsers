@@ -30,7 +30,7 @@ extension NewTabPageActionsManager {
     @MainActor
     convenience init(
         appearancePreferences: AppearancePreferences,
-        visualizeFireAnimationDecider: VisualizeFireAnimationDecider,
+        visualizeFireAnimationDecider: VisualizeFireSettingsDecider,
         customizationModel: NewTabPageCustomizationModel,
         bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
         faviconManager: FaviconManagement,

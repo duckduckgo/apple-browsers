@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 
 typealias TabIdentifier = String
@@ -56,6 +57,9 @@ protocol AIChatSidebarProviding: AnyObject {
     /// This dictionary maintains the state of all chat sidebars across different browser tabs.
     var sidebarsByTab: AIChatSidebarsByTab { get }
 
+    /// Publishes events whenever `sidebarsByTab` gets updated.
+    var sidebarsByTabPublisher: AnyPublisher<AIChatSidebarsByTab, Never> { get }
+
     /// Restores the sidebar provider's state from a previously saved model.
     /// This method cleans up all existing sidebars and replaces the current model with the provided one.
     /// - Parameter model: The sidebar model to restore, containing tab IDs mapped to their chat sidebars
@@ -70,7 +74,11 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
 
     var sidebarWidth: CGFloat { Constants.sidebarWidth }
 
-    private(set) var sidebarsByTab: AIChatSidebarsByTab
+    @Published private(set) var sidebarsByTab: AIChatSidebarsByTab
+
+    var sidebarsByTabPublisher: AnyPublisher<AIChatSidebarsByTab, Never> {
+        $sidebarsByTab.dropFirst().eraseToAnyPublisher()
+    }
 
     init(sidebarsByTab: AIChatSidebarsByTab? = nil) {
         self.sidebarsByTab = sidebarsByTab ?? [:]

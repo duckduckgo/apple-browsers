@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Snarveier";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Tilpass favorittene dine og de funksjonene du bruker mest. Endre på rekkefølgen av ting eller skjul dem for å holde orden.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Den nye fanesiden din er … ny!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Favoritter";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Snarveier";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Vis, skjul og endre rekkefølgen av delene på den nye fanesiden";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "DELER";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "SNARVEIER";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Tilpass ny faneside";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Bokmerker";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Nedlastinger";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Passord";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Innstillinger";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Åpne menyen under de tre prikkene (•••) og velg **Legg til favoritt** for å legge den til ny fane-siden.";
-
 /* No comment provided by engineer. */
 "No results found" = "Ingen resultater ble funnet";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Søk privat som standard";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo har også en %1$@, tilgjengelig med en %2$@ og %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "avansert, privat AI";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "valgfritt betalt abonnement";
@@ -2395,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Slett nettleserdata med én knapp";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokker tredjepartssporere";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2698,6 +2662,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Søk eller skriv inn adresse";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Spør Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Søk";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Sekundær / andre handling";
 
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Vis fullstendig nettstedsadresse";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Standard)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Eksperimentelt)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Prøv den eksperimentelle valgmuligheten der du kan spørre Duck.ai direkte fra adressefeltet.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Søk og Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Bare søk";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Administrer Duck.ai-snarveier";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-snarveier";
@@ -2892,6 +2883,9 @@
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";
+
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Finn ut mer";
 
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "La DuckDuckGo administrere popup-vinduer om samtykke til informasjonskapsler";
@@ -3043,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Innstillinger";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Hjelper med å blokkere tredjepartssporere som prøver å skjule seg på et nettsted ved hjelp av DNS.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Beskytter mot DNS CNAME-maskering";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Deaktiverer sporing for Facebook-innhold, som kommentar-widgeter fra Facebook på andre nettsteder enn Facebook.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Sporingsbeskyttelse for Facebook";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Bidrar til å hindre at selskaper henter inn unike identifikatorer om nettleseren og enheten din, som de bruker til å følge deg rundt på nettet med.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Forhindrer sporing av fingeravtrykk";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Gjør at førsteparts informasjonskapsler utløper automatisk etter 30 dager, slik at nettsteder ikke kan spore deg på ubestemt tid når du er logget ut.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Avslutter førsteparts informasjonskapsler";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Erstatter Google AMP-koblinger med den opprinnelige utgiverens nettsted.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blokkerer Googles AMP-sporing";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blokkerer popup-vinduer for Google-pålogging på nettsteder Google ikke eier.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blokkerer Googles popup-vinduer for pålogging";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Fjerner sporingsparametere i lenker for å forhindre at tredjeparter sporer atferden din fra nettsted til nettsted.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blokkerer sporing av koblinger";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Hjelper med å blokkere selskaper fra å identifisere det siste nettstedet du besøkte.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Beskytter mot sporing av henvisninger";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Blokkerer invaderende sporere før de blir lastet inn, og dette eliminerer også annonser som er basert på sporing.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blokkerer målrettede annonser";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Bidrar til å blokkere tredjeparts informasjonskapsler som sporer deg fra nettsted til nettsted ved å forhindre at tredjepartssporere lastes i det hele tatt.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blokkerer tredjepartssporere";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Ubeskyttede nettsteder";
 
@@ -3055,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Beskyttelse mot nettsporing";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Web Tracking Protections er alltid på";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo blokkerer automatisk skjulte sporere når du surfer på nettet.\n[Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Slik beskytter vi deg";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "DuckDuckGo-nettleseren gir deg sporingsbeskyttelser, som alltid er aktive. [Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Velg alternativet som best beskriver problemet du opplevde.";
@@ -3193,8 +3256,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Få svar på ofte stilte spørsmål eller kontakt Privacy Pro-støtte fra hjelpesidene våre.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Send tilbakemelding";
+/* Share Feedback Button */
+"subscription.feedback" = "Del tilbakemelding";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Avbryt";
@@ -3617,7 +3680,7 @@
 "vpn.settings.control.with.siri" = "Kontroller VPN med Siri";
 
 /* Disclaimer for the DNS Server section on the DNS Server screen */
-"vpn.settings.dns.section-disclaimer" = "Bruk av en tilpasset DNS-server kan påvirke surfehastigheter og eksponere aktiviteten din til tredjeparter hvis serveren ikke er sikker eller pålitelig.";
+"vpn.settings.dns.section-disclaimer" = "Bruk av en tilpasset DNS-server kan påvirke surfehastigheter og eksponere aktiviteten din for tredjeparter hvis serveren ikke er sikker eller pålitelig.";
 
 /* Header text for the DNS section on the VPN Settings screen */
 "vpn.settings.dns.section-header" = "DNS";

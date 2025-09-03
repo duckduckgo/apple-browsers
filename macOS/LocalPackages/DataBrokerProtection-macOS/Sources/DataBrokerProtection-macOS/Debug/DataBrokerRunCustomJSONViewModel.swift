@@ -23,6 +23,7 @@ import Common
 import ContentScopeScripts
 import Combine
 import os.log
+import FeatureFlags
 import PixelKit
 import enum UserScript.UserScriptError
 
@@ -159,9 +160,36 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     private let contentScopeProperties: ContentScopeProperties
     private let csvColumns = ["name_input", "age_input", "city_input", "state_input", "name_scraped", "age_scraped", "address_scraped", "relatives_scraped", "url", "broker name", "screenshot_id", "error", "matched_fields", "result_match", "expected_match"]
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
+    private let featureFlagger: DBPFeatureFlagging
+
+    private class DebugDBPFeatureFlagger: DBPFeatureFlagging {
+        private let featureFlagger: FeatureFlagger
+
+        var isRemoteBrokerDeliveryFeatureOn: Bool {
+            featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
+        }
+
+        var isEmailConfirmationDecouplingFeatureOn: Bool {
+            featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
+        }
+
+        init(privacyConfigManager: PrivacyConfigurationManaging) {
+            self.featureFlagger = DefaultFeatureFlagger(
+                internalUserDecider: privacyConfigManager.internalUserDecider,
+                privacyConfigManager: privacyConfigManager,
+                localOverrides: FeatureFlagLocalOverrides(
+                    keyValueStore: UserDefaults.standard,
+                    actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>()
+                ),
+                experimentManager: nil,
+                for: FeatureFlag.self
+            )
+        }
+    }
 
     init(authenticationManager: DataBrokerProtectionAuthenticationManaging) {
         let privacyConfigurationManager = DBPPrivacyConfigurationManager()
+        self.featureFlagger = DebugDBPFeatureFlagger(privacyConfigManager: privacyConfigurationManager)
         let features = ContentScopeFeatureToggles(emailProtection: false,
                                                   emailProtectionIncontextSignup: false,
                                                   credentialsAutofill: false,
@@ -221,9 +249,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 for queryData in brokerProfileQueryData {
                     let debugScanJob = DebugScanJob(privacyConfig: self.privacyConfigManager,
                                                     prefs: self.contentScopeProperties,
-                                                    query: queryData,
+                                                    context: queryData,
                                                     emailService: self.emailService,
-                                                    captchaService: self.captchaService) {
+                                                    captchaService: self.captchaService,
+                                                    featureFlagger: self.featureFlagger) {
                         true
                     }
 
@@ -231,7 +260,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                         do {
                             return try await debugScanJob.run(inputValue: (), showWebView: false)
                         } catch {
-                            return DebugScanReturnValue(brokerURL: "ERROR - with broker: \(queryData.dataBroker.name)", extractedProfiles: [ExtractedProfile](), brokerProfileQueryData: queryData)
+                            return DebugScanReturnValue(brokerURL: "ERROR - with broker: \(queryData.dataBroker.name)", extractedProfiles: [ExtractedProfile](), context: queryData)
                         }
                     }
                 }
@@ -309,7 +338,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                               error: String? = nil,
                               extractedResult: ExtractResult? = nil) -> String {
         let matchedString = matched ? "TRUE" : "FALSE"
-        let profileQuery = result.brokerProfileQueryData.profileQuery
+        let profileQuery = result.context.profileQuery
 
         var csvRow = ""
 
@@ -331,8 +360,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         }
 
         csvRow.append("\(result.brokerURL),") // Broker URL
-        csvRow.append("\(result.brokerProfileQueryData.dataBroker.name),") // Broker Name
-        csvRow.append("\(profileQuery.id ?? 0)_\(result.brokerProfileQueryData.dataBroker.name),") // Screenshot name
+        csvRow.append("\(result.context.dataBroker.name),") // Broker Name
+        csvRow.append("\(profileQuery.id ?? 0)_\(result.context.dataBroker.name),") // Screenshot name
 
         if let error = error {
             csvRow.append("\(error),") // Error
@@ -387,9 +416,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                             let runner = BrokerProfileScanSubJobWebRunner(
                                 privacyConfig: self.privacyConfigManager,
                                 prefs: self.contentScopeProperties,
-                                query: query,
+                                context: query,
                                 emailService: self.emailService,
                                 captchaService: self.captchaService,
+                                featureFlagger: self.featureFlagger,
                                 stageDurationCalculator: FakeStageDurationCalculator(),
                                 pixelHandler: fakePixelHandler,
                                 executionConfig: .init(),
@@ -444,9 +474,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 let runner = BrokerProfileOptOutSubJobWebRunner(
                     privacyConfig: self.privacyConfigManager,
                     prefs: self.contentScopeProperties,
-                    query: brokerProfileQueryData,
+                    context: brokerProfileQueryData,
                     emailService: self.emailService,
                     captchaService: self.captchaService,
+                    featureFlagger: self.featureFlagger,
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: .init(),

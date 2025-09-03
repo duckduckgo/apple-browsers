@@ -28,7 +28,6 @@ import os.log
 public protocol HistoryManaging {
     
     var historyCoordinator: HistoryCoordinating { get }
-    func isHistoryFeatureEnabled() -> Bool
     var isEnabledByUser: Bool { get }
     func removeAllHistory() async
     func deleteHistoryForURL(_ url: URL) async
@@ -37,13 +36,11 @@ public protocol HistoryManaging {
 
 public class HistoryManager: HistoryManaging {
 
-    let privacyConfigManager: PrivacyConfigurationManaging
     let dbCoordinator: HistoryCoordinator
     let tld: TLD
 
     public var historyCoordinator: HistoryCoordinating {
-        guard isHistoryFeatureEnabled(),
-                isEnabledByUser else {
+        guard isEnabledByUser else {
             return NullHistoryCoordinator()
         }
         return dbCoordinator
@@ -57,22 +54,15 @@ public class HistoryManager: HistoryManaging {
     }
 
     /// Use `make()`
-    init(privacyConfigManager: PrivacyConfigurationManaging,
-         dbCoordinator: HistoryCoordinator,
+    init(dbCoordinator: HistoryCoordinator,
          tld: TLD,
          isAutocompleteEnabledByUser: @autoclosure @escaping () -> Bool,
          isRecentlyVisitedSitesEnabledByUser: @autoclosure @escaping () -> Bool) {
 
-        self.privacyConfigManager = privacyConfigManager
         self.dbCoordinator = dbCoordinator
         self.tld = tld
         self.isAutocompleteEnabledByUser = isAutocompleteEnabledByUser
         self.isRecentlyVisitedSitesEnabledByUser = isRecentlyVisitedSitesEnabledByUser
-    }
-
-    /// Determines if the history feature is enabled.  This code will need to be cleaned up once the roll out is at 100%
-    public func isHistoryFeatureEnabled() -> Bool {
-        return privacyConfigManager.privacyConfig.isEnabled(featureKey: .history)
     }
 
     public func removeAllHistory() async {
@@ -227,7 +217,6 @@ extension HistoryManager {
     /// Should only be called once in the app
     public static func make(isAutocompleteEnabledByUser: @autoclosure @escaping () -> Bool,
                             isRecentlyVisitedSitesEnabledByUser: @autoclosure @escaping () -> Bool,
-                            privacyConfigManager: PrivacyConfigurationManaging,
                             tld: TLD) -> Result<HistoryManager, Error> {
 
         let database = HistoryDatabase.make()
@@ -243,8 +232,7 @@ extension HistoryManager {
         let context = database.makeContext(concurrencyType: .privateQueueConcurrencyType)
         let dbCoordinator = HistoryCoordinator(historyStoring: HistoryStore(context: context, eventMapper: HistoryStoreEventMapper()))
 
-        let historyManager = HistoryManager(privacyConfigManager: privacyConfigManager,
-                                            dbCoordinator: dbCoordinator,
+        let historyManager = HistoryManager(dbCoordinator: dbCoordinator,
                                             tld: tld,
                                             isAutocompleteEnabledByUser: isAutocompleteEnabledByUser(),
                                             isRecentlyVisitedSitesEnabledByUser: isRecentlyVisitedSitesEnabledByUser())

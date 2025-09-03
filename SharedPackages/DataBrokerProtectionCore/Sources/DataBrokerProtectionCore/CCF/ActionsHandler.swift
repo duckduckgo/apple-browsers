@@ -81,7 +81,7 @@ public class ActionsHandler {
             assertionFailure("Expected optOut step but got \(step.type)")
             return ActionsHandler(stepType: step.type, actions: step.actions)
         }
-        
+
         let actions: [Action]
         if haltsAtEmailConfirmation,
            let emailConfirmIndex = step.actions.firstIndex(where: { $0 is EmailConfirmationAction }) {
@@ -89,7 +89,7 @@ public class ActionsHandler {
         } else {
             actions = step.actions
         }
-        
+
         return ActionsHandler(stepType: .optOut, actions: actions)
     }
 
@@ -99,15 +99,15 @@ public class ActionsHandler {
             assertionFailure("Expected optOut step but got \(step.type)")
             return ActionsHandler(stepType: step.type, actions: step.actions)
         }
-        
+
         guard let emailConfirmIndex = step.actions.firstIndex(where: { $0 is EmailConfirmationAction }) else {
             assertionFailure("Opt-out has no emailConfirmation step")
             return ActionsHandler(stepType: step.type, actions: step.actions)
         }
-        
+
         let afterIndex = step.actions.index(after: emailConfirmIndex)
         let actions = Array(step.actions.suffix(from: afterIndex))
-        
+
         return ActionsHandler(stepType: .optOut, actions: actions)
     }
 

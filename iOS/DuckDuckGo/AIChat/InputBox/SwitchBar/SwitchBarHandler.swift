@@ -155,7 +155,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         // Process funnel step
         processSubmissionFunnelStep(mode: currentToggleState)
         
-        // Record session activity
+        // Process session activity
         processSessionActivity(mode: currentToggleState)
         textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
     }

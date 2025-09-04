@@ -781,6 +781,20 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         return nil
     }
 
+    public func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData] {
+        return []
+    }
+
+    public func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData] {
+        return []
+    }
+
+    public func updateOptOutEmailConfirmationLink(_ link: String?, emailConfirmationLinkObtainedOnBEDate: Date?, profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
+    }
+
+    public func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
+    }
+
     public func save(backgroundTaskEvent: BackgroundTaskEvent) throws {
     }
 
@@ -789,6 +803,22 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     }
 
     public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
+    }
+
+    public func saveOptOutEmailConfirmation(profileQueryId: Int64,
+                                            brokerId: Int64,
+                                            extractedProfileId: Int64,
+                                            generatedEmail: String,
+                                            attemptID: String) throws {
+    }
+
+    public func deleteOptOutEmailConfirmation(profileQueryId: Int64,
+                                              brokerId: Int64,
+                                              extractedProfileId: Int64) throws {
+    }
+
+    public func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData] {
+        return []
     }
 }
 
@@ -938,6 +968,28 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasFetchAllDataBrokersCalled = true
 
         return dataBrokersToReturn
+    }
+
+    public func fetchBroker(with id: Int64) throws -> DataBroker? {
+        return dataBrokersToReturn.first { $0.id == id }
+    }
+
+    public func fetchProfileQuery(with id: Int64) throws -> ProfileQuery? {
+        return ProfileQuery.mock
+    }
+
+    public func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData] {
+        return []
+    }
+
+    public func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData] {
+        return []
+    }
+
+    public func updateOptOutEmailConfirmationLink(_ link: String?, emailConfirmationLinkObtainedOnBEDate: Date?, profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
+    }
+
+    public func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
     }
 
     public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) {
@@ -1105,6 +1157,22 @@ public final class MockDatabase: DataBrokerProtectionRepository {
 
     public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
         backgroundTaskEventsToReturn.removeAll { $0.timestamp < date }
+    }
+
+    public func saveOptOutEmailConfirmation(profileQueryId: Int64,
+                                            brokerId: Int64,
+                                            extractedProfileId: Int64,
+                                            generatedEmail: String,
+                                            attemptID: String) throws {
+    }
+
+    public func deleteOptOutEmailConfirmation(profileQueryId: Int64,
+                                              brokerId: Int64,
+                                              extractedProfileId: Int64) throws {
+    }
+
+    public func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData] {
+        return []
     }
 }
 
@@ -1594,7 +1662,7 @@ public final class MockBrokerProfileJobErrorDelegate: BrokerProfileJobErrorDeleg
 
 public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
     public var isRemoteBrokerDeliveryFeatureOn = true
-    public var isEmailConfirmationDecouplingFeatureOn = true
+    public var isEmailConfirmationDecouplingFeatureOn = false
 
     public init() {}
 }
@@ -2167,6 +2235,7 @@ public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProv
     public static var didCallV6Migrations = false
     public static var didCallV7Migrations = false
     public static var didCallV8Migrations = false
+    public static var didCallV9Migrations = false
 
     public static var v2Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
         didCallV2Migrations = true
@@ -2200,6 +2269,11 @@ public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProv
 
     public static var v8Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
         didCallV8Migrations = true
+        return { _ in }
+    }
+
+    public static var v9Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
+        didCallV9Migrations = true
         return { _ in }
     }
 }

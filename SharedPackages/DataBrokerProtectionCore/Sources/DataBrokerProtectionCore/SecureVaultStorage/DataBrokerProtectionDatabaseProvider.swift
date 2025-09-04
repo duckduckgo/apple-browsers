@@ -86,6 +86,27 @@ public protocol DataBrokerProtectionDatabaseProvider: SecureStorageDatabaseProvi
     func fetchOptOuts(brokerId: Int64) throws -> [(optOutDB: OptOutDB, extractedProfileDB: ExtractedProfileDB)]
     func fetchAllOptOuts() throws -> [(optOutDB: OptOutDB, extractedProfileDB: ExtractedProfileDB)]
 
+    func save(profileQueryId: Int64,
+              brokerId: Int64,
+              extractedProfileId: Int64,
+              generatedEmail: String,
+              attemptID: String,
+              mapperToDB: MapperToDB) throws
+    func updateEmailConfirmationLink(_ emailConfirmationLink: String?,
+                                     emailConfirmationLinkObtainedOnBEDate: Date?,
+                                     profileQueryId: Int64,
+                                     brokerId: Int64,
+                                     extractedProfileId: Int64,
+                                     mapperToDB: MapperToDB) throws
+    func incrementEmailConfirmationAttemptCount(profileQueryId: Int64,
+                                                brokerId: Int64,
+                                                extractedProfileId: Int64) throws
+    func deleteOptOutEmailConfirmation(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws
+    func fetchOptOutEmailConfirmation(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws -> OptOutEmailConfirmationDB?
+    func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationDB]
+    func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationDB]
+    func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationDB]
+
     func save(_ scanEvent: ScanHistoryEventDB) throws
     func save(_ optOutEvent: OptOutHistoryEventDB) throws
     func fetchScanEvents(brokerId: Int64, profileQueryId: Int64) throws -> [ScanHistoryEventDB]
@@ -127,7 +148,7 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
                                                      key: Data,
                                                      migrationProvider: T.Type = DefaultDataBrokerProtectionDatabaseMigrationsProvider.self,
                                                      reporter: SecureVaultReporting? = nil) throws -> DefaultDataBrokerProtectionDatabaseProvider {
-        try DefaultDataBrokerProtectionDatabaseProvider(file: file, key: key, registerMigrationsHandler: migrationProvider.v8Migrations, reporter: reporter)
+        try DefaultDataBrokerProtectionDatabaseProvider(file: file, key: key, registerMigrationsHandler: migrationProvider.v9Migrations, reporter: reporter)
     }
 
     public init(file: URL,
@@ -235,6 +256,10 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
                 .deleteAll(db)
             try ProfileDB
                 .deleteAll(db)
+            if try db.tableExists(OptOutEmailConfirmationDB.databaseTableName) {
+                try OptOutEmailConfirmationDB
+                    .deleteAll(db)
+            }
         }
     }
 
@@ -537,6 +562,111 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
             }
 
             return optOutsWithExtractedProfiles
+        }
+    }
+
+    public func save(profileQueryId: Int64,
+                     brokerId: Int64,
+                     extractedProfileId: Int64,
+                     generatedEmail: String,
+                     attemptID: String,
+                     mapperToDB: MapperToDB) throws {
+        let optOutEmailConfirmationJobData = OptOutEmailConfirmationJobData(
+            brokerId: brokerId,
+            profileQueryId: profileQueryId,
+            extractedProfileId: extractedProfileId,
+            generatedEmail: generatedEmail,
+            attemptID: attemptID,
+            emailConfirmationLink: nil,
+            emailConfirmationLinkObtainedOnBEDate: nil,
+            emailConfirmationAttemptCount: 0
+        )
+
+        let optOutEmailConfirmation = try mapperToDB.mapToDB(optOutEmailConfirmationJobData)
+
+        try db.write { db in
+            try optOutEmailConfirmation.upsert(db)
+        }
+    }
+
+    public func updateEmailConfirmationLink(_ emailConfirmationLink: String?,
+                                            emailConfirmationLinkObtainedOnBEDate: Date?,
+                                            profileQueryId: Int64,
+                                            brokerId: Int64,
+                                            extractedProfileId: Int64,
+                                            mapperToDB: MapperToDB) throws {
+        try db.write { db in
+            if var confirmation = try OptOutEmailConfirmationDB.fetchOne(db, key: [
+                OptOutEmailConfirmationDB.Columns.profileQueryId.name: profileQueryId,
+                OptOutEmailConfirmationDB.Columns.brokerId.name: brokerId,
+                OptOutEmailConfirmationDB.Columns.extractedProfileId.name: extractedProfileId
+            ]) {
+                confirmation.emailConfirmationLink = try mapperToDB.mapToDB(emailConfirmationLink)
+                confirmation.emailConfirmationLinkObtainedOnBEDate = emailConfirmationLinkObtainedOnBEDate
+                try confirmation.update(db)
+            } else {
+                throw DataBrokerProtectionDatabaseErrors.elementNotFound
+            }
+        }
+    }
+
+    public func incrementEmailConfirmationAttemptCount(profileQueryId: Int64,
+                                                       brokerId: Int64,
+                                                       extractedProfileId: Int64) throws {
+        try db.write { db in
+            if var confirmation = try OptOutEmailConfirmationDB.fetchOne(db, key: [
+                OptOutEmailConfirmationDB.Columns.profileQueryId.name: profileQueryId,
+                OptOutEmailConfirmationDB.Columns.brokerId.name: brokerId,
+                OptOutEmailConfirmationDB.Columns.extractedProfileId.name: extractedProfileId
+            ]) {
+                confirmation.emailConfirmationAttemptCount += 1
+                try confirmation.update(db)
+            } else {
+                throw DataBrokerProtectionDatabaseErrors.elementNotFound
+            }
+        }
+    }
+
+    public func deleteOptOutEmailConfirmation(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
+        _ = try db.write { db in
+            try OptOutEmailConfirmationDB
+                .filter(Column(OptOutEmailConfirmationDB.Columns.profileQueryId.name) == profileQueryId &&
+                        Column(OptOutEmailConfirmationDB.Columns.brokerId.name) == brokerId &&
+                        Column(OptOutEmailConfirmationDB.Columns.extractedProfileId.name) == extractedProfileId)
+                .deleteAll(db)
+        }
+    }
+
+    public func fetchOptOutEmailConfirmation(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws -> OptOutEmailConfirmationDB? {
+        try db.read { db in
+            return try OptOutEmailConfirmationDB.fetchOne(db, key: [
+                OptOutEmailConfirmationDB.Columns.profileQueryId.name: profileQueryId,
+                OptOutEmailConfirmationDB.Columns.brokerId.name: brokerId,
+                OptOutEmailConfirmationDB.Columns.extractedProfileId.name: extractedProfileId
+            ])
+        }
+    }
+
+    public func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationDB] {
+        try db.read { db in
+            try OptOutEmailConfirmationDB
+                .fetchAll(db)
+        }
+    }
+
+    public func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationDB] {
+        try db.read { db in
+            try OptOutEmailConfirmationDB
+                .filter(OptOutEmailConfirmationDB.Columns.emailConfirmationLink == nil)
+                .fetchAll(db)
+        }
+    }
+
+    public func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationDB] {
+        try db.read { db in
+            try OptOutEmailConfirmationDB
+                .filter(OptOutEmailConfirmationDB.Columns.emailConfirmationLink != nil)
+                .fetchAll(db)
         }
     }
 

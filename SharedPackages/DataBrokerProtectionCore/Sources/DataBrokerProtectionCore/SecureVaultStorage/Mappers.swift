@@ -29,6 +29,10 @@ public struct MapperToDB {
         jsonEncoder.dateEncodingStrategy = .millisecondsSince1970
     }
 
+    func mapToDB(_ text: String?) throws -> Data? {
+        try text.encoded(mechanism)
+    }
+
     func mapToDB(id: Int64? = nil, profile: DataBrokerProtectionProfile) throws -> ProfileDB {
         .init(id: id, birthYear: try withUnsafeBytes(of: profile.birthYear) { try mechanism(Data($0)) })
     }
@@ -142,6 +146,19 @@ public struct MapperToDB {
             eventType: event.eventType.rawValue,
             timestamp: event.timestamp,
             metadata: metadata
+        )
+    }
+
+    func mapToDB(_ optOutEmailConfirmation: OptOutEmailConfirmationJobData) throws -> OptOutEmailConfirmationDB {
+        .init(
+            brokerId: optOutEmailConfirmation.brokerId,
+            profileQueryId: optOutEmailConfirmation.profileQueryId,
+            extractedProfileId: optOutEmailConfirmation.extractedProfileId,
+            generatedEmail: try mechanism(optOutEmailConfirmation.generatedEmail.encoded),
+            attemptID: optOutEmailConfirmation.attemptID,
+            emailConfirmationLink: try optOutEmailConfirmation.emailConfirmationLink.encoded(mechanism),
+            emailConfirmationLinkObtainedOnBEDate: optOutEmailConfirmation.emailConfirmationLinkObtainedOnBEDate,
+            emailConfirmationAttemptCount: optOutEmailConfirmation.emailConfirmationAttemptCount
         )
     }
 }
@@ -312,6 +329,19 @@ struct MapperToModel {
             metadata: metadata
         )
     }
+
+    func mapToModel(_ optOutEmailConfirmationDB: OptOutEmailConfirmationDB) throws -> OptOutEmailConfirmationJobData {
+        .init(
+            brokerId: optOutEmailConfirmationDB.brokerId,
+            profileQueryId: optOutEmailConfirmationDB.profileQueryId,
+            extractedProfileId: optOutEmailConfirmationDB.extractedProfileId,
+            generatedEmail: try optOutEmailConfirmationDB.generatedEmail.decode(mechanism),
+            attemptID: optOutEmailConfirmationDB.attemptID,
+            emailConfirmationLink: try optOutEmailConfirmationDB.emailConfirmationLink.decode(mechanism),
+            emailConfirmationLinkObtainedOnBEDate: optOutEmailConfirmationDB.emailConfirmationLinkObtainedOnBEDate,
+            emailConfirmationAttemptCount: optOutEmailConfirmationDB.emailConfirmationAttemptCount
+        )
+    }
 }
 
 extension Optional where Wrapped == String {
@@ -345,4 +375,12 @@ extension Optional where Wrapped == Data {
 
         return try mechanism(value).utf8String()
     }
+}
+
+extension Data {
+
+    func decode(_ mechanism: (Data) throws -> Data) throws -> String {
+        try mechanism(self).utf8String()!
+    }
+
 }

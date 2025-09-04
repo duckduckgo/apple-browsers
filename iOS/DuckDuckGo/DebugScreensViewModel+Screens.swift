@@ -62,6 +62,16 @@ extension DebugScreensViewModel {
 
                 controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
+            .action(title: "Show New AddressBar Modal", { _ in
+                guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
+                
+                let pickerViewController = NewAddressBarPickerViewController()
+                pickerViewController.modalPresentationStyle = .pageSheet
+                pickerViewController.modalTransitionStyle = .coverVertical
+                pickerViewController.isModalInPresentation = true
+
+                controller.present(pickerViewController, animated: true)
+            }),
 
             // MARK: SwiftUI Views
             .view(title: "AI Chat", { _ in

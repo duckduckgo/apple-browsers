@@ -70,7 +70,7 @@ public struct RadioButtonConfiguration {
         borderWidth: CGFloat = 1,
         cornerRadius: CGFloat = 12,
         horizontalPadding: CGFloat = 16,
-        verticalPadding: CGFloat = 14,
+        verticalPadding: CGFloat = 12,
         spacing: CGFloat = 6,
         checkboxSize: CGFloat = 24,
         layout: RadioButtonLayout = .vertical,
@@ -267,10 +267,11 @@ private struct RadioButtonRow: View {
             .flexibleFrame(horizontal: false, vertical: false)
 
         Text(item.text)
+            .minimumScaleFactor(0.8)
+            .lineLimit(1)
             .font(configuration.font)
             .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
             .multilineTextAlignment(.center)
-            .lineLimit(1)
             .truncationMode(.tail)
 
         Spacer()

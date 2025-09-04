@@ -30,9 +30,10 @@ struct NewAddressBarPickerContentView: View {
     }
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 20) {
             ContentView()
             CTAView(onDismiss: onDismiss)
+                .frame(maxWidth: 440)
                 .padding(.horizontal, 32)
         }
         .background(Color(designSystemColor: .background))
@@ -43,7 +44,7 @@ private struct ContentView: View {
     var body: some View {
         ZStack {
             backgroundView
-            VStack(spacing: 16) {
+            VStack {
                 headerView
                     .frame(width: 300)
                 animationView
@@ -78,10 +79,10 @@ private struct ContentView: View {
         LinearGradient(
             stops: [
                 Gradient.Stop(color: Color(designSystemColor: .background), location: 0.2),
-                Gradient.Stop(color: Color(designSystemColor: .accent).opacity(0.4), location: 1),
+                Gradient.Stop(color: Color(designSystemColor: .accent).opacity(0.6), location: 1.0),
             ],
-            startPoint: .top,
-            endPoint: .bottom
+            startPoint: UnitPoint(x: 0.5, y: 0),
+            endPoint: UnitPoint(x: 0.8, y: 2.5)
         )
     }
 
@@ -101,9 +102,9 @@ private struct ContentView: View {
 private struct CTAView: View {
     let onDismiss: () -> Void
     @State private var selectedOption: Int = 0
-    
+
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 0) {
             RadioButtonView(
                 options: [
                     UserText.newAddressBarPickerSearchOnly,
@@ -118,6 +119,7 @@ private struct CTAView: View {
                     self.selectedOption = index
                 }
             }
+            .padding(.bottom, 16)
 
             Button {
                 onDismiss()
@@ -128,6 +130,7 @@ private struct CTAView: View {
 
             }
             .buttonStyle(PrimaryButtonStyle())
+            .padding(.bottom, 8)
 
             Button {
                 onDismiss()
@@ -138,12 +141,13 @@ private struct CTAView: View {
 
             }
             .buttonStyle(SecondaryButtonStyle())
+            .padding(.bottom, 16)
 
-            // Footer Text
             Text(UserText.newAddressBarPickerFooter)
                 .daxCaption()
-                .foregroundColor(.secondary)
+                .foregroundColor(Color(designSystemColor: .textSecondary))
                 .multilineTextAlignment(.center)
+                .padding(.bottom, 10)
         }
     }
 }

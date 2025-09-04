@@ -29,7 +29,7 @@ enum SessionActivityType: CaseIterable {
 
 /// Protocol for managing session state metrics
 protocol SessionStateMetricsProviding {
-    func recordActivity(_ activity: SessionActivityType)
+    func incrementActivity(_ activity: SessionActivityType)
     func finalizeSession()
 }
 
@@ -46,7 +46,7 @@ final class SessionStateMetrics: SessionStateMetricsProviding {
         self.pixelFiring = pixelFiring
     }
     
-    func recordActivity(_ activity: SessionActivityType) {
+    func incrementActivity(_ activity: SessionActivityType) {
         switch activity {
         case .searchSubmitted:
             searchCount += 1
@@ -74,11 +74,6 @@ final class SessionStateMetrics: SessionStateMetricsProviding {
         
         resetSessionCounters()
     }
-    
-    private func resetSession() {
-        resetSessionCounters()
-    }
-    
     
     private func resetSessionCounters() {
         searchCount = 0

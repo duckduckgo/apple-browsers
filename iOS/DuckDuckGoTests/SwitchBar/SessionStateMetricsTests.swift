@@ -41,8 +41,8 @@ final class SessionStateMetricsTests: XCTestCase {
     // MARK: - Session Type Tests
     
     func testFinalizeSession_SearchOnly_FiresCorrectPixel() throws {
-        sut.recordActivity(.searchSubmitted)
-        sut.recordActivity(.searchSubmitted)
+        sut.incrementActivity(.searchSubmitted)
+        sut.incrementActivity(.searchSubmitted)
         
         sut.finalizeSession()
         
@@ -54,9 +54,9 @@ final class SessionStateMetricsTests: XCTestCase {
     }
     
     func testFinalizeSession_PromptOnly_FiresCorrectPixel() throws {
-        sut.recordActivity(.promptSubmitted)
-        sut.recordActivity(.promptSubmitted)
-        sut.recordActivity(.promptSubmitted)
+        sut.incrementActivity(.promptSubmitted)
+        sut.incrementActivity(.promptSubmitted)
+        sut.incrementActivity(.promptSubmitted)
         
         sut.finalizeSession()
         
@@ -68,9 +68,9 @@ final class SessionStateMetricsTests: XCTestCase {
     }
     
     func testFinalizeSession_BothModes_FiresCorrectPixel() throws {
-        sut.recordActivity(.searchSubmitted)
-        sut.recordActivity(.promptSubmitted)
-        sut.recordActivity(.searchSubmitted)
+        sut.incrementActivity(.searchSubmitted)
+        sut.incrementActivity(.promptSubmitted)
+        sut.incrementActivity(.searchSubmitted)
         
         sut.finalizeSession()
         
@@ -91,13 +91,13 @@ final class SessionStateMetricsTests: XCTestCase {
     // MARK: - Session Reset Tests
     
     func testFinalizeSession_ResetsCounters() throws {
-        sut.recordActivity(.searchSubmitted)
-        sut.recordActivity(.promptSubmitted)
+        sut.incrementActivity(.searchSubmitted)
+        sut.incrementActivity(.promptSubmitted)
         
         sut.finalizeSession()
         
         // Record new activity after finalization
-        sut.recordActivity(.searchSubmitted)
+        sut.incrementActivity(.searchSubmitted)
         sut.finalizeSession()
         
         let parameters = PixelFiringMock.lastParams
@@ -107,10 +107,10 @@ final class SessionStateMetricsTests: XCTestCase {
     
     // MARK: - Activity Tests
     
-    func testRecordActivity_SearchSubmitted_IncrementsSearchCount() throws {
-        sut.recordActivity(.searchSubmitted)
-        sut.recordActivity(.searchSubmitted)
-        sut.recordActivity(.searchSubmitted)
+    func testincrementActivity_SearchSubmitted_IncrementsSearchCount() throws {
+        sut.incrementActivity(.searchSubmitted)
+        sut.incrementActivity(.searchSubmitted)
+        sut.incrementActivity(.searchSubmitted)
         
         sut.finalizeSession()
         
@@ -119,9 +119,9 @@ final class SessionStateMetricsTests: XCTestCase {
         XCTAssertEqual(parameters?["prompts_in_session"], "0")
     }
     
-    func testRecordActivity_PromptSubmitted_IncrementsPromptCount() throws {
-        sut.recordActivity(.promptSubmitted)
-        sut.recordActivity(.promptSubmitted)
+    func testincrementActivity_PromptSubmitted_IncrementsPromptCount() throws {
+        sut.incrementActivity(.promptSubmitted)
+        sut.incrementActivity(.promptSubmitted)
         
         sut.finalizeSession()
         
@@ -134,7 +134,7 @@ final class SessionStateMetricsTests: XCTestCase {
     
     func testMultipleSessions_IndependentCounting() throws {
         // First session: search only
-        sut.recordActivity(.searchSubmitted)
+        sut.incrementActivity(.searchSubmitted)
         sut.finalizeSession()
         
         let firstSessionParams = PixelFiringMock.lastParams
@@ -143,7 +143,7 @@ final class SessionStateMetricsTests: XCTestCase {
         
         // Second session: prompt only
         PixelFiringMock.tearDown() // Clear previous pixel
-        sut.recordActivity(.promptSubmitted)
+        sut.incrementActivity(.promptSubmitted)
         sut.finalizeSession()
         
         let secondSessionParams = PixelFiringMock.lastParams

@@ -123,7 +123,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     init(voiceSearchHelper: VoiceSearchHelperProtocol, storage: KeyValueStoring,
          aiChatSettings: AIChatSettingsProvider,
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
-         sessionStateMetrics: SessionStateMetricsProviding = SessionStateMetrics(storage: UserDefaults.standard)) {
+         sessionStateMetrics: SessionStateMetricsProviding) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
         self.aiChatSettings = aiChatSettings
@@ -155,7 +155,8 @@ final class SwitchBarHandler: SwitchBarHandling {
         // Process funnel step
         processSubmissionFunnelStep(mode: currentToggleState)
         
-        updateModeUsage(currentToggleState)
+        // Record session activity
+        processSessionActivity(mode: currentToggleState)
         textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
     }
 
@@ -199,10 +200,28 @@ final class SwitchBarHandler: SwitchBarHandling {
         switch mode {
         case .search:
             funnelState.processStep(.searchSubmitted)
-            sessionStateMetrics.recordActivity(.searchSubmitted)
         case .aiChat:
             funnelState.processStep(.promptSubmitted)
-            sessionStateMetrics.recordActivity(.promptSubmitted)
+        }
+    }
+    
+    private func processSessionActivity(mode: TextEntryMode) {
+        let previouslyUsedBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
+        
+        // Record activity for session metrics
+        switch mode {
+        case .search:
+            sessionStateMetrics.incrementActivity(.searchSubmitted)
+            Self.hasUsedSearchInSession = true
+        case .aiChat:
+            sessionStateMetrics.incrementActivity(.promptSubmitted)
+            Self.hasUsedAIChatInSession = true
+        }
+        
+        // Fire pixel only when user achieves both-mode usage for the first time in this session
+        let nowUsesBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
+        if nowUsesBothModes && !previouslyUsedBothModes {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarSessionBothModes)
         }
     }
 
@@ -228,23 +247,5 @@ final class SwitchBarHandler: SwitchBarHandling {
     private static func resetSessionFlags() {
         hasUsedSearchInSession = false
         hasUsedAIChatInSession = false
-    }
-    
-    // MARK: - Mode Usage Detection  
-    private func updateModeUsage(_ mode: TextEntryMode) {
-        let previouslyUsedBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
-        
-        switch mode {
-        case .search:
-            Self.hasUsedSearchInSession = true
-        case .aiChat:
-            Self.hasUsedAIChatInSession = true
-        }
-        
-        // Fire pixel only when user achieves both-mode usage for the first time in this session
-        let nowUsesBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
-        if nowUsesBothModes && !previouslyUsedBothModes {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarSessionBothModes)
-        }
     }
 }

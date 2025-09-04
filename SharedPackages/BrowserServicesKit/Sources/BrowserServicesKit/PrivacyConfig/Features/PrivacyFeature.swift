@@ -110,6 +110,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     // Import Firefox's bookmarks and new tab shortcuts to better match Firefox's behavior
     case updateFirefoxBookmarksImport
+
+    /// Displays a restore session prompt after the app closes unexpectedly
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208994157946492?focus=true
+    case restoreSessionPrompt
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -133,6 +137,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Local inactivity provisional notifications delivered to Notification Center.
     // https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
     case inactivityNotification
+
+    /// https://app.asana.com/1/137249556945/project/1210947754188321/task/1210869716452616?focus=true
+    case refreshButtonPosition
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -208,6 +215,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to disable all AI Chat related functionality
     case globalToggle
+
+    /// Adds support for passing currently visible website context to the sidebar
+    case pageContext
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

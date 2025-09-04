@@ -36,7 +36,7 @@ public protocol AccountManager {
 
     func storeAuthToken(token: String)
     func storeAccount(token: String, email: String?, externalID: String?)
-    func signOut(skipNotification: Bool)
+    func signOut(skipNotification: Bool, userInitiated: Bool)
     func signOut()
     func removeAccessToken() throws
 
@@ -64,6 +64,11 @@ extension AccountManager {
     }
 
     public var isUserAuthenticated: Bool { accessToken != nil }
+
+    func signOut(skipNotification: Bool) {
+        signOut(skipNotification: skipNotification, userInitiated: false)
+    }
+
 }
 
 public final class DefaultAccountManager: AccountManager {
@@ -172,10 +177,10 @@ public final class DefaultAccountManager: AccountManager {
     }
 
     public func signOut() {
-        signOut(skipNotification: false)
+        signOut(skipNotification: false, userInitiated: false)
     }
 
-    public func signOut(skipNotification: Bool = false) {
+    public func signOut(skipNotification: Bool = false, userInitiated: Bool = false) {
         Logger.subscription.info("[AccountManager] signOut")
 
         do {

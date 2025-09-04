@@ -45,7 +45,7 @@ class FireWindowTests: UITestCase {
         app.openNewWindow()
         // Open settings and enable session restore using helper
         app.openPreferencesWindow()
-        app.preferencesSetRestorePreviousSession(enabled: true)
+        app.preferencesSetRestorePreviousSession(to: .restoreLastSession)
         app.closePreferencesWindow()
 
         openThreeSitesOnNormalWindow()

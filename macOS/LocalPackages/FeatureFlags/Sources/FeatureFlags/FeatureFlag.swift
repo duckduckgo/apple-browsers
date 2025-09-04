@@ -114,6 +114,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1210012162616039?focus=true
     case aiChatTextSummarization
 
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210921598044116?focus=true
+    case aiChatPageContext
+
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case osSupportForceUnsupportedMessage
 
@@ -186,9 +189,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
-                .refactorOfSyncPreferences,
-                .newSyncEntryPoints,
-                .subscriptionPurchaseWidePixelMeasurement:
+                .subscriptionPurchaseWidePixelMeasurement,
+                .restoreSessionPrompt:
             true
         default:
             false
@@ -235,6 +237,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatGlobalSwitch,
 				.aiChatSidebar,
                 .aiChatTextSummarization,
+                .aiChatPageContext,
                 .shortHistoryMenu,
                 .subscriptionRebranding,
                 .importChromeShortcuts,
@@ -345,6 +348,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatTextSummarization:
             return .remoteReleasable(.subfeature(AIChatSubfeature.textSummarization))
+        case .aiChatPageContext:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
         case .osSupportForceUnsupportedMessage:
             return .disabled
         case .osSupportForceWillSoonDropSupportMessage:
@@ -376,15 +381,15 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .openFireWindowByDefault:
             return .remoteReleasable(.feature(.openFireWindowByDefault))
         case .restoreSessionPrompt:
-            return .disabled
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.restoreSessionPrompt))
         case .duckAISearchParameter:
             return .enabled
         case .subscriptionPurchaseWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         case .refactorOfSyncPreferences:
-            return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
+            return .disabled
         case .newSyncEntryPoints:
-            return .remoteReleasable(.subfeature(SyncSubfeature.newSyncEntryPoints))
+            return .disabled
         }
     }
 }

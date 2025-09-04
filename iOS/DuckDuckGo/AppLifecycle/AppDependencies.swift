@@ -44,6 +44,7 @@ struct AppServices {
     let keyValueFileStoreService: AppKeyValueFileStoreService
     let defaultBrowserPromptService: DefaultBrowserPromptService
     let systemSettingsPiPTutorialService: SystemSettingsPiPTutorialService
+    let inactivityNotificationSchedulerService: InactivityNotificationSchedulerService
     let widePixelService: WidePixelService
 
 }

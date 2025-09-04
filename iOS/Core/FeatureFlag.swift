@@ -239,6 +239,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .inactivityNotification,
              .daxEasterEggLogos,
              .dbpEmailConfirmationDecoupling,
+             .dbpRemoteBrokerDelivery,
              .subscriptionPurchaseWidePixelMeasurement,
              .refreshButtonPosition:
             return true
@@ -275,7 +276,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                .autofillSurveys,
                .autocompleteTabs,
                .adAttributionReporting,
-               .dbpRemoteBrokerDelivery,
                .crashReportOptInStatusResetting,
                .privacyProFreeTrialJan25,
                .webViewStateRestoration,

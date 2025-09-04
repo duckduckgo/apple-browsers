@@ -255,6 +255,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .refactorOfSyncPreferences,
                 .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,
+                .dbpRemoteBrokerDelivery,
                 .subscriptionPurchaseWidePixelMeasurement:
             return true
         case .debugMenu,
@@ -264,7 +265,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .dbpRemoteBrokerDelivery,
                 .scheduledSetDefaultBrowserAndAddToDockPrompts:
             return false
         }

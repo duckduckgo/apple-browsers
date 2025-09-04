@@ -82,7 +82,7 @@ import Foundation
 ///
 /// ## Thread Safety
 /// This protocol and its extensions are thread-safe and can be used from any queue.
-public protocol DDGError: Error, Equatable, CustomNSError {
+public protocol DDGError: Error, Equatable, CustomNSError, CustomStringConvertible {
     // MARK: - Core Error Properties
 
     /// The error domain identifying the error's origin or category.
@@ -151,6 +151,7 @@ public protocol DDGError: Error, Equatable, CustomNSError {
     /// ```
     ///
     /// - Note: For user-facing error messages, implement `LocalizedError`.
+    /// DDGError implements CustomStringConvertible and `description` is part of it.
     var description: String { get }
 }
 

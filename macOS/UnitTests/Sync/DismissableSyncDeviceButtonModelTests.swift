@@ -156,6 +156,29 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
         cancellable.cancel()
     }
 
+    func testAuthStateChange_InactiveButFeatureFlagOff_HidesButton() {
+        for enabledFeatureFlags in [[], [FeatureFlag.newSyncEntryPoints], [FeatureFlag.refactorOfSyncPreferences]] {
+            mockFeatureFlagger.enableFeatures(enabledFeatureFlags)
+            let model = createModel(source: .bookmarkAdded)
+
+            let expectation = expectation(description: "shouldShowSyncButton should be true")
+            let cancellable = model.$shouldShowSyncButton
+                .dropFirst() // Skip initial value
+                .sink { value in
+                    expectation.fulfill()
+                    if value {
+                        XCTFail("Sync button should not be visible")
+                    }
+                }
+
+            authStateSubject.send(.inactive)
+
+            wait(for: [expectation], timeout: 1.0)
+            cancellable.cancel()
+            mockFeatureFlagger.enabledFeatureFlags = []
+        }
+    }
+
     // MARK: - viewDidLoad Tests
 
     func testViewDidLoad_FeatureFlagsDisabled_HidesButton() {

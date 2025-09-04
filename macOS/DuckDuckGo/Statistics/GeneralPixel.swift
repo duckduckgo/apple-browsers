@@ -31,6 +31,7 @@ enum GeneralPixel: PixelKitEventV2 {
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
     case launch
     case dailyActiveUser(isDefault: Bool, isAddedToDock: Bool?)
+    case dailyFireWindowConfiguration(startupFireWindow: Bool, openFireWindowByDefault: Bool, fireAnimationEnabled: Bool)
 
     case navigation(NavigationKind)
     case navigationToExternalURL
@@ -429,6 +430,7 @@ enum GeneralPixel: PixelKitEventV2 {
     case updaterDidFindUpdate
     case updaterDidDownloadUpdate
     case updaterDidRunUpdate
+    case releaseNotesEmpty
 
     case faviconDecryptionFailedUnique
     case downloadListItemDecryptionFailedUnique
@@ -546,6 +548,9 @@ enum GeneralPixel: PixelKitEventV2 {
 
         case .dailyActiveUser:
             return  "m_mac_daily_active_user"
+
+        case .dailyFireWindowConfiguration:
+            return "m_mac_fire_window_configuration"
 
         case .navigation:
             return "m_mac_navigation"
@@ -1131,6 +1136,8 @@ enum GeneralPixel: PixelKitEventV2 {
             return "updater_did_download_update"
         case .updaterDidRunUpdate:
             return "updater_did_run_update"
+        case .releaseNotesEmpty:
+            return "m_mac_release_notes_empty"
 
         case .faviconDecryptionFailedUnique:
             return "favicon_decryption_failed_unique"
@@ -1266,6 +1273,13 @@ enum GeneralPixel: PixelKitEventV2 {
             }
 
             return params
+
+        case .dailyFireWindowConfiguration(let startupFireWindow, let openFireWindowByDefault, let fireAnimationEnabled):
+            return [
+                "startup_fire_window": startupFireWindow ? "true" : "false",
+                "open_fire_window_by_default": openFireWindowByDefault ? "true" : "false",
+                "fire_animation_enabled": fireAnimationEnabled ? "true" : "false"
+            ]
 
         case .navigation(let kind):
             return ["kind": kind.description]

@@ -37,6 +37,7 @@ struct SuggestionTrayDependencies {
     let featureFlagger: FeatureFlagger
     let appSettings: AppSettings
     let aiChatSettings: AIChatSettingsProvider
+    let featureDiscovery: FeatureDiscovery
     let newTabPageDependencies: SuggestionTrayViewController.NewTabPageDependencies
 }
 
@@ -112,6 +113,7 @@ final class SuggestionTrayManager: NSObject {
                 featureFlagger: self.dependencies.featureFlagger,
                 appSettings: self.dependencies.appSettings,
                 aiChatSettings: self.dependencies.aiChatSettings,
+                featureDiscovery: self.dependencies.featureDiscovery,
                 newTabPageDependencies: self.dependencies.newTabPageDependencies
             )
         }) else {
@@ -214,7 +216,7 @@ final class SuggestionTrayManager: NSObject {
     
     private func extractText(from suggestion: Suggestion) -> String? {
         switch suggestion {
-        case .phrase(let phrase):
+        case .phrase(let phrase), .askAIChat(let phrase):
             return phrase
         case .website(let url):
             return extractTextFromURL(url)

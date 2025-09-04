@@ -45,7 +45,6 @@ final class MainWindowController: NSWindowController {
     @MainActor
     init(window: NSWindow? = nil,
          mainViewController: MainViewController,
-         popUp: Bool,
          fireWindowSession: FireWindowSession? = nil,
          fireViewModel: FireViewModel,
          visualStyle: VisualStyleProviding) {
@@ -55,6 +54,7 @@ final class MainWindowController: NSWindowController {
 
         assert(window == nil || [.unitTests, .integrationTests].contains(AppVersion.runType),
                "Window should not be set in non-test environment")
+        let popUp = mainViewController.tabCollectionViewModel.isPopup
         let window = window ?? (popUp
             ? PopUpWindow(frame: frame)
             : MainWindow(frame: frame))
@@ -78,11 +78,9 @@ final class MainWindowController: NSWindowController {
         subscribeToFullScreenToolbarChanges()
         subscribeToKeyWindow()
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            WebExtensionManager.shared.eventsListener.didOpenWindow(self)
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didOpenWindow(self)
         }
-#endif
     }
 
     required init?(coder: NSCoder) {
@@ -307,11 +305,9 @@ extension MainWindowController: NSWindowDelegate {
             Application.appDelegate.windowControllersManager.lastKeyMainWindowController = self
         }
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            WebExtensionManager.shared.eventsListener.didFocusWindow(self)
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didFocusWindow(self)
         }
-#endif
     }
 
     private func windowDidResignKeyNotification(_ notification: Notification) {
@@ -442,11 +438,9 @@ extension MainWindowController: NSWindowDelegate {
         _=Unmanaged.passRetained(self).autorelease()
         Application.appDelegate.windowControllersManager.unregister(self)
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            WebExtensionManager.shared.eventsListener.didCloseWindow(self)
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didCloseWindow(self)
         }
-#endif
     }
 
     func windowShouldClose(_ window: NSWindow) -> Bool {

@@ -173,7 +173,8 @@ enum SubscriptionContainerViewFactory {
                                                                          subscriptionAttributionOrigin: origin,
                                                                          appStorePurchaseFlow: appStorePurchaseFlow,
                                                                          appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                         privacyProDataReporter: privacyProDataReporter)
+                                                                         privacyProDataReporter: privacyProDataReporter,
+                                                                         internalUserDecider: internalUserDecider)
         )
         viewModel.email.setEmailFlowMode(.restoreFlow)
         return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel)
@@ -194,7 +195,8 @@ enum SubscriptionContainerViewFactory {
                                                                                                        subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                                                        subscriptionAttributionOrigin: nil,
                                                                                                        appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                                                       appStoreRestoreFlow: appStoreRestoreFlow)
+                                                                                                       appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                                                       internalUserDecider: internalUserDecider)
         let viewModel = SubscriptionContainerViewModel(subscriptionManager: subscriptionManager,
                                                        isInternalUser: internalUserDecider.isInternalUser,
                                                        userScript: SubscriptionPagesUserScript(),
@@ -223,7 +225,8 @@ enum SubscriptionContainerViewFactory {
                                                                          subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                          subscriptionAttributionOrigin: nil,
                                                                          appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                         appStoreRestoreFlow: appStoreRestoreFlow)
+                                                                         appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                         internalUserDecider: internalUserDecider)
         )
 
         viewModel.email.setEmailFlowMode(emailFlow)

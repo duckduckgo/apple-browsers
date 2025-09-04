@@ -22,6 +22,7 @@ import Combine
 import Common
 import PixelKit
 import os.log
+import DesignResourcesKitIcons
 
 protocol SaveCredentialsDelegate: AnyObject {
 
@@ -138,6 +139,8 @@ final class SaveCredentialsViewController: NSViewController {
     private var autofillPreferences: AutofillPreferencesPersistor = AutofillPreferences()
 
     private var passwordManagerStateCancellable: AnyCancellable?
+
+    private var cancellables: Set<AnyCancellable> = []
 
     private var saveButtonAction: (() -> Void)?
 

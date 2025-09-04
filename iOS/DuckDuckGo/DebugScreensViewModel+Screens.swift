@@ -79,9 +79,6 @@ extension DebugScreensViewModel {
             .view(title: "DuckPlayer", { _ in
                 DuckPlayerDebugSettingsView()
             }),
-            .view(title: "New Tab Page", { _ in
-                NewTabPageSectionsDebugView()
-            }),
             .view(title: "WebView State Restoration", { _ in
                 WebViewStateRestorationDebugView()
             }),
@@ -120,6 +117,9 @@ extension DebugScreensViewModel {
             }),
             .view(title: "Default Browser Prompt", { d in
                 DefaultBrowserPromptDebugView(model: DefaultBrowserPromptDebugViewModel(keyValueFilesStore: d.keyValueStore))
+            }),
+            .view(title: "Notifications Playground", { _ in
+                LocalNotificationsPlaygroundView()
             }),
 
             // MARK: Controllers

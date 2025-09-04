@@ -35,7 +35,7 @@ protocol TabsBarDelegate: NSObjectProtocol {
 
 }
 
-class TabsBarViewController: UIViewController {
+class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     public static let viewDidLayoutNotification = Notification.Name("com.duckduckgo.app.TabsBarViewControllerViewDidLayout")
     
@@ -188,26 +188,31 @@ class TabsBarViewController: UIViewController {
     
     private func configureGestures() {
         longPressTabGesture.addTarget(self, action: #selector(handleLongPressTabGesture))
-        longPressTabGesture.minimumPressDuration = 0.2
+        longPressTabGesture.minimumPressDuration = 0.1
+        longPressTabGesture.delegate = self
         collectionView.addGestureRecognizer(longPressTabGesture)
     }
-    
+
+    private var offCenterAdjustment: CGFloat = 0
     @objc func handleLongPressTabGesture(gesture: UILongPressGestureRecognizer) {
         let locationInCollectionView = gesture.location(in: collectionView)
         
         switch gesture.state {
         case .began:
             guard let path = collectionView.indexPathForItem(at: locationInCollectionView) else { return }
+            offCenterAdjustment = 0
             delegate?.tabsBar(self, didSelectTabAtIndex: path.row)
 
         case .changed:
             guard let path = collectionView.indexPathForItem(at: locationInCollectionView) else { return }
             if pressedCell == nil, let cell = collectionView.cellForItem(at: path) as? TabsBarCell {
+                offCenterAdjustment = cell.bounds.midX - gesture.location(in: cell).x
                 cell.isPressed = true
                 pressedCell = cell
                 collectionView.beginInteractiveMovementForItem(at: path)
             }
-            let location = CGPoint(x: locationInCollectionView.x, y: collectionView.center.y)
+
+            let location = CGPoint(x: locationInCollectionView.x + offCenterAdjustment, y: collectionView.center.y)
             collectionView.updateInteractiveMovementTargetPosition(location)
             
         case .ended:
@@ -218,6 +223,16 @@ class TabsBarViewController: UIViewController {
             collectionView.cancelInteractiveMovement()
             releasePressedCell()
         }
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        guard let path = collectionView.indexPathForItem(at: touch.location(in: collectionView)),
+              let cell = collectionView.cellForItem(at: path) as? TabsBarCell else {
+            return true
+        }
+
+        // Don't recognize if pressing delete button
+        return cell.removeButton.hitTest(touch.location(in: cell.removeButton), with: nil) == nil
     }
 
     private func releasePressedCell() {

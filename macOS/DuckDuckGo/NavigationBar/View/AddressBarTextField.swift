@@ -249,7 +249,7 @@ final class AddressBarTextField: NSTextField {
                 restoreValue(Value(stringValue: suggestionViewModel.autocompletionString, userTyped: true))
             case .phrase(phrase: let phase):
                 restoreValue(Value.text(phase, userTyped: false))
-            case .unknown:
+            case .unknown, .askAIChat:
                 updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil)
             }
         case .url(urlString: let urlString, url: _, userTyped: true):
@@ -272,7 +272,7 @@ final class AddressBarTextField: NSTextField {
             case .suggestion(let suggestionViewModel):
                 switch suggestionViewModel.suggestion {
                 case .phrase, .website, .bookmark, .historyEntry, .internalPage, .openTab: return false
-                case .unknown: return true
+                case .unknown, .askAIChat: return true
                 }
             case .text(_, userTyped: true), .url(_, _, userTyped: true): return false
             case .text, .url: return true
@@ -874,7 +874,7 @@ extension AddressBarTextField {
                 }
             case .openTab(title: _, url: let url, _, _):
                 self = .openTab(url)
-            case .unknown:
+            case .unknown, .askAIChat:
                 self = Suffix.search
             }
         }
@@ -1234,7 +1234,8 @@ extension URL {
             finalUrl = url
             userEnteredValue = url.absoluteString
         case .phrase(phrase: let phrase),
-             .unknown(value: let phrase):
+             .unknown(value: let phrase),
+             .askAIChat(value: let phrase):
             finalUrl = URL.makeSearchUrl(from: phrase)
             userEnteredValue = phrase
         case .none:

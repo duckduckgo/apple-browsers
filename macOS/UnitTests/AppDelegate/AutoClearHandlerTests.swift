@@ -56,7 +56,10 @@ class AutoClearHandlerTests: XCTestCase {
         let service = StatePersistenceService(fileStore: fileStore, fileName: fileName)
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                                     service: service,
-                                                                    startupPreferences: NSApp.delegateTyped.startupPreferences)
+                                                                    startupPreferences: NSApp.delegateTyped.startupPreferences,
+                                                                    keyValueStore: NSApp.delegateTyped.keyValueStore,
+                                                                    sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator,
+                                                                    pixelFiring: nil)
         handler = AutoClearHandler(dataClearingPreferences: dataClearingPreferences,
                                    startupPreferences: startupPreferences,
                                    fireViewModel: fireViewModel,
@@ -104,7 +107,12 @@ class AutoClearHandlerTests: XCTestCase {
 
 }
 
-final class MockVisualizeFireAnimationDecider: VisualizeFireAnimationDecider {
+final class MockVisualizeFireAnimationDecider: VisualizeFireSettingsDecider {
+    var isOpenFireWindowByDefaultEnabled: Bool = false
+
+    var shouldShowOpenFireWindowByDefaultPublisher: AnyPublisher<Bool, Never> = Just(false)
+        .eraseToAnyPublisher()
+
     var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> = Just(true)
         .eraseToAnyPublisher()
 

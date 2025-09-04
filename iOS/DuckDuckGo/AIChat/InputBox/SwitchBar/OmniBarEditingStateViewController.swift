@@ -37,6 +37,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onSelectFavorite(_ favorite: BookmarkEntity)
     func onSelectSuggestion(_ suggestion: Suggestion)
     func onVoiceSearchRequested(from mode: TextEntryMode)
+    func onDismissRequested()
 }
 
 /// Main coordinator for the OmniBar editing state, managing multiple specialized components
@@ -108,6 +109,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         super.viewDidAppear(animated)
 
         DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
+        DailyPixel.fire(pixel: .aiChatExperimentalOmnibarShown)
     }
 
     // MARK: - Public Methods
@@ -199,7 +201,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             .receive(on: DispatchQueue.main)
             .sink { [weak self] submission in
                 guard let self = self else { return }
-                defer { self.switchBarHandler.clearText() }
 
                 let text = submission.text
 
@@ -210,9 +211,11 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
                 switch submission.mode {
                 case .search:
+                    DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarQuerySubmitted)
                     self.delegate?.onQuerySubmitted(text)
 
                 case .aiChat:
+                    DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarPromptSubmitted)
                     // If we (re)add the web rag button, then we need to add it to the array of tools Duck.ai should use
                     //  for this submission.
                     self.delegate?.onPromptSubmitted(text, tools: nil)
@@ -242,6 +245,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     @objc private func dismissButtonTapped(_ sender: UIButton) {
         switchBarVC.unfocusTextField()
+        delegate?.onDismissRequested()
         dismissAnimated()
     }
 

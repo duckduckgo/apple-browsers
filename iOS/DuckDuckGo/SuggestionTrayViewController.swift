@@ -73,6 +73,7 @@ class SuggestionTrayViewController: UIViewController {
     private let featureFlagger: FeatureFlagger
     private let appSettings: AppSettings
     private let aiChatSettings: AIChatSettingsProvider
+    private let featureDiscovery: FeatureDiscovery
 
     var coversFullScreen: Bool = false
 
@@ -110,7 +111,6 @@ class SuggestionTrayViewController: UIViewController {
         let favoritesModel: FavoritesListInteracting
         let homePageMessagesConfiguration: HomePageMessagesConfiguration
         let privacyProDataReporting: PrivacyProDataReporting?
-        let variantManager: VariantManager
         let newTabDialogFactory: NewTabDaxDialogFactory
         let newTabDaxDialogManager: NewTabDialogSpecProvider & PrivacyProPromotionCoordinating
         let faviconLoader: FavoritesFaviconLoading
@@ -126,6 +126,7 @@ class SuggestionTrayViewController: UIViewController {
                    featureFlagger: FeatureFlagger,
                    appSettings: AppSettings,
                    aiChatSettings: AIChatSettingsProvider,
+                   featureDiscovery: FeatureDiscovery,
                    newTabPageDependencies: NewTabPageDependencies? = nil) {
         self.favoritesModel = favoritesViewModel
         self.bookmarksDatabase = bookmarksDatabase
@@ -135,6 +136,7 @@ class SuggestionTrayViewController: UIViewController {
         self.appSettings = appSettings
         self.aiChatSettings = aiChatSettings
         self.newTabPageDependencies = newTabPageDependencies
+        self.featureDiscovery = featureDiscovery
         super.init(coder: coder)
     }
     
@@ -283,11 +285,9 @@ class SuggestionTrayViewController: UIViewController {
 
         let controller = NewTabPageViewController(
             tab: Tab(),
-            isNewTabPageCustomizationEnabled: false,
             interactionModel: dependencies.favoritesModel,
             homePageMessagesConfiguration: dependencies.homePageMessagesConfiguration,
             privacyProDataReporting: dependencies.privacyProDataReporting,
-            variantManager: dependencies.variantManager,
             newTabDialogFactory: dependencies.newTabDialogFactory,
             daxDialogsManager: dependencies.newTabDaxDialogManager,
             faviconLoader: dependencies.faviconLoader,
@@ -336,7 +336,8 @@ class SuggestionTrayViewController: UIViewController {
                                                     appSettings: appSettings,
                                                     tabsModel: tabsModel,
                                                     featureFlagger: featureFlagger,
-                                                    aiChatSettings: aiChatSettings)
+                                                    aiChatSettings: aiChatSettings,
+                                                    featureDiscovery: featureDiscovery)
         install(controller: controller, animated: animated)
         controller.delegate = autocompleteDelegate
         controller.presentationDelegate = self

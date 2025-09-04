@@ -53,10 +53,8 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter(), isStillOnboarding: { true })
         hvc = NewTabPageViewController(
             tab: Tab(),
-            isNewTabPageCustomizationEnabled: false,
             interactionModel: MockFavoritesListInteracting(),
             homePageMessagesConfiguration: homePageConfiguration,
-            variantManager: variantManager,
             newTabDialogFactory: dialogFactory,
             daxDialogsManager: specProvider,
             faviconLoader: EmptyFaviconLoading(),

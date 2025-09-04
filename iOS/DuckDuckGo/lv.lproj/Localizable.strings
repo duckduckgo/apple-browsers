@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Saīsnes";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Pielāgo savu izlasi un bieži izmantotās funkcijas. Pārkārto elementus vai paslēp tos, lai lieki neaizņemtu vietu.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Tava jaunas cilnes lapa ir... atjaunota!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Izlase";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Saīsnes";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Rādīt, paslēpt un pārkārtot sadaļas jaunās cilnes lapā";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "SADAĻAS";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "SAĪSNES";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Jaunas cilnes lapas pielāgošana";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Grāmatzīmes";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Lejupielādes";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Paroles";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Iestatījumi";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Jebkurā vietnē atver izvēlni ••• un izvēlies **Pievienot izlasei**, lai to pievienotu savai jaunas cilnes lapai.";
-
 /* No comment provided by engineer. */
 "No results found" = "Nav atrasti rezultāti";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Meklē privāti pēc noklusējuma";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo ir arī %1$@, kas pieejams ar %2$@ un %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "uzlabotu, privātu mākslīgo intelektu";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "neobligāts maksas abonements";
@@ -2395,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Dzēst pārlūkošanas datus ar vienu pogu";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Bloķē trešo pušu izsekotājus";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2698,6 +2662,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Meklē vai ievadi adresi";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Pajautā Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Meklēt";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Sekundārā/otrā darbība";
 
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Rādīt pilnu vietnes adresi";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Noklusējuma)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Eksperimentāls)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Izmēģini mūsu eksperimentālo iespēju jautāt Duck.ai tieši no adreses joslas.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Meklēšana & Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Meklēt tikai";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Pārvaldīt Duck.ai īsceļus";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai īsceļi";
@@ -2892,6 +2883,9 @@
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatūra";
+
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Uzzināt vairāk";
 
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Ļaut DuckDuckGo pārvaldīt sīkfailu piekrišanas uznirstošos logus";
@@ -3043,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Iestatījumi";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Palīdz bloķēt trešo pušu izsekotājus, kas mēģina maskēties tīmekļa vietnē, izmantojot DNS.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Aizsargā pret DNS CNAME maskēšanu";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Atspējo izsekošanu Facebook saturam, piemēram, Facebook komentāru logrīkiem vietnēs, kas nav Facebook.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Facebook izsekošanas aizsardzība";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Palīdz neļaut izsekošanas uzņēmumiem iegūt unikālus identifikatorus par tavu pārlūkprogrammu un ierīci, kurus viņi izmanto, lai sekotu tev tīmeklī.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Novērš identificējošo ciparvirkņu izsekošanu";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Pēc 30 dienām automātiski izbeidzas 1. puses sīkfaili, lai vietnes nevarētu tevi izsekot bezgalīgi, kad esi izrakstījies.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Atspējo pirmās puses sīkfailus";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Aizstāj Google AMP saites ar sākotnējā izdevēja vietni.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Bloķē Google AMP izsekošanu";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Bloķē Google pierakstīšanās uznirstošos logus vietnēs, kas nepieder Google.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Bloķē Google pieteikšanās uznirstošos logus";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Noņem izsekošanas parametrus saitēs, lai trešās personas nevarētu izsekot tavai uzvedībai dažādās vietnēs.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Bloķē saišu izsekošanu";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Palīdz neļaut uzņēmumiem identificēt tavu pēdējo apmeklēto vietni.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Aizsargā pret novirzītāju izsekošanu";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Bloķē uzmācīgus izsekotājus, pirms tie tiek ielādēti, tādējādi efektīvi novēršot reklāmas, kas balstās uz izsekošanu.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Bloķē mērķētas reklāmas";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Palīdz bloķēt trešo pušu sīkfailus, kas izseko tevi no vietnes uz vietni un neļauj ielādēt trešo pušu izsekotājus.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Bloķē trešo pušu izsekotājus";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Neaizsargātas vietnes";
 
@@ -3055,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Tīmekļa izsekošanas aizsardzība";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Web tracking protections vienmēr ir ieslēgtas";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo automātiski bloķē slēptos izsekotājus, kad tu pārlūko tīmekli.\n[Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Kā mēs tevi aizsargājam";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "DuckDuckGo pārlūkprogramma nodrošina izsekošanas aizsardzības, kas vienmēr ir aktīvas. [Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Izvēlies atbilstošāko problēmas raksturojumu.";
@@ -3193,8 +3256,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Saņem atbildes uz bieži uzdotiem jautājumiem vai sazinies ar Privacy Pro atbalsta dienestu mūsu palīdzības lapās.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Sūtīt atsauksmi";
+/* Share Feedback Button */
+"subscription.feedback" = "Kopīgot atsauksmi";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Atcelt";

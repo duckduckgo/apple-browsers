@@ -36,7 +36,6 @@ struct AppConfiguration {
     func start() throws {
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
         PixelConfiguration.configure(with: featureFlagger)
-        NewTabPageIntroMessageConfiguration().disableIntroMessageForReturningUsers()
 
         contentBlockingConfiguration.prepareContentBlocking()
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)

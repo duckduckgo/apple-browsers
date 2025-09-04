@@ -86,6 +86,7 @@ struct UserText {
     static let mainMenuFile = NSLocalizedString("main-menu.file", value: "File", comment: "Main Menu File")
     static let mainMenuFileNewTab = NSLocalizedString("main-menu.file.new-tab", value: "New Tab", comment: "Main Menu File item")
     static let mainMenuFileOpenLocation = NSLocalizedString("main-menu.file.open-location", value: "Open Location…", comment: "Main Menu File item- Menu option that allows the user to connect to an address (type an address) on click the address bar of the browser is selected and the user can type.")
+    static let mainMenuFileOpenFile = NSLocalizedString("main-menu.file.open-file", value: "Open File…", comment: "Main Menu File item")
     static let mainMenuFileCloseWindow = NSLocalizedString("main-menu.file.close-window", value: "Close Window", comment: "Main Menu File item")
     static let mainMenuFileCloseAllWindows = NSLocalizedString("main-menu.file.close-all-windows", value: "Close All Windows", comment: "Main Menu File item")
     static let mainMenuFileSaveAs = NSLocalizedString("main-menu.file.save-as", value: "Save As…", comment: "Main Menu File item")
@@ -431,16 +432,52 @@ struct UserText {
                                                                 value: "Fireproofing this site will keep you signed in after using the Fire Button.",
                                                                 comment: "Fireproof confirmation message")
     static let webTrackingProtectionSettingsTitle = NSLocalizedString("web.tracking.protection.title", value: "Web Tracking Protection", comment: "Web tracking protection settings section title")
-    static let webTrackingProtectionExplenation = NSLocalizedString("web.tracking.protection.explenation", value: "DuckDuckGo automatically blocks hidden trackers as you browse the web.", comment: "Privacy feature explanation in the browser settings")
+    public static let webTrackingProtectionSubtitle = NSLocalizedString("settings.web.tracking.protection.subtitle", value: "How We Protect You", comment: "The subtitle of the web tracking protection grid section")
+    static let webTrackingProtectionExplenation = NSLocalizedString("web.tracking.protection.subtitle", value: "DuckDuckGo automatically blocks hidden trackers as you browse the web.", comment: "Privacy feature explanation in the browser settings")
     static let autoconsentCheckboxTitle = NSLocalizedString("autoconsent.checkbox.title", value: "Automatically handle cookie pop-ups", comment: "Autoconsent settings checkbox title")
     static let autoconsentExplanation = NSLocalizedString("autoconsent.explanation", value: "DuckDuckGo will try to select the most private settings available and hide these pop-ups for you.", comment: "Autoconsent feature explanation in settings")
     static let privateSearchExplanation = NSLocalizedString("private.search.explenation", value: "DuckDuckGo Private Search is your default search engine, so you can search the web without being tracked.", comment: "feature explanation in settings")
     static let webTrackingProtectionExplanation = NSLocalizedString("web.tracking.protection.explanation", value: "DuckDuckGo automatically blocks hidden trackers as you browse the web.", comment: "feature explanation in settings")
+    static let webTrackingProtectionUpdatedDescription = NSLocalizedString("web.tracking.protection.updated.description", value: "The DuckDuckGo browser provides tracking protections, which are always active.", comment: "Updated feature description in settings")
+    static let webTrackingProtectionAlwaysOn = NSLocalizedString("Always On", comment: "Web tracking protection Always on title")
+    
+    // Tracking Protection Features
+    static let trackingProtectionThirdPartyTrackersTitle = NSLocalizedString("tracking.protection.third.party.trackers.title", value: "Blocks 3rd-party trackers", comment: "Feature box title")
+    static let trackingProtectionThirdPartyTrackersDescription = NSLocalizedString("tracking.protection.third.party.trackers.description", value: "Helps block 3rd-party cookies that track you from site to site by preventing 3rd-party trackers from loading in the first place.", comment: "Feature description")
+    
+    static let trackingProtectionTargetedAdsTitle = NSLocalizedString("tracking.protection.targeted.ads.title", value: "Blocks targeted ads", comment: "Feature box title")
+    static let trackingProtectionTargetedAdsDescription = NSLocalizedString("tracking.protection.targeted.ads.description", value: "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.", comment: "Feature description")
+    
+    static let trackingProtectionLinkTrackingTitle = NSLocalizedString("tracking.protection.link.tracking.title", value: "Blocks link tracking", comment: "Feature box title")
+    static let trackingProtectionLinkTrackingDescription = NSLocalizedString("tracking.protection.link.tracking.description", value: "Removes tracking parameters in links to prevent 3rd parties from tracking your behavior across sites.", comment: "Feature box description")
+    
+    static let trackingProtectionFingerprintingTitle = NSLocalizedString("tracking.protection.fingerprinting.title", value: "Prevents fingerprint tracking", comment: "Feature box title")
+    static let trackingProtectionFingerprintingDescription = NSLocalizedString("tracking.protection.fingerprinting.description", value: "Helps stop tracking companies from obtaining unique identifiers about your browser and device, which they use to follow you around the web.", comment: "Feature box description")
+    
+    static let trackingProtectionReferrerTitle = NSLocalizedString("tracking.protection.referrer.title", value: "Protects against referrer tracking", comment: "Feature box title")
+    static let trackingProtectionReferrerDescription = NSLocalizedString("tracking.protection.referrer.description", value: "Helps block companies from identifying the last website you visited.", comment: "Feature box description")
+    
+    static let trackingProtectionFirstPartyCookiesTitle = NSLocalizedString("tracking.protection.first.party.cookies.title", value: "Expires 1st-party cookies", comment: "Feature box title")
+    static let trackingProtectionFirstPartyCookiesDescription = NSLocalizedString("tracking.protection.first.party.cookies.description", value: "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out.", comment: "Feature box description")
+    
+    static let trackingProtectionCNAMECloakingTitle = NSLocalizedString("tracking.protection.cname.cloaking.title", value: "Protects against DNS CNAME cloaking", comment: "Feature box title")
+    static let trackingProtectionCNAMECloakingDescription = NSLocalizedString("tracking.protection.cname.cloaking.description", value: "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS.", comment: "Feature box description")
+    
+    static let trackingProtectionGoogleAMPTitle = NSLocalizedString("tracking.protection.google.amp.title", value: "Blocks Google's AMP Tracking", comment: "Feature box title")
+    static let trackingProtectionGoogleAMPDescription = NSLocalizedString("tracking.protection.google.amp.description", value: "Replaces Google AMP links with the original publisher's site.", comment: "Feature box description")
+    
+    static let trackingProtectionGoogleSignInTitle = NSLocalizedString("tracking.protection.google.sign.in.title", value: "Blocks Google's sign-in pop-ups", comment: "Feature box title")
+    static let trackingProtectionGoogleSignInDescription = NSLocalizedString("tracking.protection.google.sign.in.description", value: "Blocks Google sign-in pop-ups on sites Google doesn't own.", comment: "Feature box description")
+    
+    static let trackingProtectionFacebookTitle = NSLocalizedString("tracking.protection.facebook.title", value: "Facebook tracking protection", comment: "Feature box title")
+    static let trackingProtectionFacebookDescription = NSLocalizedString("tracking.protection.facebook.description", value: "Disables tracking for Facebook content like Facebook comment widgets on non-Facebook sites.", comment: "Feature box description")
+    
     static let emailProtectionExplanation = NSLocalizedString("email.protection.explanation", value: "Block email trackers and hide your address without switching your email provider.", comment: "Email protection feature explanation in settings. The feature blocks email trackers and hides original email address.")
 
     // Misc
 
     static let aiChatShowOnNewTabPageBarToggle = NSLocalizedString("duckai.show-on-new-tab-page.toggle", value: "Show on New Tab Page", comment: "A checkbox to control AI Chat shortcut visibility on the New Tab Page")
+    static let aiChatShowInSearchBoxOnNewTabPageBarToggle = NSLocalizedString("duckai.show-in-search-box-on-new-tab-page.toggle", value: "Show in Search box on New Tab Page", comment: "A checkbox to control AI Chat shortcut visibility in a search box on the New Tab Page")
     static let aiChatShowInAddressBarToggle = NSLocalizedString("duckai.show-in-address-bar.toggle", value: "Show Duck.ai shortcut in the address bar", comment: "Show AI Chat in the address bar")
     static let aiChatShowInApplicationMenuToggle = NSLocalizedString("duckai.show-in-application-menu.toggle-setting", value: "Show Duck.ai shortcuts in menus", comment: "Show Duck.ai in application menus")
     static let aiChatOpenInSidebarToggle = NSLocalizedString("duckai.open-in-sidebar.toggle-setting", value: "Open Duck.ai in the sidebar", comment: "Settings option to open Duck.ai in the sidebar")
@@ -522,6 +559,7 @@ struct UserText {
     static let autofillPasswordManager = NSLocalizedString("autofill.password-manager", value: "Password Manager", comment: "Autofill settings section title")
     static let autofillPasswordManagerDuckDuckGo = NSLocalizedString("autofill.password-manager.duckduckgo", value: "DuckDuckGo built-in password manager", comment: "Autofill password manager row title")
     static let autofillPasswordManagerBitwarden = NSLocalizedString("autofill.password-manager.bitwarden", value: "Bitwarden", comment: "Autofill password manager row title")
+    static let autofillPasswordManagerBitwardenExtension = NSLocalizedString("autofill.password-manager.bitwarden.extension", value: "Bitwarden Extension", comment: "Autofill password manager row title")
     static let autofillPasswordManagerBitwardenDisclaimer = NSLocalizedString("autofill.password-manager.bitwarden.disclaimer", value: "Setup requires installing the Bitwarden app.", comment: "Autofill password manager Bitwarden disclaimer")
     static let restartBitwarden = NSLocalizedString("restart.bitwarden", value: "Restart Bitwarden", comment: "Button to restart Bitwarden application")
     static let restartBitwardenInfo = NSLocalizedString("restart.bitwarden.info", value: "Bitwarden is not responding. Please restart it to initiate the communication again", comment: "This string represents a message informing the user that Bitwarden is not responding and prompts them to restart the application to initiate communication again.")
@@ -604,6 +642,9 @@ struct UserText {
     static let importDataImportTypeTitleSelected = NSLocalizedString("import.browser.data.import-type.title.collapsed", value: "Import selected data", comment: "Import Browser Data dialog title for option to choose what to import in collapsed state")
     static let importDataImportTypeSubtitleBookmarksAndPasswords = NSLocalizedString("import.browser.data.import-type.subtitle.bookmarks.and.passwords", value: "Bookmarks and passwords", comment: "Import Browser Data dialog subtitle for option to choose what to import in collapsed state")
     static let importDataImportTypeSubtitleNone = NSLocalizedString("import.browser.data.import-type.subtitle.none", value: "None", comment: "Import Browser Data dialog subtitle for option to choose what to import in collapsed state")
+    static let importDataSelectProfileTitle = NSLocalizedString("import.browser.data.select.profile.title", value: "Select profile:", comment: "Title for the data import browser profile picker")
+    static let importDataSelectionSyncButtonTitle = NSLocalizedString("import.browser.data.selection.sync.button.title", value: "Sync from DuckDuckGo on another device", comment: "Import Browser Data dialog button title to sync imported data at selection stage")
+    static let importDataCompleteSyncButtonTitle = NSLocalizedString("import.browser.data.complete.sync.button.title", value: "Sync to DuckDuckGo on Mobile", comment: "Import Browser Data dialog button title to sync imported data at completion stage")
 
     static let exportLogins = NSLocalizedString("export.logins.data", value: "Export Passwords…", comment: "Opens Export Logins Data dialog")
     static let exportBookmarks = NSLocalizedString("export.bookmarks.menu.item", value: "Export Bookmarks…", comment: "Export bookmarks menu item")
@@ -901,6 +942,17 @@ struct UserText {
     static let onStartup = NSLocalizedString("preferences.on-startup", value: "On Startup", comment: "Name of the preferences section related to app startup")
     static let reopenAllWindowsFromLastSession = NSLocalizedString("preferences.reopen-windows", value: "Reopen all windows from last session", comment: "Option to control session restoration")
     static let showHomePage = NSLocalizedString("preferences.show-home", value: "Open a new window", comment: "Option to control session startup")
+    static let openANew = NSLocalizedString("preferences.startup.open-a-new", value: "Open a new", comment: "Label for startup window type selection")
+    static let window = NSLocalizedString("preferences.startup.window", value: "Window", comment: "Option for regular window type")
+    static let fireWindow = NSLocalizedString("preferences.fire-window-section", value: "Fire Window", comment: "Section title for Fire Window preferences")
+    static let openFireWindowByDefault = NSLocalizedString("preferences.open-fire-window-by-default", value: "Open Fire Window by default", comment: "Option to make all new windows Fire Windows")
+
+    static func openFireWindowByDefaultExplanation(newFireWindowShortcut: String, newRegularWindowShortcut: String) -> String {
+        let localized = NSLocalizedString("preferences.open-fire-window-by-default.explanation",
+                                          value: "Open Fire Windows by default when opening new windows (%@). You can still open a regular browser window when this setting is on (%@).",
+                                          comment: "Explanation for the option to make all new windows Fire Windows. The %@ will be replaced with a keyboard shortcut for opening new Fire Windows and regular Windows (e.g. '⌘N' and '⇧⌘N').")
+        return String(format: localized, newFireWindowShortcut, newRegularWindowShortcut)
+    }
 
     static let pinnedTabs = NSLocalizedString("preferences-pinned-tabs.title", value: "Pinned tabs are", comment: "Beginning of the setting for pinned tabs. It's either 'Pinned tabs are shared across all windows' or 'Pinned tabs are different in each window'")
     static let pinnedTabsWarningTitle = NSLocalizedString("preferences-pinned-tabs-warning-title", value: "Are you sure you want to share pinned tabs across all windows?", comment: "Title of warning before switching from per window pinned tabs to shared pinned tabs")
@@ -1283,6 +1335,9 @@ struct UserText {
     static let showDownloadsShortcut = NSLocalizedString("pinning.show-downloads-shortcut", value: "Show Downloads Shortcut", comment: "Menu item for showing the downloads shortcut")
     static let hideDownloadsShortcut = NSLocalizedString("pinning.hide-downloads-shortcut", value: "Hide Downloads Shortcut", comment: "Menu item for hiding the downloads shortcut")
 
+    static let showShareShortcut = NSLocalizedString("pinning.show-share-shortcut", value: "Show Share Shortcut", comment: "Menu item for showing the share shortcut")
+    static let hideShareShortcut = NSLocalizedString("pinning.hide-share-shortcut", value: "Hide Share Shortcut", comment: "Menu item for hiding the share shortcut")
+
     static let showNetworkProtectionShortcut = NSLocalizedString("pinning.show-netp-shortcut", value: "Show VPN Shortcut", comment: "Menu item for showing the NetP shortcut")
     static let hideNetworkProtectionShortcut = NSLocalizedString("pinning.hide-netp-shortcut", value: "Hide VPN Shortcut", comment: "Menu item for hiding the NetP shortcut")
 
@@ -1311,7 +1366,9 @@ struct UserText {
     static let bookmarksSortByNameDescending = NSLocalizedString("bookmarks.sort.name.desc", value: "Descending", comment: "Button to sort bookmarks by name descending")
 
     static let bookmarksEmptyStateTitle = NSLocalizedString("bookmarks.empty.state.title", value: "No bookmarks yet", comment: "Title displayed in Bookmark Manager when there is no bookmarks yet")
-    static let bookmarksEmptyStateMessage = NSLocalizedString("bookmarks.empty.state.message", value: "If your bookmarks are saved in another browser, you can import them into DuckDuckGo.", comment: "Text displayed in Bookmark Manager when there is no bookmarks yet")
+    static let bookmarksEmptyStateMessage = NSLocalizedString("bookmarks.empty.state.message2", value: "Import bookmarks from another browser or sync them on DuckDuckGo across your devices.", comment: "Text displayed in Bookmark Manager when there is no bookmarks yet")
+    static let bookmarksEmptyStateImportButtonTitle = NSLocalizedString("bookmarks.empty.state.importButton.title", value: "Import Bookmarks", comment: "")
+    static let bookmarksEmptyStateSyncButtonTitle = NSLocalizedString("bookmarks.empty.state.syncButton.title", value: "Sync Bookmarks", comment: "")
 
     static let bookmarksEmptySearchResultStateTitle = NSLocalizedString("bookmarks.empty.search.resukt..state.title", value: "No bookmarks found", comment: "Title displayed in Bookmark Panel when there is no bookmarks that match the search query")
     static let bookmarksEmptySearchResultStateMessage = NSLocalizedString("bookmarks.empty.search.result.state.message", value: "Try different search terms.", comment: "Text displayed in Bookmark Panel when there is no bookmarks that match the search query")
@@ -1422,6 +1479,7 @@ struct UserText {
     // Favorites
     static let newTabFavoriteSectionTitle = NSLocalizedString("newTab.favorites.section.title", value: "Favorites", comment: "Title of the Favorites section in the home page")
     static let newTabOmnibarSectionTitle = NSLocalizedString("newTab.favorites.section.omnibar", value: "Search", comment: "Title of the Search section in the home page")
+    static let newTabAIChatSectionTitle = NSLocalizedString("newTab.aichat.section.title", value: "Duck.ai", comment: "Title of the Duck.ai section in the home page")
 
     // Set Up
     static let newTabSetUpDefaultBrowserCardTitle = NSLocalizedString("newTab.setup.default.browser.title", value: "Default to Privacy", comment: "Title of the Default Browser card of the Set Up section in the home page")
@@ -1500,11 +1558,17 @@ struct UserText {
     static let warnBeforeQuitDialogHeader = NSLocalizedString("warn.before.quit.dialog.header", value: "Clear tabs and browsing data and quit DuckDuckGo?", comment: "A header of warning before clearing data on the application termination.")
     static let warnBeforeQuitDialogCheckboxMessage = NSLocalizedString("warn.before.quit.dialog.checkbox.message", value: "Warn me every time", comment: "A label after checkbox to configure the warning before clearing data on the application termination.")
     static let disableAutoClearToEnableSessionRestore = NSLocalizedString("disable.auto.clear.to.enable.session.restore",
-                                                                          value: "Your session won't be restored if data is deleted when exiting.",
+                                                                          value: "Your session won't be restored if Auto-Clear is turned on. Fire Windows also won’t be restored.",
                                                                           comment: "Information label in Settings. It tells user that to enable session restoration setting they have to disable burn on quit. Auto-Clear should match the string with 'auto.clear' key")
     static let showDataClearingSettings = NSLocalizedString("show.data.clearing.settings",
-                                                            value: "Open Data Clearing Settings",
+                                                            value: "Go to Data Clearing Settings",
                                                             comment: "Button in Settings. It navigates user to Data Clearing Settings. The Data Clearing string should match the string with the preferences.data-clearing key")
+    static let showStartupSettings = NSLocalizedString("show.startup.settings",
+                                                       value: "Go to Startup Settings",
+                                                       comment: "Button in Data Clearing Settings. It navigates user to Startup Settings.")
+    static let fireWindowSessionRestoreWarning = NSLocalizedString("fire.window.session.restore.warning",
+                                                                  value: "Fire Windows won’t be restored with your session.",
+                                                                  comment: "Warning message explaining that session restoration is not available when using Fire Window")
     static let fireAnimationSectionHeader = NSLocalizedString("fire.animation.section.setting", value: "Animation", comment: "Section header in Data Clearing related to the Fire Animation.")
     static let showFireAnimationToggleText = NSLocalizedString("fire.animation.toggle.value", value: "Show inferno animation when deleting data", comment: "Checkbox to toggle the fire animation to be on or off")
 
@@ -1514,6 +1578,22 @@ struct UserText {
     static let crashReportTextFieldTitle = NSLocalizedString("crash-report.textfield.title", value: "Problem Details", comment: "Title of the text field where the problems that caused the crashed are detailed")
     static let crashReportSendButton = NSLocalizedString("crash-report.send-button", value: "Send to DuckDuckGo", comment: "Button the user can press to send the crash report to DuckDuckGo")
     static let crashReportDontSendButton = NSLocalizedString("crash-report.dont-send-button", value: "Don’t Send", comment: "Button the user can press to not send the crash report")
+
+    // MARK: Post-Crash Session Restore Prompt
+    static let sessionRestorePromptTitle = NSLocalizedString("session.restore.prompt.title", value: "The browser didn’t quit as expected", comment: "Title of the prompt where the user can choose to restore the previous browser session after a crash")
+    static let sessionRestorePromptMessage = NSLocalizedString("session.restore.prompt.message", value: "Would you like to restore tabs from your previous session?", comment: "Message of the prompt where the user can choose to restore the previous browser session after a crash")
+    static let sessionRestorePromptExplanation: String = {
+        let localized = {
+            if #available(macOS 12, *) {
+                NSLocalizedString("session.restore.prompt.explanation.markdown", value: "You can also do this later from **%1$@** → **%2$@**.", comment: "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session. Please make sure to keep **%1$@** and **%2$@** intact.")
+            } else {
+                NSLocalizedString("session.restore.prompt.explanation", value: "You can also do this later from %1$@ → %2$@.", comment: "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session.")
+            }
+        }()
+        return String(format: localized, mainMenuHistory, mainMenuHistoryReopenAllWindowsFromLastSession)
+    }()
+    static let sessionRestorePromptButtonAccept = NSLocalizedString("session.restore.prompt.button.accept", value: "Restore Session", comment: "Button the user can press to restore the previous browser session after a crash")
+    static let sessionRestorePromptButtonReject = NSLocalizedString("session.restore.prompt.button.reject", value: "No Thanks", comment: "Button the user can press to not restore the previous browser session after a crash")
 
     // MARK: Downloads
     static let downloadsDialogTitle = NSLocalizedString("downloads.dialog.title", value: "Downloads", comment: "Title of the dialog that manages the Downloads in the browser")
@@ -1582,6 +1662,7 @@ struct UserText {
                 static let addBookmark = NSLocalizedString("bookmarks.dialog.action.addBookmark", value: "Add Bookmark", comment: "CTA title for adding a Bookmark")
                 static let addFolder = NSLocalizedString("bookmarks.dialog.action.addFolder", value: "Add Folder", comment: "CTA title for adding a Folder")
                 static let addAllBookmarks = NSLocalizedString("bookmarks.dialog.action.addAllBookmarks", value: "Save Bookmarks", comment: "CTA title for saving multiple Bookmarks at once")
+                static let syncBookmarks = NSLocalizedString("bookmarks.dialog.action.syncBookmarks", value: "Sync Bookmarks Across Devices", comment: "CTA title for syncing bookmarks")
             }
         }
     }

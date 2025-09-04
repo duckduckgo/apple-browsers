@@ -235,7 +235,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         Logger.subscription.log("Remove subscription")
 
         Task {
-            await subscriptionManager.signOut(notifyUI: true)
+            await subscriptionManager.signOut(notifyUI: true, userInitiated: true)
             _ = await ActionMessageView()
             await ActionMessageView.present(message: UserText.subscriptionRemovalConfirmation,
                                             presentationLocation: .withoutBottomBar)

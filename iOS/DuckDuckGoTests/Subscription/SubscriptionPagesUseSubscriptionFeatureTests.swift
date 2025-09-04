@@ -71,7 +71,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         static let mockParams: [String: String] = [:]
         static let mockScriptMessage = MockWKScriptMessage(name: "", body: "", webView: WKWebView() )
 
-        static let invalidTokenError = APIServiceError.serverError(statusCode: 401, error: "invalid_token")
+        static let invalidTokenError = APIServiceError.serverError(statusCode: 401, errorCode: "invalid_token")
     }
 
     var userDefaults: UserDefaults!
@@ -105,6 +105,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     var subscriptionManagerV2: SubscriptionManagerMockV2!
     var purchaseFlow: AppStorePurchaseFlowMockV2!
     var restoreFlow: AppStoreRestoreFlowMockV2!
+    var mockInternalUserDecider: MockInternalUserDecider!
 
     override func setUpWithError() throws {
         throw XCTSkip("Potentially flaky")
@@ -188,11 +189,13 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         subscriptionManagerV2 = SubscriptionManagerMockV2()
         purchaseFlow = AppStorePurchaseFlowMockV2()
         restoreFlow = AppStoreRestoreFlowMockV2()
+        mockInternalUserDecider = MockInternalUserDecider(isInternalUser: true)
         featureAuthV2 = DefaultSubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManagerV2,
                                                                          subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                          subscriptionAttributionOrigin: nil,
                                                                          appStorePurchaseFlow: purchaseFlow,
-                                                                         appStoreRestoreFlow: restoreFlow)
+                                                                         appStoreRestoreFlow: restoreFlow,
+                                                                         internalUserDecider: mockInternalUserDecider)
 
     }
 

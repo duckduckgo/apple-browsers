@@ -21,6 +21,7 @@ import Combine
 import Common
 import Foundation
 import Navigation
+import PixelKit
 import WebKit
 
 #if SPARKLE
@@ -147,7 +148,7 @@ extension ReleaseNotesValues {
         self.automaticUpdate = automaticUpdate
     }
 
-    init(from updateController: UpdateController) {
+    init(from updateController: UpdateController, pixelKit: PixelKit? = PixelKit.shared) {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
@@ -162,17 +163,22 @@ extension ReleaseNotesValues {
                 formatter.dateFormat = "MMMM dd yyyy"
                 let releaseTitle = formatter.string(from: cached.date)
 
-                self.init(status: .loaded,
+                let cachedVersion = "\(cached.version) (\(cached.build))"
+                let status = currentVersion == cachedVersion ? ReleaseNotesValues.Status.loaded : ReleaseNotesValues.Status.updateReady
+
+                self.init(status: status,
                           currentVersion: currentVersion,
-                          latestVersion: "\(cached.version) \(cached.build)",
+                          latestVersion: cachedVersion,
                           lastUpdate: lastUpdate,
                           releaseTitle: releaseTitle,
                           releaseNotes: cached.releaseNotes,
                           releaseNotesPrivacyPro: cached.releaseNotesPrivacyPro,
-                          downloadProgress: nil,
+                          downloadProgress: 0.00,
                           automaticUpdate: updateController.areAutomaticUpdatesEnabled)
                 return
             }
+
+            pixelKit?.fire(GeneralPixel.releaseNotesEmpty, frequency: .dailyAndCount)
 
             self.init(status: updateController.updateProgress.toStatus,
                       currentVersion: currentVersion,
@@ -223,7 +229,7 @@ extension ReleaseNotesValues {
 
 private extension Update {
     var versionString: String? {
-        "\(version) \(build)"
+        "\(version) (\(build))"
     }
 }
 

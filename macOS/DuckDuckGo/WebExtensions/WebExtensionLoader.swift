@@ -16,15 +16,14 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
-
 import CryptoKit
+import WebKit
 
 @available(macOS 15.4, *)
 protocol WebExtensionLoading: AnyObject {
     @discardableResult
-    func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WKWebExtensionContext
-    func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WKWebExtensionContext, Error>]
+    func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
+    func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>]
     func unloadExtension(at path: String, from controller: WKWebExtensionController) throws
 }
 
@@ -36,24 +35,48 @@ final class WebExtensionLoader: WebExtensionLoading {
         case failedToFindContextForPath(path: String)
     }
 
-    func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WKWebExtensionContext {
+    func bundle(from path: String) -> Bundle? {
+        let url = URL(fileURLWithPath: path, isDirectory: true)
+        return Bundle(url: url)
+    }
+
+    @MainActor
+    func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
         guard let extensionURL = URL(string: path) else {
             assertionFailure("Failed to create URL from path: \(path)")
             throw WebExtensionLoaderError.failedToCreateURLFromPath(path: path)
         }
 
-        let webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
+        let webExtension: WKWebExtension
+        var extensionIdentifier: WebExtensionIdentifier?
+
+        if extensionURL.pathExtension == "appex",
+           let bundle = Bundle(url: extensionURL) {
+
+            // Detect known extension based on bundle
+            extensionIdentifier = WebExtensionIdentifier.identify(bundle: bundle)
+
+            // Loading from the bundle is best to support native messaging automagically
+            webExtension = try await WKWebExtension(appExtensionBundle: bundle)
+        } else {
+            // Detect known extension based on bundle
+            extensionIdentifier = WebExtensionIdentifier.bitwarden
+            webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
+        }
+
+        // Single point for context creation and loading
         let context = makeContext(for: webExtension, at: path)
-        try await controller.load(context)
-        return context
+        try controller.load(context)
+
+        return WebExtensionLoadResult(context: context, path: path, extensionIdentifier: extensionIdentifier)
     }
 
-    func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WKWebExtensionContext, Error>] {
-        var result = [Result<WKWebExtensionContext, Error>]()
+    func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
+        var result = [Result<WebExtensionLoadResult, Error>]()
         for path in paths {
             do {
-                let context = try await loadWebExtension(path: path, into: controller)
-                result.append(.success(context))
+                let loadResult = try await loadWebExtension(path: path, into: controller)
+                result.append(.success(loadResult))
             } catch {
                 result.append(.failure(error))
             }
@@ -104,5 +127,3 @@ final class WebExtensionLoader: WebExtensionLoading {
         return context
     }
 }
-
-#endif

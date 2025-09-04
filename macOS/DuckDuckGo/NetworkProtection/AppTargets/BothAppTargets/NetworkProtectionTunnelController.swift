@@ -689,26 +689,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             try await subscriptionManagerV2.getTokenContainer(policy: .localForceRefresh)
         }
 
-        options[NetworkProtectionOptionKey.selectedEnvironment] = settings.selectedEnvironment.rawValue as NSString
-        options[NetworkProtectionOptionKey.selectedServer] = settings.selectedServer.stringValue as? NSString
-
-        options[NetworkProtectionOptionKey.excludeLocalNetworks] = NSNumber(value: settings.excludeLocalNetworks)
-
-        if let data = try? JSONEncoder().encode(settings.selectedLocation) {
-            options[NetworkProtectionOptionKey.selectedLocation] = NSData(data: data)
-        }
-
-        ensureRiskyDomainsEnabledIfNeeded()
-        var dnsSettings = settings.dnsSettings
-        if settings.dnsSettings == .ddg(blockRiskyDomains: true) && !featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection) {
-            dnsSettings = .ddg(blockRiskyDomains: false)
-        }
-        if let data = try? JSONEncoder().encode(dnsSettings) {
-            options[NetworkProtectionOptionKey.dnsSettings] = NSData(data: data)
-        }
-
-        if case .custom(let keyValidity) = settings.registrationKeyValidity {
-            options[NetworkProtectionOptionKey.keyValidity] = String(describing: keyValidity) as NSString
+        // Encode entire VPN settings as one unit
+        let settingsSnapshot = VPNSettingsSnapshot(from: settings)
+        if let data = try? JSONEncoder().encode(settingsSnapshot) {
+            options[NetworkProtectionOptionKey.settings] = NSData(data: data)
         }
 
         if Self.simulationOptions.isEnabled(.tunnelFailure) {
@@ -741,19 +725,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 guard let self, error == nil, fired else { return }
                 self.defaults.vpnFirstEnabled = PixelKit.pixelLastFireDate(event: NetworkProtectionPixelEvent.networkProtectionNewUser)
             }
-    }
-
-    public func ensureRiskyDomainsEnabledIfNeeded(){
-        // If current dnsSettings is .ddg with blockRiskyDomains false,
-        // and we haven't yet defaulted, and the risky domains protection feature is on,
-        // then update dnsSettings to .ddg(blockRiskyDomains: true) and mark the flag.
-        if case .ddg(let blockRiskyDomains) = settings.dnsSettings,
-           !blockRiskyDomains,
-           !settings.didBlockRiskyDomainsDefaultToTrue,
-           featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection) {
-            settings.dnsSettings = .ddg(blockRiskyDomains: true)
-            settings.didBlockRiskyDomainsDefaultToTrue = true
-        }
     }
 
     /// Stops the VPN connection

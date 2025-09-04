@@ -83,7 +83,7 @@ final class MainViewController: NSViewController {
         fatalError("MainViewController: Bad initializer")
     }
 
-    init(tabCollectionViewModel: TabCollectionViewModel? = nil,
+    init(tabCollectionViewModel: TabCollectionViewModel,
          bookmarkManager: BookmarkManager = NSApp.delegateTyped.bookmarkManager,
          bookmarkDragDropManager: BookmarkDragDropManager = NSApp.delegateTyped.bookmarkDragDropManager,
          historyCoordinator: HistoryCoordinator = NSApp.delegateTyped.historyCoordinator,
@@ -102,12 +102,12 @@ final class MainViewController: NSViewController {
          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
          pixelFiring: PixelFiring? = PixelKit.shared,
-         visualizeFireAnimationDecider: VisualizeFireAnimationDecider = NSApp.delegateTyped.visualizeFireAnimationDecider,
-         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter = NSApp.delegateTyped.vpnUpsellPopoverPresenter
+         visualizeFireAnimationDecider: VisualizeFireSettingsDecider = NSApp.delegateTyped.visualizeFireSettingsDecider,
+         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter = NSApp.delegateTyped.vpnUpsellPopoverPresenter,
+         sessionRestorePromptCoordinator: SessionRestorePromptCoordinating = NSApp.delegateTyped.sessionRestorePromptCoordinator
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
-        let tabCollectionViewModel = tabCollectionViewModel ?? TabCollectionViewModel()
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.historyCoordinator = historyCoordinator
@@ -196,7 +196,8 @@ final class MainViewController: NSViewController {
                                                                          brokenSitePromptLimiter: brokenSitePromptLimiter,
                                                                          aiChatMenuConfig: aiChatMenuConfig,
                                                                          aiChatSidebarPresenter: aiChatSidebarPresenter,
-                                                                         vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter)
+                                                                         vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
+                                                                         sessionRestorePromptCoordinator: sessionRestorePromptCoordinator)
 
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
@@ -860,7 +861,7 @@ extension MainViewController: BrowserTabViewControllerDelegate {
     )
     bkman.loadBookmarks()
 
-    let vc = MainViewController(bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider())
+    let vc = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()), bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider())
     var c: AnyCancellable!
     c = vc.publisher(for: \.view.window).sink { window in
         window?.titlebarAppearsTransparent = true

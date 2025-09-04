@@ -55,7 +55,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     override func setUp() {
         super.setUp()
-        tabCollectionViewModel = TabCollectionViewModel()
+        tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
         fireproofDomains = MockFireproofDomains(domains: [])
         passwordManagerCoordinator = PasswordManagerCoordinator()
         networkProtectionVisibilityMock = NetworkProtectionVisibilityMock(isInstalled: false, visible: false)
@@ -107,7 +107,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
 
     @MainActor
-    private func setupMoreOptionsMenu() {
+    private func setupMoreOptionsMenu(isFireWindowDefault: Bool = false) {
         let aiChatPreferencesStorage = MockAIChatPreferencesStorage()
         aiChatPreferencesStorage.showShortcutInApplicationMenu = true
 
@@ -133,7 +133,9 @@ final class MoreOptionsMenuTests: XCTestCase {
                                             storage: aiChatPreferencesStorage,
                                             remoteSettings: MockRemoteAISettings(),
                                             featureFlagger: mockFeatureFlagger
-                                          ))
+                                          ),
+                                          isFireWindowDefault: isFireWindowDefault,
+                                          isUsingAuthV2: true)
 
         moreOptionsMenu.actionDelegate = capturingActionDelegate
     }
@@ -605,7 +607,8 @@ final class MoreOptionsMenuTests: XCTestCase {
         let tabContentsSupportingSharing: [Tab.TabContent] = [
             .url(try XCTUnwrap("https://example.com".url), credential: nil, source: .ui),
             .url(try XCTUnwrap("https://duckduckgo.com".url), credential: nil, source: .ui),
-            .url(try XCTUnwrap("https://wikipedia.org".url), credential: nil, source: .ui)
+            .url(try XCTUnwrap("https://wikipedia.org".url), credential: nil, source: .ui),
+            .url(try XCTUnwrap("duck://player/abcde12345".url), credential: nil, source: .ui)
         ]
         for tabContent in tabContentsSupportingSharing {
             let tab = Tab(content: tabContent)
@@ -622,7 +625,6 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     func testWhenTabDoesNotSupportSharingThenShareItemIsPresentAndDisabled() throws {
         let tabContentsNotSupportingSharing: [Tab.TabContent] = [
-            .url(try XCTUnwrap("duck://player/abcde12345".url), credential: nil, source: .ui),
             .url(try XCTUnwrap("duck://favicon/www.example.com".url), credential: nil, source: .ui),
             .subscription(.aboutDuckDuckGo),
             .identityTheftRestoration(.aboutDuckDuckGo),
@@ -766,6 +768,19 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(sut.item(at: 5)?.title, UserText.sendSubscriptionFeedback(isSubscriptionRebrandingOn: false))
         XCTAssertEqual(sut.item(at: 6)?.isSeparatorItem, true)
         XCTAssertEqual(sut.item(at: 7)?.title, "Copy Version")
+    }
+
+    @MainActor
+    func testOpenNewWindowItemsAreInCorrectPosition_whenOpenFireWindowByDefaultChanges() {
+        setupMoreOptionsMenu()
+
+        XCTAssertEqual(moreOptionsMenu.items[3].title, UserText.newWindowMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[4].title, UserText.newBurnerWindowMenuItem)
+
+        setupMoreOptionsMenu(isFireWindowDefault: true)
+
+        XCTAssertEqual(moreOptionsMenu.items[3].title, UserText.newBurnerWindowMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[4].title, UserText.newWindowMenuItem)
     }
 }
 

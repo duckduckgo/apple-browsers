@@ -63,6 +63,7 @@ protocol NewWindowPolicyDecisionMaker {
         var contentScopeExperimentsManager: ContentScopeExperimentsManaging
         var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
         var newTabPageShownPixelSender: NewTabPageShownPixelSender
+        var aiChatSidebarProvider: AIChatSidebarProviding
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -138,6 +139,7 @@ protocol NewWindowPolicyDecisionMaker {
                      onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
                      pageRefreshMonitor: PageRefreshMonitoring = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern),
                      aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil,
+                     aiChatSidebarProvider: AIChatSidebarProviding? = nil,
                      newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil
     ) {
 
@@ -196,6 +198,7 @@ protocol NewWindowPolicyDecisionMaker {
                   onboardingPixelReporter: onboardingPixelReporter,
                   pageRefreshMonitor: pageRefreshMonitor,
                   aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
+                  aiChatSidebarProvider: aiChatSidebarProvider ?? NSApp.delegateTyped.aiChatSidebarProvider,
                   newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender
         )
     }
@@ -241,6 +244,7 @@ protocol NewWindowPolicyDecisionMaker {
          onboardingPixelReporter: OnboardingAddressBarReporting,
          pageRefreshMonitor: PageRefreshMonitoring,
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
+         aiChatSidebarProvider: AIChatSidebarProviding,
          newTabPageShownPixelSender: NewTabPageShownPixelSender
     ) {
         self._id = id
@@ -296,6 +300,7 @@ protocol NewWindowPolicyDecisionMaker {
         var tabGetter: () -> Tab? = { nil }
         self.extensions = extensionsBuilder
             .build(with: (tabIdentifier: instrumentation.currentTabIdentifier,
+                          tabID: self.uuid,
                           isTabPinned: { tabGetter().map { tab in pinnedTabsManagerProvider.pinnedTabsManager(for: tab)?.isTabPinned(tab) ?? false } ?? false },
                           isTabBurner: burnerMode.isBurner,
                           isTabLoadedInSidebar: isLoadedInSidebar,
@@ -326,7 +331,8 @@ protocol NewWindowPolicyDecisionMaker {
                                                        featureFlagger: featureFlagger,
                                                        contentScopeExperimentsManager: contentScopeExperimentsManager,
                                                        aiChatMenuConfiguration: aiChatMenuConfiguration,
-                                                       newTabPageShownPixelSender: newTabPageShownPixelSender)
+                                                       newTabPageShownPixelSender: newTabPageShownPixelSender,
+                                                       aiChatSidebarProvider: aiChatSidebarProvider)
             )
         super.init()
         tabGetter = { [weak self] in self }
@@ -457,7 +463,7 @@ protocol NewWindowPolicyDecisionMaker {
     /// Publishes currently active main frame Navigation state
     var navigationStatePublisher: some Publisher<NavigationState?, Never> {
         navigationDelegate.$currentNavigation.map { currentNavigation -> AnyPublisher<NavigationState?, Never> in
-            MainActor.assumeIsolated {
+            MainActor.assumeMainThread {
                 currentNavigation?.$state.map { $0 }.eraseToAnyPublisher() ?? Just(nil).eraseToAnyPublisher()
             }
         }.switchToLatest()
@@ -480,7 +486,7 @@ protocol NewWindowPolicyDecisionMaker {
                 guard let currentNavigation = currentNavigation else {
                     return false
                 }
-                return MainActor.assumeIsolated {
+                return MainActor.assumeMainThread {
                     let isSameDocumentNavigation = (currentNavigation.redirectHistory.first ?? currentNavigation.navigationAction).navigationType.isSameDocumentNavigation
                     return !isSameDocumentNavigation
                 }
@@ -524,11 +530,9 @@ protocol NewWindowPolicyDecisionMaker {
             if navigationDelegate.currentNavigation == nil {
                 updateCanGoBackForward(withCurrentNavigation: nil)
             }
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-            if #available(macOS 15.4, *) {
-                WebExtensionManager.shared.eventsListener.didChangeTabProperties([.URL], for: self)
+            if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+                webExtensionManager.eventsListener.didChangeTabProperties([.URL], for: self)
             }
-#endif
         }
     }
 
@@ -604,11 +608,9 @@ protocol NewWindowPolicyDecisionMaker {
 
     @Published var title: String? {
         didSet {
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-            if #available(macOS 15.4, *) {
-                WebExtensionManager.shared.eventsListener.didChangeTabProperties([.title], for: self)
+            if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+                webExtensionManager.eventsListener.didChangeTabProperties([.title], for: self)
             }
-#endif
         }
     }
 
@@ -639,11 +641,9 @@ protocol NewWindowPolicyDecisionMaker {
 
     @Published private(set) var isLoading: Bool = false {
         didSet {
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-            if #available(macOS 15.4, *) {
-                WebExtensionManager.shared.eventsListener.didChangeTabProperties([.loading], for: self)
+            if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+                webExtensionManager.eventsListener.didChangeTabProperties([.loading], for: self)
             }
-#endif
         }
     }
     @Published private(set) var loadingProgress: Double = 0.0
@@ -944,11 +944,9 @@ protocol NewWindowPolicyDecisionMaker {
         webView.audioState.toggle()
         objectWillChange.send()
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            WebExtensionManager.shared.eventsListener.didChangeTabProperties([.muted], for: self)
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didChangeTabProperties([.muted], for: self)
         }
-#endif
     }
 
     private enum ReloadIfNeededSource {

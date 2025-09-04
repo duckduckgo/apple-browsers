@@ -122,7 +122,8 @@ final class BrokerProfileJobTests: XCTestCase {
                                         version: "1.0",
                                         schedulingConfig: config,
                                         optOutUrl: "",
-                                        eTag: "")
+                                        eTag: "",
+                                        removedAt: nil)
         let mockProfileQuery = ProfileQuery(id: profileQueryId, firstName: "a", lastName: "b", city: "c", state: "d", birthYear: 1222)
 
         let historyEvents = [HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested)]

@@ -26,12 +26,10 @@ on:
         type: string
       skip-release:
         description: "Skip release build"
-        required: false
         default: false
         type: boolean
       skip-asana:
         description: "Skip Asana task creation on tests failure"
-        required: false
         type: boolean
         default: true
     secrets:
@@ -149,7 +147,7 @@ jobs:
       run: |
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
-        
+
         set -o pipefail && xcodebuild test \
           -scheme "iOS Browser" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
@@ -297,7 +295,7 @@ jobs:
       run: |
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
-        
+
         bundle exec fastlane sync_signing
 
         set -o pipefail && xcodebuild \

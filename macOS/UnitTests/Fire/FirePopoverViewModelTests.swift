@@ -50,7 +50,7 @@ final class FirePopoverViewModelTests: XCTestCase {
 
     @MainActor func testOnBurn_OnboardingContextualDialogsManagerFireButtonUsedCalled() {
         // Given
-        let tabCollectionVM = TabCollectionViewModel()
+        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         let onboardingContextualDialogsManager = CapturingContextualOnboardingStateUpdater()
         let vm = makeViewModel(with: tabCollectionVM, onboardingContextualDialogsManager: onboardingContextualDialogsManager)
         XCTAssertNil(onboardingContextualDialogsManager.updatedForTab)

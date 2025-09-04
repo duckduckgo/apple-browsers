@@ -40,6 +40,7 @@ protocol OptionsButtonMenuDelegate: AnyObject {
     func optionsButtonMenuRequestedBookmarkImportInterface(_ menu: NSMenu)
     func optionsButtonMenuRequestedBookmarkExportInterface(_ menu: NSMenu)
     func optionsButtonMenuRequestedLoginsPopover(_ menu: NSMenu, selectedCategory: SecureVaultSorting.Category)
+    func optionsButtonMenuRequestedStartSync(_ menu: NSMenu)
     func optionsButtonMenuRequestedOpenExternalPasswordManager(_ menu: NSMenu)
     func optionsButtonMenuRequestedNetworkProtectionPopover(_ menu: NSMenu)
     func optionsButtonMenuRequestedDownloadsPopover(_ menu: NSMenu)
@@ -75,6 +76,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     @MainActor
     private lazy var sharingMenu: NSMenu = SharingMenu(title: UserText.shareMenuItem, location: .moreOptionsMenu)
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let isUsingAuthV2: Bool
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
     private let freemiumDBPFeature: FreemiumDBPFeature
     private let freemiumDBPPresenter: FreemiumDBPPresenter
@@ -89,9 +91,12 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     private let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
+    private let isFireWindowDefault: Bool
 
     /// The `DataBrokerProtectionFreemiumPixelHandler` instance used to fire pixels
     private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
+
+    private let syncDeviceButtonModel: SyncDeviceButtonModel
 
     private weak var updateMenuItem: NSMenuItem?
 
@@ -121,7 +126,10 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
-         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
+         isFireWindowDefault: Bool = NSApp.delegateTyped.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
+         isUsingAuthV2: Bool,
+         syncDeviceButtonModel: SyncDeviceButtonModel = SyncDeviceButtonModel()) {
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -133,6 +141,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.internalUserDecider = internalUserDecider
         self.subscriptionManager = subscriptionManager
+        self.isUsingAuthV2 = isUsingAuthV2
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.freemiumDBPFeature = freemiumDBPFeature
         self.freemiumDBPPresenter = freemiumDBPPresenter
@@ -144,6 +153,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.featureFlagger = featureFlagger
         self.moreOptionsMenuIconsProvider = visualStyle.iconsProvider.moreOptionsMenuIconsProvider
+        self.isFireWindowDefault = isFireWindowDefault
+        self.syncDeviceButtonModel = syncDeviceButtonModel
 
         super.init(title: "")
 
@@ -285,7 +296,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     @MainActor
     @objc func newWindow(_ sender: NSMenuItem) {
         PixelKit.fire(MoreOptionsMenuPixel.newWindowActionClicked, frequency: .daily)
-        WindowsManager.openNewWindow()
+        WindowsManager.openNewWindow(burnerMode: .regular)
     }
 
     @MainActor
@@ -340,6 +351,11 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     @objc func openDownloads(_ sender: NSMenuItem) {
         PixelKit.fire(MoreOptionsMenuPixel.downloadsActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedDownloadsPopover(self)
+    }
+
+    @MainActor
+    @objc func startSync(_ sender: NSMenuItem) {
+        actionDelegate?.optionsButtonMenuRequestedStartSync(self)
     }
 
     @objc func openAutofillWithAllItems(_ sender: NSMenuItem) {
@@ -470,19 +486,31 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             .targetting(self)
             .withImage(moreOptionsMenuIconsProvider.newTabIcon)
 
-        // New Window
-        addItem(withTitle: UserText.newWindowMenuItem, action: #selector(newWindow(_:)), keyEquivalent: "n")
+        let newWindowItem = NSMenuItem(title: UserText.newWindowMenuItem, action: #selector(newWindow(_:)), keyEquivalent: "")
             .targetting(self)
             .withImage(moreOptionsMenuIconsProvider.newWindowIcon)
 
-        // New Burner Window
-        let burnerWindowItem = NSMenuItem(title: UserText.newBurnerWindowMenuItem,
-                                          action: #selector(newBurnerWindow(_:)),
-                                          target: self)
-        burnerWindowItem.keyEquivalent = "n"
-        burnerWindowItem.keyEquivalentModifierMask = [.command, .shift]
-        burnerWindowItem.image = moreOptionsMenuIconsProvider.newFireWindowIcon
-        addItem(burnerWindowItem)
+        let burnerWindowItem = NSMenuItem(title: UserText.newBurnerWindowMenuItem, action: #selector(newBurnerWindow(_:)), keyEquivalent: "")
+            .targetting(self)
+            .withImage(moreOptionsMenuIconsProvider.newFireWindowIcon)
+
+        if isFireWindowDefault {
+            newWindowItem.keyEquivalent = "n"
+            newWindowItem.keyEquivalentModifierMask = [.command, .shift]
+            burnerWindowItem.keyEquivalent = "n"
+            burnerWindowItem.keyEquivalentModifierMask = [.command]
+
+            addItem(burnerWindowItem)
+            addItem(newWindowItem)
+        } else {
+            burnerWindowItem.keyEquivalent = "n"
+            burnerWindowItem.keyEquivalentModifierMask = [.command, .shift]
+            newWindowItem.keyEquivalent = "n"
+            newWindowItem.keyEquivalentModifierMask = [.command]
+
+            addItem(newWindowItem)
+            addItem(burnerWindowItem)
+        }
 
         // New Duck.ai Chat
         if aiChatMenuConfiguration.shouldDisplayApplicationMenuShortcut {
@@ -529,6 +557,12 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             .withImage(moreOptionsMenuIconsProvider.passwordsIcon)
             .withSubmenu(loginsSubMenu)
             .withAccessibilityIdentifier("MoreOptionsMenu.autofill")
+
+        if syncDeviceButtonModel.shouldShowSyncButton {
+            addItem(withTitle: UserText.sync, action: #selector(startSync), keyEquivalent: "")
+                .targetting(self)
+                .withImage(moreOptionsMenuIconsProvider.syncIcon)
+        }
 
         addItem(NSMenuItem.separator())
     }
@@ -580,6 +614,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                          subscriptionManager: subscriptionManager,
                                                          moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider,
                                                          featureFlagger: featureFlagger,
+                                                         isUsingAuthV2: isUsingAuthV2,
                                                          onComplete: { [weak self] in
                                                              self?.submenuBuildingCompleteSubject.send(true)
                                                          })
@@ -1162,18 +1197,21 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
 
     private let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
     private let featureFlagger: FeatureFlagger
+    private let isUsingAuthV2: Bool
 
     init(targeting target: AnyObject,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding,
          featureFlagger: FeatureFlagger,
+         isUsingAuthV2: Bool,
          onComplete: @escaping () -> Void = {}) {
 
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.subscriptionManager = subscriptionManager
         self.moreOptionsMenuIconsProvider = moreOptionsMenuIconsProvider
         self.featureFlagger = featureFlagger
+        self.isUsingAuthV2 = isUsingAuthV2
 
         super.init(title: "")
 
@@ -1207,7 +1245,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
         if features.contains(.dataBrokerProtection) {
             addItem(dataBrokerProtectionItem)
         }
-        if features.contains(.paidAIChat) && featureFlagger.isFeatureOn(.paidAIChat) {
+        if features.contains(.paidAIChat) && featureFlagger.isFeatureOn(.paidAIChat) && isUsingAuthV2 {
             addItem(paidAIChatItem)
         }
         if features.contains(.identityTheftRestoration) || features.contains(.identityTheftRestorationGlobal) {

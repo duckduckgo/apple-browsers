@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Genvägar";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Anpassa dina favoriter och funktioner. Ordna om saker och ting eller göm dem för att hålla layouten minimalistisk.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Din nya fliksida är... ny!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Favoriter";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Genvägar";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Visa, dölja och ändra ordning på avsnitt på den nya fliksidan";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "AVSNITT";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "GENVÄGAR";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Anpassa sidan Ny flik";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Bokmärken";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Nerladdningar";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Lösenord";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Inställningar";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Öppna menyn ••• på valfri webbplats och välj **Lägg till favorit** för att lägga till den på din nya fliksida.";
-
 /* No comment provided by engineer. */
 "No results found" = "Inga resultat hittades";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Sök privat som standard";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo har också ett %1$@ där det ingår ett %2$@ och %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "avancerad, privat AI";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "valfri betald prenumeration";
@@ -2395,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Radera surfdata med en knapp";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blockera spårare från tredje part";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2698,6 +2662,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Sök eller ange adress";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Fråga Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Sök";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Sekundär/andra åtgärd";
 
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Visa hela webbplatsadressen";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Standard)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Experimentell)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Prova vår experimentella funktion och fråga Duck.ai direkt från adressfältet.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Sök & Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Sök endast";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Hantera Duck.ai-genvägar";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-genvägar";
@@ -2892,6 +2883,9 @@
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tangentbord";
+
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Läs mer";
 
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Låt DuckDuckGo hantera popup-fönster för godkännande av cookies";
@@ -3043,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Inställningar";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Hjälper till att blockera spårare från tredje part som använder DNS för att försöka gömma sig på en webbplats.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Skyddar mot DNS CNAME-maskering";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Inaktiverar spårning av Facebook-innehåll, t.ex. widgetar för Facebook-kommentarer på webbplatser utanför Facebook.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Skydd mot Facebook-spårning";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Hjälper till att förhindra spårningsföretag från att få unika identifierare om din webbläsare och enhet, som de använder för att följa dig på webben.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Förhindrar fingerprint-spårning";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Förstapartscookies löper automatiskt ut efter 30 dagar, så att webbplatser inte kan spåra dig på obestämd tid när du är utloggad.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Upphör för förstapartscookies";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Ersätter Google AMP-länkar med den ursprungliga utgivarens webbplats.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blockerar spårning med Google AMP";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blockerar popup-fönster för Google-inloggning på webbplatser som Google inte äger.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blockerar popup-fönster för Google-inloggning";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Tar bort spårningsparametrar i länkar för att förhindra att tredje part spårar ditt beteende på olika webbplatser.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blockerar länkspårning";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Hjälper till att blockera företag från att identifiera den senaste webbplatsen du besökte.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Skyddar mot hänvisningsspårning";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Blockerar invasiva spårare innan de läses in, vilket effektivt eliminerar annonser som bygger på spårning.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blockerar riktade annonser";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Hjälper till att blockera tredjepartscookies som spårar dig från webbplats till webbplats genom att förhindra att tredjepartsspårare laddas.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blockerar spårare från tredje part";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Oskyddade webbplatser";
 
@@ -3055,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Web Tracking Protection";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Web Tracking Protections är alltid aktiverat";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo blockerar automatiskt dolda spårare när du surfar på webben.\n[Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Hur vi skyddar dig";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "DuckDuckGo-webbläsaren erbjuder spårningsskydd som alltid är aktiva. [Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Välj det alternativ som bäst beskriver det problem som du har stött på.";
@@ -3193,8 +3256,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Få svar på vanliga frågor eller kontakta supporten för Privacy Pro på våra hjälpsidor.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Skicka återkoppling";
+/* Share Feedback Button */
+"subscription.feedback" = "Berätta vad du tycker";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Avbryt";

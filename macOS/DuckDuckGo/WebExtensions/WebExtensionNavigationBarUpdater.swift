@@ -16,8 +16,6 @@
 //  limitations under the License.
 //
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-
 import WebKit
 
 @available(macOS 15.4, *)
@@ -26,9 +24,9 @@ final class WebExtensionNavigationBarUpdater {
 
     private let container: NSStackView
     private var buttons = Set<MouseOverButton>()
-    private let webExtensionManager: WebExtensionManager
+    private let webExtensionManager: WebExtensionManaging
 
-    init(container: NSStackView, webExtensionManager: WebExtensionManager = .shared) {
+    init(container: NSStackView, webExtensionManager: WebExtensionManaging) {
         self.container = container
         self.webExtensionManager = webExtensionManager
     }
@@ -46,13 +44,20 @@ final class WebExtensionNavigationBarUpdater {
     /// This won't return until updates end, so be very mindful of where this is called.
     ///
     func runUpdateLoop() async {
-        for await _ in webExtensionManager.extensionUpdates {
-            let loadedExtensions = webExtensionManager.loadedExtensions
-            removeButtons(forExtensionsRemovedFrom: loadedExtensions)
-            addButtons(forExtensionsAddedTo: loadedExtensions)
+        // We run this once initially to make sure we're up to date
+        updateLoadedExtensions()
 
-            container.needsDisplay = true
+        for await _ in webExtensionManager.extensionUpdates {
+            updateLoadedExtensions()
         }
+    }
+
+    private func updateLoadedExtensions() {
+        let loadedExtensions = webExtensionManager.loadedExtensions
+        removeButtons(forExtensionsRemovedFrom: loadedExtensions)
+        addButtons(forExtensionsAddedTo: loadedExtensions)
+
+        container.needsDisplay = true
     }
 
     private func removeButtons(forExtensionsRemovedFrom loadedExtensions: Set<WKWebExtensionContext>) {
@@ -83,5 +88,3 @@ final class WebExtensionNavigationBarUpdater {
         }
     }
 }
-
-#endif

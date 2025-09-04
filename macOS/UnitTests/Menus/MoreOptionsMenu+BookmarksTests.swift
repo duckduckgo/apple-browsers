@@ -24,7 +24,7 @@ final class MoreOptionsMenu_BookmarksTests: XCTestCase {
     @MainActor
     func testWhenBookmarkSubmenuIsInitThenBookmarkAllTabsKeyIsCmdShiftD() throws {
         // GIVEN
-        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
+        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(isPopup: false), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
 
         // WHEN
         let result = try XCTUnwrap(sut.item(withTitle: UserText.bookmarkAllTabs))

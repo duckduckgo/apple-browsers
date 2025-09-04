@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "AIExperimentalOn.pdf",
+      "filename" : "Mobile-SearchBox-WithAI-Active.pdf",
       "idiom" : "universal"
     },
     {
@@ -11,7 +11,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "AIExperimentalOn-2.pdf",
+      "filename" : "Mobile-SearchBox-WithAI-Active-OnDark.pdf",
       "idiom" : "universal"
     }
   ],

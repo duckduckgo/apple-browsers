@@ -11,6 +11,10 @@ on:
         description: "Asana release task URL"
         required: true
         type: string
+      base-branch:
+        description: "Base branch name (defaults to main, only override for testing)"
+        default: main
+        type: string
       tag:
         description: "Tag to publish"
         required: true
@@ -23,6 +27,10 @@ on:
         - internal
         - public
         - hotfix
+      ignore-unreleased-changes:
+        description: "Ignore unreleased changes when making a public release?"
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       asana-task-url:
@@ -59,11 +67,34 @@ jobs:
     uses: ./.github/workflows/macos_tag_release.yml
     with:
       asana-task-url: ${{ inputs.asana-task-url || github.event.inputs.asana-task-url }}
+      base-branch: ${{ github.event.inputs.base-branch }}
       branch: ${{ github.ref_name }}
       prerelease: false
-    secrets:
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      GHA_ELEVATED_PERMISSIONS_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
+      ignore-unreleased-changes: ${{ github.event.inputs.ignore-unreleased-changes == 'true' }}
+    secrets: inherit
+
+  stop-workflow-if-needed:
+
+    name: Stop workflow if needed
+
+    needs: [tag-public-release]
+
+    outputs:
+      stop_workflow: ${{ steps.download-stop-workflow.outcome == 'success' }}
+
+    runs-on: macos-15
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Download stop_workflow flag artifact
+        id: download-stop-workflow
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: stop_workflow
+          path: .github
 
   publish-to-sparkle:
 
@@ -74,12 +105,13 @@ jobs:
       SPARKLE_DIR: ${{ github.workspace }}/macOS/sparkle-updates
       asana-task-url: ${{ inputs.asana-task-url || github.event.inputs.asana-task-url }}
 
-    needs: [tag-public-release]
+    needs: [stop-workflow-if-needed]
 
-    # Allow to run even if the tag-public-release job was skipped (e.g. for internal releases)
-    # or failed (for public releases or hotfixes), because tagging doesn't block publishing the release
-    # but still allow the workflow to be cancelled
-    if: ${{ !cancelled() }}
+    # Run always (unless cancelled), except for the case when stop-workflow-if-needed was not skipped and produced a non-true output.
+    # For internal releases, that job isn't run at all, so it doesn't produce an output. We want to publish the release then.
+    # For public/hotfix releases, we want to publish the release unless the workflow should be stopped here, as indicated
+    # by the stop_workflow flag.
+    if: always() && !cancelled() && needs.stop-workflow-if-needed.outputs.stop_workflow != 'true'
 
     runs-on: macos-15-xlarge
     timeout-minutes: 10
@@ -431,13 +463,4 @@ jobs:
     if: github.event.inputs.release-type != null && github.event.inputs.release-type != 'internal'
 
     uses: ./.github/workflows/macos_create_variants.yml
-    secrets:
-      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      AWS_ACCESS_KEY_ID_RELEASE_S3: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
-      AWS_SECRET_ACCESS_KEY_RELEASE_S3: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
-      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
-      SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+    secrets: inherit

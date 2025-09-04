@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 
+@MainActor
 public protocol ManagementDialogModelDelegate: AnyObject {
     func turnOffSync()
     func updateDeviceName(_ name: String)
@@ -35,6 +36,7 @@ public protocol ManagementDialogModelDelegate: AnyObject {
     func userPressedCancel(from dialog: ManagementDialogKind)
     func switchAccountsCancelled()
     func enterCodeViewDidAppear()
+    func didEndFlow()
 }
 
 public final class ManagementDialogModel: ObservableObject {
@@ -90,6 +92,7 @@ public final class ManagementDialogModel: ObservableObject {
         syncErrorMessage?.type.onButtonPressed(delegate: delegate)
         syncErrorMessage = nil
         currentDialog = nil
+        delegate?.didEndFlow()
     }
 
     private var shouldShowErrorMessageCancellable: AnyCancellable?

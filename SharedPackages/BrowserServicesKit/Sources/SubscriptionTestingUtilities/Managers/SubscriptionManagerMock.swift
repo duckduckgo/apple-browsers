@@ -135,8 +135,8 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         await currentSubscriptionFeatures().contains(feature)
     }
 
-    public func signOut(notifyUI: Bool) async {
-        accountManager.signOut(skipNotification: !notifyUI)
+    public func signOut(notifyUI: Bool, userInitiated: Bool) async {
+        accountManager.signOut(skipNotification: !notifyUI, userInitiated: userInitiated)
     }
 
     public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {

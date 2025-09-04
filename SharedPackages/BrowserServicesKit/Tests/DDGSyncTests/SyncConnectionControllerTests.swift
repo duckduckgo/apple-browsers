@@ -171,7 +171,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.createExchangeRecoveryKeyTransmitterStub = exchangeRecoveryKeyTransmitter
 
         let expectation = self.expectation(description: "Exchanger poll completes")
-        delegate.didFinishTransmittingRecoveryKeyCalled = {
+        remoteExchanger.stopPollingCallback = {
             expectation.fulfill()
         }
 

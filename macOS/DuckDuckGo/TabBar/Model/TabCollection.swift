@@ -16,43 +16,55 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 import Combine
 import History
 
 final class TabCollection: NSObject {
 
+    /// When true, this collection is used by a popup window and must contain at most one tab
+    let isPopup: Bool
+
     @Published private(set) var tabs: [Tab]
 
     let didRemoveTabPublisher = PassthroughSubject<(Tab, Int), Never>()
 
-    init(tabs: [Tab] = []) {
+    init(tabs: [Tab] = [], isPopup: Bool = false) {
+        assert(!isPopup || tabs.count <= 1, "Popup tab collections must contain at most one tab")
+        self.isPopup = isPopup
         self.tabs = tabs
     }
 
     func append(tab: Tab) {
+        // Enforce single-tab popup: ignore attempts to add more than one tab
+        if isPopup, !tabs.isEmpty {
+            assertionFailure("Popup tab collections must contain at most one tab")
+            return
+        }
         tabs.append(tab)
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            WebExtensionManager.shared.eventsListener.didOpenTab(tab)
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didOpenTab(tab)
         }
-#endif
     }
 
     @discardableResult
     func insert(_ tab: Tab, at index: Int) -> Bool {
+        // Enforce single-tab popup: ignore inserts beyond the first slot
+        if isPopup, !tabs.isEmpty {
+            assertionFailure("Popup tab collections must contain at most one tab")
+            return false
+        }
         guard index >= 0, index <= tabs.endIndex else {
             assertionFailure("TabCollection: Index out of bounds")
             return false
         }
 
         tabs.insert(tab, at: index)
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            WebExtensionManager.shared.eventsListener.didOpenTab(tab)
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didOpenTab(tab)
         }
-#endif
         return true
     }
 
@@ -124,22 +136,18 @@ final class TabCollection: NSObject {
             keepLocalHistory(of: tabs[index])
         }
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            WebExtensionManager.shared.eventsListener.didCloseTab(tabs[index], windowIsClosing: false)
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didCloseTab(tabs[index], windowIsClosing: false)
         }
-#endif
     }
 
     private func tabsWillClose(range: Range<Int>) {
         for i in range {
             keepLocalHistory(of: tabs[i])
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-            if #available(macOS 15.4, *) {
-                WebExtensionManager.shared.eventsListener.didCloseTab(tabs[i], windowIsClosing: false)
+            if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+                webExtensionManager.eventsListener.didCloseTab(tabs[i], windowIsClosing: false)
             }
-#endif
         }
     }
 
@@ -170,11 +178,9 @@ final class TabCollection: NSObject {
         let oldTab = tabs[index]
         tabs[index] = tab
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            WebExtensionManager.shared.eventsListener.didReplaceTab(oldTab, with: tab)
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didReplaceTab(oldTab, with: tab)
         }
-#endif
     }
 
     // MARK: - Fire button

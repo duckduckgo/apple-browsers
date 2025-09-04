@@ -126,6 +126,10 @@ final class SettingsViewModel: ObservableObject {
     var isUpdatedAIFeaturesSettingsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
+    
+    var isRefreshButtonPositionEnabled: Bool {
+        featureFlagger.isFeatureOn(.refreshButtonPosition)
+    }
 
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
@@ -186,6 +190,19 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: $0 == .top ? .settingsAddressBarTopSelected : .settingsAddressBarBottomSelected)
                 self.appSettings.currentAddressBarPosition = $0
                 self.state.addressBar.position = $0
+            }
+        )
+    }
+    
+    var refreshButtonPositionBinding: Binding<RefreshButtonPosition> {
+        Binding<RefreshButtonPosition>(
+            get: {
+                self.state.refreshButtonPosition
+            },
+            set: {
+                Pixel.fire(pixel: $0 == .addressBar ? .settingsRefreshButtonPositionAddressBar : .settingsRefreshButtonPositionMenu)
+                self.appSettings.currentRefreshButtonPosition = $0
+                self.state.refreshButtonPosition = $0
             }
         )
     }
@@ -580,6 +597,7 @@ extension SettingsViewModel {
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
+            refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
@@ -630,7 +648,7 @@ extension SettingsViewModel {
 
     private func updateRecentlyVisitedSitesVisibility() {
         withAnimation {
-            shouldShowRecentlyVisitedSites = historyManager.isHistoryFeatureEnabled() && state.autocomplete
+            shouldShowRecentlyVisitedSites = state.autocomplete
         }
     }
 
@@ -853,6 +871,14 @@ extension SettingsViewModel {
 
     func openAIChat() {
         urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
+    }
+    
+    func openWebTrackingProtectionLearnMore() {
+        urlOpener.open(URL.webTrackingProtection)
+    }
+    
+    func openGPCLearnMore() {
+        urlOpener.open(URL.gpcLearnMore)
     }
 
     var shouldDisplayDuckPlayerContingencyMessage: Bool {
@@ -1288,6 +1314,7 @@ extension SettingsViewModel {
         Binding<Bool>(
             get: { self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled },
             set: { newValue in
+                guard newValue != self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled else { return }
                 self.objectWillChange.send()
                 self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
             }
@@ -1310,15 +1337,6 @@ extension SettingsViewModel {
                 self.aiChatSettings.enableAIChatTabSwitcherUserSettings(enable: newValue)
             }
         )
-    }
-
-    var aiChatExperimentalBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.state.isExperimentalAIChatEnabled },
-            set: { _ in
-                self.experimentalAIChatManager.toggleExperimentalTheming()
-                self.state.isExperimentalAIChatEnabled = self.experimentalAIChatManager.isExperimentalAIChatSettingsEnabled
-            })
     }
 
     func launchAIFeaturesLearnMore() {

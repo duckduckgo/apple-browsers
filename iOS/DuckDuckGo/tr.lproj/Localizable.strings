@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Kısayollar";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Favorilerinizi ve düzenli olarak kullandığınız özellikleri kendinize göre ayarlayın. Temiz tutmak için öğeleri yeniden sıralayın veya gizleyin.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Yeni Sekme Sayfanız... Yeni!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Favoriler";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Kısayollar";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Yeni sekme sayfasında bölümleri göster, gizle ve yeniden sırala";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "BÖLÜMLER";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "KISAYOLLAR";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Yeni Sekme Sayfasını Özelleştir";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Yer İmleri";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "İndirilenler";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Şifreler";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Ayarlar";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Herhangi bir sitedeyken, ••• menüsünü açın ve siteyi yeni sekme sayfanıza eklemek için **Favori Ekle**'yi seçin.";
-
 /* No comment provided by engineer. */
 "No results found" = "Sonuç bulunamadı";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Varsayılan olarak gizli arama yapın";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo ayrıca %2$@ ve %3$@ ile kullanılabilen bir %1$@ özelliğine de sahiptir.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "gelişmiş, özel yapay zeka";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "isteğe bağlı ücretli abonelik";
@@ -2395,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Tarama verilerini tek bir düğmeyle silin";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Üçüncü taraf izleyicileri engelleyin";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2698,6 +2662,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Adres ara veya gir";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Duck.ai'a sor";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Ara";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "İkincil / İkinci İşlem";
 
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Tam Site Adresini Göster";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Varsayılan)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Deneysel)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Adres Çubuğundan Duck.ai'a doğrudan soru sormanızı sağlayan deneysel seçeneğimizi deneyin.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Arama ve Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Yalnızca Arama";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Duck.ai Kısayollarını Yönet";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai Kısayolları";
@@ -2892,6 +2883,9 @@
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klavye";
+
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Daha Fazla Bilgi";
 
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "DuckDuckGo'nun çerez izni açılır pencerelerini yönetmesine izin verin";
@@ -3043,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Ayarlar";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "DNS kullanarak bir web sitesinde kendilerini gizlemeye çalışan üçüncü taraf izleyicileri engellemeye yardımcı olur.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "DNS CNAME gizlemesine karşı koruma sağlar";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Facebook dışındaki sitelerde Facebook yorum widget'ları gibi Facebook içeriklerinin izlenmesini devre dışı bırakır.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Facebook İzleme Koruması";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "İzleme şirketlerinin, tarayıcınız ve cihazınız hakkında sizi web'de takip etmek için kullandıkları benzersiz tanımlayıcılar edinmelerini engellemeye yardımcı olur.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Parmak izi izlemeyi önler";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Çıkış yaptığınızda sitelerin sizi süresiz olarak izleyememesi için birinci taraf çerezlerini 30 gün sonra otomatik olarak sonlandırır.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Birinci taraf çerezleri kaldırır";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Google AMP bağlantılarını orijinal yayıncının sitesiyle değiştirir.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Google'ın AMP İzlemesini Engeller";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Google'ın sahibi olmadığı sitelerdeki Google oturum açma açılır pencerelerini engeller.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Google'ın oturum açma açılır pencerelerini engeller";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Üçüncü tarafların sitelerde yaptıklarınızı izlemesini önlemek için bağlantılardaki izleme parametrelerini kaldırır.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Bağlantı izlemeyi engeller";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Şirketlerin ziyaret ettiğiniz son web sitesini tanımlamasını engellemeye yardımcı olur.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Yönlendiren izlemesine karşı koruma sağlar";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "İstilacı izleyicileri yüklenmeden önce engelleyerek, izlemeye dayalı reklamları etkili bir şekilde ortadan kaldırır.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Hedefli reklamları engeller";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Üçüncü taraf izleyicilerin yüklenmesini baştan engelleyerek, sizi siteden siteye takip eden üçüncü taraf çerezlerini engellemeye yardımcı olur.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Üçüncü taraf izleyicileri engeller";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Korumasız Siteler";
 
@@ -3055,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Web İzleme Koruması";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Web tracking protections her zaman açıktır";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo, web'de gezinirken gizli izleyicileri otomatik olarak engeller.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Sizi Nasıl Koruyoruz?";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "DuckDuckGo tarayıcısı, her zaman etkin olan izleme korumaları sunar. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Karşılaştığınız sorunu en iyi tanımlayan seçeneği seçin.";
@@ -3193,8 +3256,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Yardım sayfalarımızdan sıkça sorulan soruların yanıtlarını alabilir veya Privacy Pro destek ekibiyle iletişime geçebilirsiniz.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Geri Bildirim gönder";
+/* Share Feedback Button */
+"subscription.feedback" = "Geri Bildirim Paylaş";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "İptal";
@@ -3617,7 +3680,7 @@
 "vpn.settings.control.with.siri" = "VPN'i Siri ile Kontrol Edin";
 
 /* Disclaimer for the DNS Server section on the DNS Server screen */
-"vpn.settings.dns.section-disclaimer" = "Özel bir DNS sunucusu kullanmak, tarama hızlarını etkileyebilir ve sunucu güvenli veya güvenilir değilse etkinliğini üçüncü taraflara ifşa edebilir.";
+"vpn.settings.dns.section-disclaimer" = "Özel bir DNS sunucusu kullanmak, tarama hızlarını etkileyebilir ve sunucu güvenli veya güvenilir değilse etkinliğinizi üçüncü taraflara ifşa edebilir.";
 
 /* Header text for the DNS section on the VPN Settings screen */
 "vpn.settings.dns.section-header" = "DNS";

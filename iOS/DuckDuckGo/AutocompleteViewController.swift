@@ -55,6 +55,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private let bookmarksDatabase: CoreDataDatabase
     private let tabsModel: TabsModel
     private let aiChatSettings: AIChatSettingsProvider
+    private let featureDiscovery: FeatureDiscovery
 
     private var task: URLSessionDataTask?
 
@@ -71,30 +72,35 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         }
     }()
 
+    let showAskAIChat: Bool
+
     init(historyManager: HistoryManaging,
          bookmarksDatabase: CoreDataDatabase,
          appSettings: AppSettings,
          historyMessageManager: HistoryMessageManager = HistoryMessageManager(),
          tabsModel: TabsModel,
          featureFlagger: FeatureFlagger,
-         aiChatSettings: AIChatSettingsProvider) {
+         aiChatSettings: AIChatSettingsProvider,
+         featureDiscovery: FeatureDiscovery) {
 
         self.tabsModel = tabsModel
         self.historyManager = historyManager
         self.bookmarksDatabase = bookmarksDatabase
+        self.featureDiscovery = featureDiscovery
 
         self.appSettings = appSettings
         self.historyMessageManager = historyMessageManager
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
 
-
         /// When the experimental address bar is enabled, the bar is always at the top.
         /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210975623943806?focus=true
         let isExperimentalAddressBarEnabled = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
         let isAddressBarAtBottom = !isExperimentalAddressBarEnabled && appSettings.currentAddressBarPosition == .bottom
+        self.showAskAIChat = featureFlagger.isFeatureOn(.askAIChatSuggestion) && aiChatSettings.isAIChatEnabled
         self.model = AutocompleteViewModel(isAddressBarAtBottom: isAddressBarAtBottom,
-                                           showMessage: historyManager.isHistoryFeatureEnabled() && historyMessageManager.shouldShow())
+                                           showMessage: historyMessageManager.shouldShow(),
+                                           showAskAIChat: showAskAIChat)
 
         super.init(rootView: AutocompleteView(model: model))
         self.model.delegate = self
@@ -225,10 +231,11 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
             (lastResults.duckduckgoSuggestions.isEmpty ? 0 : sectionPadding) +
             sectionHeight(lastResults.localSuggestions) +
             (lastResults.localSuggestions.isEmpty ? 0 : sectionPadding) +
+            (showAskAIChat ? sectionHeight([.askAIChat(value: "")]) + sectionPadding : 0) +
             messageHeight +
             controllerPadding
 
-        presentationDelegate?
+        self.presentationDelegate?
             .autocompleteDidChangeContentHeight(height: CGFloat(height))
     }
 
@@ -278,6 +285,14 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
 
         case .openTab:
             Pixel.fire(pixel: .autocompleteClickOpenTab)
+
+        case .askAIChat:
+            let params = featureDiscovery.addToParams([:], forFeature: .aiChat)
+            if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+                DailyPixel.fireDailyAndCount(pixel: .autocompleteAskAIChatExperimentalExperience, withAdditionalParameters: params)
+            } else {
+                DailyPixel.fireDailyAndCount(pixel: .autocompleteAskAIChatLegacyExperience, withAdditionalParameters: params)
+            }
 
         default:
             // NO-OP

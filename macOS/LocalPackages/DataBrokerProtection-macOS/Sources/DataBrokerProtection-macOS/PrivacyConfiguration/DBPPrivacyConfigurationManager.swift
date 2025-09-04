@@ -82,7 +82,7 @@ public final class DBPPrivacyConfigurationManager: PrivacyConfigurationManaging 
         return privacyConfig
     }
 
-    public var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: InternalUserDeciderStoreMock())
+    public let internalUserDecider: InternalUserDecider
 
     @discardableResult
     public func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult {
@@ -108,7 +108,9 @@ public final class DBPPrivacyConfigurationManager: PrivacyConfigurationManaging 
         return result
     }
 
-    public init() {}
+    public init(internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: UserDefaults.config)) {
+        self.internalUserDecider = internalUserDecider
+    }
 }
 
 func privacyConfiguration(withData data: PrivacyConfigurationData,

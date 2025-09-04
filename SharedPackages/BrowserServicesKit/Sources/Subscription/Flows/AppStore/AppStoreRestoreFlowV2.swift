@@ -20,8 +20,9 @@ import Foundation
 import StoreKit
 import os.log
 import Networking
+import Common
 
-public enum AppStoreRestoreFlowErrorV2: LocalizedError, Equatable {
+public enum AppStoreRestoreFlowErrorV2: DDGError {
     case missingAccountOrTransactions
     case pastTransactionAuthenticationError
     case failedToObtainAccessToken
@@ -29,20 +30,27 @@ public enum AppStoreRestoreFlowErrorV2: LocalizedError, Equatable {
     case failedToFetchSubscriptionDetails
     case subscriptionExpired
 
-    public var errorDescription: String? {
+    public var description: String {
         switch self {
-        case .missingAccountOrTransactions:
-            return "Missing account or transactions."
-        case .pastTransactionAuthenticationError:
-            return "Past transaction authentication error."
-        case .failedToObtainAccessToken:
-            return "Failed to obtain access token."
-        case .failedToFetchAccountDetails:
-            return "Failed to fetch account details."
-        case .failedToFetchSubscriptionDetails:
-            return "Failed to fetch subscription details."
-        case .subscriptionExpired:
-            return "Subscription expired."
+        case .missingAccountOrTransactions: "No account or past transactions found"
+        case .pastTransactionAuthenticationError: "Failed to authenticate with past Apple ID transaction"
+        case .failedToObtainAccessToken: "Unable to obtain access token from authentication service"
+        case .failedToFetchAccountDetails: "Failed to retrieve account details from server"
+        case .failedToFetchSubscriptionDetails: "Unable to fetch subscription information from server"
+        case .subscriptionExpired: "The subscription associated with this account has expired"
+        }
+    }
+
+    public var errorDomain: String { "com.duckduckgo.subscription.AppStoreRestoreFlowErrorV2" }
+
+    public var errorCode: Int {
+        switch self {
+        case .missingAccountOrTransactions: 13000
+        case .pastTransactionAuthenticationError: 13001
+        case .failedToObtainAccessToken: 13002
+        case .failedToFetchAccountDetails: 13003
+        case .failedToFetchSubscriptionDetails: 13004
+        case .subscriptionExpired: 13005
         }
     }
 }

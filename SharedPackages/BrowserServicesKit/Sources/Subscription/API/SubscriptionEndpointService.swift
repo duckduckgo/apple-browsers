@@ -30,9 +30,49 @@ public struct ConfirmPurchaseResponse: Decodable {
     public let subscription: PrivacyProSubscription
 }
 
-public enum SubscriptionServiceError: Error {
+public enum SubscriptionServiceError: DDGError {
     case noCachedData
     case apiError(APIServiceError)
+
+    public var description: String {
+        switch self {
+        case .noCachedData:
+            return "No cached data available."
+        case .apiError(let error):
+            return "API error: \(String(describing: error))"
+        }
+    }
+
+    public var errorDomain: String { "com.duckduckgo.subscription.SubscriptionServiceError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .noCachedData:
+            return 12100
+        case .apiError:
+            return 12101
+        }
+    }
+
+    public static func == (lhs: SubscriptionServiceError, rhs: SubscriptionServiceError) -> Bool {
+        switch (lhs, rhs) {
+        case (.noCachedData, .noCachedData):
+                return true
+        case (.apiError(let lhsError), .apiError(let rhsError)):
+            return lhsError == rhsError
+        default:
+            return false
+        }
+    }
+
+    public var underlyingError: (any Error)? {
+        switch self {
+        case .apiError(let error):
+            return error
+        default:
+            return nil
+        }
+    }
 }
 
 public protocol SubscriptionEndpointService {

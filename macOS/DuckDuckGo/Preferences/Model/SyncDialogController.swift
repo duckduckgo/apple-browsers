@@ -501,8 +501,8 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     func didEndFlow() {
         Task { [weak self] in
             await self?.connectionController.cancel()
+            self?.coordinationDelegate?.didEndFlow()
         }
-        coordinationDelegate?.didEndFlow()
     }
 }
 

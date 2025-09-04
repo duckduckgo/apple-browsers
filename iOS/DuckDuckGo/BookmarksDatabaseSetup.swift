@@ -41,12 +41,12 @@ struct BookmarksDatabaseSetup {
         return BookmarksStateValidator(keyValueStore: UserDefaults.app) { validationError, additionalParams in
             switch validationError {
             case .bookmarksStructureLost:
-                DailyPixel.fire(pixel: .debugBookmarksStructureLost,
+                DailyPixel.fireDailyAndCount(pixel: .debugBookmarksStructureLost,
                                 withAdditionalParameters: additionalParams ?? [:])
             case .bookmarksStructureNotRecovered:
-                DailyPixel.fire(pixel: .debugBookmarksStructureNotRecovered)
+                DailyPixel.fireDailyAndCount(pixel: .debugBookmarksStructureNotRecovered)
             case .bookmarksStructureBroken:
-                DailyPixel.fire(pixel: .debugBookmarksInvalidRoots,
+                DailyPixel.fireDailyAndCount(pixel: .debugBookmarksInvalidRoots,
                                 withAdditionalParameters: additionalParams ?? [:])
             case .validatorError(let underlyingError):
                 let processedErrors = CoreDataErrorsParser.parse(error: underlyingError as NSError)

@@ -784,9 +784,9 @@ extension Pixel {
         case debugBookmarksStructureNotRecovered
         case debugBookmarksInvalidRoots
         case debugBookmarksValidationFailed
-                case debugBookmarksStructureLostAfterCrash
+        case debugBookmarksStructureLostAfterCrash
         case debugBookmarksSyncAttemptedToDeleteRoot
-        
+
         case debugBookmarksPendingDeletionFixed
         case debugBookmarksPendingDeletionRepairError
 

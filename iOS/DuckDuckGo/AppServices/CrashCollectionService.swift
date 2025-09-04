@@ -65,7 +65,7 @@ final class CrashCollectionService {
                 }
                 
                 if isBookmarksStructureMissing {
-                    DailyPixel.fire(pixel: .debugBookmarksStructureLostAfterCrash)
+                    DailyPixel.fireDailyAndCount(pixel: .debugBookmarksStructureLostAfterCrash)
                 }
             }
 

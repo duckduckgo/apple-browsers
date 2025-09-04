@@ -71,6 +71,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let storage: KeyValueStoring
     private let aiChatSettings: AIChatSettingsProvider
     private let funnelState: SwitchBarFunnelProviding
+    private var sessionStateMetrics: SessionStateMetricsProviding
 
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
@@ -119,18 +120,23 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
     private var backgroundObserver: NSObjectProtocol?
 
-    init(voiceSearchHelper: VoiceSearchHelperProtocol, storage: KeyValueStoring, aiChatSettings: AIChatSettingsProvider, funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard)) {
+    init(voiceSearchHelper: VoiceSearchHelperProtocol, storage: KeyValueStoring,
+         aiChatSettings: AIChatSettingsProvider,
+         funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
+         sessionStateMetrics: SessionStateMetricsProviding = SessionStateMetrics(storage: UserDefaults.standard)) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
         self.aiChatSettings = aiChatSettings
         self.funnelState = funnelState
+        self.sessionStateMetrics = sessionStateMetrics
         
         // Set up app lifecycle observers to reset session flags
         backgroundObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.didEnterBackgroundNotification,
             object: nil,
             queue: .main
-        ) { _ in
+        ) { [weak self] _ in
+            self?.sessionStateMetrics.finalizeSession()
             Self.resetSessionFlags()
         }
     }
@@ -193,8 +199,10 @@ final class SwitchBarHandler: SwitchBarHandling {
         switch mode {
         case .search:
             funnelState.processStep(.searchSubmitted)
+            sessionStateMetrics.recordActivity(.searchSubmitted)
         case .aiChat:
             funnelState.processStep(.promptSubmitted)
+            sessionStateMetrics.recordActivity(.promptSubmitted)
         }
     }
 

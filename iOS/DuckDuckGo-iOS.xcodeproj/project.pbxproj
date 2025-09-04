@@ -1414,6 +1414,8 @@
 		C1935A242C89CC6D001AD72D /* AutofillHeaderViewFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1935A232C89CC6D001AD72D /* AutofillHeaderViewFactoryTests.swift */; };
 		C1963863283794A000298D4D /* BookmarksCachingSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1963862283794A000298D4D /* BookmarksCachingSearch.swift */; };
 		C19D90D12CFE3A7F00D17DF3 /* AutofillLoginListSectionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = C19D90D02CFE3A7F00D17DF3 /* AutofillLoginListSectionType.swift */; };
+		C1AAECBD2E699F740016B82E /* SessionStateMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AAECBC2E699F740016B82E /* SessionStateMetrics.swift */; };
+		C1AAECBF2E69A1CC0016B82E /* SessionStateMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AAECBE2E69A1CC0016B82E /* SessionStateMetricsTests.swift */; };
 		C1AD33282DBAD18E003B80A4 /* CreditCardPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD33242DBAD18E003B80A4 /* CreditCardPromptView.swift */; };
 		C1AD33292DBAD18E003B80A4 /* CreditCardPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD33252DBAD18E003B80A4 /* CreditCardPromptViewController.swift */; };
 		C1AD332A2DBAD18E003B80A4 /* CreditCardPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD33262DBAD18E003B80A4 /* CreditCardPromptViewModel.swift */; };
@@ -3583,6 +3585,8 @@
 		C19D90D02CFE3A7F00D17DF3 /* AutofillLoginListSectionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginListSectionType.swift; sourceTree = "<group>"; };
 		C1A001092D08635100372C87 /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C1A0010A2D08635100372C87 /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/Localizable.strings; sourceTree = "<group>"; };
+		C1AAECBC2E699F740016B82E /* SessionStateMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStateMetrics.swift; sourceTree = "<group>"; };
+		C1AAECBE2E69A1CC0016B82E /* SessionStateMetricsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStateMetricsTests.swift; sourceTree = "<group>"; };
 		C1AD33242DBAD18E003B80A4 /* CreditCardPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCardPromptView.swift; sourceTree = "<group>"; };
 		C1AD33252DBAD18E003B80A4 /* CreditCardPromptViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCardPromptViewController.swift; sourceTree = "<group>"; };
 		C1AD33262DBAD18E003B80A4 /* CreditCardPromptViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCardPromptViewModel.swift; sourceTree = "<group>"; };
@@ -4711,6 +4715,7 @@
 			isa = PBXGroup;
 			children = (
 				317DD5542E0D5DD300CCC28C /* SwitchBarHandlerTests.swift */,
+				C1AAECBE2E69A1CC0016B82E /* SessionStateMetricsTests.swift */,
 			);
 			path = SwitchBar;
 			sourceTree = "<group>";
@@ -5265,6 +5270,7 @@
 				31EEBCDA2E2AABA900901255 /* NavigationActionBarView.swift */,
 				315E14A72DF77BCD00419C8A /* SwitchBarHandler.swift */,
 				315E14A82DF77BCD00419C8A /* SwitchBarViewController.swift */,
+				C1AAECBC2E699F740016B82E /* SessionStateMetrics.swift */,
 			);
 			path = SwitchBar;
 			sourceTree = "<group>";
@@ -9988,6 +9994,7 @@
 				6F2331662DD4D046004D102D /* TabSwitcherStaticButton.swift in Sources */,
 				EE0153E12A6EABE0002A8B26 /* NetworkProtectionConvenienceInitialisers.swift in Sources */,
 				C17B595B2A03AAD30055F2D1 /* PasswordGenerationPromptView.swift in Sources */,
+				C1AAECBD2E699F740016B82E /* SessionStateMetrics.swift in Sources */,
 				98AA92B32456FBE100ED4B9E /* SearchFieldContainerView.swift in Sources */,
 				CBF259562D3A960900AC63E4 /* SyncService.swift in Sources */,
 				3157B43827F4C8490042D3D7 /* FaviconsHelper.swift in Sources */,
@@ -10579,6 +10586,7 @@
 				84EFBCC92D81796000706739 /* AutocompleteSuggestionsDataSourceTests.swift in Sources */,
 				9FFDA8372DFA885C007923F7 /* PictureInPictureControllerFactoryTests.swift in Sources */,
 				98E5630B2DE8AF3100E6E75F /* HtmlTestDataLoader.swift in Sources */,
+				C1AAECBF2E69A1CC0016B82E /* SessionStateMetricsTests.swift in Sources */,
 				98E5630D2DE8AF3100E6E75F /* InitHelpers.swift in Sources */,
 				98E563122DE8AF3100E6E75F /* CombineTestUtilities.swift in Sources */,
 				98E563162DE8AF3100E6E75F /* TestDataLoader.swift in Sources */,

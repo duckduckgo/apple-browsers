@@ -94,7 +94,7 @@ public class ActionsHandler {
     }
 
     /// Creates an ActionsHandler for email confirmation continuation - starts after email confirmation action
-    public static func forEmailConfirmationContinuation(_ step: Step) throws -> ActionsHandler {
+    public static func forEmailConfirmationContinuation(_ step: Step) -> ActionsHandler {
         guard step.type == .optOut else {
             assertionFailure("Expected optOut step but got \(step.type)")
             return ActionsHandler(stepType: step.type, actions: step.actions)

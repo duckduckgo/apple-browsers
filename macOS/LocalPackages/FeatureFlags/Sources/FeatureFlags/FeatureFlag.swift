@@ -191,7 +191,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .supportsAlternateStripePaymentFlow,
                 .restoreSessionPrompt,
                 .refactorOfSyncPreferences,
-                .newSyncEntryPoints,
                 .subscriptionPurchaseWidePixelMeasurement:
             true
         default:

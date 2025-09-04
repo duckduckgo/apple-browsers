@@ -237,7 +237,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     @objc
     func signOut() {
         Task {
-            await subscriptionAuthV1toV2Bridge.signOut(notifyUI: true)
+            await subscriptionAuthV1toV2Bridge.signOut(notifyUI: true, userInitiated: true)
         }
     }
 

@@ -1,5 +1,5 @@
 //
-//  WebExtensionPathsCacheMock.swift
+//  SessionRestorePromptCoordinatorMock.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,30 +16,22 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
-
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 15.4, *)
-final class WebExtensionPathsCachingMock: WebExtensionPathsCaching {
+final class SessionRestorePromptCoordinatorMock: SessionRestorePromptCoordinating {
+    var uiReady: Bool = false
+    var sessionPromptShown: Bool = false
+    var applicationWillTerminateCalled: Bool = false
 
-    var cache: [String] = []
-
-    var addCalled = false
-    var addedURL: String?
-    func add(_ url: String) {
-        addCalled = true
-        addedURL = url
-        cache.append(url)
+    func markUIReady() {
+        uiReady = true
     }
 
-    var removeCalled = false
-    var removedURL: String?
-    func remove(_ url: String) {
-        removeCalled = true
-        removedURL = url
-        cache.removeAll { $0 == url }
+    func showRestoreSessionPrompt(restoreAction: @escaping (Bool) -> Void) {
+        sessionPromptShown = true
+    }
+
+    func applicationWillTerminate() {
+        applicationWillTerminateCalled = true
     }
 }
-
-#endif

@@ -36,6 +36,7 @@ struct SessionRestorePromptView: View {
             Text(UserText.sessionRestorePromptTitle)
                 .font(.title3)
                 .bold()
+                .multilineText()
                 .padding(.bottom, 12)
 
             Text(UserText.sessionRestorePromptMessage)
@@ -43,7 +44,7 @@ struct SessionRestorePromptView: View {
                 .font(.body)
                 .padding(.bottom, 8)
 
-            Text(UserText.sessionRestorePromptExplanation)
+            Text(.init(UserText.sessionRestorePromptExplanation))
                 .multilineText()
                 .font(.body)
                 .padding(.bottom, 20)
@@ -54,20 +55,22 @@ struct SessionRestorePromptView: View {
                     dismiss()
                 } label: {
                     Text(UserText.sessionRestorePromptButtonReject)
+                        .multilineText()
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                 }
-                .buttonStyle(StandardButtonStyle(topPadding: 0, bottomPadding: 0))
+                .buttonStyle(StandardButtonStyle())
 
                 Button {
                     model.restoreSession()
                     dismiss()
                 } label: {
                     Text(UserText.sessionRestorePromptButtonAccept)
+                        .multilineText()
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                 }
-                .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0))
+                .buttonStyle(DefaultActionButtonStyle(enabled: true))
             }
         }
         .multilineTextAlignment(.center)
@@ -75,6 +78,5 @@ struct SessionRestorePromptView: View {
         .padding(.top, 8)
         .padding(.bottom, 16)
         .frame(width: Const.width)
-        .background(Color(.interfaceBackground))
     }
 }

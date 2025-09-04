@@ -1,5 +1,5 @@
 //
-//  Logger+WebExtensions.swift
+//  NativeMessagingHandlerFactory.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -17,8 +17,14 @@
 //
 
 import Foundation
-import os.log
 
-public extension Logger {
-    static var webExtensions = { Logger(subsystem: "WebExtensions", category: "") }()
+@available(macOS 15.4, *)
+final class NativeMessagingHandlerFactory {
+
+    static func makeHandler(for extensionIdentifier: WebExtensionIdentifier) -> NativeMessagingHandling? {
+        switch extensionIdentifier {
+        case .bitwarden:
+            return BitwardenNativeMessagingHandler()
+        }
+    }
 }

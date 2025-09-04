@@ -1,5 +1,5 @@
 //
-//  Logger+WebExtensions.swift
+//  NativeMessagingHandling.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -17,8 +17,10 @@
 //
 
 import Foundation
-import os.log
+import WebKit
 
-public extension Logger {
-    static var webExtensions = { Logger(subsystem: "WebExtensions", category: "") }()
+@available(macOS 15.4, *)
+protocol NativeMessagingHandling {
+    func handleMessage(_ message: Any, to applicationIdentifier: String?, for extensionContext: WKWebExtensionContext) async throws -> Any?
+    func handleConnection(using port: WKWebExtension.MessagePort, for extensionContext: WKWebExtensionContext) throws
 }

@@ -1,5 +1,5 @@
 //
-//  Logger+WebExtensions.swift
+//  WebExtensionLoadResult.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -17,8 +17,17 @@
 //
 
 import Foundation
-import os.log
+import WebKit
 
-public extension Logger {
-    static var webExtensions = { Logger(subsystem: "WebExtensions", category: "") }()
+@available(macOS 15.4, *)
+struct WebExtensionLoadResult {
+    let context: WKWebExtensionContext
+    let extensionIdentifier: WebExtensionIdentifier?
+    let path: String
+
+    init(context: WKWebExtensionContext, path: String, extensionIdentifier: WebExtensionIdentifier? = nil) {
+        self.context = context
+        self.path = path
+        self.extensionIdentifier = extensionIdentifier
+    }
 }

@@ -186,7 +186,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     public let subscriptionUIHandler: SubscriptionUIHandling
 
-    private(set) lazy var sessionRestorePromptCoordinator = SessionRestorePromptCoordinator(featureFlagger: featureFlagger)
+    private(set) lazy var sessionRestorePromptCoordinator = SessionRestorePromptCoordinator(pixelFiring: PixelKit.shared, featureFlagger: featureFlagger)
 
     // MARK: - Freemium DBP
     public let freemiumDBPFeature: FreemiumDBPFeature
@@ -247,6 +247,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionBridge: subscriptionAuthV1toV2Bridge
         )
     }()
+
+    private(set) var webExtensionManager: WebExtensionManaging?
 
     private var didFinishLaunching = false
 
@@ -798,14 +800,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            Task { @MainActor in
-                await WebExtensionManager.shared.loadInstalledExtensions()
-            }
-        }
-#endif
-
 #if !APPSTORE
         crashReporter = CrashReporter(internalUserDecider: internalUserDecider)
 #endif
@@ -828,7 +822,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                              startupPreferences: startupPreferences,
                                                              keyValueStore: keyValueStore,
-                                                             sessionRestorePromptCoordinator: sessionRestorePromptCoordinator)
+                                                             sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
+                                                             pixelFiring: PixelKit.shared)
 
 #if SPARKLE
         if AppVersion.runType != .uiTests {
@@ -893,6 +888,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if isFirstLaunch {
             AppDelegate.firstLaunchDate = Date()
         }
+
+        setupWebExtensions()
 
         vpnUpsellVisibilityManager.setup(isFirstLaunch: isFirstLaunch)
 
@@ -1141,6 +1138,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func application(_ sender: NSApplication, openFiles files: [String]) {
         urlEventHandler.handleFiles(files)
+    }
+
+    // MARK: - Web Extensions
+
+    @MainActor
+    private func setupWebExtensions() {
+        if #available(macOS 15.4, *), featureFlagger.isFeatureOn(.webExtensions) {
+            let webExtensionManager = WebExtensionManager()
+            self.webExtensionManager = webExtensionManager
+
+            Task {
+                await webExtensionManager.loadInstalledExtensions()
+            }
+        } else {
+            self.webExtensionManager = nil
+        }
     }
 
     // MARK: - PixelKit

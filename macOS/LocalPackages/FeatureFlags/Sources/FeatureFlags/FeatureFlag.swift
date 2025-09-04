@@ -189,7 +189,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
-                .subscriptionPurchaseWidePixelMeasurement:
+                .subscriptionPurchaseWidePixelMeasurement,
+                .restoreSessionPrompt:
             true
         default:
             false
@@ -380,7 +381,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .openFireWindowByDefault:
             return .remoteReleasable(.feature(.openFireWindowByDefault))
         case .restoreSessionPrompt:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.restoreSessionPrompt))
         case .duckAISearchParameter:
             return .enabled
         case .subscriptionPurchaseWidePixelMeasurement:

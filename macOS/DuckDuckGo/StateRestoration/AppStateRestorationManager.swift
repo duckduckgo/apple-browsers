@@ -39,6 +39,7 @@ final class AppStateRestorationManager: NSObject {
     private let startupPreferences: StartupPreferences
     private let keyValueStore: ThrowingKeyValueStoring
     private let sessionRestorePromptCoordinator: SessionRestorePromptCoordinating
+    private let pixelFiring: PixelFiring?
 
     @UserDefaultsWrapper(key: .appIsRelaunchingAutomatically, defaultValue: false)
     private var appIsRelaunchingAutomatically: Bool
@@ -67,9 +68,18 @@ final class AppStateRestorationManager: NSObject {
         startupPreferences.restorePreviousSession
     }
 
-    convenience init(fileStore: FileStore, startupPreferences: StartupPreferences, keyValueStore: ThrowingKeyValueStoring, sessionRestorePromptCoordinator: SessionRestorePromptCoordinating) {
+    convenience init(fileStore: FileStore,
+                     startupPreferences: StartupPreferences,
+                     keyValueStore: ThrowingKeyValueStoring,
+                     sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
+                     pixelFiring: PixelFiring?) {
         let service = StatePersistenceService(fileStore: fileStore, fileName: Constants.fileName)
-        self.init(fileStore: fileStore, service: service, startupPreferences: startupPreferences, keyValueStore: keyValueStore, sessionRestorePromptCoordinator: sessionRestorePromptCoordinator)
+        self.init(fileStore: fileStore,
+                  service: service,
+                  startupPreferences: startupPreferences,
+                  keyValueStore: keyValueStore,
+                  sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
+                  pixelFiring: pixelFiring)
     }
 
     init(
@@ -77,13 +87,15 @@ final class AppStateRestorationManager: NSObject {
         service: StatePersistenceService,
         startupPreferences: StartupPreferences,
         keyValueStore: ThrowingKeyValueStoring,
-        sessionRestorePromptCoordinator: SessionRestorePromptCoordinating
+        sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
+        pixelFiring: PixelFiring?
     ) {
         self.service = service
         self.tabSnapshotCleanupService = TabSnapshotCleanupService(fileStore: fileStore)
         self.startupPreferences = startupPreferences
         self.keyValueStore = keyValueStore
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
+        self.pixelFiring = pixelFiring
     }
 
     func subscribeToAutomaticAppRelaunching(using relaunchPublisher: AnyPublisher<Void, Never>) {
@@ -138,16 +150,7 @@ final class AppStateRestorationManager: NSObject {
         // don‘t automatically restore windows if relaunched 2nd time with no recently updated app session state
         readLastSessionState(restoreWindows: !service.isAppStateFileStale || isRelaunchingAutomatically, restoreRegularTabs: shouldRestoreRegularTabs)
 
-        let didCloseUnexpectedly = !appDidTerminateAsExpected
-        appDidTerminateAsExpected = false // Set to false so it will be false if the app closes without terminating properly
-        // Display a prompt to restore the last session when the user has disabled "restore previous session" and the app closed unexpectedly.
-        // Don't show the prompt if relaunched 2nd time with no recently updated app session state (crash loop).
-        if didCloseUnexpectedly && !shouldRestoreRegularTabs && canRestoreLastSessionState && !service.isAppStateFileStale {
-            sessionRestorePromptCoordinator.showRestoreSessionPrompt { [weak self] restoreSession in
-                guard let self, restoreSession else { return }
-                restoreLastSessionState(interactive: true, includeRegularTabs: true)
-            }
-        }
+        detectUnexpectedAppTermination()
 
         stateChangedCancellable = Publishers.Merge(
                 Application.appDelegate.windowControllersManager.stateChanged,
@@ -164,6 +167,7 @@ final class AppStateRestorationManager: NSObject {
     func applicationWillTerminate() {
         stateChangedCancellable?.cancel()
         appDidTerminateAsExpected = true
+        sessionRestorePromptCoordinator.applicationWillTerminate()
         if Application.appDelegate.windowControllersManager.isInInitialState {
             service.clearState(sync: true)
         } else {
@@ -205,5 +209,22 @@ final class AppStateRestorationManager: NSObject {
 
     private func migratePinnedTabsSettingIfNecessary() {
         TabsPreferences.shared.migratePinnedTabsSettingIfNecessary(nil)
+    }
+
+    private func detectUnexpectedAppTermination() {
+        let didCloseUnexpectedly = !appDidTerminateAsExpected
+        appDidTerminateAsExpected = false // Set to false so it will be false if the app closes without terminating properly
+
+        guard didCloseUnexpectedly else { return }
+        pixelFiring?.fire(SessionRestorePromptPixel.unexpectedAppTerminationDetected)
+
+        // Display a prompt to restore the last session when the user has disabled "restore previous session".
+        // Don't show the prompt if relaunched 2nd time with no recently updated app session state (crash loop).
+        if !shouldRestoreRegularTabs && canRestoreLastSessionState && !service.isAppStateFileStale {
+            sessionRestorePromptCoordinator.showRestoreSessionPrompt { [weak self] restoreSession in
+                guard let self, restoreSession else { return }
+                restoreLastSessionState(interactive: true, includeRegularTabs: true)
+            }
+        }
     }
 }

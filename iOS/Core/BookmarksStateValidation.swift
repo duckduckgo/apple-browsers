@@ -114,6 +114,7 @@ public class BookmarksStateValidator: BookmarksStateValidation {
 
         // Add recent bookmark error information
         if let recentBookmarkError = getRecentBookmarkError() {
+            params["recent-bookmark-error-name"] = recentBookmarkError.name
             params["recent-bookmark-error-domain"] = recentBookmarkError.domain
             params["recent-bookmark-error-code"] = "\(recentBookmarkError.code)"
         }
@@ -128,27 +129,26 @@ public class BookmarksStateValidator: BookmarksStateValidation {
         return UserDefaults.standard.object(forKey: syncEnabledKey) != nil
     }
 
-    private func getRecentBookmarkError() -> (domain: String, code: Int)? {
+    private func getRecentBookmarkError() -> (name: String, domain: String, code: Int)? {
         let bookmarkErrorKey = "BookmarksValidator.lastBookmarkError"
         let maxAgeHours: TimeInterval = 24 // 1 day
 
-        // Check KeyValueFileStore for bookmark error
-        guard let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
-              let keyValueFileStore = try? KeyValueFileStore(location: appSupportDir, name: "AppKeyValueStore"),
-              let errorInfo = (try? keyValueFileStore.object(forKey: bookmarkErrorKey)) as? [String: Any],
+        // Check UserDefaults for bookmark error
+        guard let errorInfo = UserDefaults.app.object(forKey: bookmarkErrorKey) as? [String: Any],
               let timestamp = errorInfo["timestamp"] as? Date,
+              let name = errorInfo["bookmarkError"] as? String,
               let domain = errorInfo["domain"] as? String,
               let code = errorInfo["code"] as? Int else {
             return nil
         }
-        
+
         // Check if error is recent (within 1 day)
         let hoursSinceError = Date().timeIntervalSince(timestamp) / 3600
         guard hoursSinceError <= maxAgeHours else {
             return nil
         }
         
-        return (domain: domain, code: code)
+        return (name: name, domain: domain, code: code)
     }
 
 }

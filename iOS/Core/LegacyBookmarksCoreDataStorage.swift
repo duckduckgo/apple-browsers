@@ -40,6 +40,33 @@ public enum BookmarksDatabaseError: Error {
     
     // Generic
     case other(Error)
+
+    public var name: String {
+        switch self {
+        case .noDBSchemeFound:
+            return "noDBSchemeFound"
+        case .unableToLoadPersistentStores:
+            return "unableToLoadPersistentStores"
+        case .errorCreatingTopLevelBookmarksFolder:
+            return "errorCreatingTopLevelBookmarksFolder"
+        case .errorCreatingTopLevelFavoritesFolder:
+            return "errorCreatingTopLevelFavoritesFolder"
+        case .couldNotFixBookmarkFolder:
+            return "couldNotFixBookmarkFolder"
+        case .couldNotFixFavoriteFolder:
+            return "couldNotFixFavoriteFolder"
+        case .couldNotPrepareBookmarksDBStructure:
+            return "couldNotPrepareBookmarksDBStructure"
+        case .couldNotWriteToBookmarksDB:
+            return "couldNotWriteToBookmarksDB"
+        case .couldNotGetFavoritesOrder:
+            return "couldNotGetFavoritesOrder"
+        case .couldNotPrepareDatabase:
+            return "couldNotPrepareDatabase"
+        case .other:
+            return "other"
+        }
+    }
 }
 
 public class LegacyBookmarksCoreDataStorage {

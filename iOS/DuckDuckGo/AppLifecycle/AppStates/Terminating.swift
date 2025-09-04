@@ -92,7 +92,7 @@ struct Terminating: TerminatingHandling {
                 mode = error.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(debugMessage: "DB init failed: \(error.localizedDescription)")
             }
         case .bookmarksDatabase(let bookmarkError):
-            let underlyingError: Error
+            var underlyingError: Error = bookmarkError
             let debugMessage: String
 
             switch bookmarkError {
@@ -108,7 +108,6 @@ struct Terminating: TerminatingHandling {
                 
             // Legacy storage errors
             case .noDBSchemeFound:
-                underlyingError = bookmarkError
                 debugMessage = "Legacy Bookmarks DB init failed: no DB scheme found"
                 pixel = .bookmarksCouldNotLoadDatabase
             case .unableToLoadPersistentStores(let error):
@@ -116,19 +115,15 @@ struct Terminating: TerminatingHandling {
                 debugMessage = "Legacy Bookmarks DB init failed: unable to load persistent stores"
                 pixel = .bookmarksCouldNotLoadDatabase
             case .errorCreatingTopLevelBookmarksFolder:
-                underlyingError = bookmarkError
                 debugMessage = "Legacy Bookmarks DB init failed: error creating top level bookmarks folder"
                 pixel = .bookmarksCouldNotLoadDatabase
             case .errorCreatingTopLevelFavoritesFolder:
-                underlyingError = bookmarkError
                 debugMessage = "Legacy Bookmarks DB init failed: error creating top level favorites folder"
                 pixel = .bookmarksCouldNotLoadDatabase
             case .couldNotFixBookmarkFolder:
-                underlyingError = bookmarkError
                 debugMessage = "Legacy Bookmarks DB init failed: could not fix bookmark folder"
                 pixel = .bookmarksCouldNotLoadDatabase
             case .couldNotFixFavoriteFolder:
-                underlyingError = bookmarkError
                 debugMessage = "Legacy Bookmarks DB init failed: could not fix favorite folder"
                 pixel = .bookmarksCouldNotLoadDatabase
                 
@@ -149,7 +144,7 @@ struct Terminating: TerminatingHandling {
                 pixel = .bookmarksCouldNotLoadDatabase
             }
             
-            recordBookmarkDatabaseError(underlyingError)
+            recordBookmarkDatabaseError(error: bookmarkError, underlyingError: underlyingError)
             errorToReport = underlyingError
             mode = underlyingError.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(debugMessage: debugMessage)
         case .historyDatabase(let error):
@@ -197,6 +192,19 @@ struct Terminating: TerminatingHandling {
         window.rootViewController?.present(alertController, animated: true, completion: nil)
     }
 
+    // MARK: - Error Tracking
+
+    private func recordBookmarkDatabaseError(error: BookmarksDatabaseError, underlyingError: Error) {
+        let errorInfo: [String: Any] = [
+            "timestamp": Date(),
+            "bookmarkError": error.name,
+            "domain": (underlyingError as NSError).domain,
+            "code": (underlyingError as NSError).code
+        ]
+
+        UserDefaults.app.set(errorInfo, forKey: "BookmarksValidator.lastBookmarkError")
+    }
+
 }
 
 private extension Error {
@@ -211,21 +219,4 @@ private extension Error {
         return false
     }
 
-}
-
-// MARK: - Error Tracking
-
-private func recordBookmarkDatabaseError(_ error: Error) {
-    guard let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
-          let keyValueStore = try? KeyValueFileStore(location: appSupportDir, name: "AppKeyValueStore") else {
-        return
-    }
-    
-    let errorInfo: [String: Any] = [
-        "timestamp": Date(),
-        "domain": (error as NSError).domain,
-        "code": (error as NSError).code
-    ]
-    
-    try? keyValueStore.set(errorInfo, forKey: "BookmarksValidator.lastBookmarkError")
 }

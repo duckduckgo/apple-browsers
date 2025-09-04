@@ -203,8 +203,6 @@ final class SwitchBarHandler: SwitchBarHandling {
         case .aiChat:
             funnelState.processStep(.promptSubmitted)
             sessionStateMetrics.recordActivity(.promptSubmitted)
-        case .aiChat:
-            funnelState.processStep(.promptSubmitted)
         }
     }
 

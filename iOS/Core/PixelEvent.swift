@@ -1287,6 +1287,12 @@ extension Pixel {
         case aiChatExperimentalOmnibarQuerySubmitted
         case aiChatExperimentalOmnibarModeSwitched
         case aiChatExperimentalOmnibarSessionBothModes
+        case aiChatExperimentalOmnibarFirstSettingsViewed
+        case aiChatExperimentalOmnibarFirstEnabled
+        case aiChatExperimentalOmnibarFirstInteraction
+        case aiChatExperimentalOmnibarFirstSearchSubmission
+        case aiChatExperimentalOmnibarFirstPromptSubmission
+        case aiChatExperimentalOmnibarFullConversionUser
         case aiChatLegacyOmnibarShown
         case aiChatLegacyOmnibarQuerySubmitted
         case aiChatLegacyOmnibarAichatButtonPressed
@@ -2522,6 +2528,12 @@ extension Pixel.Event {
         case .aiChatExperimentalOmnibarQuerySubmitted: return "m_aichat_experimental_omnibar_query_submitted"
         case .aiChatExperimentalOmnibarModeSwitched: return "m_aichat_experimental_omnibar_mode_switched"
         case .aiChatExperimentalOmnibarSessionBothModes: return "m_aichat_experimental_omnibar_session_both_modes"
+        case .aiChatExperimentalOmnibarFirstSettingsViewed: return "m_aichat_experimental_omnibar_first_settings_viewed"
+        case .aiChatExperimentalOmnibarFirstEnabled: return "m_aichat_experimental_omnibar_first_enabled"
+        case .aiChatExperimentalOmnibarFirstInteraction: return "m_aichat_experimental_omnibar_first_interaction"
+        case .aiChatExperimentalOmnibarFirstSearchSubmission: return "m_aichat_experimental_omnibar_first_search_submission"
+        case .aiChatExperimentalOmnibarFirstPromptSubmission: return "m_aichat_experimental_omnibar_first_prompt_submission"
+        case .aiChatExperimentalOmnibarFullConversionUser: return "m_aichat_experimental_omnibar_full_conversion_user"
         case .aiChatLegacyOmnibarShown: return "m_aichat_legacy_omnibar_shown"
         case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
         case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"

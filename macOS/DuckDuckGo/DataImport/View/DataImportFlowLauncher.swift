@@ -68,8 +68,7 @@ final class DataImportFlowLauncher: DataImportFlowLaunching {
         if
             case .inactive = ddgSync?.authState,
             let deviceSyncLauncher = DeviceSyncCoordinator(),
-            featureFlagger.isFeatureOn(.newSyncEntryPoints),
-            featureFlagger.isFeatureOn(.refactorOfSyncPreferences) {
+            featureFlagger.isNewSyncEntryPointsFeatureOn {
             syncFeatureVisibility = .show(syncLauncher: deviceSyncLauncher)
         } else {
             syncFeatureVisibility = .hide

@@ -19,7 +19,6 @@
 import XCTest
 @testable import PixelKit
 import PixelKitTestingUtilities
-import Common
 
 final class PixelKitParametersTests: XCTestCase {
 

@@ -33,6 +33,9 @@ struct AIChatTextTranslationRequest: Equatable {
     /// The title of the website where the text for translation was selected
     let websiteTitle: String?
 
+    /// The eTLD of the website's URL where the text for translation was selected
+    let websiteTLD: String?
+
     /// Source language of the selected text based on element or document `lang` attribute
     let sourceLanguage: String?
 }
@@ -77,6 +80,7 @@ final class AIChatTranslator: AIChatTranslating {
         let prompt = AIChatNativePrompt.translationPrompt(request.text,
                                                           url: request.websiteURL,
                                                           title: request.websiteTitle,
+                                                          sourceTLD: request.websiteTLD,
                                                           sourceLanguage: request.sourceLanguage,
                                                           targetLanguage: targetTranslationLanguage())
 //        pixelFiring?.fire(AIChatPixel.aiChatTranslateText(source: request.source), frequency: .dailyAndStandard) // TODO: Fire appropriate pixel

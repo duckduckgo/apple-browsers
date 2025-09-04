@@ -22,6 +22,7 @@ import Combine
 import Foundation
 import WebKitExtensions
 import BrowserServicesKit
+import Common
 
 enum NavigationDecision {
     case allow(NewWindowPolicy)
@@ -42,6 +43,7 @@ final class ContextMenuManager: NSObject {
     private let isLoadedInSidebar: Bool
     private let internalUserDecider: InternalUserDecider
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+    private let tld: TLD
 
     private var isEmailAddress: Bool {
         guard let linkURL, let url = URL(string: linkURL) else {
@@ -65,12 +67,14 @@ final class ContextMenuManager: NSObject {
          tabsPreferences: TabsPreferences = TabsPreferences.shared,
          isLoadedInSidebar: Bool = false,
          internalUserDecider: InternalUserDecider,
-         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
+         tld: TLD
     ) {
         self.tabsPreferences = tabsPreferences
         self.isLoadedInSidebar = isLoadedInSidebar
         self.internalUserDecider = internalUserDecider
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
+        self.tld = tld
         super.init()
 
         contextMenuScriptPublisher
@@ -448,11 +452,13 @@ private extension ContextMenuManager {
 
         Task { @MainActor in
 
+            let sourceTLD = tld.eTLD(forStringURL: webView?.url?.absoluteString ?? "")
             let sourceLanguage: String? = await webView?.currentSelectionLanguage
 
             let request = AIChatTextTranslationRequest(text: selectedText,
                                                        websiteURL: webView?.url,
                                                        websiteTitle: webView?.title,
+                                                       websiteTLD: sourceTLD,
                                                        sourceLanguage: sourceLanguage)
 
             mainViewController?.aiChatTranslator.translate(request)

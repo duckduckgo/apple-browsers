@@ -189,8 +189,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
-                .subscriptionPurchaseWidePixelMeasurement,
-                .restoreSessionPrompt:
+                .restoreSessionPrompt,
+                .refactorOfSyncPreferences,
+                .newSyncEntryPoints,
+                .subscriptionPurchaseWidePixelMeasurement:
             true
         default:
             false
@@ -387,9 +389,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .subscriptionPurchaseWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         case .refactorOfSyncPreferences:
-            return .disabled
+            return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
         case .newSyncEntryPoints:
-            return .disabled
+            return .remoteReleasable(.subfeature(SyncSubfeature.newSyncEntryPoints))
         }
     }
 }

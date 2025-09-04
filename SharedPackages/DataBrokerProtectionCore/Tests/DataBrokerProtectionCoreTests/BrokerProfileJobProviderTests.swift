@@ -205,7 +205,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
         // Then
         XCTAssertTrue(mockDatabase.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData")
         XCTAssertEqual(mockDatabase.lastShouldFilterRemovedBrokers, true, "Should request filtering of removed brokers")
-        
+
         // Should create jobs only for active brokers (removed brokers are filtered at database level)
         XCTAssertEqual(result.count, 2, "Should create jobs only for active brokers")
     }

@@ -446,11 +446,17 @@ private extension ContextMenuManager {
             return
         }
 
-        let request = AIChatTextTranslationRequest(text: selectedText,
-                                                   websiteURL: webView?.url,
-                                                   websiteTitle: webView?.title)
+        Task { @MainActor in
 
-        mainViewController?.aiChatTranslator.translate(request)
+            let sourceLanguage: String? = await webView?.currentSelectionLanguage
+
+            let request = AIChatTextTranslationRequest(text: selectedText,
+                                                       websiteURL: webView?.url,
+                                                       websiteTitle: webView?.title,
+                                                       sourceLanguage: sourceLanguage)
+
+            mainViewController?.aiChatTranslator.translate(request)
+        }
     }
 
     func openLinkInNewTab(_ sender: NSMenuItem) {

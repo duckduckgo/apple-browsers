@@ -240,13 +240,13 @@ public struct AIChatNativePrompt: Codable, Equatable {
         AIChatNativePrompt(platform: Platform.name, tool: .summary(.init(text: text, sourceURL: url?.absoluteString, sourceTitle: title)))
     }
 
-    public static func translationPrompt(_ text: String, url: URL?, title: String?, targetLanguage: String) -> AIChatNativePrompt {
+    public static func translationPrompt(_ text: String, url: URL?, title: String?, sourceLanguage: String?, targetLanguage: String) -> AIChatNativePrompt {
 
         let translation = AIChatNativePrompt.Tool.translation(.init(text: text,
                                                                     sourceURL: url?.absoluteString,
                                                                     sourceTitle: title,
                                                                     sourceTLD: nil, // TODO: missing
-                                                                    sourceLanguage: nil, // TODO: missing
+                                                                    sourceLanguage: sourceLanguage,
                                                                     targetLanguage: targetLanguage))
 
         return AIChatNativePrompt(platform: Platform.name, tool: translation)

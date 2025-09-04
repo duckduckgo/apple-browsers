@@ -27,11 +27,14 @@ struct AIChatTextTranslationRequest: Equatable {
     /// The text to be translated
     let text: String
 
-    /// The URL of the website where the translated text was selected
+    /// The URL of the website where the text for translation was selected
     let websiteURL: URL?
 
-    /// The title of the website where the translated text was selected
+    /// The title of the website where the text for translation was selected
     let websiteTitle: String?
+
+    /// Source language of the selected text based on element or document `lang` attribute
+    let sourceLanguage: String?
 }
 
 /// This protocol describes APIs for translation in AI Chat.
@@ -74,6 +77,7 @@ final class AIChatTranslator: AIChatTranslating {
         let prompt = AIChatNativePrompt.translationPrompt(request.text,
                                                           url: request.websiteURL,
                                                           title: request.websiteTitle,
+                                                          sourceLanguage: request.sourceLanguage,
                                                           targetLanguage: targetTranslationLanguage())
 //        pixelFiring?.fire(AIChatPixel.aiChatTranslateText(source: request.source), frequency: .dailyAndStandard) // TODO: Fire appropriate pixel
 

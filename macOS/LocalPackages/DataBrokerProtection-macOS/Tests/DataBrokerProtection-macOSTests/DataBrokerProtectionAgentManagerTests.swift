@@ -22,6 +22,7 @@ import Persistence
 @testable import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
+import BrowserServicesKit
 
 final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 
@@ -43,6 +44,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     private var mockAuthenticationManager: MockAuthenticationManager!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
     private var mockBrokerUpdater: MockBrokerJSONService!
+    private var mockInternalUserDecider: InternalUserDecider!
 
     override func setUpWithError() throws {
 
@@ -54,7 +56,9 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockAuthenticationManager = MockAuthenticationManager()
         mockAgentStopper = MockAgentStopper()
         mockConfigurationManager = MockConfigurationManager()
-        mockPrivacyConfigurationManager = DBPPrivacyConfigurationManager()
+        let mockInternalUserStore = InternalUserDeciderStoreMock(isInternalUser: false)
+        mockInternalUserDecider = DefaultInternalUserDecider(store: mockInternalUserStore)
+        mockPrivacyConfigurationManager = DBPPrivacyConfigurationManager(internalUserDecider: mockInternalUserDecider)
         mockBrokerUpdater = MockBrokerJSONService()
 
         let mockDatabase = MockDatabase()

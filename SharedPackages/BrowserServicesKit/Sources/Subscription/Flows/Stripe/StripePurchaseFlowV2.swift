@@ -20,11 +20,46 @@ import Foundation
 import StoreKit
 import os.log
 import Networking
+import Common
 import PixelKit
 
-public enum StripePurchaseFlowError: Swift.Error {
+public enum StripePurchaseFlowError: DDGError {
     case noProductsFound
     case accountCreationFailed(Error)
+
+    public var description: String {
+        switch self {
+        case .noProductsFound: "No products found."
+        case .accountCreationFailed(let error): "Account creation failed: \(error)"
+        }
+    }
+
+    public var errorDomain: String { "com.duckduckgo.subscription.StripePurchaseFlowError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .noProductsFound: 12700
+        case .accountCreationFailed: 12701
+        }
+    }
+
+    public var underlyingError: (any Error)? {
+        switch self {
+        case .accountCreationFailed(let error): error
+        default: nil
+        }
+    }
+
+    public static func == (lhs: StripePurchaseFlowError, rhs: StripePurchaseFlowError) -> Bool {
+        switch (lhs, rhs) {
+        case (.noProductsFound, .noProductsFound):
+            return true
+        case let (.accountCreationFailed(lhsError), .accountCreationFailed(rhsError)):
+            return String(describing: lhsError) == String(describing: rhsError)
+        default:
+            return false
+        }
+    }
 }
 
 public protocol StripePurchaseFlowV2 {
@@ -98,7 +133,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
 
                 return .success((purchaseUpdate: PurchaseUpdate.redirect(withToken: tokenContainer.accessToken), accountCreationDuration: accountCreation))
             } catch {
-                Logger.subscriptionStripePurchaseFlow.error("Account creation failed: \(error.localizedDescription, privacy: .public)")
+                Logger.subscriptionStripePurchaseFlow.error("Account creation failed: \(String(describing: error), privacy: .public)")
                 return .failure(.accountCreationFailed(error))
             }
         }

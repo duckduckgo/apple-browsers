@@ -16,10 +16,9 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
-
 import Foundation
 import os.log
+import WebKit
 
 @available(macOS 15.4, *)
 protocol NativeMessagingConnectionDelegate: AnyObject {
@@ -41,13 +40,11 @@ final class NativeMessagingConnection {
 
         // Enable running proxy process when the application path in native messaging
         // communicator is corrrect
-//        do {
-//            try communicator.runProxyProcess()
-//        } catch {
-//            Logger.webExtensions.error("NativeMessagingConnection: Running proxy process failed")
-//            delegate?.nativeMessagingConnectionProcessDidFail(self)
-//        }
+        do {
+            try communicator.runProxyProcess()
+        } catch {
+            Logger.webExtensions.error("NativeMessagingConnection: Running proxy process failed")
+            delegate?.nativeMessagingConnectionProcessDidFail(self)
+        }
     }
 }
-
-#endif

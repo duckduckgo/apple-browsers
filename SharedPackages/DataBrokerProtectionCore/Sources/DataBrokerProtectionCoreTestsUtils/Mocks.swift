@@ -53,7 +53,8 @@ public extension BrokerProfileQueryData {
                 parent: parentURL,
                 mirrorSites: mirrorSites,
                 optOutUrl: optOutUrl ?? "",
-                eTag: ""
+                eTag: "",
+                removedAt: nil
             ),
             profileQuery: ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 50, deprecated: deprecated),
             scanJobData: ScanJobData(brokerId: 1,
@@ -603,9 +604,24 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
     public func fetchBroker(with name: String) throws -> DataBroker? {
         if shouldReturnOldVersionBroker {
-            return .init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.0", schedulingConfig: .mock, optOutUrl: "", eTag: "")
+            return .init(id: 1,
+                         name: "Broker",
+                         url: "broker.com",
+                         steps: [Step](),
+                         version: "1.0.0",
+                         schedulingConfig: .mock,
+                         optOutUrl: "", eTag: "",
+                         removedAt: nil)
         } else if shouldReturnNewVersionBroker {
-            return .init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.1", schedulingConfig: .mock, optOutUrl: "", eTag: "")
+            return .init(id: 1,
+                         name: "Broker",
+                         url: "broker.com",
+                         steps: [Step](),
+                         version: "1.0.1",
+                         schedulingConfig: .mock,
+                         optOutUrl: "",
+                         eTag: "",
+                         removedAt: nil)
         }
 
         return nil
@@ -1059,6 +1075,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasUpdateRemoveDateCalled = false
         wasAddHistoryEventCalled = false
         wasFetchLastHistoryEventCalled = false
+        fetchAllBrokerProfileQueryDataError = nil
         lastHistoryEventToReturn = nil
         lastPreferredRunDateOnScan = nil
         lastPreferredRunDateOnOptOut = nil
@@ -2074,8 +2091,22 @@ public extension BrokerDB {
                      json: try! JSONSerialization.data(withJSONObject: [:], options: []),
                      version: "\($0).\($0).\($0)",
                      url: "www.testbroker.com",
-                     eTag: "")
+                     eTag: "",
+                     removedAt: nil
+            )
         }
+    }
+
+    static func random(name: String? = nil, removedAt: Date? = nil) -> BrokerDB {
+        BrokerDB(
+            id: nil,
+            name: name ?? .random(length: 6),
+            json: try! JSONSerialization.data(withJSONObject: [:], options: []),
+            version: "1.0.0",
+            url: "www.\(name?.lowercased() ?? "test")broker.com",
+            eTag: "test-etag",
+            removedAt: removedAt
+        )
     }
 }
 
@@ -2129,12 +2160,13 @@ public extension ExtractedProfileDB {
 }
 
 public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProvider {
-    public static var didCallV2Migrations = false
+   public static var didCallV2Migrations = false
     public static var didCallV3Migrations = false
     public static var didCallV4Migrations = false
     public static var didCallV5Migrations = false
     public static var didCallV6Migrations = false
     public static var didCallV7Migrations = false
+    public static var didCallV8Migrations = false
 
     public static var v2Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
         didCallV2Migrations = true
@@ -2163,6 +2195,11 @@ public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProv
 
     public static var v7Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
         didCallV7Migrations = true
+        return { _ in }
+    }
+
+    public static var v8Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
+        didCallV8Migrations = true
         return { _ in }
     }
 }
@@ -2254,7 +2291,8 @@ public extension DataBroker {
                 maxAttempts: -1
             ),
             optOutUrl: "",
-            eTag: ""
+            eTag: "",
+            removedAt: nil
         )
     }
 
@@ -2276,7 +2314,8 @@ public extension DataBroker {
             ),
             parent: "some",
             optOutUrl: "",
-            eTag: ""
+            eTag: "",
+            removedAt: nil
         )
     }
 
@@ -2293,7 +2332,8 @@ public extension DataBroker {
                 maxAttempts: -1
             ),
             optOutUrl: "",
-            eTag: ""
+            eTag: "",
+            removedAt: nil
         )
     }
 
@@ -2311,7 +2351,18 @@ public extension DataBroker {
                                  mirrorSites: [MirrorSite] = [MirrorSite](),
                                  optOutUrl: String = "testbroker.com/optout",
                                  eTag: String = "") -> DataBroker {
-        return DataBroker(id: id, name: name, url: url, steps: steps, version: version, schedulingConfig: schedulingConfig, parent: parent, mirrorSites: mirrorSites, optOutUrl: optOutUrl, eTag: eTag)
+        return DataBroker(
+            id: id,
+            name: name,
+            url: url,
+            steps: steps,
+            version: version,
+            schedulingConfig: schedulingConfig,
+            parent: parent,
+            mirrorSites: mirrorSites,
+            optOutUrl: optOutUrl,
+            eTag: eTag,
+            removedAt: nil)
     }
 
     static func mock(withId id: Int64) -> DataBroker {
@@ -2328,7 +2379,8 @@ public extension DataBroker {
                 maxAttempts: -1
             ),
             optOutUrl: "",
-            eTag: ""
+            eTag: "",
+            removedAt: nil
         )
     }
 
@@ -2344,7 +2396,8 @@ public extension DataBroker {
                 maxAttempts: -1
               ),
               optOutUrl: "",
-              eTag: ""
+              eTag: "",
+              removedAt: nil
         )
     }
 
@@ -2366,7 +2419,8 @@ public extension DataBroker {
             ),
             mirrorSites: mirroSites,
             optOutUrl: "",
-            eTag: ""
+            eTag: "",
+            removedAt: nil
         )
     }
 }

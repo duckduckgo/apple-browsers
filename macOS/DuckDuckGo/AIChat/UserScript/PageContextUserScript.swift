@@ -45,7 +45,6 @@ final class PageContextUserScript: NSObject, Subfeature {
     enum MessageName: String {
         case collect
         case collectionResult
-        case collectionError
     }
 
     override init() {
@@ -64,8 +63,6 @@ final class PageContextUserScript: NSObject, Subfeature {
         switch MessageName(rawValue: methodName) {
         case .collectionResult:
             return { [weak self] in await self?.collectionResult(params: $0, message: $1) }
-        case .collectionError:
-            return { [weak self] in await self?.collectionError(params: $0, message: $1) }
         default:
             return nil
         }
@@ -77,11 +74,6 @@ final class PageContextUserScript: NSObject, Subfeature {
             return nil
         }
         collectionResultSubject.send(payload.serializedPageData)
-        return nil
-    }
-
-    private func collectionError(params: Any, message: UserScriptMessage) async -> Encodable? {
-        Logger.aiChat.error("\(#function): \(String(reflecting: params))")
         return nil
     }
 }

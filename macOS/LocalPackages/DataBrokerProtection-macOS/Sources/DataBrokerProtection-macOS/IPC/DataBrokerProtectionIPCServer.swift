@@ -199,7 +199,9 @@ extension DefaultDataBrokerProtectionIPCServer: XPCServerInterface {
     }
 
     func checkForEmailConfirmationData() {
-        serverDelegate?.checkForEmailConfirmationData()
+        Task {
+            await serverDelegate?.checkForEmailConfirmationData()
+        }
     }
 
     func getDebugMetadata(completion: @escaping (DBPBackgroundAgentMetadata?) -> Void) {

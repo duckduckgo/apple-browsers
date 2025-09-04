@@ -417,7 +417,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func checkForEmailConfirmationData() {
         Task {
-            DataBrokerProtectionManager.shared.loginItemInterface.checkForEmailConfirmationData()
+            await DataBrokerProtectionManager.shared.loginItemInterface.checkForEmailConfirmationData()
         }
     }
 

@@ -25,9 +25,12 @@ import BrowserServicesKit
 import PixelKit
 import Networking
 
-final class DBPService: NSObject {
-
+final class DBPService: NSObject, EmailConfirmationDataChecking {
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
+
+    public var emailConfirmationDataService: EmailConfirmationDataServiceProvider? {
+        dbpIOSManager?.emailConfirmationDataService
+    }
 
     init(appDependencies: DependencyProvider) {
         guard appDependencies.featureFlagger.isFeatureOn(.personalInformationRemoval) else {
@@ -80,6 +83,10 @@ final class DBPService: NSObject {
 
     func resume() {
         dbpIOSManager?.tryToFireWeeklyPixels()
+
+        Task {
+            await dbpIOSManager?.checkForEmailConfirmationData()
+        }
     }
 }
 

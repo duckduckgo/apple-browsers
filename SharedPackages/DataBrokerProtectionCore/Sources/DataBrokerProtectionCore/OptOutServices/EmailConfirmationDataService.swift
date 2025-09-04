@@ -21,6 +21,23 @@ import Common
 import Algorithms
 import os.log
 
+public protocol EmailConfirmationDataChecking {
+    var emailConfirmationDataService: EmailConfirmationDataServiceProvider? { get }
+    func checkForEmailConfirmationData() async
+}
+
+extension EmailConfirmationDataChecking {
+    public func checkForEmailConfirmationData() async {
+        Logger.dataBrokerProtection.log("Checking for email confirmation data...")
+        do {
+            try await emailConfirmationDataService?.checkForEmailConfirmationData()
+            Logger.dataBrokerProtection.log("Email confirmation data check completed")
+        } catch {
+            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
+        }
+    }
+}
+
 public protocol EmailConfirmationDataServiceProvider {
     func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64,
                                              dataBrokerURL: String,

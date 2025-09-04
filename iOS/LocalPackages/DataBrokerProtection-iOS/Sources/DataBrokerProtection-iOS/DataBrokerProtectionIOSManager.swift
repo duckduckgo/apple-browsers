@@ -187,7 +187,7 @@ public final class DataBrokerProtectionIOSManager {
     public let database: DataBrokerProtectionRepository
     private var queueManager: BrokerProfileJobQueueManaging
     private let jobDependencies: BrokerProfileJobDependencyProviding
-    private let emailConfirmationDataService: EmailConfirmationDataServiceProvider
+    public var emailConfirmationDataService: EmailConfirmationDataServiceProvider?
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let iOSPixelsHandler: EventMapping<IOSPixels>
@@ -389,15 +389,6 @@ public final class DataBrokerProtectionIOSManager {
         }
     }
 
-    private func checkForEmailConfirmationData() async {
-        Logger.dataBrokerProtection.log("iOS manager triggering email confirmation data check")
-        do {
-            try await emailConfirmationDataService.checkForEmailConfirmationData()
-            Logger.dataBrokerProtection.log("Email confirmation data check completed")
-        } catch {
-            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
-        }
-    }
 
     private func calculateEarliestBeginDate(from date: Date = .init(), firstEligibleJobDate: Date?) -> Date {
         let maxBackgroundTaskWaitDate = date.addingTimeInterval(maxBackgroundTaskWaitTime)
@@ -574,3 +565,5 @@ extension DataBrokerProtectionIOSManager: BrokerProfileJobQueueManagerDelegate {
         }
     }
 }
+
+extension DataBrokerProtectionIOSManager: EmailConfirmationDataChecking {}

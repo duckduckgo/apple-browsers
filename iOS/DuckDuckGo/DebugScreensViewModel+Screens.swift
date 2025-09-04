@@ -118,6 +118,9 @@ extension DebugScreensViewModel {
             .view(title: "Default Browser Prompt", { d in
                 DefaultBrowserPromptDebugView(model: DefaultBrowserPromptDebugViewModel(keyValueFilesStore: d.keyValueStore))
             }),
+            .view(title: "Notifications Playground", { _ in
+                LocalNotificationsPlaygroundView()
+            }),
 
             // MARK: Controllers
             .controller(title: "Image Cache", { d in

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 import Combine
 import History
@@ -43,11 +44,9 @@ final class TabCollection: NSObject {
         }
         tabs.append(tab)
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            WebExtensionManager.shared.eventsListener.didOpenTab(tab)
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didOpenTab(tab)
         }
-#endif
     }
 
     @discardableResult
@@ -63,11 +62,9 @@ final class TabCollection: NSObject {
         }
 
         tabs.insert(tab, at: index)
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            WebExtensionManager.shared.eventsListener.didOpenTab(tab)
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didOpenTab(tab)
         }
-#endif
         return true
     }
 
@@ -139,22 +136,18 @@ final class TabCollection: NSObject {
             keepLocalHistory(of: tabs[index])
         }
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            WebExtensionManager.shared.eventsListener.didCloseTab(tabs[index], windowIsClosing: false)
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didCloseTab(tabs[index], windowIsClosing: false)
         }
-#endif
     }
 
     private func tabsWillClose(range: Range<Int>) {
         for i in range {
             keepLocalHistory(of: tabs[i])
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-            if #available(macOS 15.4, *) {
-                WebExtensionManager.shared.eventsListener.didCloseTab(tabs[i], windowIsClosing: false)
+            if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+                webExtensionManager.eventsListener.didCloseTab(tabs[i], windowIsClosing: false)
             }
-#endif
         }
     }
 
@@ -185,11 +178,9 @@ final class TabCollection: NSObject {
         let oldTab = tabs[index]
         tabs[index] = tab
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            WebExtensionManager.shared.eventsListener.didReplaceTab(oldTab, with: tab)
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didReplaceTab(oldTab, with: tab)
         }
-#endif
     }
 
     // MARK: - Fire button

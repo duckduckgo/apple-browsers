@@ -188,7 +188,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .setAsDefaultBrowserPiPVideoTutorial,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .daxEasterEggLogos,
-             .subscriptionPurchaseWidePixelMeasurement:
+             .subscriptionPurchaseWidePixelMeasurement,
+             .askAIChatSuggestion:
             true
         default:
             false

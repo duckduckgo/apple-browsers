@@ -1,0 +1,82 @@
+// See https://app.asana.com/1/137249556945/project/392891325557410/task/1210882421460693
+{
+    m_autocomplete_click_phrase: {
+        description: 'Fired when user clicks on a phrase in the autocomplete suggestion list.',
+        owners: ['brindy'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+    m_autocomplete_click_website: {
+        description: 'ired when user clicks on a website in the autocomplete suggestion list.  The name of the website is not sent.',
+        owners: ['brindy'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+    m_autocomplete_click_bookmark: {
+        description: 'Fired when user clicks on a bookmark in the autocomplete suggestion list.  No details about the bookmark are sent.',
+        owners: ['brindy'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+    m_autocomplete_click_favorite: {
+        description: 'Fired when user clicks on a favorite in the autocomplete suggestion list.  No details about the favorite are sent.',
+        owners: ['brindy'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+    m_autocomplete_click_history_search: {
+        description: 'Fired when user clicks on a search based history item in the autocomplete suggestion list.  No details about the history item are sent.',
+        owners: ['brindy'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+    m_autocomplete_click_history_site: {
+        description: 'Fired when user clicks on a website based history item in the autocomplete suggestion list.  No details about the history item are sent.',
+        owners: ['brindy'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+    m_autocomplete_click_switch_to_tab: {
+        description: 'Fired when user clicks on an open tab in the autocomplete suggestion list.  No details about the tab are sent.',
+        owners: ['brindy'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+    m_autocomplete_click_askaichat_legacy: {
+        description: 'Fired if the Ask Duck.ai item was clicked in the autocompelte suggest while showing the legacy input.',
+        owners: ['brindy'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'was_used_before',
+                description: 'Indicates if Duck.ai was used before.',
+                type: 'boolean',
+                examples: ['0', '1'],
+            },
+        ],
+    },
+    m_autocomplete_click_askaichat_experimental: {
+        description: 'Fired if the Ask Duck.ai item was clicked in the autocompelte suggest while showing the experimental input.',
+        owners: ['brindy'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'was_used_before',
+                description: 'Indicates if Duck.ai was used before.',
+                type: 'boolean',
+                examples: ['0', '1'],
+            },
+        ],
+    },
+}

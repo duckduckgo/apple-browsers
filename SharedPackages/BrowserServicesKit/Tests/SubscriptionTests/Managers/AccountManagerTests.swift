@@ -37,8 +37,8 @@ final class AccountManagerTests: XCTestCase {
                                    Entitlement(product: .networkProtection)]
 
         static let keychainError = AccountKeychainAccessError.keychainSaveFailure(1)
-        static let invalidTokenError = APIServiceError.serverError(statusCode: 401, error: "invalid_token")
-        static let unknownServerError = APIServiceError.serverError(statusCode: 401, error: "unknown_error")
+        static let invalidTokenError = APIServiceError.serverError(statusCode: 401, errorCode: "invalid_token")
+        static let unknownServerError = APIServiceError.serverError(statusCode: 401, errorCode: "unknown_error")
     }
 
     var userDefaults: UserDefaults!

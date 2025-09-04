@@ -176,6 +176,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211127159784126?focus=true
     case subscriptionPurchaseWidePixelMeasurement
+
+    /// https://app.asana.com/1/137249556945/project/1203822806345703/task/1211227407476981?focus=true
+    case syncFeatureLevel3
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -189,8 +192,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
-                .subscriptionPurchaseWidePixelMeasurement,
-                .restoreSessionPrompt:
+                .restoreSessionPrompt,
+                .refactorOfSyncPreferences,
+                .subscriptionPurchaseWidePixelMeasurement:
             true
         default:
             false
@@ -255,7 +259,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .refactorOfSyncPreferences,
                 .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,
-                .subscriptionPurchaseWidePixelMeasurement:
+                .subscriptionPurchaseWidePixelMeasurement,
+                .syncFeatureLevel3:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -387,9 +392,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .subscriptionPurchaseWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         case .refactorOfSyncPreferences:
-            return .disabled
+            return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
         case .newSyncEntryPoints:
-            return .disabled
+            return .remoteReleasable(.subfeature(SyncSubfeature.newSyncEntryPoints))
+        case .syncFeatureLevel3:
+            return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
         }
     }
 }

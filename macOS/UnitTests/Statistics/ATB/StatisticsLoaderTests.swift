@@ -409,4 +409,47 @@ class StatisticsLoaderTests: XCTestCase {
         }
     }
 
+    func testWhenDuckAIRefreshHasSuccessfulAtbRequestThenDuckAIRetentionAtbUpdated() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionAtb"
+        loadSuccessfulAtbStub()
+
+        let expect = expectation(description: "Successful DuckAI atb updates retention store")
+        testee.refreshDuckAIRetentionAtb {
+            XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "v77-5")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenDuckAIRefreshHasUnsuccessfulAtbRequestThenDuckAIRetentionAtbNotUpdated() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionAtb"
+        loadUnsuccessfulAtbStub()
+
+        let expect = expectation(description: "Unsuccessful DuckAI atb does not update store")
+        testee.refreshDuckAIRetentionAtb {
+            XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "retentionAtb")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenDuckAIRefreshCalledWithoutInstallStatisticsThenInstallStatisticsRequested() {
+        mockStatisticsStore.atb = nil
+        mockStatisticsStore.duckAIRetentionAtb = nil
+        loadSuccessfulAtbStub()
+        loadSuccessfulExiStub()
+
+        let expect = expectation(description: "DuckAI refresh triggers install statistics")
+        testee.refreshDuckAIRetentionAtb {
+            XCTAssertTrue(self.mockStatisticsStore.hasInstallStatistics)
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
 }

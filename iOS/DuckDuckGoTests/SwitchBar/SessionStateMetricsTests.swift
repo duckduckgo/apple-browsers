@@ -1,5 +1,5 @@
 //
-//  sutTests.swift
+//  SessionStateMetricsTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -21,7 +21,7 @@ import XCTest
 @testable import DuckDuckGo
 import PersistenceTestingUtils
 
-final class sutTests: XCTestCase {
+final class SessionStateMetricsTests: XCTestCase {
 
     var mockStorage: MockKeyValueStore!
     var sut: SessionStateMetrics!

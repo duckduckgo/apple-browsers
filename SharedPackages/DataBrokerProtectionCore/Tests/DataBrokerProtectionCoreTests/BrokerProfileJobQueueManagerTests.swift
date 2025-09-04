@@ -57,7 +57,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
                                                         pixelHandler: mockPixelHandler,
                                                         eventsHandler: mockEventsHandler,
                                                         dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
-                                                        emailService: EmailServiceMock(),
+                                                        emailConfirmationService: MockEmailConfirmationDataServiceProvider(),
                                                         captchaService: CaptchaServiceMock(),
                                                         featureFlagger: MockDBPFeatureFlagger())
     }

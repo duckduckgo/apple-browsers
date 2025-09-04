@@ -30,7 +30,6 @@ public protocol BrokerProfileJobDependencyProviding {
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
     var eventsHandler: EventMapping<JobEvent> { get }
     var dataBrokerProtectionSettings: DataBrokerProtectionSettings { get }
-    var emailService: EmailServiceProtocol { get }
     var emailConfirmationService: EmailConfirmationDataServiceProvider { get }
     var captchaService: CaptchaServiceProtocol { get }
     var vpnBypassService: VPNBypassFeatureProvider? { get }
@@ -55,7 +54,6 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public let eventsHandler: EventMapping<JobEvent>
     public let dataBrokerProtectionSettings: DataBrokerProtectionSettings
-    public let emailService: EmailServiceProtocol
     public let emailConfirmationService: EmailConfirmationDataServiceProvider
     public let captchaService: CaptchaServiceProtocol
     public let vpnBypassService: VPNBypassFeatureProvider?
@@ -70,7 +68,6 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 eventsHandler: EventMapping<JobEvent>,
                 dataBrokerProtectionSettings: DataBrokerProtectionSettings,
-                emailService: EmailServiceProtocol,
                 emailConfirmationService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
@@ -85,7 +82,6 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         self.pixelHandler = pixelHandler
         self.eventsHandler = eventsHandler
         self.dataBrokerProtectionSettings = dataBrokerProtectionSettings
-        self.emailService = emailService
         self.emailConfirmationService = emailConfirmationService
         self.captchaService = captchaService
         self.vpnBypassService = vpnBypassService

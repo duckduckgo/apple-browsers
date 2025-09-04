@@ -26,7 +26,6 @@ public protocol EmailConfirmationJobDependencyProviding {
     var privacyConfig: PrivacyConfigurationManaging { get }
     var executionConfig: BrokerJobExecutionConfig { get }
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
-    var emailService: EmailServiceProtocol { get }
     var emailConfirmationService: EmailConfirmationDataServiceProvider { get }
     var captchaService: CaptchaServiceProtocol { get }
     var vpnBypassService: VPNBypassFeatureProvider? { get }
@@ -39,7 +38,6 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
     public let privacyConfig: PrivacyConfigurationManaging
     public let executionConfig: BrokerJobExecutionConfig
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    public let emailService: EmailServiceProtocol
     public let emailConfirmationService: EmailConfirmationDataServiceProvider
     public let captchaService: CaptchaServiceProtocol
     public let vpnBypassService: VPNBypassFeatureProvider?
@@ -51,7 +49,6 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.privacyConfig = brokerDependencies.privacyConfig
         self.executionConfig = brokerDependencies.executionConfig
         self.pixelHandler = brokerDependencies.pixelHandler
-        self.emailService = brokerDependencies.emailService
         self.emailConfirmationService = brokerDependencies.emailConfirmationService
         self.captchaService = brokerDependencies.captchaService
         self.vpnBypassService = brokerDependencies.vpnBypassService
@@ -63,7 +60,6 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
                 privacyConfig: PrivacyConfigurationManaging,
                 executionConfig: BrokerJobExecutionConfig,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                emailService: EmailServiceProtocol,
                 emailConfirmationService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 vpnBypassService: VPNBypassFeatureProvider?,
@@ -73,7 +69,6 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.privacyConfig = privacyConfig
         self.executionConfig = executionConfig
         self.pixelHandler = pixelHandler
-        self.emailService = emailService
         self.emailConfirmationService = emailConfirmationService
         self.captchaService = captchaService
         self.vpnBypassService = vpnBypassService

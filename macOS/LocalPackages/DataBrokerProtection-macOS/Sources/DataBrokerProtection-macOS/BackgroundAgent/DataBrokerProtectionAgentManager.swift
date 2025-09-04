@@ -145,7 +145,6 @@ public class DataBrokerProtectionAgentManagerProvider {
             pixelHandler: sharedPixelsHandler,
             eventsHandler: eventsHandler,
             dataBrokerProtectionSettings: dbpSettings,
-            emailService: emailService,
             emailConfirmationService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: featureFlagger,

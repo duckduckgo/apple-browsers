@@ -33,6 +33,7 @@ public enum EmailError: Error, Equatable, Codable {
     case extractionError
     case requestError
     case serverError
+    case retriesExceeded
 }
 
 public struct EmailData: Decodable {

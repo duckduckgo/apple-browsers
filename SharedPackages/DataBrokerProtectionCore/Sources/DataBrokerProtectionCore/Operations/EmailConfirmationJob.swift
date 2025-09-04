@@ -160,7 +160,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
         )
 
-        let actionsHandler = try ActionsHandler.forEmailConfirmationContinuation(optOutStep)
+        let actionsHandler = ActionsHandler.forEmailConfirmationContinuation(optOutStep)
 
         let webRunner = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: jobDependencies.privacyConfig,
@@ -246,14 +246,14 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                     extractedProfileId: jobData.extractedProfileId,
                     brokerId: jobData.brokerId,
                     profileQueryId: jobData.profileQueryId,
-                    type: .error(error: .emailConfirmationFailed)
+                    type: .error(error: .emailError(.retriesExceeded))
                 )
             )
         } catch {
             Logger.dataBrokerProtection.error("Failed to handle max retries exceeded: \(error)")
         }
 
-        await handleError(DataBrokerProtectionError.emailConfirmationFailed, brokerName: brokerName, version: version)
+        await handleError(DataBrokerProtectionError.emailError(.retriesExceeded), brokerName: brokerName, version: version)
     }
 
     private func handleError(_ error: Error, brokerName: String? = nil, version: String? = nil) async {

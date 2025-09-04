@@ -248,7 +248,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
-    let webExtensionManager: WebExtensionManaging?
+    private(set) var webExtensionManager: WebExtensionManaging?
 
     private var didFinishLaunching = false
 
@@ -800,17 +800,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
-        if #available(macOS 15.4, *), featureFlagger.isFeatureOn(.webExtensions) {
-            let webExtensionManager = WebExtensionManager()
-            self.webExtensionManager = webExtensionManager
-
-            Task {
-                await webExtensionManager.loadInstalledExtensions()
-            }
-        } else {
-            self.webExtensionManager = nil
-        }
-
 #if !APPSTORE
         crashReporter = CrashReporter(internalUserDecider: internalUserDecider)
 #endif
@@ -899,6 +888,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if isFirstLaunch {
             AppDelegate.firstLaunchDate = Date()
         }
+
+        setupWebExtensions()
 
         vpnUpsellVisibilityManager.setup(isFirstLaunch: isFirstLaunch)
 
@@ -1147,6 +1138,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func application(_ sender: NSApplication, openFiles files: [String]) {
         urlEventHandler.handleFiles(files)
+    }
+
+    // MARK: - Web Extensions
+
+    @MainActor
+    private func setupWebExtensions() {
+        if #available(macOS 15.4, *), featureFlagger.isFeatureOn(.webExtensions) {
+            let webExtensionManager = WebExtensionManager()
+            self.webExtensionManager = webExtensionManager
+
+            Task {
+                await webExtensionManager.loadInstalledExtensions()
+            }
+        } else {
+            self.webExtensionManager = nil
+        }
     }
 
     // MARK: - PixelKit

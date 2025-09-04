@@ -35,7 +35,7 @@ struct SearchInAppIntent: AppIntent {
     
     @MainActor
     func perform() async throws -> some IntentResult & OpensIntent {
-        
+        Pixel.fire(pixel: .appIntentPerformed, withAdditionalParameters: ["type": "search"])
         await UIApplication.shared.open(AppDeepLinkSchemes.newSearch.url)
         return .result()
     }

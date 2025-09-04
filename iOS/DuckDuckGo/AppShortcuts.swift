@@ -90,7 +90,7 @@ struct AppShortcuts: AppShortcutsProvider {
                         "Go to \(.applicationName) AI chat"
                     ],
                     shortTitle: "Duck.ai",
-                    systemImageName: "magnifyingglass"
+                    systemImageName: "bubble.right"
         )
     }
 }

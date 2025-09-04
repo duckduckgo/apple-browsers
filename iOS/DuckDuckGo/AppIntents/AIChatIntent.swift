@@ -35,7 +35,7 @@ struct AIChatIntent: AppIntent {
     
     @MainActor
     public func perform() async throws -> some IntentResult & OpensIntent {
-        
+        Pixel.fire(pixel: .appIntentPerformed, withAdditionalParameters: ["type": "duckai"])
         await UIApplication.shared.open(AppDeepLinkSchemes.openAIChat.url)
         return .result()
     }

@@ -45,6 +45,7 @@ private struct ContentView: View {
             backgroundView
             VStack(spacing: 16) {
                 headerView
+                    .frame(width: 300)
                 animationView
             }
             .padding()
@@ -52,21 +53,24 @@ private struct ContentView: View {
     }
 
     var headerView: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 0) {
             Text(UserText.newAddressBarPickerTitle)
                 .textCase(.uppercase)
-                .daxTitle1()
-                .foregroundColor(.secondary)
-            
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(Color(baseColor: .red50))
+                .padding(.bottom, 8)
+
             Text(UserText.newAddressBarPickerSubtitle)
-                .daxCaption()
+                .daxTitle1()
                 .foregroundColor(.primary)
                 .multilineTextAlignment(.center)
-            
+                .padding(.bottom, 16)
+
             Text(UserText.newAddressBarPickerDescription)
                 .daxCaption()
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
+                .padding(.bottom, 16)
         }
     }
 

@@ -134,7 +134,7 @@ final class InactivityNotificationSchedulerService {
     private func buildUNNotificationRequest() -> UNNotificationRequest {
         let daysInactive = makeDaysInactive()
         // let trigger = UNTimeIntervalNotificationTrigger(timeInterval: .days(daysInactive), repeats: false)
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: .minutes(5), repeats: false)
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: .minutes(1), repeats: false)
         return UNNotificationRequest(
             identifier: Constants.notificationIdentifier,
             content: makeUNNotificationContent(with: daysInactive),

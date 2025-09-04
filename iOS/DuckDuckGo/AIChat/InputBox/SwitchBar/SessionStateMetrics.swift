@@ -58,14 +58,13 @@ final class SessionStateMetrics: SessionStateMetricsProviding {
     func finalizeSession() {
         
         // Only fire pixel if there was any activity
-        guard let sessionType = determineSessionType() else {
+        guard searchCount > 0 || promptCount > 0 else {
             resetSessionCounters()
             return
         }
         
         // Fire session summary pixel
         let parameters = [
-            "session_type": sessionType,
             "searches_in_session": String(searchCount),
             "prompts_in_session": String(promptCount)
         ]
@@ -80,14 +79,6 @@ final class SessionStateMetrics: SessionStateMetricsProviding {
         resetSessionCounters()
     }
     
-    private func determineSessionType() -> String? {
-        switch (searchCount > 0, promptCount > 0) {
-        case (true, true): return "both_modes"
-        case (true, false): return "search_only"
-        case (false, true): return "prompt_only"
-        case (false, false): return nil
-        }
-    }
     
     private func resetSessionCounters() {
         searchCount = 0

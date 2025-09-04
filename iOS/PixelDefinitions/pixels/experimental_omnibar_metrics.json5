@@ -108,11 +108,6 @@
             'appVersion',
             'pixelSource',
             {
-                key: 'session_type',
-                description: 'Type of session activity: both_modes, search_only, prompt_only',
-                type: 'string',
-            },
-            {
                 key: 'searches_in_session',
                 description: 'Number of search queries submitted during the session',
                 type: 'integer',

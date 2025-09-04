@@ -231,13 +231,16 @@ extension URL {
             ])
     }
 
-    static func duckAIAtb(atbWithVariant: String, setAtb: String) -> URL {
+    static func duckAIAtb(atbWithVariant: String, setAtb: String?) -> URL {
+        var params: [String: String?] = [
+            DuckDuckGoParameters.ATB.activityType: DuckDuckGoParameters.ATB.duckAIValue,
+            DuckDuckGoParameters.ATB.atb: atbWithVariant,
+            DuckDuckGoParameters.ATB.setAtb: setAtb
+        ]
+
+        // Don't include setAtb if the parameter is nil
         return Self.initialAtb
-            .appendingParameters([
-                DuckDuckGoParameters.ATB.activityType: DuckDuckGoParameters.ATB.duckAIValue,
-                DuckDuckGoParameters.ATB.atb: atbWithVariant,
-                DuckDuckGoParameters.ATB.setAtb: setAtb
-            ])
+            .appendingParameters(params.compactMapValues { $0 })
     }
 
     static func exti(forAtb atb: String) -> URL {

@@ -241,9 +241,7 @@ final class StatisticsLoader {
     func refreshDuckAIRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
 
-        guard let atbWithVariant = statisticsStore.atbWithVariant,
-              let duckAIRetentionAtb = statisticsStore.duckAIRetentionAtb ?? statisticsStore.atb
-        else {
+        guard let atbWithVariant = statisticsStore.atbWithVariant else {
             requestInstallStatistics {
                 self.updateUsageSegmentationAfterInstall(activityType: .duckAI)
                 completion()
@@ -252,6 +250,8 @@ final class StatisticsLoader {
         }
 
         Logger.atb.debug("Requesting Duck.ai retention ATB")
+
+        let duckAIRetentionAtb = statisticsStore.duckAIRetentionAtb
 
         let url = URL.duckAIAtb(atbWithVariant: atbWithVariant, setAtb: duckAIRetentionAtb)
         let configuration = APIRequest.Configuration(url: url)
@@ -269,7 +269,6 @@ final class StatisticsLoader {
                 self.statisticsStore.duckAIRetentionAtb = atb.version
                 self.storeUpdateVersionIfPresent(atb)
                 self.updateUsageSegmentationWithAtb(atb, activityType: .duckAI)
-//                NotificationCenter.default.post(name: .searchDAU, object: nil, userInfo: nil)
             }
 
             completion()

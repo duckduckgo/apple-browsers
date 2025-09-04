@@ -89,16 +89,16 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
     public func checkForEmailConfirmationData() async throws {
         guard featureFlagger.isEmailConfirmationDecouplingFeatureOn else { return }
 
-        Logger.dataBrokerProtection.log("[EmailConfirmationDataService] Checking for email confirmation data...")
+        Logger.dataBrokerProtection.log("✉️ [EmailConfirmationDataService] Checking for email confirmation data...")
 
         let recordsAwaitingLink = try database.fetchOptOutEmailConfirmationsAwaitingLink()
-        Logger.dataBrokerProtection.log("[EmailConfirmationDataService] Found \(recordsAwaitingLink.count, privacy: .public) records awaiting email confirmation links")
+        Logger.dataBrokerProtection.log("✉️ [EmailConfirmationDataService] Found \(recordsAwaitingLink.count, privacy: .public) records awaiting email confirmation links")
 
         var itemsToDelete: [EmailDataRequestItemV1] = []
         for chunk in recordsAwaitingLink.chunks(ofCount: EmailServiceV1.Constants.maxBatchSize) {
             let records = Array(chunk)
             let response = try await emailServiceV1.fetchEmailData(items: records.toEmailDataRequestItems())
-            Logger.dataBrokerProtection.log("[EmailConfirmationDataService] Email data API response: \(response.items.count, privacy: .public) items returned")
+            Logger.dataBrokerProtection.log("✉️ [EmailConfirmationDataService] Email data API response: \(response.items.count, privacy: .public) items returned")
 
             itemsToDelete.append(contentsOf: response.items.toEmailDataResponseItemsForDeletion())
 
@@ -107,7 +107,7 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                 case .ready:
                     if let record = records[email: item.email, attemptId: item.attemptId] {
                         let brokerName = try? database.fetchBroker(with: record.brokerId)?.name ?? "Unknown"
-                        Logger.dataBrokerProtection.log("[EmailConfirmationDataService] Email confirmation link ready for profileQuery: \(record.profileQueryId, privacy: .public), broker: \(brokerName ?? "Unknown", privacy: .public) (\(record.brokerId, privacy: .public))")
+                        Logger.dataBrokerProtection.log("✉️ [EmailConfirmationDataService] Email confirmation link ready for profileQuery: \(record.profileQueryId, privacy: .public), broker: \(brokerName ?? "Unknown", privacy: .public) (\(record.brokerId, privacy: .public))")
                         try database.updateOptOutEmailConfirmationLink(item.confirmationLink,
                                                                        emailConfirmationLinkObtainedOnBEDate: item.linkObtainedOnBEDate,
                                                                        profileQueryId: record.profileQueryId,
@@ -115,10 +115,10 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                                                                        extractedProfileId: record.extractedProfileId)
                     }
                 case .pending:
-                    Logger.dataBrokerProtection.log("[EmailConfirmationDataService] Email still pending for: \(item.email, privacy: .public), attemptId: \(item.attemptId, privacy: .public)")
+                    Logger.dataBrokerProtection.log("✉️ [EmailConfirmationDataService] Email still pending for: \(item.email, privacy: .public), attemptId: \(item.attemptId, privacy: .public)")
                     continue
                 case .unknown, .error:
-                    Logger.dataBrokerProtection.error("[EmailConfirmationDataService] Email confirmation failed for \(item.email, privacy: .public): status=\(item.status.rawValue, privacy: .public), error=\(item.errorCode?.rawValue ?? "", privacy: .public)")
+                    Logger.dataBrokerProtection.error("✉️ [EmailConfirmationDataService] Email confirmation failed for \(item.email, privacy: .public): status=\(item.status.rawValue, privacy: .public), error=\(item.errorCode?.rawValue ?? "", privacy: .public)")
                     if let record = records[email: item.email, attemptId: item.attemptId] {
                         try database.deleteOptOutEmailConfirmation(profileQueryId: record.profileQueryId,
                                                                    brokerId: record.brokerId,
@@ -133,7 +133,7 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
         }
 
         try await emailServiceV1.deleteEmailData(items: itemsToDelete)
-        Logger.dataBrokerProtection.log("[EmailConfirmationDataService] Deleted \(itemsToDelete.count, privacy: .public) processed email data items from backend")
+        Logger.dataBrokerProtection.log("✉️ [EmailConfirmationDataService] Deleted \(itemsToDelete.count, privacy: .public) processed email data items from backend")
     }
 }
 

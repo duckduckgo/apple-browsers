@@ -171,7 +171,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             privacyConfig: jobDependencies.privacyConfig,
             prefs: jobDependencies.contentScopeProperties,
             context: JobContext(dataBroker: broker, profileQuery: profileQuery),
-            emailConfirmationService: jobDependencies.emailConfirmationService,
+            emailConfirmationDataService: jobDependencies.emailConfirmationDataService,
             captchaService: jobDependencies.captchaService,
             featureFlagger: jobDependencies.featureFlagger,
             stageCalculator: stageDurationCalculator,

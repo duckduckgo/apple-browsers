@@ -35,7 +35,7 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     var privacyConfig: PrivacyConfigurationManaging { get }
     var prefs: ContentScopeProperties { get }
     var context: SubJobContextProviding { get }
-    var emailConfirmationService: EmailConfirmationDataServiceProvider { get }
+    var emailConfirmationDataService: EmailConfirmationDataServiceProvider { get }
     var captchaService: CaptchaServiceProtocol { get }
     var cookieHandler: CookieHandler { get }
     var stageCalculator: StageDurationCalculator { get }
@@ -130,7 +130,7 @@ public extension SubJobWebRunning {
         if action.needsEmail {
             do {
                 stageCalculator.setStage(.emailGenerate)
-                let emailData = try await emailConfirmationService.getEmailAndOptionallySaveToDatabase(
+                let emailData = try await emailConfirmationDataService.getEmailAndOptionallySaveToDatabase(
                     dataBrokerId: context.dataBroker.id ?? 0,
                     dataBrokerURL: context.dataBroker.url,
                     profileQueryId: context.profileQuery.id ?? 0,
@@ -158,7 +158,7 @@ public extension SubJobWebRunning {
     private func runEmailConfirmationAction(action: EmailConfirmationAction) async throws {
         if let email = extractedProfile?.email {
             stageCalculator.setStage(.emailReceive)
-            let url =  try await emailConfirmationService.getConfirmationLink(
+            let url =  try await emailConfirmationDataService.getConfirmationLink(
                 from: email,
                 numberOfRetries: 10, // Move to constant
                 pollingInterval: action.pollingTime,

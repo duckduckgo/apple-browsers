@@ -150,7 +150,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     let brokers: [DataBroker]
 
     private let emailService: EmailService
-    private let emailConfirmationService: EmailConfirmationDataServiceProvider
+    private let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     private let captchaService: CaptchaService
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels> = EventMapping { event, _, _, _ in
@@ -237,7 +237,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
                                            settings: dbpSettings,
                                            servicePixel: backendServicePixels)
-        self.emailConfirmationService = EmailConfirmationDataService(database: database,
+        self.emailConfirmationDataService = EmailConfirmationDataService(database: database,
                                                                      emailServiceV0: emailService,
                                                                      emailServiceV1: emailServiceV1,
                                                                      featureFlagger: featureFlagger,
@@ -260,7 +260,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     let debugScanJob = DebugScanJob(privacyConfig: self.privacyConfigManager,
                                                     prefs: self.contentScopeProperties,
                                                     context: queryData,
-                                                    emailConfirmationService: self.emailConfirmationService,
+                                                    emailConfirmationDataService: self.emailConfirmationDataService,
                                                     captchaService: self.captchaService,
                                                     featureFlagger: self.featureFlagger) {
                         true
@@ -427,7 +427,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 privacyConfig: self.privacyConfigManager,
                                 prefs: self.contentScopeProperties,
                                 context: query,
-                                emailConfirmationService: self.emailConfirmationService,
+                                emailConfirmationDataService: self.emailConfirmationDataService,
                                 captchaService: self.captchaService,
                                 featureFlagger: self.featureFlagger,
                                 stageDurationCalculator: FakeStageDurationCalculator(),
@@ -481,7 +481,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     privacyConfig: self.privacyConfigManager,
                     prefs: self.contentScopeProperties,
                     context: brokerProfileQueryData,
-                    emailConfirmationService: self.emailConfirmationService,
+                    emailConfirmationDataService: self.emailConfirmationDataService,
                     captchaService: self.captchaService,
                     featureFlagger: self.featureFlagger,
                     stageCalculator: FakeStageDurationCalculator(),

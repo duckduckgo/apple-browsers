@@ -522,7 +522,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                             privacyConfig: privacyConfigManager,
                             prefs: contentScopeProperties,
                             context: brokerProfileQueryData,
-                            emailConfirmationService: emailConfirmationDataService,
+                            emailConfirmationDataService: emailConfirmationDataService,
                             captchaService: captchaService,
                             featureFlagger: featureFlagger,
                             stageDurationCalculator: FakeStageDurationCalculator(),

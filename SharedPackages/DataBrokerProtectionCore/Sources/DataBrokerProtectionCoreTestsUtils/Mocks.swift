@@ -1785,7 +1785,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public var eventsHandler: EventMapping<JobEvent>
     public var dataBrokerProtectionSettings: DataBrokerProtectionSettings
-    public var emailConfirmationService: any EmailConfirmationDataServiceProvider
+    public var emailConfirmationDataService: any EmailConfirmationDataServiceProvider
     public var captchaService: any CaptchaServiceProtocol
     public var vpnBypassService: (any VPNBypassFeatureProvider)?
     public var jobSortPredicate: BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
@@ -1803,7 +1803,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
         self.pixelHandler = MockPixelHandler()
         self.eventsHandler = MockOperationEventsHandler()
         self.dataBrokerProtectionSettings = DataBrokerProtectionSettings(defaults: .standard)
-        self.emailConfirmationService = MockEmailConfirmationDataServiceProvider()
+        self.emailConfirmationDataService = MockEmailConfirmationDataServiceProvider()
         self.captchaService = CaptchaServiceMock()
         self.featureFlagger = MockDBPFeatureFlagger()
     }

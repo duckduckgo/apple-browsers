@@ -30,7 +30,7 @@ public protocol BrokerProfileJobDependencyProviding {
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
     var eventsHandler: EventMapping<JobEvent> { get }
     var dataBrokerProtectionSettings: DataBrokerProtectionSettings { get }
-    var emailConfirmationService: EmailConfirmationDataServiceProvider { get }
+    var emailConfirmationDataService: EmailConfirmationDataServiceProvider { get }
     var captchaService: CaptchaServiceProtocol { get }
     var vpnBypassService: VPNBypassFeatureProvider? { get }
     var jobSortPredicate: BrokerJobDataComparators.Predicate { get }
@@ -54,7 +54,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public let eventsHandler: EventMapping<JobEvent>
     public let dataBrokerProtectionSettings: DataBrokerProtectionSettings
-    public let emailConfirmationService: EmailConfirmationDataServiceProvider
+    public let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     public let captchaService: CaptchaServiceProtocol
     public let vpnBypassService: VPNBypassFeatureProvider?
     public let jobSortPredicate: BrokerJobDataComparators.Predicate
@@ -68,7 +68,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 eventsHandler: EventMapping<JobEvent>,
                 dataBrokerProtectionSettings: DataBrokerProtectionSettings,
-                emailConfirmationService: EmailConfirmationDataServiceProvider,
+                emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
                 vpnBypassService: VPNBypassFeatureProvider? = nil,
@@ -82,7 +82,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         self.pixelHandler = pixelHandler
         self.eventsHandler = eventsHandler
         self.dataBrokerProtectionSettings = dataBrokerProtectionSettings
-        self.emailConfirmationService = emailConfirmationService
+        self.emailConfirmationDataService = emailConfirmationDataService
         self.captchaService = captchaService
         self.vpnBypassService = vpnBypassService
         self.jobSortPredicate = jobSortPredicate
@@ -96,7 +96,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
             privacyConfig: self.privacyConfig,
             prefs: self.contentScopeProperties,
             context: profileQuery,
-            emailConfirmationService: self.emailConfirmationService,
+            emailConfirmationDataService: self.emailConfirmationDataService,
             captchaService: self.captchaService,
             featureFlagger: self.featureFlagger,
             stageDurationCalculator: stageDurationCalculator,
@@ -113,7 +113,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
             privacyConfig: self.privacyConfig,
             prefs: self.contentScopeProperties,
             context: profileQuery,
-            emailConfirmationService: self.emailConfirmationService,
+            emailConfirmationDataService: self.emailConfirmationDataService,
             captchaService: self.captchaService,
             featureFlagger: self.featureFlagger,
             stageCalculator: stageDurationCalculator,

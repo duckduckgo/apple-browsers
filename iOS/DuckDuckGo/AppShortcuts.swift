@@ -60,17 +60,37 @@ struct AppShortcuts: AppShortcutsProvider {
                     systemImageName: "globe")
         AppShortcut(intent: SearchInAppIntent(),
                     phrases: [
+                        "Begin a search in \(.applicationName)",
+                        "Start a search in \(.applicationName)",
+                        "Begin searching with \(.applicationName)",
+                        "Start searching with \(.applicationName)",
+                        "Open \(.applicationName)",
+                        "Launch \(.applicationName)",
+                        "Open Search in \(.applicationName)",
                         "Search in \(.applicationName)",
                         "Search with \(.applicationName)",
+                        "Use \(.applicationName) to search",
+                        "Search the web with \(.applicationName)",
+                        "Open my \(.applicationName) browser",
+                        "Start browsing with \(.applicationName)",
+                        "Use \(.applicationName) to browse"
                     ],
                     shortTitle: "Search",
                     systemImageName: "magnifyingglass"
         )
         AppShortcut(intent: AIChatIntent(),
                     phrases: [
-                        "Chat with Duck.ai in \(.applicationName)",
+                        "Ask Duck.ai on \(.applicationName)",
+                        "Open Duck.ai on \(.applicationName)",
+                        "Launch Duck.ai on \(.applicationName)",
+                        "Ask \(.applicationName) AI chat",
+                        "Start \(.applicationName) AI chat",
+                        "Open \(.applicationName) AI chat",
+                        "Launch \(.applicationName) AI chat",
+                        "Go to \(.applicationName) AI chat"
                     ],
                     shortTitle: "Duck.ai",
+                    systemImageName: "magnifyingglass"
         )
     }
 }

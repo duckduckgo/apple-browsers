@@ -24,13 +24,13 @@ import Core
 @available(iOS 17.0, *)
 struct AIChatIntent: AppIntent {
     static var title: LocalizedStringResource = "Duck.ai"
-    static let description: LocalizedStringResource = "Chat with Duck.ai"
+    static let description: LocalizedStringResource = "Open a private chat with Duck.ai"
     static let openAppWhenRun: Bool = true
     static let isDiscoverable: Bool = true
     static var authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
 
     public static var parameterSummary: some ParameterSummary {
-        Summary("Chat with Duck.ai in DuckDuckGo")
+        Summary("Open a private chat with Duck.ai")
     }
     
     @MainActor

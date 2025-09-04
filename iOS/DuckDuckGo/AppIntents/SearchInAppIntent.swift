@@ -23,14 +23,14 @@ import Core
 
 @available(iOS 17.0, *)
 struct SearchInAppIntent: AppIntent {
-    static var title: LocalizedStringResource = "Search"
-    static let description: LocalizedStringResource = "Search in DuckDuckGo"
+    static var title: LocalizedStringResource = "DuckDuckGo Search"
+    static let description: LocalizedStringResource = "Search privately in DuckDuckGo"
     static let openAppWhenRun: Bool = true
     static let isDiscoverable: Bool = true
     static var authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Search in DuckDuckGo")
+        Summary("Search privately in DuckDuckGo")
     }
     
     @MainActor

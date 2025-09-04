@@ -119,7 +119,7 @@ struct BrokerProfileOptOutSubJob {
                brokerProfileQueryData.dataBroker.requiresEmailConfirmationDuringOptOut(),
                let email = extractedProfile.email {
                 // We halted at email confirmation - save data and set waiting state
-                Logger.dataBrokerProtection.log("Opt-out halting for email confirmation - broker: \(brokerProfileQueryData.dataBroker.name, privacy: .public), profile: \(extractedProfileId, privacy: .public)")
+                Logger.dataBrokerProtection.log("✉️ Opt-out halting for email confirmation - broker: \(brokerProfileQueryData.dataBroker.name, privacy: .public), profile: \(extractedProfileId, privacy: .public)")
 
                 try dependencies.database.saveOptOutEmailConfirmation(
                     profileQueryId: profileQueryId,
@@ -128,7 +128,7 @@ struct BrokerProfileOptOutSubJob {
                     generatedEmail: email,
                     attemptID: stageDurationCalculator.attemptId.uuidString
                 )
-                Logger.dataBrokerProtection.log("Saved email confirmation data - email: \(email, privacy: .public), attemptID: \(stageDurationCalculator.attemptId, privacy: .public)")
+                Logger.dataBrokerProtection.log("✉️ Saved email confirmation data - email: \(email, privacy: .public), attemptID: \(stageDurationCalculator.attemptId, privacy: .public)")
 
                 // Save the new state
                 try dependencies.database.add(.init(
@@ -137,7 +137,7 @@ struct BrokerProfileOptOutSubJob {
                     profileQueryId: profileQueryId,
                     type: .optOutSubmittedAndAwaitingEmailConfirmation
                 ))
-                Logger.dataBrokerProtection.log("Opt-out status changed to awaiting email confirmation")
+                Logger.dataBrokerProtection.log("✉️ Opt-out status changed to awaiting email confirmation")
             } else {
                 // Normal completion path - opt out was fully submitted
                 // 8c. Update state to indicate that the opt-out has been requested, for a future scan to confirm:

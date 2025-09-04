@@ -129,6 +129,7 @@ public struct DataBroker: Codable, Sendable {
     public let mirrorSites: [MirrorSite]
     public let optOutUrl: String
     public var eTag: String
+    public var removedAt: Date?
 
     public var isFakeBroker: Bool {
         name.contains("fake") // A future improvement will be to add a property in the JSON file.
@@ -144,6 +145,7 @@ public struct DataBroker: Codable, Sendable {
         case mirrorSites
         case optOutUrl
         case eTag
+        case removedAt
     }
 
     enum Constants {
@@ -159,7 +161,8 @@ public struct DataBroker: Codable, Sendable {
          parent: String? = nil,
          mirrorSites: [MirrorSite] = [MirrorSite](),
          optOutUrl: String,
-         eTag: String
+         eTag: String,
+         removedAt: Date?
     ) {
         self.id = id
         self.name = name
@@ -177,6 +180,7 @@ public struct DataBroker: Codable, Sendable {
         self.mirrorSites = mirrorSites
         self.optOutUrl = optOutUrl
         self.eTag = eTag
+        self.removedAt = removedAt
     }
 
     public init(from decoder: Decoder) throws {
@@ -217,6 +221,8 @@ public struct DataBroker: Codable, Sendable {
         }
 
         id = nil
+
+        removedAt = try? container.decode(Date.self, forKey: .removedAt)
     }
 
     public mutating func setETag(_ eTag: String) {

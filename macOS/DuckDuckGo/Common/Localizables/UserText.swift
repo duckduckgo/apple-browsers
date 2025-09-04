@@ -1579,6 +1579,22 @@ struct UserText {
     static let crashReportSendButton = NSLocalizedString("crash-report.send-button", value: "Send to DuckDuckGo", comment: "Button the user can press to send the crash report to DuckDuckGo")
     static let crashReportDontSendButton = NSLocalizedString("crash-report.dont-send-button", value: "Don’t Send", comment: "Button the user can press to not send the crash report")
 
+    // MARK: Post-Crash Session Restore Prompt
+    static let sessionRestorePromptTitle = NSLocalizedString("session.restore.prompt.title", value: "The browser didn’t quit as expected", comment: "Title of the prompt where the user can choose to restore the previous browser session after a crash")
+    static let sessionRestorePromptMessage = NSLocalizedString("session.restore.prompt.message", value: "Would you like to restore tabs from your previous session?", comment: "Message of the prompt where the user can choose to restore the previous browser session after a crash")
+    static let sessionRestorePromptExplanation: String = {
+        let localized = {
+            if #available(macOS 12, *) {
+                NSLocalizedString("session.restore.prompt.explanation.markdown", value: "You can also do this later from **%1$@** → **%2$@**.", comment: "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session. Please make sure to keep **%1$@** and **%2$@** intact.")
+            } else {
+                NSLocalizedString("session.restore.prompt.explanation", value: "You can also do this later from %1$@ → %2$@.", comment: "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session.")
+            }
+        }()
+        return String(format: localized, mainMenuHistory, mainMenuHistoryReopenAllWindowsFromLastSession)
+    }()
+    static let sessionRestorePromptButtonAccept = NSLocalizedString("session.restore.prompt.button.accept", value: "Restore Session", comment: "Button the user can press to restore the previous browser session after a crash")
+    static let sessionRestorePromptButtonReject = NSLocalizedString("session.restore.prompt.button.reject", value: "No Thanks", comment: "Button the user can press to not restore the previous browser session after a crash")
+
     // MARK: Downloads
     static let downloadsDialogTitle = NSLocalizedString("downloads.dialog.title", value: "Downloads", comment: "Title of the dialog that manages the Downloads in the browser")
     static let downloadsOpenItem = NSLocalizedString("downloads.open.item", value: "Open", comment: "Contextual menu item in downloads manager to open the downloaded file")

@@ -741,7 +741,7 @@ final class MainMenu: NSMenu {
                 customConfigurationUrlMenuItem
                 configurationDateAndTimeMenuItem
                 NSMenuItem.separator()
-                NSMenuItem(title: "Reload Configuration Now", action: #selector(AppDelegate.reloadConfigurationNow))
+                NSMenuItem(title: "Reload Configuration Now", action: #selector(AppDelegate.reloadConfigurationNow), keyEquivalent: [.command, .shift, .option, "r"])
                 NSMenuItem(title: "Set custom configuration URL…", action: #selector(AppDelegate.setCustomPrivacyConfigurationURL))
                 NSMenuItem(title: "Reset configuration to default", action: #selector(AppDelegate.resetPrivacyConfigurationToDefault))
             }

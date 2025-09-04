@@ -1314,6 +1314,7 @@ extension SettingsViewModel {
         Binding<Bool>(
             get: { self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled },
             set: { newValue in
+                guard newValue != self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled else { return }
                 self.objectWillChange.send()
                 self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
             }
@@ -1336,15 +1337,6 @@ extension SettingsViewModel {
                 self.aiChatSettings.enableAIChatTabSwitcherUserSettings(enable: newValue)
             }
         )
-    }
-
-    var aiChatExperimentalBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.state.isExperimentalAIChatEnabled },
-            set: { _ in
-                self.experimentalAIChatManager.toggleExperimentalTheming()
-                self.state.isExperimentalAIChatEnabled = self.experimentalAIChatManager.isExperimentalAIChatSettingsEnabled
-            })
     }
 
     func launchAIFeaturesLearnMore() {

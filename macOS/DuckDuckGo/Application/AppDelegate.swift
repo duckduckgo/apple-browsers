@@ -186,6 +186,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     public let subscriptionUIHandler: SubscriptionUIHandling
 
+    private(set) lazy var sessionRestorePromptCoordinator = SessionRestorePromptCoordinator(featureFlagger: featureFlagger)
+
     // MARK: - Freemium DBP
     public let freemiumDBPFeature: FreemiumDBPFeature
     public let freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator
@@ -823,7 +825,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
 
-        stateRestorationManager = AppStateRestorationManager(fileStore: fileStore, startupPreferences: startupPreferences)
+        stateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
+                                                             startupPreferences: startupPreferences,
+                                                             keyValueStore: keyValueStore,
+                                                             sessionRestorePromptCoordinator: sessionRestorePromptCoordinator)
 
 #if SPARKLE
         if AppVersion.runType != .uiTests {

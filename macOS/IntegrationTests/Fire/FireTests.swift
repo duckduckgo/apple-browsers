@@ -182,7 +182,9 @@ final class FireTests: XCTestCase {
         let service = StatePersistenceService(fileStore: fileStore, fileName: fileName)
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                                     service: service,
-                                                                    startupPreferences: NSApp.delegateTyped.startupPreferences)
+                                                                    startupPreferences: NSApp.delegateTyped.startupPreferences,
+                                                                    keyValueStore: NSApp.delegateTyped.keyValueStore,
+                                                                    sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator)
         appStateRestorationManager.applicationDidFinishLaunching()
 
         let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),
@@ -201,7 +203,9 @@ final class FireTests: XCTestCase {
         let service = StatePersistenceService(fileStore: fileStore, fileName: fileName)
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                                     service: service,
-                                                                    startupPreferences: NSApp.delegateTyped.startupPreferences)
+                                                                    startupPreferences: NSApp.delegateTyped.startupPreferences,
+                                                                    keyValueStore: NSApp.delegateTyped.keyValueStore,
+                                                                    sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator)
         appStateRestorationManager.applicationDidFinishLaunching()
 
         let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),

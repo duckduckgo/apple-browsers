@@ -3559,8 +3559,23 @@
 		CC0942FE2E16AF9C00E67336 /* FavoritesImportProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0942FC2E16AF6000E67336 /* FavoritesImportProcessor.swift */; };
 		CC0943002E16B6F000E67336 /* FavoritesImportProcessorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0942FF2E16B6F000E67336 /* FavoritesImportProcessorTests.swift */; };
 		CC0943012E16B6F000E67336 /* FavoritesImportProcessorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0942FF2E16B6F000E67336 /* FavoritesImportProcessorTests.swift */; };
+		CC0DD90F2E5DD74600277E46 /* AppStateRestorationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0DD90E2E5DD74600277E46 /* AppStateRestorationManagerTests.swift */; };
+		CC0DD9102E5DD74600277E46 /* AppStateRestorationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0DD90E2E5DD74600277E46 /* AppStateRestorationManagerTests.swift */; };
+		CC0DD9132E5DF47E00277E46 /* SessionRestorePromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0DD9122E5DF47E00277E46 /* SessionRestorePromptView.swift */; };
+		CC0DD9142E5DF47E00277E46 /* SessionRestorePromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0DD9122E5DF47E00277E46 /* SessionRestorePromptView.swift */; };
+		CC0DD9162E5DF4B600277E46 /* SessionRestorePromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0DD9152E5DF4B000277E46 /* SessionRestorePromptViewModel.swift */; };
+		CC0DD9172E5DF4B600277E46 /* SessionRestorePromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0DD9152E5DF4B000277E46 /* SessionRestorePromptViewModel.swift */; };
+		CC0DD9192E5DFA5800277E46 /* SessionRestorePromptPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0DD9182E5DFA4D00277E46 /* SessionRestorePromptPopover.swift */; };
+		CC0DD91A2E5DFA5800277E46 /* SessionRestorePromptPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0DD9182E5DFA4D00277E46 /* SessionRestorePromptPopover.swift */; };
+		CC0DD91C2E5EF7CE00277E46 /* SessionRestorePromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0DD91B2E5EF7C100277E46 /* SessionRestorePromptCoordinator.swift */; };
+		CC0DD91D2E5EF7CE00277E46 /* SessionRestorePromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0DD91B2E5EF7C100277E46 /* SessionRestorePromptCoordinator.swift */; };
 		CC5B3D012E158B9F00115521 /* ChromiumDataImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC5B3D002E158B9F00115521 /* ChromiumDataImporterTests.swift */; };
 		CC5B3D022E158B9F00115521 /* ChromiumDataImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC5B3D002E158B9F00115521 /* ChromiumDataImporterTests.swift */; };
+		CC6E897C2E5F08EA00F6BED0 /* SessionRestorePromptCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC6E897B2E5F08EA00F6BED0 /* SessionRestorePromptCoordinatorTests.swift */; };
+		CC6E897D2E5F08EA00F6BED0 /* SessionRestorePromptCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC6E897B2E5F08EA00F6BED0 /* SessionRestorePromptCoordinatorTests.swift */; };
+		CC6E897E2E5F08EA00F6BED0 /* SessionRestorePromptCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC6E897B2E5F08EA00F6BED0 /* SessionRestorePromptCoordinatorTests.swift */; };
+		CC6E89802E5F0DE100F6BED0 /* SessionRestorePromptCoordinatorMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC6E897F2E5F0DD600F6BED0 /* SessionRestorePromptCoordinatorMock.swift */; };
+		CC6E89812E5F0DE100F6BED0 /* SessionRestorePromptCoordinatorMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC6E897F2E5F0DD600F6BED0 /* SessionRestorePromptCoordinatorMock.swift */; };
 		CC8777092E1FF39B00113863 /* FirefoxHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */; };
 		CC87770A2E1FF39B00113863 /* FirefoxHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */; };
 		CC87770C2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */; };
@@ -5735,7 +5750,14 @@
 		CC00A08F2E1D52A700750ED3 /* FirefoxPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxPreferencesTests.swift; sourceTree = "<group>"; };
 		CC0942FC2E16AF6000E67336 /* FavoritesImportProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesImportProcessor.swift; sourceTree = "<group>"; };
 		CC0942FF2E16B6F000E67336 /* FavoritesImportProcessorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesImportProcessorTests.swift; sourceTree = "<group>"; };
+		CC0DD90E2E5DD74600277E46 /* AppStateRestorationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateRestorationManagerTests.swift; sourceTree = "<group>"; };
+		CC0DD9122E5DF47E00277E46 /* SessionRestorePromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptView.swift; sourceTree = "<group>"; };
+		CC0DD9152E5DF4B000277E46 /* SessionRestorePromptViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptViewModel.swift; sourceTree = "<group>"; };
+		CC0DD9182E5DFA4D00277E46 /* SessionRestorePromptPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptPopover.swift; sourceTree = "<group>"; };
+		CC0DD91B2E5EF7C100277E46 /* SessionRestorePromptCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptCoordinator.swift; sourceTree = "<group>"; };
 		CC5B3D002E158B9F00115521 /* ChromiumDataImporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumDataImporterTests.swift; sourceTree = "<group>"; };
+		CC6E897B2E5F08EA00F6BED0 /* SessionRestorePromptCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptCoordinatorTests.swift; sourceTree = "<group>"; };
+		CC6E897F2E5F0DD600F6BED0 /* SessionRestorePromptCoordinatorMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptCoordinatorMock.swift; sourceTree = "<group>"; };
 		CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxHistoryReader.swift; sourceTree = "<group>"; };
 		CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxHistoryReaderTests.swift; sourceTree = "<group>"; };
 		CCC87D6C2E1412D00091344D /* ChromiumTopSitesReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumTopSitesReader.swift; sourceTree = "<group>"; };
@@ -7959,6 +7981,9 @@
 				4B11060325903E570039B979 /* CoreDataEncryptionTesting.xcdatamodeld */,
 				B662D3DD275613BB0035D4D6 /* EncryptionKeyStoreMock.swift */,
 				B6A5A27825B93FFE00AA7ADA /* StateRestorationManagerTests.swift */,
+				CC6E897B2E5F08EA00F6BED0 /* SessionRestorePromptCoordinatorTests.swift */,
+				CC0DD90E2E5DD74600277E46 /* AppStateRestorationManagerTests.swift */,
+				CC6E897F2E5F0DD600F6BED0 /* SessionRestorePromptCoordinatorMock.swift */,
 				B6A5A27D25B9403E00AA7ADA /* FileStoreMock.swift */,
 				4BBF0916282DD6EF00EE1418 /* TemporaryFileHandlerTests.swift */,
 				378205F52837CBA800D1D4AA /* SavedStateMock.swift */,
@@ -10444,6 +10469,7 @@
 		B68458AE25C7E75100DC17B6 /* StateRestoration */ = {
 			isa = PBXGroup;
 			children = (
+				CC0DD9112E5DF45900277E46 /* View */,
 				B6A5A27025B9377300AA7ADA /* StatePersistenceService.swift */,
 				B68458AF25C7E76A00DC17B6 /* WindowManager+StateRestoration.swift */,
 				B68458B725C7E8B200DC17B6 /* Tab+NSSecureCoding.swift */,
@@ -10451,6 +10477,7 @@
 				B68458BF25C7E9E000DC17B6 /* TabCollectionViewModel+NSSecureCoding.swift */,
 				B684590725C9027900DC17B6 /* AppStateChangedPublisher.swift */,
 				B684592E25C93FBF00DC17B6 /* AppStateRestorationManager.swift */,
+				CC0DD91B2E5EF7C100277E46 /* SessionRestorePromptCoordinator.swift */,
 			);
 			path = StateRestoration;
 			sourceTree = "<group>";
@@ -11034,6 +11061,16 @@
 				CBECDB832CDA8137005B8B87 /* BrokenSitePromptLimiterStore.swift */,
 			);
 			path = BrokenSitePrompt;
+			sourceTree = "<group>";
+		};
+		CC0DD9112E5DF45900277E46 /* View */ = {
+			isa = PBXGroup;
+			children = (
+				CC0DD9122E5DF47E00277E46 /* SessionRestorePromptView.swift */,
+				CC0DD9152E5DF4B000277E46 /* SessionRestorePromptViewModel.swift */,
+				CC0DD9182E5DFA4D00277E46 /* SessionRestorePromptPopover.swift */,
+			);
+			path = View;
 			sourceTree = "<group>";
 		};
 		CD33012E2C89B5B3009AA127 /* ErrorPage */ = {
@@ -12811,6 +12848,7 @@
 				3706FAB2293F65D500E42796 /* TabInstrumentation.swift in Sources */,
 				3706FAB5293F65D500E42796 /* ConfigurationManager.swift in Sources */,
 				371BFF602D3936140075DB87 /* HistoryViewActionsManagerExtension.swift in Sources */,
+				CC0DD9162E5DF4B600277E46 /* SessionRestorePromptViewModel.swift in Sources */,
 				3706FAB6293F65D500E42796 /* YoutubePlayerUserScript.swift in Sources */,
 				1D8057C92A83CB3C00F4FED6 /* SupportedOsChecker.swift in Sources */,
 				379E4D602D4383D200A901B1 /* NewTabPageCoordinator.swift in Sources */,
@@ -12956,6 +12994,7 @@
 				B60C6F8E29B200AB007BFAA8 /* SavePanelAccessoryView.swift in Sources */,
 				372D15ED2D00FA1A00A11576 /* AppearancePreferences+NewTabPage.swift in Sources */,
 				4B9579222AC687170062CA31 /* HardwareModel.swift in Sources */,
+				CC0DD91C2E5EF7CE00277E46 /* SessionRestorePromptCoordinator.swift in Sources */,
 				3706FB03293F65D500E42796 /* PopUpWindow.swift in Sources */,
 				CB24F70D29A3D9CB006DCC58 /* AppConfigurationURLProvider.swift in Sources */,
 				3706FB05293F65D500E42796 /* Favicons.xcdatamodeld in Sources */,
@@ -12988,6 +13027,7 @@
 				BB7BAAC32DDBB096004A5A58 /* AddressBarStyleProviding.swift in Sources */,
 				F1D0429A2BFBABA100A31506 /* SubscriptionManager+StandardConfiguration.swift in Sources */,
 				4B4D60D42A0C84F700BCD287 /* UserText+NetworkProtection.swift in Sources */,
+				CC0DD91A2E5DFA5800277E46 /* SessionRestorePromptPopover.swift in Sources */,
 				3706FB1A293F65D500E42796 /* OutlineSeparatorViewCell.swift in Sources */,
 				3706FB1B293F65D500E42796 /* SafariDataImporter.swift in Sources */,
 				3199AF702C80734A003AEBDC /* DuckPlayerOnboardingDecider.swift in Sources */,
@@ -13463,6 +13503,7 @@
 				3706FC08293F65D500E42796 /* CoreDataBookmarkImporter.swift in Sources */,
 				8426108E2C9811F30070D5F9 /* KeyEquivalentView.swift in Sources */,
 				3706FC09293F65D500E42796 /* SuggestionViewModel.swift in Sources */,
+				CC0DD9142E5DF47E00277E46 /* SessionRestorePromptView.swift in Sources */,
 				3706FC0A293F65D500E42796 /* BookmarkManagedObject.swift in Sources */,
 				37DF37092CF38CD7005ED34B /* PrivacyStatsDatabase.swift in Sources */,
 				B6ABC5972B4861D4008343B9 /* FocusableTextField.swift in Sources */,
@@ -13966,6 +14007,7 @@
 				3706FE31293F661700E42796 /* TabCollectionViewModelDelegateMock.swift in Sources */,
 				3706FE32293F661700E42796 /* BookmarksHTMLReaderTests.swift in Sources */,
 				9F0FFFBC2BCCAEC2007C87DD /* AddEditBookmarkFolderDialogViewModelMock.swift in Sources */,
+				CC6E897C2E5F08EA00F6BED0 /* SessionRestorePromptCoordinatorTests.swift in Sources */,
 				7B1522AE2DE9CBE900887371 /* VPNAppEventsHandlerTests.swift in Sources */,
 				CCC87D742E1429570091344D /* ChromiumTopSitesReaderTests.swift in Sources */,
 				B60C6F8229B1B4AD007BFAA8 /* TestRunHelper.swift in Sources */,
@@ -14179,6 +14221,8 @@
 				3706FE84293F661700E42796 /* TabCollectionViewModelTests+PinnedTabs.swift in Sources */,
 				B603975229C1FFAD00902A34 /* ExpectedNavigationExtension.swift in Sources */,
 				3706FE85293F661700E42796 /* BWRequestTests.swift in Sources */,
+				CC0DD9102E5DD74600277E46 /* AppStateRestorationManagerTests.swift in Sources */,
+				CC6E89812E5F0DE100F6BED0 /* SessionRestorePromptCoordinatorMock.swift in Sources */,
 				1DA7FEE52D883436004882E9 /* PinnedTabsManagerProvidingMock.swift in Sources */,
 				37B16FFA2DBA3AF100910812 /* TabCrashIndicatorModelTests.swift in Sources */,
 				3135647F2D9EBB9900BF4B5D /* AIChatAddressBarPromptExtractorTests.swift in Sources */,
@@ -14542,6 +14586,7 @@
 				8449053F2E549B6D0054F4FD /* StringExtensions.swift in Sources */,
 				EE9D81C32BC57A3700338BE3 /* StateRestorationTests.swift in Sources */,
 				560419492DD5FF3700818414 /* ContentScopeExperimentsEndToEndTests.swift in Sources */,
+				CC6E897E2E5F08EA00F6BED0 /* SessionRestorePromptCoordinatorTests.swift in Sources */,
 				EEC7BE2E2BC6C09500F86835 /* AddressBarKeyboardShortcutsTests.swift in Sources */,
 				84E2FC462E0DB043000874F7 /* XCUIElementSnapshotExtension.swift in Sources */,
 				EE54F7B32BBFEA49006218DB /* BookmarksAndFavoritesTests.swift in Sources */,
@@ -14705,12 +14750,14 @@
 				14505A08256084EF00272CC6 /* UserAgent.swift in Sources */,
 				841BE93E2C6F236000E9C2B5 /* BookmarkDragDropManager.swift in Sources */,
 				31FC23512DB7A86F00900574 /* AddressBarMenuButton.swift in Sources */,
+				CC0DD9132E5DF47E00277E46 /* SessionRestorePromptView.swift in Sources */,
 				1D39E5772C2BFD5700757339 /* ReleaseNotesTabExtension.swift in Sources */,
 				379857EB2D720C65008773F6 /* HistoryViewOnboardingDecider.swift in Sources */,
 				987799F12999993C005D8EB6 /* LegacyBookmarkStore.swift in Sources */,
 				1E4EDA292DE9ED2D0019B6E8 /* AIChatSidebarProvider.swift in Sources */,
 				1D220BF82B86192200F8BBC6 /* PreferencesEmailProtectionView.swift in Sources */,
 				4B8AC93526B3B2FD00879451 /* NSAlert+DataImport.swift in Sources */,
+				CC0DD91D2E5EF7CE00277E46 /* SessionRestorePromptCoordinator.swift in Sources */,
 				AA7412BD24D2BEEE00D22FE0 /* MainWindow.swift in Sources */,
 				AAD6D8882696DF6D002393B3 /* CrashReportPromptViewController.swift in Sources */,
 				37ABFE7C2DED901200DE39F2 /* SettingsPixel.swift in Sources */,
@@ -14792,6 +14839,7 @@
 				BBC7BDAC2D5BB0890037A4AE /* BannerView.swift in Sources */,
 				4B9DB03B2A983B24000927DB /* InvitedToWaitlistView.swift in Sources */,
 				8589063C267BCDC000D23B0D /* SaveCredentialsViewController.swift in Sources */,
+				CC0DD9172E5DF4B600277E46 /* SessionRestorePromptViewModel.swift in Sources */,
 				4BBE0AA727B9B027003B37A8 /* PopUpButton.swift in Sources */,
 				AABEE6A524AA0A7F0043105B /* SuggestionViewController.swift in Sources */,
 				1D6216B229069BBF00386B2C /* BWKeyStorage.swift in Sources */,
@@ -15489,6 +15537,7 @@
 				B68458B825C7E8B200DC17B6 /* Tab+NSSecureCoding.swift in Sources */,
 				85378DA0274E6F42007C5CBF /* NSNotificationName+EmailManager.swift in Sources */,
 				1DDC84FF2B835BC000670238 /* SearchPreferences.swift in Sources */,
+				CC0DD9192E5DFA5800277E46 /* SessionRestorePromptPopover.swift in Sources */,
 				B693955726F04BEC0015B914 /* MouseOverButton.swift in Sources */,
 				AA61C0D02722159B00E6B681 /* FireInfoViewController.swift in Sources */,
 				C1C405872C7F80E50089DE8A /* PromotionView+FreemiumDBP.swift in Sources */,
@@ -15789,6 +15838,7 @@
 				9FA75A3E2BA00E1400DA5FA6 /* BookmarksBarMenuFactoryTests.swift in Sources */,
 				BB0036612E426E9D0016DDEF /* ReportProblemFormViewModelTests.swift in Sources */,
 				BB0036622E426E9D0016DDEF /* RequestNewFeatureViewModelTests.swift in Sources */,
+				CC6E897D2E5F08EA00F6BED0 /* SessionRestorePromptCoordinatorTests.swift in Sources */,
 				BB0036642E426E9D0016DDEF /* FeedbackTests.swift in Sources */,
 				B69B50462726C5C200758A2B /* AtbAndVariantCleanupTests.swift in Sources */,
 				567DA94529E95C3F008AC5EE /* YoutubeOverlayUserScriptTests.swift in Sources */,
@@ -15836,6 +15886,7 @@
 				7B09CBA92BA4BE8100CF245B /* NetworkProtectionPixelEventTests.swift in Sources */,
 				B6DA441E2616C84600DD1EC2 /* PixelStoreMock.swift in Sources */,
 				B6BBF1702744CDE1004F850E /* CoreDataStoreTests.swift in Sources */,
+				CC0DD90F2E5DD74600277E46 /* AppStateRestorationManagerTests.swift in Sources */,
 				4B9292BF2667103100AD2C21 /* TreeControllerTests.swift in Sources */,
 				4B11060525903E570039B979 /* CoreDataEncryptionTesting.xcdatamodeld in Sources */,
 				858A798826A99DBE00A75A42 /* PasswordManagementItemListModelTests.swift in Sources */,
@@ -16117,6 +16168,7 @@
 				37D046A12C7DA9A200AEAA50 /* UserBackgroundImagesManagerTests.swift in Sources */,
 				56BC8F022D312B320046059D /* ConfigurationManagerTests.swift in Sources */,
 				56A214AF2CB583BF00E5BC0E /* TrackerMessageProviderTests.swift in Sources */,
+				CC6E89802E5F0DE100F6BED0 /* SessionRestorePromptCoordinatorMock.swift in Sources */,
 				37AA017C2E2100DA00844427 /* CrashPixelAppIdentifierTests.swift in Sources */,
 				37CD54B927F1F8AC00F1F7B9 /* AppearancePreferencesTests.swift in Sources */,
 				EEF53E182950CED5002D78F4 /* JSAlertViewModelTests.swift in Sources */,

@@ -73731,6 +73731,66 @@
         }
       }
     },
+    "session.restore.prompt.button.accept" : {
+      "comment" : "Button the user can press to restore the previous browser session after a crash",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restore Session"
+          }
+        }
+      }
+    },
+    "session.restore.prompt.button.reject" : {
+      "comment" : "Button the user can press to not restore the previous browser session after a crash",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No Thanks"
+          }
+        }
+      }
+    },
+    "session.restore.prompt.explanation" : {
+      "comment" : "Explanation of how the user can restore the previous browser session after a crash later",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can also do this later from History → Reopen All Windows From Last Session."
+          }
+        }
+      }
+    },
+    "session.restore.prompt.message" : {
+      "comment" : "Message of the prompt where the user can choose to restore the previous browser session after a crash",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Would you like to restore tabs from your previous session?"
+          }
+        }
+      }
+    },
+    "session.restore.prompt.title" : {
+      "comment" : "Title of the prompt where the user can choose to restore the previous browser session after a crash",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The browser didn’t quit as expected"
+          }
+        }
+      }
+    },
     "settings" : {
       "comment" : "Menu item for opening settings",
       "extractionState" : "extracted_with_value",

@@ -38,7 +38,7 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
     func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool
 
     func currentSubscriptionFeatures() async throws -> [Entitlement.ProductName]
-    func signOut(notifyUI: Bool) async
+    func signOut(notifyUI: Bool, userInitiated: Bool) async
     var canPurchase: Bool { get }
     /// Publisher that emits a boolean value indicating whether the user can purchase.
     var canPurchasePublisher: AnyPublisher<Bool, Never> { get }
@@ -51,6 +51,12 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
 
     /// Checks if the user is eligible for a free trial.
     func isUserEligibleForFreeTrial() -> Bool
+}
+
+public extension SubscriptionAuthV1toV2Bridge {
+    func signOut(notifyUI: Bool) async {
+        await signOut(notifyUI: notifyUI, userInitiated: false)
+    }
 }
 
 extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
@@ -74,8 +80,8 @@ extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
         }
     }
 
-    public func signOut(notifyUI: Bool) async {
-        accountManager.signOut(skipNotification: !notifyUI)
+    public func signOut(notifyUI: Bool, userInitiated: Bool) async {
+        accountManager.signOut(skipNotification: !notifyUI, userInitiated: userInitiated)
     }
 
     public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {

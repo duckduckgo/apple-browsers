@@ -23,35 +23,6 @@ import os.log
 
 struct AppConfigurationURLProvider: ConfigurationURLProviding {
 
-    // MARK: - Debug
-    internal init(privacyConfigurationManager: PrivacyConfigurationManaging,
-                  featureFlagger: FeatureFlagger,
-                  customPrivacyConfiguration: URL? = nil) {
-        let trackerDataUrlProvider = TrackerDataURLOverrider(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
-        self.init(trackerDataUrlProvider: trackerDataUrlProvider)
-        if let customPrivacyConfiguration {
-            // Overwrite custom privacy configuration if provided
-            self.customPrivacyConfiguration = customPrivacyConfiguration.absoluteString
-        }
-        // Otherwise use the default or already stored custom configuration
-    }
-
-    @UserDefaultsWrapper(key: .customConfigurationUrl, defaultValue: nil)
-    private var customPrivacyConfiguration: String?
-
-    private var customPrivacyConfigurationUrl: URL? {
-        if let customPrivacyConfiguration {
-            return URL(string: customPrivacyConfiguration)
-        }
-        return nil
-    }
-
-    mutating func resetToDefaultConfigurationUrl() {
-        self.customPrivacyConfiguration = nil
-    }
-
-    // MARK: - Main
-
     private var trackerDataUrlProvider: TrackerDataURLProviding
 
     public enum Constants {
@@ -69,13 +40,13 @@ struct AppConfigurationURLProvider: ConfigurationURLProviding {
     }
 
     func url(for configuration: Configuration) -> URL {
-        // URLs for privacyConfiguration and trackerDataSet shall match the ones in update_embedded.sh. 
+        // URLs for privacyConfiguration and trackerDataSet shall match the ones in update_embedded.sh.
         // Danger checks that the URLs match on every PR. If the code changes, the regex that Danger uses may need an update.
         switch configuration {
         case .bloomFilterBinary: return URL(string: "https://staticcdn.duckduckgo.com/https/https-mobile-v2-bloom.bin")!
         case .bloomFilterSpec: return URL(string: "https://staticcdn.duckduckgo.com/https/https-mobile-v2-bloom-spec.json")!
         case .bloomFilterExcludedDomains: return URL(string: "https://staticcdn.duckduckgo.com/https/https-mobile-v2-false-positives.json")!
-        case .privacyConfiguration: return customPrivacyConfigurationUrl ?? Constants.defaultPrivacyConfigurationURL
+        case .privacyConfiguration: return Constants.defaultPrivacyConfigurationURL
         case .surrogates: return URL(string: "https://staticcdn.duckduckgo.com/surrogates.txt")!
         case .trackerDataSet:
             return trackerDataUrlProvider.trackerDataURL ?? Constants.defaultTrackerDataURL

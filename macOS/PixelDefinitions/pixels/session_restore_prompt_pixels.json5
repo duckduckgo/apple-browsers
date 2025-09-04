@@ -1,0 +1,32 @@
+{
+    'm_mac_unclean-exit_detected': {
+        description: 'Fired when an unexpected app termination is detected on app launch',
+        owners: ['rachelmcr'],
+        triggers: ['other'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+    'm_mac_unclean-exit_popup_shown': {
+        description: 'Fired when the unexpected app termination restore session popover is shown to the user',
+        owners: ['rachelmcr'],
+        triggers: ['other'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+    'm_mac_unclean-exit_popup_dismissed_without-restore': {
+        description: 'Fired when user dismisses the unexpected app termination popover without choosing to restore tabs',
+        owners: ['rachelmcr'],
+        triggers: ['other'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+    'm_mac_unclean-exit_popup_dismissed_with-restore': {
+        description: 'Fired when user dismisses the unexpected app termination popover and chooses to restore tabs',
+        owners: ['rachelmcr'],
+        triggers: ['other'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+    'm_mac_unclean-exit_popup_browser-closed': {
+        description: 'Fired when the browser is closed while the unexpected app termination popover is still open',
+        owners: ['rachelmcr'],
+        triggers: ['other'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+}

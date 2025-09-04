@@ -87,6 +87,8 @@ struct AboutViewVersion: View {
     func copyVersion(_ version: String) {
         guard viewModel.isInternalUser else { return }
         UIPasteboard.general.string = version
+        // Internal user only so no translation required
+        ActionMessageView.present(message: "\"\(version)\" copied")
     }
 
     var body: some View {

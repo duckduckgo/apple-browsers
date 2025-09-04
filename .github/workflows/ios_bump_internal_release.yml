@@ -11,6 +11,7 @@ on:
     paths:
       - 'SharedPackages/**'
       - 'iOS/**'
+      - '!iOS/fastlane/**'
   workflow_dispatch:
     inputs:
       asana-task-url:

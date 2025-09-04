@@ -28,7 +28,7 @@ final class StripePurchaseFlowTests: XCTestCase {
         static let externalID = UUID().uuidString
         static let email = "dax@duck.com"
 
-        static let unknownServerError = APIServiceError.serverError(statusCode: 401, error: "unknown_error")
+        static let unknownServerError = APIServiceError.serverError(statusCode: 401, errorCode: "unknown_error")
     }
 
     var accountManager: AccountManagerMock!

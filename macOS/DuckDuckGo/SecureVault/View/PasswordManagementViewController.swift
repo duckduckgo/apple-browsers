@@ -297,7 +297,6 @@ final class PasswordManagementViewController: NSViewController {
         }
 
         refetchAndPromptForAuthentication(text: "", selectItemMatchingDomain: domain, clearWhenNoMatches: true)
-
     }
 
     override func viewDidDisappear() {

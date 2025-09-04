@@ -582,6 +582,42 @@ final class SyncDialogControllerTests: XCTestCase {
     }
 
     func testSyncWithAnotherDevicePressed_whenAuthenticationDoesNotSucceed_forAnyReason_callsDidEndFlowOnCoordinationDelegate() async {
+        await assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow {
+            await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+        }
+    }
+
+    func testSyncWithServerPressed_whenAuthenticationDoesNotSucceed_forAnyReason_callsDidEndFlowOnCoordinationDelegate() async {
+        await assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow {
+            await syncDialogController.syncWithServerPressed()
+        }
+    }
+
+    func testRecoverDataPressed_whenAuthenticationDoesNotSucceed_forAnyReason_callsDidEndFlowOnCoordinationDelegate() async {
+        await assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow {
+            await syncDialogController.recoverDataPressed()
+        }
+    }
+
+    func testSaveRecoveryPDF_whenAuthenticationDoesNotSucceed_forAnyReason_callsDidEndFlowOnCoordinationDelegate() async {
+        let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
+        syncDialogController.coordinationDelegate = coordinationDelegate
+        ddgSyncing.account = .mock
+        for authenticationResult in [
+            DeviceAuthenticationResult.failure,
+            DeviceAuthenticationResult.noAuthAvailable,
+        ] {
+            authenticator.stubAuthenticateUser = authenticationResult
+            let expectation = XCTestExpectation(description: "Did call didEndFlow")
+            coordinationDelegate.didEndFlowCalled = {
+                expectation.fulfill()
+            }
+            syncDialogController.saveRecoveryPDF()
+            await fulfillment(of: [expectation])
+        }
+    }
+
+    func assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow(file: StaticString = #file, line: UInt = #line, functionUnderTest: () async -> Void) async {
         let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
         syncDialogController.coordinationDelegate = coordinationDelegate
         for authenticationResult in [
@@ -593,9 +629,9 @@ final class SyncDialogControllerTests: XCTestCase {
             coordinationDelegate.didEndFlowCalled = {
                 didEndFlowCalled = true
             }
-            await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+            await functionUnderTest()
 
-            XCTAssertTrue(didEndFlowCalled)
+            XCTAssertTrue(didEndFlowCalled, file: file, line: line)
         }
     }
 

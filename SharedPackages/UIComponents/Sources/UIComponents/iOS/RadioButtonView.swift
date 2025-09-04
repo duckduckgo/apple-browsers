@@ -74,7 +74,7 @@ public struct RadioButtonConfiguration {
         spacing: CGFloat = 6,
         checkboxSize: CGFloat = 24,
         layout: RadioButtonLayout = .vertical,
-        buttonSpacing: CGFloat = 12
+        buttonSpacing: CGFloat = 8
     ) {
         self.font = font
         self.selectedTextColor = selectedTextColor
@@ -237,6 +237,12 @@ private struct RadioButtonRow: View {
 
     @ViewBuilder
     private var verticalRowContent: some View {
+        Text(item.text)
+            .font(configuration.font)
+            .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
         (isSelected ? configuration.selectedCheckboxImage : configuration.unselectedCheckboxImage)
             .resizable()
             .renderingMode(.template)
@@ -244,14 +250,6 @@ private struct RadioButtonRow: View {
             .foregroundColor(isSelected ? configuration.selectedCheckboxColor : configuration.unselectedCheckboxColor)
             .frame(width: configuration.checkboxSize, height: configuration.checkboxSize)
             .flexibleFrame(horizontal: false, vertical: false)
-
-        Text(item.text)
-            .font(configuration.font)
-            .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
-            .multilineTextAlignment(.leading)
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-        Spacer()
     }
 
     @ViewBuilder

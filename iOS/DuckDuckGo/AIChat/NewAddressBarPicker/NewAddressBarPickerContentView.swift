@@ -43,6 +43,8 @@ struct NewAddressBarPickerContentView: View {
 private struct ContentView: View {
     var body: some View {
         ZStack {
+            Color(designSystemColor: .background)
+
             backgroundView
             VStack {
                 headerView
@@ -51,7 +53,7 @@ private struct ContentView: View {
                 Spacer()
                 animationView
             }
-            .padding()
+            .padding(.horizontal)
         }
     }
 
@@ -81,16 +83,16 @@ private struct ContentView: View {
         LinearGradient(
             stops: [
                 Gradient.Stop(color: Color(designSystemColor: .background), location: 0.2),
-                Gradient.Stop(color: Color(designSystemColor: .accent).opacity(0.6), location: 1.0),
+                Gradient.Stop(color: Color(designSystemColor: .accent), location: 1.8),
             ],
             startPoint: UnitPoint(x: 0.5, y: 0),
-            endPoint: UnitPoint(x: 0.8, y: 2.5)
+            endPoint: UnitPoint(x: 0.8, y: 1.8)
         )
     }
 
     var animationView: some View {
         RoundedRectangle(cornerRadius: 8)
-            .fill(Color(designSystemColor: .accent).opacity(0.2))
+            .fill(Color(designSystemColor: .backgroundTertiary))
             .frame(height: 120)
             .overlay(
                 Text("Animation Placeholder")
@@ -114,7 +116,6 @@ private struct CTAView: View {
                 ],
                 selectedIndex: selectedOption,
                 configuration: RadioButtonConfiguration(
-                    layout: .horizontal
                 )
             ) { _, selectedIndex in
                 if let index = selectedIndex {
@@ -149,7 +150,6 @@ private struct CTAView: View {
                 .daxCaption()
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .multilineTextAlignment(.center)
-                .padding(.bottom, 15)
         }
     }
 }

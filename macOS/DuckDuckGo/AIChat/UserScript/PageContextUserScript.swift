@@ -30,7 +30,10 @@ struct PageContextPayload: Codable {
 
 final class PageContextUserScript: NSObject, Subfeature {
     public let collectionResultPublisher: AnyPublisher<String, Never>
-    public let featureName: String = "pageContext"
+    static public let featureName: String = "pageContext"
+    public var featureName: String {
+        Self.featureName
+    }
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
     let messageOriginPolicy: MessageOriginPolicy = .all

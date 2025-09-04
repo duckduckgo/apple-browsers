@@ -26,6 +26,7 @@ final class MockStatisticsStore: StatisticsStore {
     var atb: String?
     var searchRetentionAtb: String?
     var appRetentionAtb: String?
+    var duckAIRetentionAtb: String?
 
     var variant: String?
     var lastAppRetentionRequestDate: Date?

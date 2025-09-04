@@ -76,6 +76,7 @@ public struct EmailService: EmailServiceProtocol {
     }
 
     public func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData {
+        Logger.dataBrokerProtection.log("✉️ [EmailService] Getting email for dataBroker: \(dataBrokerURL, privacy: .public), attemptId: \(attemptId.uuidString, privacy: .public)")
 
         var urlComponents = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: true)
         urlComponents?.path += "\(Constants.endpointSubPath)/generate"
@@ -100,8 +101,11 @@ public struct EmailService: EmailServiceProtocol {
         try validateHTTPResponse(response)
 
         do {
-            return try JSONDecoder().decode(EmailData.self, from: data)
+            let emailData = try JSONDecoder().decode(EmailData.self, from: data)
+            Logger.dataBrokerProtection.log("✉️ [EmailService] Successfully generated email: \(emailData.emailAddress, privacy: .public)")
+            return emailData
         } catch {
+            Logger.dataBrokerProtection.error("✉️ [EmailService] Failed to decode email data: \(error, privacy: .public)")
             throw EmailError.cantFindEmail
         }
     }
@@ -123,9 +127,11 @@ public struct EmailService: EmailServiceProtocol {
                                     pollingInterval: TimeInterval,
                                     attemptId: UUID,
                                     shouldRunNextStep: @escaping () -> Bool) async throws -> URL {
+        Logger.dataBrokerProtection.log("✉️ [EmailService] Getting confirmation link from email: \(email, privacy: .public), attemptId: \(attemptId.uuidString, privacy: .public)")
         let pollingTimeInNanoSecondsSeconds = UInt64(pollingInterval * 1000) * NSEC_PER_MSEC
 
         guard let emailResult = try? await extractEmailLink(email: email, attemptId: attemptId) else {
+            Logger.dataBrokerProtection.error("✉️ [EmailService] Failed to extract email link for: \(email, privacy: .public)")
             throw EmailError.cantFindEmail
         }
 
@@ -136,17 +142,18 @@ public struct EmailService: EmailServiceProtocol {
         switch emailResult.status {
         case .ready:
             if let link = emailResult.link, let url = URL(string: link) {
-                Logger.service.debug("Email received")
+                Logger.dataBrokerProtection.log("✉️ [EmailService] Email received with confirmation link")
                 return url
             } else {
-                Logger.service.debug("Invalid email link")
+                Logger.dataBrokerProtection.error("✉️ [EmailService] Invalid email link")
                 throw EmailError.invalidEmailLink
             }
         case .pending:
             if numberOfRetries == 0 {
+                Logger.dataBrokerProtection.error("✉️ [EmailService] Link extraction timed out after retries for: \(email, privacy: .public)")
                 throw EmailError.linkExtractionTimedOut
             }
-            Logger.service.debug("No email yet. Waiting for a new request ...")
+            Logger.dataBrokerProtection.log("✉️ [EmailService] No email yet. Waiting for a new request... (\(numberOfRetries, privacy: .public) retries remaining)")
             try await Task.sleep(nanoseconds: pollingTimeInNanoSecondsSeconds)
             return try await getConfirmationLink(from: email,
                                                  numberOfRetries: numberOfRetries - 1,
@@ -154,11 +161,13 @@ public struct EmailService: EmailServiceProtocol {
                                                  attemptId: attemptId,
                                                  shouldRunNextStep: shouldRunNextStep)
         case .unknown:
+            Logger.dataBrokerProtection.error("✉️ [EmailService] Unknown status received for email: \(email, privacy: .public)")
             throw EmailError.unknownStatusReceived(email: email)
         }
     }
 
     private func extractEmailLink(email: String, attemptId: UUID) async throws -> EmailResponse {
+        Logger.dataBrokerProtection.log("✉️ [EmailService] Extracting email link for: \(email, privacy: .public), attemptId: \(attemptId.uuidString, privacy: .public)")
         var urlComponents = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: true)
         urlComponents?.path += "\(Constants.endpointSubPath)/links"
         urlComponents?.queryItems = [

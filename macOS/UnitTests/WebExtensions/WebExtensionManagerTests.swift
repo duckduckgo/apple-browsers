@@ -41,6 +41,7 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     override func tearDown() {
+        webExtensionLoadingMock?.cleanupTestExtensions()
         pathsStoringMock = nil
         webExtensionLoadingMock = nil
         internalUserStore = nil

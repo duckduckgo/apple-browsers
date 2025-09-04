@@ -18,6 +18,7 @@
 
 @testable import DuckDuckGo_Privacy_Browser
 import WebKit
+import Foundation
 
 @available(macOS 15.4, *)
 final class WebExtensionLoadingMock: WebExtensionLoading {
@@ -29,6 +30,9 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
     var mockLoadResults: [Result<WebExtensionLoadResult, Error>] = []
     var mockError: Error?
 
+    // Track created test extensions for cleanup
+    private var createdTestExtensions: [URL] = []
+
     @discardableResult
     func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
         loadWebExtensionCalled = true
@@ -39,8 +43,9 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
         }
 
         guard let mockLoadResult = mockLoadResult else {
-            // Create a default mock result for testing
-            let mockExtension = try await WKWebExtension(resourceBaseURL: URL(fileURLWithPath: path))
+            // Create a minimal web extension for testing
+            let testExtensionURL = try createTestWebExtension()
+            let mockExtension = try await WKWebExtension(resourceBaseURL: testExtensionURL)
             let mockContext = await WKWebExtensionContext(for: mockExtension)
             return WebExtensionLoadResult(context: mockContext, path: path)
         }
@@ -56,5 +61,39 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
 
     func unloadExtension(at path: String, from controller: WKWebExtensionController) throws {
         // Mock implementation
+    }
+
+    // MARK: - Test Helper
+
+    private func createTestWebExtension() throws -> URL {
+        let tempDir = FileManager.default.temporaryDirectory
+        let extensionDir = tempDir.appendingPathComponent("TestExtension-\(UUID().uuidString)")
+
+        // Create minimal manifest.json for web extension
+        let manifest = """
+        {
+            "manifest_version": 3,
+            "name": "Test Extension",
+            "version": "1.0.0",
+            "description": "Minimal test extension for unit tests"
+        }
+        """
+
+        try FileManager.default.createDirectory(at: extensionDir, withIntermediateDirectories: true)
+        try manifest.write(to: extensionDir.appendingPathComponent("manifest.json"),
+                          atomically: true, encoding: .utf8)
+
+        // Track for cleanup
+        createdTestExtensions.append(extensionDir)
+
+        return extensionDir
+    }
+
+    /// Clean up any test extensions created during testing
+    func cleanupTestExtensions() {
+        for extensionURL in createdTestExtensions {
+            try? FileManager.default.removeItem(at: extensionURL)
+        }
+        createdTestExtensions.removeAll()
     }
 }

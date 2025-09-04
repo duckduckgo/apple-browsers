@@ -287,6 +287,8 @@ final class PasswordManagementViewController: NSViewController {
             listView.frame = listContainer.bounds
             listContainer.addSubview(listView)
         }
+
+        refetchAndPromptForAuthentication(text: "", selectItemMatchingDomain: domain, clearWhenNoMatches: true)
     }
 
     override func viewDidAppear() {
@@ -295,8 +297,6 @@ final class PasswordManagementViewController: NSViewController {
         if !isDirty {
             itemModel?.clearSecureVaultModel()
         }
-
-        refetchAndPromptForAuthentication(text: "", selectItemMatchingDomain: domain, clearWhenNoMatches: true)
     }
 
     override func viewDidDisappear() {

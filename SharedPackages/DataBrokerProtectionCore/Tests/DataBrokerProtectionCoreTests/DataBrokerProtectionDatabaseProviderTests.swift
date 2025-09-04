@@ -412,8 +412,8 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         let removedBroker = BrokerDB.random(name: "RemovedBroker", removedAt: Date())
 
         // When
-        let _ = try freshProvider.save(activeBroker)
-        let _ = try freshProvider.save(removedBroker)
+        _ = try freshProvider.save(activeBroker)
+        _ = try freshProvider.save(removedBroker)
 
         let allBrokers = try freshProvider.fetchAllBrokers()
         let nonRemovedBrokers = try freshProvider.fetchAllNonRemovedBrokers()
@@ -436,8 +436,8 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         let broker2 = BrokerDB.random(name: "ActiveBroker2", removedAt: nil)
 
         // When
-        let _ = try freshProvider.save(broker1)
-        let _ = try freshProvider.save(broker2)
+        _ = try freshProvider.save(broker1)
+        _ = try freshProvider.save(broker2)
 
         let allBrokers = try freshProvider.fetchAllBrokers()
         let nonRemovedBrokers = try freshProvider.fetchAllNonRemovedBrokers()
@@ -458,8 +458,8 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         let removedBroker2 = BrokerDB.random(name: "RemovedBroker2", removedAt: Date())
 
         // When
-        let _ = try freshProvider.save(removedBroker1)
-        let _ = try freshProvider.save(removedBroker2)
+        _ = try freshProvider.save(removedBroker1)
+        _ = try freshProvider.save(removedBroker2)
 
         let allBrokers = try freshProvider.fetchAllBrokers()
         let nonRemovedBrokers = try freshProvider.fetchAllNonRemovedBrokers()

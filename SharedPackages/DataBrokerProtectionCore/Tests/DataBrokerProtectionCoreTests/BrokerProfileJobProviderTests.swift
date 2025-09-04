@@ -120,14 +120,14 @@ final class BrokerProfileJobProviderTests: XCTestCase {
 
     func testProvideJobs_withOnlyRemovedBrokers_returnsEmptyArray() throws {
         // Given
-        let removedBroker1 : BrokerProfileQueryData = BrokerProfileQueryData(
+        let removedBroker1 = BrokerProfileQueryData(
             dataBroker: .removedMock,
             profileQuery: .mock,
             scanJobData: .mock,
             optOutJobData: [.mock(with: .mockWithoutRemovedDate)]
         )
 
-        let removedBroker2 : BrokerProfileQueryData = BrokerProfileQueryData(
+        let removedBroker2 = BrokerProfileQueryData(
             dataBroker: .removedMock,
             profileQuery: .mock,
             scanJobData: .mock,
@@ -149,7 +149,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
 
     func testProvideJobs_withMixedBrokers_onlyCreatesJobsForActiveOnes() throws {
         // Given
-        let activeBroker1 : BrokerProfileQueryData = BrokerProfileQueryData(
+        let activeBroker1 = BrokerProfileQueryData(
             dataBroker: .mock,
             profileQuery: .mock,
             scanJobData: .mock,
@@ -172,21 +172,21 @@ final class BrokerProfileJobProviderTests: XCTestCase {
             eTag: "",
             removedAt: nil // Active broker
         )
-        let activeBroker2 : BrokerProfileQueryData = BrokerProfileQueryData(
+        let activeBroker2 = BrokerProfileQueryData(
             dataBroker: activeBroker2DataBroker,
             profileQuery: .mock,
             scanJobData: .mock,
             optOutJobData: [.mock(with: .mockWithoutRemovedDate)]
         )
 
-        let removedBroker1 : BrokerProfileQueryData = BrokerProfileQueryData(
+        let removedBroker1 = BrokerProfileQueryData(
             dataBroker: .removedMock,
             profileQuery: .mock,
             scanJobData: .mock,
             optOutJobData: [.mock(with: .mockWithoutRemovedDate)]
         )
 
-        let removedBroker2 : BrokerProfileQueryData = BrokerProfileQueryData(
+        let removedBroker2 = BrokerProfileQueryData(
             dataBroker: .removedMock,
             profileQuery: .mock,
             scanJobData: .mock,
@@ -212,14 +212,14 @@ final class BrokerProfileJobProviderTests: XCTestCase {
 
     func testProvideJobs_allFilterRemovedBrokers() throws {
         // Given
-        let activeBrokerData : BrokerProfileQueryData = BrokerProfileQueryData(
+        let activeBrokerData = BrokerProfileQueryData(
             dataBroker: .mock,
             profileQuery: .mock,
             scanJobData: .mock,
             optOutJobData: [.mock(with: .mockWithoutRemovedDate)]
         )
 
-        let removedBrokerData : BrokerProfileQueryData = BrokerProfileQueryData(
+        let removedBrokerData = BrokerProfileQueryData(
             dataBroker: .removedMock,
             profileQuery: .mock,
             scanJobData: .mock,

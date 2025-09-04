@@ -47,6 +47,8 @@ private struct ContentView: View {
             VStack {
                 headerView
                     .frame(width: 300)
+                    .padding(.top, 64)
+                Spacer()
                 animationView
             }
             .padding()
@@ -147,7 +149,7 @@ private struct CTAView: View {
                 .daxCaption()
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .multilineTextAlignment(.center)
-                .padding(.bottom, 10)
+                .padding(.bottom, 15)
         }
     }
 }

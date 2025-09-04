@@ -821,9 +821,7 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertNil(managementDialogModel.currentDialog)
     }
 
-    // MARK: - User Actions
-
-    func testDidEndFlow_cancelsConnectionControllerAndNotifiesDelegate() async {
+    func testDidEndFlow_notifiesDelegate() async {
         let mockDelegate = MockDeviceSyncCoordinationDelegate()
         syncDialogController.coordinationDelegate = mockDelegate
 
@@ -835,6 +833,28 @@ final class SyncDialogControllerTests: XCTestCase {
         syncDialogController.didEndFlow()
 
         await fulfillment(of: [expectation], timeout: 5.0)
+    }
+
+    func testDidEndFlow_cancelsConnectionController_beforeNotifyingDelegate() async {
+        let mockDelegate = MockDeviceSyncCoordinationDelegate()
+        syncDialogController.coordinationDelegate = mockDelegate
+        var didCallDidEndFlow = false
+
+        let didEndFlowCalled = expectation(description: "didEndFlowCalled called")
+        mockDelegate.didEndFlowCalled = {
+            didCallDidEndFlow = true
+            didEndFlowCalled.fulfill()
+        }
+
+        let cancelCalled = expectation(description: "cancelCalled called")
+        connectionController.cancelCalled = {
+            XCTAssertFalse(didCallDidEndFlow)
+            cancelCalled.fulfill()
+        }
+
+        syncDialogController.didEndFlow()
+
+        await fulfillment(of: [cancelCalled, didEndFlowCalled], timeout: 5.0)
     }
 
     // MARK: - Helper Methods

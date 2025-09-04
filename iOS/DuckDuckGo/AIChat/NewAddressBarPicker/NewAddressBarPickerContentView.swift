@@ -20,21 +20,21 @@
 import SwiftUI
 import UIComponents
 import DesignResourcesKit
+import DuckUI
 
 struct NewAddressBarPickerContentView: View {
     let onDismiss: () -> Void
-    
+
     init(onDismiss: @escaping () -> Void) {
         self.onDismiss = onDismiss
     }
-    
+
     var body: some View {
         VStack(spacing: 24) {
             ContentView()
             CTAView(onDismiss: onDismiss)
-          
+                .padding(.horizontal, 32)
         }
-        .padding(.horizontal, 32)
         .background(Color(designSystemColor: .background))
     }
 }
@@ -71,12 +71,17 @@ private struct ContentView: View {
     }
 
     var backgroundView: some View {
-        RoundedRectangle(cornerRadius: 12)
-            .fill(Color(designSystemColor: .surface))
+        LinearGradient(
+            stops: [
+                Gradient.Stop(color: Color(designSystemColor: .background), location: 0.2),
+                Gradient.Stop(color: Color(designSystemColor: .accent).opacity(0.4), location: 1),
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
     }
 
     var animationView: some View {
-        // Placeholder for animation - could be an illustration or animation
         RoundedRectangle(cornerRadius: 8)
             .fill(Color(designSystemColor: .accent).opacity(0.2))
             .frame(height: 120)
@@ -95,7 +100,6 @@ private struct CTAView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            // Radio Button Options
             RadioButtonView(
                 options: [
                     UserText.newAddressBarPickerSearchOnly,
@@ -110,23 +114,27 @@ private struct CTAView: View {
                     self.selectedOption = index
                 }
             }
-            
-            
-            // Action Buttons
-//            VStack(spacing: 12) {
-//                onDismiss()
-//            } label: {
-//                Text(UserText.newAddressBarPickerConfirm)
-//                    .daxButton()
-//            }
-//            
-//            VStack(spacing: 12) {
-//                onDismiss()
-//            } label: {
-//                Text(UserText.newAddressBarPickerConfirm)
-//                    .daxButton()
-//            }
-//            
+
+            Button {
+                onDismiss()
+            } label: {
+                Text(UserText.newAddressBarPickerConfirm)
+                    .daxButton()
+                    .foregroundStyle(Color(designSystemColor: .accentContentPrimary))
+
+            }
+            .buttonStyle(PrimaryButtonStyle())
+
+            Button {
+                onDismiss()
+            } label: {
+                Text(UserText.newAddressBarPickerNotNow)
+                    .daxButton()
+                    .foregroundStyle(Color(designSystemColor: .accent))
+
+            }
+            .buttonStyle(SecondaryButtonStyle())
+
             // Footer Text
             Text(UserText.newAddressBarPickerFooter)
                 .daxCaption()

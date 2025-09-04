@@ -150,11 +150,12 @@ public struct AIChatNativePrompt: Codable, Equatable {
         public let text: String
         public let sourceURL: String?
         public let sourceTitle: String?
+        public let sourceTLD: String?
         public let sourceLanguage: String?
         public let targetLanguage: String
 
         private enum CodingKeys: String, CodingKey {
-            case text, sourceURL, sourceTitle, sourceLanguage, targetLanguage
+            case text, sourceURL, sourceTitle, sourceTLD, sourceLanguage, targetLanguage
         }
 
         public func encode(to encoder: Encoder) throws {
@@ -162,6 +163,13 @@ public struct AIChatNativePrompt: Codable, Equatable {
             try container.encode(text, forKey: .text)
             try container.encodeIfPresent(sourceURL, forKey: .sourceURL)
             try container.encodeIfPresent(sourceTitle, forKey: .sourceTitle)
+            try container.encodeIfPresent(sourceTLD, forKey: .sourceTLD)
+            if let sourceTLD {
+                try container.encodeIfPresent(sourceTLD, forKey: .sourceTLD)
+            } else {
+                // sourceTLD requires to be passed explicitly as nil if lacks value
+                try container.encodeNil(forKey: .sourceTLD)
+            }
             if let sourceLanguage {
                 try container.encodeIfPresent(sourceLanguage, forKey: .sourceLanguage)
             } else {
@@ -232,23 +240,17 @@ public struct AIChatNativePrompt: Codable, Equatable {
         AIChatNativePrompt(platform: Platform.name, tool: .summary(.init(text: text, sourceURL: url?.absoluteString, sourceTitle: title)))
     }
 
-    public static func translationPrompt(_ text: String, url: URL?, title: String?, targetLanguage: String? = nil) -> AIChatNativePrompt {
-          let finalTargetLanguage = targetLanguage ?? systemLanguageCode
-          return AIChatNativePrompt(platform: Platform.name, tool: .translation(.init(text: text, sourceURL: url?.absoluteString, sourceTitle: title, sourceLanguage: nil, targetLanguage: finalTargetLanguage)))
-      }
-}
+    public static func translationPrompt(_ text: String, url: URL?, title: String?, targetLanguage: String) -> AIChatNativePrompt {
 
-// MARK: - Translation Utilities
-extension AIChatNativePrompt {
-    /// Returns the user's preferred language code for translation (e.g., "en", "es", "fr")
-    public static var systemLanguageCode: String {
-        if let languageCode = Locale.preferredLanguages.first {
-            // Extract just the language code part (e.g., "en" from "en-US")
-            let components = languageCode.components(separatedBy: "-")
-            return components.first ?? "en"
-        }
-        return "en" // Default to English if unable to determine
-    }
+        let translation = AIChatNativePrompt.Tool.translation(.init(text: text,
+                                                                    sourceURL: url?.absoluteString,
+                                                                    sourceTitle: title,
+                                                                    sourceTLD: nil, // TODO: missing
+                                                                    sourceLanguage: nil, // TODO: missing
+                                                                    targetLanguage: targetLanguage))
+
+        return AIChatNativePrompt(platform: Platform.name, tool: translation)
+      }
 }
 
 enum Platform {

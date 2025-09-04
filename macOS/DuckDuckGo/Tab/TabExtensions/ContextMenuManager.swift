@@ -446,7 +446,10 @@ private extension ContextMenuManager {
             return
         }
 
-        let request = AIChatTextTranslationRequest(text: selectedText, websiteURL: webView?.url, websiteTitle: webView?.title, targetLanguage: AIChatNativePrompt.systemLanguageCode, source: .contextMenu)
+        let request = AIChatTextTranslationRequest(text: selectedText,
+                                                   websiteURL: webView?.url,
+                                                   websiteTitle: webView?.title)
+
         mainViewController?.aiChatTranslator.translate(request)
     }
 

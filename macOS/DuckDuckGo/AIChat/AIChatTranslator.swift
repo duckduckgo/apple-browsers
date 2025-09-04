@@ -32,16 +32,6 @@ struct AIChatTextTranslationRequest: Equatable {
 
     /// The title of the website where the translated text was selected
     let websiteTitle: String?
-
-    /// The target language for translation
-    let targetLanguage: String
-
-    /// The source of the translate action
-    let source: Source
-
-    enum Source: String {
-        case contextMenu = "context-menu"
-    }
 }
 
 /// This protocol describes APIs for translation in AI Chat.
@@ -81,12 +71,15 @@ final class AIChatTranslator: AIChatTranslating {
             return
         }
 
-        let prompt = AIChatNativePrompt.translationPrompt(request.text, url: request.websiteURL, title: request.websiteTitle, targetLanguage: request.targetLanguage)
+        let prompt = AIChatNativePrompt.translationPrompt(request.text,
+                                                          url: request.websiteURL,
+                                                          title: request.websiteTitle,
+                                                          targetLanguage: targetTranslationLanguage())
 //        pixelFiring?.fire(AIChatPixel.aiChatTranslateText(source: request.source), frequency: .dailyAndStandard) // TODO: Fire appropriate pixel
 
         if aiChatMenuConfig.shouldOpenAIChatInSidebar {
             if !aiChatSidebarPresenter.isSidebarOpenForCurrentTab() {
-                pixelFiring?.fire(AIChatPixel.aiChatSidebarOpened(source: .summarization), frequency: .dailyAndStandard) // TODO: Update the source
+//                pixelFiring?.fire(AIChatPixel.aiChatSidebarOpened(source: .summarization), frequency: .dailyAndStandard) // TODO: Update the source
             }
             aiChatSidebarPresenter.presentSidebar(for: prompt)
         } else {
@@ -94,4 +87,12 @@ final class AIChatTranslator: AIChatTranslating {
             aiChatTabOpener.openAIChatTab(nil, with: .newTab(selected: true))
         }
     }
+
+    /// Return target translation language as BCP 47 code
+    private func targetTranslationLanguage() -> String {
+        appPreferredLanguage() ?? systemLanguage()
+    }
+
+    private let appPreferredLanguage = { Locale.preferredLanguages.first }
+    private let systemLanguage = { Locale.current.identifier.replacingOccurrences(of: "_", with: "-") }
 }

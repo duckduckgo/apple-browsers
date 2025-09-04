@@ -149,7 +149,7 @@ final class UserScripts: UserScriptsProvider {
         }
 
         if let pageContextUserScript {
-            contentScopeUserScriptIsolated.registerSubfeature(delegate: pageContextUserScript)
+            contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
         }
 
         if let subscriptionUserScript {

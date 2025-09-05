@@ -201,7 +201,11 @@ class BookmarksDatabaseSetupTests: XCTestCase {
                                               validator: validatorMock)
             XCTFail("Unexpected")
         } catch {
-            XCTAssertEqual(error as? BookmarksModelError, BookmarksModelError.bookmarkFolderExpected)
+            if case BookmarksDatabaseError.couldNotGetFavoritesOrder(let underlyingError) = error {
+                XCTAssertEqual(underlyingError as? BookmarksModelError, BookmarksModelError.bookmarkFolderExpected)
+            } else {
+                XCTFail("Wrong error")
+            }
         }
 
         wait(for: [favsObtained], timeout: 5)
@@ -243,7 +247,11 @@ class BookmarksDatabaseSetupTests: XCTestCase {
                                               validator: validatorMock)
             XCTFail("Unexpected")
         } catch {
-            XCTAssertEqual(error as? BookmarksModelError, BookmarksModelError.bookmarkFolderExpected)
+            if case BookmarksDatabaseError.couldNotPrepareDatabase(let underlyingError) = error {
+                XCTAssertEqual(underlyingError as? BookmarksModelError, BookmarksModelError.bookmarkFolderExpected)
+            } else {
+                XCTFail("Wrong error")
+            }
         }
 
         wait(for: [onLoadStore, favsObtained], timeout: 5)

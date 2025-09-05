@@ -99,4 +99,24 @@
         suffixes: ['platform', 'form_factor'],
         parameters: ['appVersion', 'pixelSource'],
     },
+    m_aichat_experimental_omnibar_session_summary: {
+        description: 'Fires when app session ends to compare search/prompt activity across session types',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'searches_in_session',
+                description: 'Number of search queries submitted during the session',
+                type: 'integer',
+            },
+            {
+                key: 'prompts_in_session',
+                description: 'Number of AI prompts submitted during the session',
+                type: 'integer',
+            },
+        ],
+    },
 }

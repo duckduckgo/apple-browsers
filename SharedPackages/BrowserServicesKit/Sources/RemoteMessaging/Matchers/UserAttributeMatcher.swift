@@ -35,6 +35,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
     }
 
     private let isWidgetInstalled: Bool
+    private let isSyncEnabled: Bool
 
     private let commonUserAttributeMatcher: CommonUserAttributeMatcher
 
@@ -58,9 +59,11 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
                 isDuckPlayerEnabled: Bool,
                 dismissedMessageIds: [String],
                 shownMessageIds: [String],
-                enabledFeatureFlags: [String]
+                enabledFeatureFlags: [String],
+                isSyncEnabled: Bool
     ) {
         self.isWidgetInstalled = isWidgetInstalled
+        self.isSyncEnabled = isSyncEnabled
 
         commonUserAttributeMatcher = .init(
             statisticsStore: statisticsStore,
@@ -90,6 +93,8 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
         switch matchingAttribute {
         case let matchingAttribute as WidgetAddedMatchingAttribute:
             return matchingAttribute.evaluate(for: isWidgetInstalled)
+        case let matchingAttribute as SyncEnabledMatchingAttribute:
+            return matchingAttribute.evaluate(for: isSyncEnabled)
         default:
             return commonUserAttributeMatcher.evaluate(matchingAttribute: matchingAttribute)
         }

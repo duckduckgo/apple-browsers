@@ -206,6 +206,9 @@ public struct AIChatNativePrompt: Codable, Equatable {
         case TextSummary.tool:
             let summary = try container.decode(TextSummary.self, forKey: .summary)
             tool = .summary(summary)
+        case Translation.tool:
+            let translation = try container.decode(Translation.self, forKey: .translation)
+            tool = .translation(translation)
         default:
             tool = nil
         }

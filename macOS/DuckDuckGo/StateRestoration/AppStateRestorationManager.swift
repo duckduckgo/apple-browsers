@@ -212,6 +212,12 @@ final class AppStateRestorationManager: NSObject {
     }
 
     private func detectUnexpectedAppTermination() {
+#if DEBUG || REVIEW
+        guard AppVersion.runType != .uiTests else {
+            return
+        }
+#endif
+
         let didCloseUnexpectedly = !appDidTerminateAsExpected
         appDidTerminateAsExpected = false // Set to false so it will be false if the app closes without terminating properly
 

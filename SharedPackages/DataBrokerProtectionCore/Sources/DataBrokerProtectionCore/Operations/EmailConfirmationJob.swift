@@ -93,14 +93,18 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     }
 
     private func runJob() async {
+        Logger.dataBrokerProtection.log(loggerContext(), message: "✉️ Starting email confirmation job for broker: \(self.jobData.brokerId), profile: \(self.jobData.extractedProfileId)")
+
         guard let emailConfirmationLink = jobData.emailConfirmationLink,
               let linkURL = URL(string: emailConfirmationLink) else {
+            Logger.dataBrokerProtection.error(loggerContext(), message: "✉️ Email confirmation job started without valid link")
             await handleError(EmailError.invalidEmailLink)
             return
         }
 
         // Fetch the broker data
         guard let broker = try? jobDependencies.database.fetchBroker(with: jobData.brokerId) else {
+            Logger.dataBrokerProtection.error(loggerContext(), message: "✉️ Failed to fetch broker with id: \(self.jobData.brokerId)")
             await handleError(DataBrokerProtectionError.dataNotInDatabase)
             return
         }
@@ -109,6 +113,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
         // Fetch the extracted profile
         guard let extractedProfileData = try? jobDependencies.database.fetchExtractedProfile(with: jobData.extractedProfileId) else {
+            Logger.dataBrokerProtection.error(loggerContext(), message: "✉️ Failed to fetch extracted profile with id: \(self.jobData.extractedProfileId)")
             await handleError(DataBrokerProtectionError.dataNotInDatabase)
             return
         }
@@ -120,12 +125,16 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         while attemptCount < Self.maxRetries {
             if isCancelled { return }
 
+            Logger.dataBrokerProtection.log(loggerContext(), message: "✉️ Email confirmation attempt \(attemptCount + 1) of \(Self.maxRetries)")
+
             do {
                 try await executeEmailConfirmation(with: linkURL, broker: broker, extractedProfile: extractedProfile)
                 try await markAsSuccessful()
+                Logger.dataBrokerProtection.log(loggerContext(), message: "✉️ Email confirmation completed successfully")
                 return
             } catch {
                 attemptCount += 1
+                Logger.dataBrokerProtection.error(loggerContext(), message: "✉️ Email confirmation attempt \(attemptCount) failed: \(error)")
 
                 if attemptCount < Self.maxRetries {
                     try? await incrementAttemptCount()
@@ -196,6 +205,8 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     }
 
     private func markAsSuccessful() async throws {
+        Logger.dataBrokerProtection.log(loggerContext(), message: "✉️ Marking email confirmation as successful, transitioning to optOutRequested")
+
         try jobDependencies.database.deleteOptOutEmailConfirmation(
             profileQueryId: jobData.profileQueryId,
             brokerId: jobData.brokerId,

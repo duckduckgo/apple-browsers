@@ -120,12 +120,14 @@ struct BrokerProfileOptOutSubJob {
                 // Halt the opt-out process
                 // The EmailConfirmationJob will handle obtaining and clicking the confirmation link,
                 // then resume the opt-out from this point
+                Logger.dataBrokerProtection.log("✉️ Opt-out halting for email confirmation - broker: \(brokerProfileQueryData.dataBroker.name, privacy: .public), profile: \(extractedProfileId, privacy: .public)")
                 try dependencies.database.add(.init(
                     extractedProfileId: extractedProfileId,
                     brokerId: brokerId,
                     profileQueryId: profileQueryId,
                     type: .optOutSubmittedAndAwaitingEmailConfirmation
                 ))
+                Logger.dataBrokerProtection.log("✉️ Opt-out status changed to awaiting email confirmation")
             } else {
                 // Normal completion path - opt out was fully submitted
                 // 8c. Update state to indicate that the opt-out has been requested, for a future scan to confirm:

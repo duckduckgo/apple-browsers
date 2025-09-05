@@ -170,13 +170,13 @@ class TabBarTests: UITestCase {
     }
 
     private func openFourSitesOnSameWindow() {
-        openSite(pageTitle: "Page #1")
+        app.openSite(pageTitle: "Page #1")
         app.openNewTab()
-        openSite(pageTitle: "Page #2")
+        app.openSite(pageTitle: "Page #2")
         app.openNewTab()
-        openSite(pageTitle: "Page #3")
+        app.openSite(pageTitle: "Page #3")
         app.openNewTab()
-        openSite(pageTitle: "Page #4")
+        app.openSite(pageTitle: "Page #4")
     }
 
     private func pinsPageOne() {
@@ -184,21 +184,6 @@ class TabBarTests: UITestCase {
         app.typeKey("[", modifierFlags: [.command, .shift])
         app.typeKey("[", modifierFlags: [.command, .shift])
         app.menuItems["Pin Tab"].tap()
-    }
-
-    private func openSite(pageTitle: String) {
-        let url = UITests.simpleServedPage(titled: pageTitle)
-
-        let addressBar = app.addressBar
-        XCTAssertTrue(
-            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The address bar text field didn't become available in a reasonable timeframe."
-        )
-        addressBar.typeURL(url)
-        XCTAssertTrue(
-            app.windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Visited site didn't load with the expected title in a reasonable timeframe."
-        )
     }
 
     private func openPrivacyTestPagesSite() {

@@ -35,6 +35,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
     }
 
     private let isWidgetInstalled: Bool
+    private let isSyncEnabled: Bool
 
     private let commonUserAttributeMatcher: CommonUserAttributeMatcher
 
@@ -62,6 +63,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
                 isSyncEnabled: Bool
     ) {
         self.isWidgetInstalled = isWidgetInstalled
+        self.isSyncEnabled = isSyncEnabled
 
         commonUserAttributeMatcher = .init(
             statisticsStore: statisticsStore,
@@ -83,8 +85,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
             isDuckPlayerEnabled: isDuckPlayerEnabled,
             dismissedMessageIds: dismissedMessageIds,
             shownMessageIds: shownMessageIds,
-            enabledFeatureFlags: enabledFeatureFlags,
-            isSyncEnabled: isSyncEnabled
+            enabledFeatureFlags: enabledFeatureFlags
         )
     }
 
@@ -92,6 +93,8 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
         switch matchingAttribute {
         case let matchingAttribute as WidgetAddedMatchingAttribute:
             return matchingAttribute.evaluate(for: isWidgetInstalled)
+        case let matchingAttribute as SyncEnabledMatchingAttribute:
+            return matchingAttribute.evaluate(for: isSyncEnabled)
         default:
             return commonUserAttributeMatcher.evaluate(matchingAttribute: matchingAttribute)
         }
@@ -130,8 +133,7 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
                 isDuckPlayerEnabled: Bool,
                 isCurrentFreemiumPIRUser: Bool,
                 dismissedDeprecatedMacRemoteMessageIds: [String],
-                enabledFeatureFlags: [String],
-                isSyncEnabled: Bool
+                enabledFeatureFlags: [String]
     ) {
         self.pinnedTabsCount = pinnedTabsCount
         self.hasCustomHomePage = hasCustomHomePage
@@ -158,8 +160,7 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
             isDuckPlayerEnabled: isDuckPlayerEnabled,
             dismissedMessageIds: dismissedMessageIds,
             shownMessageIds: shownMessageIds,
-            enabledFeatureFlags: enabledFeatureFlags,
-            isSyncEnabled: isSyncEnabled
+            enabledFeatureFlags: enabledFeatureFlags
         )
     }
 
@@ -213,7 +214,6 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
     private let dismissedMessageIds: [String]
     private let shownMessageIds: [String]
     private let enabledFeatureFlags: [String]
-    private let isSyncEnabled: Bool
 
     public init(statisticsStore: StatisticsStore,
                 variantManager: VariantManager,
@@ -234,8 +234,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
                 isDuckPlayerEnabled: Bool,
                 dismissedMessageIds: [String],
                 shownMessageIds: [String],
-                enabledFeatureFlags: [String],
-                isSyncEnabled: Bool
+                enabledFeatureFlags: [String]
     ) {
         self.statisticsStore = statisticsStore
         self.variantManager = variantManager
@@ -257,7 +256,6 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
         self.dismissedMessageIds = dismissedMessageIds
         self.shownMessageIds = shownMessageIds
         self.enabledFeatureFlags = enabledFeatureFlags
-        self.isSyncEnabled = isSyncEnabled
     }
 
     public func evaluate(matchingAttribute: MatchingAttribute) -> EvaluationResult? {
@@ -324,8 +322,6 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
             }
         case let matchingAttribute as AllFeatureFlagsEnabledMatchingAttribute:
             return matchingAttribute.evaluate(for: enabledFeatureFlags)
-        case let matchingAttribute as SyncEnabledMatchingAttribute:
-            return matchingAttribute.evaluate(for: isSyncEnabled)
         default:
             assertionFailure("Could not find matching attribute")
             return nil

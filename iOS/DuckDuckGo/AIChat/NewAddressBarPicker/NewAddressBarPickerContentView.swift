@@ -23,26 +23,6 @@ import DesignResourcesKit
 import DuckUI
 import Lottie
 
-enum AddressBarPickerAnimation: String {
-    case iPhoneDark = "toggle-ios-dark"
-    case iPhoneLight = "toggle-ios-light"
-    case iPadDark = "toggle-ipad-dark"
-    case iPadLight = "toggle-ipad-light"
-    
-    static func animation(for device: UIUserInterfaceIdiom, colorScheme: ColorScheme) -> AddressBarPickerAnimation {
-        switch (device, colorScheme) {
-        case (.pad, .dark):
-            return .iPadDark
-        case (.pad, .light):
-            return .iPadLight
-        case (_, .dark):
-            return .iPhoneDark
-        case (_, .light):
-            return .iPhoneLight
-        }
-    }
-}
-
 struct NewAddressBarPickerContentView: View {
     let onDismiss: () -> Void
 
@@ -73,8 +53,6 @@ private struct ContentView: View {
                     .padding(.top, 64)
                 Spacer()
                 AnimationView()
-                    .frame(width: 300, height: 100)
-                    .background(.red)
             }
             .padding(.horizontal)
         }
@@ -123,21 +101,38 @@ private struct AnimationView: View {
             colorScheme: colorScheme
         )
         
-        LottieView(
-            lottieFile: animation.rawValue,
-            loopMode: .mode(.loop),
-            isAnimating: .constant(true),
-            animationImageProvider: AddressBarPickerAnimationImageProvider(
+        Lottie.LottieView(animation: .named(animation.rawValue))
+            .imageProvider(AddressBarPickerAnimationImageProvider(
                 colorScheme: colorScheme,
                 deviceIdiom: UIDevice.current.userInterfaceIdiom
-            )
-        )
-        .aspectRatio(contentMode: .fit)
-        .id("\(animation.rawValue)-\(colorScheme)")
-
+            ))
+            .resizable()
+            .looping()
+            .id("\(animation.rawValue)-\(colorScheme)")
     }
 }
 
+private enum AddressBarPickerAnimation: String {
+    case iPhoneDark = "toggle-ios-dark"
+    case iPhoneLight = "toggle-ios-light"
+    case iPadDark = "toggle-ipad-dark"
+    case iPadLight = "toggle-ipad-light"
+
+    static func animation(for device: UIUserInterfaceIdiom, colorScheme: ColorScheme) -> AddressBarPickerAnimation {
+        switch (device, colorScheme) {
+        case (.pad, .dark):
+            return .iPadDark
+        case (.pad, .light):
+            return .iPadLight
+        case (_, .dark):
+            return .iPhoneDark
+        case (_, .light):
+            return .iPhoneLight
+        case (_, _):
+            return .iPhoneLight
+        }
+    }
+}
 
 private struct CTAView: View {
     let onDismiss: () -> Void
@@ -192,13 +187,17 @@ private struct CTAView: View {
 
 // MARK: - Animation Image Provider
 
-final class AddressBarPickerAnimationImageProvider: AnimationImageProvider {
+final class AddressBarPickerAnimationImageProvider: AnimationImageProvider, Equatable {
     private let colorScheme: ColorScheme
     private let deviceIdiom: UIUserInterfaceIdiom
     
     init(colorScheme: ColorScheme, deviceIdiom: UIUserInterfaceIdiom) {
         self.colorScheme = colorScheme
         self.deviceIdiom = deviceIdiom
+    }
+    
+    static func == (lhs: AddressBarPickerAnimationImageProvider, rhs: AddressBarPickerAnimationImageProvider) -> Bool {
+        return lhs.colorScheme == rhs.colorScheme && lhs.deviceIdiom == rhs.deviceIdiom
     }
     
     func imageForAsset(asset: ImageAsset) -> CGImage? {

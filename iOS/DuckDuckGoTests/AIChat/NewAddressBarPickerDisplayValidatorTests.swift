@@ -25,9 +25,6 @@ import AIChat
 @testable import DuckDuckGo
 
 final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
-
-    // MARK: - Test Doubles
-
     private var mockAIChatSettings: MockAIChatSettingsProvider!
     private var mockTutorialSettings: MockTutorialSettings!
     private var mockFeatureFlagger: MockFeatureFlagger!
@@ -49,11 +46,9 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         mockAppSettings = AppSettingsMock()
         mockKeyValueStore = MockKeyValueStore()
 
-        // Create test UserDefaults suite
         testUserDefaults = UserDefaults(suiteName: testSuiteName)!
         testUserDefaults.removePersistentDomain(forName: testSuiteName)
 
-        // Create real instances with mock dependencies
         experimentalAIChatManager = ExperimentalAIChatManager(
             featureFlagger: mockFeatureFlagger,
             userDefaults: testUserDefaults
@@ -157,7 +152,7 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
     func testShouldDisplayPicker_WhenExperimentalSettingsEnabled_ReturnsFalse() {
         // Given
         setupShowCriteriaMet()
-        // For ExperimentalAIChatManager, we need to set the UserDefaults value
+
         testUserDefaults.set(true, forKey: "experimentalAIChatSettingsEnabled")
 
         // When
@@ -211,7 +206,7 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
     func testShouldDisplayPicker_WithPartialShowCriteria_ReturnsFalse() {
         // Given
         mockAIChatSettings.isAIChatEnabled = true
-        mockTutorialSettings.hasSeenOnboarding = false // Missing this criteria
+        mockTutorialSettings.hasSeenOnboarding = false
         mockFeatureFlagger.enabledFeatureFlags = [.showAIChatAddressBarChoiceScreen]
         setupNoExclusionCriteria()
 

@@ -34,6 +34,8 @@ public struct DataBrokerScheduleConfig: Codable, Sendable {
     }
 
     // Used for opt-outs with email confirmation step following the decoupling changes
+    // We should allow sufficient time for email confirmation to complete while ensuring
+    // the opt-out can be retried if the email confirmation process fails
     // https://app.asana.com/1/137249556945/project/481882893211075/task/1211046211583710?focus=true
     var hoursUntilNextAttemptForOptOutWithEmailConfirmation: Int {
         maintenanceScan

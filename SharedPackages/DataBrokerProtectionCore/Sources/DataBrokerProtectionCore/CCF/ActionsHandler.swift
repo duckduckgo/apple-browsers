@@ -95,7 +95,8 @@ public class ActionsHandler {
         return ActionsHandler(stepType: .optOut, actions: actions)
     }
 
-    /// Creates an ActionsHandler for email confirmation continuation - starts after email confirmation action
+    /// Creates an ActionsHandler for email confirmation continuation - starts at email confirmation action,
+    /// but replacing it with a navigate action to open the confirmation URL
     public static func forEmailConfirmationContinuation(_ step: Step, confirmationURL: URL) -> ActionsHandler {
         guard step.type == .optOut else {
             assertionFailure("Expected optOut step but got \(step.type)")

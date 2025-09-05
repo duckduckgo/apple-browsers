@@ -113,7 +113,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     enum DebugActionRows: Int, CaseIterable {
         case forceBrokerJSONRefresh
         case runPIRDebugMode
-        case checkForEmailConfirmationData
         case runPendingScans
         case runPendingOptOuts
         case runAllPendingJobs
@@ -125,8 +124,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return "Force Broker JSON Refresh"
             case .runPIRDebugMode:
                 return "Run PIR Debug Mode"
-            case .checkForEmailConfirmationData:
-                return "Check for Email Confirmation Data"
             case .runPendingScans:
                 return "Run Pending Scans"
             case .runPendingOptOuts:
@@ -558,10 +555,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             Task { @MainActor in
                 try await manager.refreshRemoteBrokerJSON()
                 tableView.reloadData()
-            }
-        case .checkForEmailConfirmationData:
-            Task {
-                await manager.checkForEmailConfirmationData()
             }
         case .runPendingScans:
             runPendingJobs(type: .scheduledScan)

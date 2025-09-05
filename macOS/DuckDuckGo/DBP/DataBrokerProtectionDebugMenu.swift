@@ -120,9 +120,6 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             }
 
             NSMenuItem(title: "Operations") {
-                NSMenuItem(title: "Check for Email Confirmation Data", action: #selector(DataBrokerProtectionDebugMenu.checkForEmailConfirmationData))
-                    .targetting(self)
-
                 NSMenuItem(title: "Hidden WebView") {
                     menuItem(withTitle: "Run queued operations",
                              action: #selector(DataBrokerProtectionDebugMenu.startScheduledOperations(_:)),
@@ -413,12 +410,6 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func toggleShowStatusMenuItem() {
         settings.showInMenuBar.toggle()
-    }
-
-    @objc private func checkForEmailConfirmationData() {
-        Task {
-            await DataBrokerProtectionManager.shared.loginItemInterface.checkForEmailConfirmationData()
-        }
     }
 
     // MARK: - Utility Functions

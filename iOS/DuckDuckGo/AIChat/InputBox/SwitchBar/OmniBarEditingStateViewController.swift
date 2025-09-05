@@ -56,6 +56,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
+    private let featureDiscovery: FeatureDiscovery
 
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
     lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
@@ -70,8 +71,10 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     // MARK: - Initialization
 
-    internal init(switchBarHandler: any SwitchBarHandling) {
+    internal init(switchBarHandler: any SwitchBarHandling,
+                  featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.switchBarHandler = switchBarHandler
+        self.featureDiscovery = featureDiscovery
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -215,7 +218,10 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                     self.delegate?.onQuerySubmitted(text)
 
                 case .aiChat:
-                    DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarPromptSubmitted)
+                    DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarPromptSubmitted,
+                                               withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
+                    featureDiscovery.setWasUsedBefore(.aiChat)
+                    
                     // If we (re)add the web rag button, then we need to add it to the array of tools Duck.ai should use
                     //  for this submission.
                     self.delegate?.onPromptSubmitted(text, tools: nil)

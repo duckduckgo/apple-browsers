@@ -13,7 +13,15 @@
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'was_used_before',
+                description: 'Indicates if AI Chat was used before this submission: 1=returning user, 0=first-time user',
+                type: 'integer',
+            },
+        ],
     },
     m_aichat_experimental_omnibar_query_submitted: {
         description: 'Fires when user submits a search query through the experimental omnibar',

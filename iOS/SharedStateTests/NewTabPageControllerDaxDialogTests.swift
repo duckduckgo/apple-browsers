@@ -27,6 +27,12 @@ import Persistence
 import BrowserServicesKit
 @testable import Configuration
 
+private class MockURLBasedDebugCommands: URLBasedDebugCommands {
+    func handle(url: URL) -> Bool {
+        return false
+    }
+}
+
 final class NewTabPageControllerDaxDialogTests: XCTestCase {
 
     var variantManager: CapturingVariantManager!
@@ -59,7 +65,8 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             daxDialogsManager: specProvider,
             faviconLoader: EmptyFaviconLoading(),
             messageNavigationDelegate: MockMessageNavigationDelegate(),
-            appSettings: AppSettingsMock()
+            appSettings: AppSettingsMock(),
+            internalUserCommands: MockURLBasedDebugCommands()
         )
 
         let window = UIWindow(frame: UIScreen.main.bounds)

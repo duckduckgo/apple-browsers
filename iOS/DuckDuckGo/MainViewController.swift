@@ -234,6 +234,8 @@ class MainViewController: UIViewController {
     
     private let daxEasterEggPresenter: DaxEasterEggPresenting
 
+    private let internalUserCommands: URLBasedDebugCommands = InternalUserCommands()
+
     init(
         bookmarksDatabase: CoreDataDatabase,
         bookmarksDatabaseCleaner: BookmarkDatabaseCleaner,
@@ -348,7 +350,8 @@ class MainViewController: UIViewController {
                                                                                          newTabDaxDialogManager: daxDialogsManager,
                                                                                          faviconLoader: faviconLoader,
                                                                                          messageNavigationDelegate: self,
-                                                                                         appSettings: appSettings)
+                                                                                         appSettings: appSettings,
+                                                                                         internalUserCommands: internalUserCommands)
 
         let suggestionTrayDependencies = SuggestionTrayDependencies(favoritesViewModel: favoritesViewModel,
                                                                     bookmarksDatabase: bookmarksDatabase,
@@ -1003,7 +1006,8 @@ class MainViewController: UIViewController {
                                                   daxDialogsManager: daxDialogsManager,
                                                   faviconLoader: faviconLoader,
                                                   messageNavigationDelegate: self,
-                                                  appSettings: appSettings)
+                                                  appSettings: appSettings,
+                                                  internalUserCommands: internalUserCommands)
 
         controller.delegate = self
         controller.chromeDelegate = self
@@ -2309,7 +2313,7 @@ extension MainViewController: BrowserChromeDelegate {
         guard let url = favorite.urlObject else { return }
 
         // Handle shortcuts for internal testing
-        if let favUrl = favorite.url, let url = URL(string: favUrl), InternalUserCommands().handle(url: url) {
+        if let favUrl = favorite.url, let url = URL(string: favUrl), internalUserCommands.handle(url: url) {
             dismissSuggestionTray()
             return
         }

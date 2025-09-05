@@ -20,9 +20,15 @@
 import Core
 import UIKit
 import Foundation
+import BrowserServicesKit
 
 /// Used to specify custom commands executed through Favorite shortcuts from Home Screen or overlay
-class InternalUserCommands {
+
+protocol URLBasedDebugCommands {
+    func handle(url: URL) -> Bool
+}
+
+class InternalUserCommands: URLBasedDebugCommands {
 
     enum Constants {
         static let scheme = "ddg-internal"
@@ -32,14 +38,30 @@ class InternalUserCommands {
         case reloadConfig
     }
 
+    init(internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: InternalUserStore()),
+         presenter: ActionMessagePresenting.Type = ActionMessageView.self,
+         configFetching: AppConfigurationFetching = AppConfigurationFetch()) {
+        self.internalUserDecider = internalUserDecider
+        self.presenter = presenter
+        self.configFetching = configFetching
+    }
+
+    let internalUserDecider: InternalUserDecider
+    let presenter: ActionMessagePresenting.Type
+    let configFetching: AppConfigurationFetching
+
     private func present(message: String) {
         DispatchQueue.main.async {
-            ActionMessageView.present(message: message)
+            self.presenter.present(message: message,
+                                   actionTitle: nil,
+                                   presentationLocation: .withBottomBar(andAddressBarBottom: false),
+                                   duration: 3.0,
+                                   onAction: {}, onDidDismiss: {})
         }
     }
 
     public func handle(url: URL) -> Bool {
-        guard InternalUserStore().isInternalUser || isDebugBuild,
+        guard internalUserDecider.isInternalUser,
               url.scheme == Constants.scheme else { return false }
 
         guard let command = Command(rawValue: url.host ?? "") else {
@@ -49,7 +71,9 @@ class InternalUserCommands {
 
         switch command {
         case .reloadConfig:
-            AppConfigurationFetch().start(isDebug: true) { result in
+            configFetching.start(isBackgroundFetch: false,
+                                 isDebug: true,
+                                 forceRefresh: true) { result in
                 switch result {
                 case .assetsUpdated(let protectionsUpdated):
                     if protectionsUpdated {

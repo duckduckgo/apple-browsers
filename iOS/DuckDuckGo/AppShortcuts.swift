@@ -84,19 +84,28 @@ struct AppShortcuts: AppShortcutsProvider {
         )
         AppShortcut(intent: AIChatIntent(),
                     phrases: [
+                        "Access Duck AI on \(.applicationName)",
                         "Access \(.applicationName) AI chat",
-                        "Ask Duck.ai on \(.applicationName)",
+                        "Access \(.applicationName) Chat",
+                        "Ask Duck AI on \(.applicationName)",
                         "Ask \(.applicationName) AI chat",
-                        "Go to \(.applicationName) AI chat",
-                        "Launch Duck.ai on \(.applicationName)",
-                        "Launch \(.applicationName) AI chat",
+                        "Ask \(.applicationName) Chat",
+                        "Go to Duck AI on \(.applicationName)",
+                        "Go to \(.applicationName) AI Chat",
+                        "Go to \(.applicationName) Chat",
+                        "Launch Duck AI on \(.applicationName)",
+                        "Launch \(.applicationName) AI Chat",
+                        "Launch \(.applicationName) Chat",
+                        "New \(.applicationName) AI Chat",
                         "New \(.applicationName) Chat",
-                        "Open Duck.ai on \(.applicationName)",
-                        "Open \(.applicationName) AI chat",
-                        "Start \(.applicationName) AI chat"
+                        "Open Duck AI on \(.applicationName)",
+                        "Open \(.applicationName) AI Chat",
+                        "Open \(.applicationName) Chat",
+                        "Start \(.applicationName) AI chat",
+                        "Start \(.applicationName) Chat"
                     ],
                     shortTitle: "AI Chat",
-                    systemImageName: "bubble.right"
+                    systemImageName: "circle.fill"
         )
     }
 }

@@ -20,15 +20,53 @@ import Foundation
 import StoreKit
 import os.log
 import Networking
+import Common
+import PixelKit
 
-public enum StripePurchaseFlowError: Swift.Error {
+public enum StripePurchaseFlowError: DDGError {
     case noProductsFound
     case accountCreationFailed(Error)
+
+    public var description: String {
+        switch self {
+        case .noProductsFound: "No products found."
+        case .accountCreationFailed(let error): "Account creation failed: \(error)"
+        }
+    }
+
+    public var errorDomain: String { "com.duckduckgo.subscription.StripePurchaseFlowError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .noProductsFound: 12700
+        case .accountCreationFailed: 12701
+        }
+    }
+
+    public var underlyingError: (any Error)? {
+        switch self {
+        case .accountCreationFailed(let error): error
+        default: nil
+        }
+    }
+
+    public static func == (lhs: StripePurchaseFlowError, rhs: StripePurchaseFlowError) -> Bool {
+        switch (lhs, rhs) {
+        case (.noProductsFound, .noProductsFound):
+            return true
+        case let (.accountCreationFailed(lhsError), .accountCreationFailed(rhsError)):
+            return String(describing: lhsError) == String(describing: rhsError)
+        default:
+            return false
+        }
+    }
 }
 
 public protocol StripePurchaseFlowV2 {
+    typealias PrepareResult = (purchaseUpdate: PurchaseUpdate, accountCreationDuration: WidePixel.MeasuredInterval?)
+
     func subscriptionOptions() async -> Result<SubscriptionOptionsV2, StripePurchaseFlowError>
-    func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PurchaseUpdate, StripePurchaseFlowError>
+    func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PrepareResult, StripePurchaseFlowError>
     func completeSubscriptionPurchase() async
 }
 
@@ -73,7 +111,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
                                               availableEntitlements: features))
     }
 
-    public func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PurchaseUpdate, StripePurchaseFlowError> {
+    public func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PrepareResult, StripePurchaseFlowError> {
         Logger.subscription.log("Preparing subscription purchase")
 
         await subscriptionManager.signOut(notifyUI: false)
@@ -82,17 +120,20 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
             if let subscriptionExpired = await isSubscriptionExpired(),
                subscriptionExpired == true,
                let tokenContainer = try? await subscriptionManager.getTokenContainer(policy: .localValid) {
-                return .success(PurchaseUpdate.redirect(withToken: tokenContainer.accessToken))
+                return .success((purchaseUpdate: PurchaseUpdate.redirect(withToken: tokenContainer.accessToken), accountCreationDuration: nil))
             } else {
-                return .success(PurchaseUpdate.redirect(withToken: ""))
+                return .success((purchaseUpdate: PurchaseUpdate.redirect(withToken: ""), accountCreationDuration: nil))
             }
         } else {
             do {
                 // Create account
+                var accountCreation = WidePixel.MeasuredInterval.startingNow()
                 let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded)
-                return .success(PurchaseUpdate.redirect(withToken: tokenContainer.accessToken))
+                accountCreation.complete()
+
+                return .success((purchaseUpdate: PurchaseUpdate.redirect(withToken: tokenContainer.accessToken), accountCreationDuration: accountCreation))
             } catch {
-                Logger.subscriptionStripePurchaseFlow.error("Account creation failed: \(error.localizedDescription, privacy: .public)")
+                Logger.subscriptionStripePurchaseFlow.error("Account creation failed: \(String(describing: error), privacy: .public)")
                 return .failure(.accountCreationFailed(error))
             }
         }

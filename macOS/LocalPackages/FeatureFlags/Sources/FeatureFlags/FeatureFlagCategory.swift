@@ -49,6 +49,7 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .aiChatSidebar,
                 .aiChatTextSummarization,
                 .aiChatTextTranslation,
+                .aiChatPageContext,
                 .duckAISearchParameter:
             return .duckAI
         case .osSupportForceUnsupportedMessage,

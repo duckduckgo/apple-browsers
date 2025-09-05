@@ -22,6 +22,7 @@ import Combine
 import Persistence
 import Core
 import UIKit
+import AIChat
 
 // MARK: - TextEntryMode Enum
 public enum TextEntryMode: String, CaseIterable {
@@ -68,6 +69,9 @@ final class SwitchBarHandler: SwitchBarHandling {
     // MARK: - Dependencies
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let storage: KeyValueStoring
+    private let aiChatSettings: AIChatSettingsProvider
+    private let funnelState: SwitchBarFunnelProviding
+    private var sessionStateMetrics: SessionStateMetricsProviding
 
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
@@ -116,16 +120,23 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
     private var backgroundObserver: NSObjectProtocol?
 
-    init(voiceSearchHelper: VoiceSearchHelperProtocol, storage: KeyValueStoring) {
+    init(voiceSearchHelper: VoiceSearchHelperProtocol, storage: KeyValueStoring,
+         aiChatSettings: AIChatSettingsProvider,
+         funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
+         sessionStateMetrics: SessionStateMetricsProviding) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
+        self.aiChatSettings = aiChatSettings
+        self.funnelState = funnelState
+        self.sessionStateMetrics = sessionStateMetrics
         
         // Set up app lifecycle observers to reset session flags
         backgroundObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.didEnterBackgroundNotification,
             object: nil,
             queue: .main
-        ) { _ in
+        ) { [weak self] _ in
+            self?.sessionStateMetrics.finalizeSession()
             Self.resetSessionFlags()
         }
     }
@@ -141,7 +152,11 @@ final class SwitchBarHandler: SwitchBarHandling {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         
-        updateModeUsage(currentToggleState)
+        // Process funnel step
+        processSubmissionFunnelStep(mode: currentToggleState)
+        
+        // Process session activity
+        processSessionActivity(mode: currentToggleState)
         textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
     }
 
@@ -166,11 +181,48 @@ final class SwitchBarHandler: SwitchBarHandling {
     }
 
     func markUserInteraction() {
+        let isFirstInteraction = !hasUserInteractedWithText
         hasUserInteractedWithText = true
+        
+        // Process first interaction funnel step (if this is the first text interaction in this session)
+        if isFirstInteraction {
+            funnelState.processStep(.firstInteraction)
+        }
     }
 
     func clearButtonTapped() {
         clearButtonTappedSubject.send(())
+    }
+    
+    
+    /// Process funnel step when user submits text
+    private func processSubmissionFunnelStep(mode: TextEntryMode) {
+        switch mode {
+        case .search:
+            funnelState.processStep(.searchSubmitted)
+        case .aiChat:
+            funnelState.processStep(.promptSubmitted)
+        }
+    }
+    
+    private func processSessionActivity(mode: TextEntryMode) {
+        let previouslyUsedBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
+        
+        // Record activity for session metrics
+        switch mode {
+        case .search:
+            sessionStateMetrics.incrementActivity(.searchSubmitted)
+            Self.hasUsedSearchInSession = true
+        case .aiChat:
+            sessionStateMetrics.incrementActivity(.promptSubmitted)
+            Self.hasUsedAIChatInSession = true
+        }
+        
+        // Fire pixel only when user achieves both-mode usage for the first time in this session
+        let nowUsesBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
+        if nowUsesBothModes && !previouslyUsedBothModes {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarSessionBothModes)
+        }
     }
 
     func saveToggleState() {
@@ -195,23 +247,5 @@ final class SwitchBarHandler: SwitchBarHandling {
     private static func resetSessionFlags() {
         hasUsedSearchInSession = false
         hasUsedAIChatInSession = false
-    }
-    
-    // MARK: - Mode Usage Detection  
-    private func updateModeUsage(_ mode: TextEntryMode) {
-        let previouslyUsedBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
-        
-        switch mode {
-        case .search:
-            Self.hasUsedSearchInSession = true
-        case .aiChat:
-            Self.hasUsedAIChatInSession = true
-        }
-        
-        // Fire pixel only when user achieves both-mode usage for the first time in this session
-        let nowUsesBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
-        if nowUsesBothModes && !previouslyUsedBothModes {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarSessionBothModes)
-        }
     }
 }

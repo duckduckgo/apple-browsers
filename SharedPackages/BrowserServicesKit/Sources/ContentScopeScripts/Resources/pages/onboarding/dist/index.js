@@ -8147,6 +8147,7 @@
   var siblings = /* @__PURE__ */ new WeakMap();
   var animations = /* @__PURE__ */ new WeakMap();
   var intersections = /* @__PURE__ */ new WeakMap();
+  var mutationObservers = /* @__PURE__ */ new WeakMap();
   var intervals = /* @__PURE__ */ new WeakMap();
   var options = /* @__PURE__ */ new WeakMap();
   var debounces = /* @__PURE__ */ new WeakMap();
@@ -8157,8 +8158,8 @@
   var TGT = "__aa_tgt";
   var DEL = "__aa_del";
   var NEW = "__aa_new";
-  var handleMutations = (mutations2) => {
-    const elements = getElements(mutations2);
+  var handleMutations = (mutations) => {
+    const elements = getElements(mutations);
     if (elements) {
       elements.forEach((el) => animate(el));
     }
@@ -8231,12 +8232,11 @@
       requestAnimationFrame(() => callback());
     }
   }
-  var mutations;
   var resize;
   var supportedBrowser = typeof window !== "undefined" && "ResizeObserver" in window;
   if (supportedBrowser) {
     root = document.documentElement;
-    mutations = new MutationObserver(handleMutations);
+    new MutationObserver(handleMutations);
     resize = new ResizeObserver(handleResizes);
     window.addEventListener("scroll", () => {
       scrollY = window.scrollY;
@@ -8244,8 +8244,8 @@
     });
     resize.observe(root);
   }
-  function getElements(mutations2) {
-    const observedNodes = mutations2.reduce((nodes, mutation) => {
+  function getElements(mutations) {
+    const observedNodes = mutations.reduce((nodes, mutation) => {
       return [
         ...nodes,
         ...Array.from(mutation.addedNodes),
@@ -8255,7 +8255,7 @@
     const onlyCommentNodesObserved = observedNodes.every((node) => node.nodeName === "#comment");
     if (onlyCommentNodesObserved)
       return false;
-    return mutations2.reduce((elements, mutation) => {
+    return mutations.reduce((elements, mutation) => {
       if (elements === false)
         return false;
       if (mutation.target instanceof Element) {
@@ -8425,7 +8425,7 @@
     }
     animations.set(el, animation);
     coords.set(el, newCoords);
-    animation.addEventListener("finish", updatePos.bind(null, el));
+    animation.addEventListener("finish", () => updatePos(el), { once: true });
   }
   function add(el) {
     if (NEW in el)
@@ -8451,7 +8451,7 @@
       animation.play();
     }
     animations.set(el, animation);
-    animation.addEventListener("finish", updatePos.bind(null, el));
+    animation.addEventListener("finish", () => updatePos(el), { once: true });
   }
   function cleanUp(el, styles) {
     var _a;
@@ -8517,7 +8517,10 @@
           transform: "scale(.98)",
           opacity: 0
         }
-      ], { duration: optionsOrPlugin.duration, easing: "ease-out" });
+      ], {
+        duration: optionsOrPlugin.duration,
+        easing: "ease-out"
+      });
     } else {
       const [keyframes, options2] = getPluginTuple(optionsOrPlugin(el, "remove", oldCoords));
       if ((options2 === null || options2 === void 0 ? void 0 : options2.styleReset) !== false) {
@@ -8528,7 +8531,9 @@
       animation.play();
     }
     animations.set(el, animation);
-    animation.addEventListener("finish", cleanUp.bind(null, el, styleReset));
+    animation.addEventListener("finish", () => cleanUp(el, styleReset), {
+      once: true
+    });
   }
   function adjustScroll(el, finalX, finalY, optionsOrPlugin) {
     const scrollDeltaX = scrollX - finalX;
@@ -8582,7 +8587,7 @@
     return [top, left, width, height];
   }
   function autoAnimate(el, config = {}) {
-    if (mutations && resize) {
+    if (supportedBrowser && resize) {
       const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
       const isDisabledDueToReduceMotion = mediaQuery.matches && !isPlugin(config) && !config.disrespectUserMotionPreference;
       if (!isDisabledDueToReduceMotion) {
@@ -8594,13 +8599,19 @@
         if (isPlugin(config)) {
           options.set(el, config);
         } else {
-          options.set(el, { duration: 250, easing: "ease-in-out", ...config });
+          options.set(el, {
+            duration: 250,
+            easing: "ease-in-out",
+            ...config
+          });
         }
-        mutations.observe(el, { childList: true });
+        const mo = new MutationObserver(handleMutations);
+        mo.observe(el, { childList: true });
+        mutationObservers.set(el, mo);
         parents.add(el);
       }
     }
-    return Object.freeze({
+    const controller = Object.freeze({
       parent: el,
       enable: () => {
         enabled.add(el);
@@ -8608,8 +8619,39 @@
       disable: () => {
         enabled.delete(el);
       },
-      isEnabled: () => enabled.has(el)
+      isEnabled: () => enabled.has(el),
+      destroy: () => {
+        enabled.delete(el);
+        parents.delete(el);
+        options.delete(el);
+        const mo = mutationObservers.get(el);
+        mo === null || mo === void 0 ? void 0 : mo.disconnect();
+        mutationObservers.delete(el);
+        forEach(el, (node) => {
+          resize === null || resize === void 0 ? void 0 : resize.unobserve(node);
+          const a3 = animations.get(node);
+          try {
+            a3 === null || a3 === void 0 ? void 0 : a3.cancel();
+          } catch {
+          }
+          animations.delete(node);
+          const io = intersections.get(node);
+          io === null || io === void 0 ? void 0 : io.disconnect();
+          intersections.delete(node);
+          const i3 = intervals.get(node);
+          if (i3)
+            clearInterval(i3);
+          intervals.delete(node);
+          const d3 = debounces.get(node);
+          if (d3)
+            clearTimeout(d3);
+          debounces.delete(node);
+          coords.delete(node);
+          siblings.delete(node);
+        });
+      }
     });
+    return controller;
   }
 
   // ../node_modules/@formkit/auto-animate/preact/index.mjs
@@ -8625,6 +8667,12 @@
       if (element.current instanceof HTMLElement)
         setController(autoAnimate(element.current, options2 || {}));
     }, []);
+    y2(() => {
+      return () => {
+        var _a;
+        (_a = controller === null || controller === void 0 ? void 0 : controller.destroy) === null || _a === void 0 ? void 0 : _a.call(controller);
+      };
+    }, [controller]);
     return [element, setEnabled];
   }
 
@@ -10231,7 +10279,7 @@
   };
 
   // shared/components/Switch/Switch.js
-  function Switch({ checked = false, platformName, size, theme, ...props }) {
+  function Switch({ checked = false, platformName, size, theme, inputProps, ...props }) {
     const { onChecked, onUnchecked, ariaLabel, pending } = props;
     function change(e3) {
       if (e3.target.checked === true) {
@@ -10249,7 +10297,8 @@
         "aria-label": ariaLabel,
         class: Switch_default.input,
         checked,
-        onChange: change
+        onChange: change,
+        ...inputProps
       }
     ), /* @__PURE__ */ _("span", { class: Switch_default.switch, style: "transition-duration: 130ms;transition-delay: 0ms;" }));
   }

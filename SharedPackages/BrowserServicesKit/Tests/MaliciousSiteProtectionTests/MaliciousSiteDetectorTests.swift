@@ -133,7 +133,7 @@ class MaliciousSiteDetectorTests: XCTestCase {
     func testWhenMatchesApiFailsThenEventIsFired() async throws {
         let e = expectation(description: "matchesForHashPrefix called")
         mockAPIClient.matchesForHashPrefix = { _ in
-            let error = Networking.APIRequestV2.Error.urlSession(URLError(.badServerResponse))
+            let error = Networking.APIRequestV2Error.urlSession(URLError(.badServerResponse))
             XCTAssertFalse(error.isTimedOut)
             e.fulfill()
             throw error
@@ -149,7 +149,7 @@ class MaliciousSiteDetectorTests: XCTestCase {
 
         XCTAssertEqual(mockEventMapping.events.count, 1)
         switch mockEventMapping.events.last {
-        case .matchesApiFailure(APIRequestV2.Error.urlSession(URLError.badServerResponse)):
+        case .matchesApiFailure(APIRequestV2Error.urlSession(URLError.badServerResponse)):
             break
         case .none:
             XCTFail( "No event fired")
@@ -161,7 +161,7 @@ class MaliciousSiteDetectorTests: XCTestCase {
     func testWhenMatchesApiFailsWithTimeoutThenEventIsFired() async throws {
         let e = expectation(description: "matchesForHashPrefix called")
         mockAPIClient.matchesForHashPrefix = { _ in
-            let error = Networking.APIRequestV2.Error.urlSession(URLError(.timedOut))
+            let error = Networking.APIRequestV2Error.urlSession(URLError(.timedOut))
             XCTAssertTrue(error.isTimedOut) // should match testWhenMatchesRequestTimeouts_TimeoutErrorThrown!
             e.fulfill()
             throw error

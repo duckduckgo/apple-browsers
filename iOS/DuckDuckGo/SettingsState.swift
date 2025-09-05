@@ -65,6 +65,7 @@ struct SettingsState {
     var addressBar: AddressBar
     var showsFullURL: Bool
     var isExperimentalAIChatEnabled: Bool
+    var refreshButtonPosition: RefreshButtonPosition
 
     // Privacy properties
     var sendDoNotSell: Bool
@@ -124,6 +125,7 @@ struct SettingsState {
             addressBar: AddressBar(enabled: false, position: .top),
             showsFullURL: false,
             isExperimentalAIChatEnabled: false,
+            refreshButtonPosition: .addressBar,
             sendDoNotSell: true,
             autoconsentEnabled: false,
             autoclearDataEnabled: false,

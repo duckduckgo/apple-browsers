@@ -23,6 +23,7 @@ import Common
 import ContentScopeScripts
 import Combine
 import os.log
+import FeatureFlags
 import PixelKit
 
 struct ExtractedAddress: Codable {
@@ -157,9 +158,36 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     private let contentScopeProperties: ContentScopeProperties
     private let csvColumns = ["name_input", "age_input", "city_input", "state_input", "name_scraped", "age_scraped", "address_scraped", "relatives_scraped", "url", "broker name", "screenshot_id", "error", "matched_fields", "result_match", "expected_match"]
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
+    private let featureFlagger: DBPFeatureFlagging
+
+    private class DebugDBPFeatureFlagger: DBPFeatureFlagging {
+        private let featureFlagger: FeatureFlagger
+
+        var isRemoteBrokerDeliveryFeatureOn: Bool {
+            featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
+        }
+
+        var isEmailConfirmationDecouplingFeatureOn: Bool {
+            featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
+        }
+
+        init(privacyConfigManager: PrivacyConfigurationManaging) {
+            self.featureFlagger = DefaultFeatureFlagger(
+                internalUserDecider: privacyConfigManager.internalUserDecider,
+                privacyConfigManager: privacyConfigManager,
+                localOverrides: FeatureFlagLocalOverrides(
+                    keyValueStore: UserDefaults.standard,
+                    actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>()
+                ),
+                experimentManager: nil,
+                for: FeatureFlag.self
+            )
+        }
+    }
 
     init(authenticationManager: DataBrokerProtectionAuthenticationManaging) {
         let privacyConfigurationManager = DBPPrivacyConfigurationManager()
+        self.featureFlagger = DebugDBPFeatureFlagger(privacyConfigManager: privacyConfigurationManager)
         let features = ContentScopeFeatureToggles(emailProtection: false,
                                                   emailProtectionIncontextSignup: false,
                                                   credentialsAutofill: false,
@@ -220,7 +248,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                                     prefs: self.contentScopeProperties,
                                                     context: queryData,
                                                     emailService: self.emailService,
-                                                    captchaService: self.captchaService) {
+                                                    captchaService: self.captchaService,
+                                                    featureFlagger: self.featureFlagger) {
                         true
                     }
 
@@ -387,6 +416,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 context: query,
                                 emailService: self.emailService,
                                 captchaService: self.captchaService,
+                                featureFlagger: self.featureFlagger,
                                 stageDurationCalculator: FakeStageDurationCalculator(),
                                 pixelHandler: fakePixelHandler,
                                 executionConfig: .init(),
@@ -440,6 +470,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     context: brokerProfileQueryData,
                     emailService: self.emailService,
                     captchaService: self.captchaService,
+                    featureFlagger: self.featureFlagger,
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: .init(),

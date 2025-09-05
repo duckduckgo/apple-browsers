@@ -357,6 +357,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     private let captchaService: CaptchaService
     private let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let executionConfig: BrokerJobExecutionConfig
+    private let featureFlagger: DBPFeatureFlagging
 
     var hasValidInput: Bool {
         !firstName.isEmpty && !lastName.isEmpty && !city.isEmpty && !state.isEmpty && !birthYear.isEmpty
@@ -403,6 +404,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         }
         
         let appDependencies = AppDependencyProvider.shared
+        self.featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
         let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
             subscriptionManager: appDependencies.subscriptionAuthV1toV2Bridge,
             runTypeProvider: appDependencies.dbpSettings,
@@ -493,6 +495,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                             context: brokerProfileQueryData,
                             emailService: emailService,
                             captchaService: captchaService,
+                            featureFlagger: featureFlagger,
                             stageDurationCalculator: FakeStageDurationCalculator(),
                             pixelHandler: fakePixelHandler,
                             executionConfig: executionConfig
@@ -621,6 +624,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                     context: brokerProfileQueryData,
                     emailService: emailService,
                     captchaService: captchaService,
+                    featureFlagger: featureFlagger,
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: executionConfig

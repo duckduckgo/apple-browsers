@@ -1,5 +1,5 @@
 //
-//  WebExtensionPathsCacheMock.swift
+//  StringExtensions.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,30 +16,17 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
+extension String {
 
-@testable import DuckDuckGo_Privacy_Browser
-
-@available(macOS 15.4, *)
-final class WebExtensionPathsCachingMock: WebExtensionPathsCaching {
-
-    var cache: [String] = []
-
-    var addCalled = false
-    var addedURL: String?
-    func add(_ url: String) {
-        addCalled = true
-        addedURL = url
-        cache.append(url)
+    func escapedJavaScriptString() -> String {
+        self.replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "'", with: "\\'")
+            .replacingOccurrences(of: "\n", with: "\\n")
     }
 
-    var removeCalled = false
-    var removedURL: String?
-    func remove(_ url: String) {
-        removeCalled = true
-        removedURL = url
-        cache.removeAll { $0 == url }
+    func dropping(suffix: String) -> String {
+        return hasSuffix(suffix) ? String(dropLast(suffix.count)) : self
     }
+
 }
-
-#endif

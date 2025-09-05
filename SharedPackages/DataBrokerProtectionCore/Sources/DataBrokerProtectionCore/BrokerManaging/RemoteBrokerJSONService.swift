@@ -34,10 +34,6 @@ extension FileManager: ZipArchiveHandling {
     }
 }
 
-public protocol RemoteBrokerDeliveryFeatureFlagging {
-    var isRemoteBrokerDeliveryFeatureOn: Bool { get }
-}
-
 public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     enum Error: Swift.Error, CustomNSError {
         case serverError(httpCode: Int?)

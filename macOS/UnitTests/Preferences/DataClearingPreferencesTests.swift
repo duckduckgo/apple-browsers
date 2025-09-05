@@ -28,7 +28,7 @@ class MockFireButtonPreferencesPersistor: FireButtonPreferencesPersistor {
     var autoClearEnabled: Bool = false
     var warnBeforeClearingEnabled: Bool = false
     var loginDetectionEnabled: Bool = false
-    var openFireWindowByDefault: Bool = false
+    var shouldOpenFireWindowByDefault: Bool = false
 }
 
 fileprivate extension DataClearingPreferences {
@@ -84,13 +84,13 @@ class DataClearingPreferencesTests: XCTestCase {
     func testWhenOpenFireWindowByDefaultIsUpdatedThenPersistorUpdates() {
         let mockPersistor = MockFireButtonPreferencesPersistor()
         let dataClearingPreferences = DataClearingPreferences(persistor: mockPersistor)
-        dataClearingPreferences.openFireWindowByDefault = true
+        dataClearingPreferences.shouldOpenFireWindowByDefault = true
 
-        XCTAssertTrue(mockPersistor.openFireWindowByDefault)
+        XCTAssertTrue(mockPersistor.shouldOpenFireWindowByDefault)
 
-        dataClearingPreferences.openFireWindowByDefault = false
+        dataClearingPreferences.shouldOpenFireWindowByDefault = false
 
-        XCTAssertFalse(mockPersistor.openFireWindowByDefault)
+        XCTAssertFalse(mockPersistor.shouldOpenFireWindowByDefault)
     }
 
     @MainActor

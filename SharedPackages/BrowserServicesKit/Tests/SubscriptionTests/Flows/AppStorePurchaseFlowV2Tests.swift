@@ -58,7 +58,12 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
         let result = await sut.purchaseSubscription(with: "testSubscriptionID")
 
         XCTAssertTrue(appStoreRestoreFlowMock.restoreAccountFromPastPurchaseCalled)
-        XCTAssertEqual(result, .failure(.activeSubscriptionAlreadyPresent))
+        switch result {
+        case .failure(let error):
+            XCTAssertEqual(error, .activeSubscriptionAlreadyPresent)
+        case .success:
+            XCTFail("Unexpected success")
+        }
     }
 
     func test_purchaseSubscription_withNoProductsFound_returnsError() async {
@@ -88,7 +93,12 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
         let result = await sut.purchaseSubscription(with: "testSubscriptionID")
 
         XCTAssertTrue(storePurchaseManagerMock.purchaseSubscriptionCalled)
-        XCTAssertEqual(result, .success("transactionJWS"))
+        switch result {
+        case .success(let payload):
+            XCTAssertEqual(payload.transactionJWS, "transactionJWS")
+        case .failure(let error):
+            XCTFail("Unexpected failure: \(error)")
+        }
     }
 
     func test_purchaseSubscription_purchaseCancelledByUser_returnsCancelledError() async {
@@ -99,7 +109,12 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
 
         let result = await sut.purchaseSubscription(with: "testSubscriptionID")
 
-        XCTAssertEqual(result, .failure(.cancelledByUser))
+        switch result {
+        case .failure(let error):
+            XCTAssertEqual(error, .cancelledByUser)
+        case .success:
+            XCTFail("Unexpected success")
+        }
     }
 
     func test_purchaseSubscription_purchaseFailed_returnsPurchaseFailedError() async {
@@ -111,7 +126,12 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
 
         let result = await sut.purchaseSubscription(with: "testSubscriptionID")
 
-        XCTAssertEqual(result, .failure(.purchaseFailed(underlyingError)))
+        switch result {
+        case .failure(let error):
+            XCTAssertEqual(error, .purchaseFailed(underlyingError))
+        case .success:
+            XCTFail("Unexpected success")
+        }
     }
 
     // MARK: - completeSubscriptionPurchase Tests

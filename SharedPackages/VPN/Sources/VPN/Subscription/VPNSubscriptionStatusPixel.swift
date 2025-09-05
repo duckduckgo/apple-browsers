@@ -54,6 +54,8 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
         }
     }
 
+    public var error: (any Error)? { nil }
+
     public var parameters: [String: String]? {
         switch self {
         case .signedIn(let isSubscriptionActive, let isAuthV2, let sourceObject),
@@ -75,10 +77,6 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
                 "notificationObjectClass": Self.sourceClass(from: sourceObject)
             ]
         }
-    }
-
-    public var error: (any Error)? {
-        nil
     }
 
     static func sourceClass(from sourceObject: Any?) -> String {

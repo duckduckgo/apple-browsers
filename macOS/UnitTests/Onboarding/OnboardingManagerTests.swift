@@ -19,6 +19,7 @@
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 import SwiftUI
+import Persistence
 
 class OnboardingManagerTests: XCTestCase {
 
@@ -40,7 +41,7 @@ class OnboardingManagerTests: XCTestCase {
         defaultBrowserProvider = CapturingDefaultBrowserProvider()
         appearancePersistor = MockAppearancePreferencesPersistor()
         appearancePreferences = AppearancePreferences(persistor: appearancePersistor, privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
-        startupPersistor = StartupPreferencesUserDefaultsPersistor()
+        startupPersistor = StartupPreferencesUserDefaultsPersistor(keyValueStore: MockKeyValueStore())
         fireButtonPreferencesPersistor = MockFireButtonPreferencesPersistor()
         dataClearingPreferences = DataClearingPreferences(
             persistor: fireButtonPreferencesPersistor,
@@ -250,4 +251,16 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(self.appearancePersistor.homeButtonPosition, .hidden)
     }
 
+}
+
+private final class MockKeyValueStore: ThrowingKeyValueStoring {
+    func object(forKey defaultName: String) throws -> Any? {
+        return nil
+    }
+
+    func set(_ value: Any?, forKey defaultName: String) throws {
+    }
+
+    func removeObject(forKey defaultName: String) throws {
+    }
 }

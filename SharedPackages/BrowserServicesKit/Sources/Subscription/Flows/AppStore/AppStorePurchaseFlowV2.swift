@@ -20,35 +20,53 @@ import Foundation
 import StoreKit
 import os.log
 import Networking
+import Common
+import PixelKit
 
-public enum AppStorePurchaseFlowError: Swift.Error, Equatable, LocalizedError {
+public enum AppStorePurchaseFlowError: DDGError {
     case noProductsFound
     case activeSubscriptionAlreadyPresent
     case authenticatingWithTransactionFailed
-    case accountCreationFailed(Swift.Error)
-    case purchaseFailed(Swift.Error)
+    case accountCreationFailed(Error)
+    case purchaseFailed(Error)
     case cancelledByUser
     case missingEntitlements
-    case internalError(Swift.Error?)
+    case internalError(Error?)
 
-    public var errorDescription: String? {
+    public var description: String {
         switch self {
-        case .noProductsFound:
-            "No products found"
-        case .activeSubscriptionAlreadyPresent:
-            "An active subscription is already present"
-        case .authenticatingWithTransactionFailed:
-            "Authenticating with transaction failed"
-        case .accountCreationFailed(let subError):
-            "Account creation failed: \(subError.localizedDescription)"
-        case .purchaseFailed(let subError):
-            "Purchase failed: \(subError.localizedDescription)"
-        case .cancelledByUser:
-            "Purchase cancelled by user"
-        case .missingEntitlements:
-            "Missing entitlements"
-        case .internalError(let error):
-            "Internal error: \(error?.localizedDescription ?? "<nil>" )"
+        case .noProductsFound: "No subscription products found in the App Store"
+        case .activeSubscriptionAlreadyPresent: "An active subscription is already present on this account"
+        case .authenticatingWithTransactionFailed: "Failed to authenticate the subscription transaction"
+        case .accountCreationFailed(let subError): "Failed to create subscription account: \(String(describing: subError))"
+        case .purchaseFailed(let subError): "Subscription purchase failed: \(String(describing: subError))"
+        case .cancelledByUser: "Subscription purchase was cancelled by user"
+        case .missingEntitlements: "Subscription completed but entitlements are missing"
+        case .internalError(let error): "An internal error occurred during purchase: \(String(describing: error))"
+        }
+    }
+
+    public var errorDomain: String { "com.duckduckgo.subscription.AppStorePurchaseFlowError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .noProductsFound: 12900
+        case .activeSubscriptionAlreadyPresent: 12901
+        case .authenticatingWithTransactionFailed: 12902
+        case .accountCreationFailed: 12903
+        case .purchaseFailed: 12904
+        case .cancelledByUser: 12905
+        case .missingEntitlements: 12906
+        case .internalError: 12907
+        }
+    }
+
+    public var underlyingError: (any Error)? {
+        switch self {
+        case .accountCreationFailed(let error): error
+        case .purchaseFailed(let error): error
+        case .internalError(let error): error
+        default: nil
         }
     }
 
@@ -62,9 +80,9 @@ public enum AppStorePurchaseFlowError: Swift.Error, Equatable, LocalizedError {
             (.internalError, .internalError):
             return true
         case let (.accountCreationFailed(lhsError), .accountCreationFailed(rhsError)):
-            return lhsError.localizedDescription == rhsError.localizedDescription
+            return String(describing: lhsError) == String(describing: rhsError)
         case let (.purchaseFailed(lhsError), .purchaseFailed(rhsError)):
-            return lhsError.localizedDescription == rhsError.localizedDescription
+            return String(describing: lhsError) == String(describing: rhsError)
         default:
             return false
         }
@@ -74,7 +92,9 @@ public enum AppStorePurchaseFlowError: Swift.Error, Equatable, LocalizedError {
 @available(macOS 12.0, iOS 15.0, *)
 public protocol AppStorePurchaseFlowV2 {
     typealias TransactionJWS = String
-    func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<TransactionJWS, AppStorePurchaseFlowError>
+    typealias PurchaseResult = (transactionJWS: TransactionJWS, accountCreationDuration: WidePixel.MeasuredInterval?)
+
+    func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<PurchaseResult, AppStorePurchaseFlowError>
 
     /// Completes the subscription purchase by validating the transaction.
     ///
@@ -100,10 +120,12 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
         self.appStoreRestoreFlow = appStoreRestoreFlow
     }
 
-    public func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<TransactionJWS, AppStorePurchaseFlowError> {
+    public func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<PurchaseResult, AppStorePurchaseFlowError> {
         Logger.subscriptionAppStorePurchaseFlow.log("Purchasing Subscription")
 
         var externalID: String?
+        var accountCreationDuration: WidePixel.MeasuredInterval?
+
         if let existingExternalID = await getExpiredSubscriptionID() {
             Logger.subscriptionAppStorePurchaseFlow.log("External ID retrieved from expired subscription")
             externalID = existingExternalID
@@ -116,14 +138,17 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
                 Logger.subscriptionAppStorePurchaseFlow.log("An active subscription is already present")
                 return .failure(.activeSubscriptionAlreadyPresent)
             case .failure(let error):
-                Logger.subscriptionAppStorePurchaseFlow.log("Failed to restore an account from a past purchase: \(error.localizedDescription, privacy: .public)")
+                Logger.subscriptionAppStorePurchaseFlow.log("Failed to restore an account from a past purchase: \(String(describing: error), privacy: .public)")
                 do {
+                    var creationStart = WidePixel.MeasuredInterval.startingNow()
                     externalID = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded).decodedAccessToken.externalID
+                    creationStart.complete()
+                    accountCreationDuration = creationStart
                 } catch Networking.OAuthClientError.missingTokenContainer {
-                    Logger.subscriptionStripePurchaseFlow.error("Failed to create a new account: \(error.localizedDescription, privacy: .public)")
+                    Logger.subscriptionStripePurchaseFlow.error("Failed to create a new account: \(String(describing: error), privacy: .public)")
                     return .failure(.accountCreationFailed(error))
                 } catch {
-                    Logger.subscriptionStripePurchaseFlow.fault("Failed to create a new account: \(error.localizedDescription, privacy: .public), the operation is unrecoverable")
+                    Logger.subscriptionStripePurchaseFlow.fault("Failed to create a new account: \(String(describing: error), privacy: .public), the operation is unrecoverable")
                     return .failure(.internalError(error))
                 }
             }
@@ -137,11 +162,11 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
         // Make the purchase
         switch await storePurchaseManager.purchaseSubscription(with: subscriptionIdentifier, externalID: externalID) {
         case .success(let transactionJWS):
-            return .success(transactionJWS)
+            return .success((transactionJWS: transactionJWS, accountCreationDuration: accountCreationDuration))
         case .failure(let error):
-            Logger.subscriptionAppStorePurchaseFlow.error("purchaseSubscription error: \(error.localizedDescription, privacy: .public)")
+            Logger.subscriptionAppStorePurchaseFlow.error("purchaseSubscription error: \(String(describing: error), privacy: .public)")
 
-            await subscriptionManager.signOut(notifyUI: false) // TBD see if true is needed
+            await subscriptionManager.signOut(notifyUI: false)
 
             switch error {
             case .purchaseCancelledByUser:
@@ -189,7 +214,7 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
             }
             return nil
         } catch {
-            Logger.subscription.error("Failed to retrieve the current subscription ID: \(error.localizedDescription, privacy: .public)")
+            Logger.subscription.error("Failed to retrieve the current subscription ID: \(String(describing: error), privacy: .public)")
             return nil
         }
     }
@@ -204,7 +229,7 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
         case .success:
             Logger.subscriptionAppStorePurchaseFlow.log("Subscription recovered")
         case .failure(let error):
-            Logger.subscriptionAppStorePurchaseFlow.fault("Failed to recover Apple subscription: \(error.localizedDescription, privacy: .public)")
+            Logger.subscriptionAppStorePurchaseFlow.fault("Failed to recover Apple subscription: \(String(describing: error), privacy: .public)")
             throw error
         }
     }

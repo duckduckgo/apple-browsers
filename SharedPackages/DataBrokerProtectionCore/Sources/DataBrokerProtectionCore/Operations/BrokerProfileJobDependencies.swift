@@ -34,6 +34,7 @@ public protocol BrokerProfileJobDependencyProviding {
     var captchaService: CaptchaServiceProtocol { get }
     var vpnBypassService: VPNBypassFeatureProvider? { get }
     var jobSortPredicate: BrokerJobDataComparators.Predicate { get }
+    var featureFlagger: DBPFeatureFlagging { get }
 
     func createScanRunner(profileQuery: BrokerProfileQueryData,
                           stageDurationCalculator: StageDurationCalculator,
@@ -57,6 +58,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public let captchaService: CaptchaServiceProtocol
     public let vpnBypassService: VPNBypassFeatureProvider?
     public let jobSortPredicate: BrokerJobDataComparators.Predicate
+    public let featureFlagger: DBPFeatureFlagging
 
     public init(database: any DataBrokerProtectionRepository,
                 contentScopeProperties: ContentScopeProperties,
@@ -68,6 +70,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
                 dataBrokerProtectionSettings: DataBrokerProtectionSettings,
                 emailService: EmailServiceProtocol,
                 captchaService: CaptchaServiceProtocol,
+                featureFlagger: DBPFeatureFlagging,
                 vpnBypassService: VPNBypassFeatureProvider? = nil,
                 jobSortPredicate: @escaping BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
     ) {
@@ -83,6 +86,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         self.captchaService = captchaService
         self.vpnBypassService = vpnBypassService
         self.jobSortPredicate = jobSortPredicate
+        self.featureFlagger = featureFlagger
     }
 
     public func createScanRunner(profileQuery: BrokerProfileQueryData,
@@ -94,6 +98,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
             context: profileQuery,
             emailService: self.emailService,
             captchaService: self.captchaService,
+            featureFlagger: self.featureFlagger,
             stageDurationCalculator: stageDurationCalculator,
             pixelHandler: self.pixelHandler,
             executionConfig: self.executionConfig,
@@ -110,6 +115,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
             context: profileQuery,
             emailService: self.emailService,
             captchaService: self.captchaService,
+            featureFlagger: self.featureFlagger,
             stageCalculator: stageDurationCalculator,
             pixelHandler: self.pixelHandler,
             executionConfig: self.executionConfig,

@@ -28,7 +28,7 @@ final class SubscriptionManagerTests: XCTestCase {
 
         static let accessToken = UUID().uuidString
 
-        static let invalidTokenError = APIServiceError.serverError(statusCode: 401, errorCode: "invalid_token")
+        static let invalidTokenError = APIServiceError.serverError(statusCode: 401, statusDescription: "invalid_token")
 
         static let tld = TLD()
 

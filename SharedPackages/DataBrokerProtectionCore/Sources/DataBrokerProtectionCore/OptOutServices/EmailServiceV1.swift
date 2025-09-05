@@ -134,6 +134,7 @@ public struct EmailServiceV1: EmailServiceV1Protocol {
         }
 
         guard items.count <= Constants.maxBatchSize else {
+            assertionFailure("Batch size exceeded: \(items.count) > \(Constants.maxBatchSize)")
             throw EmailErrorV1.batchSizeExceeded
         }
 

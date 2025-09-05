@@ -99,7 +99,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210052464460517?focus=true
     case privacyProFreeTrial
 
-	/// https://app.asana.com/1/137249556945/project/1204186595873227/task/1210181044180012?focus=true
+    /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1210181044180012?focus=true
     case paidAIChat
 
     /// https://app.asana.com/1/137249556945/task/1210330600670666
@@ -113,6 +113,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1210012162616039?focus=true
     case aiChatTextSummarization
+
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210921598044116?focus=true
+    case aiChatPageContext
 
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case osSupportForceUnsupportedMessage
@@ -174,10 +177,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211127159784126?focus=true
     case subscriptionPurchaseWidePixelMeasurement
 
-    /// Rollout switch for redesigned Fire dialog (replaces legacy popover)
+    /// https://app.asana.com/1/137249556945/project/1203822806345703/task/1211227407476981?focus=true
+    case syncFeatureLevel3
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210417832822045
     case fireDialog
     /// Toggle for showing the "Manage individual sites" link in Fire dialog
     case fireDialogIndividualSitesLink
+
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -191,8 +198,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
+                .restoreSessionPrompt,
                 .refactorOfSyncPreferences,
-                .newSyncEntryPoints,
                 .subscriptionPurchaseWidePixelMeasurement:
             true
         default:
@@ -240,6 +247,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatGlobalSwitch,
                 .aiChatSidebar,
                 .aiChatTextSummarization,
+                .aiChatPageContext,
                 .shortHistoryMenu,
                 .subscriptionRebranding,
                 .importChromeShortcuts,
@@ -258,6 +266,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,
                 .subscriptionPurchaseWidePixelMeasurement,
+                .syncFeatureLevel3,
                 .fireDialog:
             return true
         case .debugMenu,
@@ -352,6 +361,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatTextSummarization:
             return .remoteReleasable(.subfeature(AIChatSubfeature.textSummarization))
+        case .aiChatPageContext:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
         case .osSupportForceUnsupportedMessage:
             return .disabled
         case .osSupportForceWillSoonDropSupportMessage:
@@ -383,7 +394,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .openFireWindowByDefault:
             return .remoteReleasable(.feature(.openFireWindowByDefault))
         case .restoreSessionPrompt:
-            return .disabled
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.restoreSessionPrompt))
         case .duckAISearchParameter:
             return .enabled
         case .subscriptionPurchaseWidePixelMeasurement:
@@ -396,6 +407,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
         case .newSyncEntryPoints:
             return .remoteReleasable(.subfeature(SyncSubfeature.newSyncEntryPoints))
+        case .syncFeatureLevel3:
+            return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
         }
     }
 }

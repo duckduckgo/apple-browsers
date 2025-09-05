@@ -116,6 +116,26 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
     func save(backgroundTaskEvent: BackgroundTaskEvent) throws
     func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent]
     func deleteBackgroundTaskEvents(olderThan date: Date) throws
+
+    func saveOptOutEmailConfirmation(profileQueryId: Int64,
+                                     brokerId: Int64,
+                                     extractedProfileId: Int64,
+                                     generatedEmail: String,
+                                     attemptID: String) throws
+    func deleteOptOutEmailConfirmation(profileQueryId: Int64,
+                                       brokerId: Int64,
+                                       extractedProfileId: Int64) throws
+    func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData]
+    func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData]
+    func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData]
+    func updateOptOutEmailConfirmationLink(_ emailConfirmationLink: String?,
+                                           emailConfirmationLinkObtainedOnBEDate: Date?,
+                                           profileQueryId: Int64,
+                                           brokerId: Int64,
+                                           extractedProfileId: Int64) throws
+    func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64,
+                                                      brokerId: Int64,
+                                                      extractedProfileId: Int64) throws
 }
 
 public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDatabaseProvider>: DataBrokerProtectionSecureVault {
@@ -525,5 +545,70 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
 
     public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
         try self.providers.database.deleteBackgroundTaskEvents(olderThan: date)
+    }
+
+    public func saveOptOutEmailConfirmation(profileQueryId: Int64,
+                                            brokerId: Int64,
+                                            extractedProfileId: Int64,
+                                            generatedEmail: String,
+                                            attemptID: String) throws {
+        try self.providers.database.save(
+            profileQueryId: profileQueryId,
+            brokerId: brokerId,
+            extractedProfileId: extractedProfileId,
+            generatedEmail: generatedEmail,
+            attemptID: attemptID,
+            mapperToDB: MapperToDB(mechanism: l2Encrypt(data:))
+        )
+    }
+
+    public func deleteOptOutEmailConfirmation(profileQueryId: Int64,
+                                              brokerId: Int64,
+                                              extractedProfileId: Int64) throws {
+        try self.providers.database.deleteOptOutEmailConfirmation(
+            profileQueryId: profileQueryId,
+            brokerId: brokerId,
+            extractedProfileId: extractedProfileId
+        )
+    }
+
+    public func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData] {
+        let mapper = MapperToModel(mechanism: l2Decrypt(data:))
+        return try self.providers.database.fetchAllOptOutEmailConfirmations().map(mapper.mapToModel(_:))
+    }
+
+    public func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData] {
+        let mapper = MapperToModel(mechanism: l2Decrypt(data:))
+        return try self.providers.database.fetchOptOutEmailConfirmationsAwaitingLink().map(mapper.mapToModel(_:))
+    }
+
+    public func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData] {
+        let mapper = MapperToModel(mechanism: l2Decrypt(data:))
+        return try self.providers.database.fetchOptOutEmailConfirmationsWithLink().map(mapper.mapToModel(_:))
+    }
+
+    public func updateOptOutEmailConfirmationLink(_ emailConfirmationLink: String?,
+                                                  emailConfirmationLinkObtainedOnBEDate: Date?,
+                                                  profileQueryId: Int64,
+                                                  brokerId: Int64,
+                                                  extractedProfileId: Int64) throws {
+        try self.providers.database.updateEmailConfirmationLink(
+            emailConfirmationLink,
+            emailConfirmationLinkObtainedOnBEDate: emailConfirmationLinkObtainedOnBEDate,
+            profileQueryId: profileQueryId,
+            brokerId: brokerId,
+            extractedProfileId: extractedProfileId,
+            mapperToDB: MapperToDB(mechanism: l2Encrypt(data:))
+        )
+    }
+
+    public func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64,
+                                                             brokerId: Int64,
+                                                             extractedProfileId: Int64) throws {
+        try self.providers.database.incrementEmailConfirmationAttemptCount(
+            profileQueryId: profileQueryId,
+            brokerId: brokerId,
+            extractedProfileId: extractedProfileId
+        )
     }
 }

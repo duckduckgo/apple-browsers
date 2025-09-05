@@ -39,14 +39,12 @@ public enum SiteTroubleshootingPixel: VPNPixel {
         }
     }
 
+    public var error: (any Error)? { nil }
+
     public var parameters: [String: String]? {
         switch self {
         case .reportIssues(let domain):
             return [PixelKit.Parameters.domain: domain]
         }
-    }
-
-    public var error: Error? {
-        return nil
     }
 }

@@ -61,6 +61,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        webTrackingProtectionPreferences: preferences,
                                        experimentManager: MockContentScopeExperimentManager(),
                                        tld: TLD(),
+                                       featureFlagger: MockFeatureFlagger(),
                                        onboardingNavigationDelegate: CapturingOnboardingNavigation(),
                                        appearancePreferences: appearancePreferences,
                                        startupPreferences: startupPreferences,

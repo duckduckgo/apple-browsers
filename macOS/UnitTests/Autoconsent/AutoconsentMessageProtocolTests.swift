@@ -53,6 +53,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
                                                                                       errorReporting: nil),
                                                experimentManager: MockContentScopeExperimentManager(),
                                                tld: Application.appDelegate.tld,
+                                               featureFlagger: Application.appDelegate.featureFlagger,
                                                onboardingNavigationDelegate: CapturingOnboardingNavigation(),
                                                appearancePreferences: appearancePreferences,
                                                startupPreferences: startupPreferences,

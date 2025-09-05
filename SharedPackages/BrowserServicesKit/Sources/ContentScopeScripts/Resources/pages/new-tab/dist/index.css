@@ -2950,6 +2950,9 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   background-color: var(--track-bg-color-checked-active);
   border-color: var(--track-border-color-checked-active);
 }
+.Switch_input[disabled] {
+  cursor: not-allowed;
+}
 .Switch_switch {
   box-sizing: border-box;
   inline-size: var(--switch-width);
@@ -3033,6 +3036,9 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   gap: 10px;
   white-space: nowrap;
   height: calc(28 * var(--px-in-rem));
+}
+.VisibilityMenu_menuItemLabel:has(input[disabled]) .VisibilityMenu_title {
+  color: var(--ntp-text-tertiary);
 }
 .VisibilityMenu_menuItemLabelEmbedded {
   white-space: normal;

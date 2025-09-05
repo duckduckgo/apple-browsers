@@ -28,6 +28,7 @@ public protocol WidePixelManaging {
     func startFlow<T: WidePixelData>(_ data: T)
     func updateFlow<T: WidePixelData>(_ data: T)
     func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock)
+    func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus) async throws -> Bool
     func discardFlow<T: WidePixelData>(_ data: T)
     func getAllFlowData<T: WidePixelData>(_ type: T.Type) -> [T]
 }
@@ -141,7 +142,21 @@ public final class WidePixel: WidePixelManaging {
                 Self.logger.error("Failed to complete wide pixel flow \(T.pixelName, privacy: .public): \(error.localizedDescription, privacy: .public)")
                 report(.completeFailed(pixelName: T.pixelName, error: error), error: error, params: nil)
                 storage.delete(data)
-                onComplete(false, error)
+                onComplete(false, PixelKitError.externalError(error))
+            }
+        }
+    }
+
+    @discardableResult
+    public func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus) async throws -> Bool {
+        return try await withCheckedThrowingContinuation { continuation in
+            completeFlow(data, status: status) { result, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+
+                continuation.resume(returning: result)
             }
         }
     }
@@ -218,7 +233,7 @@ public final class WidePixel: WidePixelManaging {
             frequency: .standard,
             withHeaders: nil,
             withAdditionalParameters: nil,
-            withError: nil,
+            withDDGError: nil,
             allowedQueryReservedCharacters: nil,
             includeAppVersionParameter: true,
             includePixelSourceParameter: false,

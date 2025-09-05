@@ -1,5 +1,5 @@
 //
-//  WebExtensionPathsCache.swift
+//  WebExtensionPathsStoringMock.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,41 +16,26 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
+@testable import DuckDuckGo_Privacy_Browser
 
 @available(macOS 15.4, *)
-protocol WebExtensionPathsCaching: AnyObject {
+final class WebExtensionPathsStoringMock: WebExtensionPathsStoring {
 
-    var cache: [String] { get }
-    func add(_ url: String)
-    func remove(_ url: String)
+    var paths: [String] = []
 
-}
-
-@available(macOS 15.4, *)
-final class WebExtensionPathsCache: WebExtensionPathsCaching {
-
-    @UserDefaultsWrapper(key: .webExtensionPathsCache, defaultValue: [])
-    var cache: [String]
-
+    var addCalled = false
+    var addedURL: String?
     func add(_ url: String) {
-        guard !cache.contains(url) else {
-            assertionFailure("Already cached: \(url)")
-            return
-        }
-
-        cache.append(url)
+        addCalled = true
+        addedURL = url
+        paths.append(url)
     }
 
+    var removeCalled = false
+    var removedURL: String?
     func remove(_ url: String) {
-        guard cache.contains(url) else {
-            assertionFailure("Not cached: \(url)")
-            return
-        }
-
-        cache.removeAll(where: { $0 == url })
+        removeCalled = true
+        removedURL = url
+        paths.removeAll { $0 == url }
     }
-
 }
-
-#endif

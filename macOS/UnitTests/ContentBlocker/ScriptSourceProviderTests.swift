@@ -71,6 +71,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
             experimentManager: experimentManager,
             tld: Application.appDelegate.tld,
+            featureFlagger: MockFeatureFlagger(),
             onboardingNavigationDelegate: CapturingOnboardingNavigation(),
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,

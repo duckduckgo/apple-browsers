@@ -37,7 +37,7 @@ final class RemoteMessagingService {
          configurationStore: ConfigurationStore,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          configurationURLProvider: ConfigurationURLProviding,
-         syncService: SyncService
+         syncService: DDGSyncing
     ) {
         remoteMessagingClient = RemoteMessagingClient(
             bookmarksDatabase: bookmarksDatabase,

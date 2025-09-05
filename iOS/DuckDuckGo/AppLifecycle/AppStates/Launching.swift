@@ -91,7 +91,7 @@ struct Launching: LaunchingHandling {
                                                             configurationStore: AppDependencyProvider.shared.configurationStore,
                                                             privacyConfigurationManager: privacyConfigurationManager,
                                                             configurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
-                                                            syncService: syncService)
+                                                            syncService: syncService.sync)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)

@@ -39,7 +39,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         duckPlayerStorage: DuckPlayerStorage,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         themeManager: ThemeManaging = ThemeManager.shared,
-        syncService: SyncService
+        syncService: DDGSyncing
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
@@ -56,7 +56,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let internalUserDecider: InternalUserDecider
     let featureFlagger: FeatureFlagger
     let themeManager: ThemeManaging
-    let syncService: SyncService
+    let syncService: DDGSyncing
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -92,7 +92,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             appSettings.duckPlayerMode != .disabled
         }
         var isSyncEnabled: Bool {
-            syncService.sync.authState != .inactive
+            syncService.authState != .inactive
         }
 
         let surveyActionMapper: DefaultRemoteMessagingSurveyURLBuilder

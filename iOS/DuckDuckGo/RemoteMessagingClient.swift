@@ -60,7 +60,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
         duckPlayerStorage: DuckPlayerStorage,
         configurationURLProvider: ConfigurationURLProviding,
-        syncService: SyncService
+        syncService: DDGSyncing
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
             bookmarksDatabase: bookmarksDatabase,

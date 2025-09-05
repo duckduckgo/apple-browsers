@@ -89,11 +89,13 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
         let recordsAwaitingLink = try database.fetchOptOutEmailConfirmationsAwaitingLink()
 
         var itemsToDelete: [EmailDataRequestItemV1] = []
+
+        // Chunk requests to respect API rate limits
         for chunk in recordsAwaitingLink.chunks(ofCount: EmailServiceV1.Constants.maxBatchSize) {
             let records = Array(chunk)
             let response = try await emailServiceV1.fetchEmailData(items: records.toEmailDataRequestItems())
 
-            itemsToDelete.append(contentsOf: response.items.toEmailDataResponseItemsForDeletion())
+            itemsToDelete.append(contentsOf: response.items.toEmailDataRequestItemsForDeletion())
 
             for item in response.items {
                 switch item.status {
@@ -136,7 +138,7 @@ extension [OptOutEmailConfirmationJobData] {
 }
 
 extension [EmailDataResponseItemV1] {
-    func toEmailDataResponseItemsForDeletion() -> [EmailDataRequestItemV1] {
+    func toEmailDataRequestItemsForDeletion() -> [EmailDataRequestItemV1] {
         filter { $0.status == .ready || $0.status == .error }
             .map { .init(email: $0.email, attemptId: $0.attemptId) }
     }

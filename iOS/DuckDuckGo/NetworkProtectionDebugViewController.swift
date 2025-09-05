@@ -694,7 +694,7 @@ shouldShowVPNShortcut: \(await vpnVisibility.shouldShowVPNShortcut() ? "YES" : "
                 if subscriptionOverrideEnabled {
                     defaults.subscriptionOverrideEnabled = false
                     Task {
-                        await AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.signOut(notifyUI: true)
+                        await AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.signOut(notifyUI: true, userInitiated: true)
                     }
                 } else {
                     defaults.resetSubscriptionOverrideEnabled()

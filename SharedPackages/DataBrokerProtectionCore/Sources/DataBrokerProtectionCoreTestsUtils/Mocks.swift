@@ -53,7 +53,8 @@ public extension BrokerProfileQueryData {
                 parent: parentURL,
                 mirrorSites: mirrorSites,
                 optOutUrl: optOutUrl ?? "",
-                eTag: ""
+                eTag: "",
+                removedAt: nil
             ),
             profileQuery: ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 50, deprecated: deprecated),
             scanJobData: ScanJobData(brokerId: 1,
@@ -603,9 +604,24 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
     public func fetchBroker(with name: String) throws -> DataBroker? {
         if shouldReturnOldVersionBroker {
-            return .init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.0", schedulingConfig: .mock, optOutUrl: "", eTag: "")
+            return .init(id: 1,
+                         name: "Broker",
+                         url: "broker.com",
+                         steps: [Step](),
+                         version: "1.0.0",
+                         schedulingConfig: .mock,
+                         optOutUrl: "", eTag: "",
+                         removedAt: nil)
         } else if shouldReturnNewVersionBroker {
-            return .init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.1", schedulingConfig: .mock, optOutUrl: "", eTag: "")
+            return .init(id: 1,
+                         name: "Broker",
+                         url: "broker.com",
+                         steps: [Step](),
+                         version: "1.0.1",
+                         schedulingConfig: .mock,
+                         optOutUrl: "",
+                         eTag: "",
+                         removedAt: nil)
         }
 
         return nil
@@ -765,6 +781,20 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         return nil
     }
 
+    public func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData] {
+        return []
+    }
+
+    public func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData] {
+        return []
+    }
+
+    public func updateOptOutEmailConfirmationLink(_ link: String?, emailConfirmationLinkObtainedOnBEDate: Date?, profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
+    }
+
+    public func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
+    }
+
     public func save(backgroundTaskEvent: BackgroundTaskEvent) throws {
     }
 
@@ -773,6 +803,22 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     }
 
     public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
+    }
+
+    public func saveOptOutEmailConfirmation(profileQueryId: Int64,
+                                            brokerId: Int64,
+                                            extractedProfileId: Int64,
+                                            generatedEmail: String,
+                                            attemptID: String) throws {
+    }
+
+    public func deleteOptOutEmailConfirmation(profileQueryId: Int64,
+                                              brokerId: Int64,
+                                              extractedProfileId: Int64) throws {
+    }
+
+    public func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData] {
+        return []
     }
 }
 
@@ -924,6 +970,36 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         return dataBrokersToReturn
     }
 
+    public func fetchBroker(with id: Int64) throws -> DataBroker? {
+        return dataBrokersToReturn.first { $0.id == id }
+    }
+
+    public func fetchProfileQuery(with id: Int64) throws -> ProfileQuery? {
+        return ProfileQuery.mock
+    }
+
+    public var recordsAwaitingLink: [OptOutEmailConfirmationJobData] = []
+
+    public func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData] {
+        return recordsAwaitingLink
+    }
+
+    public func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData] {
+        return []
+    }
+
+    public func updateOptOutEmailConfirmationLink(_ link: String?,
+                                                  emailConfirmationLinkObtainedOnBEDate: Date?,
+                                                  profileQueryId: Int64,
+                                                  brokerId: Int64,
+                                                  extractedProfileId: Int64) throws {
+    }
+
+    public func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64,
+                                                             brokerId: Int64,
+                                                             extractedProfileId: Int64) throws {
+    }
+
     public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) {
         lastPreferredRunDateOnScan = date
         lastProfileQueryIdOnScanUpdatePreferredRunDate = profileQueryId
@@ -1059,6 +1135,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasUpdateRemoveDateCalled = false
         wasAddHistoryEventCalled = false
         wasFetchLastHistoryEventCalled = false
+        fetchAllBrokerProfileQueryDataError = nil
         lastHistoryEventToReturn = nil
         lastPreferredRunDateOnScan = nil
         lastPreferredRunDateOnOptOut = nil
@@ -1088,6 +1165,22 @@ public final class MockDatabase: DataBrokerProtectionRepository {
 
     public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
         backgroundTaskEventsToReturn.removeAll { $0.timestamp < date }
+    }
+
+    public func saveOptOutEmailConfirmation(profileQueryId: Int64,
+                                            brokerId: Int64,
+                                            extractedProfileId: Int64,
+                                            generatedEmail: String,
+                                            attemptID: String) throws {
+    }
+
+    public func deleteOptOutEmailConfirmation(profileQueryId: Int64,
+                                              brokerId: Int64,
+                                              extractedProfileId: Int64) throws {
+    }
+
+    public func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData] {
+        return []
     }
 }
 
@@ -1576,10 +1669,14 @@ public final class MockBrokerProfileJobErrorDelegate: BrokerProfileJobErrorDeleg
 }
 
 public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
-    public var isRemoteBrokerDeliveryFeatureOn = true
-    public var isEmailConfirmationDecouplingFeatureOn = true
+    public let isRemoteBrokerDeliveryFeatureOn: Bool
+    public let isEmailConfirmationDecouplingFeatureOn: Bool
 
-    public init() {}
+    public init(isRemoteBrokerDeliveryFeatureOn: Bool = true,
+                isEmailConfirmationDecouplingFeatureOn: Bool = false) {
+        self.isRemoteBrokerDeliveryFeatureOn = isRemoteBrokerDeliveryFeatureOn
+        self.isEmailConfirmationDecouplingFeatureOn = isEmailConfirmationDecouplingFeatureOn
+    }
 }
 
 public final class MockOperationEventsHandler: EventMapping<JobEvent> {
@@ -1923,8 +2020,8 @@ extension SecureStorageError: @retroactive Equatable {
         case (.keystoreUpdateError(let status1), .keystoreUpdateError(let status2)):
             return status1 == status2
         case (.authRequired, .authRequired), (.invalidPassword, .invalidPassword),
-            (.noL1Key, .noL1Key), (.noL2Key, .noL2Key), (.duplicateRecord, .duplicateRecord),
-            (.generalCryptoError, .generalCryptoError), (.encodingFailed, .encodingFailed):
+             (.noL1Key, .noL1Key), (.noL2Key, .noL2Key), (.duplicateRecord, .duplicateRecord),
+             (.generalCryptoError, .generalCryptoError), (.encodingFailed, .encodingFailed):
             return true
         default:
             return false
@@ -2037,8 +2134,8 @@ private extension Data {
     }
 
     static func randomEventData(length: Int) -> Data {
-            return .randomStringData(length: length)
-        }
+        return .randomStringData(length: length)
+    }
 }
 
 extension Date {
@@ -2053,16 +2150,16 @@ public extension ProfileQueryDB {
     static func random(withProfileIds profileIds: [Int64]) -> [ProfileQueryDB] {
         profileIds.map {
             ProfileQueryDB(id: nil, profileId: $0,
-                                         first: .randomStringData(length: 4),
-                                         last: .randomStringData(length: 4),
-                                         middle: nil,
-                                         suffix: nil,
-                                         city: .randomStringData(length: 4),
-                                         state: .randomStringData(length: 4), street: .randomStringData(length: 4),
-                                         zipCode: nil,
-                                         phone: nil,
-                                         birthYear: Data.randomBirthdateData(),
-                                         deprecated: Bool.random())
+                           first: .randomStringData(length: 4),
+                           last: .randomStringData(length: 4),
+                           middle: nil,
+                           suffix: nil,
+                           city: .randomStringData(length: 4),
+                           state: .randomStringData(length: 4), street: .randomStringData(length: 4),
+                           zipCode: nil,
+                           phone: nil,
+                           birthYear: Data.randomBirthdateData(),
+                           deprecated: Bool.random())
         }
     }
 }
@@ -2074,8 +2171,22 @@ public extension BrokerDB {
                      json: try! JSONSerialization.data(withJSONObject: [:], options: []),
                      version: "\($0).\($0).\($0)",
                      url: "www.testbroker.com",
-                     eTag: "")
+                     eTag: "",
+                     removedAt: nil
+            )
         }
+    }
+
+    static func random(name: String? = nil, removedAt: Date? = nil) -> BrokerDB {
+        BrokerDB(
+            id: nil,
+            name: name ?? .random(length: 6),
+            json: try! JSONSerialization.data(withJSONObject: [:], options: []),
+            version: "1.0.0",
+            url: "www.\(name?.lowercased() ?? "test")broker.com",
+            eTag: "test-etag",
+            removedAt: removedAt
+        )
     }
 }
 
@@ -2135,6 +2246,8 @@ public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProv
     public static var didCallV5Migrations = false
     public static var didCallV6Migrations = false
     public static var didCallV7Migrations = false
+    public static var didCallV8Migrations = false
+    public static var didCallV9Migrations = false
 
     public static var v2Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
         didCallV2Migrations = true
@@ -2163,6 +2276,16 @@ public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProv
 
     public static var v7Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
         didCallV7Migrations = true
+        return { _ in }
+    }
+
+    public static var v8Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
+        didCallV8Migrations = true
+        return { _ in }
+    }
+
+    public static var v9Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
+        didCallV9Migrations = true
         return { _ in }
     }
 }
@@ -2254,7 +2377,8 @@ public extension DataBroker {
                 maxAttempts: -1
             ),
             optOutUrl: "",
-            eTag: ""
+            eTag: "",
+            removedAt: nil
         )
     }
 
@@ -2276,7 +2400,8 @@ public extension DataBroker {
             ),
             parent: "some",
             optOutUrl: "",
-            eTag: ""
+            eTag: "",
+            removedAt: nil
         )
     }
 
@@ -2293,7 +2418,8 @@ public extension DataBroker {
                 maxAttempts: -1
             ),
             optOutUrl: "",
-            eTag: ""
+            eTag: "",
+            removedAt: nil
         )
     }
 
@@ -2311,7 +2437,18 @@ public extension DataBroker {
                                  mirrorSites: [MirrorSite] = [MirrorSite](),
                                  optOutUrl: String = "testbroker.com/optout",
                                  eTag: String = "") -> DataBroker {
-        return DataBroker(id: id, name: name, url: url, steps: steps, version: version, schedulingConfig: schedulingConfig, parent: parent, mirrorSites: mirrorSites, optOutUrl: optOutUrl, eTag: eTag)
+        return DataBroker(
+            id: id,
+            name: name,
+            url: url,
+            steps: steps,
+            version: version,
+            schedulingConfig: schedulingConfig,
+            parent: parent,
+            mirrorSites: mirrorSites,
+            optOutUrl: optOutUrl,
+            eTag: eTag,
+            removedAt: nil)
     }
 
     static func mock(withId id: Int64) -> DataBroker {
@@ -2328,7 +2465,8 @@ public extension DataBroker {
                 maxAttempts: -1
             ),
             optOutUrl: "",
-            eTag: ""
+            eTag: "",
+            removedAt: nil
         )
     }
 
@@ -2344,7 +2482,8 @@ public extension DataBroker {
                 maxAttempts: -1
               ),
               optOutUrl: "",
-              eTag: ""
+              eTag: "",
+              removedAt: nil
         )
     }
 
@@ -2366,7 +2505,8 @@ public extension DataBroker {
             ),
             mirrorSites: mirroSites,
             optOutUrl: "",
-            eTag: ""
+            eTag: "",
+            removedAt: nil
         )
     }
 }

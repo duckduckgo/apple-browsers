@@ -43,10 +43,11 @@ final class MapperToModelTests: XCTestCase {
             parent: "ParentBroker",
             mirrorSites: [],
             optOutUrl: "https://example.com/opt-out",
-            eTag: ""
+            eTag: "",
+            removedAt: nil
         )
         let jsonData = try jsonEncoder.encode(brokerData)
-        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: jsonData, version: "1.0", url: "https://example.com", eTag: "")
+        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: jsonData, version: "1.0", url: "https://example.com", eTag: "", removedAt: nil)
 
         // When
         let result = try sut.mapToModel(brokerDB)
@@ -73,7 +74,7 @@ final class MapperToModelTests: XCTestCase {
                 "schedulingConfig": {"retryError": 1, "confirmOptOutScan": 2, "maintenanceScan": 3, "maxAttempts": -1}
             }
             """.data(using: .utf8)!
-        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: brokerData, version: "1.0", url: "https://example.com", eTag: "")
+        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: brokerData, version: "1.0", url: "https://example.com", eTag: "", removedAt: nil)
 
         // When
         let result = try sut.mapToModel(brokerDB)
@@ -91,7 +92,13 @@ final class MapperToModelTests: XCTestCase {
                 "invalidKey": "value"
             }
             """.data(using: .utf8)!
-        let brokerDB = BrokerDB(id: 1, name: "InvalidBroker", json: invalidJsonData, version: "1.0", url: "https://example.com", eTag: "")
+        let brokerDB = BrokerDB(id: 1,
+                                name: "InvalidBroker",
+                                json: invalidJsonData,
+                                version: "1.0",
+                                url: "https://example.com",
+                                eTag: "",
+                                removedAt: nil)
 
         // When & Then
         XCTAssertThrowsError(try sut.mapToModel(brokerDB)) { error in
@@ -109,7 +116,7 @@ final class MapperToModelTests: XCTestCase {
                 "schedulingConfig": {"retryError": 1, "confirmOptOutScan": 2, "maintenanceScan": 3, "maxAttempts": -1}
             }
             """.data(using: .utf8)!
-        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: brokerData, version: "1.0", url: "", eTag: "")
+        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: brokerData, version: "1.0", url: "", eTag: "", removedAt: nil)
 
         // When
         let result = try sut.mapToModel(brokerDB)

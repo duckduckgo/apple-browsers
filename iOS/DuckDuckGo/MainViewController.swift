@@ -234,6 +234,8 @@ class MainViewController: UIViewController {
     
     private let daxEasterEggPresenter: DaxEasterEggPresenting
 
+    private let internalUserCommands: URLBasedDebugCommands = InternalUserCommands()
+
     init(
         bookmarksDatabase: CoreDataDatabase,
         bookmarksDatabaseCleaner: BookmarkDatabaseCleaner,
@@ -348,7 +350,8 @@ class MainViewController: UIViewController {
                                                                                          newTabDaxDialogManager: daxDialogsManager,
                                                                                          faviconLoader: faviconLoader,
                                                                                          messageNavigationDelegate: self,
-                                                                                         appSettings: appSettings)
+                                                                                         appSettings: appSettings,
+                                                                                         internalUserCommands: internalUserCommands)
 
         let suggestionTrayDependencies = SuggestionTrayDependencies(favoritesViewModel: favoritesViewModel,
                                                                     bookmarksDatabase: bookmarksDatabase,
@@ -357,6 +360,7 @@ class MainViewController: UIViewController {
                                                                     featureFlagger: featureFlagger,
                                                                     appSettings: appSettings,
                                                                     aiChatSettings: aiChatSettings,
+                                                                    featureDiscovery: featureDiscovery,
                                                                     newTabPageDependencies: newTabPageDependencies)
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
@@ -546,7 +550,8 @@ class MainViewController: UIViewController {
                                          tabsModel: self.tabManager.model,
                                          featureFlagger: self.featureFlagger,
                                          appSettings: self.appSettings,
-                                         aiChatSettings: self.aiChatSettings)
+                                         aiChatSettings: self.aiChatSettings,
+                                         featureDiscovery: self.featureDiscovery)
         }) else {
             assertionFailure()
             return
@@ -1021,7 +1026,8 @@ class MainViewController: UIViewController {
                                                   daxDialogsManager: daxDialogsManager,
                                                   faviconLoader: faviconLoader,
                                                   messageNavigationDelegate: self,
-                                                  appSettings: appSettings)
+                                                  appSettings: appSettings,
+                                                  internalUserCommands: internalUserCommands)
 
         controller.delegate = self
         controller.chromeDelegate = self
@@ -2082,6 +2088,8 @@ class MainViewController: UIViewController {
                 Logger.subscription.fault("Missing entitlements payload")
                 return
             }
+
+            let userInitiatedSignOut = (userInfo[EntitlementsDidChangePayload.userInitiatedEntitlementChangeKey] as? Bool) ?? false
             let hasVPNEntitlements = payload.entitlements.contains(.networkProtection)
             let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
@@ -2101,12 +2109,17 @@ class MainViewController: UIViewController {
                         sourceObject: notification.object),
                     frequency: .dailyAndCount)
 
-                if await networkProtectionTunnelController.isInstalled {
+                if await networkProtectionTunnelController.isInstalled && !userInitiatedSignOut {
                     tunnelDefaults.enableEntitlementMessaging()
                 }
 
                 await networkProtectionTunnelController.stop()
-                await networkProtectionTunnelController.removeVPN(reason: .entitlementCheck)
+
+                if userInitiatedSignOut {
+                    await networkProtectionTunnelController.removeVPN(reason: .signedOut)
+                } else {
+                    await networkProtectionTunnelController.removeVPN(reason: .entitlementCheck)
+                }
             }
 
             hadVPNEntitlements = hasVPNEntitlements
@@ -2325,6 +2338,13 @@ extension MainViewController: BrowserChromeDelegate {
 
     private func handleFavoriteSelected(_ favorite: BookmarkEntity) {
         guard let url = favorite.urlObject else { return }
+
+        // Handle shortcuts for internal testing
+        if let favUrl = favorite.url, let url = URL(string: favUrl), internalUserCommands.handle(url: url) {
+            dismissSuggestionTray()
+            return
+        }
+
         Pixel.fire(pixel: .favoriteLaunchedWebsite)
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()

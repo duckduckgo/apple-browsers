@@ -16,13 +16,9 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
-
 import Foundation
 import os.log
 
 public extension Logger {
     static var webExtensions = { Logger(subsystem: "WebExtensions", category: "") }()
 }
-
-#endif

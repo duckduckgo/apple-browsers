@@ -16,24 +16,25 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
+import AppKit
+import OSLog
 
 @available(macOS 15.4, *)
 final class WebExtensionsDebugMenu: NSMenu {
 
     private let webExtensionManager: WebExtensionManaging
 
-    private let installExtensionMenuItem = NSMenuItem(title: "Install web extension...", action: #selector(WebExtensionsDebugMenu.selectAndLoadWebExtension))
+    private let installExtensionMenuItem = NSMenuItem(title: "Install web extension", action: nil)
     private let uninstallAllExtensionsMenuItem = NSMenuItem(title: "Uninstall all extensions", action: #selector(WebExtensionsDebugMenu.uninstallAllExtensions))
 
-    init(webExtensionManager: WebExtensionManaging = WebExtensionManager.shared) {
+    init(webExtensionManager: WebExtensionManaging) {
         self.webExtensionManager = webExtensionManager
         super.init(title: "")
 
-        installExtensionMenuItem.target = self
-        installExtensionMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled
+        installExtensionMenuItem.submenu = makeInstallSubmenu()
+        installExtensionMenuItem.isEnabled = true
         uninstallAllExtensionsMenuItem.target = self
-        uninstallAllExtensionsMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled && webExtensionManager.hasInstalledExtensions
+        uninstallAllExtensionsMenuItem.isEnabled = webExtensionManager.hasInstalledExtensions
 
         addItems()
     }
@@ -48,10 +49,26 @@ final class WebExtensionsDebugMenu: NSMenu {
             addItem(.separator())
             for webExtensionPath in webExtensionManager.webExtensionPaths {
                 let name = webExtensionManager.extensionName(from: webExtensionPath)
-                self.addItem(WebExtensionMenuItem(webExtensionPath: webExtensionPath,
-                                                  webExtensionName: name))
+                let menuItem = WebExtensionMenuItem(webExtensionPath: webExtensionPath, webExtensionName: name)
+                self.addItem(menuItem)
             }
         }
+    }
+
+    private func makeInstallSubmenu() -> NSMenu {
+        let submenu = NSMenu()
+
+        let browseItem = NSMenuItem(title: "Other...", action: #selector(selectAndLoadWebExtension))
+        browseItem.target = self
+        submenu.addItem(browseItem)
+
+        submenu.addItem(.separator())
+
+        let bitwardenItem = NSMenuItem(title: "Bitwarden", action: #selector(installBitwardenExtension))
+        bitwardenItem.target = self
+        submenu.addItem(bitwardenItem)
+
+        return submenu
     }
 
     required init(coder: NSCoder) {
@@ -63,13 +80,13 @@ final class WebExtensionsDebugMenu: NSMenu {
 
         addItems()
 
-        installExtensionMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled
-        uninstallAllExtensionsMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled && webExtensionManager.hasInstalledExtensions
+        installExtensionMenuItem.isEnabled = true
+        uninstallAllExtensionsMenuItem.isEnabled = webExtensionManager.hasInstalledExtensions
     }
 
     @objc func selectAndLoadWebExtension() {
-        let panel = NSOpenPanel(allowedFileTypes: [.directory], directoryURL: .downloadsDirectory)
-        panel.canChooseFiles = false
+        let panel = NSOpenPanel(allowedFileTypes: [.directory, .applicationExtension], directoryURL: .downloadsDirectory)
+        panel.canChooseFiles = true
         panel.canChooseDirectories = true
         guard case .OK = panel.runModal(),
               let url = panel.url else { return }
@@ -81,6 +98,13 @@ final class WebExtensionsDebugMenu: NSMenu {
 
     @objc func uninstallAllExtensions() {
         webExtensionManager.uninstallAllExtensions()
+    }
+
+    @objc func installBitwardenExtension() {
+        let path = WebExtensionIdentifier.bitwarden.defaultPath
+        Task {
+            await webExtensionManager.installExtension(path: path)
+        }
     }
 
 }
@@ -105,14 +129,12 @@ final class WebExtensionMenuItem: NSMenuItem {
 final class WebExtensionSubMenu: NSMenu {
 
     private let webExtensionPath: String
-    private let webExtensionManager: WebExtensionManaging
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    init(webExtensionPath: String, webExtensionManager: WebExtensionManaging = WebExtensionManager.shared) {
-        self.webExtensionManager = webExtensionManager
+    init(webExtensionPath: String) {
         self.webExtensionPath = webExtensionPath
         super.init(title: "")
 
@@ -122,9 +144,10 @@ final class WebExtensionSubMenu: NSMenu {
     }
 
     @objc func uninstallExtension() {
+        guard let webExtensionManager = NSApp.delegateTyped.webExtensionManager else {
+            return
+        }
+
         try? webExtensionManager.uninstallExtension(path: webExtensionPath)
     }
-
 }
-
-#endif

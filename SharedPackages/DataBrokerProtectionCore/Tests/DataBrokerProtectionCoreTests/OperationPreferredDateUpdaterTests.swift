@@ -46,7 +46,8 @@ final class OperationPreferredDateUpdaterTests: XCTestCase {
                 maxAttempts: -1
             ),
             optOutUrl: "",
-            eTag: ""
+            eTag: "",
+            removedAt: nil
         )
         databaseMock.childBrokers = [childBroker]
 

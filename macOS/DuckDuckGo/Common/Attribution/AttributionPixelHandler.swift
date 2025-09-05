@@ -18,6 +18,7 @@
 
 import Foundation
 import PixelKit
+import Common
 
 // A type that send pixels that needs attributions parameters.
 protocol AttributionPixelHandler {
@@ -92,7 +93,7 @@ extension GenericAttributionPixelHandler {
         _ frequency: PixelKit.Frequency,
         _ headers: [String: String],
         _ parameters: [String: String]?,
-        _ error: Error?,
+        _ error: (any DDGError)?,
         _ namePrefix: String?,
         _ allowedQueryReservedCharacters: CharacterSet?,
         _ includeAppVersionParameter: Bool,

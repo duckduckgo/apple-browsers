@@ -36,7 +36,7 @@ class FireWindowTests: UITestCase {
 
     func testFireWindowDoesNotStoreHistory() {
         app.openFireWindow()
-        openSite(pageTitle: "Some site")
+        app.openSite(pageTitle: "Some site")
         app.openNewWindow()
         assertSiteIsNotShowingInNormalWindowHistory()
     }
@@ -61,11 +61,11 @@ class FireWindowTests: UITestCase {
 
     func testFireWindowDoNotShowPinnedTabs() {
         app.openNewWindow()
-        openSite(pageTitle: "Page #1")
+        app.openSite(pageTitle: "Page #1")
         app.menuItems["Pin Tab"].tap()
 
         app.openNewTab()
-        openSite(pageTitle: "Page #2")
+        app.openSite(pageTitle: "Page #2")
         app.menuItems["Pin Tab"].tap()
 
         app.openFireWindow()
@@ -74,10 +74,10 @@ class FireWindowTests: UITestCase {
 
     func testFireWindowTabsCannotBeDragged() {
         app.openFireWindow()
-        openSite(pageTitle: "Page #1")
+        app.openSite(pageTitle: "Page #1")
 
         app.openNewTab()
-        openSite(pageTitle: "Page #2")
+        app.openSite(pageTitle: "Page #2")
 
         dragFirstTabOutsideOfFireWindow()
 
@@ -118,7 +118,7 @@ class FireWindowTests: UITestCase {
 
     func testDevelopMenuIsEnabledInFireWindowAfterNavigation() {
         app.openFireWindow()
-        openSite(pageTitle: "Some site")
+        app.openSite(pageTitle: "Some site")
         assertDeveloperToolsEnabled(true)
     }
 
@@ -295,38 +295,24 @@ class FireWindowTests: UITestCase {
 
     private func openThreeSitesOnNormalWindow() {
         app.openNewTab()
-        openSite(pageTitle: "Page #1")
+        app.openSite(pageTitle: "Page #1")
         app.openNewTab()
-        openSite(pageTitle: "Page #2")
+        app.openSite(pageTitle: "Page #2")
         app.openNewTab()
-        openSite(pageTitle: "Page #3")
+        app.openSite(pageTitle: "Page #3")
     }
 
     private func openThreeSitesOnFireWindow() {
-        openSite(pageTitle: "Page #4")
+        app.openSite(pageTitle: "Page #4")
         app.openNewTab()
-        openSite(pageTitle: "Page #5")
+        app.openSite(pageTitle: "Page #5")
         app.openNewTab()
-        openSite(pageTitle: "Page #6")
+        app.openSite(pageTitle: "Page #6")
     }
 
     private func assertSiteIsNotShowingInNormalWindowHistory() {
         let siteMenuItemInHistory = app.menuItems["Some site"]
         XCTAssertFalse(siteMenuItemInHistory.exists, "Menu item should not exist because it was not stored in history.")
-    }
-
-    private func openSite(pageTitle: String) {
-        let url = UITests.simpleServedPage(titled: pageTitle)
-        let addressBar = app.addressBar
-        XCTAssertTrue(
-            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The address bar text field didn't become available in a reasonable timeframe."
-        )
-        addressBar.typeURL(url)
-        XCTAssertTrue(
-            app.windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Visited site didn't load with the expected title in a reasonable timeframe."
-        )
     }
 
     private func areTestsRunningOnMacos13() -> Bool {

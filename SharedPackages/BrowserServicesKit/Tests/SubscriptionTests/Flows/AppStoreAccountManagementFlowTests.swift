@@ -33,7 +33,7 @@ final class AppStoreAccountManagementFlowTests: XCTestCase {
 
         static let mostRecentTransactionJWS = "dGhpcyBpcyBub3QgYSByZWFsIEFw(...)cCBTdG9yZSB0cmFuc2FjdGlvbiBKV1M="
 
-        static let invalidTokenError = APIServiceError.serverError(statusCode: 401, errorCode: "invalid_token")
+        static let invalidTokenError = APIServiceError.serverError(statusCode: 401, statusDescription: "invalid_token")
 
         static let entitlements = [Entitlement(product: .dataBrokerProtection),
                                    Entitlement(product: .identityTheftRestoration),

@@ -36,7 +36,7 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
 
         static let authorizationHeader = ["Authorization": "Bearer TOKEN"]
 
-        static let unknownServerError = APIServiceError.serverError(statusCode: 401, errorCode: "unknown_error")
+        static let unknownServerError = APIServiceError.serverError(statusCode: 401, statusDescription: "unknown_error")
     }
 
     var apiService: APIServiceMock!

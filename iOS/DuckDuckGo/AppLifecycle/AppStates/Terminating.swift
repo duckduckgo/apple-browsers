@@ -97,45 +97,45 @@ struct Terminating: TerminatingHandling {
 
             switch bookmarkError {
             // Database setup errors
-            case .couldNotGetFavoritesOrder(let error): // todo pixels
+            case .couldNotGetFavoritesOrder(let error):
                 underlyingError = error
                 debugMessage = "Bookmarks DB init failed: could not get favorites order"
-                pixel = .bookmarksCouldNotLoadDatabase
+                pixel = .debugBookmarksCouldNotGetFavoritesOrder
             case .couldNotPrepareDatabase(let error):
                 underlyingError = error
                 debugMessage = "Bookmarks DB init failed: could not prepare database"
-                pixel = .bookmarksCouldNotLoadDatabase
+                pixel = .debugBookmarksCouldNotPrepareDatabase
                 
             // Legacy storage errors
             case .noDBSchemeFound:
                 debugMessage = "Legacy Bookmarks DB init failed: no DB scheme found"
-                pixel = .bookmarksCouldNotLoadDatabase
+                pixel = .debugBookmarksNoDBSchemeFound
             case .unableToLoadPersistentStores(let error):
                 underlyingError = error
                 debugMessage = "Legacy Bookmarks DB init failed: unable to load persistent stores"
-                pixel = .bookmarksCouldNotLoadDatabase
+                pixel = .debugBookmarksUnableToLoadPersistentStores
             case .errorCreatingTopLevelBookmarksFolder:
                 debugMessage = "Legacy Bookmarks DB init failed: error creating top level bookmarks folder"
-                pixel = .bookmarksCouldNotLoadDatabase
+                pixel = .debugBookmarksErrorCreatingTopLevelBookmarksFolder
             case .errorCreatingTopLevelFavoritesFolder:
                 debugMessage = "Legacy Bookmarks DB init failed: error creating top level favorites folder"
-                pixel = .bookmarksCouldNotLoadDatabase
+                pixel = .debugBookmarksErrorCreatingTopLevelFavoritesFolder
             case .couldNotFixBookmarkFolder:
                 debugMessage = "Legacy Bookmarks DB init failed: could not fix bookmark folder"
-                pixel = .bookmarksCouldNotLoadDatabase
+                pixel = .debugBookmarksCouldNotFixBookmarkFolder
             case .couldNotFixFavoriteFolder:
                 debugMessage = "Legacy Bookmarks DB init failed: could not fix favorite folder"
-                pixel = .bookmarksCouldNotLoadDatabase
+                pixel = .debugBookmarksCouldNotFixFavoriteFolder
                 
             // Migration errors
             case .couldNotPrepareBookmarksDBStructure(let error):
                 underlyingError = error
                 debugMessage = "Bookmarks migration failed: could not prepare DB structure"
-                pixel = .bookmarksMigrationFailed
+                pixel = .debugBookmarksCouldNotPrepareDBStructure
             case .couldNotWriteToBookmarksDB(let error):
                 underlyingError = error
                 debugMessage = "Bookmarks migration failed: could not write to DB"
-                pixel = .bookmarksMigrationFailed
+                pixel = .debugBookmarksCouldNotWriteToDB
                 
             // Generic
             case .other(let error):

@@ -21,6 +21,27 @@ import SwiftUI
 import UIComponents
 import DesignResourcesKit
 import DuckUI
+import Lottie
+
+enum AddressBarPickerAnimation: String {
+    case iPhoneDark = "toggle-ios-dark"
+    case iPhoneLight = "toggle-ios-light"
+    case iPadDark = "toggle-ipad-dark"
+    case iPadLight = "toggle-ipad-light"
+    
+    static func animation(for device: UIUserInterfaceIdiom, colorScheme: ColorScheme) -> AddressBarPickerAnimation {
+        switch (device, colorScheme) {
+        case (.pad, .dark):
+            return .iPadDark
+        case (.pad, .light):
+            return .iPadLight
+        case (_, .dark):
+            return .iPhoneDark
+        case (_, .light):
+            return .iPhoneLight
+        }
+    }
+}
 
 struct NewAddressBarPickerContentView: View {
     let onDismiss: () -> Void
@@ -51,7 +72,9 @@ private struct ContentView: View {
                     .frame(width: 300)
                     .padding(.top, 64)
                 Spacer()
-                animationView
+                AnimationView()
+                    .frame(width: 300, height: 100)
+                    .background(.red)
             }
             .padding(.horizontal)
         }
@@ -89,16 +112,29 @@ private struct ContentView: View {
             endPoint: UnitPoint(x: 0.8, y: 1.8)
         )
     }
+}
 
-    var animationView: some View {
-        RoundedRectangle(cornerRadius: 8)
-            .fill(Color(designSystemColor: .backgroundTertiary))
-            .frame(height: 120)
-            .overlay(
-                Text("Animation Placeholder")
-                    .daxCaption()
-                    .foregroundColor(.secondary)
+private struct AnimationView: View {
+    @Environment(\.colorScheme) private var colorScheme
+    
+    var body: some View {
+        let animation = AddressBarPickerAnimation.animation(
+            for: UIDevice.current.userInterfaceIdiom,
+            colorScheme: colorScheme
+        )
+        
+        LottieView(
+            lottieFile: animation.rawValue,
+            loopMode: .mode(.loop),
+            isAnimating: .constant(true),
+            animationImageProvider: AddressBarPickerAnimationImageProvider(
+                colorScheme: colorScheme,
+                deviceIdiom: UIDevice.current.userInterfaceIdiom
             )
+        )
+        .aspectRatio(contentMode: .fit)
+        .id("\(animation.rawValue)-\(colorScheme)")
+
     }
 }
 
@@ -152,4 +188,40 @@ private struct CTAView: View {
                 .multilineTextAlignment(.center)
         }
     }
+}
+
+// MARK: - Animation Image Provider
+
+final class AddressBarPickerAnimationImageProvider: AnimationImageProvider {
+    private let colorScheme: ColorScheme
+    private let deviceIdiom: UIUserInterfaceIdiom
+    
+    init(colorScheme: ColorScheme, deviceIdiom: UIUserInterfaceIdiom) {
+        self.colorScheme = colorScheme
+        self.deviceIdiom = deviceIdiom
+    }
+    
+    func imageForAsset(asset: ImageAsset) -> CGImage? {
+        let imageName: String
+        
+        switch asset.name {
+        case "img_0.png":
+            imageName = "ab-animation-blur"
+        case "img_1.png":
+            imageName = "ab-animation-aichat"
+        case "img_2.png":
+            imageName = "ab-animation-aichat-2"
+        case "img_3.png":
+            imageName = "ab-animation-search-1"
+        case "img_4.png":
+            imageName = "ab-animation-search-2"
+        case "img_5.png":
+            imageName = "ab-animation-pill"
+        default:
+            return nil
+        }
+        
+        return UIImage(named: imageName)?.cgImage
+    }
+
 }

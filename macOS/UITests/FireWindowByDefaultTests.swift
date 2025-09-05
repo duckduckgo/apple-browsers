@@ -19,23 +19,12 @@
 import XCTest
 
 class FireWindowByDefaultTests: UITestCase {
-
-    private var dataClearingButton: XCUIElement!
-    private var generalButton: XCUIElement!
-    private var openFireWindowByDefaultToggle: XCUIElement!
-    private var reopenAllWindowsFromLastSessionRadio: XCUIElement!
-
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
 
         // Assume feature flag is on by default
         app = XCUIApplication.setUp(featureFlags: ["openFireWindowByDefault": true])
-
-        dataClearingButton = app.buttons["PreferencesSidebar.dataClearingButton"]
-        generalButton = app.buttons["PreferencesSidebar.generalButton"]
-        openFireWindowByDefaultToggle = app.checkBoxes["PreferencesDataClearingView.openFireWindowByDefault"]
-        reopenAllWindowsFromLastSessionRadio = app.radioButtons["PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"]
 
         app.enforceSingleWindow()
     }
@@ -50,22 +39,17 @@ class FireWindowByDefaultTests: UITestCase {
 
     func testFireWindowByDefaultEnabled() {
         // Navigate to Settings -> Data Clearing
-        navigateToDataClearingSettings()
+        app.openPreferencesWindow()
+        app.preferencesGoToDataClearingPane()
 
         // Turn on the 'Open Fire Window by Default' setting
-        if openFireWindowByDefaultToggle.value as? Bool == false {
-            openFireWindowByDefaultToggle.click()
-        }
-
-        // Verify the setting is enabled
-        XCTAssertTrue(openFireWindowByDefaultToggle.value as? Bool == true,
-                     "Open Fire Window by Default should be enabled")
+        app.setOpenFireWindowByDefault(enabled: true)
 
         // Close preferences
         app.closePreferencesWindow()
 
         // Test CMD+N opens Fire Window
-        app.typeKey("n", modifierFlags: .command)
+        app.openNewWindow()
         assertFireWindowOpened()
 
         // Close the Fire Window
@@ -78,22 +62,17 @@ class FireWindowByDefaultTests: UITestCase {
 
     func testFireWindowByDefaultDisabled() {
         // Navigate to Settings -> Data Clearing
-        navigateToDataClearingSettings()
+        app.openPreferencesWindow()
+        app.preferencesGoToDataClearingPane()
 
         // Turn off the 'Open Fire Window by Default' setting
-        if openFireWindowByDefaultToggle.value as? Bool == true {
-            openFireWindowByDefaultToggle.click()
-        }
-
-        // Verify the setting is disabled
-        XCTAssertTrue(openFireWindowByDefaultToggle.value as? Bool == false,
-                     "Open Fire Window by Default should be disabled")
+        app.setOpenFireWindowByDefault(enabled: false)
 
         // Close preferences
         app.closePreferencesWindow()
 
         // Test CMD+N opens Normal Window
-        app.typeKey("n", modifierFlags: .command)
+        app.openNewWindow()
         assertNormalWindowOpened()
 
         // Close the Normal Window
@@ -108,108 +87,45 @@ class FireWindowByDefaultTests: UITestCase {
         // First, enable session restore in General preferences
         navigateToGeneralSettings()
 
-        if reopenAllWindowsFromLastSessionRadio.isSelected == false {
-            reopenAllWindowsFromLastSessionRadio.click()
-        }
-
-        // Verify session restore is enabled
-        XCTAssertTrue(reopenAllWindowsFromLastSessionRadio.isSelected,
-                     "Session restore should be enabled")
+        app.preferencesSetRestorePreviousSession(to: .restoreLastSession)
 
         // Navigate to Data Clearing preferences
-        navigateToDataClearingSettings()
+        app.preferencesGoToDataClearingPane()
 
         // Enable Fire Window by Default
-        if openFireWindowByDefaultToggle.value as? Bool == false {
-            openFireWindowByDefaultToggle.click()
-        }
+        app.setOpenFireWindowByDefault(enabled: true)
 
         app.closeWindow()
 
-        // Open Normal Window
+        // Open Normal Window using (CMD + SHIFT + N)
         app.typeKey("n", modifierFlags: [.command, .shift])
-        openSite(pageTitle: "Page #1")
+        app.openSite(pageTitle: "Page #1")
 
         // Quit the application
         app.typeKey("q", modifierFlags: [.command])
         app.launch()
+
+        _ = app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence)
 
         assertRestoredSession()
     }
 
     // MARK: - Helper Methods
 
-    private func openSite(pageTitle: String) {
-        let url = UITests.simpleServedPage(titled: pageTitle)
-        let addressBar = app.addressBar
-        XCTAssertTrue(
-            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The address bar text field didn't become available in a reasonable timeframe."
-        )
-        addressBar.typeURL(url)
-        XCTAssertTrue(
-            app.windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Visited site didn't load with the expected title in a reasonable timeframe."
-        )
-    }
-
-    private func navigateToDataClearingSettings() {
-        app.openPreferencesWindow()
-
-        XCTAssertTrue(
-            dataClearingButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Data Clearing button should be available in preferences sidebar"
-        )
-
-        dataClearingButton.click()
-
-        XCTAssertTrue(
-            openFireWindowByDefaultToggle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Open Fire Window by Default toggle should be available in Data Clearing preferences"
-        )
-    }
-
     private func navigateToGeneralSettings() {
         app.openPreferencesWindow()
-
-        XCTAssertTrue(
-            generalButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "General button should be available in preferences sidebar"
-        )
-
-        generalButton.click()
-
-        XCTAssertTrue(
-            reopenAllWindowsFromLastSessionRadio.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Session restore radio button should be available in General preferences"
-        )
+        app.preferencesGoToGeneralPane()
     }
 
     private func resetToDefaultSettings() {
-        // Reset Fire Window by Default to disabled
-        navigateToDataClearingSettings()
-        if openFireWindowByDefaultToggle.value as? Bool == true {
-            openFireWindowByDefaultToggle.click()
-        }
+        // Reset Fire Window by Default to disable
+        app.openPreferencesWindow()
+        app.preferencesGoToDataClearingPane()
+        app.setOpenFireWindowByDefault(enabled: false)
 
         // Reset session restore to disabled (open new window)
-        navigateToGeneralSettings()
-        let openNewWindowRadio = app.radioButtons["PreferencesGeneralView.stateRestorePicker.openANewWindow"]
-        if openNewWindowRadio.exists && !openNewWindowRadio.isSelected {
-            openNewWindowRadio.click()
-        }
-
-        // Reset startup window type to default (normal window)
-        let startupWindowTypePicker = app.popUpButtons.firstMatch
-        if startupWindowTypePicker.exists {
-            startupWindowTypePicker.click()
-            let windowOption = app.menuItems["Window"]
-            if windowOption.exists {
-                windowOption.click()
-            }
-        }
-
-        app.closePreferencesWindow()
+        app.preferencesGoToGeneralPane()
+        app.preferencesSetRestorePreviousSession(to: .newWindow)
     }
 
     private func assertFireWindowOpened() {

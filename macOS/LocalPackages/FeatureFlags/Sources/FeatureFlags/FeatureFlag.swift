@@ -173,6 +173,11 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211127159784126?focus=true
     case subscriptionPurchaseWidePixelMeasurement
+
+    /// Rollout switch for redesigned Fire dialog (replaces legacy popover)
+    case fireDialog
+    /// Toggle for showing the "Manage individual sites" link in Fire dialog
+    case fireDialogIndividualSitesLink
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -227,13 +232,13 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .paidAIChat,
                 .exchangeKeysToSyncWithAnotherDevice,
                 .canScanUrlBasedSyncSetupBarcodes,
-				.privacyProFreeTrial,
+                .privacyProFreeTrial,
                 .removeWWWInCanonicalizationInThreatProtection,
                 .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage,
                 .willSoonDropBigSurSupport,
                 .aiChatGlobalSwitch,
-				.aiChatSidebar,
+                .aiChatSidebar,
                 .aiChatTextSummarization,
                 .shortHistoryMenu,
                 .subscriptionRebranding,
@@ -252,7 +257,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .refactorOfSyncPreferences,
                 .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,
-                .subscriptionPurchaseWidePixelMeasurement:
+                .subscriptionPurchaseWidePixelMeasurement,
+                .fireDialog:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -262,7 +268,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
                 .dbpRemoteBrokerDelivery,
-                .scheduledSetDefaultBrowserAndAddToDockPrompts:
+                .scheduledSetDefaultBrowserAndAddToDockPrompts,
+                .fireDialogIndividualSitesLink:
             return false
         }
     }
@@ -381,6 +388,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .enabled
         case .subscriptionPurchaseWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
+        case .fireDialog:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.fireDialog))
+        case .fireDialogIndividualSitesLink:
+            return .enabled
         case .refactorOfSyncPreferences:
             return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
         case .newSyncEntryPoints:

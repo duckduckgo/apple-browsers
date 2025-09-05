@@ -42,7 +42,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         }
 
         reporter = CapturingOnboardingPixelReporter()
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
         viewModel = OnboardingFireButtonDialogViewModel(
             onboardingPixelReporter: reporter,
             fireCoordinator: fireCoordinator,
@@ -68,7 +68,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenTryFireButtonThenOnFireButtonPressedCalledAndPixelSent() throws {
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),

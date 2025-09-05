@@ -110,6 +110,12 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     // Import Firefox's bookmarks and new tab shortcuts to better match Firefox's behavior
     case updateFirefoxBookmarksImport
+
+    // Gradual rollout for new Fire dialog replacing the legacy popover
+    case fireDialog
+
+    // Controls visibility of the "Manage individual sites" link in the Fire dialog
+    case fireDialogIndividualSitesLink
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

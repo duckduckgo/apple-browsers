@@ -22,10 +22,12 @@ import SwiftUI
 public struct StandardButtonStyle: ButtonStyle {
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
+    public let horizontalPadding: CGFloat
 
-    public init(topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3) {
+    public init(topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, horizontalPadding: CGFloat = 7.5) {
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
+        self.horizontalPadding = horizontalPadding
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
@@ -37,7 +39,7 @@ public struct StandardButtonStyle: ButtonStyle {
             .font(.system(size: 13))
             .padding(.top, topPadding)
             .padding(.bottom, bottomPadding)
-            .padding(.horizontal, 7.5)
+            .padding(.horizontal, horizontalPadding)
             .background(backgroundColor)
             .foregroundColor(labelColor)
             .cornerRadius(5)

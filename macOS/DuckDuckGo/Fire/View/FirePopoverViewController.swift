@@ -129,12 +129,6 @@ final class FirePopoverViewController: NSViewController {
         fireGraphic.image = visualStyle.iconsProvider.fireInfoGraphic
     }
 
-    override func viewWillAppear() {
-        super.viewWillAppear()
-
-        firePopoverViewModel.refreshItems()
-    }
-
     override func viewDidLayout() {
         super.viewDidLayout()
         if burnerWindowButton.wantsLayer {

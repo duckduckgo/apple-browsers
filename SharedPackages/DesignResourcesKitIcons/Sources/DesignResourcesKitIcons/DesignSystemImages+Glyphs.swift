@@ -167,6 +167,7 @@ public extension DesignSystemImages {
             public static var folderNew: DesignSystemImage { .init(resource: .folderNew16) }
             public static var gift: DesignSystemImage { .init(resource: .gift16) }
             public static var globe: DesignSystemImage { .init(resource: .globe16) }
+            public static var globeBlocked: DesignSystemImage { .init(resource: .globeBlocked16) }
             public static var help: DesignSystemImage { .init(resource: .help16) }
             public static var history: DesignSystemImage { .init(resource: .history16) }
             public static var home: DesignSystemImage { .init(resource: .home16) }
@@ -449,6 +450,7 @@ public extension DesignSystemImages {
             public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayer24) }
             public static var videoSolid: DesignSystemImage { .init(resource: .videoSolid24) }
             public static var viewGrid: DesignSystemImage { .init(resource: .viewGrid24) }
+            public static var window: DesignSystemImage { .init(resource: .window24) }
             public static var zoomIn: DesignSystemImage { .init(resource: .zoomIn24) }
        }
    }

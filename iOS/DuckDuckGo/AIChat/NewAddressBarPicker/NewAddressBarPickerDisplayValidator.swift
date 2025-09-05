@@ -41,16 +41,20 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     
     // MARK: - Initialization
     
-    init(dependencies: DependencyProvider = AppDependencyProvider.shared) {
-        self.aiChatSettings = AIChatSettings(
-            privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
-            featureFlagger: dependencies.featureFlagger
-        )
-        self.tutorialSettings = DefaultTutorialSettings()
-        self.featureFlagger = dependencies.featureFlagger
-        self.experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: dependencies.featureFlagger)
-        self.appSettings = dependencies.appSettings
-        self.pickerStorage = NewAddressBarPickerStorage()
+    init(
+        aiChatSettings: AIChatSettingsProvider,
+        tutorialSettings: TutorialSettings,
+        featureFlagger: FeatureFlagger,
+        experimentalAIChatManager: ExperimentalAIChatManager,
+        appSettings: AppSettings,
+        pickerStorage: NewAddressBarPickerStorage
+    ) {
+        self.aiChatSettings = aiChatSettings
+        self.tutorialSettings = tutorialSettings
+        self.featureFlagger = featureFlagger
+        self.experimentalAIChatManager = experimentalAIChatManager
+        self.appSettings = appSettings
+        self.pickerStorage = pickerStorage
     }
     
     // MARK: - Public Interface

@@ -601,7 +601,14 @@ class MainViewController: UIViewController {
     }
     
     private func presentNewAddressBarPickerIfNeeded() {
-        let validator = NewAddressBarPickerDisplayValidator()
+        let validator = NewAddressBarPickerDisplayValidator(
+            aiChatSettings: aiChatSettings,
+            tutorialSettings: tutorialSettings,
+            featureFlagger: featureFlagger,
+            experimentalAIChatManager: experimentalAIChatManager,
+            appSettings: appSettings,
+            pickerStorage: NewAddressBarPickerStorage()
+        )
         guard validator.shouldDisplayNewAddressBarPicker() else { return }
 
         let pickerViewController = NewAddressBarPickerViewController()

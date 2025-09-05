@@ -36,6 +36,8 @@ final class StatisticsLoader {
     private let usageSegmentation: UsageSegmenting
     private let parser = AtbParser()
     private var isAppRetentionRequestInProgress = false
+    var isSearchRetentionRequestInProgress = false
+    var isDuckAIRetentionRequestInProgress = false
     private let fireSearchExperimentPixels: () -> Void
     private let fireAppRetentionExperimentPixels: () -> Void
 
@@ -160,6 +162,11 @@ final class StatisticsLoader {
     func refreshSearchRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
 
+        guard !isSearchRetentionRequestInProgress else {
+            completion()
+            return
+        }
+
         guard let atbWithVariant = statisticsStore.atbWithVariant,
               let searchRetentionAtb = statisticsStore.searchRetentionAtb ?? statisticsStore.atb
         else {
@@ -172,10 +179,13 @@ final class StatisticsLoader {
 
         Logger.atb.debug("Requesting search retention ATB")
 
+        isSearchRetentionRequestInProgress = true
+
         let url = URL.searchAtb(atbWithVariant: atbWithVariant, setAtb: searchRetentionAtb, isSignedIntoEmailProtection: emailManager.isSignedIn)
         let configuration = APIRequest.Configuration(url: url)
         let request = APIRequest(configuration: configuration, urlSession: URLSession.session(useMainThreadCallbackQueue: true))
         request.fetch { (response, error) in
+            self.isSearchRetentionRequestInProgress = false
             if let error = error {
                 Logger.atb.error("Search atb request failed with error \(error.localizedDescription)")
                 completion()
@@ -241,6 +251,11 @@ final class StatisticsLoader {
     func refreshDuckAIRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
 
+        guard !isDuckAIRetentionRequestInProgress else {
+            completion()
+            return
+        }
+
         guard let atbWithVariant = statisticsStore.atbWithVariant else {
             requestInstallStatistics {
                 self.updateUsageSegmentationAfterInstall(activityType: .duckAI)
@@ -256,7 +271,9 @@ final class StatisticsLoader {
         let url = URL.duckAIAtb(atbWithVariant: atbWithVariant, setAtb: duckAIRetentionAtb)
         let configuration = APIRequest.Configuration(url: url)
         let request = APIRequest(configuration: configuration, urlSession: URLSession.session(useMainThreadCallbackQueue: true))
+        isDuckAIRetentionRequestInProgress = true
         request.fetch { (response, error) in
+            self.isDuckAIRetentionRequestInProgress = false
             if let error = error {
                 Logger.atb.error("Duck.ai atb request failed with error \(error.localizedDescription)")
                 completion()

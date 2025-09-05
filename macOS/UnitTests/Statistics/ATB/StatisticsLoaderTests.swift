@@ -452,4 +452,39 @@ class StatisticsLoaderTests: XCTestCase {
         waitForExpectations(timeout: 1, handler: nil)
     }
 
+    func testWhenDuckAIRefreshCalledWhileAnotherIsInProgressThenSecondCallIsIgnored() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionAtb"
+        loadSuccessfulAtbStub()
+
+        // Simulate an ongoing request
+        testee.isDuckAIRetentionRequestInProgress = true
+
+        let expect = expectation(description: "Second DuckAI refresh call is ignored")
+        testee.refreshDuckAIRetentionAtb {
+            // The refresh should be ignored, so no update should occur
+            XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "retentionAtb")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenSearchRefreshCalledWhileAnotherIsInProgressThenSecondCallIsIgnored() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "retentionAtb"
+        loadSuccessfulAtbStub()
+
+        // Simulate an ongoing request
+        testee.isSearchRetentionRequestInProgress = true
+
+        let expect = expectation(description: "Second Search refresh call is ignored")
+        testee.refreshSearchRetentionAtb {
+            // The refresh should be ignored, so no update should occur
+            XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "retentionAtb")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
 }

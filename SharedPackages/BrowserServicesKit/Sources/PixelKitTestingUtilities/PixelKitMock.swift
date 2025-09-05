@@ -60,7 +60,7 @@ public struct ExpectedFireCall: Equatable {
     public static func == (lhs: ExpectedFireCall, rhs: ExpectedFireCall) -> Bool {
         lhs.pixel.name == rhs.pixel.name
         && lhs.pixel.parameters == rhs.pixel.parameters
-        && String(describing: lhs.pixel.error) == String(describing: rhs.pixel.error)
+        && lhs.pixel.error == rhs.pixel.error
         && lhs.frequency == rhs.frequency
     }
 }

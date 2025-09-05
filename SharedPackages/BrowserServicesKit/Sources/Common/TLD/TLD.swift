@@ -82,7 +82,9 @@ public class TLD {
     public func eTLD(_ host: String?) -> String? {
         guard let host = host else { return nil }
 
-        let parts = [String](host.components(separatedBy: ".").reversed())
+        // Strip port number if present
+        let hostWithoutPort = host.components(separatedBy: ":").first ?? host
+        let parts = [String](hostWithoutPort.components(separatedBy: ".").reversed())
 
         var stack = ""
         var lastKnownTLD = ""

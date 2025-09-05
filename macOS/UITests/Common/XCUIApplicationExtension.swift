@@ -46,6 +46,7 @@ extension XCUIApplication {
 
         static let settingsScrollView = "Settings.ScrollView"
         static let preferencesGeneralButton = "PreferencesSidebar.generalButton"
+        static let preferencesDataClearingButton = "PreferencesSidebar.dataClearingButton"
         static let switchToNewTabWhenOpenedCheckbox = "PreferencesGeneralView.switchToNewTabWhenOpened"
         static let alwaysAskWhereToSaveFilesCheckbox = "PreferencesGeneralView.alwaysAskWhereToSaveFiles"
         static let openPopupOnDownloadCompletionCheckbox = "PreferencesGeneralView.openPopupOnDownloadCompletion"
@@ -59,6 +60,7 @@ extension XCUIApplication {
         static let startupWindowTypeRegularWindow = "PreferencesGeneralView.stateRestorePicker.openANewWindow.regular"
         static let startupWindowTypeFireWindow = "PreferencesGeneralView.stateRestorePicker.openANewWindow.fireWindow"
 
+        static let openFireWindowByDefaultCheckbox = "PreferencesDataClearingView.openFireWindowByDefault"
     }
 
     static func setUp(environment: [String: String]? = nil, featureFlags: [String: Bool] = ["visualUpdates": true]) -> XCUIApplication {
@@ -159,6 +161,20 @@ extension XCUIApplication {
     /// Opens downloads
     func openDownloads() {
         typeKey("j", modifierFlags: .command)
+    }
+
+    func openSite(pageTitle: String) {
+        let url = UITests.simpleServedPage(titled: pageTitle)
+        let addressBar = addressBar
+        XCTAssertTrue(
+            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The address bar text field didn't become available in a reasonable timeframe."
+        )
+        addressBar.typeURL(url)
+        XCTAssertTrue(
+            windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Visited site didn't load with the expected title in a reasonable timeframe."
+        )
     }
 
     // MARK: - Bookmarks
@@ -324,6 +340,13 @@ extension XCUIApplication {
         if general.waitForExistence(timeout: UITests.Timeouts.elementExistence) { general.click() }
     }
 
+    /// Selects the Data Clearing pane in Preferences
+    func preferencesGoToDataClearingPane() {
+        let prefs = preferencesWindow
+        let dataClearing = prefs.buttons[AccessibilityIdentifiers.preferencesDataClearingButton]
+        if dataClearing.waitForExistence(timeout: UITests.Timeouts.elementExistence) { dataClearing.click() }
+    }
+
     enum StartupType: String, CaseIterable {
         case restoreLastSession
         case newWindow
@@ -374,6 +397,11 @@ extension XCUIApplication {
             ensureHittable(radioButton)
             radioButton.click()
         }
+    }
+
+    func setOpenFireWindowByDefault(enabled: Bool) {
+        let checkbox = checkBoxes[AccessibilityIdentifiers.openFireWindowByDefaultCheckbox]
+        checkbox.toggleCheckboxIfNeeded(to: enabled, ensureHittable: self.ensureHittable)
     }
 
     /// Sets the "Always ask where to save files" toggle to a specific state

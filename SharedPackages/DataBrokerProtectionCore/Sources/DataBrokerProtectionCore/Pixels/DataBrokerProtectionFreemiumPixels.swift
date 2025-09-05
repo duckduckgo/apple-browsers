@@ -94,11 +94,7 @@ public enum DataBrokerProtectionFreemiumPixels: PixelKitEventV2 {
         }
     }
 
-    public var parameters: [String: String]? {
-        return nil
-    }
+    public var error: (any Error)? { nil }
 
-    public var error: (any Error)? {
-        nil
-    }
+    public var parameters: [String: String]? { nil }
 }

@@ -74,7 +74,7 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
 
         switch subscriptionActivationError {
         case .purchaseFailed(let error):
-            PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureStoreError(error), frequency: .legacyDailyAndCount, withError: error)
+            PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureStoreError(error), frequency: .legacyDailyAndCount)
         case .missingEntitlements:
             PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureBackendError, frequency: .legacyDailyAndCount)
         case .failedToGetSubscriptionOptions:
@@ -84,7 +84,7 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
         case .cancelledByUser:
             break
         case .accountCreationFailed(let error):
-            PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated(error), frequency: .legacyDailyAndCount, withError: error)
+            PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated(error), frequency: .legacyDailyAndCount)
         case .activeSubscriptionAlreadyPresent:
             break
         case .otherPurchaseError:

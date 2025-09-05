@@ -389,7 +389,12 @@ extension LegacyBookmarksCoreDataStorage {
                     try createMissingTopLevelFolder(onContext: privateContext, withFolderType: folderType)
                 }
 
-                try privateContext.save()
+                do {
+                    try privateContext.save()
+                } catch {
+                    DailyPixel.fireDailyAndCount(pixel: .debugBookmarksTopFolderSaveFailed)
+                    assertionFailure("Failure saving bookmark top folder fix")
+                }
             } catch {
                 thrownError = error
             }

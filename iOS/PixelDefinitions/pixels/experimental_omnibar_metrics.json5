@@ -99,4 +99,19 @@
         suffixes: ['platform', 'form_factor'],
         parameters: ['appVersion', 'pixelSource'],
     },
+    m_aichat_experimental_omnibar_text_area_focused: {
+        description: 'Fires when user focuses the text input area in the experimental omnibar',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'orientation',
+                description: 'Device orientation when text area was focused: portrait or landscape',
+                type: 'string',
+            },
+        ],
+    },
 }

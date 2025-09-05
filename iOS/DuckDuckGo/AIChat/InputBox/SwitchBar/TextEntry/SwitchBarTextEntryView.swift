@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import Combine
 import DesignResourcesKitIcons
+import Core
 
 class SwitchBarTextEntryView: UIView {
 
@@ -324,6 +325,10 @@ class SwitchBarTextEntryView: UIView {
 
 extension SwitchBarTextEntryView: UITextViewDelegate {
 
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        fireTextAreaFocusedPixel()
+    }
+
     func textViewDidChange(_ textView: UITextView) {
         hasBeenInteractedWith = true
         
@@ -348,5 +353,22 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
             return false
         }
         return true
+    }
+}
+
+// MARK: Pixels
+
+private extension SwitchBarTextEntryView {
+    func fireTextAreaFocusedPixel() {
+        let parameters = ["orientation": UIDevice.current.orientation.orientationDescription]
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarTextAreaFocused, withAdditionalParameters: parameters)
+    }
+}
+
+// MARK: Other extensions
+
+private extension UIDeviceOrientation {
+    var orientationDescription: String {
+        isLandscape ? "landscape" : "portrait"
     }
 }

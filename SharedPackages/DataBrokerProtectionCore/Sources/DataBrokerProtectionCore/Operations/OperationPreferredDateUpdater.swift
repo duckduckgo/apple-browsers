@@ -23,6 +23,7 @@ import os.log
 enum OperationPreferredDateUpdaterOrigin {
     case optOut
     case scan
+    case emailConfirmation
 }
 
 protocol OperationPreferredDateUpdating {

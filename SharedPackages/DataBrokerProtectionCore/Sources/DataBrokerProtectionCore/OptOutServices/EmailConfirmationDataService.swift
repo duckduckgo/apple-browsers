@@ -110,6 +110,7 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                 case .pending:
                     continue
                 case .unknown, .error:
+                    // These are unrecoverable errors and we'll need to set it up for future retry
                     if let record = records[email: item.email, attemptId: item.attemptId] {
                         try database.deleteOptOutEmailConfirmation(profileQueryId: record.profileQueryId,
                                                                    brokerId: record.brokerId,
@@ -118,6 +119,14 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                                                brokerId: record.brokerId,
                                                profileQueryId: record.profileQueryId,
                                                type: .error(error: .emailError(item.errorCode?.asEmailError))))
+                        if let broker = try database.fetchBroker(with: record.brokerId) {
+                            try updateOperationDataDates(origin: .emailConfirmation,
+                                                         brokerId: record.brokerId,
+                                                         profileQueryId: record.profileQueryId,
+                                                         extractedProfileId: record.extractedProfileId,
+                                                         schedulingConfig: broker.schedulingConfig,
+                                                         database: database)
+                        }
                     }
                 }
             }
@@ -125,6 +134,20 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
 
         try await emailServiceV1.deleteEmailData(items: itemsToDelete)
     }
+
+    private func updateOperationDataDates(origin: OperationPreferredDateUpdaterOrigin,
+                                          brokerId: Int64,
+                                          profileQueryId: Int64,
+                                          extractedProfileId: Int64?,
+                                          schedulingConfig: DataBrokerScheduleConfig,
+                                          database: DataBrokerProtectionRepository) throws {
+       let dateUpdater = OperationPreferredDateUpdater(database: database)
+       try dateUpdater.updateOperationDataDates(origin: origin,
+                                                brokerId: brokerId,
+                                                profileQueryId: profileQueryId,
+                                                extractedProfileId: extractedProfileId,
+                                                schedulingConfig: schedulingConfig)
+   }
 }
 
 extension [OptOutEmailConfirmationJobData] {

@@ -449,10 +449,10 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
     }
 
     public func getConfirmationLink(from email: String,
-                                   numberOfRetries: Int,
-                                   pollingInterval: TimeInterval,
-                                   attemptId: UUID,
-                                   shouldRunNextStep: @escaping () -> Bool) async throws -> URL {
+                                    numberOfRetries: Int,
+                                    pollingInterval: TimeInterval,
+                                    attemptId: UUID,
+                                    shouldRunNextStep: @escaping () -> Bool) async throws -> URL {
         if shouldThrow {
             throw DataBrokerProtectionError.emailError(nil)
         }
@@ -1590,8 +1590,8 @@ public final class MockEmailConfirmationJobProvider: EmailConfirmationJobProvidi
     public init() {}
 
     public func createEmailConfirmationJobs(showWebView: Bool,
-                                             errorDelegate: EmailConfirmationErrorDelegate,
-                                             jobDependencies: EmailConfirmationJobDependencyProviding) throws -> [EmailConfirmationJob] {
+                                            errorDelegate: EmailConfirmationErrorDelegate,
+                                            jobDependencies: EmailConfirmationJobDependencyProviding) throws -> [EmailConfirmationJob] {
         if shouldThrowError {
             throw NSError(domain: "test", code: 1, userInfo: nil)
         }

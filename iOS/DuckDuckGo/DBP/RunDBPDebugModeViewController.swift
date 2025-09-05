@@ -440,6 +440,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         let database: DataBrokerProtectionRepository
         do {
             let vault = try vaultFactory.makeVault(reporter: nil)
+            // swiftlint:disable:next force_cast
             database = vault as! DataBrokerProtectionRepository
         } catch {
             fatalError("Failed to create database: \(error)")

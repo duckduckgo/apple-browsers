@@ -84,7 +84,7 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                   let extractedProfileId = extractedProfileId else {
                 throw DataBrokerProtectionError.dataNotInDatabase
             }
-            
+
             try database.saveOptOutEmailConfirmation(profileQueryId: profileQueryId,
                                                      brokerId: dataBrokerId,
                                                      extractedProfileId: extractedProfileId,

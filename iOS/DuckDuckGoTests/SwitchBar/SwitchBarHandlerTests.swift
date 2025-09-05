@@ -53,7 +53,8 @@ final class SwitchBarHandlerTests: XCTestCase {
     private func createSUT() {
         sut = SwitchBarHandler(
             voiceSearchHelper: mockVoiceSearchHelper,
-            storage: mockStorage, aiChatSettings: MockAIChatSettingsProvider()
+            storage: mockStorage, aiChatSettings: MockAIChatSettingsProvider(),
+            sessionStateMetrics: SessionStateMetrics(storage: mockStorage)
         )
     }
 

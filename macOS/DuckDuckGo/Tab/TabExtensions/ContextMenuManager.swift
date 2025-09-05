@@ -451,13 +451,17 @@ private extension ContextMenuManager {
         }
 
         Task { @MainActor in
-            let sourceTLD = tld.eTLD(forStringURL: webView?.url?.absoluteString ?? "")
+            let websiteTLD: String? = {
+                guard let sourceTLD = tld.eTLD(forStringURL: webView?.url?.absoluteString ?? "") else { return nil }
+                return "." + sourceTLD
+            }()
+
             let sourceLanguage: String? = await webView?.currentSelectionLanguage
 
             let request = AIChatTextTranslationRequest(text: selectedText,
                                                        websiteURL: webView?.url,
                                                        websiteTitle: webView?.title,
-                                                       websiteTLD: sourceTLD,
+                                                       websiteTLD: websiteTLD,
                                                        sourceLanguage: sourceLanguage)
 
             mainViewController?.aiChatTranslator.translate(request)

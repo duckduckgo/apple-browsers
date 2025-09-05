@@ -1,12 +1,12 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
-    'm_mac_aichat_sidebar_opened': {
+    m_mac_aichat_sidebar_opened: {
         description: 'Fired when the AI Chat sidebar is opened',
         owners: ['miasma13'],
         triggers: ['other'],
         suffixes: ['first_daily_count'],
         parameters: [
-            'appVersion', 
+            'appVersion',
             'pixelSource',
             {
                 key: 'source',
@@ -16,7 +16,7 @@
             },
         ],
     },
-    'm_mac_aichat_translate_text': {
+    m_mac_aichat_translate_text: {
         description: 'Fired when the AI Chat translation action was triggered',
         owners: ['miasma13'],
         triggers: ['other'],

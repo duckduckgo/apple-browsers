@@ -634,7 +634,7 @@ extension DataBrokerProtectionDatabase {
 
         let newProfileQueries = profile.profileQueries
 
-        let databaseBrokerProfileQueryData = try fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+        let databaseBrokerProfileQueryData = try fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true)
         let databaseProfileQueries = databaseBrokerProfileQueryData.map { $0.profileQuery }
 
         // The queries we need to create are the one that exist on the new ones but not in the database

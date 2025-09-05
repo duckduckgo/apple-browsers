@@ -632,7 +632,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     }
 
     public func fetchAllNonRemovedBrokers() throws -> [DataBroker] {
-        return brokers
+        return brokers.filter { !$0.isRemoved }
     }
 
     public func save(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64 {

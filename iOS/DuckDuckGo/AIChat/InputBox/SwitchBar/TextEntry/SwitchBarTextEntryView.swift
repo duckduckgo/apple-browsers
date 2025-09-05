@@ -131,6 +131,7 @@ class SwitchBarTextEntryView: UIView {
 
     private func setupButtonsView() {
         buttonsView.onClearTapped = { [weak self] in
+            self?.fireClearButtonPressedPixel()
             self?.handler.clearText()
             self?.handler.clearButtonTapped()
         }
@@ -362,6 +363,10 @@ private extension SwitchBarTextEntryView {
     func fireTextAreaFocusedPixel() {
         let parameters = ["orientation": UIDevice.current.orientation.orientationDescription]
         Pixel.fire(pixel: .aiChatExperimentalOmnibarTextAreaFocused, withAdditionalParameters: parameters)
+    }
+    
+    func fireClearButtonPressedPixel() {
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarClearButtonPressed)
     }
 }
 

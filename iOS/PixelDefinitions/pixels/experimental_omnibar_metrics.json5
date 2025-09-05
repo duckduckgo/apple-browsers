@@ -114,4 +114,11 @@
             },
         ],
     },
+    m_aichat_experimental_omnibar_clear_button_pressed: {
+        description: 'Fires when user presses the X (clear) button in the experimental omnibar',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
 }

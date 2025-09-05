@@ -113,6 +113,14 @@ final class BrowserTabViewController: NSViewController {
 
     public weak var aiChatSidebarHostingDelegate: AIChatSidebarHostingDelegate?
 
+    private var isInPopUpWindow: Bool {
+        guard let mainViewController = parent as? MainViewController else {
+            assertionFailure("BrowserTabViewController is not a child of MainViewController")
+            return view.window is PopUpWindow
+        }
+        return mainViewController.isInPopUpWindow
+    }
+
     required init?(coder: NSCoder) {
         fatalError("BrowserTabViewController: Bad initializer")
     }
@@ -878,7 +886,7 @@ final class BrowserTabViewController: NSViewController {
         }
 
         // shouldn't open New Tabs in PopUp window
-        if view.window?.isPopUpWindow ?? true {
+        if isInPopUpWindow {
             // Prefer Tab's Parent
             Application.appDelegate.windowControllersManager.showTab(with: content)
             return nil
@@ -1219,9 +1227,8 @@ extension BrowserTabViewController: ContentOverlayUserScriptDelegate {
 extension BrowserTabViewController: TabDelegate {
 
     func tabWillStartNavigation(_ tab: Tab, isUserInitiated: Bool) {
-        if isUserInitiated,
+        if isUserInitiated, isInPopUpWindow,
            let window = self.view.window,
-           window.isPopUpWindow == true,
            window.isKeyWindow == false {
 
             window.makeKeyAndOrderFront(nil)

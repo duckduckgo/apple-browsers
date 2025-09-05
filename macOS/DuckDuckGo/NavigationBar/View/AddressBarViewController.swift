@@ -115,6 +115,14 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
+    var isInPopUpWindow: Bool {
+        guard let navigationBarViewController = parent as? NavigationBarViewController else {
+            assertionFailure("AddressBarViewController is not a child of NavigationBarViewController")
+            return view.window is PopUpWindow
+        }
+        return navigationBarViewController.isInPopUpWindow
+    }
+
     private var accentColor: NSColor {
         return isBurner ? NSColor.burnerAccent : NSColor.controlAccentColor
     }
@@ -217,17 +225,14 @@ final class AddressBarViewController: NSViewController {
     }
 
     override func viewWillAppear() {
-        guard let window = view.window else {
-            assert([.unitTests, .integrationTests].contains(AppVersion.runType),
-                   "AddressBarViewController.viewWillAppear: view.window is nil")
-            return
-        }
-        if window.isPopUpWindow == true {
+        if isInPopUpWindow {
             addressBarTextField.isHidden = true
             inactiveBackgroundView.isHidden = true
             activeBackgroundViewWithSuggestions.isHidden = true
             activeOuterBorderView.isHidden = true
             activeBackgroundView.isHidden = true
+            passiveTextField.isSelectable = false
+
             shadowView.isHidden = true
             inactiveAddressBarShadowView.removeFromSuperview()
         } else {
@@ -550,7 +555,7 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func updateShadowViewPresence(_ isFirstResponder: Bool) {
-        guard isFirstResponder, view.window?.isPopUpWindow == false else {
+        guard isFirstResponder, !isInPopUpWindow else {
             shadowView.removeFromSuperview()
             return
         }

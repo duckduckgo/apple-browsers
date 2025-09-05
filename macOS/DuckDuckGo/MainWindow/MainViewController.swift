@@ -75,8 +75,8 @@ final class MainViewController: NSViewController {
         && (!(view.window?.isFullScreen ?? false) || NSApp.delegateTyped.appearancePreferences.showTabsAndBookmarksBarOnFullScreen)
     }
 
-    private var isInPopUpWindow: Bool {
-        view.window?.isPopUpWindow == true
+    var isInPopUpWindow: Bool {
+        tabCollectionViewModel.isPopup
     }
 
     required init?(coder: NSCoder) {
@@ -244,7 +244,7 @@ final class MainViewController: NSViewController {
         if isInPopUpWindow {
             tabBarViewController.view.isHidden = true
             mainView.tabBarContainerView.isHidden = true
-            mainView.isTabBarShown = false
+            mainView.setTabBarShown(false, animated: false)
             resizeNavigationBar(isHomePage: false, animated: false)
 
             updateBookmarksBarViewVisibility(visible: false)
@@ -831,7 +831,7 @@ extension MainViewController: BrowserTabViewControllerDelegate {
                 .contains { mainWindowController -> Bool in
                     mainWindowController.mainViewController !== self
                     && mainWindowController.mainViewController.isBurner == false
-                    && mainWindowController.window?.isPopUpWindow == false
+                    && !mainWindowController.mainViewController.isInPopUpWindow
                 }
         }()
 

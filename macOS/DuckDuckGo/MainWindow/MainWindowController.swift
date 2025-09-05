@@ -54,7 +54,7 @@ final class MainWindowController: NSWindowController {
 
         assert(window == nil || [.unitTests, .integrationTests].contains(AppVersion.runType),
                "Window should not be set in non-test environment")
-        let popUp = mainViewController.tabCollectionViewModel.isPopup
+        let popUp = mainViewController.isInPopUpWindow
         let window = window ?? (popUp
             ? PopUpWindow(frame: frame)
             : MainWindow(frame: frame))
@@ -248,6 +248,11 @@ final class MainWindowController: NSWindowController {
             toolbarView.setAccessibilityEnabled(false)
             toolbarView.setAccessibilityElement(false)
             tabBarViewController.view.setAccessibilityParent(window)
+
+            // macOS 26 Glass Container prevents right clicks
+            if let glassContainer = toolbarView.subviews.first(where: { $0.className == "NSGlassContainerView" }) {
+                glassContainer.removeFromSuperview()
+            }
         }
 
         tabBarViewController.view.frame = newParentView.bounds
@@ -347,7 +352,7 @@ extension MainWindowController: NSWindowDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
             guard let self else { return }
             mainViewController.disableTabPreviews()
-            mainViewController.mainView.isTabBarShown = false
+            mainViewController.mainView.setTabBarShown(false, animated: true)
             mainViewController.mainView.webContainerTopBinding = .navigationBar
             mainViewController.updateBookmarksBarViewVisibility(visible: false)
             moveTabBarView(toTitlebarView: false)
@@ -360,7 +365,7 @@ extension MainWindowController: NSWindowDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
             guard let self else { return }
             mainViewController.enableTabPreviews()
-            mainViewController.mainView.isTabBarShown = true
+            mainViewController.mainView.setTabBarShown(true, animated: true)
             mainViewController.mainView.webContainerTopBinding = .tabBar
             mainViewController.updateBookmarksBarViewVisibility(visible: mainViewController.shouldShowBookmarksBar)
             window?.titlebarAppearsTransparent = true
@@ -524,22 +529,6 @@ fileprivate extension MainMenu {
             preferencesMenuItem.menu,
             manageBookmarksMenuItem.menu
         ].compactMap { $0 }
-    }
-
-}
-
-fileprivate extension NavigationBarViewController {
-
-    var controlsForUserPrevention: [NSControl?] {
-        return [homeButton,
-                optionsButton,
-                overflowButton,
-                bookmarkListButton,
-                passwordManagementButton,
-                addressBarViewController?.addressBarTextField,
-                addressBarViewController?.passiveTextField,
-                addressBarViewController?.addressBarButtonsViewController?.bookmarkButton
-        ]
     }
 
 }

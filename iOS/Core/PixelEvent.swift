@@ -2801,7 +2801,7 @@ public extension Pixel.Event {
             }
         }
 
-        private var event: PixelKitEventV2 {
+        private var event: PixelKitEvent {
             switch self {
             case .errorPageShown(let category, let clientSideHit):
                 return MaliciousSiteProtection.Event.errorPageShown(category: category, clientSideHit: clientSideHit)

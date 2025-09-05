@@ -22,7 +22,7 @@ import BrowserServicesKit
 import DDGSync
 import Configuration
 
-enum GeneralPixel: PixelKitEventV2 {
+enum GeneralPixel: PixelKitEvent {
 
     case crash(appIdentifier: CrashPixelAppIdentifier?)
     case crashOnCrashHandlersSetUp
@@ -332,9 +332,9 @@ enum GeneralPixel: PixelKitEventV2 {
     case dbSaveExcludedHTTPSDomainsError(error: Error?)
     case dbSaveBloomFilterError(error: Error?)
 
-    case remoteMessagingSaveConfigError
-    case remoteMessagingUpdateMessageShownError
-    case remoteMessagingUpdateMessageStatusError
+    case remoteMessagingSaveConfigError(error: Error?)
+    case remoteMessagingUpdateMessageShownError(error: Error?)
+    case remoteMessagingUpdateMessageStatusError(error: Error?)
 
     case configurationFetchError(error: Error)
 
@@ -1231,31 +1231,6 @@ enum GeneralPixel: PixelKitEventV2 {
             // Enhanced statistics
         case .usageSegments: return "retention_segments"
 
-        }
-    }
-
-    var error: (any Error)? {
-        switch self {
-        case .dbContainerInitializationError(let error),
-                .dbInitializationError(let error),
-                .dbSaveExcludedHTTPSDomainsError(let error?),
-                .dbSaveBloomFilterError(let error?),
-                .configurationFetchError(let error),
-                .secureVaultInitError(let error),
-                .secureVaultError(let error),
-                .syncSignupError(let error),
-                .syncLoginError(let error),
-                .syncLogoutError(let error),
-                .syncUpdateDeviceError(let error),
-                .syncRemoveDeviceError(let error),
-                .syncRefreshDevicesError(let error),
-                .syncDeleteAccountError(let error),
-                .syncLoginExistingAccountError(let error),
-                .syncSecureStorageReadError(let error),
-                .syncSecureStorageDecodingError(let error),
-                .bookmarksCouldNotLoadDatabase(let error?):
-            return error
-        default: return nil
         }
     }
 

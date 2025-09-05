@@ -34,7 +34,7 @@ public enum StripePurchaseFlowError: DDGError {
         }
     }
 
-    public var errorDomain: String { "com.duckduckgo.subscription.StripePurchaseFlowError" }
+    public static var errorDomain: String { "com.duckduckgo.subscription.StripePurchaseFlowError" }
 
     public var errorCode: Int {
         switch self {

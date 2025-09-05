@@ -29,7 +29,7 @@ fileprivate let appDistribution = "direct"
 #endif
 // swiftlint:enable private_over_fileprivate
 
-enum PrivacyProPixel: PixelKitEventV2 {
+enum PrivacyProPixel: PixelKitEvent {
     // Subscription
     case privacyProSubscriptionActive(AuthVersion)
     case privacyProOfferScreenImpression
@@ -156,16 +156,6 @@ enum PrivacyProPixel: PixelKitEventV2 {
         }
     }
 
-    var error: (any Error)? {
-        switch self {
-        case .privacyProPurchaseFailureStoreError(let error): return error
-        case .privacyProPurchaseFailureAccountNotCreated(let error): return error
-        case .privacyProAuthV2MigrationFailed(_, let error): return error
-        case .privacyProAuthV2GetTokensError(_, _, let error): return error
-        default: return nil
-        }
-    }
-
     private struct PrivacyProPixelsDefaults {
         static let errorKey = "error"
         static let policyCacheKey = "policycache"
@@ -196,7 +186,7 @@ enum PrivacyProPixel: PixelKitEventV2 {
     }
 }
 
-enum PrivacyProErrorPixel: PixelKitEventV2 {
+enum PrivacyProErrorPixel: PixelKitEvent {
 
     case privacyProKeychainAccessError(accessType: AccountKeychainAccessType,
                                        accessError: AccountKeychainAccessError,
@@ -219,10 +209,6 @@ enum PrivacyProErrorPixel: PixelKitEventV2 {
                 "authVersion": authVersion.rawValue
             ]
         }
-    }
-
-    var error: (any Error)? {
-        return nil
     }
 
 }

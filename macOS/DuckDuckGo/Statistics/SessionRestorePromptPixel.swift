@@ -23,7 +23,7 @@ import PixelKit
  *
  * See macOS/PixelDefinitions/pixels/session_restore_prompt_pixels.json5 for more details.
  */
-enum SessionRestorePromptPixel: PixelKitEventV2 {
+enum SessionRestorePromptPixel: PixelKitEvent {
     case unexpectedAppTerminationDetected
     case promptShown
     case promptDismissedWithoutRestore

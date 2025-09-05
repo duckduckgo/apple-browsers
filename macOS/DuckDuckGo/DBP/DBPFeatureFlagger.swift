@@ -38,8 +38,7 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
     }
 
     init(configurationManager: DataBrokerProtection_macOS.ConfigurationManager,
-         privacyConfigurationManager: PrivacyConfigurationManaging,
-         allowOverrides: (() -> Bool)? = nil) {
+         privacyConfigurationManager: PrivacyConfigurationManaging) {
         let featureFlagger = DefaultFeatureFlagger(
             internalUserDecider: privacyConfigurationManager.internalUserDecider,
             privacyConfigManager: privacyConfigurationManager,
@@ -47,7 +46,6 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
                 keyValueStore: UserDefaults.config,
                 actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>()
             ),
-            allowOverrides: allowOverrides,
             experimentManager: nil,
             for: FeatureFlag.self
         )

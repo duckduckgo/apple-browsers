@@ -120,6 +120,10 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
         ipcClient.checkForEmailConfirmationData()
     }
 
+    func runEmailConfirmationOperations(showWebView: Bool) {
+        ipcClient.runEmailConfirmationOperations(showWebView: showWebView)
+    }
+
     func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {
         return await ipcClient.getDebugMetadata()
     }

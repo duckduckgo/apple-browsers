@@ -566,4 +566,10 @@ extension DataBrokerProtectionIOSManager: BrokerProfileJobQueueManagerDelegate {
     }
 }
 
-extension DataBrokerProtectionIOSManager: EmailConfirmationDataChecking {}
+extension DataBrokerProtectionIOSManager: EmailConfirmationDataChecking {
+
+    public func runEmailConfirmationOperations() async {
+        await checkForEmailConfirmationData()
+        queueManager.addEmailConfirmationJobs(showWebView: false, jobDependencies: makeJobDependencies())
+    }
+}

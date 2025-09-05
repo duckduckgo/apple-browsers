@@ -464,6 +464,11 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
                                                     completion: nil))
     }
 
+    public func runEmailConfirmationOperations(showWebView: Bool) async {
+        await checkForEmailConfirmationData()
+        queueManager.addEmailConfirmationJobs(showWebView: showWebView, jobDependencies: jobDependencies)
+    }
+
     public func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {
 
         if let backgroundAgentVersion = Bundle.main.releaseVersionNumber,

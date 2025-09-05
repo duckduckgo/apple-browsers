@@ -599,6 +599,17 @@ class MainViewController: UIViewController {
         guard showOnboarding else { return }
         segueToDaxOnboarding()
     }
+    
+    private func presentNewAddressBarPickerIfNeeded() {
+        let validator = NewAddressBarPickerDisplayValidator()
+        guard validator.shouldDisplayNewAddressBarPicker() else { return }
+
+        let pickerViewController = NewAddressBarPickerViewController()
+        pickerViewController.modalPresentationStyle = .overFullScreen
+        pickerViewController.modalTransitionStyle = .crossDissolve
+        validator.markPickerDisplayAsSeen()
+        self.present(pickerViewController, animated: true)
+    }
 
     func presentNetworkProtectionStatusSettingsModal() {
         Task {

@@ -34,10 +34,10 @@ class BookmarksMigrationTests: XCTestCase {
         
         let containerLocation = MockBookmarksDatabase.tempDBDir()
         try FileManager.default.createDirectory(at: containerLocation, withIntermediateDirectories: true)
-        
-        sourceStack = LegacyBookmarksCoreDataStorage(storeURL: containerLocation.appendingPathComponent("OldBookmarks.sqlite"),
-                                                    createIfNeeded: true)
-        sourceStack.loadStoreAndCaches()
+
+        sourceStack = try LegacyBookmarksCoreDataStorage(storeURL: containerLocation.appendingPathComponent("OldBookmarks.sqlite"),
+                                                          createIfNeeded: true)
+        try sourceStack.loadStoreAndCaches()
         try await prepareDB(with: sourceStack)
     }
     
@@ -88,7 +88,7 @@ class BookmarksMigrationTests: XCTestCase {
     
     func testWhenThereIsNoDatabaseThenLegacyStackIsNotCreated() {
         let tempURL = MockBookmarksDatabase.tempDBDir().appendingPathComponent("OldBookmarks.sqlite")
-        let legacyStore = LegacyBookmarksCoreDataStorage(storeURL: tempURL)
+        let legacyStore = try? LegacyBookmarksCoreDataStorage(storeURL: tempURL)
         XCTAssertNil(legacyStore)
     }
     

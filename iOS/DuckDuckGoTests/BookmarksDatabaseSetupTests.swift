@@ -157,12 +157,11 @@ class BookmarksDatabaseSetupTests: XCTestCase {
 
         let setup = BookmarksDatabaseSetup(migrationAssertion: BookmarksMigrationAssertion(store: MockKeyValueStore()))
 
-        switch setup.loadStoreAndMigrate(bookmarksDatabase: dbMock,
-                                         formFactorFavoritesMigrator: ffMock,
-                                         validator: validatorMock) {
-        case .success:
-            break
-        case .failure(let error):
+        do {
+            _ = try setup.loadStoreAndMigrate(bookmarksDatabase: dbMock,
+                                              formFactorFavoritesMigrator: ffMock,
+                                              validator: validatorMock)
+        } catch {
             XCTFail("Unexpected error: \(error)")
         }
 
@@ -196,12 +195,12 @@ class BookmarksDatabaseSetupTests: XCTestCase {
 
         let setup = BookmarksDatabaseSetup(migrationAssertion: BookmarksMigrationAssertion(store: MockKeyValueStore()))
 
-        switch setup.loadStoreAndMigrate(bookmarksDatabase: dbMock,
-                                         formFactorFavoritesMigrator: ffMock,
-                                         validator: validatorMock) {
-        case .success:
+        do {
+            _ = try setup.loadStoreAndMigrate(bookmarksDatabase: dbMock,
+                                              formFactorFavoritesMigrator: ffMock,
+                                              validator: validatorMock)
             XCTFail("Unexpected")
-        case .failure(let error):
+        } catch {
             XCTAssertEqual(error as? BookmarksModelError, BookmarksModelError.bookmarkFolderExpected)
         }
 
@@ -238,12 +237,12 @@ class BookmarksDatabaseSetupTests: XCTestCase {
 
         let setup = BookmarksDatabaseSetup(migrationAssertion: BookmarksMigrationAssertion(store: MockKeyValueStore()))
 
-        switch setup.loadStoreAndMigrate(bookmarksDatabase: dbMock,
-                                         formFactorFavoritesMigrator: ffMock,
-                                         validator: validatorMock) {
-        case .success:
+        do {
+            _ = try setup.loadStoreAndMigrate(bookmarksDatabase: dbMock,
+                                              formFactorFavoritesMigrator: ffMock,
+                                              validator: validatorMock)
             XCTFail("Unexpected")
-        case .failure(let error):
+        } catch {
             XCTAssertEqual(error as? BookmarksModelError, BookmarksModelError.bookmarkFolderExpected)
         }
 

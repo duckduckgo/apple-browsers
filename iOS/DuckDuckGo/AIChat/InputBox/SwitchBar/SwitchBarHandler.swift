@@ -47,6 +47,9 @@ protocol SwitchBarHandling: AnyObject {
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> { get }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { get }
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { get }
+    
+    // Provide toggle mode parameters. Used in pixels.
+    var modeParameters: [String: String] { get }
 
     // MARK: - Methods
     func updateCurrentText(_ text: String)
@@ -84,6 +87,10 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     var isVoiceSearchEnabled: Bool {
         voiceSearchHelper.isVoiceSearchEnabled
+    }
+    
+    var modeParameters: [String: String] {
+        ["mode": currentToggleState.rawValue]
     }
 
     var currentTextPublisher: AnyPublisher<String, Never> {

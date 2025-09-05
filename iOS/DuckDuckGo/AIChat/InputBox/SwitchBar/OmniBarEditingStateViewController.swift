@@ -244,7 +244,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     // MARK: - Action Handlers
 
     @objc private func dismissButtonTapped(_ sender: UIButton) {
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarBackButtonPressed)
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarBackButtonPressed, withAdditionalParameters: switchBarHandler.modeParameters)
         switchBarVC.unfocusTextField()
         delegate?.onDismissRequested()
         dismissAnimated()
@@ -309,12 +309,14 @@ extension OmniBarEditingStateViewController: NavigationActionBarManagerDelegate 
     }
 
     func navigationActionBarManagerDidTapNewLine(_ manager: NavigationActionBarManager) {
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarFloatingReturnPressed)
         let currentText = switchBarHandler.currentText
         let newText = currentText + "\n"
         switchBarHandler.updateCurrentText(newText)
     }
 
     func navigationActionBarManagerDidTapSearch(_ manager: NavigationActionBarManager) {
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarFloatingSubmitPressed, withAdditionalParameters: switchBarHandler.modeParameters)
         let currentText = switchBarHandler.currentText
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             switchBarHandler.submitText(currentText)

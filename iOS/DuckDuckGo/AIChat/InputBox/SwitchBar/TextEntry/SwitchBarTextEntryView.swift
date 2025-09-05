@@ -367,11 +367,11 @@ private extension SwitchBarTextEntryView {
     }
     
     func fireClearButtonPressedPixel() {
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarClearButtonPressed)
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarClearButtonPressed, withAdditionalParameters: handler.modeParameters)
     }
     
     func fireKeyboardGoPressedPixel() {
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarKeyboardGoPressed)
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarKeyboardGoPressed, withAdditionalParameters: handler.modeParameters)
     }
 }
 

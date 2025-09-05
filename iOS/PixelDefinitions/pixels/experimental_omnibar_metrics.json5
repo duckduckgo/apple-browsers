@@ -119,17 +119,63 @@
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'mode',
+                description: 'Current toggle mode when button was pressed: search or aiChat',
+                type: 'string',
+            },
+        ],
     },
     m_aichat_experimental_omnibar_back_button_pressed: {
         description: 'Fires when user presses the back button in the experimental omnibar',
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'mode',
+                description: 'Current toggle mode when button was pressed: search or aiChat',
+                type: 'string',
+            },
+        ],
     },
     m_aichat_experimental_omnibar_keyboard_go_pressed: {
         description: 'Fires when user presses the keyboard return/go button in the experimental omnibar',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'mode',
+                description: 'Current toggle mode when button was pressed: search or aiChat',
+                type: 'string',
+            },
+        ],
+    },
+    m_aichat_experimental_omnibar_floating_submit_pressed: {
+        description: 'Fires when user presses the floating submit button in the experimental omnibar',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'mode',
+                description: 'Current toggle mode when button was pressed: search or aiChat',
+                type: 'string',
+            },
+        ],
+    },
+    m_aichat_experimental_omnibar_floating_return_pressed: {
+        description: 'Fires when user presses the floating return button (new line) in the experimental omnibar',
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['platform', 'form_factor'],

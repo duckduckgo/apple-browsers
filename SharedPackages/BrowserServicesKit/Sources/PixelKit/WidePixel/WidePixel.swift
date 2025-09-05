@@ -142,7 +142,7 @@ public final class WidePixel: WidePixelManaging {
                 Self.logger.error("Failed to complete wide pixel flow \(T.pixelName, privacy: .public): \(error.localizedDescription, privacy: .public)")
                 report(.completeFailed(pixelName: T.pixelName, error: error), error: error, params: nil)
                 storage.delete(data)
-                onComplete(false, error)
+                onComplete(false, PixelKitError.externalError(error))
             }
         }
     }
@@ -233,7 +233,7 @@ public final class WidePixel: WidePixelManaging {
             frequency: .standard,
             withHeaders: nil,
             withAdditionalParameters: nil,
-            withError: nil,
+            withDDGError: nil,
             allowedQueryReservedCharacters: nil,
             includeAppVersionParameter: true,
             includePixelSourceParameter: false,

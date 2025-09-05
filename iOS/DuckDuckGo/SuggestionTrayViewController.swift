@@ -73,6 +73,7 @@ class SuggestionTrayViewController: UIViewController {
     private let featureFlagger: FeatureFlagger
     private let appSettings: AppSettings
     private let aiChatSettings: AIChatSettingsProvider
+    private let featureDiscovery: FeatureDiscovery
 
     var coversFullScreen: Bool = false
 
@@ -126,6 +127,7 @@ class SuggestionTrayViewController: UIViewController {
                    featureFlagger: FeatureFlagger,
                    appSettings: AppSettings,
                    aiChatSettings: AIChatSettingsProvider,
+                   featureDiscovery: FeatureDiscovery,
                    newTabPageDependencies: NewTabPageDependencies? = nil) {
         self.favoritesModel = favoritesViewModel
         self.bookmarksDatabase = bookmarksDatabase
@@ -135,6 +137,7 @@ class SuggestionTrayViewController: UIViewController {
         self.appSettings = appSettings
         self.aiChatSettings = aiChatSettings
         self.newTabPageDependencies = newTabPageDependencies
+        self.featureDiscovery = featureDiscovery
         super.init(coder: coder)
     }
     
@@ -335,7 +338,8 @@ class SuggestionTrayViewController: UIViewController {
                                                     appSettings: appSettings,
                                                     tabsModel: tabsModel,
                                                     featureFlagger: featureFlagger,
-                                                    aiChatSettings: aiChatSettings)
+                                                    aiChatSettings: aiChatSettings,
+                                                    featureDiscovery: featureDiscovery)
         install(controller: controller, animated: animated)
         controller.delegate = autocompleteDelegate
         controller.presentationDelegate = self

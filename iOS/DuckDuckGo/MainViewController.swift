@@ -360,6 +360,7 @@ class MainViewController: UIViewController {
                                                                     featureFlagger: featureFlagger,
                                                                     appSettings: appSettings,
                                                                     aiChatSettings: aiChatSettings,
+                                                                    featureDiscovery: featureDiscovery,
                                                                     newTabPageDependencies: newTabPageDependencies)
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
@@ -549,7 +550,8 @@ class MainViewController: UIViewController {
                                          tabsModel: self.tabManager.model,
                                          featureFlagger: self.featureFlagger,
                                          appSettings: self.appSettings,
-                                         aiChatSettings: self.aiChatSettings)
+                                         aiChatSettings: self.aiChatSettings,
+                                         featureDiscovery: self.featureDiscovery)
         }) else {
             assertionFailure()
             return
@@ -2068,6 +2070,8 @@ class MainViewController: UIViewController {
                 Logger.subscription.fault("Missing entitlements payload")
                 return
             }
+
+            let userInitiatedSignOut = (userInfo[EntitlementsDidChangePayload.userInitiatedEntitlementChangeKey] as? Bool) ?? false
             let hasVPNEntitlements = payload.entitlements.contains(.networkProtection)
             let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
@@ -2087,12 +2091,17 @@ class MainViewController: UIViewController {
                         sourceObject: notification.object),
                     frequency: .dailyAndCount)
 
-                if await networkProtectionTunnelController.isInstalled {
+                if await networkProtectionTunnelController.isInstalled && !userInitiatedSignOut {
                     tunnelDefaults.enableEntitlementMessaging()
                 }
 
                 await networkProtectionTunnelController.stop()
-                await networkProtectionTunnelController.removeVPN(reason: .entitlementCheck)
+
+                if userInitiatedSignOut {
+                    await networkProtectionTunnelController.removeVPN(reason: .signedOut)
+                } else {
+                    await networkProtectionTunnelController.removeVPN(reason: .entitlementCheck)
+                }
             }
 
             hadVPNEntitlements = hasVPNEntitlements

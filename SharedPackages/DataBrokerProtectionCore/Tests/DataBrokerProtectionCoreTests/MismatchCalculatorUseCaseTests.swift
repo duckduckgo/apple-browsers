@@ -26,8 +26,16 @@ final class MismatchCalculatorUseCaseTests: XCTestCase {
     private let database = MockDatabase()
     private let pixelHandler = MockDataBrokerProtectionPixelsHandler()
 
+    override func setUp() {
+        super.setUp()
+        pixelHandler.clear()
+        database.clear()
+    }
+
     override func tearDown() {
         pixelHandler.clear()
+        database.clear()
+        super.tearDown()
     }
 
     func testWhenParentHasMoreMatches_thenParentSiteHasMoreMatchesPixelIsFired() {
@@ -158,7 +166,8 @@ extension BrokerProfileQueryData {
                 version: "1.0.0",
                 schedulingConfig: DataBrokerScheduleConfig.mock,
                 optOutUrl: "",
-                eTag: ""
+                eTag: "",
+                removedAt: nil
             ),
             profileQuery: ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 50),
             scanJobData: ScanJobData(brokerId: 1, profileQueryId: 1, historyEvents: historyEvents)
@@ -175,7 +184,8 @@ extension BrokerProfileQueryData {
                 schedulingConfig: DataBrokerScheduleConfig.mock,
                 parent: "parent.com",
                 optOutUrl: "",
-                eTag: ""
+                eTag: "",
+                removedAt: nil
             ),
             profileQuery: ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 50),
             scanJobData: ScanJobData(brokerId: 2, profileQueryId: 1, historyEvents: historyEvents)

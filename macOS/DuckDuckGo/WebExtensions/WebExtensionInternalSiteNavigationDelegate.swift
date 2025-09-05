@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
+import WebKit
 
 @available(macOS 15.4, *)
 final class WebExtensionInternalSiteNavigationDelegate: NSObject, WKNavigationDelegate {
@@ -40,5 +40,3 @@ final class WebExtensionInternalSiteNavigationDelegate: NSObject, WKNavigationDe
     }
 
 }
-
-#endif

@@ -219,6 +219,29 @@ class AppUserDefaultsTests: XCTestCase {
         XCTAssertTrue(appUserDefaults.autoconsentEnabled)
     }
 
+    func testWhenRefreshButtonPositionIsSetThenItIsPersisted() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+        appUserDefaults.featureFlagger = createFeatureFlagger(withFeatureFlagEnabled: .refreshButtonPosition)
+        
+        appUserDefaults.currentRefreshButtonPosition = .menu
+        XCTAssertEqual(appUserDefaults.currentRefreshButtonPosition, .menu)
+    }
+
+    func testWhenReadingRefreshButtonPositionDefaultThenAddressBarIsReturned() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+        appUserDefaults.featureFlagger = createFeatureFlagger(withFeatureFlagEnabled: .refreshButtonPosition)
+        
+        XCTAssertEqual(appUserDefaults.currentRefreshButtonPosition, .addressBar)
+    }
+
+    func testWhenRefreshButtonPositionFeatureFlagIsDisabledThenDefaultAddressBarIsReturned() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+        appUserDefaults.featureFlagger = MockFeatureFlagger()
+        
+        appUserDefaults.currentRefreshButtonPosition = .menu
+        XCTAssertEqual(appUserDefaults.currentRefreshButtonPosition, .addressBar)
+    }
+
     // MARK: - Mock Creation
 
     private func mockConfiguration(subfeatureEnabled: Bool) -> PrivacyConfiguration {

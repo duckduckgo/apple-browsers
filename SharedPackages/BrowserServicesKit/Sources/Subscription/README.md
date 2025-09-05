@@ -189,6 +189,20 @@ do {
 }
 ```
 
+## Error codes
+
+| Codes range | Domain  |
+|:----------|:----------|
+|12000|com.duckduckgo.subscription.SubscriptionManagerError|
+|12100|com.duckduckgo.subscription.SubscriptionServiceError|
+|12200|com.duckduckgo.subscription.StoreError|
+|12300|com.duckduckgo.subscription.SubscriptionEndpointServiceError|
+|12400|com.duckduckgo.subscription.AccountKeychainAccessError|
+|12500|com.duckduckgo.subscription.APIServiceError|
+|12600|com.duckduckgo.subscription.StorePurchaseManagerError|
+|12700|com.duckduckgo.subscription.StripePurchaseFlowError|
+|13000|com.duckduckgo.subscription.AppStoreRestoreFlowErrorV2|
+
 ## Additional Resources
 
 - **AOR**: [Apple Privacy Pro Accounts AOR](https://app.asana.com/1/137249556945/project/1209882303470922/list/1209882470267442)

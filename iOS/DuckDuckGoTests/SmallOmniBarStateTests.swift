@@ -456,6 +456,17 @@ class SmallOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showBookmarksButton)
         XCTAssertFalse(testee.showAccessoryButton)
     }
+    
+    func testWhenInBrowsingNonEditingStateThenRefreshButtonIsHiddenIfNotEnabled() {
+        mockFeatureFlagger.enabledFeatureFlags = [.refreshButtonPosition]
+        let mockAppSettings = AppSettingsMock()
+        mockAppSettings.currentRefreshButtonPosition = .menu
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger,
+                                                 appSettings: mockAppSettings)
+        let testee = SmallOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertFalse(testee.showRefresh)
+    }
 
     func testWhenEnteringBrowsingNonEditingStateThenTextIsMaintained() {
         let testee = SmallOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
@@ -495,5 +506,41 @@ class SmallOmniBarStateTests: XCTestCase {
     func testWhenInBrowsingNonEditingStateThenBrowsingStoppedTransitionsToHomeNonEditingState() {
         let testee = SmallOmniBarState.BrowsingNonEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
         XCTAssertEqual(testee.onBrowsingStoppedState.name, SmallOmniBarState.HomeNonEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false).name)
+    }
+    
+    func testWhenRefreshButtonFeatureFlagIsOffThenIsRefreshButtonEnabledReturnsTrue() {
+        // Given
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        
+        // When
+        let isEnabled = dependencies.isRefreshButtonEnabled
+        
+        // Then
+        XCTAssertTrue(isEnabled)
+    }
+    
+    func testWhenRefreshButtonFeatureFlagIsOnThenIsRefreshButtonEnabledReturnsAppSettingsValue() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.refreshButtonPosition]
+        let mockAppSettings = AppSettingsMock()
+        mockAppSettings.currentRefreshButtonPosition = .addressBar
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger,
+                                                 appSettings: mockAppSettings)
+        
+        // When
+        let isEnabled = dependencies.isRefreshButtonEnabled
+        
+        // Then
+        XCTAssertTrue(isEnabled)
+        
+        // Given
+        mockAppSettings.currentRefreshButtonPosition = .menu
+        
+        // When
+        let isEnabledWithMenuSetting = dependencies.isRefreshButtonEnabled
+        
+        // Then
+        XCTAssertFalse(isEnabledWithMenuSetting)
     }
 }

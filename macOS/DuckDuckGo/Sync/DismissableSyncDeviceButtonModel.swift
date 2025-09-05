@@ -90,6 +90,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
     private var authState: SyncAuthState = .initializing {
         didSet {
             guard
+                featureFlagger.isNewSyncEntryPointsFeatureOn,
                 case .inactive = authState,
                 !wasDimissed,
                 !wasPresentationCountLimitReached,
@@ -239,11 +240,5 @@ extension DismissableSyncDeviceButtonModel {
             initialAuthState = .initializing
         }
         self.init(source: source, keyValueStore: keyValueStore, authStatePublisher: authStatePublisher, initialAuthState: initialAuthState, syncLauncher: syncLauncher)
-    }
-}
-
-fileprivate extension FeatureFlagger {
-    var isNewSyncEntryPointsFeatureOn: Bool {
-        isFeatureOn(.newSyncEntryPoints) && isFeatureOn(.refactorOfSyncPreferences)
     }
 }

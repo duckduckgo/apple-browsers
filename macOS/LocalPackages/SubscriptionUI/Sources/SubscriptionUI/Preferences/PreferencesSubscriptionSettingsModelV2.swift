@@ -238,7 +238,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
     func removeFromThisDeviceAction() {
         userEventHandler(.didClickRemoveSubscription)
         Task {
-            await subscriptionManager.signOut(notifyUI: true)
+            await subscriptionManager.signOut(notifyUI: true, userInitiated: true)
         }
     }
 

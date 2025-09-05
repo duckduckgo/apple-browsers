@@ -1302,6 +1302,7 @@ extension Pixel {
         case aiChatLegacyOmnibarShown
         case aiChatLegacyOmnibarQuerySubmitted
         case aiChatLegacyOmnibarAichatButtonPressed
+        case aiChatLegacyOmnibarBackButtonPressed
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -2549,6 +2550,7 @@ extension Pixel.Event {
         case .aiChatLegacyOmnibarShown: return "m_aichat_legacy_omnibar_shown"
         case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
         case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"
+        case .aiChatLegacyOmnibarBackButtonPressed: return "m_aichat_legacy_omnibar_back_button_pressed"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

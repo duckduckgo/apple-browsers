@@ -181,4 +181,11 @@
         suffixes: ['platform', 'form_factor'],
         parameters: ['appVersion', 'pixelSource'],
     },
+    m_aichat_legacy_omnibar_back_button_pressed: {
+        description: 'Fires when user presses the back/dismiss button in the legacy omnibar (baseline comparison for experimental omnibar back navigation)',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
 }

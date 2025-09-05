@@ -163,7 +163,6 @@ public struct AIChatNativePrompt: Codable, Equatable {
             try container.encode(text, forKey: .text)
             try container.encodeIfPresent(sourceURL, forKey: .sourceURL)
             try container.encodeIfPresent(sourceTitle, forKey: .sourceTitle)
-            try container.encodeIfPresent(sourceTLD, forKey: .sourceTLD)
             if let sourceTLD {
                 try container.encodeIfPresent(sourceTLD, forKey: .sourceTLD)
             } else {

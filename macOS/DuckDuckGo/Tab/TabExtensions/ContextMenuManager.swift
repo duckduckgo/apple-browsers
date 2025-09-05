@@ -451,7 +451,6 @@ private extension ContextMenuManager {
         }
 
         Task { @MainActor in
-
             let sourceTLD = tld.eTLD(forStringURL: webView?.url?.absoluteString ?? "")
             let sourceLanguage: String? = await webView?.currentSelectionLanguage
 

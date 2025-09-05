@@ -27,7 +27,20 @@
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'direction',
+                description: 'Direction of the mode switch: to_search or to_duckai',
+                type: 'string',
+            },
+            {
+                key: 'had_text',
+                description: 'Whether text was present in the input when mode was switched: true or false',
+                type: 'boolean',
+            },
+        ],
     },
     m_aichat_experimental_omnibar_session_both_modes: {
         description: 'Fires when user has used BOTH search and AI chat modes within the same app session',

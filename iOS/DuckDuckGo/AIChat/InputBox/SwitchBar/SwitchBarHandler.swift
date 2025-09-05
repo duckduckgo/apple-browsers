@@ -168,7 +168,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         saveToggleState()
         
         if isStateChanging {
-            Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched)
+            fireModeSwitchedPixel(to: state)
         }
     }
 
@@ -245,5 +245,15 @@ final class SwitchBarHandler: SwitchBarHandling {
         if nowUsesBothModes && !previouslyUsedBothModes {
             DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarSessionBothModes)
         }
+    }
+    
+    private func fireModeSwitchedPixel(to state: TextEntryMode) {
+        let direction = state == .search ? "to_search" : "to_duckai"
+        let hadText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let parameters = [
+            "direction": direction,
+            "had_text": String(hadText)
+        ]
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched, withAdditionalParameters: parameters)
     }
 }

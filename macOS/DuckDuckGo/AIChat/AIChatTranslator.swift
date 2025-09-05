@@ -83,11 +83,11 @@ final class AIChatTranslator: AIChatTranslating {
                                                           sourceTLD: request.websiteTLD,
                                                           sourceLanguage: request.sourceLanguage,
                                                           targetLanguage: targetTranslationLanguage())
-//        pixelFiring?.fire(AIChatPixel.aiChatTranslateText(source: request.source), frequency: .dailyAndStandard) // TODO: Fire appropriate pixel
+        pixelFiring?.fire(AIChatPixel.aiChatTranslateText, frequency: .dailyAndStandard)
 
         if aiChatMenuConfig.shouldOpenAIChatInSidebar {
             if !aiChatSidebarPresenter.isSidebarOpenForCurrentTab() {
-//                pixelFiring?.fire(AIChatPixel.aiChatSidebarOpened(source: .summarization), frequency: .dailyAndStandard) // TODO: Update the source
+                pixelFiring?.fire(AIChatPixel.aiChatSidebarOpened(source: .translation), frequency: .dailyAndStandard)
             }
             aiChatSidebarPresenter.presentSidebar(for: prompt)
         } else {

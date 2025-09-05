@@ -256,23 +256,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         hasUsedAIChatInSession = false
     }
     
-    // MARK: - Mode Usage Detection  
-    private func updateModeUsage(_ mode: TextEntryMode) {
-        let previouslyUsedBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
-        
-        switch mode {
-        case .search:
-            Self.hasUsedSearchInSession = true
-        case .aiChat:
-            Self.hasUsedAIChatInSession = true
-        }
-        
-        // Fire pixel only when user achieves both-mode usage for the first time in this session
-        let nowUsesBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
-        if nowUsesBothModes && !previouslyUsedBothModes {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarSessionBothModes)
-        }
-    }
+    // MARK: - Pixels
     
     private func fireModeSwitchedPixel(to state: TextEntryMode) {
         let direction = state == .search ? "to_search" : "to_duckai"

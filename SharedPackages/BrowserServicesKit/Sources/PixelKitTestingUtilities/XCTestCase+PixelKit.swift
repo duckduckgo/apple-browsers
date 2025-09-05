@@ -60,13 +60,31 @@ public extension XCTestCase {
         var expectedParameters = [String: String]()
 
         if let error = event.error {
+            // Check if this is a DDGErrorPixelKitWrapper by domain and unwrap it
+            let errorToProcess: Error
             let nsError = error as NSError
-            expectedParameters[PixelKit.Parameters.errorCode] = "\(nsError.code)"
-            expectedParameters[PixelKit.Parameters.errorDomain] = nsError.domain
 
-            if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
+            if nsError.domain.contains("DDGErrorPixelKitWrapper"),
+               let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
+                // The wrapper will be unwrapped by PixelKit, so use the underlying error
+                errorToProcess = underlyingError
+            } else {
+                errorToProcess = error
+            }
+
+            let finalNSError = errorToProcess as NSError
+            expectedParameters[PixelKit.Parameters.errorCode] = "\(finalNSError.code)"
+            expectedParameters[PixelKit.Parameters.errorDomain] = finalNSError.domain
+
+            if let underlyingError = finalNSError.userInfo[NSUnderlyingErrorKey] as? NSError {
                 expectedParameters[PixelKit.Parameters.underlyingErrorCode] = "\(underlyingError.code)"
                 expectedParameters[PixelKit.Parameters.underlyingErrorDomain] = underlyingError.domain
+
+                // Check for second level underlying error
+                if let secondUnderlyingError = underlyingError.userInfo[NSUnderlyingErrorKey] as? NSError {
+                    expectedParameters[PixelKit.Parameters.underlyingErrorCode + "2"] = "\(secondUnderlyingError.code)"
+                    expectedParameters[PixelKit.Parameters.underlyingErrorDomain + "2"] = secondUnderlyingError.domain
+                }
             }
         }
 

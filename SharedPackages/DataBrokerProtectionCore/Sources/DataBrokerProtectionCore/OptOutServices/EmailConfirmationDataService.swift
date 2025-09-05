@@ -39,10 +39,10 @@ extension EmailConfirmationDataChecking {
 }
 
 public protocol EmailConfirmationDataServiceProvider {
-    func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64,
+    func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64?,
                                              dataBrokerURL: String,
-                                             profileQueryId: Int64,
-                                             extractedProfileId: Int64,
+                                             profileQueryId: Int64?,
+                                             extractedProfileId: Int64?,
                                              attemptId: UUID) async throws -> EmailData
     func checkForEmailConfirmationData() async throws
 
@@ -73,14 +73,21 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
         self.pixelHandler = pixelHandler
     }
 
-    public func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64,
+    public func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64?,
                                                     dataBrokerURL: String,
-                                                    profileQueryId: Int64,
-                                                    extractedProfileId: Int64,
+                                                    profileQueryId: Int64?,
+                                                    extractedProfileId: Int64?,
                                                     attemptId: UUID) async throws -> EmailData {
         let emailData = try await emailServiceV0.getEmail(dataBrokerURL: dataBrokerURL, attemptId: attemptId)
 
         if featureFlagger.isEmailConfirmationDecouplingFeatureOn {
+            guard let dataBrokerId = dataBrokerId,
+                  let profileQueryId = profileQueryId,
+                  let extractedProfileId = extractedProfileId else {
+                Logger.dataBrokerProtection.log("✉️ [EmailConfirmationDataService] Missing required IDs")
+                throw DataBrokerProtectionError.dataNotInDatabase
+            }
+            
             try database.saveOptOutEmailConfirmation(profileQueryId: profileQueryId,
                                                      brokerId: dataBrokerId,
                                                      extractedProfileId: extractedProfileId,

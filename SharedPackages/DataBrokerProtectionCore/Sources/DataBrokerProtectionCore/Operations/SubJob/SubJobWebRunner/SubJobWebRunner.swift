@@ -131,10 +131,10 @@ public extension SubJobWebRunning {
             do {
                 stageCalculator.setStage(.emailGenerate)
                 let emailData = try await emailConfirmationDataService.getEmailAndOptionallySaveToDatabase(
-                    dataBrokerId: context.dataBroker.id ?? 0,
+                    dataBrokerId: context.dataBroker.id,
                     dataBrokerURL: context.dataBroker.url,
-                    profileQueryId: context.profileQuery.id ?? 0,
-                    extractedProfileId: extractedProfile?.id ?? 0,
+                    profileQueryId: context.profileQuery.id,
+                    extractedProfileId: extractedProfile?.id,
                     attemptId: stageCalculator.attemptId
                 )
                 extractedProfile?.email = emailData.emailAddress

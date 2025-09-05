@@ -437,10 +437,10 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
 
     public init() {}
 
-    public func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64,
+    public func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64?,
                                                     dataBrokerURL: String,
-                                                    profileQueryId: Int64,
-                                                    extractedProfileId: Int64,
+                                                    profileQueryId: Int64?,
+                                                    extractedProfileId: Int64?,
                                                     attemptId: UUID) async throws -> EmailData {
         if shouldThrow {
             throw DataBrokerProtectionError.emailError(nil)

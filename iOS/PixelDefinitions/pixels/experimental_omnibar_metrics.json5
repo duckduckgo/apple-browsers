@@ -128,4 +128,11 @@
         suffixes: ['platform', 'form_factor'],
         parameters: ['appVersion', 'pixelSource'],
     },
+    m_aichat_experimental_omnibar_keyboard_go_pressed: {
+        description: 'Fires when user presses the keyboard return/go button in the experimental omnibar',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
 }

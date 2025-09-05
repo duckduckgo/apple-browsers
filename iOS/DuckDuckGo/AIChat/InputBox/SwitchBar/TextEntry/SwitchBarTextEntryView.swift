@@ -344,6 +344,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
+            fireKeyboardGoPressedPixel()
             /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210629837418046?focus=true
             let currentText = textView.text ?? ""
             if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -367,6 +368,10 @@ private extension SwitchBarTextEntryView {
     
     func fireClearButtonPressedPixel() {
         Pixel.fire(pixel: .aiChatExperimentalOmnibarClearButtonPressed)
+    }
+    
+    func fireKeyboardGoPressedPixel() {
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarKeyboardGoPressed)
     }
 }
 

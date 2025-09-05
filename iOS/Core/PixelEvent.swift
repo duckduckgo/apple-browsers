@@ -786,6 +786,7 @@ extension Pixel {
         case debugBookmarksValidationFailed
         case debugBookmarksStructureLostAfterCrash
         case debugBookmarksSyncAttemptedToDeleteRoot
+        case debugBookmarksTopFolderSaveFailed
 
         case debugBookmarksPendingDeletionFixed
         case debugBookmarksPendingDeletionRepairError
@@ -2011,6 +2012,7 @@ extension Pixel.Event {
         case .debugBookmarksValidationFailed: return "m_d_bookmarks_validation_failed"
         case .debugBookmarksStructureLostAfterCrash: return "m_debug_bookmarks_structure_lost_after_crash"
         case .debugBookmarksSyncAttemptedToDeleteRoot: return "m_debug_bookmarks_sync_attempted_to_delete_root"
+        case .debugBookmarksTopFolderSaveFailed: return "m_debug_bookmarks_top_folder_save_failed"
 
         case .debugBookmarksPendingDeletionFixed: return "m_debug_bookmarks_pending_deletion_fixed"
         case .debugBookmarksPendingDeletionRepairError: return "m_debug_bookmarks_pending_deletion_repair_error"

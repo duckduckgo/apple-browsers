@@ -22,6 +22,10 @@ import CoreData
 import Bookmarks
 import Persistence
 
+private extension BoolFileMarker.Name {
+    static let hasSuccessfullyLaunchedBefore = BoolFileMarker.Name(rawValue: "app-launched-successfully")
+}
+
 public protocol BookmarksStateValidation {
 
     func validateInitialState(context: NSManagedObjectContext,
@@ -119,6 +123,9 @@ public class BookmarksStateValidator: BookmarksStateValidation {
             params["recent-bookmark-error-code"] = "\(recentBookmarkError.code)"
         }
         
+        // Check if launch marker file exists (helps distinguish restore vs corruption)
+        params["launch-marker-present"] = "\(hasLaunchedSuccessfullyBefore)"
+        
         return params
     }
     
@@ -127,6 +134,13 @@ public class BookmarksStateValidator: BookmarksStateValidation {
     private var isSyncEnabled: Bool {
         let syncEnabledKey = "com.duckduckgo.sync.enabled"
         return UserDefaults.standard.object(forKey: syncEnabledKey) != nil
+    }
+    
+    private var hasLaunchedSuccessfullyBefore: Bool {
+        guard let marker = BoolFileMarker(name: .hasSuccessfullyLaunchedBefore) else {
+            return false
+        }
+        return marker.isPresent
     }
 
     private func getRecentBookmarkError() -> (name: String, domain: String, code: Int)? {

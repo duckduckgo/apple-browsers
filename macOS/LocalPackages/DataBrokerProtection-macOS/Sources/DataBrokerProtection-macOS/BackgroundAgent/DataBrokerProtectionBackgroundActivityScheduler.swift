@@ -61,11 +61,9 @@ public final class DefaultDataBrokerProtectionBackgroundActivityScheduler: DataB
             activity.schedule { completion in
                 Task {
                     self.lastTriggerTimestamp = Date()
-                    Logger.dataBrokerProtection.log("Scheduler running...")
 
                     await self.delegate?.dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(self)
 
-                    Logger.dataBrokerProtection.log("Scheduler finished...")
                     completion(.finished)
                 }
             }

@@ -60,36 +60,42 @@ struct AppShortcuts: AppShortcutsProvider {
                     systemImageName: "globe")
         AppShortcut(intent: SearchInAppIntent(),
                     phrases: [
+                        "Access \(.applicationName)",
                         "Begin a search in \(.applicationName)",
-                        "Start a search in \(.applicationName)",
                         "Begin searching with \(.applicationName)",
-                        "Start searching with \(.applicationName)",
-                        "Open \(.applicationName)",
+                        "Go to \(.applicationName)",
                         "Launch \(.applicationName)",
+                        "New \(.applicationName) Search",
+                        "Open \(.applicationName)",
+                        "Open \(.applicationName) browser",
                         "Open Search in \(.applicationName)",
                         "Search in \(.applicationName)",
-                        "Search with \(.applicationName)",
-                        "Use \(.applicationName) to search",
                         "Search the web with \(.applicationName)",
-                        "Open my \(.applicationName) browser",
+                        "Search using \(.applicationName)",
+                        "Search with \(.applicationName)",
+                        "Start a search in \(.applicationName)",
                         "Start browsing with \(.applicationName)",
-                        "Use \(.applicationName) to browse"
+                        "Start searching with \(.applicationName)",
+                        "Use \(.applicationName) to browse",
+                        "Use \(.applicationName) to search"
                     ],
                     shortTitle: "Search",
                     systemImageName: "magnifyingglass"
         )
         AppShortcut(intent: AIChatIntent(),
                     phrases: [
+                        "Access \(.applicationName) AI chat",
                         "Ask Duck.ai on \(.applicationName)",
-                        "Open Duck.ai on \(.applicationName)",
-                        "Launch Duck.ai on \(.applicationName)",
                         "Ask \(.applicationName) AI chat",
-                        "Start \(.applicationName) AI chat",
-                        "Open \(.applicationName) AI chat",
+                        "Go to \(.applicationName) AI chat",
+                        "Launch Duck.ai on \(.applicationName)",
                         "Launch \(.applicationName) AI chat",
-                        "Go to \(.applicationName) AI chat"
+                        "New \(.applicationName) Chat",
+                        "Open Duck.ai on \(.applicationName)",
+                        "Open \(.applicationName) AI chat",
+                        "Start \(.applicationName) AI chat"
                     ],
-                    shortTitle: "Duck.ai",
+                    shortTitle: "AI Chat",
                     systemImageName: "bubble.right"
         )
     }

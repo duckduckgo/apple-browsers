@@ -23,7 +23,7 @@ import Core
 
 @available(iOS 17.0, *)
 struct AIChatIntent: AppIntent {
-    static var title: LocalizedStringResource = "Duck.ai"
+    static var title: LocalizedStringResource = "Chat with Duck.ai on DuckDuckGo"
     static let description: LocalizedStringResource = "Open a private chat with Duck.ai"
     static let openAppWhenRun: Bool = true
     static let isDiscoverable: Bool = true

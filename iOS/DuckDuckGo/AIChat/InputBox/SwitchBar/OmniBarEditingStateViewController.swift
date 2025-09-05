@@ -244,6 +244,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     // MARK: - Action Handlers
 
     @objc private func dismissButtonTapped(_ sender: UIButton) {
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarBackButtonPressed)
         switchBarVC.unfocusTextField()
         delegate?.onDismissRequested()
         dismissAnimated()

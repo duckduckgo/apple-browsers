@@ -121,4 +121,11 @@
         suffixes: ['platform', 'form_factor'],
         parameters: ['appVersion', 'pixelSource'],
     },
+    m_aichat_experimental_omnibar_back_button_pressed: {
+        description: 'Fires when user presses the back button in the experimental omnibar',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
 }

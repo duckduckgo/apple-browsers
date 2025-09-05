@@ -151,7 +151,7 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     var userEmail: String? { get }
 
     /// Sign out the user, clear and invalidate the access token and clear the subscription cache
-    func signOut(notifyUI: Bool) async
+    func signOut(notifyUI: Bool, userInitiated: Bool) async
 
     /// Removes the subscription cache, this will trigger a remote fetch the next time `getSubscription(...)` is called
     func clearSubscriptionCache()
@@ -193,6 +193,12 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
 
     /// Remove the stored token container and the legacy token
     func removeLocalAccount() throws
+}
+
+extension SubscriptionManagerV2 {
+    func signOut(notifyUI: Bool) async {
+        await signOut(notifyUI: notifyUI, userInitiated: false)
+    }
 }
 
 /// Single entry point for everything related to Subscription. This manager is disposable, every time something related to the environment changes this need to be recreated.
@@ -429,45 +435,46 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     }
 
     var cachedUserEntitlements: [SubscriptionEntitlement] {
-        get {
-            userDefaults.userEntitlements
-        }
-        set {
-            let currentCachedUserEntitlements = self.userDefaults.userEntitlements
-            self.userDefaults.userEntitlements = newValue
+        userDefaults.userEntitlements
+    }
 
-            // Send notification when entitlements change
-            if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedUserEntitlements, newValue) {
-                Logger.subscription.debug("Entitlements changed - New \(String(describing: newValue)) Old \(String(describing: currentCachedUserEntitlements))")
-                let payload = EntitlementsDidChangePayload(entitlements: newValue)
-                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: payload.notificationUserInfo)
-            }
+    private func updateCachedUserEntitlements(_ newEntitlements: [SubscriptionEntitlement], userInitiated: Bool = false) {
+        let currentCachedUserEntitlements = self.userDefaults.userEntitlements
+        self.userDefaults.userEntitlements = newEntitlements
+
+        // Send notification when entitlements change
+        if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedUserEntitlements, newEntitlements) {
+            Logger.subscription.debug("Entitlements changed - New \(String(describing: newEntitlements)) Old \(String(describing: currentCachedUserEntitlements))")
+            let payload = EntitlementsDidChangePayload(entitlements: newEntitlements)
+
+            var userInfo = payload.notificationUserInfo
+            userInfo[EntitlementsDidChangePayload.userInitiatedEntitlementChangeKey] = userInitiated
+            NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: userInfo)
         }
     }
 
     var cachedIsUserAuthenticated: Bool {
-        get {
-            userDefaults.isUserAuthenticated
+        userDefaults.isUserAuthenticated
+    }
+
+    private func updateCachedIsUserAuthenticated(_ newValue: Bool, userInitiated: Bool = false) {
+        let currentCachedIsAuthenticated = self.userDefaults.isUserAuthenticated
+        self.userDefaults.isUserAuthenticated = newValue
+
+        // Send notification when the login changes
+        switch (currentCachedIsAuthenticated, newValue) {
+        case (false, true):
+            Logger.subscription.debug("Login detected")
+            NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
+        case (true, false):
+            Logger.subscription.debug("Logout detected")
+            NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
+        default:
+            Logger.subscription.debug("Login state unchanged - Current: \(currentCachedIsAuthenticated), new: \(newValue)")
         }
-        set {
-            let currentCachedIsAuthenticated = self.userDefaults.isUserAuthenticated
-            self.userDefaults.isUserAuthenticated = newValue
 
-            // Send notification when the login changes
-            switch (currentCachedIsAuthenticated, newValue) {
-            case (false, true):
-                Logger.subscription.debug("Login detected")
-                NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
-            case (true, false):
-                Logger.subscription.debug("Logout detected")
-                NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
-            default:
-                Logger.subscription.debug("Login state unchanged - Current: \(currentCachedIsAuthenticated), new: \(newValue)")
-            }
-
-            if newValue == false {
-                self.cachedUserEntitlements = []
-            }
+        if newValue == false {
+            self.updateCachedUserEntitlements([], userInitiated: userInitiated)
         }
     }
 
@@ -478,12 +485,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             let resultTokenContainer = try await oAuthClient.getTokens(policy: policy)
             let newEntitlements = resultTokenContainer.decodedAccessToken.subscriptionEntitlements
 
-            cachedUserEntitlements = newEntitlements
-            cachedIsUserAuthenticated = true
+            self.updateCachedUserEntitlements(newEntitlements)
+            self.updateCachedIsUserAuthenticated(true)
             return resultTokenContainer
         } catch OAuthClientError.missingTokenContainer {
             // Expected when no tokens are available
-            cachedUserEntitlements = []
+            self.updateCachedUserEntitlements([])
             throw SubscriptionManagerError.noTokenAvailable
         } catch {
             pixelHandler.handle(pixel: .getTokensError(policy, error))
@@ -493,7 +500,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             case OAuthClientError.unknownAccount:
 
                 Logger.subscription.error("Refresh failed, the account is unknown. Logging out...")
-                await signOut(notifyUI: true)
+                await signOut(notifyUI: true, userInitiated: false)
                 throw SubscriptionManagerError.noTokenAvailable
 
             case OAuthClientError.invalidTokenRequest:
@@ -505,7 +512,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
                     return recoveredTokenContainer
                 } catch {
-                    await signOut(notifyUI: false)
+                    await signOut(notifyUI: false, userInitiated: false)
                     pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
                     throw SubscriptionManagerError.noTokenAvailable
                 }
@@ -537,8 +544,8 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     public func exchange(tokenV1: String) async throws -> TokenContainer {
         let tokenContainer = try await oAuthClient.exchange(accessTokenV1: tokenV1)
-            cachedIsUserAuthenticated = true
-            cachedUserEntitlements = tokenContainer.decodedAccessToken.subscriptionEntitlements
+            updateCachedIsUserAuthenticated(true)
+            updateCachedUserEntitlements(tokenContainer.decodedAccessToken.subscriptionEntitlements)
         return tokenContainer
     }
 
@@ -554,27 +561,30 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         // It’s important to force refresh the token to immediately branch from the one received.
         // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
         let refreshedTokenContainer = try await oAuthClient.getTokens(policy: .localForceRefresh)
-        cachedIsUserAuthenticated = true
-        cachedUserEntitlements = refreshedTokenContainer.decodedAccessToken.subscriptionEntitlements
+        updateCachedIsUserAuthenticated(true)
+        updateCachedUserEntitlements(refreshedTokenContainer.decodedAccessToken.subscriptionEntitlements)
         }
 
     public func removeLocalAccount() throws {
         Logger.subscription.log("Removing local account")
-            cachedIsUserAuthenticated = false
+            updateCachedIsUserAuthenticated(false)
         try oAuthClient.removeLocalAccount()
     }
 
-    public func signOut(notifyUI: Bool) async {
-        Logger.subscription.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI ? "true" : "false")")
+    public func signOut(notifyUI: Bool, userInitiated: Bool) async {
+        Logger.subscription.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI ? "true" : "false"), User Initiated: \(userInitiated ? "true" : "false")")
+
         try? await oAuthClient.logout()
         clearSubscriptionCache()
+
         if notifyUI {
-                cachedIsUserAuthenticated = false
+                updateCachedIsUserAuthenticated(false, userInitiated: userInitiated)
         } else {
             // skipping cached setter for avoiding notification
-                userDefaults.isUserAuthenticated = false
-                userDefaults.userEntitlements = []
-            }
+            userDefaults.isUserAuthenticated = false
+            userDefaults.userEntitlements = []
+        }
+
         Logger.subscription.log("Removing V1 Account")
         try? legacyAccountStorage?.clearAuthenticationState()
     }

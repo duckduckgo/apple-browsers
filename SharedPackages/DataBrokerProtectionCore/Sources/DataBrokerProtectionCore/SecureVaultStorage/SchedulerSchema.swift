@@ -325,6 +325,58 @@ extension OptOutHistoryEventDB: PersistableRecord, FetchableRecord {
     }
 }
 
+public struct OptOutEmailConfirmationDB: Codable {
+    let brokerId: Int64
+    let profileQueryId: Int64
+    let extractedProfileId: Int64
+    let generatedEmail: Data
+    let attemptID: String
+    var emailConfirmationLink: Data?
+    var emailConfirmationLinkObtainedOnBEDate: Date?
+    var emailConfirmationAttemptCount: Int64
+}
+
+extension OptOutEmailConfirmationDB: PersistableRecord, FetchableRecord {
+    public static let databaseTableName: String = "optOutEmailConfirmation"
+
+    static let profileQuery = belongsTo(ProfileQueryDB.self)
+    static let broker = belongsTo(BrokerDB.self)
+    static let extractedProfile = belongsTo(ExtractedProfileDB.self)
+
+    enum Columns: String, ColumnExpression {
+        case brokerId
+        case profileQueryId
+        case extractedProfileId
+        case generatedEmail
+        case attemptID
+        case emailConfirmationLink
+        case emailConfirmationLinkObtainedOnBEDate
+        case emailConfirmationAttemptCount
+    }
+
+    public init(row: Row) throws {
+        brokerId = row[Columns.brokerId]
+        profileQueryId = row[Columns.profileQueryId]
+        extractedProfileId = row[Columns.extractedProfileId]
+        generatedEmail = row[Columns.generatedEmail]
+        attemptID = row[Columns.attemptID]
+        emailConfirmationLink = row[Columns.emailConfirmationLink]
+        emailConfirmationLinkObtainedOnBEDate = row[Columns.emailConfirmationLinkObtainedOnBEDate]
+        emailConfirmationAttemptCount = row[Columns.emailConfirmationAttemptCount]
+    }
+
+    public func encode(to container: inout PersistenceContainer) throws {
+        container[Columns.brokerId] = brokerId
+        container[Columns.profileQueryId] = profileQueryId
+        container[Columns.extractedProfileId] = extractedProfileId
+        container[Columns.generatedEmail] = generatedEmail
+        container[Columns.attemptID] = attemptID
+        container[Columns.emailConfirmationLink] = emailConfirmationLink
+        container[Columns.emailConfirmationLinkObtainedOnBEDate] = emailConfirmationLinkObtainedOnBEDate
+        container[Columns.emailConfirmationAttemptCount] = emailConfirmationAttemptCount
+    }
+}
+
 public struct ExtractedProfileDB: Codable {
     let id: Int64?
     let brokerId: Int64

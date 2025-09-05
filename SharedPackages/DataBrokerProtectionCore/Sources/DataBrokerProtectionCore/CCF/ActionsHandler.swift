@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 public class ActionsHandler {
     private var lastExecutedActionIndex: Int?
 
@@ -94,19 +96,21 @@ public class ActionsHandler {
     }
 
     /// Creates an ActionsHandler for email confirmation continuation - starts after email confirmation action
-    public static func forEmailConfirmationContinuation(_ step: Step) -> ActionsHandler {
+    public static func forEmailConfirmationContinuation(_ step: Step, confirmationURL: URL) -> ActionsHandler {
         guard step.type == .optOut else {
             assertionFailure("Expected optOut step but got \(step.type)")
             return ActionsHandler(stepType: step.type, actions: step.actions)
         }
 
-        guard let emailConfirmIndex = step.actions.firstIndex(where: { $0 is EmailConfirmationAction }) else {
+        guard let emailConfirmIndex = step.actions.firstIndex(where: { $0 is EmailConfirmationAction }),
+              let emailConfirmationAction = step.actions[emailConfirmIndex] as? EmailConfirmationAction else {
             assertionFailure("Opt-out has no emailConfirmation step")
             return ActionsHandler(stepType: step.type, actions: step.actions)
         }
 
         let afterIndex = step.actions.index(after: emailConfirmIndex)
-        let actions = Array(step.actions.suffix(from: afterIndex))
+        var actions: [Action] = [NavigateAction(id: emailConfirmationAction.id, actionType: .navigate, url: confirmationURL.absoluteString, ageRange: nil, dataSource: nil)]
+        actions.append(contentsOf: Array(step.actions.suffix(from: afterIndex)))
 
         return ActionsHandler(stepType: .optOut, actions: actions)
     }

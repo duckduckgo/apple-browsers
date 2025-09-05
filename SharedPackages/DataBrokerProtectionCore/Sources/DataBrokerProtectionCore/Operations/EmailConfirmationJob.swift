@@ -165,7 +165,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
         )
 
-        let actionsHandler = ActionsHandler.forEmailConfirmationContinuation(optOutStep)
+        let actionsHandler = ActionsHandler.forEmailConfirmationContinuation(optOutStep, confirmationURL: linkURL)
 
         let webRunner = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: jobDependencies.privacyConfig,
@@ -194,13 +194,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 return !self.isCancelled && !Task.isCancelled
             }
         )
-
-        await webViewHandler.initializeWebView(showWebView: showWebView)
-
-        // Load the email confirmation link
-        stageDurationCalculator.setStage(.emailConfirm)
-        try await webViewHandler.load(url: linkURL)
-        stageDurationCalculator.fireOptOutEmailConfirm()
 
         // Now run the remaining actions
         try await webRunner.run(

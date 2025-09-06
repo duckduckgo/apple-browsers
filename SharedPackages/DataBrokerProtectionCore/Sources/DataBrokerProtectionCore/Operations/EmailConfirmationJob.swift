@@ -35,28 +35,38 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     private let showWebView: Bool
     private(set) weak var errorDelegate: EmailConfirmationErrorDelegate? // Internal read-only to enable mocking
     private let jobDependencies: EmailConfirmationJobDependencyProviding
+    private let waitTimeBeforeRetry: TimeInterval
+
+    // Also to enable mocking
+    private let customWebRunner: BrokerProfileOptOutSubJobWebRunning?
+    private let customWebViewHandler: WebViewHandler?
 
     private let id = UUID()
     private var _isExecuting = false
     private var _isFinished = false
 
-    private var currentBroker: DataBroker?
     private let attemptId = UUID()
 
     private static let maxRetries = 3
 
     deinit {
-        Logger.dataBrokerProtection.log(loggerContext(), message: "✉️ Deinit EmailConfirmationJob: \(String(describing: self.id.uuidString))")
+        Logger.dataBrokerProtection.log("✉️ Deinit EmailConfirmationJob: \(String(describing: self.id.uuidString))")
     }
 
     public init(jobData: OptOutEmailConfirmationJobData,
                 showWebView: Bool,
                 errorDelegate: EmailConfirmationErrorDelegate?,
-                jobDependencies: EmailConfirmationJobDependencyProviding) {
+                jobDependencies: EmailConfirmationJobDependencyProviding,
+                webRunner: BrokerProfileOptOutSubJobWebRunning? = nil,
+                webViewHandler: WebViewHandler? = nil,
+                waitTimeBeforeRetry: TimeInterval = .seconds(3)) {
         self.jobData = jobData
         self.showWebView = showWebView
         self.errorDelegate = errorDelegate
         self.jobDependencies = jobDependencies
+        self.customWebRunner = webRunner
+        self.customWebViewHandler = webViewHandler
+        self.waitTimeBeforeRetry = waitTimeBeforeRetry
         super.init()
     }
 
@@ -93,27 +103,25 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     }
 
     private func runJob() async {
-        Logger.dataBrokerProtection.log(loggerContext(), message: "✉️ Starting email confirmation job for broker: \(self.jobData.brokerId), profile: \(self.jobData.extractedProfileId)")
+        Logger.dataBrokerProtection.log("✉️ Starting email confirmation job for broker: \(self.jobData.brokerId), profile: \(self.jobData.extractedProfileId)")
 
         guard let emailConfirmationLink = jobData.emailConfirmationLink,
               let linkURL = URL(string: emailConfirmationLink) else {
-            Logger.dataBrokerProtection.error(loggerContext(), message: "✉️ Email confirmation job started without valid link")
+            Logger.dataBrokerProtection.error("✉️ Email confirmation job started without valid link")
             await handleError(EmailError.invalidEmailLink)
             return
         }
 
         // Fetch the broker data
         guard let broker = try? jobDependencies.database.fetchBroker(with: jobData.brokerId) else {
-            Logger.dataBrokerProtection.error(loggerContext(), message: "✉️ Failed to fetch broker with id: \(self.jobData.brokerId)")
+            Logger.dataBrokerProtection.error("✉️ Failed to fetch broker with id: \(self.jobData.brokerId)")
             await handleError(DataBrokerProtectionError.dataNotInDatabase)
             return
         }
 
-        currentBroker = broker
-
         // Fetch the extracted profile
         guard let extractedProfileData = try? jobDependencies.database.fetchExtractedProfile(with: jobData.extractedProfileId) else {
-            Logger.dataBrokerProtection.error(loggerContext(), message: "✉️ Failed to fetch extracted profile with id: \(self.jobData.extractedProfileId)")
+            Logger.dataBrokerProtection.error("✉️ Failed to fetch extracted profile with id: \(self.jobData.extractedProfileId)")
             await handleError(DataBrokerProtectionError.dataNotInDatabase)
             return
         }
@@ -125,21 +133,19 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         while attemptCount < Self.maxRetries {
             if isCancelled { return }
 
-            Logger.dataBrokerProtection.log(loggerContext(), message: "✉️ Email confirmation attempt \(attemptCount + 1) of \(Self.maxRetries)")
+            Logger.dataBrokerProtection.log("✉️ Email confirmation attempt \(attemptCount + 1) of \(Self.maxRetries)")
 
             do {
                 try await executeEmailConfirmation(with: linkURL, broker: broker, extractedProfile: extractedProfile)
                 try await markAsSuccessful()
-                Logger.dataBrokerProtection.log(loggerContext(), message: "✉️ Email confirmation completed successfully")
+                Logger.dataBrokerProtection.log("✉️ Email confirmation completed successfully")
                 return
             } catch {
                 attemptCount += 1
-                Logger.dataBrokerProtection.error(loggerContext(), message: "✉️ Email confirmation attempt \(attemptCount) failed: \(error)")
+                Logger.dataBrokerProtection.error("✉️ Email confirmation attempt \(attemptCount) failed: \(error)")
 
                 if attemptCount < Self.maxRetries {
                     try? await incrementAttemptCount()
-
-                    let waitTimeBeforeRetry: TimeInterval = 3
                     try? await Task.sleep(nanoseconds: UInt64(waitTimeBeforeRetry) * 1_000_000_000)
                 }
             }
@@ -167,35 +173,44 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
         let actionsHandler = ActionsHandler.forEmailConfirmationContinuation(optOutStep, confirmationURL: linkURL)
 
-        let webRunner = BrokerProfileOptOutSubJobWebRunner(
-            privacyConfig: jobDependencies.privacyConfig,
-            prefs: jobDependencies.contentScopeProperties,
-            context: JobContext(dataBroker: broker, profileQuery: profileQuery),
-            emailConfirmationDataService: jobDependencies.emailConfirmationDataService,
-            captchaService: jobDependencies.captchaService,
-            featureFlagger: jobDependencies.featureFlagger,
-            stageCalculator: stageDurationCalculator,
-            pixelHandler: jobDependencies.pixelHandler,
-            executionConfig: jobDependencies.executionConfig,
-            shouldRunNextStep: { [weak self] in
-                guard let self = self else { return false }
-                return !self.isCancelled && !Task.isCancelled
-            }
-        )
+        let webRunner: BrokerProfileOptOutSubJobWebRunning
+        if let customWebRunner = self.customWebRunner {
+            webRunner = customWebRunner
+        } else {
+            webRunner = BrokerProfileOptOutSubJobWebRunner(
+                privacyConfig: jobDependencies.privacyConfig,
+                prefs: jobDependencies.contentScopeProperties,
+                context: JobContext(dataBroker: broker, profileQuery: profileQuery),
+                emailConfirmationDataService: jobDependencies.emailConfirmationDataService,
+                captchaService: jobDependencies.captchaService,
+                featureFlagger: jobDependencies.featureFlagger,
+                stageCalculator: stageDurationCalculator,
+                pixelHandler: jobDependencies.pixelHandler,
+                executionConfig: jobDependencies.executionConfig,
+                shouldRunNextStep: { [weak self] in
+                    guard let self = self else { return false }
+                    return !self.isCancelled && !Task.isCancelled
+                }
+            )
+        }
 
-        let webViewHandler = await DataBrokerProtectionWebViewHandler(
-            privacyConfig: jobDependencies.privacyConfig,
-            prefs: jobDependencies.contentScopeProperties,
-            delegate: webRunner,
-            isFakeBroker: broker.isFakeBroker,
-            executionConfig: jobDependencies.executionConfig,
-            shouldContinueActionHandler: { [weak self] in
-                guard let self = self else { return false }
-                return !self.isCancelled && !Task.isCancelled
-            }
-        )
+        let webViewHandler: WebViewHandler
+        if let customWebViewHandler = self.customWebViewHandler {
+            webViewHandler = customWebViewHandler
+        } else {
+            webViewHandler = await DataBrokerProtectionWebViewHandler(
+                privacyConfig: jobDependencies.privacyConfig,
+                prefs: jobDependencies.contentScopeProperties,
+                delegate: webRunner as? CCFCommunicationDelegate ?? webRunner as! BrokerProfileOptOutSubJobWebRunner,
+                isFakeBroker: broker.isFakeBroker,
+                executionConfig: jobDependencies.executionConfig,
+                shouldContinueActionHandler: { [weak self] in
+                    guard let self = self else { return false }
+                    return !self.isCancelled && !Task.isCancelled
+                }
+            )
+        }
 
-        // Now run the remaining actions
         try await webRunner.run(
             inputValue: extractedProfile,
             webViewHandler: webViewHandler,
@@ -205,7 +220,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     }
 
     private func markAsSuccessful() async throws {
-        Logger.dataBrokerProtection.log(loggerContext(), message: "✉️ Marking email confirmation as successful, transitioning to optOutRequested")
+        Logger.dataBrokerProtection.log("✉️ Marking email confirmation as successful, transitioning to optOutRequested")
 
         try jobDependencies.database.deleteOptOutEmailConfirmation(
             profileQueryId: jobData.profileQueryId,
@@ -248,7 +263,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 )
             )
         } catch {
-            Logger.dataBrokerProtection.error(loggerContext(), message: "✉️ Failed to handle max retries exceeded: \(error)")
+            Logger.dataBrokerProtection.error("✉️ Failed to handle max retries exceeded: \(error)")
         }
 
         await handleError(DataBrokerProtectionError.emailError(.retriesExceeded), brokerName: brokerName, version: version)
@@ -273,9 +288,5 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
         didChangeValue(forKey: #keyPath(isExecuting))
         didChangeValue(forKey: #keyPath(isFinished))
-    }
-
-    private func loggerContext() -> PIRActionLogContext {
-        .init(stepType: .optOut, broker: currentBroker, attemptId: attemptId)
     }
 }

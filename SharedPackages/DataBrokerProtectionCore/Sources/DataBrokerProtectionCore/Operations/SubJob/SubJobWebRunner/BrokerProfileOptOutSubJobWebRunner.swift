@@ -28,6 +28,19 @@ public protocol BrokerProfileOptOutSubJobWebRunning {
                 extractedProfile: ExtractedProfile,
                 showWebView: Bool,
                 shouldRunNextStep: @escaping () -> Bool) async throws
+    func run(inputValue: ExtractedProfile,
+             webViewHandler: WebViewHandler?,
+             actionsHandler: ActionsHandler?,
+             showWebView: Bool) async throws
+}
+
+extension BrokerProfileOptOutSubJobWebRunning {
+    public func run(inputValue: ExtractedProfile,
+             webViewHandler: WebViewHandler? = nil,
+             actionsHandler: ActionsHandler? = nil,
+             showWebView: Bool = false) async throws {
+        try await run(inputValue: inputValue, webViewHandler: webViewHandler, actionsHandler: actionsHandler, showWebView: showWebView)
+    }
 }
 
 public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerProfileOptOutSubJobWebRunning {
@@ -92,9 +105,9 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
 
     @MainActor
     public func run(inputValue: ExtractedProfile,
-                    webViewHandler: WebViewHandler? = nil,
-                    actionsHandler: ActionsHandler? = nil,
-                    showWebView: Bool = false) async throws {
+                    webViewHandler: WebViewHandler?,
+                    actionsHandler: ActionsHandler?,
+                    showWebView: Bool) async throws {
         var task: Task<Void, Never>?
 
         try await withTaskCancellationHandler {

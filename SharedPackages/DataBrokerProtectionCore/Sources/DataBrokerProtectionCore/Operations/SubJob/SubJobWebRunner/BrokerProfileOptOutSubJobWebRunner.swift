@@ -23,18 +23,23 @@ import UserScript
 import os.log
 import Common
 
+public typealias BrokerProfileOptOutSubJobWebProtocol = BrokerProfileOptOutSubJobWebRunning & BrokerProfileOptOutSubJobWebTesting
+
 public protocol BrokerProfileOptOutSubJobWebRunning {
     func optOut(profileQuery: BrokerProfileQueryData,
                 extractedProfile: ExtractedProfile,
                 showWebView: Bool,
                 shouldRunNextStep: @escaping () -> Bool) async throws
+}
+
+public protocol BrokerProfileOptOutSubJobWebTesting {
     func run(inputValue: ExtractedProfile,
              webViewHandler: WebViewHandler?,
              actionsHandler: ActionsHandler?,
              showWebView: Bool) async throws
 }
 
-extension BrokerProfileOptOutSubJobWebRunning {
+extension BrokerProfileOptOutSubJobWebTesting {
     public func run(inputValue: ExtractedProfile,
              webViewHandler: WebViewHandler? = nil,
              actionsHandler: ActionsHandler? = nil,
@@ -43,7 +48,7 @@ extension BrokerProfileOptOutSubJobWebRunning {
     }
 }
 
-public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerProfileOptOutSubJobWebRunning {
+public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerProfileOptOutSubJobWebProtocol {
     public typealias ReturnValue = Void
     public typealias InputValue = ExtractedProfile
 

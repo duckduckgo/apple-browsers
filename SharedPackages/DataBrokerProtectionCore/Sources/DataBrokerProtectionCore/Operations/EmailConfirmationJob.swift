@@ -37,9 +37,8 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     private let jobDependencies: EmailConfirmationJobDependencyProviding
     private let waitTimeBeforeRetry: TimeInterval
 
-    // Also to enable mocking
-    private let customWebRunner: BrokerProfileOptOutSubJobWebRunning?
-    private let customWebViewHandler: WebViewHandler?
+    private let webRunnerForTesting: BrokerProfileOptOutSubJobWebProtocol?
+    private let webViewHandlerForTesting: WebViewHandler?
 
     private let id = UUID()
     private var _isExecuting = false
@@ -57,15 +56,15 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 showWebView: Bool,
                 errorDelegate: EmailConfirmationErrorDelegate?,
                 jobDependencies: EmailConfirmationJobDependencyProviding,
-                webRunner: BrokerProfileOptOutSubJobWebRunning? = nil,
+                webRunner: BrokerProfileOptOutSubJobWebProtocol? = nil,
                 webViewHandler: WebViewHandler? = nil,
                 waitTimeBeforeRetry: TimeInterval = .seconds(3)) {
         self.jobData = jobData
         self.showWebView = showWebView
         self.errorDelegate = errorDelegate
         self.jobDependencies = jobDependencies
-        self.customWebRunner = webRunner
-        self.customWebViewHandler = webViewHandler
+        self.webRunnerForTesting = webRunner
+        self.webViewHandlerForTesting = webViewHandler
         self.waitTimeBeforeRetry = waitTimeBeforeRetry
         super.init()
     }
@@ -173,9 +172,9 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
         let actionsHandler = ActionsHandler.forEmailConfirmationContinuation(optOutStep, confirmationURL: linkURL)
 
-        let webRunner: BrokerProfileOptOutSubJobWebRunning
-        if let customWebRunner = self.customWebRunner {
-            webRunner = customWebRunner
+        let webRunner: BrokerProfileOptOutSubJobWebProtocol
+        if let webRunnerForTesting = self.webRunnerForTesting {
+            webRunner = webRunnerForTesting
         } else {
             webRunner = BrokerProfileOptOutSubJobWebRunner(
                 privacyConfig: jobDependencies.privacyConfig,
@@ -195,8 +194,8 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         }
 
         let webViewHandler: WebViewHandler
-        if let customWebViewHandler = self.customWebViewHandler {
-            webViewHandler = customWebViewHandler
+        if let webViewHandlerForTesting = self.webViewHandlerForTesting {
+            webViewHandler = webViewHandlerForTesting
         } else {
             webViewHandler = await DataBrokerProtectionWebViewHandler(
                 privacyConfig: jobDependencies.privacyConfig,

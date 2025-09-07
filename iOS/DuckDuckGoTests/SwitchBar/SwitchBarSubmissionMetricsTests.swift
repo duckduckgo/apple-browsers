@@ -25,39 +25,39 @@ final class SwitchBarSubmissionMetricsTests: XCTestCase {
     // MARK: - SwitchBarTextBucket Tests
     
     func testTextBucketShort() {
-        let bucket = SwitchBarTextBucket("hello")
+        let bucket = SwitchBarTextBucket("hello")!
         XCTAssertEqual(bucket, .short)
         XCTAssertEqual(bucket.rawValue, "short")
     }
     
     func testTextBucketShortBoundary() {
-        let bucket15 = SwitchBarTextBucket("123456789012345")
+        let bucket15 = SwitchBarTextBucket("123456789012345")!
         XCTAssertEqual(bucket15, .short)
         XCTAssertEqual(bucket15.rawValue, "short")
     }
     
     func testTextBucketMedium() {
-        let bucket = SwitchBarTextBucket("This is a medium text")
+        let bucket = SwitchBarTextBucket("This is a medium text")!
         XCTAssertEqual(bucket, .medium)
         XCTAssertEqual(bucket.rawValue, "medium")
     }
     
     func testTextBucketMediumBoundaries() {
-        let bucket16 = SwitchBarTextBucket("1234567890123456")
+        let bucket16 = SwitchBarTextBucket("1234567890123456")!
         XCTAssertEqual(bucket16, .medium)
         
-        let bucket40 = SwitchBarTextBucket("1234567890123456789012345678901234567890")
+        let bucket40 = SwitchBarTextBucket("1234567890123456789012345678901234567890")!
         XCTAssertEqual(bucket40, .medium)
     }
     
     func testTextBucketLong() {
-        let bucket = SwitchBarTextBucket("This is a longer text that should be categorized as long text for testing purposes")
+        let bucket = SwitchBarTextBucket("This is a longer text that should be categorized as long text for testing purposes")!
         XCTAssertEqual(bucket, .long)
         XCTAssertEqual(bucket.rawValue, "long")
     }
     
     func testTextBucketLongBoundaries() {
-        let bucket41 = SwitchBarTextBucket("12345678901234567890123456789012345678901")
+        let bucket41 = SwitchBarTextBucket("12345678901234567890123456789012345678901")!
         XCTAssertEqual(bucket41, .long)
         
         let bucket99 = SwitchBarTextBucket(String(repeating: "a", count: 99))
@@ -69,32 +69,32 @@ final class SwitchBarSubmissionMetricsTests: XCTestCase {
     
     func testTextBucketVeryLong() {
         let longText = String(repeating: "a", count: 150)
-        let bucket = SwitchBarTextBucket(longText)
+        let bucket = SwitchBarTextBucket(longText)!
         XCTAssertEqual(bucket, .veryLong)
         XCTAssertEqual(bucket.rawValue, "very_long")
     }
     
     func testTextBucketVeryLongBoundary() {
-        let bucket100 = SwitchBarTextBucket(String(repeating: "a", count: 100))
+        let bucket100 = SwitchBarTextBucket(String(repeating: "a", count: 100))!
         XCTAssertEqual(bucket100, .long)
         
-        let bucket101 = SwitchBarTextBucket(String(repeating: "a", count: 101))
+        let bucket101 = SwitchBarTextBucket(String(repeating: "a", count: 101))!
         XCTAssertEqual(bucket101, .veryLong)
     }
     
     func testTextBucketEmptyString() {
         let bucket = SwitchBarTextBucket("")
-        XCTAssertEqual(bucket, .veryLong)
+        XCTAssertNil(bucket)
     }
     
     func testTextBucketSingleCharacter() {
-        let bucket = SwitchBarTextBucket("a")
+        let bucket = SwitchBarTextBucket("a")!
         XCTAssertEqual(bucket, .short)
     }
     
     func testTextBucketUnicodeCharacters() {
         let unicodeText = "Hello 👋 World 🌍"
-        let bucket = SwitchBarTextBucket(unicodeText)
+        let bucket = SwitchBarTextBucket(unicodeText)!
         XCTAssertEqual(bucket, .short)
     }
     

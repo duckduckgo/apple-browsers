@@ -32,7 +32,8 @@ enum SwitchBarTextBucket: String, CaseIterable {
     case veryLong = "very_long"
     
     /// Categorizes text by character count
-    init(_ text: String) {
+    init?(_ text: String) {
+        guard text.count > 0 else { return nil }
         switch text.count {
         case 1...15:
             self = .short
@@ -59,9 +60,7 @@ struct SwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding {
     
     /// Process text submission and fire pixel with length bucket parameter
     func process(_ text: String, for submissionMode: TextEntryMode) {
-        guard !text.isEmpty else { return }
-        
-        let bucket = SwitchBarTextBucket(text)
+        guard let bucket = SwitchBarTextBucket(text) else { return }
         
         let additionalParams = [textLengthBucketKey: bucket.rawValue]
         

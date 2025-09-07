@@ -13,14 +13,30 @@
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'text_length_bucket',
+                description: 'Indicates length of AI prompt text using buckets: short (1-15), medium (16-40), long (41-100), very_long (100+)',
+                type: 'string',
+            },
+        ],
     },
     m_aichat_experimental_omnibar_query_submitted: {
         description: 'Fires when user submits a search query through the experimental omnibar',
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'text_length_bucket',
+                description: 'Indicates length of search query text using buckets: short (1-15), medium (16-40), long (41-100), very_long (100+)',
+                type: 'string',
+            },
+        ],
     },
     m_aichat_experimental_omnibar_mode_switched: {
         description: 'Fires when user toggles between search and AI chat modes in the experimental omnibar',

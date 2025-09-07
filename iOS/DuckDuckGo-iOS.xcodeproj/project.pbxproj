@@ -1362,6 +1362,8 @@
 		C13830FE2DCD3FFC00A29B3C /* CreditCardInputAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13830FD2DCD3FFC00A29B3C /* CreditCardInputAccessoryView.swift */; };
 		C13B32D22A0E750700A59236 /* AutofillSettingStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13B32D12A0E750700A59236 /* AutofillSettingStatus.swift */; };
 		C13C076C2D00A6B7006386CF /* VaultCredentialManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13C076B2D00A6B7006386CF /* VaultCredentialManager.swift */; };
+		C13C60DA2E6D7AE100ED2211 /* SwitchBarSubmissionMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13C60D92E6D7AE100ED2211 /* SwitchBarSubmissionMetrics.swift */; };
+		C13C60DC2E6D7B0F00ED2211 /* SwitchBarSubmissionMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13C60DB2E6D7B0F00ED2211 /* SwitchBarSubmissionMetricsTests.swift */; };
 		C13EEA1E2D64CFCA001D5DC3 /* DataImportViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA1D2D64CFCA001D5DC3 /* DataImportViewModelTests.swift */; };
 		C13EEA202D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA1F2D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift */; };
 		C13EEA222D64F6DB001D5DC3 /* DataImportSummaryViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA212D64F6DB001D5DC3 /* DataImportSummaryViewModelTests.swift */; };
@@ -3515,6 +3517,8 @@
 		C13830FD2DCD3FFC00A29B3C /* CreditCardInputAccessoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCardInputAccessoryView.swift; sourceTree = "<group>"; };
 		C13B32D12A0E750700A59236 /* AutofillSettingStatus.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutofillSettingStatus.swift; sourceTree = "<group>"; };
 		C13C076B2D00A6B7006386CF /* VaultCredentialManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultCredentialManager.swift; sourceTree = "<group>"; };
+		C13C60D92E6D7AE100ED2211 /* SwitchBarSubmissionMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchBarSubmissionMetrics.swift; sourceTree = "<group>"; };
+		C13C60DB2E6D7B0F00ED2211 /* SwitchBarSubmissionMetricsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchBarSubmissionMetricsTests.swift; sourceTree = "<group>"; };
 		C13EEA1D2D64CFCA001D5DC3 /* DataImportViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportViewModelTests.swift; sourceTree = "<group>"; };
 		C13EEA1F2D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZipContentSelectionViewModelTests.swift; sourceTree = "<group>"; };
 		C13EEA212D64F6DB001D5DC3 /* DataImportSummaryViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryViewModelTests.swift; sourceTree = "<group>"; };
@@ -4720,6 +4724,7 @@
 			children = (
 				317DD5542E0D5DD300CCC28C /* SwitchBarHandlerTests.swift */,
 				C1AAECBE2E69A1CC0016B82E /* SessionStateMetricsTests.swift */,
+				C13C60DB2E6D7B0F00ED2211 /* SwitchBarSubmissionMetricsTests.swift */,
 			);
 			path = SwitchBar;
 			sourceTree = "<group>";
@@ -5275,6 +5280,7 @@
 				315E14A72DF77BCD00419C8A /* SwitchBarHandler.swift */,
 				315E14A82DF77BCD00419C8A /* SwitchBarViewController.swift */,
 				C1AAECBC2E699F740016B82E /* SessionStateMetrics.swift */,
+				C13C60D92E6D7AE100ED2211 /* SwitchBarSubmissionMetrics.swift */,
 			);
 			path = SwitchBar;
 			sourceTree = "<group>";
@@ -10479,6 +10485,7 @@
 				1E8AD1CF27C000A000ABA377 /* CompleteDownloadRow.swift in Sources */,
 				98D98A8F25ED952F00D8E3DF /* BrowsingMenuButton.swift in Sources */,
 				31C3149F2D2EEB44009A412A /* AIChatUserScript.swift in Sources */,
+				C13C60DA2E6D7AE100ED2211 /* SwitchBarSubmissionMetrics.swift in Sources */,
 				31C314A02D2EEB44009A412A /* AIChatUserScriptHandling.swift in Sources */,
 				9865DFF922A8220D00D27829 /* FavoritesOverlay.swift in Sources */,
 				1E4DCF4627B6A33600961E25 /* DownloadsListViewModel.swift in Sources */,
@@ -10619,6 +10626,7 @@
 				F189AEE41F18FDAF001EBAE1 /* LinkTests.swift in Sources */,
 				C1E2C2272D9F1D0F0011C66C /* AutofillCreditCardDetailsViewModelTests.swift in Sources */,
 				C1056A562E253D98003220BA /* AutofillCredentialsImportPresentationManagerTests.swift in Sources */,
+				C13C60DC2E6D7B0F00ED2211 /* SwitchBarSubmissionMetricsTests.swift in Sources */,
 				6F7FB8E12C660B3E00867DA7 /* NewTabPageFavoritesModelTests.swift in Sources */,
 				C1C725B82D63810D00361B81 /* ImportArchiveReaderTests.swift in Sources */,
 				C1C725BA2D63810D00361B81 /* DataImportManagerTests.swift in Sources */,

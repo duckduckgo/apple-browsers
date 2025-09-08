@@ -43,7 +43,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     private static let maxRetries = 3
 
     deinit {
-        Logger.dataBrokerProtection.log(loggerContext(), message: "✉️ Deinit EmailConfirmationJob: \(String(describing: self.id.uuidString))")
+        Logger.dataBrokerProtection.log("✉️ Deinit EmailConfirmationJob: \(String(describing: self.id.uuidString))")
     }
 
     public init(jobData: OptOutEmailConfirmationJobData,
@@ -101,8 +101,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             await handleError(DataBrokerProtectionError.dataNotInDatabase)
             return
         }
-
-        currentBroker = broker
 
         // Fetch the extracted profile
         guard let extractedProfileData = try? jobDependencies.database.fetchExtractedProfile(with: jobData.extractedProfileId) else {
@@ -259,7 +257,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 )
             )
         } catch {
-            Logger.dataBrokerProtection.error(loggerContext(), message: "✉️ Failed to handle max retries exceeded: \(error)")
+            Logger.dataBrokerProtection.error("✉️ Failed to handle max retries exceeded: \(error)")
         }
 
         await handleError(DataBrokerProtectionError.emailError(.retriesExceeded), brokerName: brokerName, version: version, schedulingConfig: schedulingConfig)
@@ -309,9 +307,5 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
         didChangeValue(forKey: #keyPath(isExecuting))
         didChangeValue(forKey: #keyPath(isFinished))
-    }
-
-    private func loggerContext() -> PIRActionLogContext {
-        .init(stepType: .optOut, broker: currentBroker, attemptId: attemptId)
     }
 }

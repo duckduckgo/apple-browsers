@@ -26,14 +26,14 @@ import DataBrokerProtectionCoreTestsUtils
 
 final class BrokerProfileJobActionTests: XCTestCase {
     let webViewHandler = WebViewHandlerMock()
-    let emailService = EmailServiceMock()
+    let emailConfirmationDataService = MockEmailConfirmationDataServiceProvider()
     let captchaService = CaptchaServiceMock()
     let pixelHandler = MockDataBrokerProtectionPixelsHandler()
     let stageCalulator = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker", dataBrokerVersion: "1.1.1", handler: MockDataBrokerProtectionPixelsHandler(), vpnConnectionState: "disconnected", vpnBypassStatus: "off")
 
     override func tearDown() async throws {
         webViewHandler.reset()
-        emailService.reset()
+        emailConfirmationDataService.reset()
         captchaService.reset()
     }
 
@@ -45,7 +45,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -72,7 +72,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -101,12 +101,12 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let emailConfirmationAction = EmailConfirmationAction(id: "", actionType: .emailConfirmation, pollingTime: 1, dataSource: nil)
         let step = Step(type: .optOut, actions: [emailConfirmationAction])
         let extractedProfile = ExtractedProfile(email: "test@duck.com")
-        emailService.shouldThrow = true
+        emailConfirmationDataService.shouldThrow = true
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -138,7 +138,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -163,7 +163,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -172,7 +172,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             executionConfig: BrokerJobExecutionConfig(),
             shouldRunNextStep: { true }
         )
-        emailService.shouldThrow = true
+        emailConfirmationDataService.shouldThrow = true
 
         do {
             _ = try await sut.run(inputValue: ExtractedProfile(), webViewHandler: webViewHandler)
@@ -193,7 +193,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -216,7 +216,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -240,7 +240,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -265,7 +265,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -297,7 +297,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -322,7 +322,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -348,7 +348,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -369,7 +369,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -392,7 +392,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -414,7 +414,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -436,7 +436,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -457,7 +457,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(with: [Step(type: .scan, actions: [])]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             stageDurationCalculator: MockStageDurationCalculator(),
@@ -477,7 +477,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -499,7 +499,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(with: [Step(type: .scan, actions: [])]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             stageDurationCalculator: MockStageDurationCalculator(),
@@ -529,7 +529,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -550,7 +550,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(url: "spokeo.com"),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             cookieHandler: mockCookieHandler,
@@ -574,7 +574,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(url: "verecor.com"),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             cookieHandler: mockCookieHandler,
@@ -602,7 +602,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -629,7 +629,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -659,7 +659,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             stageDurationCalculator: mockStageCalculator,
@@ -685,7 +685,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -718,7 +718,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -750,7 +750,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -795,7 +795,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
                 privacyConfig: PrivacyConfigurationManagingMock(),
                 prefs: ContentScopeProperties.mock,
                 context: BrokerProfileQueryData.mock(with: [step]),
-                emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+                emailConfirmationDataService: emailConfirmationDataService,
                 captchaService: captchaService,
                 featureFlagger: MockDBPFeatureFlagger(),
                 operationAwaitTime: 0,
@@ -827,7 +827,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
@@ -861,7 +861,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,

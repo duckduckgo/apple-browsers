@@ -34,6 +34,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private let aiChatSettings = AIChatSettings()
     private weak var editingStateViewController: OmniBarEditingStateViewController?
     private var cancellables = Set<AnyCancellable>()
+    private let sessionStateMetrics = SessionStateMetrics(storage: UserDefaults.standard)
 
     private var animateNextEditingTransition = true
 
@@ -212,7 +213,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
         let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper,
-                                                storage: UserDefaults.standard, aiChatSettings: aiChatSettings)
+                                                storage: UserDefaults.standard, aiChatSettings: aiChatSettings,
+                                                sessionStateMetrics: sessionStateMetrics)
 
         guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty else {
             return switchBarHandler

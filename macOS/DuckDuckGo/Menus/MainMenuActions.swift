@@ -40,6 +40,9 @@ extension AppDelegate {
 
     @MainActor
     @objc func checkForUpdates(_ sender: Any?) {
+#if APPSTORE
+        NSWorkspace.shared.open(.appStore)
+#endif
 #if SPARKLE
         if let warning = SupportedOSChecker().supportWarning,
            case .unsupported = warning {

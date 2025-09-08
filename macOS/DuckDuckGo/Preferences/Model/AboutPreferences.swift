@@ -162,6 +162,10 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         NSPasteboard.general.copy(value)
     }
 
+    @MainActor func checkForAppStoreUpdate() {
+        NSApp.delegateTyped.checkForUpdates(nil)
+    }
+
 #if SPARKLE
     func checkForUpdate(userInitiated: Bool) {
         if userInitiated {

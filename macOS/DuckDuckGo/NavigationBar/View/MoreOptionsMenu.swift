@@ -444,6 +444,10 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     private func addUpdateItem() {
+#if APPSTORE
+        let checkForAppStoreUpdates = NSMenuItem(title: UserText.mainMenuAppCheckforUpdates, action: #selector(AppDelegate.checkForUpdates))
+        addItem(checkForAppStoreUpdates)
+#endif
 #if SPARKLE
         guard AppVersion.runType != .uiTests,
               let updateController = Application.appDelegate.updateController,

@@ -236,6 +236,7 @@ class MainViewController: UIViewController {
 
     private let internalUserCommands: URLBasedDebugCommands = InternalUserCommands()
     private let launchSourceManager: LaunchSourceManaging
+    private let remoteMessagingService: RemoteMessagingService
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -271,7 +272,8 @@ class MainViewController: UIViewController {
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: DaxDialogsManaging,
         daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
-        launchSourceManager: LaunchSourceManaging
+        launchSourceManager: LaunchSourceManaging,
+        remoteMessagingService: RemoteMessagingService
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -310,6 +312,7 @@ class MainViewController: UIViewController {
         self.daxDialogsManager = daxDialogsManager
         self.daxEasterEggPresenter = daxEasterEggPresenter
         self.launchSourceManager = launchSourceManager
+        self.remoteMessagingService = remoteMessagingService
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -618,7 +621,8 @@ class MainViewController: UIViewController {
             experimentalAIChatManager: experimentalAIChatManager,
             appSettings: appSettings,
             pickerStorage: NewAddressBarPickerStorage(),
-            launchSourceManager: launchSourceManager
+            launchSourceManager: launchSourceManager,
+            remoteMessagingService: remoteMessagingService
         )
         guard validator.shouldDisplayNewAddressBarPicker() else { return }
 

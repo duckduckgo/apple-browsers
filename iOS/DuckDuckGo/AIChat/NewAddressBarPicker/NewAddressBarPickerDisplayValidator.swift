@@ -39,6 +39,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     private let appSettings: AppSettings
     private let pickerStorage: NewAddressBarPickerStorage
     private let launchSourceManager: LaunchSourceManaging
+    private let remoteMessagingService: RemoteMessagingService
 
     // MARK: - Initialization
     
@@ -49,7 +50,8 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         experimentalAIChatManager: ExperimentalAIChatManager,
         appSettings: AppSettings,
         pickerStorage: NewAddressBarPickerStorage,
-        launchSourceManager: LaunchSourceManaging
+        launchSourceManager: LaunchSourceManaging,
+        remoteMessagingService: RemoteMessagingService
     ) {
         self.aiChatSettings = aiChatSettings
         self.tutorialSettings = tutorialSettings
@@ -58,6 +60,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         self.appSettings = appSettings
         self.pickerStorage = pickerStorage
         self.launchSourceManager = launchSourceManager
+        self.remoteMessagingService = remoteMessagingService
     }
     
     // MARK: - Public Interface
@@ -72,6 +75,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         guard !isNewToggleExperimentEnabled else { return false }
         guard !hasForceChoiceBeenShown else { return false }
         guard !isLaunchedFromExternalSource else { return false }
+        guard !hasInteractedWithAddressBarRemoteMessage else { return false }
 
         return true
     }
@@ -110,6 +114,11 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
 
     private var isLaunchedFromExternalSource: Bool {
         launchSourceManager.source != .standard
+    }
+
+    private var hasInteractedWithAddressBarRemoteMessage: Bool {
+        /// https://github.com/duckduckgo/remote-messaging-config/pull/235
+        return remoteMessagingService.hasDismissedMessage(withID: "search_duck_ai_announcement")
     }
 }
 

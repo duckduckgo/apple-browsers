@@ -19,8 +19,20 @@
 
 import UIKit
 import SwiftUI
+import AIChat
 
 final class NewAddressBarPickerViewController: UIViewController {
+    
+    private let aiChatSettings: AIChatSettingsProvider
+    
+    init(aiChatSettings: AIChatSettingsProvider) {
+        self.aiChatSettings = aiChatSettings
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     private var contentView: NewAddressBarPickerContentView!
     private var hostingController: UIHostingController<NewAddressBarPickerContentView>!
@@ -32,7 +44,9 @@ final class NewAddressBarPickerViewController: UIViewController {
     }
     
     private func setupContentView() {
-        contentView = NewAddressBarPickerContentView { [weak self] in
+        contentView = NewAddressBarPickerContentView(
+            aiChatSettings: aiChatSettings
+        ) { [weak self] in
             self?.dismiss(animated: true)
         }
         
@@ -51,5 +65,16 @@ final class NewAddressBarPickerViewController: UIViewController {
         ])
         
         hostingController.didMove(toParent: self)
+    }
+    
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        switch UIDevice.current.userInterfaceIdiom {
+        case .phone:
+            return .portrait
+        case .pad:
+            return .all
+        default:
+            return .all
+        }
     }
 }

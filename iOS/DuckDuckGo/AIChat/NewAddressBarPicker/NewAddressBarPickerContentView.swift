@@ -22,18 +22,27 @@ import UIComponents
 import DesignResourcesKit
 import DuckUI
 import Lottie
+import AIChat
 
 struct NewAddressBarPickerContentView: View {
+    let aiChatSettings: AIChatSettingsProvider
     let onDismiss: () -> Void
 
-    init(onDismiss: @escaping () -> Void) {
+    init(
+        aiChatSettings: AIChatSettingsProvider,
+        onDismiss: @escaping () -> Void
+    ) {
+        self.aiChatSettings = aiChatSettings
         self.onDismiss = onDismiss
     }
 
     var body: some View {
         VStack(spacing: 20) {
             ContentView()
-            CTAView(onDismiss: onDismiss)
+            CTAView(
+                aiChatSettings: aiChatSettings,
+                onDismiss: onDismiss
+            )
                 .frame(maxWidth: 440)
                 .padding(.horizontal, 32)
         }
@@ -135,6 +144,7 @@ private enum AddressBarPickerAnimation: String {
 }
 
 private struct CTAView: View {
+    let aiChatSettings: AIChatSettingsProvider
     let onDismiss: () -> Void
     @State private var selectedOption: Int = 0
 
@@ -156,7 +166,7 @@ private struct CTAView: View {
             .padding(.bottom, 16)
 
             Button {
-                onDismiss()
+                handleConfirmation()
             } label: {
                 Text(UserText.newAddressBarPickerConfirm)
                     .daxButton()
@@ -181,7 +191,20 @@ private struct CTAView: View {
                 .daxCaption()
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .multilineTextAlignment(.center)
+                .padding(.bottom, bottomPadding)
         }
+    }
+
+    private var bottomPadding: CGFloat {
+        UIDevice.current.userInterfaceIdiom == .pad ? 24 : 0
+    }
+
+    private func handleConfirmation() {
+        // selectedOption 0 = Search Only (disable AI search input)
+        // selectedOption 1 = Search and AI (enable AI search input)
+        let enableAISearch = (selectedOption == 1)
+        aiChatSettings.enableAIChatSearchInputUserSettings(enable: enableAISearch)
+        onDismiss()
     }
 }
 

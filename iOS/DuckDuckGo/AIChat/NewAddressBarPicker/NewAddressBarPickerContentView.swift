@@ -103,7 +103,18 @@ private struct ContentView: View {
 
 private struct AnimationView: View {
     @Environment(\.colorScheme) private var colorScheme
-    
+
+    /// Code required to loop specific parts of the animation
+    /// https://app.asana.com/1/137249556945/project/1207822763512188/task/1211197237823963?focus=true
+    @State private var hasPlayedIntro = false
+
+    private enum AnimationFrame {
+        static let introStart: AnimationFrameTime = 0
+        static let introEnd: AnimationFrameTime = 30
+        static let loopStart: AnimationFrameTime = 31
+        static let defaultEnd: AnimationFrameTime = 100 /// Fallback in case lottieAnimationView is nil
+    }
+
     var body: some View {
         let animation = AddressBarPickerAnimation.animation(
             for: UIDevice.current.userInterfaceIdiom,
@@ -115,9 +126,40 @@ private struct AnimationView: View {
                 colorScheme: colorScheme,
                 deviceIdiom: UIDevice.current.userInterfaceIdiom
             ))
-            .playing(loopMode: .loop)
+            .configure(configureLottieAnimation)
             .scaledToFit()
             .id("\(animation.rawValue)-\(colorScheme)")
+    }
+
+    private func configureLottieAnimation(_ lottieAnimationView: LottieAnimationView) {
+        let endFrame = lottieAnimationView.animation?.endFrame ?? AnimationFrame.defaultEnd
+
+        if hasPlayedIntro {
+            playLoopAnimation(in: lottieAnimationView, endFrame: endFrame)
+        } else {
+            playIntroAnimation(in: lottieAnimationView, endFrame: endFrame)
+        }
+    }
+
+    private func playIntroAnimation(in animationView: LottieAnimationView, endFrame: AnimationFrameTime) {
+        animationView.play(
+            fromFrame: AnimationFrame.introStart,
+            toFrame: AnimationFrame.introEnd,
+            loopMode: .playOnce
+        ) { [self] completed in
+            guard completed else { return }
+
+            hasPlayedIntro = true
+            playLoopAnimation(in: animationView, endFrame: endFrame)
+        }
+    }
+
+    private func playLoopAnimation(in animationView: LottieAnimationView, endFrame: AnimationFrameTime ) {
+        animationView.play(
+            fromFrame: AnimationFrame.loopStart,
+            toFrame: endFrame,
+            loopMode: .loop
+        )
     }
 }
 

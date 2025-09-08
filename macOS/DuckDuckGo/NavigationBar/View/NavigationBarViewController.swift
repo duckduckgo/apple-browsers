@@ -337,6 +337,7 @@ final class NavigationBarViewController: NSViewController {
 
     override func viewDidLoad() {
         setupAccessibility()
+        setupNavigationButtons()
 
         view.wantsLayer = true
         view.layer?.masksToBounds = false
@@ -382,7 +383,6 @@ final class NavigationBarViewController: NSViewController {
             ])
 
         } else /* if !isInPopUpWindow */ {
-            setupNavigationButtons()
             updateHomeButton()
             addContextMenu()
 
@@ -563,16 +563,13 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func updatePasswordManagementButton() {
-        guard !isInPopUpWindow else {
-            passwordManagementButton.isHidden = true
-            return
+        if !isInPopUpWindow {
+            passwordManagementButton.menu = NSMenu {
+                NSMenuItem(title: LocalPinningManager.shared.shortcutTitle(for: .autofill),
+                           action: #selector(toggleAutofillPanelPinning),
+                           keyEquivalent: "")
+            }
         }
-
-        let menu = NSMenu()
-        let title = LocalPinningManager.shared.shortcutTitle(for: .autofill)
-        menu.addItem(withTitle: title, action: #selector(toggleAutofillPanelPinning), keyEquivalent: "")
-
-        passwordManagementButton.menu = menu
 
         let url = tabCollectionViewModel.selectedTabViewModel?.tab.content.userEditableUrl
 
@@ -587,7 +584,7 @@ final class NavigationBarViewController: NSViewController {
             return
         }
 
-        if LocalPinningManager.shared.isPinned(.autofill) {
+        if !isInPopUpWindow, LocalPinningManager.shared.isPinned(.autofill) {
             passwordManagementButton.isHidden = false
         } else {
             passwordManagementButton.isShown = popovers.isPasswordManagementPopoverShown || isAutoFillAutosaveMessageVisible
@@ -642,10 +639,12 @@ final class NavigationBarViewController: NSViewController {
         case `default`
     }
     private func updateDownloadsButton(source: DownloadsButtonUpdateSource) {
-        downloadsButton.menu = NSMenu {
-            NSMenuItem(title: LocalPinningManager.shared.shortcutTitle(for: .downloads),
-                       action: #selector(toggleDownloadsPanelPinning(_:)),
-                       keyEquivalent: "")
+        if !isInPopUpWindow {
+            downloadsButton.menu = NSMenu {
+                NSMenuItem(title: LocalPinningManager.shared.shortcutTitle(for: .downloads),
+                           action: #selector(toggleDownloadsPanelPinning(_:)),
+                           keyEquivalent: "")
+            }
         }
 
         if LocalPinningManager.shared.isPinned(.downloads) && !isInPopUpWindow {

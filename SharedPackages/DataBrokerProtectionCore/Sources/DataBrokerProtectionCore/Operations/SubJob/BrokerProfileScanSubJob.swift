@@ -297,7 +297,9 @@ struct BrokerProfileScanSubJob {
     private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<JobEvent>,
                                                      database: DataBrokerProtectionRepository) {
 
-        guard let savedExtractedProfiles = try? database.fetchAllBrokerProfileQueryData().flatMap({ $0.extractedProfiles }),
+        // Jobs for removed brokers will already be prevented from being scheduled upstream
+        guard let savedExtractedProfiles = try? database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+            .flatMap({ $0.extractedProfiles }),
               savedExtractedProfiles.count > 0 else {
             return
         }

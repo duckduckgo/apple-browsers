@@ -732,6 +732,174 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         XCTAssertEqual(sessionPixel?.params?["duration_median_ms"], "35000.0")
     }
     #endif
+
+    func testWhenFireWeeklyReportPixels_thenExcludesRemovedBrokersFromReport() {
+        // Given
+        let activeBrokerData = BrokerProfileQueryData(
+            dataBroker: .mock,
+            profileQuery: .mock,
+            scanJobData: .mockWithRecentScan,
+            optOutJobData: [.mockWithSuccessfulOptOut]
+        )
+
+        let removedBroker = DataBroker(
+            id: 2,
+            name: "RemovedBroker",
+            url: "https://removed.com",
+            steps: [],
+            version: "1.0",
+            schedulingConfig: DataBrokerScheduleConfig.mock,
+            mirrorSites: [],
+            optOutUrl: "",
+            eTag: "",
+            removedAt: Date()
+        )
+        let removedBrokerData = BrokerProfileQueryData(
+            dataBroker: removedBroker,
+            profileQuery: .mock,
+            scanJobData: .mockWithRecentScan,
+            optOutJobData: [.mockWithSuccessfulOptOut, .mockWithSuccessfulOptOut]
+        )
+
+        database.brokerProfileQueryDataToReturn = [activeBrokerData, removedBrokerData]
+
+        let sut = DataBrokerProtectionEventPixels(database: database,
+                                                  repository: repository,
+                                                  handler: handler)
+
+        // When
+        sut.fireWeeklyReportPixels()
+
+        // Then
+        XCTAssertTrue(database.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData")
+        XCTAssertEqual(database.lastShouldFilterRemovedBrokers, true, "Should request filtering of removed brokers for event pixels")
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+
+        // Weekly report should only reflect active broker data
+        let scanningPixels = firedPixels.filter { $0.name == "dbp_event_weekly-report_scanning" }
+        let removalPixels = firedPixels.filter { $0.name == "dbp_event_weekly-report_removals" }
+
+        XCTAssertFalse(scanningPixels.isEmpty, "Should fire scanning report pixels")
+        XCTAssertFalse(removalPixels.isEmpty, "Should fire removal report pixels")
+
+        // Should only count removals from active broker (1), not removed broker (2)
+        if let removalPixel = removalPixels.first,
+           let removalsParam = removalPixel.params?["removals"] {
+            XCTAssertEqual(removalsParam, "1", "Should only count removals from active brokers")
+        }
+    }
+
+    func testWhenWeeklyReportPixels_thenExcludesRemovedBrokersFromCoverage() {
+        // Given
+        let activeBroker1 = BrokerProfileQueryData(
+            dataBroker: .mock,
+            profileQuery: .mock,
+            scanJobData: .mockWithRecentScan,
+            optOutJobData: []
+        )
+
+        let activeBroker2 = BrokerProfileQueryData(
+            dataBroker: .mockWithURL("https://active2.com"),
+            profileQuery: .mock,
+            scanJobData: .mockWithOldScan, // Not scanned this week
+            optOutJobData: []
+        )
+
+        let removedBroker = BrokerProfileQueryData(
+            dataBroker: .removedMock,
+            profileQuery: .mock,
+            scanJobData: .mockWithRecentScan,
+            optOutJobData: []
+        )
+
+        database.brokerProfileQueryDataToReturn = [activeBroker1, activeBroker2, removedBroker]
+
+        let sut = DataBrokerProtectionEventPixels(database: database,
+                                                  repository: repository,
+                                                  handler: handler)
+
+        // When
+        sut.fireWeeklyReportPixels()
+
+        // Then
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let scanningPixels = firedPixels.filter { $0.name == "dbp_event_weekly-report_scanning" }
+
+        XCTAssertFalse(scanningPixels.isEmpty, "Should fire scanning report pixels")
+
+        // Scan coverage should be calculated as: 1 scanned out of 2 active brokers = 50%
+        // (excluding the removed broker from both numerator and denominator)
+        if let scanningPixel = scanningPixels.first,
+           let scanCoverage = scanningPixel.params?["scan_coverage"] {
+            XCTAssertEqual(scanCoverage, "50-75", "Scan coverage should exclude removed brokers from calculation")
+        }
+    }
+
+    func testWhenWeeklyReportPixels_withOnlyRemovedBrokers_thenFiresZeroStats() {
+        // Given
+        // Create removed broker mocks (using manually created DataBroker since we need removedAt)
+        let removedDataBroker1 = DataBroker(
+            id: 1,
+            name: "RemovedBroker1",
+            url: "https://removed1.com",
+            steps: [],
+            version: "1.0",
+            schedulingConfig: DataBrokerScheduleConfig.mock,
+            mirrorSites: [],
+            optOutUrl: "",
+            eTag: "",
+            removedAt: Date()
+        )
+        let removedBroker1 = BrokerProfileQueryData(
+            dataBroker: removedDataBroker1,
+            profileQuery: .mock,
+            scanJobData: .mockWithRecentScan,
+            optOutJobData: [.mockWithSuccessfulOptOut]
+        )
+
+        let removedDataBroker2 = DataBroker(
+            id: 2,
+            name: "RemovedBroker2",
+            url: "https://removed2.com",
+            steps: [],
+            version: "1.0",
+            schedulingConfig: DataBrokerScheduleConfig.mock,
+            mirrorSites: [],
+            optOutUrl: "",
+            eTag: "",
+            removedAt: Date()
+        )
+        let removedBroker2 = BrokerProfileQueryData(
+            dataBroker: removedDataBroker2,
+            profileQuery: .mock,
+            scanJobData: .mockWithRecentScan,
+            optOutJobData: [.mockWithSuccessfulOptOut]
+        )
+
+        database.brokerProfileQueryDataToReturn = [removedBroker1, removedBroker2]
+
+        let sut = DataBrokerProtectionEventPixels(database: database,
+                                                  repository: repository,
+                                                  handler: handler)
+
+        // When
+        sut.fireWeeklyReportPixels()
+
+        // Then
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let scanningPixels = firedPixels.filter { $0.name == "dbp_event_weekly-report_scanning" }
+        let removalPixels = firedPixels.filter { $0.name == "dbp_event_weekly-report_removals" }
+
+        // Should still fire pixels but with zero counts since all brokers are filtered out
+        XCTAssertFalse(scanningPixels.isEmpty, "Should fire scanning report pixels even with no active brokers")
+        XCTAssertFalse(removalPixels.isEmpty, "Should fire removal report pixels even with no active brokers")
+
+        if let removalPixel = removalPixels.first,
+           let removalsParam = removalPixel.params?["removals"] {
+            XCTAssertEqual(removalsParam, "0", "Should show zero removals when all brokers are removed")
+        }
+    }
 }
 
 final class MockDataBrokerProtectionEventPixelsRepository: DataBrokerProtectionEventPixelsRepository {

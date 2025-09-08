@@ -526,7 +526,7 @@ extension DataBrokerProtectionIOSManager: DBPUIViewModelDelegate {
     }
     
     public func getAllBrokerProfileQueryData() throws -> [DataBrokerProtectionCore.BrokerProfileQueryData] {
-        try database.fetchAllBrokerProfileQueryData()
+        try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
     }
 
     @MainActor

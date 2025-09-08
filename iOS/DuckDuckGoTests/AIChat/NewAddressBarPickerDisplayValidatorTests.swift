@@ -21,6 +21,8 @@ import XCTest
 import Core
 import Persistence
 import BrowserServicesKit
+import RemoteMessaging
+import RemoteMessagingTestsUtils
 import AIChat
 @testable import DuckDuckGo
 
@@ -55,6 +57,7 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         )
         pickerStorage = NewAddressBarPickerStorage(keyValueStore: mockKeyValueStore)
 
+        let remoteMessageStoreMock = MockRemoteMessagingStore()
         validator = NewAddressBarPickerDisplayValidator(
             aiChatSettings: mockAIChatSettings,
             tutorialSettings: mockTutorialSettings,
@@ -62,7 +65,7 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
             experimentalAIChatManager: experimentalAIChatManager,
             appSettings: mockAppSettings,
             pickerStorage: pickerStorage,
-            launchSourceManager: LaunchSourceManager()
+            launchSourceManager: LaunchSourceManager(), remoteMessageStore: remoteMessageStoreMock
         )
     }
 

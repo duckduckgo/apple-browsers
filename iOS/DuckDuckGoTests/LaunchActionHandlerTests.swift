@@ -74,7 +74,11 @@ final class MockLaunchSourceManager: LaunchSourceManaging {
         self.lastSetSource = source
         setSourceCallCount += 1
     }
-    
+
+    func handleAppAction(_ appAction: LaunchAction) {
+        
+    }
+
 }
 
 @MainActor

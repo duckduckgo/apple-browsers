@@ -213,6 +213,7 @@
 		31C314A22D2EF614009A412A /* AIChatViewControllerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C314A12D2EF60A009A412A /* AIChatViewControllerManager.swift */; };
 		31C70B5528045E3500FB6AD1 /* SecureVaultReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C70B5428045E3500FB6AD1 /* SecureVaultReporter.swift */; };
 		31C70B5B2804C61000FB6AD1 /* SaveAutofillLoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C70B5A2804C61000FB6AD1 /* SaveAutofillLoginManager.swift */; };
+		31C71A782E6F4F5B004D503F /* RemoteMessagingTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 31C71A772E6F4F5B004D503F /* RemoteMessagingTestsUtils */; };
 		31CB4251273AF50700FA0F3F /* SpeechRecognizerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31CB4250273AF50700FA0F3F /* SpeechRecognizerProtocol.swift */; };
 		31CC224928369B38001654A4 /* AutofillLoginListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31CC224828369B38001654A4 /* AutofillLoginListViewController.swift */; };
 		31CE145C2D5505520027F11D /* OmnibarDependencyProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31CE145B2D5505520027F11D /* OmnibarDependencyProvider.swift */; };
@@ -4126,6 +4127,7 @@
 				F486D3382506A225002D07D7 /* OHHTTPStubsSwift in Frameworks */,
 				4BC95EAF2D7417A8002FAB32 /* SubscriptionTestingUtilities in Frameworks */,
 				4BC95EAD2D7417A0002FAB32 /* Subscription in Frameworks */,
+				31C71A782E6F4F5B004D503F /* RemoteMessagingTestsUtils in Frameworks */,
 				84EFBCCE2D817CB500706739 /* SnapshotTesting in Frameworks */,
 				9F5412772E3998B000DBF008 /* SetDefaultBrowserTestSupport in Frameworks */,
 				4BC95EAB2D74179B002FAB32 /* PersistenceTestingUtils in Frameworks */,
@@ -8917,6 +8919,7 @@
 				9FE59CD92E309A4F00C4B65D /* SystemSettingsPiPTutorialTestSupport */,
 				9F5412762E3998B000DBF008 /* SetDefaultBrowserTestSupport */,
 				4BB88F3E2E5D701200DE539A /* PixelKitTestingUtilities */,
+				31C71A772E6F4F5B004D503F /* RemoteMessagingTestsUtils */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = 84E341A61E2F7EFB00BDBA6F /* UnitTests.xctest */;
@@ -14407,6 +14410,10 @@
 		316AC7862DC28DD1003D9770 /* UIComponents */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = UIComponents;
+		};
+		31C71A772E6F4F5B004D503F /* RemoteMessagingTestsUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RemoteMessagingTestsUtils;
 		};
 		31E69A62280F4CB600478327 /* DuckUI */ = {
 			isa = XCSwiftPackageProductDependency;

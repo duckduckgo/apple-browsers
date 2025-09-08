@@ -217,7 +217,9 @@ final class MockIPCServer: DataBrokerProtectionIPCServer {
     }
 
     func checkForEmailConfirmationData() {
-        serverDelegate?.checkForEmailConfirmationData()
+        Task {
+            await serverDelegate?.checkForEmailConfirmationData()
+        }
     }
 }
 

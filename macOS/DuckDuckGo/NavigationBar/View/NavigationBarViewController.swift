@@ -1045,7 +1045,7 @@ final class NavigationBarViewController: NSViewController {
             .sink { [weak self] _ in
                 guard let self, !self.isDownloadsPopoverShown,
                       DownloadsPreferences.shared.shouldOpenPopupOnCompletion,
-                      Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window === downloadsButton.window else { return }
+                      downloadsButton.window?.isKeyWindow == true else { return }
 
                 self.popovers.showDownloadsPopoverAndAutoHide(from: downloadsButton, popoverDelegate: self, downloadsDelegate: self)
             }

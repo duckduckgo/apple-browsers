@@ -41,9 +41,9 @@ public protocol BrokerProfileOptOutSubJobWebTesting {
 
 extension BrokerProfileOptOutSubJobWebTesting {
     public func run(inputValue: ExtractedProfile,
-             webViewHandler: WebViewHandler? = nil,
-             actionsHandler: ActionsHandler? = nil,
-             showWebView: Bool = false) async throws {
+                    webViewHandler: WebViewHandler? = nil,
+                    actionsHandler: ActionsHandler? = nil,
+                    showWebView: Bool = false) async throws {
         try await run(inputValue: inputValue, webViewHandler: webViewHandler, actionsHandler: actionsHandler, showWebView: showWebView)
     }
 }

@@ -25,7 +25,7 @@ import DataBrokerProtectionCoreTestsUtils
 
 final class EmailConfirmationJobTests: XCTestCase {
     var sut: EmailConfirmationJob!
-    
+
     let mockDatabase = MockDatabase()
     let mockErrorDelegate = MockEmailConfirmationErrorDelegate()
     lazy var mockBrokerDependencies: MockBrokerProfileJobDependencies = {

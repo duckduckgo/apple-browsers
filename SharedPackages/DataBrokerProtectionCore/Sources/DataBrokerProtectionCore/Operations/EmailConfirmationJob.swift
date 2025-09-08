@@ -196,11 +196,11 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         let webViewHandler: WebViewHandler
         if let webViewHandlerForTesting = self.webViewHandlerForTesting {
             webViewHandler = webViewHandlerForTesting
-        } else {
+        } else if let webRunner = webRunner as? CCFCommunicationDelegate {
             webViewHandler = await DataBrokerProtectionWebViewHandler(
                 privacyConfig: jobDependencies.privacyConfig,
                 prefs: jobDependencies.contentScopeProperties,
-                delegate: webRunner as? CCFCommunicationDelegate ?? webRunner as! BrokerProfileOptOutSubJobWebRunner,
+                delegate: webRunner,
                 isFakeBroker: broker.isFakeBroker,
                 executionConfig: jobDependencies.executionConfig,
                 shouldContinueActionHandler: { [weak self] in
@@ -208,6 +208,9 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                     return !self.isCancelled && !Task.isCancelled
                 }
             )
+        } else {
+            assertionFailure("webRunner must conform to CCFCommunicationDelegate")
+            return
         }
 
         try await webRunner.run(

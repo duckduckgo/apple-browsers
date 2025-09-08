@@ -594,7 +594,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public var scanJobData = [ScanJobData]()
     public var optOutJobData = [OptOutJobData]()
     public var lastPreferredRunDateOnScan: Date?
-    
+
     public var wasDeleteOptOutEmailConfirmationCalled = false
     public var lastDeletedEmailConfirmationProfileQueryId: Int64?
     public var lastDeletedEmailConfirmationBrokerId: Int64?
@@ -939,8 +939,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var attemptCount: Int64 = 0
     public private(set) var scanEvents = [HistoryEvent]()
     public private(set) var optOutEvents = [HistoryEvent]()
-    
-    // Additional properties for EmailConfirmationJob tests
+
     public var brokerToReturn: DataBroker?
     public var profileQueryToReturn: ProfileQuery?
     public var extractedProfileToReturn: ExtractedProfile?
@@ -1045,17 +1044,11 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     }
 
     public func fetchBroker(with id: Int64) throws -> DataBroker? {
-        if let brokerToReturn = brokerToReturn {
-            return brokerToReturn
-        }
-        return dataBrokersToReturn.first { $0.id == id }
+        brokerToReturn ?? dataBrokersToReturn.first { $0.id == id }
     }
 
     public func fetchProfileQuery(with id: Int64) throws -> ProfileQuery? {
-        if let profileQueryToReturn = profileQueryToReturn {
-            return profileQueryToReturn
-        }
-        return ProfileQuery.mock
+        profileQueryToReturn ?? ProfileQuery.mock
     }
 
     public var recordsAwaitingLink: [OptOutEmailConfirmationJobData] = []
@@ -2534,6 +2527,7 @@ public extension DataBroker {
             optOutUrl: "",
             eTag: "",
             removedAt: nil
+        )
     }
 
     static var removedMock: DataBroker {

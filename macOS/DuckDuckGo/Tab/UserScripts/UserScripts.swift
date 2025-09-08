@@ -112,6 +112,7 @@ final class UserScripts: UserScriptsProvider {
         }
 
         if sourceProvider.featureFlagger.isFeatureOn(.newTabPagePerTab) {
+            assert(sourceProvider.newTabPageActionsManager != nil, "New Tab Page actions manager must not be nil")
             let newTabPageUserScript = NewTabPageUserScript()
             sourceProvider.newTabPageActionsManager?.registerUserScript(newTabPageUserScript)
             self.newTabPageUserScript = newTabPageUserScript

@@ -402,8 +402,8 @@ final class NavigationBarViewController: NSViewController {
 #endif
 
         if #available(macOS 15.4, *), !burnerMode.isBurner, let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            Task { @MainActor in
-                await WebExtensionNavigationBarUpdater(container: menuButtons, webExtensionManager: webExtensionManager).runUpdateLoop()
+            Task { @MainActor [weak self] in
+                await WebExtensionNavigationBarUpdater(webExtensionManager: webExtensionManager, container: self?.menuButtons).runUpdateLoop()
             }
         }
     }

@@ -24,6 +24,7 @@ import RemoteMessaging
 import Core
 import Persistence
 import BackgroundTasks
+import DDGSync
 
 final class RemoteMessagingService {
 
@@ -35,7 +36,9 @@ final class RemoteMessagingService {
          internalUserDecider: InternalUserDecider,
          configurationStore: ConfigurationStore,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         configurationURLProvider: ConfigurationURLProviding) {
+         configurationURLProvider: ConfigurationURLProviding,
+         syncService: DDGSyncing
+    ) {
         remoteMessagingClient = RemoteMessagingClient(
             bookmarksDatabase: bookmarksDatabase,
             appSettings: appSettings,
@@ -47,7 +50,8 @@ final class RemoteMessagingService {
                 privacyConfigurationManager: privacyConfigurationManager
             ),
             duckPlayerStorage: DefaultDuckPlayerStorage(),
-            configurationURLProvider: configurationURLProvider
+            configurationURLProvider: configurationURLProvider,
+            syncService: syncService
         )
         remoteMessagingClient.registerBackgroundRefreshTaskHandler()
 

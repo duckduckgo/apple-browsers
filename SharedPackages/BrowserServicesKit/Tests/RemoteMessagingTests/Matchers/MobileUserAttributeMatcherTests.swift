@@ -72,7 +72,33 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
-    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = []) {
+    // MARK: - SyncEnabled
+
+    func testWhenSyncEnabledMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isSyncEnabled: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: SyncEnabledMatchingAttribute(value: true, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenSyncEnabledDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isSyncEnabled: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: SyncEnabledMatchingAttribute(value: true, fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenSyncDisabledMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isSyncEnabled: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: SyncEnabledMatchingAttribute(value: false, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenSyncDisabledDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isSyncEnabled: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: SyncEnabledMatchingAttribute(value: false, fallback: nil)),
+                       .fail)
+    }
+
+    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [], isSyncEnabled: Bool = false) {
         matcher = MobileUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
             variantManager: manager,
@@ -94,7 +120,8 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             isDuckPlayerEnabled: false,
             dismissedMessageIds: dismissedMessageIds,
             shownMessageIds: [],
-            enabledFeatureFlags: []
+            enabledFeatureFlags: [],
+            isSyncEnabled: isSyncEnabled
         )
     }
 }

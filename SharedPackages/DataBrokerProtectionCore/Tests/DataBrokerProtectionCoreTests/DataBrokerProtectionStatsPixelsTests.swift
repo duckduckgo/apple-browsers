@@ -713,4 +713,188 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         // Cleanup
         handler.clear()
     }
+
+    func testWhenTryToFireStatsPixels_thenExcludesRemovedBrokersFromStats() throws {
+        // Given
+        let database = MockDatabase()
+
+        let submittedDate = Calendar.current.date(byAdding: .day, value: -22, to: Date())
+        let optOutJobData = OptOutJobData.mock(with: .optOutConfirmed,
+                                               submittedDate: submittedDate,
+                                               sevenDaysConfirmationPixelFired: true,
+                                               fourteenDaysConfirmationPixelFired: false,
+                                               twentyOneDaysConfirmationPixelFired: false)
+
+        let eightDaysAgo = Calendar.current.date(byAdding: .day, value: -8, to: Date())!
+        let historyEventsForScanOperation: [HistoryEvent] = [
+            .init(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: eightDaysAgo),
+            .init(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 2), date: eightDaysAgo),
+        ]
+
+        let activeBrokerData = BrokerProfileQueryData(
+            dataBroker: .mock,
+            profileQuery: .mock,
+            scanJobData: .mockWith(historyEvents: historyEventsForScanOperation),
+            optOutJobData: [optOutJobData]
+        )
+
+        let removedBrokerData = BrokerProfileQueryData(
+            dataBroker: .removedMock,
+            profileQuery: .mock,
+            scanJobData: .mockWith(historyEvents: historyEventsForScanOperation),
+            optOutJobData: [optOutJobData]
+        )
+
+        database.brokerProfileQueryDataToReturn = [activeBrokerData, removedBrokerData]
+
+        let repository = MockDataBrokerProtectionStatsPixelsRepository()
+        repository.latestStatsWeeklyPixelDate = eightDaysAgo
+
+        let sut = DataBrokerProtectionStatsPixels(
+            database: database,
+            handler: handler,
+            repository: repository
+        )
+
+        // When
+        sut.tryToFireStatsPixels()
+
+        // Then
+        XCTAssertTrue(database.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData")
+        XCTAssertEqual(database.lastShouldFilterRemovedBrokers, true, "Should request filtering of removed brokers for stats")
+
+        // Verify that pixels fired only include data from active brokers
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        XCTAssertFalse(firedPixels.isEmpty, "Should fire stats pixels")
+
+        // Global stats should only reflect active broker data
+        let globalPixels = firedPixels.filter { $0.name.contains("weekly_stats") || $0.name.contains("monthly_stats") }
+        XCTAssertFalse(globalPixels.isEmpty, "Should fire global stats pixels")
+    }
+
+    func testWhenFireCustomStatsPixelsIfNeeded_thenExcludesRemovedBrokersFromCustomStats() throws {
+        // Given
+        let repository = MockDataBrokerProtectionStatsPixelsRepository()
+        repository._customStatsPixelsLastSentTimestamp = Date.nowMinus(hours: 25)
+        let database = MockDatabase()
+
+        let submittedDate = Calendar.current.date(byAdding: .day, value: -22, to: Date())
+        let optOutJobData = OptOutJobData.mock(with: .optOutConfirmed,
+                                               submittedDate: submittedDate,
+                                               sevenDaysConfirmationPixelFired: true,
+                                               fourteenDaysConfirmationPixelFired: false,
+                                               twentyOneDaysConfirmationPixelFired: false)
+
+        let activeBrokerData = BrokerProfileQueryData(
+            dataBroker: .mock,
+            profileQuery: .mock,
+            scanJobData: .mock,
+            optOutJobData: [optOutJobData]
+        )
+
+        let removedBrokerData = BrokerProfileQueryData(
+            dataBroker: .removedMock,
+            profileQuery: .mock,
+            scanJobData: .mock,
+            optOutJobData: [optOutJobData]
+        )
+
+        database.brokerProfileQueryDataToReturn = [activeBrokerData, removedBrokerData]
+
+        let sut = DataBrokerProtectionStatsPixels(database: database,
+                                                  handler: handler,
+                                                  repository: repository)
+
+        // When
+        sut.fireCustomStatsPixelsIfNeeded()
+
+        // Then
+        XCTAssertTrue(database.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData")
+        XCTAssertEqual(database.lastShouldFilterRemovedBrokers, true, "Should request filtering of removed brokers for custom stats")
+
+        // Verify the trigger was set to fire custom stats pixels
+        XCTAssertTrue(repository.didSetCustomStatsPixelsLastSentTimestamp, "Should update timestamp after firing")
+    }
+
+    func testWhenWeeklyStatsPixelsAreFired_thenOnlyCountsActiveBrokers() throws {
+        // Given
+        let database = MockDatabase()
+
+        let eightDaysAgo = Calendar.current.date(byAdding: .day, value: -8, to: Date())!
+        let historyEventsForScanOperation: [HistoryEvent] = [
+            .init(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: eightDaysAgo),
+            .init(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 3), date: eightDaysAgo),
+        ]
+
+        let activeBrokerWithProfiles = BrokerProfileQueryData(
+            dataBroker: .mock,
+            profileQuery: .mock,
+            scanJobData: .mockWith(historyEvents: historyEventsForScanOperation),
+            optOutJobData: [
+                .init(
+                    brokerId: 1,
+                    profileQueryId: 1,
+                    createdDate: Date(),
+                    historyEvents: [HistoryEvent.mock(type: .optOutConfirmed, date: Date())],
+                    attemptCount: 1,
+                    submittedSuccessfullyDate: Date(),
+                    extractedProfile: .mockWithRemovedDate
+                ),
+                .mockWithInProgressOptOut
+            ]
+        )
+
+        let removedBrokerWithProfiles = BrokerProfileQueryData(
+            dataBroker: .removedMock,
+            profileQuery: .mock,
+            scanJobData: .mockWith(historyEvents: historyEventsForScanOperation),
+            optOutJobData: [
+                .init(
+                    brokerId: 2,
+                    profileQueryId: 1,
+                    createdDate: Date(),
+                    historyEvents: [HistoryEvent.mock(type: .optOutConfirmed, date: Date())],
+                    attemptCount: 1,
+                    submittedSuccessfullyDate: Date(),
+                    extractedProfile: .mockWithRemovedDate
+                ),
+                .init(
+                    brokerId: 2,
+                    profileQueryId: 2,
+                    createdDate: Date(),
+                    historyEvents: [HistoryEvent.mock(type: .optOutConfirmed, date: Date())],
+                    attemptCount: 1,
+                    submittedSuccessfullyDate: Date(),
+                    extractedProfile: .mockWithRemovedDate
+                )
+            ]
+        )
+
+        database.brokerProfileQueryDataToReturn = [activeBrokerWithProfiles, removedBrokerWithProfiles]
+
+        let repository = MockDataBrokerProtectionStatsPixelsRepository()
+        repository.latestStatsWeeklyPixelDate = eightDaysAgo
+
+        let sut = DataBrokerProtectionStatsPixels(
+            database: database,
+            handler: handler,
+            repository: repository
+        )
+
+        // When  
+        sut.tryToFireStatsPixels()
+
+        // Then
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let weeklyStatsPixels = firedPixels.filter { $0.name == "dbp_weekly_stats" }
+
+        XCTAssertFalse(weeklyStatsPixels.isEmpty, "Should fire weekly stats pixels")
+
+        // Stats should only reflect the active broker opt-outs
+        for pixel in weeklyStatsPixels {
+            if let successfulOptOuts = pixel.params?["num_optoutsuccess"] {
+                XCTAssertEqual(successfulOptOuts, "1", "Global stats should exclude removed broker opt-outs")
+            }
+        }
+    }
 }

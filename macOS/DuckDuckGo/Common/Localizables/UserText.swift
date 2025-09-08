@@ -25,10 +25,11 @@ struct UserText {
     static let duckDuckGo = NSLocalizedString("about.app_name", value: "DuckDuckGo", comment: "Application name to be displayed in the About dialog")
     static let duckDuckGoForMacAppStore = NSLocalizedString("about.app_name_app_store", value: "DuckDuckGo for Mac App Store", comment: "Application name to be displayed in the About dialog in App Store app")
 
-    // MARK: - Dialogs
+    // MARK: - Generic
     static let ok = NSLocalizedString("ok", value: "OK", comment: "OK button")
     static let cancel = NSLocalizedString("cancel", value: "Cancel", comment: "Cancel button")
     static let none = NSLocalizedString("none", value: "None", comment: "Generic 'None' label")
+    static let searchBarSearch = NSLocalizedString("searchBar.search", value: "Search", comment: "Generic placeholder for search fields")
 
     // Fire Dialog
     static let fireDialogFireproofSitesManage = NSLocalizedString("fire.dialog.manage", value: "Manage", comment: "Button title to manage Fireproof Sites or related settings")

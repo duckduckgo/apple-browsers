@@ -2458,6 +2458,8 @@
 		84E2FC462E0DB043000874F7 /* XCUIElementSnapshotExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E2FC452E0DB041000874F7 /* XCUIElementSnapshotExtension.swift */; };
 		84E2FC482E0DB058000874F7 /* XCUIElementTypeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E2FC472E0DB051000874F7 /* XCUIElementTypeExtension.swift */; };
 		84E5698A2E32022C00583076 /* TabNavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E569892E32022C00583076 /* TabNavigationTests.swift */; };
+		84E9D4BC2E6B07D400E7CC5B /* FireproofDomainCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E9D4BB2E6B07D400E7CC5B /* FireproofDomainCellView.swift */; };
+		84E9D4BD2E6B07D400E7CC5B /* FireproofDomainCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E9D4BB2E6B07D400E7CC5B /* FireproofDomainCellView.swift */; };
 		84EFBCD02D817CC400706739 /* InlineSnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 84EFBCCF2D817CC400706739 /* InlineSnapshotTesting */; };
 		84F1C8CF2C7705B500716446 /* BookmarksBarMenuPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F1C8CE2C7705B500716446 /* BookmarksBarMenuPopover.swift */; };
 		84F1C8D02C7705B500716446 /* BookmarksBarMenuPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F1C8CE2C7705B500716446 /* BookmarksBarMenuPopover.swift */; };
@@ -5047,6 +5049,7 @@
 		84E2FC452E0DB041000874F7 /* XCUIElementSnapshotExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCUIElementSnapshotExtension.swift; sourceTree = "<group>"; };
 		84E2FC472E0DB051000874F7 /* XCUIElementTypeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCUIElementTypeExtension.swift; sourceTree = "<group>"; };
 		84E569892E32022C00583076 /* TabNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabNavigationTests.swift; sourceTree = "<group>"; };
+		84E9D4BB2E6B07D400E7CC5B /* FireproofDomainCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireproofDomainCellView.swift; sourceTree = "<group>"; };
 		84F1C8CE2C7705B500716446 /* BookmarksBarMenuPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarMenuPopover.swift; sourceTree = "<group>"; };
 		84F1C8DA2C774CA900716446 /* BookmarkListPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkListPopover.swift; sourceTree = "<group>"; };
 		84F1C8DD2C774D4200716446 /* NSTableViewExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSTableViewExtension.swift; sourceTree = "<group>"; };
@@ -7340,27 +7343,28 @@
 		4B0511AA262CAA5A00F6079C /* View */ = {
 			isa = PBXGroup;
 			children = (
+				84E9D4BB2E6B07D400E7CC5B /* FireproofDomainCellView.swift */,
 				4B0511AD262CAA5A00F6079C /* FireproofDomains.storyboard */,
 				4B0511B4262CAA5A00F6079C /* FireproofDomainsViewController.swift */,
-				37AFCE8027DA2CA600471A10 /* PreferencesViewController.swift */,
-				37AFCE8627DA334800471A10 /* PreferencesRootView.swift */,
-				37AFCE8427DA2D3900471A10 /* PreferencesSidebar.swift */,
-				37AFCE8A27DB69BC00471A10 /* PreferencesGeneralView.swift */,
-				1D01A3D72B88DF8B00FE8150 /* PreferencesSyncView.swift */,
-				1DDC84FA2B8356CE00670238 /* PreferencesDefaultBrowserView.swift */,
-				1DDC84F62B83558F00670238 /* PreferencesPrivateSearchView.swift */,
-				1DDC85022B83903E00670238 /* PreferencesWebTrackingProtectionView.swift */,
-				1DDD3EBF2B84F5D5004CBF2B /* PreferencesCookiePopupProtectionView.swift */,
-				1D220BF72B86192200F8BBC6 /* PreferencesEmailProtectionView.swift */,
-				4B41EDA62B1543C9001EEDF4 /* PreferencesVPNView.swift */,
+				37AFCE9127DB8CAD00471A10 /* PreferencesAboutView.swift */,
+				1D01A3CF2B88CEC600FE8150 /* PreferencesAccessibilityView.swift */,
+				31C26A092CBE9D2200FFF462 /* PreferencesAIChat.swift */,
 				37D2771427E870D4003365FD /* PreferencesAppearanceView.swift */,
 				379DE4BC27EA31AC002CC3DE /* PreferencesAutofillView.swift */,
-				1D01A3CF2B88CEC600FE8150 /* PreferencesAccessibilityView.swift */,
+				1DDD3EBF2B84F5D5004CBF2B /* PreferencesCookiePopupProtectionView.swift */,
 				37CC53EB27E8A4D10028713D /* PreferencesDataClearingView.swift */,
+				1DDC84FA2B8356CE00670238 /* PreferencesDefaultBrowserView.swift */,
 				37F19A6428E1B3FB00740DC6 /* PreferencesDuckPlayerView.swift */,
-				31C26A092CBE9D2200FFF462 /* PreferencesAIChat.swift */,
-				37AFCE9127DB8CAD00471A10 /* PreferencesAboutView.swift */,
+				1D220BF72B86192200F8BBC6 /* PreferencesEmailProtectionView.swift */,
+				37AFCE8A27DB69BC00471A10 /* PreferencesGeneralView.swift */,
+				1DDC84F62B83558F00670238 /* PreferencesPrivateSearchView.swift */,
+				37AFCE8627DA334800471A10 /* PreferencesRootView.swift */,
+				37AFCE8427DA2D3900471A10 /* PreferencesSidebar.swift */,
+				1D01A3D72B88DF8B00FE8150 /* PreferencesSyncView.swift */,
 				560419432DD49BB600818414 /* PreferencesThreatProtectionView.swift */,
+				37AFCE8027DA2CA600471A10 /* PreferencesViewController.swift */,
+				4B41EDA62B1543C9001EEDF4 /* PreferencesVPNView.swift */,
+				1DDC85022B83903E00670238 /* PreferencesWebTrackingProtectionView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -13620,6 +13624,7 @@
 				3706FC23293F65D500E42796 /* StatisticsStore.swift in Sources */,
 				37F09AD42DDE433500643A1B /* FaviconManagerMock.swift in Sources */,
 				37AA01762E1FEC4400844427 /* CrashCollectionExtension.swift in Sources */,
+				84E9D4BD2E6B07D400E7CC5B /* FireproofDomainCellView.swift in Sources */,
 				1DDD3EBD2B84DCB9004CBF2B /* WebTrackingProtectionPreferences.swift in Sources */,
 				3706FC25293F65D500E42796 /* ColorView.swift in Sources */,
 				E2BC1B242E210AF300F58D61 /* NewTabPageOmnibarConfigProvider.swift in Sources */,
@@ -15808,6 +15813,7 @@
 				B6F1B02E2BCE6B47005E863C /* TunnelControllerProvider.swift in Sources */,
 				37AFCE8127DA2CA600471A10 /* PreferencesViewController.swift in Sources */,
 				31A83FB52BE28D7D00F74E67 /* UserText+DBP.swift in Sources */,
+				84E9D4BC2E6B07D400E7CC5B /* FireproofDomainCellView.swift in Sources */,
 				376597862E32E3370039EF74 /* NewTabPageTabPreloader.swift in Sources */,
 				4B02198A25E05FAC00ED7DEA /* FireproofDomains.swift in Sources */,
 				4B677442255DBEEA00025BD8 /* Database.swift in Sources */,

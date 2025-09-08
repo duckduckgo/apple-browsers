@@ -57,7 +57,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet private var daxLogo: NSImageView!
     @IBOutlet private var addressBarStack: NSStackView!
 
-    @IBOutlet private var menuButtons: NSStackView!
+    @IBOutlet private(set) var menuButtons: NSStackView!
 
     @IBOutlet private var addressBarLeftToNavButtonsConstraint: NSLayoutConstraint!
     @IBOutlet private var addressBarProportionalWidthConstraint: NSLayoutConstraint!

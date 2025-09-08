@@ -49511,6 +49511,66 @@
         }
       }
     },
+    "newtabpage.context.menu.favorites" : {
+      "comment" : "Context menu item to manage Favorites section on the New Tap Page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Favorites"
+          }
+        }
+      }
+    },
+    "newtabpage.context.menu.open.duckai.settings" : {
+      "comment" : "Context menu item to open Duck.ai Settings from the New Tap Page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck.ai Settings"
+          }
+        }
+      }
+    },
+    "newtabpage.context.menu.protections.report" : {
+      "comment" : "Context menu item to manage Protections Report section on the New Tap Page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Protections Report"
+          }
+        }
+      }
+    },
+    "newtabpage.context.menu.search" : {
+      "comment" : "Context menu item to manage Search section on the New Tap Page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search"
+          }
+        }
+      }
+    },
+    "newtabpage.context.menu.show.duckai" : {
+      "comment" : "Context menu item to manage Duck.ai on the New Tap Page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Duck.ai in Search Box"
+          }
+        }
+      }
+    },
     "next" : {
       "comment" : "Next button",
       "extractionState" : "extracted_with_value",

@@ -24,6 +24,7 @@ public extension NewTabPageDataModel {
 
         public enum Target: String, Codable {
             case settings
+            case duckAISettings
         }
     }
 }

@@ -50,6 +50,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     private var cancellables = Set<AnyCancellable>()
     private let sectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding
     private let sectionsVisibilityProvider: NewTabPageSectionsVisibilityProviding
+    private let omnibarConfigProvider: NewTabPageOmnibarConfigProviding
     private let customBackgroundProvider: NewTabPageCustomBackgroundProviding
     private let contextMenuPresenter: NewTabPageContextMenuPresenting
     private let linkOpener: NewTabPageLinkOpening
@@ -58,6 +59,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     public init(
         sectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding,
         sectionsVisibilityProvider: NewTabPageSectionsVisibilityProviding,
+        omnibarConfigProvider: NewTabPageOmnibarConfigProviding,
         customBackgroundProvider: NewTabPageCustomBackgroundProviding,
         contextMenuPresenter: NewTabPageContextMenuPresenting = DefaultNewTabPageContextMenuPresenter(),
         linkOpener: NewTabPageLinkOpening,
@@ -65,6 +67,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     ) {
         self.sectionsAvailabilityProvider = sectionsAvailabilityProvider
         self.sectionsVisibilityProvider = sectionsVisibilityProvider
+        self.omnibarConfigProvider = omnibarConfigProvider
         self.customBackgroundProvider = customBackgroundProvider
         self.contextMenuPresenter = contextMenuPresenter
         self.linkOpener = linkOpener
@@ -140,32 +143,52 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func showContextMenu(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        guard let params: NewTabPageDataModel.ContextMenuParams = DecodableHelper.decode(from: params) else { return nil }
+        let menu = NSMenu {
+            // Show only when the search box is available
+            if sectionsAvailabilityProvider.isOmnibarAvailable {
+                NSMenuItem(title: UserText.newTabPageContextMenuSearch,
+                           action: #selector(self.toggleVisibility(_:)),
+                           target: self,
+                           representedObject: NewTabPageDataModel.WidgetId.omnibar,
+                           state: sectionsVisibilityProvider.isOmnibarVisible ? .on : .off)
+                .withAccessibilityIdentifier("HomePage.Views.Menu.Search")
+            }
 
-        let menu = NSMenu()
+            NSMenuItem(title: UserText.newTabPageContextMenuFavorites,
+                       action: #selector(self.toggleVisibility(_:)),
+                       target: self,
+                       representedObject: NewTabPageDataModel.WidgetId.favorites,
+                       state: sectionsVisibilityProvider.isFavoritesVisible ? .on: .off)
+            .withAccessibilityIdentifier("HomePage.Views.Menu.Favorites")
 
-        for menuItem in params.visibilityMenuItems {
-            switch menuItem.id {
-            case .omnibar:
-                let item = NSMenuItem(title: menuItem.title, action: #selector(self.toggleVisibility(_:)), keyEquivalent: "")
-                item.target = self
-                item.representedObject = menuItem.id
-                item.state = sectionsVisibilityProvider.isOmnibarVisible ? .on : .off
-                menu.addItem(item)
-            case .favorites:
-                let item = NSMenuItem(title: menuItem.title, action: #selector(self.toggleVisibility(_:)), keyEquivalent: "")
-                item.target = self
-                item.representedObject = menuItem.id
-                item.state = sectionsVisibilityProvider.isFavoritesVisible ? .on : .off
-                menu.addItem(item)
-            case .protections:
-                let item = NSMenuItem(title: menuItem.title, action: #selector(self.toggleVisibility(_:)), keyEquivalent: "")
-                item.target = self
-                item.representedObject = menuItem.id
-                item.state = sectionsVisibilityProvider.isProtectionsReportVisible ? .on : .off
-                menu.addItem(item)
-            default:
-                break
+            NSMenuItem(title: UserText.newTabPageContextMenuProtectionsReport,
+                       action: #selector(self.toggleVisibility(_:)),
+                       target: self,
+                       representedObject: NewTabPageDataModel.WidgetId.protections,
+                       state: sectionsVisibilityProvider.isProtectionsReportVisible ? .on: .off)
+            .withAccessibilityIdentifier("HomePage.Views.Menu.ProtectionsReport")
+
+            // The separator won't be presented if it's the last menu item
+            NSMenuItem.separator()
+
+            // Show only when the search box is available and Duck.ai settings are visible
+            if sectionsAvailabilityProvider.isOmnibarAvailable && omnibarConfigProvider.isAIChatSettingVisible {
+
+                // Show only when the Search box is visible
+                if sectionsVisibilityProvider.isOmnibarVisible {
+                    NSMenuItem(title: UserText.newTabPageContextMenuShowDuckAI,
+                               action: #selector(self.toggleDuckAI(_:)),
+                               target: self,
+                               representedObject: 0,
+                               state: omnibarConfigProvider.isAIChatShortcutEnabled ? .on : .off)
+                    .withAccessibilityIdentifier("HomePage.Views.Menu.ShowDuckAI")
+                }
+
+                NSMenuItem(title: UserText.newTabPageContextMenuOpenDuckAISettings,
+                           action: #selector(self.openDuckAISettings(_:)),
+                           target: self,
+                           representedObject: 0)
+                .withAccessibilityIdentifier("HomePage.Views.Menu.OpenDuckAISettings")
             }
         }
 
@@ -186,6 +209,16 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             sectionsVisibilityProvider.isProtectionsReportVisible.toggle()
         default:
             break
+        }
+    }
+
+    @objc private func toggleDuckAI(_ sender: NSMenuItem) {
+        omnibarConfigProvider.isAIChatShortcutEnabled.toggle()
+    }
+
+    @objc private func openDuckAISettings(_ sender: NSMenuItem) {
+        Task { @MainActor [weak self] in
+            await self?.linkOpener.openLink(.duckAISettings)
         }
     }
 

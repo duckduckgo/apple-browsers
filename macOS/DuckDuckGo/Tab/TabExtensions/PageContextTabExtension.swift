@@ -39,6 +39,7 @@ final class PageContextTabExtension {
 
     private var cancellables = Set<AnyCancellable>()
     private var userScriptCancellables = Set<AnyCancellable>()
+    private var sidebarCancellables = Set<AnyCancellable>()
     private let tabID: TabIdentifier
     private var content: Tab.TabContent = .none
     private let featureFlagger: FeatureFlagger
@@ -51,6 +52,11 @@ final class PageContextTabExtension {
     private weak var pageContextUserScript: PageContextUserScript? {
         didSet {
             subscribeToCollectionResult()
+        }
+    }
+    private weak var sidebar: AIChatSidebar? {
+        didSet {
+            subscribeToCollectionRequest()
         }
     }
 
@@ -97,11 +103,16 @@ final class PageContextTabExtension {
             .map { $0[tabID] != nil }
             .removeDuplicates()
             .filter { $0 }
-            .sink { [weak self] _ in
+            .sink { [weak self, weak aiChatSidebarProvider] _ in
+                guard let self else {
+                    return
+                }
+                sidebar = aiChatSidebarProvider?.sidebarsByTab[tabID]
+
                 /// This closure is responsible for passing cached page context to the newly displayed sidebar.
                 /// It's only called when sidebar for tabID is non-nil.
                 /// Additionally, we're only calling `handle` if there's a cached page context.
-                guard let self, let cachedPageContext, aiChatMenuConfiguration.shouldAutomaticallySendPageContext else {
+                guard let cachedPageContext, aiChatMenuConfiguration.shouldAutomaticallySendPageContext else {
                     return
                 }
                 handle(cachedPageContext)
@@ -137,6 +148,20 @@ final class PageContextTabExtension {
             .store(in: &userScriptCancellables)
     }
 
+    private func subscribeToCollectionRequest() {
+        sidebarCancellables.removeAll()
+        guard let sidebar else {
+            return
+        }
+
+        sidebar.sidebarViewController.pageContextRequestedPublisher?
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.collectPageContextIfNeeded(force: true)
+            }
+            .store(in: &sidebarCancellables)
+    }
+
     /// This is the main place where page context handling happens.
     /// We always cache the latest context, and if sidebar is open,
     /// we're passing the context to it.
@@ -150,8 +175,8 @@ final class PageContextTabExtension {
         }
     }
 
-    private func collectPageContextIfNeeded() {
-        guard case .url = content, aiChatMenuConfiguration.shouldAutomaticallySendPageContext else {
+    private func collectPageContextIfNeeded(force: Bool = false) {
+        guard case .url = content, force || aiChatMenuConfiguration.shouldAutomaticallySendPageContext else {
             return
         }
         pageContextUserScript?.collect()

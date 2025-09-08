@@ -39,6 +39,7 @@ protocol AIChatUserScriptHandling {
 
     func getPageContext(params: Any, message: UserScriptMessage) -> Encodable?
     var pageContextPublisher: AnyPublisher<AIChatPageContextData, Never> { get }
+    var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
@@ -49,9 +50,11 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let messageHandling: AIChatMessageHandling
     public let aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never>
     public let pageContextPublisher: AnyPublisher<AIChatPageContextData, Never>
+    public let pageContextRequestedPublisher: AnyPublisher<Void, Never>
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
     private let pageContextSubject = PassthroughSubject<AIChatPageContextData, Never>()
+    private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     private let storage: AIChatPreferencesStorage
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter
@@ -71,6 +74,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.notificationCenter = notificationCenter
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
+        self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
     }
 
     enum AIChatKeys {
@@ -97,7 +101,15 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func getPageContext(params: Any, message: any UserScriptMessage) -> Encodable? {
-        messageHandling.getDataForMessageType(.pageContext)
+        guard let payload: GetPageContext = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+
+        let data = messageHandling.getDataForMessageType(.pageContext)
+        if data == nil, payload.explicitConsent {
+            pageContextRequestedSubject.send()
+        }
+        return data
     }
 
     @MainActor
@@ -176,6 +188,9 @@ extension AIChatUserScriptHandler {
             case newTab = "new-tab"
             case newWindow = "new-window"
         }
+    }
 
+    struct GetPageContext: Codable, Equatable {
+        let explicitConsent: Bool
     }
 }

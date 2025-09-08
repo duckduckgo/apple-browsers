@@ -86,6 +86,10 @@ final class AIChatSidebarViewController: NSViewController {
         aiTab.aiChat?.submitPageContext(pageContext)
     }
 
+    public var pageContextRequestedPublisher: AnyPublisher<Void, Never>? {
+        aiTab.aiChat?.pageContextRequestedPublisher
+    }
+
     override func loadView() {
         let container = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.navigationBackgroundColor)
 

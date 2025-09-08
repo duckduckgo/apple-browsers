@@ -44,8 +44,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     private var _isExecuting = false
     private var _isFinished = false
 
-    private let attemptId = UUID()
-
     private static let maxRetries = 3
 
     deinit {
@@ -129,14 +127,22 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
         var attemptCount = jobData.emailConfirmationAttemptCount
 
+        let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
+            dataBroker: broker.url,
+            dataBrokerVersion: broker.version,
+            handler: jobDependencies.pixelHandler,
+            vpnConnectionState: jobDependencies.vpnBypassService?.connectionStatus ?? "unknown",
+            vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
+        )
+
         while attemptCount < Self.maxRetries {
             if isCancelled { return }
 
             Logger.dataBrokerProtection.log("✉️ Email confirmation attempt \(attemptCount + 1) of \(Self.maxRetries)")
 
             do {
-                try await executeEmailConfirmation(with: linkURL, broker: broker, extractedProfile: extractedProfile)
-                try await markAsSuccessful()
+                try await executeEmailConfirmation(with: linkURL, broker: broker, extractedProfile: extractedProfile, stageDurationCalculator: stageDurationCalculator)
+                try await markAsSuccessful(stageDurationCalculator: stageDurationCalculator)
                 Logger.dataBrokerProtection.log("✉️ Email confirmation completed successfully")
                 return
             } catch {
@@ -153,7 +159,12 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         await handleMaxRetriesExceeded(brokerName: broker.name, version: broker.version)
     }
 
-    private func executeEmailConfirmation(with linkURL: URL, broker: DataBroker, extractedProfile: ExtractedProfile) async throws {
+    private func executeEmailConfirmation(
+        with linkURL: URL,
+        broker: DataBroker,
+        extractedProfile: ExtractedProfile,
+        stageDurationCalculator: DataBrokerProtectionStageDurationCalculator
+    ) async throws {
         guard let optOutStep = broker.steps.first(where: { $0.type == .optOut }) else {
             throw DataBrokerProtectionError.noOptOutStep
         }
@@ -161,14 +172,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         guard let profileQuery = try? jobDependencies.database.fetchProfileQuery(with: jobData.profileQueryId) else {
             throw DataBrokerProtectionError.dataNotInDatabase
         }
-
-        let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
-            dataBroker: broker.url,
-            dataBrokerVersion: broker.version,
-            handler: jobDependencies.pixelHandler,
-            vpnConnectionState: jobDependencies.vpnBypassService?.connectionStatus ?? "unknown",
-            vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
-        )
 
         let actionsHandler = ActionsHandler.forEmailConfirmationContinuation(optOutStep, confirmationURL: linkURL)
 
@@ -221,13 +224,21 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         )
     }
 
-    private func markAsSuccessful() async throws {
+    private func markAsSuccessful(stageDurationCalculator: DataBrokerProtectionStageDurationCalculator) async throws {
         Logger.dataBrokerProtection.log("✉️ Marking email confirmation as successful, transitioning to optOutRequested")
 
         try jobDependencies.database.deleteOptOutEmailConfirmation(
             profileQueryId: jobData.profileQueryId,
             brokerId: jobData.brokerId,
             extractedProfileId: jobData.extractedProfileId
+        )
+
+        try jobDependencies.database.addAttempt(
+            extractedProfileId: jobData.extractedProfileId,
+            attemptUUID: stageDurationCalculator.attemptId,
+            dataBroker: stageDurationCalculator.dataBroker,
+            lastStageDate: stageDurationCalculator.lastStateTime,
+            startTime: stageDurationCalculator.startTime
         )
 
         try jobDependencies.database.add(

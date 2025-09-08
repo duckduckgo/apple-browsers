@@ -59,15 +59,15 @@ final class PersistentStoresConfiguration {
     }
 
     private func loadAndMigrateBookmarksDatabase() throws -> Bool {
-        var isMissingStructure: Bool = false
+        var didRepairBookmarksStructure: Bool = false
         do {
-            isMissingStructure = try BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: bookmarksDatabase)
+            didRepairBookmarksStructure = try BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: bookmarksDatabase)
         } catch let error as BookmarksDatabaseError {
             throw TerminationError.bookmarksDatabase(error)
         } catch {
             throw TerminationError.bookmarksDatabase(.other(error))
         }
-        return isMissingStructure
+        return didRepairBookmarksStructure
     }
 
 }

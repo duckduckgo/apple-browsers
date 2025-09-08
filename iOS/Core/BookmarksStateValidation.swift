@@ -145,7 +145,7 @@ public class BookmarksStateValidator: BookmarksStateValidation {
 
     private func getRecentBookmarkError() -> (name: String, domain: String, code: Int)? {
         let bookmarkErrorKey = "BookmarksValidator.lastBookmarkError"
-        let maxAgeHours: TimeInterval = 24 // 1 day
+        let maxAgeSeconds: TimeInterval = 24 * 60 * 60 // 1 day
 
         // Check UserDefaults for bookmark error
         guard let errorInfo = UserDefaults.app.object(forKey: bookmarkErrorKey) as? [String: Any],
@@ -157,11 +157,11 @@ public class BookmarksStateValidator: BookmarksStateValidation {
         }
 
         // Check if error is recent (within 1 day)
-        let hoursSinceError = Date().timeIntervalSince(timestamp) / 3600
-        guard hoursSinceError <= maxAgeHours else {
+        let secondsSinceError = Date().timeIntervalSince(timestamp)
+        guard secondsSinceError <= maxAgeSeconds else {
             return nil
         }
-        
+
         return (name: name, domain: domain, code: code)
     }
 

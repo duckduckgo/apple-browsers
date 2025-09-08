@@ -64,7 +64,8 @@ final class CrashCollectionService {
                     DailyPixel.fireDaily(.dbCrashDetectedDaily(appIdentifier: appIdentifier))
                 }
                 
-                if isBookmarksStructureMissing {
+                if isBookmarksStructureMissing && appIdentifier == nil {
+                    // Only fire for main app crashes, not extension crashes
                     DailyPixel.fireDailyAndCount(pixel: .debugBookmarksStructureLostAfterCrash)
                 }
             }

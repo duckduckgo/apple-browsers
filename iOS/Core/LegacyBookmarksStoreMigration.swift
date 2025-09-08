@@ -200,7 +200,15 @@ public class LegacyBookmarksStoreMigration {
             do {
                 try destination.save(onErrorFire: .bookmarksMigrationCouldNotPrepareDatabaseOnFailedMigration)
             } catch {
-                throw BookmarksDatabaseError.couldNotWriteToBookmarksDB(error)
+                let nsError = error as NSError
+                let sanitizedError = NSError(domain: nsError.domain,
+                                             code: nsError.code,
+                                             userInfo: [
+                                                NSLocalizedDescriptionKey: nsError.localizedDescription,
+                                                NSLocalizedFailureReasonErrorKey: nsError.localizedFailureReason ?? "Migration save failed"
+                                             ]
+                )
+                throw BookmarksDatabaseError.couldNotWriteToBookmarksDB(sanitizedError)
             }
         }
     }

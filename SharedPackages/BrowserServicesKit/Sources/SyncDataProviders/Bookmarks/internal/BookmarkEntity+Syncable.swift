@@ -109,8 +109,8 @@ extension BookmarkEntity {
                 decryptedUsing decrypt: (String) throws -> String,
                 metricsEvents: EventMapping<MetricsEvent>? = nil) throws {
         guard !syncable.isDeleted else {
-            if let syncableUUID = syncable.uuid, Constants.favoriteFoldersIDs.union([Constants.rootFolderID]).contains(syncableUUID) {
-                metricsEvents?.fire(.syncAttemptedToDeleteRoot(rootUUID: syncableUUID))
+            if parent == nil {
+                metricsEvents?.fire(.syncAttemptedToDeleteRoot(rootUUID: syncable.uuid ?? ""))
             }
             context.delete(self)
             return

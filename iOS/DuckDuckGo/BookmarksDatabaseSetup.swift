@@ -74,7 +74,7 @@ struct BookmarksDatabaseSetup {
         var migrationHappened = false
         var loadError: Error?
         var migrationError: Error?
-        var isMissingStructure = false
+        var didRepairBookmarksStructure = false
         bookmarksDatabase.loadStore { context, error in
             guard let context = context, error == nil else {
                 loadError = error
@@ -83,8 +83,8 @@ struct BookmarksDatabaseSetup {
 
             do {
                 // Perform pre-setup/migration validation
-                isMissingStructure = !validator.validateInitialState(context: context,
-                                                                     validationError: .bookmarksStructureLost)
+                didRepairBookmarksStructure = !validator.validateInitialState(context: context,
+                                                                              validationError: .bookmarksStructureLost)
 
                 try self.migrateFromLegacyCoreDataStorageIfNeeded(context)
                 migrationHappened = try self.migrateToFormFactorSpecificFavorites(context, oldFavoritesOrder)
@@ -93,7 +93,7 @@ struct BookmarksDatabaseSetup {
                 return
             }
 
-            if isMissingStructure {
+            if didRepairBookmarksStructure {
                 _ = validator.validateInitialState(context: context,
                                                    validationError: .bookmarksStructureNotRecovered)
             }
@@ -126,7 +126,7 @@ struct BookmarksDatabaseSetup {
             }
         }
 
-        return isMissingStructure
+        return didRepairBookmarksStructure
     }
 
     private func repairDeletedFlag(context: NSManagedObjectContext) {

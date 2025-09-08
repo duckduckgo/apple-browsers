@@ -84,4 +84,169 @@ final class BrokerProfileJobProviderTests: XCTestCase {
         // Then
         XCTAssert(result.count == 3)
     }
+
+    func testWhenProvideJobs_andRemovedBrokersExist_thenExcludesRemovedBrokersFromJobScheduling() throws {
+        // Given
+        let activeBrokerData = BrokerProfileQueryData(
+            dataBroker: .mock,
+            profileQuery: .mock,
+            scanJobData: .mock,
+            optOutJobData: [.mock(with: .mockWithoutRemovedDate)]
+        )
+
+        let removedBrokerData = BrokerProfileQueryData(
+            dataBroker: .removedMock,
+            profileQuery: .mock,
+            scanJobData: .mock,
+            optOutJobData: [.mock(with: .mockWithoutRemovedDate)]
+        )
+
+        mockDatabase.brokerProfileQueryDataToReturn = [activeBrokerData, removedBrokerData]
+
+        // When
+        let result = try sut.createJobs(with: .all,
+                                        withPriorityDate: nil,
+                                        showWebView: false,
+                                        errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                        jobDependencies: mockDependencies)
+
+        // Then
+        XCTAssertTrue(mockDatabase.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData")
+        XCTAssertEqual(mockDatabase.lastShouldFilterRemovedBrokers, true, "Should request filtering of removed brokers for job scheduling")
+
+        // Should only create jobs for active broker
+        XCTAssertEqual(result.count, 1, "Should only create jobs for active brokers")
+    }
+
+    func testProvideJobs_withOnlyRemovedBrokers_returnsEmptyArray() throws {
+        // Given
+        let removedBroker1 = BrokerProfileQueryData(
+            dataBroker: .removedMock,
+            profileQuery: .mock,
+            scanJobData: .mock,
+            optOutJobData: [.mock(with: .mockWithoutRemovedDate)]
+        )
+
+        let removedBroker2 = BrokerProfileQueryData(
+            dataBroker: .removedMock,
+            profileQuery: .mock,
+            scanJobData: .mock,
+            optOutJobData: [.mock(with: .mockWithoutRemovedDate)]
+        )
+
+        mockDatabase.brokerProfileQueryDataToReturn = [removedBroker1, removedBroker2]
+
+        // When
+        let result = try sut.createJobs(with: .all,
+                                        withPriorityDate: nil,
+                                        showWebView: false,
+                                        errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                        jobDependencies: mockDependencies)
+
+        // Then
+        XCTAssertEqual(result.count, 0, "Should not create jobs for removed brokers")
+    }
+
+    func testProvideJobs_withMixedBrokers_onlyCreatesJobsForActiveOnes() throws {
+        // Given
+        let activeBroker1 = BrokerProfileQueryData(
+            dataBroker: .mock,
+            profileQuery: .mock,
+            scanJobData: .mock,
+            optOutJobData: [.mock(with: .mockWithoutRemovedDate)]
+        )
+
+        // Create second active broker with different ID
+        let activeBroker2DataBroker = DataBroker(
+            id: 3,
+            name: "ActiveBroker2",
+            url: "https://active2.com",
+            steps: [
+                Step(type: .scan, actions: [Action]()),
+                Step(type: .optOut, actions: [Action]())
+            ],
+            version: "1.0",
+            schedulingConfig: DataBrokerScheduleConfig.mock,
+            mirrorSites: [],
+            optOutUrl: "",
+            eTag: "",
+            removedAt: nil // Active broker
+        )
+        let activeBroker2 = BrokerProfileQueryData(
+            dataBroker: activeBroker2DataBroker,
+            profileQuery: .mock,
+            scanJobData: .mock,
+            optOutJobData: [.mock(with: .mockWithoutRemovedDate)]
+        )
+
+        let removedBroker1 = BrokerProfileQueryData(
+            dataBroker: .removedMock,
+            profileQuery: .mock,
+            scanJobData: .mock,
+            optOutJobData: [.mock(with: .mockWithoutRemovedDate)]
+        )
+
+        let removedBroker2 = BrokerProfileQueryData(
+            dataBroker: .removedMock,
+            profileQuery: .mock,
+            scanJobData: .mock,
+            optOutJobData: [.mock(with: .mockWithoutRemovedDate)]
+        )
+
+        mockDatabase.brokerProfileQueryDataToReturn = [activeBroker1, removedBroker1, activeBroker2, removedBroker2]
+
+        // When
+        let result = try sut.createJobs(with: .all,
+                                        withPriorityDate: nil,
+                                        showWebView: false,
+                                        errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                        jobDependencies: mockDependencies)
+
+        // Then
+        XCTAssertTrue(mockDatabase.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData")
+        XCTAssertEqual(mockDatabase.lastShouldFilterRemovedBrokers, true, "Should request filtering of removed brokers")
+
+        // Should create jobs only for active brokers (removed brokers are filtered at database level)
+        XCTAssertEqual(result.count, 2, "Should create jobs only for active brokers")
+    }
+
+    func testProvideJobs_allFilterRemovedBrokers() throws {
+        // Given
+        let activeBrokerData = BrokerProfileQueryData(
+            dataBroker: .mock,
+            profileQuery: .mock,
+            scanJobData: .mock,
+            optOutJobData: [.mock(with: .mockWithoutRemovedDate)]
+        )
+
+        let removedBrokerData = BrokerProfileQueryData(
+            dataBroker: .removedMock,
+            profileQuery: .mock,
+            scanJobData: .mock,
+            optOutJobData: [.mock(with: .mockWithoutRemovedDate)]
+        )
+
+        mockDatabase.brokerProfileQueryDataToReturn = [activeBrokerData, removedBrokerData]
+
+        let jobTypes: [JobType] = [.scheduledScan, .manualScan, .optOut, .all]
+
+        // When & Then
+        for jobType in jobTypes {
+            // Reset call tracking flags
+            mockDatabase.wasFetchAllBrokerProfileQueryDataCalled = false
+            mockDatabase.lastShouldFilterRemovedBrokers = nil
+
+            let result = try sut.createJobs(with: jobType,
+                                            withPriorityDate: nil,
+                                            showWebView: false,
+                                            errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                            jobDependencies: mockDependencies)
+
+            XCTAssertTrue(mockDatabase.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData for \(jobType)")
+            XCTAssertEqual(mockDatabase.lastShouldFilterRemovedBrokers, true, "Should request filtering for job type \(jobType)")
+
+            // Should create at most 1 job (for active broker only)
+            XCTAssertLessThanOrEqual(result.count, 1, "Should create at most 1 job for \(jobType)")
+        }
+    }
 }

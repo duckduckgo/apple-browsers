@@ -103,7 +103,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         Logger.dataBrokerProtection.log("✉️ Starting email confirmation job for broker: \(self.jobData.brokerId), profile: \(self.jobData.extractedProfileId)")
 
         guard let emailConfirmationLink = jobData.emailConfirmationLink,
-              let linkURL = URL(string: emailConfirmationLink) else {
+              let confirmationURL = URL(string: emailConfirmationLink) else {
             Logger.dataBrokerProtection.error("✉️ Email confirmation job started without valid link")
             await handleError(EmailError.invalidEmailLink)
             return
@@ -141,7 +141,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             Logger.dataBrokerProtection.log("✉️ Email confirmation attempt \(attemptCount + 1) of \(Self.maxRetries)")
 
             do {
-                try await executeEmailConfirmation(with: linkURL, broker: broker, extractedProfile: extractedProfile, stageDurationCalculator: stageDurationCalculator)
+                try await executeEmailConfirmation(with: confirmationURL, broker: broker, extractedProfile: extractedProfile, stageDurationCalculator: stageDurationCalculator)
                 try await markAsSuccessful(stageDurationCalculator: stageDurationCalculator, broker: broker)
                 Logger.dataBrokerProtection.log("✉️ Email confirmation completed successfully")
                 return
@@ -160,20 +160,14 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     }
 
     private func executeEmailConfirmation(
-        with linkURL: URL,
+        with confirmationURL: URL,
         broker: DataBroker,
         extractedProfile: ExtractedProfile,
         stageDurationCalculator: DataBrokerProtectionStageDurationCalculator
     ) async throws {
-        guard let optOutStep = broker.steps.first(where: { $0.type == .optOut }) else {
-            throw DataBrokerProtectionError.noOptOutStep
-        }
-
         guard let profileQuery = try? jobDependencies.database.fetchProfileQuery(with: jobData.profileQueryId) else {
             throw DataBrokerProtectionError.dataNotInDatabase
         }
-
-        let actionsHandler = ActionsHandler.forEmailConfirmationContinuation(optOutStep, confirmationURL: linkURL)
 
         let webRunner: BrokerProfileOptOutSubJobWebProtocol
         if let webRunnerForTesting = self.webRunnerForTesting {
@@ -189,6 +183,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 stageCalculator: stageDurationCalculator,
                 pixelHandler: jobDependencies.pixelHandler,
                 executionConfig: jobDependencies.executionConfig,
+                variant: .emailConfirmation(confirmationURL),
                 shouldRunNextStep: { [weak self] in
                     guard let self = self else { return false }
                     return !self.isCancelled && !Task.isCancelled
@@ -219,7 +214,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         try await webRunner.run(
             inputValue: extractedProfile,
             webViewHandler: webViewHandler,
-            actionsHandler: actionsHandler,
             showWebView: showWebView
         )
     }

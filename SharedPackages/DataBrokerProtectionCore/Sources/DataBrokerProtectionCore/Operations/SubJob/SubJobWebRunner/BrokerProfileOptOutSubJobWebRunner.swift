@@ -49,6 +49,12 @@ extension BrokerProfileOptOutSubJobWebTesting {
 }
 
 public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerProfileOptOutSubJobWebProtocol {
+    public enum Variant {
+        case testing // for injecting custom actionsHandler
+        case optOut // for opt-out operations (action list may be modified depending on featureFlagger.isEmailConfirmationDecouplingFeatureOn)
+        case emailConfirmation(URL) // for email confirmation operations
+    }
+
     public typealias ReturnValue = Void
     public typealias InputValue = ExtractedProfile
 
@@ -70,6 +76,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public var postLoadingSiteStartTime: Date?
     public let executionConfig: BrokerJobExecutionConfig
     public let featureFlagger: DBPFeatureFlagging
+    private let variant: Variant
 
     public var retriesCountOnError: Int = 3
 
@@ -85,6 +92,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 stageCalculator: StageDurationCalculator,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 executionConfig: BrokerJobExecutionConfig,
+                variant: Variant,
                 shouldRunNextStep: @escaping () -> Bool) {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
@@ -98,6 +106,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         self.cookieHandler = cookieHandler
         self.pixelHandler = pixelHandler
         self.executionConfig = executionConfig
+        self.variant = variant
         self.featureFlagger = featureFlagger
     }
 
@@ -131,10 +140,17 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                                      showWebView: showWebView)
 
                     if let optOutStep = context.dataBroker.optOutStep() {
-                        if let actionsHandler = actionsHandler {
-                            self.actionsHandler = actionsHandler
-                        } else {
+                        switch variant {
+                        case .testing:
+                            if let actionsHandler {
+                                self.actionsHandler = actionsHandler
+                            } else {
+                                assertionFailure("Missing ActionsHandler")
+                            }
+                        case .optOut:
                             self.actionsHandler = ActionsHandler.forOptOut(optOutStep, haltsAtEmailConfirmation: featureFlagger.isEmailConfirmationDecouplingFeatureOn)
+                        case .emailConfirmation(let url):
+                            self.actionsHandler = ActionsHandler.forEmailConfirmationContinuation(optOutStep, confirmationURL: url)
                         }
 
                         if self.shouldRunNextStep() {

@@ -127,7 +127,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
             do {
                 try await executeEmailConfirmation(with: linkURL, broker: broker, extractedProfile: extractedProfile, stageDurationCalculator: stageDurationCalculator)
-                try await markAsSuccessful(stageDurationCalculator: stageDurationCalculator)
+                try await markAsSuccessful(stageDurationCalculator: stageDurationCalculator, schedulingConfig: broker.schedulingConfig)
                 Logger.dataBrokerProtection.log("✉️ Email confirmation completed successfully")
                 return
             } catch {
@@ -142,7 +142,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             }
         }
 
-        await handleMaxRetriesExceeded(brokerName: broker.name, version: broker.version)
+        await handleMaxRetriesExceeded(brokerName: broker.name, version: broker.version, schedulingConfig: broker.schedulingConfig)
     }
 
     private func executeEmailConfirmation(
@@ -198,7 +198,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         )
     }
 
-    private func markAsSuccessful(stageDurationCalculator: DataBrokerProtectionStageDurationCalculator) async throws {
+    private func markAsSuccessful(stageDurationCalculator: DataBrokerProtectionStageDurationCalculator, schedulingConfig: DataBrokerScheduleConfig) async throws {
         Logger.dataBrokerProtection.log("✉️ Marking email confirmation as successful, transitioning to optOutRequested")
 
         try jobDependencies.database.deleteOptOutEmailConfirmation(
@@ -223,6 +223,15 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 type: .optOutRequested
             )
         )
+
+        try updateOperationDataDates(
+            origin: .emailConfirmation,
+            brokerId: jobData.brokerId,
+            profileQueryId: jobData.profileQueryId,
+            extractedProfileId: jobData.extractedProfileId,
+            schedulingConfig: schedulingConfig,
+            database: jobDependencies.database
+        )
     }
 
     private func incrementAttemptCount() async throws {
@@ -233,7 +242,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         )
     }
 
-    private func handleMaxRetriesExceeded(brokerName: String, version: String) async {
+    private func handleMaxRetriesExceeded(brokerName: String, version: String, schedulingConfig: DataBrokerScheduleConfig) async {
         do {
             try jobDependencies.database.deleteOptOutEmailConfirmation(
                 profileQueryId: jobData.profileQueryId,
@@ -253,17 +262,42 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             Logger.dataBrokerProtection.error(loggerContext(), message: "✉️ Failed to handle max retries exceeded: \(error)")
         }
 
-        await handleError(DataBrokerProtectionError.emailError(.retriesExceeded), brokerName: brokerName, version: version)
+        await handleError(DataBrokerProtectionError.emailError(.retriesExceeded), brokerName: brokerName, version: version, schedulingConfig: schedulingConfig)
     }
 
-    private func handleError(_ error: Error, brokerName: String? = nil, version: String? = nil) async {
-        await MainActor.run {
-            errorDelegate?.emailConfirmationOperationDidError(
-                error,
-                withBrokerName: brokerName,
-                version: version
+    private func handleError(_ error: Error, brokerName: String? = nil, version: String? = nil, schedulingConfig: DataBrokerScheduleConfig? = nil) async {
+        errorDelegate?.emailConfirmationOperationDidError(
+            error,
+            withBrokerName: brokerName,
+            version: version
+        )
+
+        do {
+            try updateOperationDataDates(
+                origin: .emailConfirmation,
+                brokerId: jobData.brokerId,
+                profileQueryId: jobData.profileQueryId,
+                extractedProfileId: jobData.extractedProfileId,
+                schedulingConfig: schedulingConfig ?? .default,
+                database: jobDependencies.database
             )
+        } catch {
+            Logger.dataBrokerProtection.log("✉️ Can't update operation date after error: \(error)")
         }
+    }
+
+    private func updateOperationDataDates(origin: OperationPreferredDateUpdaterOrigin,
+                                          brokerId: Int64,
+                                          profileQueryId: Int64,
+                                          extractedProfileId: Int64?,
+                                          schedulingConfig: DataBrokerScheduleConfig,
+                                          database: DataBrokerProtectionRepository) throws {
+        let dateUpdater = OperationPreferredDateUpdater(database: database)
+        try dateUpdater.updateOperationDataDates(origin: origin,
+                                                 brokerId: brokerId,
+                                                 profileQueryId: profileQueryId,
+                                                 extractedProfileId: extractedProfileId,
+                                                 schedulingConfig: schedulingConfig)
     }
 
     private func finish() {

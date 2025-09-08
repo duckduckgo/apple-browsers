@@ -21,6 +21,8 @@ import Common
 import os.log
 
 public struct DataBrokerScheduleConfig: Codable, Sendable {
+    public static let `default` = DataBrokerScheduleConfig(retryError: 48, confirmOptOutScan: 72, maintenanceScan: 120, maxAttempts: -1)
+
     let retryError: Int
     let confirmOptOutScan: Int
     let maintenanceScan: Int
@@ -209,7 +211,7 @@ public struct DataBroker: Codable, Sendable {
         do {
             schedulingConfig = try container.decode(DataBrokerScheduleConfig.self, forKey: .schedulingConfig)
         } catch {
-            schedulingConfig = .init(retryError: 48, confirmOptOutScan: 72, maintenanceScan: 120, maxAttempts: -1)
+            schedulingConfig = .default
         }
         parent = try? container.decode(String.self, forKey: .parent)
 

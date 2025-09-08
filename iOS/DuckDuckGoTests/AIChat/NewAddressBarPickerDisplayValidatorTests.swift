@@ -61,7 +61,8 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             experimentalAIChatManager: experimentalAIChatManager,
             appSettings: mockAppSettings,
-            pickerStorage: pickerStorage
+            pickerStorage: pickerStorage,
+            launchSourceManager: LaunchSourceManager()
         )
     }
 

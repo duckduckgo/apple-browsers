@@ -108,7 +108,7 @@ final class DBPEndToEndTests: XCTestCase {
         let database = dataManager!.database
         let communicator = pirProtectionManager.dataManager!.communicator
         try database.deleteProfileData()
-        XCTAssert(try database.fetchAllBrokerProfileQueryData().isEmpty)
+        XCTAssert(try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false).isEmpty)
 
         // Fake broker set up
         await deleteAllProfilesOnFakeBroker()
@@ -141,12 +141,12 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 3,
                                whenCondition: {
             autoreleasepool {
-                try! database.fetchAllBrokerProfileQueryData().count > 0
+                try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false).count > 0
             }
         })
 
         // Also check that we made the broker profile queries correctly
-        let queries = try! database.fetchAllBrokerProfileQueryData()
+        let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
         let initialBrokers = queries.compactMap { $0.dataBroker }
         assertCondition(withExpectationDescription: "Correctly read and saved 1 broker after profile save",
                         condition: { initialBrokers.count == 1 })
@@ -196,7 +196,7 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 60,
                                whenCondition: {
             autoreleasepool {
-                let queries = try! database.fetchAllBrokerProfileQueryData()
+                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
                 let brokerIDs = queries.compactMap { $0.dataBroker.id }
                 let extractedProfiles = brokerIDs.flatMap { try! database.fetchExtractedProfiles(for: $0) }
                 return extractedProfiles.count > 0
@@ -214,7 +214,7 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 10,
                                whenCondition: {
             autoreleasepool {
-                let queries = try! database.fetchAllBrokerProfileQueryData()
+                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
                 let optOutJobs = queries.flatMap { $0.optOutJobData }
                 return optOutJobs.count > 0
             }
@@ -232,7 +232,7 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 300,
                                whenCondition: {
             autoreleasepool {
-                let queries = try! database.fetchAllBrokerProfileQueryData()
+                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
                 let optOutJobs = queries.flatMap { $0.optOutJobData }
                 return optOutJobs.first?.lastRunDate != nil
             }
@@ -243,7 +243,7 @@ final class DBPEndToEndTests: XCTestCase {
         await awaitFulfillment(of: optOutRequestedExpectation,
                                withTimeout: 300,
                                whenCondition: {
-            let queries = try! database.fetchAllBrokerProfileQueryData()
+            let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
             let optOutJobs = queries.flatMap { $0.optOutJobData }
             let events = optOutJobs.flatMap { $0.historyEvents }
             let optOutsRequested = events.filter { $0.type == .optOutRequested }
@@ -298,7 +298,7 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 600,
                                whenCondition: {
             autoreleasepool {
-                let queries = try! database.fetchAllBrokerProfileQueryData()
+                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
                 let optOutJobs = queries.flatMap { $0.optOutJobData }
                 let events = optOutJobs.flatMap { $0.historyEvents }
                 let optOutsConfirmed = events.filter { $0.type == .optOutConfirmed }

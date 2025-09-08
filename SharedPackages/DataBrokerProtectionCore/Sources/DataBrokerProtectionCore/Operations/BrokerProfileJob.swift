@@ -132,7 +132,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         let allBrokerProfileQueryData: [BrokerProfileQueryData]
 
         do {
-            allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData()
+            // Jobs for removed brokers will already be prevented from being scheduled upstream and are filtered below to the specific broker ID
+            allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
         } catch {
             Logger.dataBrokerProtection.error("DataBrokerOperationsCollection error: runOperation, error: \(error.localizedDescription, privacy: .public)")
             return

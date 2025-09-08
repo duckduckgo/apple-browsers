@@ -291,8 +291,13 @@ extension DataBroker {
         parent == nil ? .parent : .child
     }
 
+    var isRemoved: Bool {
+        return removedAt != nil
+    }
+
     public func requiresEmailConfirmationDuringOptOut() -> Bool {
         guard let optOutStep = optOutStep() else { return false }
         return optOutStep.actions.contains { $0 is EmailConfirmationAction }
     }
+
 }

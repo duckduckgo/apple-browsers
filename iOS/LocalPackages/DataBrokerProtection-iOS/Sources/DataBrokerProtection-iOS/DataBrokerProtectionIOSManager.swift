@@ -570,6 +570,6 @@ extension DataBrokerProtectionIOSManager: EmailConfirmationDataChecking {
 
     public func runEmailConfirmationOperations() async {
         await checkForEmailConfirmationData()
-        queueManager.addEmailConfirmationJobs(showWebView: false, jobDependencies: makeJobDependencies())
+        queueManager.addEmailConfirmationJobs(showWebView: false, jobDependencies: jobDependencies)
     }
 }

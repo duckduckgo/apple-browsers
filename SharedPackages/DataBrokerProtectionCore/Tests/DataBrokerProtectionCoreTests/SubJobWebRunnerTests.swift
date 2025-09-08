@@ -97,6 +97,7 @@ private extension DataBrokerJobTests {
                                            stageCalculator: MockStageDurationCalculator(),
                                            pixelHandler: MockPixelHandler(),
                                            executionConfig: BrokerJobExecutionConfig(),
+                                           variant: .optOut,
                                            shouldRunNextStep: { true })
     }
 

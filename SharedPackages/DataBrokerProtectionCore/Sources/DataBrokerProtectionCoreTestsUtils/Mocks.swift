@@ -1626,6 +1626,9 @@ public final class MockBrokerProfileJobQueueManager: BrokerProfileJobQueueManagi
 
     public func stop() {
     }
+
+    public func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding) {
+    }
 }
 
 public final class MockEmailConfirmationJobProvider: EmailConfirmationJobProviding {

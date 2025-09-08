@@ -45,6 +45,7 @@ import DesignResourcesKitIcons
 import Configuration
 import PixelKit
 import SystemSettingsPiPTutorial
+import RemoteMessaging
 
 class MainViewController: UIViewController {
 
@@ -236,7 +237,7 @@ class MainViewController: UIViewController {
 
     private let internalUserCommands: URLBasedDebugCommands = InternalUserCommands()
     private let launchSourceManager: LaunchSourceManaging
-    private let remoteMessagingService: RemoteMessagingService
+    private let remoteMessageStore: RemoteMessagingStoring
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -273,7 +274,7 @@ class MainViewController: UIViewController {
         daxDialogsManager: DaxDialogsManaging,
         daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
         launchSourceManager: LaunchSourceManaging,
-        remoteMessagingService: RemoteMessagingService
+        remoteMessageStore: RemoteMessagingStoring
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -312,7 +313,7 @@ class MainViewController: UIViewController {
         self.daxDialogsManager = daxDialogsManager
         self.daxEasterEggPresenter = daxEasterEggPresenter
         self.launchSourceManager = launchSourceManager
-        self.remoteMessagingService = remoteMessagingService
+        self.remoteMessageStore = remoteMessageStore
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -622,7 +623,7 @@ class MainViewController: UIViewController {
             appSettings: appSettings,
             pickerStorage: NewAddressBarPickerStorage(),
             launchSourceManager: launchSourceManager,
-            remoteMessagingService: remoteMessagingService
+            remoteMessageStore: remoteMessageStore
         )
         guard validator.shouldDisplayNewAddressBarPicker() else { return }
 

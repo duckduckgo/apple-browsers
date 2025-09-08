@@ -101,11 +101,6 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
 
     @UserDefaultsWrapper(key: .lastRemoteMessagingRefreshDate, defaultValue: .distantPast)
     static private var lastRemoteMessagingRefreshDate: Date
-
-    func hasDismissedMessage(withID messageID: String) -> Bool {
-        let dismissedMessageIDs = store.fetchDismissedRemoteMessageIDs()
-        return dismissedMessageIDs.contains(messageID)
-    }
 }
 
 // MARK: - Background Refresh

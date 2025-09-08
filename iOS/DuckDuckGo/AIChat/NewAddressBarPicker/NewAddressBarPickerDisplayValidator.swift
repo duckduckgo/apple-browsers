@@ -22,6 +22,7 @@ import Core
 import Persistence
 import BrowserServicesKit
 import AIChat
+import RemoteMessaging
 
 protocol NewAddressBarPickerDisplayValidating {
     func shouldDisplayNewAddressBarPicker() -> Bool
@@ -39,7 +40,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     private let appSettings: AppSettings
     private let pickerStorage: NewAddressBarPickerStorage
     private let launchSourceManager: LaunchSourceManaging
-    private let remoteMessagingService: RemoteMessagingService
+    private let remoteMessageStore: RemoteMessagingStoring
 
     // MARK: - Initialization
     
@@ -51,7 +52,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         appSettings: AppSettings,
         pickerStorage: NewAddressBarPickerStorage,
         launchSourceManager: LaunchSourceManaging,
-        remoteMessagingService: RemoteMessagingService
+        remoteMessageStore: RemoteMessagingStoring
     ) {
         self.aiChatSettings = aiChatSettings
         self.tutorialSettings = tutorialSettings
@@ -60,7 +61,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         self.appSettings = appSettings
         self.pickerStorage = pickerStorage
         self.launchSourceManager = launchSourceManager
-        self.remoteMessagingService = remoteMessagingService
+        self.remoteMessageStore = remoteMessageStore
     }
     
     // MARK: - Public Interface
@@ -117,8 +118,8 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     }
 
     private var hasInteractedWithAddressBarRemoteMessage: Bool {
-        /// https://github.com/duckduckgo/remote-messaging-config/pull/235
-        return remoteMessagingService.hasDismissedMessage(withID: "search_duck_ai_announcement")
+        let dismissedMessageIDs = remoteMessageStore.fetchDismissedRemoteMessageIDs()
+        return dismissedMessageIDs.contains("search_duck_ai_announcement")
     }
 }
 

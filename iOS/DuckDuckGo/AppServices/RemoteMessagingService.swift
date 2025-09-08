@@ -102,10 +102,6 @@ final class RemoteMessagingService {
         }
     }
 
-    func hasDismissedMessage(withID messageID: String) -> Bool {
-        return remoteMessagingClient.hasDismissedMessage(withID: messageID)
-    }
-
 }
 
 extension NSNotification.Name {

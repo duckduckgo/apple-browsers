@@ -43,7 +43,10 @@ protocol NetPPopoverManager: AnyObject {
 
 extension PopoverPresenter {
     func show(_ popover: NSPopover, positionedBelow view: NSView) {
-        view.isHidden = false
+        if !view.isVisible {
+            view.isHidden = false
+            view.superview?.layoutSubtreeIfNeeded()
+        }
         popover.show(positionedBelow: view.bounds.insetFromLineOfDeath(flipped: view.isFlipped), in: view)
     }
 }

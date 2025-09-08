@@ -44,6 +44,7 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
     func update(_ broker: DataBroker, with id: Int64) throws
     func fetchBroker(with id: Int64) throws -> DataBroker?
     func fetchBroker(with name: String) throws -> DataBroker?
+    func fetchAllNonRemovedBrokers() throws -> [DataBroker]
     func fetchAllBrokers() throws -> [DataBroker]
     func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker]
 
@@ -196,6 +197,12 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
         }
 
         return nil
+    }
+
+    public func fetchAllNonRemovedBrokers() throws -> [DataBroker] {
+        let mapper = MapperToModel(mechanism: l2Decrypt(data:))
+
+        return try self.providers.database.fetchAllNonRemovedBrokers().map(mapper.mapToModel(_:))
     }
 
     public func fetchAllBrokers() throws -> [DataBroker] {

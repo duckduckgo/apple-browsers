@@ -893,6 +893,8 @@
 		98B31292218CCB8C00E54DE1 /* AppDependencyProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98B31291218CCB8C00E54DE1 /* AppDependencyProvider.swift */; };
 		98BFA911294A2086004EA636 /* bookmarks_3k.html in Resources */ = {isa = PBXBuildFile; fileRef = 98BFA910294A2086004EA636 /* bookmarks_3k.html */; };
 		98BFA913294A3DDC004EA636 /* BookmarksEditModelPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98BFA912294A3DDC004EA636 /* BookmarksEditModelPerformanceTests.swift */; };
+		98C785E92E687D490077819E /* InternalUserCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98C785E82E687D420077819E /* InternalUserCommands.swift */; };
+		98D094832E6AFA6B00D94984 /* InternalUserCommandsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98D094822E6AFA6B00D94984 /* InternalUserCommandsTests.swift */; };
 		98D16973250CE707009513CC /* PrivacyInfoContainer.xib in Resources */ = {isa = PBXBuildFile; fileRef = 98D16975250CE707009513CC /* PrivacyInfoContainer.xib */; };
 		98D4B7DA294407AC0068814D /* BookmarksSearchPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98D4B7D9294407AC0068814D /* BookmarksSearchPerformanceTests.swift */; };
 		98D4B7DF2944DDBD0068814D /* Core.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F143C2E41E4A4CD400CFDE3A /* Core.framework */; platformFilter = ios; };
@@ -1414,6 +1416,8 @@
 		C1935A242C89CC6D001AD72D /* AutofillHeaderViewFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1935A232C89CC6D001AD72D /* AutofillHeaderViewFactoryTests.swift */; };
 		C1963863283794A000298D4D /* BookmarksCachingSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1963862283794A000298D4D /* BookmarksCachingSearch.swift */; };
 		C19D90D12CFE3A7F00D17DF3 /* AutofillLoginListSectionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = C19D90D02CFE3A7F00D17DF3 /* AutofillLoginListSectionType.swift */; };
+		C1AAECBD2E699F740016B82E /* SessionStateMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AAECBC2E699F740016B82E /* SessionStateMetrics.swift */; };
+		C1AAECBF2E69A1CC0016B82E /* SessionStateMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AAECBE2E69A1CC0016B82E /* SessionStateMetricsTests.swift */; };
 		C1AD33282DBAD18E003B80A4 /* CreditCardPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD33242DBAD18E003B80A4 /* CreditCardPromptView.swift */; };
 		C1AD33292DBAD18E003B80A4 /* CreditCardPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD33252DBAD18E003B80A4 /* CreditCardPromptViewController.swift */; };
 		C1AD332A2DBAD18E003B80A4 /* CreditCardPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD33262DBAD18E003B80A4 /* CreditCardPromptViewModel.swift */; };
@@ -3189,11 +3193,13 @@
 		98C6C995251EABFA0067A1E8 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		98C6C996251EABFA0067A1E8 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		98C6C998251EABFA0067A1E8 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		98C785E82E687D420077819E /* InternalUserCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalUserCommands.swift; sourceTree = "<group>"; };
 		98CD35CF251EAC0B00DA7671 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		98CD35D0251EAC0B00DA7671 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		98CD35D1251EAC0B00DA7671 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/Localizable.strings; sourceTree = "<group>"; };
 		98CD35D3251EAC0B00DA7671 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		98CD35D4251EAC0B00DA7671 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		98D094822E6AFA6B00D94984 /* InternalUserCommandsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalUserCommandsTests.swift; sourceTree = "<group>"; };
 		98D16974250CE707009513CC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/PrivacyInfoContainer.xib; sourceTree = "<group>"; };
 		98D4B7D9294407AC0068814D /* BookmarksSearchPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksSearchPerformanceTests.swift; sourceTree = "<group>"; };
 		98D4B7E02949C3E80068814D /* BookmarksImportPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksImportPerformanceTests.swift; sourceTree = "<group>"; };
@@ -3583,6 +3589,8 @@
 		C19D90D02CFE3A7F00D17DF3 /* AutofillLoginListSectionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginListSectionType.swift; sourceTree = "<group>"; };
 		C1A001092D08635100372C87 /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C1A0010A2D08635100372C87 /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/Localizable.strings; sourceTree = "<group>"; };
+		C1AAECBC2E699F740016B82E /* SessionStateMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStateMetrics.swift; sourceTree = "<group>"; };
+		C1AAECBE2E69A1CC0016B82E /* SessionStateMetricsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStateMetricsTests.swift; sourceTree = "<group>"; };
 		C1AD33242DBAD18E003B80A4 /* CreditCardPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCardPromptView.swift; sourceTree = "<group>"; };
 		C1AD33252DBAD18E003B80A4 /* CreditCardPromptViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCardPromptViewController.swift; sourceTree = "<group>"; };
 		C1AD33262DBAD18E003B80A4 /* CreditCardPromptViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCardPromptViewModel.swift; sourceTree = "<group>"; };
@@ -4711,6 +4719,7 @@
 			isa = PBXGroup;
 			children = (
 				317DD5542E0D5DD300CCC28C /* SwitchBarHandlerTests.swift */,
+				C1AAECBE2E69A1CC0016B82E /* SessionStateMetricsTests.swift */,
 			);
 			path = SwitchBar;
 			sourceTree = "<group>";
@@ -5265,6 +5274,7 @@
 				31EEBCDA2E2AABA900901255 /* NavigationActionBarView.swift */,
 				315E14A72DF77BCD00419C8A /* SwitchBarHandler.swift */,
 				315E14A82DF77BCD00419C8A /* SwitchBarViewController.swift */,
+				C1AAECBC2E699F740016B82E /* SessionStateMetrics.swift */,
 			);
 			path = SwitchBar;
 			sourceTree = "<group>";
@@ -5707,6 +5717,7 @@
 		851DFD88212C5ED600D95F20 /* Main */ = {
 			isa = PBXGroup;
 			children = (
+				98D094822E6AFA6B00D94984 /* InternalUserCommandsTests.swift */,
 				851DFD89212C5EE800D95F20 /* TabSwitcherAnimatedButtonTests.swift */,
 				6F23316D2DD52E1B004D102D /* TabSwitcherStaticButtonTests.swift */,
 				310742A92848E5B70012660B /* BackForwardMenuHistoryItemURLSanitizerTests.swift */,
@@ -8460,6 +8471,7 @@
 		F1C5ECFA1E37B15B00C599A4 /* Main */ = {
 			isa = PBXGroup;
 			children = (
+				98C785E82E687D420077819E /* InternalUserCommands.swift */,
 				6F505C022DD2158100E1A1DA /* ToolbarButtons */,
 				310742A52848CD780012660B /* BackForwardMenuHistoryItem.swift */,
 				6AC6DAB228804F97002723C0 /* BarsAnimator.swift */,
@@ -9903,6 +9915,7 @@
 				C10E0A362E5CB1E4009CAE1B /* URL+QueryParameters.swift in Sources */,
 				F1849C6D2D6E3C98000589A4 /* DebugScreensViewController.swift in Sources */,
 				F1849C6E2D6E3C98000589A4 /* DebugScreensViewModel+Screens.swift in Sources */,
+				98C785E92E687D490077819E /* InternalUserCommands.swift in Sources */,
 				65BD16392D8DA439000795DE /* DuckPlayerDebugSettingsView.swift in Sources */,
 				F4D9C4FA25117A0F00814B71 /* HomeMessageStorage.swift in Sources */,
 				7B4DC5E22CB2D87C00EE5CC2 /* VPNAutoShortcuts.swift in Sources */,
@@ -9988,6 +10001,7 @@
 				6F2331662DD4D046004D102D /* TabSwitcherStaticButton.swift in Sources */,
 				EE0153E12A6EABE0002A8B26 /* NetworkProtectionConvenienceInitialisers.swift in Sources */,
 				C17B595B2A03AAD30055F2D1 /* PasswordGenerationPromptView.swift in Sources */,
+				C1AAECBD2E699F740016B82E /* SessionStateMetrics.swift in Sources */,
 				98AA92B32456FBE100ED4B9E /* SearchFieldContainerView.swift in Sources */,
 				CBF259562D3A960900AC63E4 /* SyncService.swift in Sources */,
 				3157B43827F4C8490042D3D7 /* FaviconsHelper.swift in Sources */,
@@ -10571,6 +10585,7 @@
 				4B2DF8A62E64C67300FBF11E /* WidePixelServiceTests.swift in Sources */,
 				56C23F652E0AD93600FD63C6 /* MockFeedbackSender.swift in Sources */,
 				56CA25EE2DB7ABCF00BE4226 /* LocalizationTests.swift in Sources */,
+				98D094832E6AFA6B00D94984 /* InternalUserCommandsTests.swift in Sources */,
 				CBDD5DDF29A6736A00832877 /* APIHeadersTests.swift in Sources */,
 				9FD1BDEC2D8C183C002F4EFE /* OnboardingManagerTests.swift in Sources */,
 				986B45D0299E30A50089D2D7 /* BookmarkEntityTests.swift in Sources */,
@@ -10579,6 +10594,7 @@
 				84EFBCC92D81796000706739 /* AutocompleteSuggestionsDataSourceTests.swift in Sources */,
 				9FFDA8372DFA885C007923F7 /* PictureInPictureControllerFactoryTests.swift in Sources */,
 				98E5630B2DE8AF3100E6E75F /* HtmlTestDataLoader.swift in Sources */,
+				C1AAECBF2E69A1CC0016B82E /* SessionStateMetricsTests.swift in Sources */,
 				98E5630D2DE8AF3100E6E75F /* InitHelpers.swift in Sources */,
 				98E563122DE8AF3100E6E75F /* CombineTestUtilities.swift in Sources */,
 				98E563162DE8AF3100E6E75F /* TestDataLoader.swift in Sources */,

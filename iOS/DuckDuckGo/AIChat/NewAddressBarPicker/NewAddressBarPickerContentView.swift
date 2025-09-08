@@ -272,14 +272,6 @@ final class AddressBarPickerAnimationImageProvider: AnimationImageProvider, Equa
         case "img_0.png":
             imageName = "ab-animation-blur"
         case "img_1.png":
-            imageName = "ab-animation-aichat"
-        case "img_2.png":
-            imageName = "ab-animation-aichat-2"
-        case "img_3.png":
-            imageName = "ab-animation-search-1"
-        case "img_4.png":
-            imageName = "ab-animation-search-2"
-        case "img_5.png":
             imageName = "ab-animation-pill"
         default:
             return nil

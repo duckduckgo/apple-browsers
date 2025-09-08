@@ -449,6 +449,8 @@ class MainViewController: UIViewController {
         if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
+
+        // presentNewAddressBarPickerIfNeeded()
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -614,11 +616,12 @@ class MainViewController: UIViewController {
             appSettings: appSettings,
             pickerStorage: NewAddressBarPickerStorage()
         )
-        guard validator.shouldDisplayNewAddressBarPicker() else { return }
+      //  guard validator.shouldDisplayNewAddressBarPicker() else { return }
 
-        let pickerViewController = NewAddressBarPickerViewController()
-        pickerViewController.modalPresentationStyle = .overFullScreen
-        pickerViewController.modalTransitionStyle = .crossDissolve
+        let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: aiChatSettings)
+        pickerViewController.modalPresentationStyle = .pageSheet
+        pickerViewController.modalTransitionStyle = .coverVertical
+        pickerViewController.isModalInPresentation = true
         validator.markPickerDisplayAsSeen()
         self.present(pickerViewController, animated: true)
     }

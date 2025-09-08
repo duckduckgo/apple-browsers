@@ -46,6 +46,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
 
+    private let internalUserCommands: URLBasedDebugCommands
+
     init(tab: Tab,
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
@@ -55,6 +57,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          faviconLoader: FavoritesFaviconLoading,
          messageNavigationDelegate: MessageNavigationDelegate,
          appSettings: AppSettings,
+         internalUserCommands: URLBasedDebugCommands,
          appWidthObserver: AppWidthObserver = .shared) {
 
         self.associatedTab = tab
@@ -63,6 +66,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.messageNavigationDelegate = messageNavigationDelegate
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
+        self.internalUserCommands = internalUserCommands
 
         newTabPageViewModel = NewTabPageViewModel()
         favoritesModel = FavoritesViewModel(favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
@@ -156,6 +160,11 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
         favoritesModel.onFavoriteURLSelected = { [weak self] favorite in
             guard let self else { return }
+
+            // Handle shortcuts for internal testing
+            if let favUrl = favorite.url, let url = URL(string: favUrl), internalUserCommands.handle(url: url) {
+                return
+            }
 
             delegate?.newTabPageDidSelectFavorite(self, favorite: favorite)
         }

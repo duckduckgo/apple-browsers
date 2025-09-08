@@ -314,7 +314,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     }
     
     private func calculatePendingJobCounts() async -> (pendingScans: Int, pendingOptOuts: Int) {
-        guard let allData = try? manager.database.fetchAllBrokerProfileQueryData() else {
+        guard let allData = try? manager.database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false) else {
             assertionFailure("Failed to fetch broker profile query data")
             return (0, 0)
         }

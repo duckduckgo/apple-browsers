@@ -1486,21 +1486,33 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     override func mouseDown(with event: NSEvent) {
-        // The workaround is here to allow dragging a PopUp window
-        // when the event is targeting the AddressBarButtonsViewController‘s view.
-        // Otherwise the event would be redirected to the `view.superview` (Container View)
-        // which will silently ignore it.
-        assert(type(of: view) == NSView.self)
-        assert(type(of: view.superview) == NSView?.self)
-        view.superview?.nextResponder?/* DraggingDestinationView */.mouseDown(with: event) ?? super.mouseDown(with: event)
+        if isInPopUpWindow {
+            // The workaround is here to allow dragging a PopUp window
+            // when the event is targeting the AddressBarButtonsViewController‘s view.
+            // Otherwise the event would be redirected to the `view.superview` (Container View)
+            // which will silently ignore it.
+            assert(type(of: view) == NSView.self)
+            assert(type(of: view.superview) == NSView?.self)
+            view.superview?.nextResponder?/* DraggingDestinationView */.mouseDown(with: event) ?? super.mouseDown(with: event)
+        } else {
+            super.mouseDown(with: event)
+        }
     }
 
     override func mouseDragged(with event: NSEvent) {
-        view.superview?.nextResponder?/* DraggingDestinationView */.mouseDragged(with: event) ?? super.mouseDragged(with: event)
+        if isInPopUpWindow {
+            view.superview?.nextResponder?/* DraggingDestinationView */.mouseDragged(with: event) ?? super.mouseDragged(with: event)
+        } else {
+            super.mouseDragged(with: event)
+        }
     }
 
     override func mouseUp(with event: NSEvent) {
-        view.superview?.nextResponder?/* DraggingDestinationView */.mouseUp(with: event) ?? super.mouseUp(with: event)
+        if isInPopUpWindow {
+            view.superview?.nextResponder?/* DraggingDestinationView */.mouseUp(with: event) ?? super.mouseUp(with: event)
+        } else {
+            super.mouseUp(with: event)
+        }
     }
 
     // MARK: - Notification Animation

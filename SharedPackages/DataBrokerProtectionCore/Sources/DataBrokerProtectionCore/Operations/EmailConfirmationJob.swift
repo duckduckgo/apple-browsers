@@ -125,7 +125,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
             do {
                 try await executeEmailConfirmation(with: linkURL, broker: broker, extractedProfile: extractedProfile, stageDurationCalculator: stageDurationCalculator)
-                try await markAsSuccessful(stageDurationCalculator: stageDurationCalculator, schedulingConfig: broker.schedulingConfig)
+                try await markAsSuccessful(stageDurationCalculator: stageDurationCalculator, broker: broker)
                 Logger.dataBrokerProtection.log("✉️ Email confirmation completed successfully")
                 return
             } catch {
@@ -196,7 +196,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         )
     }
 
-    private func markAsSuccessful(stageDurationCalculator: DataBrokerProtectionStageDurationCalculator, schedulingConfig: DataBrokerScheduleConfig) async throws {
+    private func markAsSuccessful(stageDurationCalculator: DataBrokerProtectionStageDurationCalculator, broker: DataBroker) async throws {
         Logger.dataBrokerProtection.log("✉️ Marking email confirmation as successful, transitioning to optOutRequested")
 
         try jobDependencies.database.deleteOptOutEmailConfirmation(
@@ -222,13 +222,29 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             )
         )
 
+        try jobDependencies.database.incrementAttemptCount(
+            brokerId: jobData.brokerId,
+            profileQueryId: jobData.profileQueryId,
+            extractedProfileId: jobData.extractedProfileId
+        )
+
+        let updater = OperationPreferredDateUpdater(database: jobDependencies.database)
+        try updater.updateChildrenBrokerForParentBroker(broker, profileQueryId: jobData.profileQueryId)
+
         try updateOperationDataDates(
             origin: .emailConfirmation,
             brokerId: jobData.brokerId,
             profileQueryId: jobData.profileQueryId,
             extractedProfileId: jobData.extractedProfileId,
-            schedulingConfig: schedulingConfig,
+            schedulingConfig: broker.schedulingConfig,
             database: jobDependencies.database
+        )
+
+        try? jobDependencies.database.updateLastRunDate(
+            Date(),
+            brokerId: jobData.brokerId,
+            profileQueryId: jobData.profileQueryId,
+            extractedProfileId: jobData.extractedProfileId
         )
     }
 

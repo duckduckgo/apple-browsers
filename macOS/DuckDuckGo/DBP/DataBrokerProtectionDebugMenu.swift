@@ -300,10 +300,12 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     @objc private func runEmailConfirmationOperations(_ sender: NSMenuItem) {
-        Logger.dataBrokerProtection.log("Running email confirmation operations...")
-        let showWebView = sender.representedObject as? Bool ?? false
+        Task {
+            Logger.dataBrokerProtection.log("Running email confirmation operations...")
+            let showWebView = sender.representedObject as? Bool ?? false
 
-        DataBrokerProtectionManager.shared.loginItemInterface.runEmailConfirmationOperations(showWebView: showWebView)
+            await DataBrokerProtectionManager.shared.loginItemInterface.runEmailConfirmationOperations(showWebView: showWebView)
+        }
     }
 
     @objc private func backgroundAgentRestart() {

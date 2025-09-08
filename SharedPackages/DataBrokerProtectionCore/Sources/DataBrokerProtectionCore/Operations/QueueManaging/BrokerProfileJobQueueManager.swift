@@ -92,6 +92,7 @@ public protocol BrokerProfileJobQueueManaging {
                                                  jobDependencies: BrokerProfileJobDependencyProviding,
                                                  errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                  completion: (() -> Void)?)
+    func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding)
     func stop()
 
     func execute(_ command: DataBrokerProtectionQueueManagerDebugCommand)
@@ -192,6 +193,28 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
                       completion: completion)
     }
 
+    public func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding) {
+        do {
+            let emailConfirmationDependencies = EmailConfirmationJobDependencies(from: jobDependencies)
+            let emailJobs = try emailConfirmationJobProvider.createEmailConfirmationJobs(
+                showWebView: showWebView,
+                errorDelegate: self,
+                jobDependencies: emailConfirmationDependencies
+            )
+            Logger.dataBrokerProtection.log("✉️ Adding \(emailJobs.count, privacy: .public) email confirmation jobs to queue")
+
+            for job in emailJobs {
+                jobQueue.addOperation(job)
+            }
+
+            if !emailJobs.isEmpty {
+                Logger.dataBrokerProtection.log("✉️ Email confirmation jobs enqueued successfully")
+            }
+        } catch {
+            Logger.dataBrokerProtection.error("✉️ Failed to create email confirmation jobs: \(error, privacy: .public)")
+        }
+    }
+
     public func stop() {
         cancelCurrentModeAndResetIfNeeded()
     }
@@ -263,28 +286,6 @@ private extension BrokerProfileJobQueueManager {
     func resetMode() {
         mode = .idle
         operationErrors = []
-    }
-
-    func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding) {
-        do {
-            let emailConfirmationDependencies = EmailConfirmationJobDependencies(from: jobDependencies)
-            let emailJobs = try emailConfirmationJobProvider.createEmailConfirmationJobs(
-                showWebView: showWebView,
-                errorDelegate: self,
-                jobDependencies: emailConfirmationDependencies
-            )
-            Logger.dataBrokerProtection.log("✉️ Adding \(emailJobs.count, privacy: .public) email confirmation jobs to queue")
-
-            for job in emailJobs {
-                jobQueue.addOperation(job)
-            }
-
-            if !emailJobs.isEmpty {
-                Logger.dataBrokerProtection.log("✉️ Email confirmation jobs enqueued successfully")
-            }
-        } catch {
-            Logger.dataBrokerProtection.error("✉️ Failed to create email confirmation jobs: \(error, privacy: .public)")
-        }
     }
 
     func addJobs(for jobType: JobType,

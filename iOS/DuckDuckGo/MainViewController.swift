@@ -235,6 +235,7 @@ class MainViewController: UIViewController {
     private let daxEasterEggPresenter: DaxEasterEggPresenting
 
     private let internalUserCommands: URLBasedDebugCommands = InternalUserCommands()
+    private let launchSourceManager: LaunchSourceManaging
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -269,7 +270,8 @@ class MainViewController: UIViewController {
         customConfigurationURLProvider: CustomConfigurationURLProviding,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: DaxDialogsManaging,
-        daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter()
+        daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
+        launchSourceManager: LaunchSourceManaging
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -307,6 +309,7 @@ class MainViewController: UIViewController {
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
         self.daxEasterEggPresenter = daxEasterEggPresenter
+        self.launchSourceManager = launchSourceManager
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -612,7 +615,8 @@ class MainViewController: UIViewController {
             featureFlagger: featureFlagger,
             experimentalAIChatManager: experimentalAIChatManager,
             appSettings: appSettings,
-            pickerStorage: NewAddressBarPickerStorage()
+            pickerStorage: NewAddressBarPickerStorage(),
+            launchSourceManager: launchSourceManager
         )
         guard validator.shouldDisplayNewAddressBarPicker() else { return }
 

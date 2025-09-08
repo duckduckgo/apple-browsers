@@ -38,7 +38,8 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     private let experimentalAIChatManager: ExperimentalAIChatManager
     private let appSettings: AppSettings
     private let pickerStorage: NewAddressBarPickerStorage
-    
+    private let launchSourceManager: LaunchSourceManaging
+
     // MARK: - Initialization
     
     init(
@@ -47,7 +48,8 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         featureFlagger: FeatureFlagger,
         experimentalAIChatManager: ExperimentalAIChatManager,
         appSettings: AppSettings,
-        pickerStorage: NewAddressBarPickerStorage
+        pickerStorage: NewAddressBarPickerStorage,
+        launchSourceManager: LaunchSourceManaging
     ) {
         self.aiChatSettings = aiChatSettings
         self.tutorialSettings = tutorialSettings
@@ -55,18 +57,17 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         self.experimentalAIChatManager = experimentalAIChatManager
         self.appSettings = appSettings
         self.pickerStorage = pickerStorage
+        self.launchSourceManager = launchSourceManager
     }
     
     // MARK: - Public Interface
     
     func shouldDisplayNewAddressBarPicker() -> Bool {
         /// https://app.asana.com/1/137249556945/task/1211152753855410?focus=true
-        /// Check all show criteria first
         guard isMainDuckAIEnabled else { return false }
         guard isOnboardingCompletedOrSkipped else { return false }
         guard isFeatureFlagEnabled else { return false }
         
-        /// Check all exclusion criteria
         guard !isDuckAIAddressBarDisabled else { return false }
         guard !isNewToggleExperimentEnabled else { return false }
         guard !hasForceChoiceBeenShown else { return false }
@@ -81,41 +82,34 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
 
     // MARK: - Show Criteria Variables
     
-    /// Check if main Duck.ai is enabled (default is true)
     private var isMainDuckAIEnabled: Bool {
-        return aiChatSettings.isAIChatEnabled
+        aiChatSettings.isAIChatEnabled
     }
     
-    /// Check if user has completed or skipped onboarding
     private var isOnboardingCompletedOrSkipped: Bool {
-        return tutorialSettings.hasSeenOnboarding
+        tutorialSettings.hasSeenOnboarding
     }
     
-    /// Check if the feature flag for showing the address bar choice screen is enabled
     private var isFeatureFlagEnabled: Bool {
-        return featureFlagger.isFeatureOn(.showAIChatAddressBarChoiceScreen)
+        featureFlagger.isFeatureOn(.showAIChatAddressBarChoiceScreen)
     }
     
     // MARK: - Exclusion Criteria Variables
     
-    /// Check if Duck.ai shortcut in address bar is disabled
     private var isDuckAIAddressBarDisabled: Bool {
-        return !aiChatSettings.isAIChatAddressBarUserSettingsEnabled
+        !aiChatSettings.isAIChatAddressBarUserSettingsEnabled
     }
     
-    /// Check if user has already enabled the new toggle experiment
     private var isNewToggleExperimentEnabled: Bool {
-        return experimentalAIChatManager.isExperimentalAIChatSettingsEnabled
+        experimentalAIChatManager.isExperimentalAIChatSettingsEnabled
     }
     
-    /// Check if force-choice has already been shown once
     private var hasForceChoiceBeenShown: Bool {
-        return pickerStorage.hasBeenShown
+        pickerStorage.hasBeenShown
     }
     
-    /// Check if app was launched from external source (links, widgets, notifications, Siri shortcuts)
     private var isLaunchedFromExternalSource: Bool {
-        return false
+        launchSourceManager.source != .standard
     }
 }
 

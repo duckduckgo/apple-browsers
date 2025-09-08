@@ -115,6 +115,8 @@ struct Launching: LaunchingHandling {
         // Has to be intialised after configuration.start in case values need to be migrated
         aiChatSettings = AIChatSettings()
 
+        let launchSourceManager = LaunchSourceManager()
+
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
@@ -137,7 +139,8 @@ struct Launching: LaunchingHandling {
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                               defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                                               systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
-                                              daxDialogsManager: daxDialogs)
+                                              daxDialogsManager: daxDialogs,
+                                              launchSourceManager: launchSourceManager)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
@@ -161,6 +164,7 @@ struct Launching: LaunchingHandling {
             notificationServiceManager: notificationServiceManager,
             privacyConfigurationManager: privacyConfigurationManager
         )
+
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
@@ -186,7 +190,8 @@ struct Launching: LaunchingHandling {
                                defaultBrowserPromptService: defaultBrowserPromptService,
                                systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
                                inactivityNotificationSchedulerService: inactivityNotificationSchedulerService,
-                               widePixelService: widePixelService
+                               widePixelService: widePixelService,
+                               launchSourceManager: launchSourceManager
         )
 
         // Register background tasks that run after app is ready

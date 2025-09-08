@@ -68,7 +68,8 @@ struct Foreground: ForegroundHandling {
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,
             shortcutItemHandler: appDependencies.mainCoordinator,
-            keyboardPresenter: KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller)
+            keyboardPresenter: KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller),
+            launchSourceService: appDependencies.services.launchSourceManager
         )
         interactionManager = UIInteractionManager(
             authenticationService: appDependencies.services.authenticationService,

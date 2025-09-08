@@ -103,11 +103,11 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     private var isNewToggleExperimentEnabled: Bool {
         experimentalAIChatManager.isExperimentalAIChatSettingsEnabled
     }
-    
+
     private var hasForceChoiceBeenShown: Bool {
         pickerStorage.hasBeenShown
     }
-    
+
     private var isLaunchedFromExternalSource: Bool {
         launchSourceManager.source != .standard
     }
@@ -133,5 +133,9 @@ struct NewAddressBarPickerStorage {
     
     func markAsShown() {
         keyValueStore.set(true, forKey: Key.hasBeenShown)
+    }
+    
+    func reset() {
+        keyValueStore.removeObject(forKey: Key.hasBeenShown)
     }
 }

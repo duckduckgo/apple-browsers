@@ -64,6 +64,7 @@ extension DebugScreensViewModel {
                 controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
             .action(title: "Show New AddressBar Modal", showNewAddressBarModal),
+            .action(title: "Reset New Address Bar Picker Data", resetNewAddressBarPickerData),
 
             // MARK: SwiftUI Views
             .view(title: "AI Chat", { _ in
@@ -233,6 +234,13 @@ extension DebugScreensViewModel {
         pickerViewController.isModalInPresentation = true
 
         controller.present(pickerViewController, animated: true)
+    }
+    
+    private func resetNewAddressBarPickerData(_ dependencies: DebugScreen.Dependencies) {
+        let pickerStorage = NewAddressBarPickerStorage()
+        pickerStorage.reset()
+        
+        ActionMessageView.present(message: "New Address Bar Picker data reset successfully")
     }
 
 }

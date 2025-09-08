@@ -452,6 +452,8 @@ class MainViewController: UIViewController {
         if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
+
+        presentNewAddressBarPickerIfNeeded()
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {

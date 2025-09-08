@@ -122,7 +122,7 @@ struct Foreground: ForegroundHandling {
         services.dbpService.resume()
         services.inactivityNotificationSchedulerService.resume()
         services.widePixelService.resume()
-
+        services.launchSourceManager.handleAppAction(launchAction)
         appDependencies.mainCoordinator.onForeground()
     }
 

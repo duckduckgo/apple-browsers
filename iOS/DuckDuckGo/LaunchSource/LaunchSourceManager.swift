@@ -22,9 +22,10 @@ import Core
 protocol LaunchSourceManaging {
     var source: LaunchSource { get }
     func setSource(_ source: LaunchSource)
+    func handleAppAction(_ appAction: LaunchAction)
 }
 
-enum LaunchSource {
+enum LaunchSource: String {
     case standard
     case shortcut
     case URL
@@ -37,6 +38,18 @@ final class LaunchSourceManager: LaunchSourceManaging {
     public init() { }
     
     func setSource(_ source: LaunchSource) {
+        Logger.lifecycle.debug("Setting Source \(source.rawValue, privacy: .public)")
         self.source = source
+    }
+
+    func handleAppAction(_ appAction: LaunchAction) {
+        switch appAction {
+        case .handleShortcutItem:
+            setSource(.shortcut)
+        case .openURL:
+            setSource(.URL)
+        case .showKeyboard:
+            setSource(.standard)
+        }
     }
 }

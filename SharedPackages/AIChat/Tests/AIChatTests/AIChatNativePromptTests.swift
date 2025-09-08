@@ -165,6 +165,8 @@ struct AIChatNativePromptTests {
             "tool": "translation",
             "translation": [
                 "text": "Hello world",
+                "sourceLanguage": nil,
+                "sourceTLD": nil,
                 "targetLanguage": "fr-FR"
             ]
         ]

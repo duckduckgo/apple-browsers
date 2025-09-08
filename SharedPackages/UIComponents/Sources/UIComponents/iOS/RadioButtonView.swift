@@ -56,7 +56,7 @@ public struct RadioButtonConfiguration {
     public var buttonSpacing: CGFloat
 
     public init(
-        font: Font = Font(UIFont.daxCaption().withSize(12)),
+        font: Font = Font(UIFont.daxCaption().withSize(13)),
         selectedTextColor: Color = .init(designSystemColor: .textLink),
         unselectedTextColor: Color = .init(designSystemColor: .textSecondary),
         selectedBackgroundColor: Color = .init(designSystemColor: .accent).opacity(0.2),

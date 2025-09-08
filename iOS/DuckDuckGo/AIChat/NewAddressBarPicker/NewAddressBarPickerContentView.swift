@@ -100,14 +100,14 @@ private struct AnimationView: View {
             for: UIDevice.current.userInterfaceIdiom,
             colorScheme: colorScheme
         )
-        
+
         Lottie.LottieView(animation: .named(animation.rawValue))
             .imageProvider(AddressBarPickerAnimationImageProvider(
                 colorScheme: colorScheme,
                 deviceIdiom: UIDevice.current.userInterfaceIdiom
             ))
-            .resizable()
-            .looping()
+            .playing(loopMode: .loop)
+            .scaledToFit()
             .id("\(animation.rawValue)-\(colorScheme)")
     }
 }

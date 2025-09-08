@@ -41,6 +41,7 @@ extension AppDelegate {
     @MainActor
     @objc func checkForUpdates(_ sender: Any?) {
 #if APPSTORE
+        PixelKit.fire(CheckForUpdatesAppStorePixels.checkForUpdate(source: .mainMenu))
         NSWorkspace.shared.open(.appStore)
 #endif
 #if SPARKLE

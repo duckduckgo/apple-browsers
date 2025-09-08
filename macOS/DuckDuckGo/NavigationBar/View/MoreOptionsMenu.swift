@@ -251,6 +251,12 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         helpItem.submenu = HelpSubMenu(targetting: self)
         addItem(helpItem)
 
+#if APPSTORE
+        let checkForAppStoreUpdates = NSMenuItem(title: UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""), action: #selector(checkForUpdates(_:)), keyEquivalent: "")
+            .withImage(DesignSystemImages.Glyphs.Size16.update)
+        addItem(checkForAppStoreUpdates)
+#endif
+
         let preferencesItem = NSMenuItem(title: UserText.settings, action: #selector(openPreferences(_:)), keyEquivalent: "")
             .targetting(self)
             .withImage(moreOptionsMenuIconsProvider.settingsIcon)
@@ -320,6 +326,11 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         PixelKit.fire(MoreOptionsMenuPixel.fireproofSiteActionClicked, frequency: .daily)
         selectedTabViewModel.tab.requestFireproofToggle()
+    }
+
+    @objc func checkForUpdates(_ sender: NSMenuItem) {
+        PixelKit.fire(CheckForUpdatesAppStorePixels.checkForUpdate(source: .moreOptionesMenu))
+        NSWorkspace.shared.open(.appStore)
     }
 
     @objc func bookmarkPage(_ sender: NSMenuItem) {
@@ -444,10 +455,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     private func addUpdateItem() {
-#if APPSTORE
-        let checkForAppStoreUpdates = NSMenuItem(title: UserText.mainMenuAppCheckforUpdates, action: #selector(AppDelegate.checkForUpdates))
-        addItem(checkForAppStoreUpdates)
-#endif
 #if SPARKLE
         guard AppVersion.runType != .uiTests,
               let updateController = Application.appDelegate.updateController,

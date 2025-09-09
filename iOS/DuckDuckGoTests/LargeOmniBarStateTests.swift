@@ -519,6 +519,17 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showBookmarksButton)
         XCTAssertFalse(testee.showAccessoryButton)
     }
+    
+    func testWhenInBrowsingNonEditingStateThenRefreshButtonIsHiddenIfNotEnabled() {
+        mockFeatureFlagger.enabledFeatureFlags = [.refreshButtonPosition]
+        let mockAppSettings = AppSettingsMock()
+        mockAppSettings.currentRefreshButtonPosition = .menu
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger,
+                                                 appSettings: mockAppSettings)
+        let testee = LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertFalse(testee.showRefresh)
+    }
 
     func testWhenEnteringBrowsingNonEditingStateThenTextIsMaintained() {
         let testee = LargeOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)

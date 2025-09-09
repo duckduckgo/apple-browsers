@@ -25,14 +25,17 @@ final class CrashCollectionService {
 
     private let appSettings: AppSettings
     private let application: UIApplication
+    private let isBookmarksStructureMissing: Bool
 
     private lazy var crashCollection = CrashCollection(crashReportSender: CrashReportSender(platform: .iOS,
                                                                                             pixelEvents: CrashReportSender.pixelEvents),
                                                        crashCollectionStorage: UserDefaults())
     private lazy var crashReportUploaderOnboarding = CrashCollectionOnboarding(appSettings: appSettings)
 
-    init(appSettings: AppSettings = AppUserDefaults(),
+    init(isBookmarksStructureMissing: Bool = false,
+         appSettings: AppSettings = AppUserDefaults(),
          application: UIApplication = UIApplication.shared) {
+        self.isBookmarksStructureMissing = isBookmarksStructureMissing
         self.appSettings = appSettings
         self.application = application
 
@@ -59,6 +62,11 @@ final class CrashCollectionService {
                     DailyPixel.fireDaily(.dbCrashDetectedDaily(appIdentifier: appIdentifier), withAdditionalParameters: dailyParameters)
                 } else {
                     DailyPixel.fireDaily(.dbCrashDetectedDaily(appIdentifier: appIdentifier))
+                }
+                
+                if isBookmarksStructureMissing && appIdentifier == nil {
+                    // Only fire for main app crashes, not extension crashes
+                    DailyPixel.fireDailyAndCount(pixel: .debugBookmarksStructureLostAfterCrash)
                 }
             }
 

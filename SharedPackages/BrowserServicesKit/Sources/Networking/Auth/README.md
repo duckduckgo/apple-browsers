@@ -112,7 +112,7 @@ The framework provides several token retrieval policies:
 The framework provides detailed error handling through `OAuthServiceError` and `OAuthClientError`:
 
 ```swift
-public enum OAuthClientError: Error {
+public enum OAuthClientError: DDGError {
     case internalError(String)
     case missingTokens
     case missingRefreshToken

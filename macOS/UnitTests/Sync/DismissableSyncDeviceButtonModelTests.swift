@@ -60,7 +60,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
     // MARK: - Auth State Change Tests
 
     func testAuthStateChange_InactiveWithAllConditionsMet_ShowsButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences])
+        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences, .syncFeatureLevel3])
         let model = createModel(source: .bookmarkAdded)
 
         let expectation = expectation(description: "shouldShowSyncButton should be true")
@@ -78,7 +78,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
     }
 
     func testAuthStateChange_NotInactive_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences])
+        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences, .syncFeatureLevel3])
         let model = createModel(source: .bookmarkAdded)
 
         let expectation = expectation(description: "shouldShowSyncButton should be false")
@@ -96,7 +96,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
     }
 
     func testAuthStateChange_InactiveButDismissed_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences])
+        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences, .syncFeatureLevel3])
         mockKeyValueStore.set(true, forKey: "com.duckduckgo.bookmarkAddedSyncPromoDismissed")
         let model = createModel(source: .bookmarkAdded)
 
@@ -116,7 +116,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
     }
 
     func testAuthStateChange_InactiveButCountLimitReached_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences])
+        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences, .syncFeatureLevel3])
         mockKeyValueStore.set(5, forKey: "com.duckduckgo.bookmarkAddedSyncPromoPresentedCount")
         let model = createModel(source: .bookmarkAdded)
 
@@ -136,7 +136,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
     }
 
     func testAuthStateChange_InactiveButDateExpired_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences])
+        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences, .syncFeatureLevel3])
         let expiredDate = Date().addingTimeInterval(-8 * 24 * 60 * 60) // 8 days ago
         mockKeyValueStore.set(expiredDate, forKey: "com.duckduckgo.bookmarkFirstPresentedCount")
         let model = createModel(source: .bookmarksBar)
@@ -156,6 +156,29 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
         cancellable.cancel()
     }
 
+    func testAuthStateChange_InactiveButFeatureFlagOff_HidesButton() {
+        for enabledFeatureFlags in [[], [FeatureFlag.newSyncEntryPoints], [FeatureFlag.refactorOfSyncPreferences]] {
+            mockFeatureFlagger.enableFeatures(enabledFeatureFlags)
+            let model = createModel(source: .bookmarkAdded)
+
+            let expectation = expectation(description: "shouldShowSyncButton should be true")
+            let cancellable = model.$shouldShowSyncButton
+                .dropFirst() // Skip initial value
+                .sink { value in
+                    expectation.fulfill()
+                    if value {
+                        XCTFail("Sync button should not be visible")
+                    }
+                }
+
+            authStateSubject.send(.inactive)
+
+            wait(for: [expectation], timeout: 1.0)
+            cancellable.cancel()
+            mockFeatureFlagger.enabledFeatureFlags = []
+        }
+    }
+
     // MARK: - viewDidLoad Tests
 
     func testViewDidLoad_FeatureFlagsDisabled_HidesButton() {
@@ -169,7 +192,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
     }
 
     func testViewDidLoad_AuthStateNotInactive_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences])
+        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences, .syncFeatureLevel3])
         let model = createModel(source: .bookmarkAdded)
         authStateSubject.send(.active)
 
@@ -179,7 +202,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
     }
 
     func testViewDidLoad_AlreadyDismissed_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences])
+        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences, .syncFeatureLevel3])
         mockKeyValueStore.set(true, forKey: "com.duckduckgo.bookmarkAddedSyncPromoDismissed")
         let model = createModel(source: .bookmarkAdded)
         authStateSubject.send(.inactive)
@@ -190,7 +213,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
     }
 
     func testViewDidLoad_CountLimitReached_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences])
+        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences, .syncFeatureLevel3])
         let model = createModel(source: .bookmarkAdded)
         waitForInitialInactiveStateToEnableSyncButton(on: model)
         mockKeyValueStore.set(5, forKey: "com.duckduckgo.bookmarkAddedSyncPromoPresentedCount")
@@ -203,7 +226,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
     }
 
     func testViewDidLoad_DateExpired_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences])
+        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences, .syncFeatureLevel3])
         let model = createModel(source: .bookmarksBar)
         waitForInitialInactiveStateToEnableSyncButton(on: model)
 
@@ -216,7 +239,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
     }
 
     func testViewDidLoad_AllConditionsMet_ShowsButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences])
+        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences, .syncFeatureLevel3])
         let model = createModel(source: .bookmarkAdded)
 
         waitForInitialInactiveStateToEnableSyncButton(on: model)
@@ -228,7 +251,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
     }
 
     func testViewDidLoad_BookmarksBar_SetsFirstSeenDate() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences])
+        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences, .syncFeatureLevel3])
         let model = createModel(source: .bookmarksBar)
 
         waitForInitialInactiveStateToEnableSyncButton(on: model)
@@ -240,7 +263,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
     }
 
     func testViewDidLoad_BookmarkAdded_IncrementsCount() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences])
+        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences, .syncFeatureLevel3])
         let model = createModel(source: .bookmarkAdded)
 
         waitForInitialInactiveStateToEnableSyncButton(on: model)
@@ -264,7 +287,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
     func testDismissSyncButtonAction_HidesButtonAndStoresState() {
         let model = createModel(source: .bookmarkAdded)
         // First show the button
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences])
+        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .refactorOfSyncPreferences, .syncFeatureLevel3])
 
         waitForInitialInactiveStateToEnableSyncButton(on: model)
 
@@ -293,11 +316,12 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
 
     // MARK: - Helper Methods
 
-    private func createModel(source: DismissableSyncDeviceButtonModel.SyncDevicePromoSource) -> DismissableSyncDeviceButtonModel {
+    private func createModel(source: DismissableSyncDeviceButtonModel.DismissableSyncDevicePromoSource) -> DismissableSyncDeviceButtonModel {
         return DismissableSyncDeviceButtonModel(
             source: source,
             keyValueStore: mockKeyValueStore,
             authStatePublisher: authStateSubject.eraseToAnyPublisher(),
+            initialAuthState: .initializing,
             syncLauncher: mockSyncLauncher,
             featureFlagger: mockFeatureFlagger
         )
@@ -323,7 +347,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
 private class MockSyncDeviceFlowLauncher: SyncDeviceFlowLaunching {
     var startDeviceSyncFlowCalled = false
 
-    func startDeviceSyncFlow(completion: (() -> Void)?) {
+    func startDeviceSyncFlow(source: SyncDeviceButtonTouchpoint, completion: (() -> Void)?) {
         startDeviceSyncFlowCalled = true
         completion?()
     }

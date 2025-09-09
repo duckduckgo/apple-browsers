@@ -6601,6 +6601,66 @@
         }
       }
     },
+    "autofill.password-manager.bitwarden.extension" : {
+      "comment" : "Autofill password manager row title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitwarden-Erweiterung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bitwarden Extension"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extensión Bitwarden"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extension Bitwarden"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estensione di Bitwarden"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitwarden-extensie"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rozszerzenie Bitwarden"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extensão Bitwarden"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Расширение Bitwarden"
+          }
+        }
+      }
+    },
     "autofill.password-manager.duckduckgo" : {
       "comment" : "Autofill password manager row title",
       "extractionState" : "extracted_with_value",
@@ -18917,8 +18977,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Deine Sitzung wird nicht wiederhergestellt, wenn die Daten beim Beenden gelöscht werden."
+            "state" : "translated",
+            "value" : "Deine Sitzung wird nicht wiederhergestellt, wenn die automatische Löschung aktiviert ist. Auch Fire Windows werden nicht wiederhergestellt."
           }
         },
         "en" : {
@@ -18929,44 +18989,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Tu sesión no se restaurará si se eliminan los datos al salir."
+            "state" : "translated",
+            "value" : "Tu sesión no se restaurará si el borrado automático está activado. Las Fire windows tampoco se restaurarán."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Votre session ne sera pas rétablie si les données sont supprimées à la fermeture."
+            "state" : "translated",
+            "value" : "Votre session ne sera pas rétablie si l'effacement automatique est activé. Les fenêtres Fire ne seront pas non plus restaurées."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "La sessione non sarà ripristinata se i dati vengono eliminati all'uscita."
+            "state" : "translated",
+            "value" : "La sessione non sarà ripristinata se è attivata la cancellazione automatica. Anche le finestre Fire non saranno ripristinate."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Je sessie wordt niet hersteld als de gegevens bij het afsluiten worden verwijderd."
+            "state" : "translated",
+            "value" : "Je sessie wordt niet hersteld als Automatisch wissen is ingeschakeld. Fire Windows worden ook niet hersteld."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Sesja nie zostanie przywrócona, jeśli dane zostaną usunięte przy wychodzeniu."
+            "state" : "translated",
+            "value" : "Sesja nie zostanie przywrócona, jeśli jest włączona funkcja automatycznego czyszczenia. Również okna Fire Window nie zostaną przywrócone."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "A tua sessão não será restaurada se os dados forem eliminados ao sair."
+            "state" : "translated",
+            "value" : "A tua sessão não será restaurada se a Limpeza automática estiver ativada. As Fire Windows também não serão restauradas."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Если данные удаляются при выходе, восстановление сеанса невозможно."
+            "state" : "translated",
+            "value" : "Если функция «Автоочистка» включена, восстановление сеанса невозможно. Окна Fire Window также не будут восстанавливаться."
           }
         }
       }
@@ -23999,6 +24059,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показывать в меню браузера"
+          }
+        }
+      }
+    },
+    "duckai.show-in-search-box-on-new-tab-page.toggle" : {
+      "comment" : "A checkbox to control AI Chat shortcut visibility in a search box on the New Tab Page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Im Suchfeld auf der neuen Registerkarte anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show in Search box on New Tab Page"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar en el cuadro de búsqueda de nueva página de pestaña"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher dans la boîte de recherche sur la page Nouvel onglet"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra nella casella di ricerca nella pagina Nuova scheda"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weergeven in het zoekvak op de nieuwe tabbladpagina"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż w polu wyszukiwania na stronie nowej karty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar na caixa de pesquisa na página do novo separador"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать в поле поиска на странице новой вкладки"
           }
         }
       }
@@ -32415,10 +32535,58 @@
       "comment" : "Warning message explaining that session restoration is not available when using Fire Window",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bei Verwendung von Fire Windows wird deine Sitzung nicht wiederhergestellt."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Fire Windows won’t be restored with your session."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las Fire Windows no se restaurarán con tu sesión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les fenêtres Fire ne seront pas restaurées avec votre session."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le finestre Fire non saranno ripristinate con la sessione."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fire Windows worden niet hersteld met je sessie."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Okna Fire Window nie zostaną przywrócone wraz z sesją."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As Fire Windows não serão restauradas com a tua sessão."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Окна Fire Window не восстанавливаются вместе с сеансом."
           }
         }
       }
@@ -47600,6 +47768,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Новое окно"
+          }
+        }
+      }
+    },
+    "newTab.aichat.section.title" : {
+      "comment" : "Title of the Duck.ai section in the home page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
           }
         }
       }
@@ -68444,10 +68672,58 @@
       "comment" : "Explanation for the option to make all new windows Fire Windows. The %@ will be replaced with a keyboard shortcut for opening new Fire Windows and regular Windows (e.g. '⌘N' and '⇧⌘N').",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standardmäßig Fire Windows öffnen, wenn neue Fenster geöffnet werden (%1$@). Du kannst weiterhin ein normales Browserfenster öffnen, wenn diese Einstellung aktiviert ist (%2$@)."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Open Fire Windows by default when opening new windows (%1$@). You can still open a regular browser window when this setting is on (%2$@)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre Fire Windows de forma predeterminada al abrir nuevas ventanas (%1$@). Puedes seguir abriendo una ventana normal del navegador con esta configuración usando (%2$@)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrez les Fire Windows par défaut lorsque vous ouvrez de nouvelles fenêtres (%1$@). Lorsque ce paramètre est activé, vous pouvez tout de même ouvrir une fenêtre de navigateur classique (%2$@)."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri Fire Windows per impostazione predefinita quando apri nuove finestre (%1$@). Puoi comunque aprire una normale finestra del browser quando questa impostazione è attiva (%2$@)."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fire Windows worden standaard geopend wanneer je nieuwe vensters opent (%1$@). Je kunt nog steeds een gewoon browservenster openen als deze instelling is ingeschakeld (%2$@)."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Domyślnie otwieraj okna Fire Window przy otwieraniu nowych okien (%1$@). Po włączeniu tego ustawienia nadal możesz otworzyć zwykłe okno przeglądarki (%2$@)."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Fire Windows por predefinição ao abrir novas janelas (%1$@). Continua a ser possível abrir uma janela normal do navegador com esta definição ativada (%2$@)."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открывать Fire Windows по умолчанию (%1$@). Вы по-прежнему сможете открывать обычные окна (%2$@)."
           }
         }
       }
@@ -69236,10 +69512,58 @@
       "comment" : "Label for startup window type selection",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnen eines neuen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Open a new"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre una nueva"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir une nouvelle"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri una nuova"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open een nieuwe"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz nowy"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir um novo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть новое"
           }
         }
       }
@@ -69248,10 +69572,58 @@
       "comment" : "Option for regular window type",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fenster"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Window"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ventana"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fenêtre"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finestra"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venster"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Okno"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Janela"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Окно"
           }
         }
       }
@@ -73419,6 +73791,366 @@
         }
       }
     },
+    "session.restore.prompt.button.accept" : {
+      "comment" : "Button the user can press to restore the previous browser session after a crash",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sitzung wiederherstellen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restore Session"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restaurar sesión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restaurer la session"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ripristina sessione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessie herstellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przywróć sesję"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restaurar sessão"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Восстановить вкладки"
+          }
+        }
+      }
+    },
+    "session.restore.prompt.button.reject" : {
+      "comment" : "Button the user can press to not restore the previous browser session after a crash",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nein, danke"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No Thanks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No, gracias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non merci"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No, grazie"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nee, bedankt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie, dziękuję"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não, obrigado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет, спасибо"
+          }
+        }
+      }
+    },
+    "session.restore.prompt.explanation" : {
+      "comment" : "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du kannst dies auch später über %1$@ → %2$@ tun."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can also do this later from %1$@ → %2$@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "También puedes hacerlo más tarde desde %1$@ → %2$@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous pouvez aussi le faire plus tard à partir de %1$@ → %2$@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puoi farlo anche in seguito da %1$@ → %2$@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je kunt dit ook later doen vanuit %1$@ → %2$@."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Możesz to zrobić później, wybierając kolejno %1$@ → %2$@."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Também podes fazê-lo mais tarde em %1$@ → %2$@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сеанс также можно восстановить позже в разделе «%1$@ → %2$@»."
+          }
+        }
+      }
+    },
+    "session.restore.prompt.explanation.markdown" : {
+      "comment" : "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session. Please make sure to keep **%1$@** and **%2$@** intact.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du kannst dies auch später über **%1$@** → **%2$@** tun."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can also do this later from **%1$@** → **%2$@**."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "También puedes hacerlo más tarde desde **%1$@** → **%2$@**."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous pouvez aussi le faire plus tard à partir de **%1$@** → **%2$@**."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puoi farlo anche più tardi da **%1$@** → **%2$@**."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je kunt dit ook later doen vanuit **%1$@** → **%2$@**."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Możesz to zrobić później, wybierając kolejno **%1$@** → **%2$@**."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Também podes fazê-lo mais tarde em **%1$@** → **%2$@**."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сеанс также можно восстановить позже в разделе **%1$@** → **%2$@**."
+          }
+        }
+      }
+    },
+    "session.restore.prompt.message" : {
+      "comment" : "Message of the prompt where the user can choose to restore the previous browser session after a crash",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Möchtest du die Tabs aus deiner vorherigen Sitzung wiederherstellen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Would you like to restore tabs from your previous session?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Te gustaría restaurar las pestañas de tu sesión anterior?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voulez-vous restaurer les onglets de votre session précédente ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vuoi ripristinare le schede dalla tua sessione precedente?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wil je de tabbladen van je vorige sessie herstellen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czy chcesz przywrócić karty z poprzedniej sesji?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gostarias de restaurar os separadores da tua sessão anterior?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Восстановить вкладки предыдущего сеанса?"
+          }
+        }
+      }
+    },
+    "session.restore.prompt.title" : {
+      "comment" : "Title of the prompt where the user can choose to restore the previous browser session after a crash",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Browser hat sich nicht wie erwartet geschlossen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The browser didn’t quit as expected"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El navegador no se ha cerrado como se esperaba"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le navigateur ne s'est pas fermé comme prévu"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il browser non si è chiuso come previsto"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De browser is niet afgesloten zoals verwacht"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przeglądarka została nieoczekiwanie zamknięta"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O navegador não encerrou como esperado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Работа браузера завершилась не как ожидалось"
+          }
+        }
+      }
+    },
     "settings" : {
       "comment" : "Menu item for opening settings",
       "extractionState" : "extracted_with_value",
@@ -75208,8 +75940,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Einstellungen zum Löschen von Daten öffnen"
+            "state" : "translated",
+            "value" : "Zu den Einstellungen zum Löschen von Daten"
           }
         },
         "en" : {
@@ -75220,43 +75952,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Abrir configuración de borrado de datos"
+            "state" : "translated",
+            "value" : "Ve a la configuración de borrado de datos"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ouvrir les paramètres d'effacement des données"
+            "state" : "translated",
+            "value" : "Accéder aux paramètres d'effacement des données"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Apri Impostazioni cancellazione dati"
+            "state" : "translated",
+            "value" : "Vai a Impostazioni cancellazione dati"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Instellingen voor het wissen van open gegevens"
+            "state" : "translated",
+            "value" : "Ga naar Instellingen voor het wissen van gegevens"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Otwórz ustawienia czyszczenia danych"
+            "state" : "translated",
+            "value" : "Przejdź do ustawień czyszczenia danych"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Abrir Definições de limpeza de dados"
+            "state" : "translated",
+            "value" : "Aceder a Definições de limpeza de dados"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Открыть настройки очистки данных"
           }
         }
@@ -75326,10 +76058,58 @@
       "comment" : "Button in Data Clearing Settings. It navigates user to Startup Settings.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gehe zu den Starteinstellungen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Go to Startup Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ve a la configuración de inicio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accéder aux paramètres de démarrage"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vai a Impostazioni di avvio"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ga naar Opstartinstellingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przejdź do ustawień uruchamiania"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aceder a Definições de arranque"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть настройки запуска"
           }
         }
       }

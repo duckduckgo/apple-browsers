@@ -54,6 +54,7 @@ final class MainCoordinator {
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let featureFlagger: FeatureFlagger
     private let defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
+    private let launchSourceManager: LaunchSourceManaging
 
     init(syncService: SyncService,
          bookmarksDatabase: CoreDataDatabase,
@@ -75,7 +76,8 @@ final class MainCoordinator {
          defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          daxDialogsManager: DaxDialogsManaging,
-         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
+         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
+         launchSourceManager: LaunchSourceManaging
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -96,6 +98,8 @@ final class MainCoordinator {
         let textZoomCoordinator = Self.makeTextZoomCoordinator()
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
         interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
+        self.launchSourceManager = launchSourceManager
+
         tabManager = TabManager(model: tabsModel,
                                 persistence: tabsPersistence,
                                 previewsSource: previewsSource,
@@ -146,7 +150,8 @@ final class MainCoordinator {
                                         customConfigurationURLProvider: customConfigurationURLProvider,
                                         systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                         daxDialogsManager: daxDialogsManager,
-                                        dbpIOSPublicInterface: dbpIOSPublicInterface)
+                                        dbpIOSPublicInterface: dbpIOSPublicInterface,
+                                        launchSourceManager: launchSourceManager)
     }
 
     func start() {

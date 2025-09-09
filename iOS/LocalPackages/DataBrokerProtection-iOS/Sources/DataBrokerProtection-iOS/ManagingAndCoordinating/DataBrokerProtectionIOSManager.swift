@@ -219,7 +219,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
     }
     
     public func getAllBrokerProfileQueryData() throws -> [DataBrokerProtectionCore.BrokerProfileQueryData] {
-        try database.fetchAllBrokerProfileQueryData()
+        try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
     }
 
     public func getAllAttempts() throws -> [AttemptInformation] {

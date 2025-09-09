@@ -30,6 +30,7 @@ final class VPNService: NSObject {
     private let tunnelDefaults = UserDefaults.networkProtectionGroupDefaults
     private let vpnFeatureVisibility: DefaultNetworkProtectionVisibility = AppDependencyProvider.shared.vpnFeatureVisibility
     private let tipKitAppEventsHandler = TipKitAppEventHandler()
+    private let notificationServiceManager: NotificationServiceManaging
 
     private let mainCoordinator: MainCoordinator
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
@@ -37,13 +38,17 @@ final class VPNService: NSObject {
     init(mainCoordinator: MainCoordinator,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
          application: UIApplication = UIApplication.shared,
-         notificationCenter: UNUserNotificationCenter = .current()) {
+         notificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
+         notificationServiceManager: NotificationServiceManaging,
+    ) {
         self.mainCoordinator = mainCoordinator
         self.subscriptionManager = subscriptionManager
         self.application = application
+        self.notificationServiceManager = notificationServiceManager
+        
+        notificationCenter.delegate = notificationServiceManager
+        
         super.init()
-
-        notificationCenter.delegate = self
 
         widgetRefreshModel.beginObservingVPNStatus()
         tipKitAppEventsHandler.appDidFinishLaunching()
@@ -128,30 +133,6 @@ final class VPNService: NSObject {
                                       icon: UIApplicationShortcutIcon(templateImageName: "VPN-16"),
                                       userInfo: nil)
         ]
-    }
-
-}
-
-extension VPNService: UNUserNotificationCenterDelegate {
-
-    func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                willPresent notification: UNNotification,
-                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        completionHandler(.banner)
-    }
-
-    @MainActor
-    func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                didReceive response: UNNotificationResponse,
-                                withCompletionHandler completionHandler: @escaping () -> Void) {
-        if response.actionIdentifier == UNNotificationDefaultActionIdentifier {
-            let identifier = response.notification.request.identifier
-
-            if NetworkProtectionNotificationIdentifier(rawValue: identifier) != nil {
-                mainCoordinator.presentNetworkProtectionStatusSettingsModal()
-            }
-        }
-        completionHandler()
     }
 
 }

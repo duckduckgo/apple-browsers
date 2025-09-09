@@ -22,6 +22,7 @@ struct AppDependencies {
     let mainCoordinator: MainCoordinator
     let services: AppServices
     let launchTaskManager: LaunchTaskManager
+    let launchSourceManager: LaunchSourceManaging
 
 }
 
@@ -44,6 +45,7 @@ struct AppServices {
     let keyValueFileStoreService: AppKeyValueFileStoreService
     let defaultBrowserPromptService: DefaultBrowserPromptService
     let systemSettingsPiPTutorialService: SystemSettingsPiPTutorialService
+    let inactivityNotificationSchedulerService: InactivityNotificationSchedulerService
     let widePixelService: WidePixelService
 
 }

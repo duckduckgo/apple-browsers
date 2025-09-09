@@ -1,9 +1,11 @@
-At DuckDuckGo, we believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people choose DuckDuckGo over Chrome and other browsers  to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from privacy-respecting search ads, not by exploiting your data. Take back control of your personal information with the browser designed for data protection, not data collection. 
+At DuckDuckGo, we believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people choose DuckDuckGo over Chrome and other browsers to search and browse online. Our built-in search engine is like Google but never tracks your searches. Our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. While our optional integrated AI features, Search Assist and Duck.ai, are private and never use your data to train AI. Oh, and our browser is free — we make money from privacy-respecting search ads, not by exploiting your data. Take back control of your personal information with the browser designed for data protection, not data collection.  
 
 FEATURE HIGHLIGHTS 
 Protect Your Searches by Default: DuckDuckGo Search comes built-in, so you can easily search online without being tracked.  
 
 Shield Your Browsing History: Our 3rd-Party Tracker Loading Protection blocks most trackers before they load, greatly exceeding what most popular browsers offer by default.  
+
+Chat Privately with AI: Duck.ai lets you have private conversations with 3rd-party AI models, anonymized by us and never used to train AI. 
 
 Secure Your Email (Optional): Use Email Protection to block most email trackers and hide your existing email address with @duck.com addresses.   
 
@@ -21,19 +23,19 @@ Banish cookie pop-ups and automatically set your preferences to minimize cookies
 
 And many more protections not available on most browsers, even in private browsing mode, including protection from link tracking, Global Privacy Control (GPC), and more. 
 
-PRIVACY PRO   
-Subscribe to Privacy Pro for:   
+DUCKDUCKGO SUBSCRIPTION
+Subscribers get
 
 •	Our VPN: Secure your connection on up to 5 devices.     
+
+• 	Access to advanced AI models in Duck.ai: Chat privately with AI models built for complex tasks. 
 
 •	Personal Information Removal: Find and remove personal info from sites that store and sell it (access on desktop).   
 
 •	Identity Theft Restoration: If your identity is stolen, we’ll help restore it.   
 
-Privacy Pro Pricing & Terms   
-Payment will be charged automatically to your iTunes account until you cancel, which you can do in app settings. You have the option to provide an email address to activate your subscription on other devices, and we will only use that email address to verify your subscription. For terms of service and privacy policy, visit https://duckduckgo.com/pro/privacy-terms 
-
-You don't need to wait to take control of your personal information! Join the millions of people using DuckDuckGo to protect their everyday searching, browsing, and emailing.  
+DuckDuckGo Subscription Pricing & Terms   
+Payment will be charged automatically to your Apple Account until you cancel, which you can do in app settings. You have the option to provide an email address to activate your subscription on other devices, and we will only use that email address to verify your subscription. For terms of service and privacy policy, visit https://duckduckgo.com/pro/privacy-terms 
 
 Read more about our free Tracking Protections at https://help.duckduckgo.com/privacy/web-tracking-protections 
 

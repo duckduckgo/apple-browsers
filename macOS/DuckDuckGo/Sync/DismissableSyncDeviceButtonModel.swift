@@ -22,10 +22,11 @@ import AppKit
 import DDGSync
 import FeatureFlags
 import BrowserServicesKit
+import PixelKit
 
 @MainActor
 public final class DismissableSyncDeviceButtonModel: ObservableObject {
-    enum SyncDevicePromoSource: CaseIterable {
+    enum DismissableSyncDevicePromoSource: CaseIterable {
         case bookmarksBar
         case bookmarkAdded
 
@@ -73,6 +74,15 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
                 return .max
             }
         }
+
+        var pixelSource: SyncDeviceButtonTouchpoint {
+            switch self {
+            case .bookmarksBar:
+                return SyncDeviceButtonTouchpoint.bookmarksBar
+            case .bookmarkAdded:
+                return SyncDeviceButtonTouchpoint.bookmarkAdded
+            }
+        }
     }
 
     @Published var shouldShowSyncButton: Bool = false
@@ -80,6 +90,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
     private var authState: SyncAuthState = .initializing {
         didSet {
             guard
+                featureFlagger.isNewSyncEntryPointsFeatureOn,
                 case .inactive = authState,
                 !wasDimissed,
                 !wasPresentationCountLimitReached,
@@ -91,12 +102,13 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         }
     }
 
-    private let source: SyncDevicePromoSource
+    private let source: DismissableSyncDevicePromoSource
     private let keyValueStore: KeyValueStoring
     private let syncLauncher: SyncDeviceFlowLaunching?
     private let featureFlagger: FeatureFlagger
 
     private var cancellables: Set<AnyCancellable> = []
+    private var hasFiredImpressionPixel = false
 
     private var wasDimissed: Bool {
         guard let wasDismissed = keyValueStore.object(forKey: source.wasDismissedKey) as? Bool else {
@@ -128,9 +140,10 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
     }
 
     init(
-        source: SyncDevicePromoSource,
+        source: DismissableSyncDevicePromoSource,
         keyValueStore: KeyValueStoring,
         authStatePublisher: AnyPublisher<SyncAuthState, Never>,
+        initialAuthState: SyncAuthState,
         syncLauncher: SyncDeviceFlowLaunching?,
         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
     ) {
@@ -138,6 +151,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         self.keyValueStore = keyValueStore
         self.syncLauncher = syncLauncher
         self.featureFlagger = featureFlagger
+        self.authState = initialAuthState
         authStatePublisher
             .receive(on: DispatchQueue.main)
             .assign(to: \.authState, onWeaklyHeld: self)
@@ -156,20 +170,26 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
             shouldShowSyncButton = false
             return
         }
+        if !hasFiredImpressionPixel {
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed.withoutMacPrefix, withAdditionalParameters: ["source": source.pixelSource.rawValue])
+            hasFiredImpressionPixel = true
+        }
         shouldShowSyncButton = true
     }
 
     func syncButtonAction() {
-        syncLauncher?.startDeviceSyncFlow(completion: nil)
+        syncLauncher?.startDeviceSyncFlow(source: source.pixelSource, completion: nil)
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.pixelSource.rawValue])
     }
 
     func dismissSyncButtonAction() {
         shouldShowSyncButton = false
         keyValueStore.set(true, forKey: source.wasDismissedKey)
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDismissed.withoutMacPrefix, withAdditionalParameters: ["source": source.pixelSource.rawValue])
     }
 
     static func resetAllState(from keyValueStore: KeyValueStoring) {
-        for source in SyncDevicePromoSource.allCases {
+        for source in DismissableSyncDevicePromoSource.allCases {
             keyValueStore.removeObject(forKey: source.wasDismissedKey)
             if let dateKey = source.promoFirstPresentedDateKey {
                 keyValueStore.removeObject(forKey: dateKey)
@@ -206,22 +226,19 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
 }
 
 extension DismissableSyncDeviceButtonModel {
-    convenience init(source: SyncDevicePromoSource, keyValueStore: KeyValueStoring) {
+    convenience init(source: DismissableSyncDevicePromoSource, keyValueStore: KeyValueStoring) {
         let authStatePublisher: AnyPublisher<SyncAuthState, Never>
         let syncLauncher: SyncDeviceFlowLaunching?
-        if let syncService = NSApp.delegateTyped.syncService, let syncPausedStateManager = NSApp.delegateTyped.syncDataProviders?.syncErrorHandler{
+        let initialAuthState: SyncAuthState
+        if let syncService = NSApp.delegateTyped.syncService, let syncPausedStateManager = NSApp.delegateTyped.syncDataProviders?.syncErrorHandler {
             authStatePublisher = syncService.authStatePublisher
             syncLauncher = DeviceSyncCoordinator(syncService: syncService, syncPausedStateManager: syncPausedStateManager)
+            initialAuthState = syncService.authState
         } else {
             authStatePublisher = Just<SyncAuthState>(.initializing).eraseToAnyPublisher()
             syncLauncher = nil
+            initialAuthState = .initializing
         }
-        self.init(source: source, keyValueStore: keyValueStore, authStatePublisher: authStatePublisher, syncLauncher: syncLauncher)
-    }
-}
-
-fileprivate extension FeatureFlagger {
-    var isNewSyncEntryPointsFeatureOn: Bool {
-        isFeatureOn(.newSyncEntryPoints) && isFeatureOn(.refactorOfSyncPreferences)
+        self.init(source: source, keyValueStore: keyValueStore, authStatePublisher: authStatePublisher, initialAuthState: initialAuthState, syncLauncher: syncLauncher)
     }
 }

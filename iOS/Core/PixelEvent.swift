@@ -51,6 +51,10 @@ extension Pixel {
         case keyboardGoWhileOnNTP
         case keyboardGoWhileOnWebsite
         case keyboardGoWhileOnSERP
+        
+        case keyboardSettingsOnNewTabEnabledDaily
+        case keyboardSettingsOnAppLaunchEnabledDaily
+        case keyboardOnAppLaunchUsedDaily
 
         case forgetAllPressedBrowsing
         case forgetAllPressedTabSwitching
@@ -139,7 +143,6 @@ extension Pixel {
         case browsingMenuShare
         case browsingMenuCopy
         case browsingMenuPrint
-        case browsingMenuReload
         case browsingMenuListPrint
         case browsingMenuFindInPage
         case browsingMenuZoom
@@ -150,6 +153,7 @@ extension Pixel {
         case browsingMenuAutofill
         case browsingMenuAIChatNewTabPage
         case browsingMenuAIChatWebPage
+        case browsingMenuRefreshPage
 
         case addressBarShare
         case addressBarSettings
@@ -786,6 +790,20 @@ extension Pixel {
         case debugBookmarksStructureNotRecovered
         case debugBookmarksInvalidRoots
         case debugBookmarksValidationFailed
+        case debugBookmarksStructureLostAfterCrash
+        case debugBookmarksSyncAttemptedToDeleteRoot
+
+        case debugBookmarksNoDBSchemeFound
+        case debugBookmarksUnableToLoadPersistentStores
+        case debugBookmarksErrorCreatingTopLevelBookmarksFolder
+        case debugBookmarksErrorCreatingTopLevelFavoritesFolder
+        case debugBookmarksCouldNotFixBookmarkFolder
+        case debugBookmarksCouldNotFixFavoriteFolder
+        case debugBookmarksCouldNotPrepareDBStructure
+        case debugBookmarksCouldNotWriteToDB
+        case debugBookmarksCouldNotGetFavoritesOrder
+        case debugBookmarksCouldNotPrepareDatabase
+        case debugBookmarksTopFolderSaveFailed
 
         case debugBookmarksPendingDeletionFixed
         case debugBookmarksPendingDeletionRepairError
@@ -1134,6 +1152,8 @@ extension Pixel {
         case settingsNextStepsAddAppToDock
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
+        case settingsRefreshButtonPositionAddressBar
+        case settingsRefreshButtonPositionMenu
 
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210619010364082)
         case settingsOpenAssistSettings
@@ -1281,9 +1301,23 @@ extension Pixel {
         case aiChatExperimentalOmnibarQuerySubmitted
         case aiChatExperimentalOmnibarModeSwitched
         case aiChatExperimentalOmnibarSessionBothModes
+        case aiChatExperimentalOmnibarFirstSettingsViewed
+        case aiChatExperimentalOmnibarFirstEnabled
+        case aiChatExperimentalOmnibarFirstInteraction
+        case aiChatExperimentalOmnibarFirstSearchSubmission
+        case aiChatExperimentalOmnibarFirstPromptSubmission
+        case aiChatExperimentalOmnibarFullConversionUser
+        case aiChatExperimentalOmnibarTextAreaFocused
+        case aiChatExperimentalOmnibarClearButtonPressed
+        case aiChatExperimentalOmnibarBackButtonPressed
+        case aiChatExperimentalOmnibarKeyboardGoPressed
+        case aiChatExperimentalOmnibarFloatingSubmitPressed
+        case aiChatExperimentalOmnibarFloatingReturnPressed
+        case aiChatExperimentalOmnibarSessionSummary
         case aiChatLegacyOmnibarShown
         case aiChatLegacyOmnibarQuerySubmitted
         case aiChatLegacyOmnibarAichatButtonPressed
+        case aiChatLegacyOmnibarBackButtonPressed
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1343,6 +1377,9 @@ extension Pixel {
         case systemSettingsPiPTutorialFailedToLoadVideo
 
         case appDidTerminateWithUnhandledError
+        
+        // MARK: - Push Notifications
+        case inactiveUserProvisionalPushNotificationTapped
     }
 
 }
@@ -1367,6 +1404,10 @@ extension Pixel.Event {
         case .keyboardGoWhileOnNTP: return "m_keyboard_go_click_ntp"
         case .keyboardGoWhileOnWebsite: return "m_keyboard_go_click_website"
         case .keyboardGoWhileOnSERP: return "m_keyboard_go_click_serp"
+        
+        case .keyboardSettingsOnNewTabEnabledDaily: return "m_keyboard_settings_on_new_tab_enabled"
+        case .keyboardSettingsOnAppLaunchEnabledDaily: return "m_keyboard_settings_on_app_launch_enabled"
+        case .keyboardOnAppLaunchUsedDaily: return "m_keyboard_on_app_launch_used"
 
         case .forgetAllPressedBrowsing: return "mf_bp"
         case .forgetAllPressedTabSwitching: return "mf_tp"
@@ -1426,6 +1467,9 @@ extension Pixel.Event {
         case .settingsNextStepsAddWidget: return "m_settings_next_steps_add_widget"
         case .settingsMoreSearchSettings: return "m_settings_more_search_settings"
         case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
+        case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
+        case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
+            
 
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
@@ -1438,7 +1482,6 @@ extension Pixel.Event {
         case .browsingMenuToggleBrowsingMode: return "mb_dm"
         case .browsingMenuCopy: return "mb_cp"
         case .browsingMenuPrint: return "mb_pr"
-        case .browsingMenuReload: return "m_nav_menu_reload"
 
         case .browsingMenuFindInPage: return "mb_fp"
         case .browsingMenuZoom: return "m_menu_page_zoom_taps"
@@ -1447,6 +1490,7 @@ extension Pixel.Event {
         case .browsingMenuReportBrokenSite: return "mb_rb"
         case .browsingMenuFireproof: return "mb_f"
         case .browsingMenuAutofill: return "m_nav_autofill_menu_item_pressed"
+        case .browsingMenuRefreshPage: return "m_menu_refresh_page"
             
         case .browsingMenuShare: return "m_browsingmenu_share"
         case .browsingMenuListPrint: return "m_browsing_menu_list_print"
@@ -2023,6 +2067,20 @@ extension Pixel.Event {
         case .debugBookmarksStructureNotRecovered: return "m_d_bookmarks_structure_not_recovered"
         case .debugBookmarksInvalidRoots: return "m_d_bookmarks_invalid_roots"
         case .debugBookmarksValidationFailed: return "m_d_bookmarks_validation_failed"
+        case .debugBookmarksStructureLostAfterCrash: return "m_debug_bookmarks_structure_lost_after_crash"
+        case .debugBookmarksSyncAttemptedToDeleteRoot: return "m_debug_bookmarks_sync_attempted_to_delete_root"
+        
+        case .debugBookmarksNoDBSchemeFound: return "m_debug_bookmarks_no_db_scheme_found"
+        case .debugBookmarksUnableToLoadPersistentStores: return "m_debug_bookmarks_unable_to_load_persistent_stores"
+        case .debugBookmarksErrorCreatingTopLevelBookmarksFolder: return "m_debug_bookmarks_error_creating_top_level_bookmarks_folder"
+        case .debugBookmarksErrorCreatingTopLevelFavoritesFolder: return "m_debug_bookmarks_error_creating_top_level_favorites_folder"
+        case .debugBookmarksCouldNotFixBookmarkFolder: return "m_debug_bookmarks_could_not_fix_bookmark_folder"
+        case .debugBookmarksCouldNotFixFavoriteFolder: return "m_debug_bookmarks_could_not_fix_favorite_folder"
+        case .debugBookmarksCouldNotPrepareDBStructure: return "m_debug_bookmarks_could_not_prepare_db_structure"
+        case .debugBookmarksCouldNotWriteToDB: return "m_debug_bookmarks_could_not_write_to_db"
+        case .debugBookmarksCouldNotGetFavoritesOrder: return "m_debug_bookmarks_could_not_get_favorites_order"
+        case .debugBookmarksCouldNotPrepareDatabase: return "m_debug_bookmarks_could_not_prepare_database"
+        case .debugBookmarksTopFolderSaveFailed: return "m_debug_bookmarks_top_folder_save_failed"
 
         case .debugBookmarksPendingDeletionFixed: return "m_debug_bookmarks_pending_deletion_fixed"
         case .debugBookmarksPendingDeletionRepairError: return "m_debug_bookmarks_pending_deletion_repair_error"
@@ -2506,9 +2564,23 @@ extension Pixel.Event {
         case .aiChatExperimentalOmnibarQuerySubmitted: return "m_aichat_experimental_omnibar_query_submitted"
         case .aiChatExperimentalOmnibarModeSwitched: return "m_aichat_experimental_omnibar_mode_switched"
         case .aiChatExperimentalOmnibarSessionBothModes: return "m_aichat_experimental_omnibar_session_both_modes"
+        case .aiChatExperimentalOmnibarFirstSettingsViewed: return "m_aichat_experimental_omnibar_first_settings_viewed"
+        case .aiChatExperimentalOmnibarFirstEnabled: return "m_aichat_experimental_omnibar_first_enabled"
+        case .aiChatExperimentalOmnibarFirstInteraction: return "m_aichat_experimental_omnibar_first_interaction"
+        case .aiChatExperimentalOmnibarFirstSearchSubmission: return "m_aichat_experimental_omnibar_first_search_submission"
+        case .aiChatExperimentalOmnibarFirstPromptSubmission: return "m_aichat_experimental_omnibar_first_prompt_submission"
+        case .aiChatExperimentalOmnibarFullConversionUser: return "m_aichat_experimental_omnibar_full_conversion_user"
+        case .aiChatExperimentalOmnibarTextAreaFocused: return "m_aichat_experimental_omnibar_text_area_focused"
+        case .aiChatExperimentalOmnibarClearButtonPressed: return "m_aichat_experimental_omnibar_clear_button_pressed"
+        case .aiChatExperimentalOmnibarBackButtonPressed: return "m_aichat_experimental_omnibar_back_button_pressed"
+        case .aiChatExperimentalOmnibarKeyboardGoPressed: return "m_aichat_experimental_omnibar_keyboard_go_pressed"
+        case .aiChatExperimentalOmnibarFloatingSubmitPressed: return "m_aichat_experimental_omnibar_floating_submit_pressed"
+        case .aiChatExperimentalOmnibarFloatingReturnPressed: return "m_aichat_experimental_omnibar_floating_return_pressed"
+        case .aiChatExperimentalOmnibarSessionSummary: return "m_aichat_experimental_omnibar_session_summary"
         case .aiChatLegacyOmnibarShown: return "m_aichat_legacy_omnibar_shown"
         case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
         case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"
+        case .aiChatLegacyOmnibarBackButtonPressed: return "m_aichat_legacy_omnibar_back_button_pressed"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"
@@ -2617,6 +2689,9 @@ extension Pixel.Event {
         case .systemSettingsPiPTutorialFailedToLoadVideo: return "m_picture-in-picture-tutorial_failed-to-load-video"
 
         case .appDidTerminateWithUnhandledError: return "m_app-did-terminate-with-unhandled-error"
+            
+        // MARK: Push Notification
+        case .inactiveUserProvisionalPushNotificationTapped: return "m_push-notification_local-provisional_inactive-user-tap"
         }
     }
 }

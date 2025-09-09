@@ -70,7 +70,7 @@ extension Preferences {
 
                     PreferencePaneSection(UserText.aiChatShortcutsSectionTitle,
                                           spacing: 6) {
-                        ToggleMenuItem(UserText.aiChatShowOnNewTabPageBarToggle,
+                        ToggleMenuItem(UserText.aiChatShowInSearchBoxOnNewTabPageBarToggle,
                                        isOn: $model.showShortcutOnNewTabPage)
                         .accessibilityIdentifier("Preferences.AIChat.showOnNewTabPageToggle")
                         .onChange(of: model.showShortcutOnNewTabPage) { newValue in
@@ -127,6 +127,14 @@ extension Preferences {
                             }
                             .disabled(!model.showShortcutInAddressBar)
                             .padding(.leading, 19)
+
+                            if model.shouldShowPageContextToggle {
+                                ToggleMenuItem("Send page context to the sidebar",
+                                               isOn: $model.isPageContextEnabled)
+                                .accessibilityIdentifier("Preferences.AIChat.isPageContextEnabledToggle")
+                                .disabled(!model.showShortcutInAddressBar || !model.openAIChatInSidebar)
+                                .padding(.leading, 19)
+                            }
                         }
                     }
                     .visibility(model.shouldShowAIFeatures ? .visible : .gone)
@@ -214,6 +222,12 @@ extension Preferences {
                                 PixelKit.fire(AIChatPixel.aiChatSidebarSettingChanged,
                                               frequency: .uniqueByName,
                                               includeAppVersionParameter: true)
+                            }
+
+                            if model.shouldShowPageContextToggle {
+                                ToggleMenuItem("Send page context to the sidebar",
+                                               isOn: $model.isPageContextEnabled)
+                                .accessibilityIdentifier("Preferences.AIChat.isPageContextEnabledToggle")
                             }
                         }
                     }

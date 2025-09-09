@@ -44,7 +44,9 @@ extension XCUIApplication {
         static let mainMenuUnpinTabMenuItem = "Unpin Tab"
         static let preferencesMenuItem = "MainMenu.preferencesMenuItem"
 
+        static let settingsScrollView = "Settings.ScrollView"
         static let preferencesGeneralButton = "PreferencesSidebar.generalButton"
+        static let preferencesDataClearingButton = "PreferencesSidebar.dataClearingButton"
         static let switchToNewTabWhenOpenedCheckbox = "PreferencesGeneralView.switchToNewTabWhenOpened"
         static let alwaysAskWhereToSaveFilesCheckbox = "PreferencesGeneralView.alwaysAskWhereToSaveFiles"
         static let openPopupOnDownloadCompletionCheckbox = "PreferencesGeneralView.openPopupOnDownloadCompletion"
@@ -53,6 +55,12 @@ extension XCUIApplication {
 
         static let addBookmarkFolderDropdown = "bookmark.add.folder.dropdown"
 
+        static let reopenAllWindowsFromLastSession = "PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"
+        static let startupTypeOpenANewWindow = "PreferencesGeneralView.stateRestorePicker.openANewWindow"
+        static let startupWindowTypeRegularWindow = "PreferencesGeneralView.stateRestorePicker.openANewWindow.regular"
+        static let startupWindowTypeFireWindow = "PreferencesGeneralView.stateRestorePicker.openANewWindow.fireWindow"
+
+        static let openFireWindowByDefaultCheckbox = "PreferencesDataClearingView.openFireWindowByDefault"
     }
 
     static func setUp(environment: [String: String]? = nil, featureFlags: [String: Bool] = ["visualUpdates": true]) -> XCUIApplication {
@@ -153,6 +161,20 @@ extension XCUIApplication {
     /// Opens downloads
     func openDownloads() {
         typeKey("j", modifierFlags: .command)
+    }
+
+    func openSite(pageTitle: String) {
+        let url = UITests.simpleServedPage(titled: pageTitle)
+        let addressBar = addressBar
+        XCTAssertTrue(
+            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The address bar text field didn't become available in a reasonable timeframe."
+        )
+        addressBar.typeURL(url)
+        XCTAssertTrue(
+            windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Visited site didn't load with the expected title in a reasonable timeframe."
+        )
     }
 
     // MARK: - Bookmarks
@@ -318,25 +340,68 @@ extension XCUIApplication {
         if general.waitForExistence(timeout: UITests.Timeouts.elementExistence) { general.click() }
     }
 
-    /// Sets startup behavior to reopen all windows from last session (or not)
-    func preferencesSetRestorePreviousSession(enabled: Bool) {
+    /// Selects the Data Clearing pane in Preferences
+    func preferencesGoToDataClearingPane() {
         let prefs = preferencesWindow
-        preferencesGoToGeneralPane()
-        preferencesSetRestorePreviousSession(enabled: enabled, in: prefs)
+        let dataClearing = prefs.buttons[AccessibilityIdentifiers.preferencesDataClearingButton]
+        if dataClearing.waitForExistence(timeout: UITests.Timeouts.elementExistence) { dataClearing.click() }
     }
 
-    func preferencesSetRestorePreviousSession(enabled: Bool, in prefs: XCUIElement) {
-        let reopen = prefs.radioButtons["PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"].firstMatch
-        let openNew = prefs.radioButtons["PreferencesGeneralView.stateRestorePicker.openANewWindow"].firstMatch
-        if enabled {
-            ensureHittable(reopen)
-            XCTAssertTrue(reopen.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Reopen last session radio button should exist")
-            if reopen.isSelected == false { reopen.click() }
-        } else {
-            ensureHittable(openNew)
-            XCTAssertTrue(openNew.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Open new window radio button should exist")
-            if openNew.isSelected == false { openNew.click() }
+    enum StartupType: String, CaseIterable {
+        case restoreLastSession
+        case newWindow
+        case fireWindow
+    }
+
+    /// Sets startup behavior to reopen all windows from last session (or not)
+    func preferencesSetRestorePreviousSession(to state: StartupType) {
+        let prefs = preferencesWindow
+        preferencesGoToGeneralPane()
+        preferencesSetRestorePreviousSession(to: state, in: prefs)
+    }
+
+    func preferencesSetRestorePreviousSession(to state: StartupType, in prefs: XCUIElement) {
+        var radioButton: XCUIElement
+        var picker: XCUIElement?
+        var switchKey: XCUIKeyboardKey?
+        switch state {
+        case .restoreLastSession:
+            radioButton = prefs.radioButtons[AccessibilityIdentifiers.reopenAllWindowsFromLastSession]
+        case .fireWindow:
+            radioButton = prefs.radioButtons[AccessibilityIdentifiers.startupWindowTypeFireWindow]
+            picker = prefs.radioButtons[AccessibilityIdentifiers.startupWindowTypeRegularWindow]
+            switchKey = .downArrow
+        case .newWindow:
+            radioButton = prefs.radioButtons[AccessibilityIdentifiers.startupWindowTypeRegularWindow]
+            picker = prefs.radioButtons[AccessibilityIdentifiers.startupWindowTypeFireWindow]
+            switchKey = .upArrow
+            if !radioButton.exists && !picker!.exists {
+                radioButton = prefs.radioButtons[AccessibilityIdentifiers.startupTypeOpenANewWindow]
+            }
         }
+
+        if !radioButton.exists, let picker, let switchKey {
+            ensureHittable(picker)
+            if picker.isSelected == false {
+                picker.click()
+            }
+
+            picker.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).click()
+            typeKey(switchKey, modifierFlags: [])
+            typeKey(.enter, modifierFlags: [])
+
+            XCTAssertTrue(radioButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Selected menu item did not appear in reasonable time")
+            XCTAssertTrue(radioButton.isSelected)
+
+        } else if radioButton.isSelected == false {
+            ensureHittable(radioButton)
+            radioButton.click()
+        }
+    }
+
+    func setOpenFireWindowByDefault(enabled: Bool) {
+        let checkbox = checkBoxes[AccessibilityIdentifiers.openFireWindowByDefaultCheckbox]
+        checkbox.toggleCheckboxIfNeeded(to: enabled, ensureHittable: self.ensureHittable)
     }
 
     /// Sets the "Always ask where to save files" toggle to a specific state
@@ -358,7 +423,7 @@ extension XCUIApplication {
     }
 
     func ensureHittable(_ element: XCUIElement) {
-        let scrollView = preferencesWindow.scrollViews.containing(.checkBox, where: NSPredicate(value: true)).firstMatch
+        let scrollView = preferencesWindow.scrollViews[AccessibilityIdentifiers.settingsScrollView]
 
         if !element.isHittable {
             // Get the element's frame and scroll view's frame

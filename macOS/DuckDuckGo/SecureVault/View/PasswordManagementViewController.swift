@@ -354,7 +354,9 @@ final class PasswordManagementViewController: NSViewController {
 
     @IBAction func onSyncClicked(_ sender: Any) {
         self.dismiss()
-        DeviceSyncCoordinator()?.startDeviceSyncFlow(completion: nil)
+        let source = SyncDeviceButtonTouchpoint.passwordsEmpty
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+        DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
     }
 
     @IBAction func onDeleteAllPasswordsClicked(_ sender: Any) {

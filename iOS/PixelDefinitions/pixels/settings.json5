@@ -1,0 +1,16 @@
+{
+    m_settings_refresh_button_position_address_bar: {
+        description: 'Fires when the user sets the refresh button position to the address bar in settings',
+        owners: ['pikorddg'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+    m_settings_refresh_button_position_menu: {
+        description: 'Fires when the user sets the refresh button position to the menu in settings',
+        owners: ['pikorddg'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+}

@@ -226,6 +226,11 @@ struct AllFeatureFlagsEnabledMatchingAttribute: ArrayContainsAllMatching {
     var fallback: Bool?
 }
 
+struct SyncEnabledMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
 struct UnknownMatchingAttribute: MatchingAttribute, Equatable {
     var fallback: Bool?
 

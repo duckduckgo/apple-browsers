@@ -477,6 +477,7 @@ struct UserText {
     // Misc
 
     static let aiChatShowOnNewTabPageBarToggle = NSLocalizedString("duckai.show-on-new-tab-page.toggle", value: "Show on New Tab Page", comment: "A checkbox to control AI Chat shortcut visibility on the New Tab Page")
+    static let aiChatShowInSearchBoxOnNewTabPageBarToggle = NSLocalizedString("duckai.show-in-search-box-on-new-tab-page.toggle", value: "Show in Search box on New Tab Page", comment: "A checkbox to control AI Chat shortcut visibility in a search box on the New Tab Page")
     static let aiChatShowInAddressBarToggle = NSLocalizedString("duckai.show-in-address-bar.toggle", value: "Show Duck.ai shortcut in the address bar", comment: "Show AI Chat in the address bar")
     static let aiChatShowInApplicationMenuToggle = NSLocalizedString("duckai.show-in-application-menu.toggle-setting", value: "Show Duck.ai shortcuts in menus", comment: "Show Duck.ai in application menus")
     static let aiChatOpenInSidebarToggle = NSLocalizedString("duckai.open-in-sidebar.toggle-setting", value: "Open Duck.ai in the sidebar", comment: "Settings option to open Duck.ai in the sidebar")
@@ -558,6 +559,7 @@ struct UserText {
     static let autofillPasswordManager = NSLocalizedString("autofill.password-manager", value: "Password Manager", comment: "Autofill settings section title")
     static let autofillPasswordManagerDuckDuckGo = NSLocalizedString("autofill.password-manager.duckduckgo", value: "DuckDuckGo built-in password manager", comment: "Autofill password manager row title")
     static let autofillPasswordManagerBitwarden = NSLocalizedString("autofill.password-manager.bitwarden", value: "Bitwarden", comment: "Autofill password manager row title")
+    static let autofillPasswordManagerBitwardenExtension = NSLocalizedString("autofill.password-manager.bitwarden.extension", value: "Bitwarden Extension", comment: "Autofill password manager row title")
     static let autofillPasswordManagerBitwardenDisclaimer = NSLocalizedString("autofill.password-manager.bitwarden.disclaimer", value: "Setup requires installing the Bitwarden app.", comment: "Autofill password manager Bitwarden disclaimer")
     static let restartBitwarden = NSLocalizedString("restart.bitwarden", value: "Restart Bitwarden", comment: "Button to restart Bitwarden application")
     static let restartBitwardenInfo = NSLocalizedString("restart.bitwarden.info", value: "Bitwarden is not responding. Please restart it to initiate the communication again", comment: "This string represents a message informing the user that Bitwarden is not responding and prompts them to restart the application to initiate communication again.")
@@ -1477,6 +1479,7 @@ struct UserText {
     // Favorites
     static let newTabFavoriteSectionTitle = NSLocalizedString("newTab.favorites.section.title", value: "Favorites", comment: "Title of the Favorites section in the home page")
     static let newTabOmnibarSectionTitle = NSLocalizedString("newTab.favorites.section.omnibar", value: "Search", comment: "Title of the Search section in the home page")
+    static let newTabAIChatSectionTitle = NSLocalizedString("newTab.aichat.section.title", value: "Duck.ai", comment: "Title of the Duck.ai section in the home page")
 
     // Set Up
     static let newTabSetUpDefaultBrowserCardTitle = NSLocalizedString("newTab.setup.default.browser.title", value: "Default to Privacy", comment: "Title of the Default Browser card of the Set Up section in the home page")
@@ -1575,6 +1578,22 @@ struct UserText {
     static let crashReportTextFieldTitle = NSLocalizedString("crash-report.textfield.title", value: "Problem Details", comment: "Title of the text field where the problems that caused the crashed are detailed")
     static let crashReportSendButton = NSLocalizedString("crash-report.send-button", value: "Send to DuckDuckGo", comment: "Button the user can press to send the crash report to DuckDuckGo")
     static let crashReportDontSendButton = NSLocalizedString("crash-report.dont-send-button", value: "Don’t Send", comment: "Button the user can press to not send the crash report")
+
+    // MARK: Post-Crash Session Restore Prompt
+    static let sessionRestorePromptTitle = NSLocalizedString("session.restore.prompt.title", value: "The browser didn’t quit as expected", comment: "Title of the prompt where the user can choose to restore the previous browser session after a crash")
+    static let sessionRestorePromptMessage = NSLocalizedString("session.restore.prompt.message", value: "Would you like to restore tabs from your previous session?", comment: "Message of the prompt where the user can choose to restore the previous browser session after a crash")
+    static let sessionRestorePromptExplanation: String = {
+        let localized = {
+            if #available(macOS 12, *) {
+                NSLocalizedString("session.restore.prompt.explanation.markdown", value: "You can also do this later from **%1$@** → **%2$@**.", comment: "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session. Please make sure to keep **%1$@** and **%2$@** intact.")
+            } else {
+                NSLocalizedString("session.restore.prompt.explanation", value: "You can also do this later from %1$@ → %2$@.", comment: "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session.")
+            }
+        }()
+        return String(format: localized, mainMenuHistory, mainMenuHistoryReopenAllWindowsFromLastSession)
+    }()
+    static let sessionRestorePromptButtonAccept = NSLocalizedString("session.restore.prompt.button.accept", value: "Restore Session", comment: "Button the user can press to restore the previous browser session after a crash")
+    static let sessionRestorePromptButtonReject = NSLocalizedString("session.restore.prompt.button.reject", value: "No Thanks", comment: "Button the user can press to not restore the previous browser session after a crash")
 
     // MARK: Downloads
     static let downloadsDialogTitle = NSLocalizedString("downloads.dialog.title", value: "Downloads", comment: "Title of the dialog that manages the Downloads in the browser")

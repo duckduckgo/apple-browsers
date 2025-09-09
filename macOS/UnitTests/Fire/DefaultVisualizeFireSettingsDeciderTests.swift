@@ -92,7 +92,7 @@ final class DefaultVisualizeFireSettingsDeciderTests: XCTestCase {
         let persistor = MockFireButtonPreferencesPersistor()
         let featureFlagger = MockFeatureFlagger()
 
-        persistor.shouldOpenFireWindowbyDefault = true
+        persistor.shouldOpenFireWindowByDefault = true
         featureFlagger.enabledFeatureFlags = [.openFireWindowByDefault]
 
         let dataClearingPreferences: DataClearingPreferences = .init(
@@ -114,7 +114,7 @@ final class DefaultVisualizeFireSettingsDeciderTests: XCTestCase {
         let persistor = MockFireButtonPreferencesPersistor()
         let featureFlagger = MockFeatureFlagger()
 
-        persistor.shouldOpenFireWindowbyDefault = false
+        persistor.shouldOpenFireWindowByDefault = false
         featureFlagger.enabledFeatureFlags = [.openFireWindowByDefault]
 
         let dataClearingPreferences: DataClearingPreferences = .init(
@@ -136,7 +136,7 @@ final class DefaultVisualizeFireSettingsDeciderTests: XCTestCase {
         let persistor = MockFireButtonPreferencesPersistor()
         let featureFlagger = MockFeatureFlagger()
 
-        persistor.shouldOpenFireWindowbyDefault = true
+        persistor.shouldOpenFireWindowByDefault = true
         featureFlagger.enabledFeatureFlags = []
 
         let dataClearingPreferences: DataClearingPreferences = .init(

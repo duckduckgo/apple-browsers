@@ -134,6 +134,7 @@ class MainViewController: UIViewController {
     private var vpnCancellables = Set<AnyCancellable>()
     private var feedbackCancellable: AnyCancellable?
     private var aiChatCancellables = Set<AnyCancellable>()
+    private var refreshButtonCancellables = Set<AnyCancellable>()
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     let privacyProDataReporter: PrivacyProDataReporting
@@ -235,6 +236,9 @@ class MainViewController: UIViewController {
     
     private let daxEasterEggPresenter: DaxEasterEggPresenting
 
+    private let internalUserCommands: URLBasedDebugCommands = InternalUserCommands()
+    private let launchSourceManager: LaunchSourceManaging
+
     init(
         bookmarksDatabase: CoreDataDatabase,
         bookmarksDatabaseCleaner: BookmarkDatabaseCleaner,
@@ -269,7 +273,8 @@ class MainViewController: UIViewController {
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: DaxDialogsManaging,
         daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
-        dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
+        dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
+        launchSourceManager: LaunchSourceManaging
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -308,6 +313,7 @@ class MainViewController: UIViewController {
         self.daxDialogsManager = daxDialogsManager
         self.daxEasterEggPresenter = daxEasterEggPresenter
         self.dbpIOSPublicInterface = dbpIOSPublicInterface
+        self.launchSourceManager = launchSourceManager
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -351,7 +357,8 @@ class MainViewController: UIViewController {
                                                                                          newTabDaxDialogManager: daxDialogsManager,
                                                                                          faviconLoader: faviconLoader,
                                                                                          messageNavigationDelegate: self,
-                                                                                         appSettings: appSettings)
+                                                                                         appSettings: appSettings,
+                                                                                         internalUserCommands: internalUserCommands)
 
         let suggestionTrayDependencies = SuggestionTrayDependencies(favoritesViewModel: favoritesViewModel,
                                                                     bookmarksDatabase: bookmarksDatabase,
@@ -360,6 +367,7 @@ class MainViewController: UIViewController {
                                                                     featureFlagger: featureFlagger,
                                                                     appSettings: appSettings,
                                                                     aiChatSettings: aiChatSettings,
+                                                                    featureDiscovery: featureDiscovery,
                                                                     newTabPageDependencies: newTabPageDependencies)
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
@@ -394,6 +402,7 @@ class MainViewController: UIViewController {
         subscribeToNetworkProtectionEvents()
         subscribeToUnifiedFeedbackNotifications()
         subscribeToAIChatSettingsEvents()
+        subscribeToRefreshButtonSettingsEvents()
 
         checkSubscriptionEntitlements()
 
@@ -447,6 +456,8 @@ class MainViewController: UIViewController {
         if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
+
+        presentNewAddressBarPickerIfNeeded()
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -461,6 +472,19 @@ class MainViewController: UIViewController {
         DailyPixel.fireDaily(.aiChatExperimentalAddressBarIsEnabledDaily,
                              withAdditionalParameters: [isEnabledParam: isEnableValue])
         
+    }
+    
+    private func fireKeyboardSettingsPixels() {
+        let keyboardSettings = KeyboardSettings()
+        let isEnabledParam = "is_enabled"
+        
+        let onNewTabValue = "\(keyboardSettings.onNewTab)"
+        DailyPixel.fireDaily(.keyboardSettingsOnNewTabEnabledDaily,
+                             withAdditionalParameters: [isEnabledParam: onNewTabValue])
+        
+        let onAppLaunchValue = "\(keyboardSettings.onAppLaunch)"
+        DailyPixel.fireDaily(.keyboardSettingsOnAppLaunchEnabledDaily,
+                             withAdditionalParameters: [isEnabledParam: onAppLaunchValue])
     }
 
     private func installSwipeTabs() {
@@ -535,7 +559,8 @@ class MainViewController: UIViewController {
                                          tabsModel: self.tabManager.model,
                                          featureFlagger: self.featureFlagger,
                                          appSettings: self.appSettings,
-                                         aiChatSettings: self.aiChatSettings)
+                                         aiChatSettings: self.aiChatSettings,
+                                         featureDiscovery: self.featureDiscovery)
         }) else {
             assertionFailure()
             return
@@ -587,6 +612,26 @@ class MainViewController: UIViewController {
 
         guard showOnboarding else { return }
         segueToDaxOnboarding()
+    }
+    
+    private func presentNewAddressBarPickerIfNeeded() {
+        let validator = NewAddressBarPickerDisplayValidator(
+            aiChatSettings: aiChatSettings,
+            tutorialSettings: tutorialSettings,
+            featureFlagger: featureFlagger,
+            experimentalAIChatManager: experimentalAIChatManager,
+            appSettings: appSettings,
+            pickerStorage: NewAddressBarPickerStorage(),
+            launchSourceManager: launchSourceManager
+        )
+        guard validator.shouldDisplayNewAddressBarPicker() else { return }
+
+        let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: aiChatSettings)
+        pickerViewController.modalPresentationStyle = .pageSheet
+        pickerViewController.modalTransitionStyle = .coverVertical
+        pickerViewController.isModalInPresentation = true
+        validator.markPickerDisplayAsSeen()
+        self.present(pickerViewController, animated: true)
     }
 
     func presentNetworkProtectionStatusSettingsModal() {
@@ -992,7 +1037,8 @@ class MainViewController: UIViewController {
                                                   daxDialogsManager: daxDialogsManager,
                                                   faviconLoader: faviconLoader,
                                                   messageNavigationDelegate: self,
-                                                  appSettings: appSettings)
+                                                  appSettings: appSettings,
+                                                  internalUserCommands: internalUserCommands)
 
         controller.delegate = self
         controller.chromeDelegate = self
@@ -1002,15 +1048,16 @@ class MainViewController: UIViewController {
         viewCoordinator.logoContainer.isHidden = true
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
 
+        // This has to happen after the new tab controller is created so that it knows to set the buttons correctly
+        // ie remove back/forward and show bookmarks/passwords
+        // but also before any other UI updates so that data from the old tab doesn't find its way into the new one
+        refreshControls()
+
         if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
             omniBar.beginEditing(animated: true)
         }
 
         syncService.scheduler.requestSyncImmediately()
-
-        // This has to happen after the new tab controller is created so that it knows to set the buttons correctly
-        // ie remove back/forward and show bookmarks/passwords
-        refreshControls()
 
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
@@ -1093,6 +1140,7 @@ class MainViewController: UIViewController {
     
     func onForeground() {
         fireExperimentalAddressBarPixel()
+        fireKeyboardSettingsPixels()
         skipSERPFlow = true
         
         // Show Fire Pulse only if Privacy button pulse should not be shown. In control group onboarding `shouldShowPrivacyButtonPulse` is always false.
@@ -1841,6 +1889,26 @@ class MainViewController: UIViewController {
             }
             .store(in: &aiChatCancellables)
     }
+    
+    private func subscribeToRefreshButtonSettingsEvents() {
+        NotificationCenter.default.publisher(for: AppUserDefaults.Notifications.refreshButtonSettingsChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshOmniBar()
+            }
+            .store(in: &refreshButtonCancellables)
+        
+        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+        
+        overridesHandler.flagDidChangePublisher
+            .filter { $0.0 == .refreshButtonPosition }
+            .sink { [weak self] _ in
+                self?.refreshOmniBar()
+            }
+            .store(in: &refreshButtonCancellables)
+    }
 
     private func subscribeToNetworkProtectionEvents() {
         if !featureDiscovery.wasUsedBefore(.vpn) {
@@ -2031,6 +2099,8 @@ class MainViewController: UIViewController {
                 Logger.subscription.fault("Missing entitlements payload")
                 return
             }
+
+            let userInitiatedSignOut = (userInfo[EntitlementsDidChangePayload.userInitiatedEntitlementChangeKey] as? Bool) ?? false
             let hasVPNEntitlements = payload.entitlements.contains(.networkProtection)
             let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
@@ -2050,12 +2120,17 @@ class MainViewController: UIViewController {
                         sourceObject: notification.object),
                     frequency: .dailyAndCount)
 
-                if await networkProtectionTunnelController.isInstalled {
+                if await networkProtectionTunnelController.isInstalled && !userInitiatedSignOut {
                     tunnelDefaults.enableEntitlementMessaging()
                 }
 
                 await networkProtectionTunnelController.stop()
-                await networkProtectionTunnelController.removeVPN(reason: .entitlementCheck)
+
+                if userInitiatedSignOut {
+                    await networkProtectionTunnelController.removeVPN(reason: .signedOut)
+                } else {
+                    await networkProtectionTunnelController.removeVPN(reason: .entitlementCheck)
+                }
             }
 
             hadVPNEntitlements = hasVPNEntitlements
@@ -2274,6 +2349,13 @@ extension MainViewController: BrowserChromeDelegate {
 
     private func handleFavoriteSelected(_ favorite: BookmarkEntity) {
         guard let url = favorite.urlObject else { return }
+
+        // Handle shortcuts for internal testing
+        if let favUrl = favorite.url, let url = URL(string: favUrl), internalUserCommands.handle(url: url) {
+            dismissSuggestionTray()
+            return
+        }
+
         Pixel.fire(pixel: .favoriteLaunchedWebsite)
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()

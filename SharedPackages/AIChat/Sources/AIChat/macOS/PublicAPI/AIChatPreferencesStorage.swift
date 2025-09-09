@@ -36,6 +36,9 @@ public protocol AIChatPreferencesStorage {
     var openAIChatInSidebar: Bool { get set }
     var openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> { get }
 
+    var isPageContextEnabled: Bool { get set }
+    var isPageContextEnabledPublisher: AnyPublisher<Bool, Never> { get }
+
     func reset()
 }
 
@@ -61,6 +64,10 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
 
     public var openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> {
         userDefaults.openAIChatInSidebarPublisher
+    }
+
+    public var isPageContextEnabledPublisher: AnyPublisher<Bool, Never> {
+        userDefaults.isPageContextEnabledPublisher
     }
 
     public init(userDefaults: UserDefaults = .standard,
@@ -94,12 +101,18 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         set { userDefaults.openAIChatInSidebar = newValue }
     }
 
+    public var isPageContextEnabled: Bool {
+        get { userDefaults.isPageContextEnabled }
+        set { userDefaults.isPageContextEnabled = newValue }
+    }
+
     public func reset() {
         userDefaults.isAIFeaturesEnabled = UserDefaults.isAIFeaturesEnabledDefaultValue
         userDefaults.showAIChatShortcutOnNewTabPage = UserDefaults.showAIChatShortcutOnNewTabPageDefaultValue
         userDefaults.showAIChatShortcutInApplicationMenu = UserDefaults.showAIChatShortcutInApplicationMenuDefaultValue
         userDefaults.showAIChatShortcutInAddressBar = UserDefaults.showAIChatShortcutInAddressBarDefaultValue
         userDefaults.openAIChatInSidebar = UserDefaults.openAIChatInSidebarDefaultValue
+        userDefaults.isPageContextEnabled = UserDefaults.isPageContextEnabledDefaultValue
     }
 }
 
@@ -110,6 +123,7 @@ private extension UserDefaults {
         static let showAIChatShortcutInApplicationMenu = "aichat.showAIChatShortcutInApplicationMenu"
         static let showAIChatShortcutInAddressBar = "aichat.showAIChatShortcutInAddressBar"
         static let openAIChatInSidebar = "aichat.openAIChatInSidebar"
+        static let isPageContextEnabled = "aichat.pageContextEnabled"
     }
 
     static let isAIFeaturesEnabledDefaultValue = true
@@ -117,6 +131,7 @@ private extension UserDefaults {
     static let showAIChatShortcutInApplicationMenuDefaultValue = true
     static let showAIChatShortcutInAddressBarDefaultValue = true
     static let openAIChatInSidebarDefaultValue = true
+    static let isPageContextEnabledDefaultValue = true
 
     @objc dynamic var isAIFeaturesEnabled: Bool {
         get {
@@ -173,6 +188,17 @@ private extension UserDefaults {
         }
     }
 
+    @objc dynamic var isPageContextEnabled: Bool {
+        get {
+            value(forKey: Keys.isPageContextEnabled) as? Bool ?? Self.isPageContextEnabledDefaultValue
+        }
+
+        set {
+            guard newValue != isPageContextEnabled else { return }
+            set(newValue, forKey: Keys.isPageContextEnabled)
+        }
+    }
+
     var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> {
         publisher(for: \.isAIFeaturesEnabled).eraseToAnyPublisher()
     }
@@ -191,6 +217,10 @@ private extension UserDefaults {
 
     var openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> {
         publisher(for: \.openAIChatInSidebar).eraseToAnyPublisher()
+    }
+
+    var isPageContextEnabledPublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.isPageContextEnabled).eraseToAnyPublisher()
     }
 }
 #endif

@@ -18,6 +18,7 @@
 
 import Foundation
 import JWTKit
+import Common
 
 /// Container for both access and refresh tokens
 ///
@@ -63,8 +64,24 @@ extension TokenContainer {
     }
 }
 
-public enum TokenPayloadError: Error {
+public enum TokenPayloadError: DDGError {
     case invalidTokenScope
+
+    public var description: String {
+        switch self {
+        case .invalidTokenScope:
+            return "Invalid token scope"
+        }
+    }
+
+    public var errorDomain: String { "com.duckduckgo.networking.TokenPayloadError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .invalidTokenScope:
+            return 11300
+        }
+    }
 }
 
 public struct JWTAccessToken: JWTPayload, Equatable {

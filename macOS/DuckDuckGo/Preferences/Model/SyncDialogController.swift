@@ -49,7 +49,7 @@ protocol SyncSettingsViewHandling {
     func presentDeleteAccount()
 
     /// Initiates the sync setup flow to connect with another device
-    func syncWithAnotherDevicePressed() async
+    func syncWithAnotherDevicePressed(source: SyncDeviceButtonTouchpoint?) async
 
     /// Initiates the sync setup flow to connect with the server
     func syncWithServerPressed() async
@@ -294,6 +294,19 @@ final class SyncDialogController {
             }
         }
     }
+
+    private func checkAuthenticated() async -> Bool {
+        let authenticationResult = await userAuthenticator.authenticateUser(reason: .syncSettings)
+        guard authenticationResult.authenticated else {
+            if authenticationResult == .noAuthAvailable {
+                presentDialog(for: .empty)
+                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice, description: "")
+            }
+            coordinationDelegate?.didEndFlow()
+            return false
+        }
+        return true
+    }
 }
 
 extension SyncDialogController: ManagementDialogModelDelegate {
@@ -394,12 +407,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         }
 
         Task { @MainActor in
-            let authenticationResult = await userAuthenticator.authenticateUser(reason: .syncSettings)
-            guard authenticationResult.authenticated else {
-                if authenticationResult == .noAuthAvailable {
-                    presentDialog(for: .empty)
-                    managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice, description: "")
-                }
+            guard await checkAuthenticated() else {
                 return
             }
 
@@ -501,8 +509,8 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     func didEndFlow() {
         Task { [weak self] in
             await self?.connectionController.cancel()
+            self?.coordinationDelegate?.didEndFlow()
         }
-        coordinationDelegate?.didEndFlow()
     }
 }
 
@@ -527,13 +535,11 @@ extension SyncDialogController: SyncSettingsViewHandling {
     }
 
     @MainActor
-    func syncWithAnotherDevicePressed() async {
-        let authenticationResult = await userAuthenticator.authenticateUser(reason: .syncSettings)
-        guard authenticationResult.authenticated else {
-            if authenticationResult == .noAuthAvailable {
-                presentDialog(for: .empty)
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice, description: "")
-            }
+    func syncWithAnotherDevicePressed(source: SyncDeviceButtonTouchpoint?) async {
+        if let source { // Must be if let so as not to override any existing source with nil
+            syncPromoSource = source.rawValue
+        }
+        guard await checkAuthenticated() else {
             return
         }
         if syncService.account != nil {
@@ -545,12 +551,7 @@ extension SyncDialogController: SyncSettingsViewHandling {
 
     @MainActor
     func syncWithServerPressed() async {
-        let authenticationResult = await userAuthenticator.authenticateUser(reason: .syncSettings)
-        guard authenticationResult.authenticated else {
-            if authenticationResult == .noAuthAvailable {
-                presentDialog(for: .empty)
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice, description: "")
-            }
+        guard await checkAuthenticated() else {
             return
         }
         presentDialog(for: .syncWithServer)
@@ -558,12 +559,7 @@ extension SyncDialogController: SyncSettingsViewHandling {
 
     @MainActor
     func recoverDataPressed() async {
-        let authenticationResult = await userAuthenticator.authenticateUser(reason: .syncSettings)
-        guard authenticationResult.authenticated else {
-            if authenticationResult == .noAuthAvailable {
-                presentDialog(for: .empty)
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice, description: "")
-            }
+        guard await checkAuthenticated() else {
             return
         }
         presentDialog(for: .recoverSyncedData)

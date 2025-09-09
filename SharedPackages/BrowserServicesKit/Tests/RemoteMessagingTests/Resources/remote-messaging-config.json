@@ -304,6 +304,14 @@
               ]
           },
       }
+    },
+    {
+      "id": 11,
+      "attributes": {
+          "syncEnabled": {
+              "value": true
+          }
+      }
     }
   ]
 }

@@ -67,7 +67,8 @@ import SystemSettingsPiPTutorialTestSupport
             errorEvents: nil,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
             duckPlayerStorage: MockDuckPlayerStorage(),
-            configurationURLProvider: MockCustomURLProvider()
+            configurationURLProvider: MockCustomURLProvider(),
+            syncService: MockDDGSyncing()
         )
         let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter(), isStillOnboarding: { false })
         let tabsModel = TabsModel(desktop: true)

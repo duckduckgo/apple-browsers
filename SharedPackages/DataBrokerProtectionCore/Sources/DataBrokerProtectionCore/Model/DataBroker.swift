@@ -282,4 +282,8 @@ extension DataBroker {
     var type: DataBrokerHierarchy {
         parent == nil ? .parent : .child
     }
+
+    var isRemoved: Bool {
+        return removedAt != nil
+    }
 }

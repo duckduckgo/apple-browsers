@@ -37,7 +37,7 @@ public protocol DataBrokerProtectionRepository {
     func saveOptOutJob(optOut: OptOutJobData, extractedProfile: ExtractedProfile) throws
 
     func brokerProfileQueryData(for brokerId: Int64, and profileQueryId: Int64) throws -> BrokerProfileQueryData?
-    func fetchAllBrokerProfileQueryData() throws -> [BrokerProfileQueryData]
+    func fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: Bool) throws -> [BrokerProfileQueryData]
     func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile]
 
     func fetchAllDataBrokers() throws -> [DataBroker]
@@ -388,9 +388,9 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
         }
     }
 
-    public func fetchAllBrokerProfileQueryData() throws -> [BrokerProfileQueryData] {
+    public func fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: Bool) throws -> [BrokerProfileQueryData] {
         do {
-            let brokers = try vault.fetchAllBrokers()
+            let brokers = shouldFilterRemovedBrokers ? try vault.fetchAllNonRemovedBrokers() : try vault.fetchAllBrokers()
             let profileQueries = try vault.fetchAllProfileQueries(for: Self.profileId)
             var brokerProfileQueryDataList = [BrokerProfileQueryData]()
 
@@ -634,7 +634,7 @@ extension DataBrokerProtectionDatabase {
 
         let newProfileQueries = profile.profileQueries
 
-        let databaseBrokerProfileQueryData = try fetchAllBrokerProfileQueryData()
+        let databaseBrokerProfileQueryData = try fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true)
         let databaseProfileQueries = databaseBrokerProfileQueryData.map { $0.profileQuery }
 
         // The queries we need to create are the one that exist on the new ones but not in the database

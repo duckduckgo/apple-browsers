@@ -21,6 +21,11 @@
                 description: 'Indicates if AI Chat was used before this submission: 1=returning user, 0=first-time user',
                 type: 'integer',
             },
+            {
+                key: 'text_length_bucket',
+                description: 'Indicates length of AI prompt text using buckets: short (1-15), medium (16-40), long (41-100), very_long (100+)',
+                type: 'string',
+            },
         ],
     },
     m_aichat_experimental_omnibar_query_submitted: {
@@ -28,14 +33,35 @@
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'text_length_bucket',
+                description: 'Indicates length of search query text using buckets: short (1-15), medium (16-40), long (41-100), very_long (100+)',
+                type: 'string',
+            },
+        ],
     },
     m_aichat_experimental_omnibar_mode_switched: {
         description: 'Fires when user toggles between search and AI chat modes in the experimental omnibar',
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'direction',
+                description: 'Direction of the mode switch: to_search or to_duckai',
+                type: 'string',
+            },
+            {
+                key: 'had_text',
+                description: 'Whether text was present in the input when mode was switched: true or false',
+                type: 'boolean',
+            },
+        ],
     },
     m_aichat_experimental_omnibar_session_both_modes: {
         description: 'Fires when user has used BOTH search and AI chat modes within the same app session',
@@ -106,5 +132,114 @@
         triggers: ['other'],
         suffixes: ['platform', 'form_factor'],
         parameters: ['appVersion', 'pixelSource'],
+    },
+    m_aichat_experimental_omnibar_text_area_focused: {
+        description: 'Fires when user focuses the text input area in the experimental omnibar',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'orientation',
+                description: 'Device orientation when text area was focused: portrait or landscape',
+                type: 'string',
+            },
+        ],
+    },
+    m_aichat_experimental_omnibar_clear_button_pressed: {
+        description: 'Fires when user presses the X (clear) button in the experimental omnibar',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'mode',
+                description: 'Current toggle mode when button was pressed: search or aiChat',
+                type: 'string',
+            },
+        ],
+    },
+    m_aichat_experimental_omnibar_back_button_pressed: {
+        description: 'Fires when user presses the back button in the experimental omnibar',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'mode',
+                description: 'Current toggle mode when button was pressed: search or aiChat',
+                type: 'string',
+            },
+        ],
+    },
+    m_aichat_experimental_omnibar_keyboard_go_pressed: {
+        description: 'Fires when user presses the keyboard return/go button in the experimental omnibar',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'mode',
+                description: 'Current toggle mode when button was pressed: search or aiChat',
+                type: 'string',
+            },
+        ],
+    },
+    m_aichat_experimental_omnibar_floating_submit_pressed: {
+        description: 'Fires when user presses the floating submit button in the experimental omnibar',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'mode',
+                description: 'Current toggle mode when button was pressed: search or aiChat',
+                type: 'string',
+            },
+        ],
+    },
+    m_aichat_experimental_omnibar_floating_return_pressed: {
+        description: 'Fires when user presses the floating return button (new line) in the experimental omnibar',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+    m_aichat_legacy_omnibar_back_button_pressed: {
+        description: 'Fires when user presses the back/dismiss button in the legacy omnibar (baseline comparison for experimental omnibar back navigation)',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+    m_aichat_experimental_omnibar_session_summary: {
+        description: 'Fires when app session ends to compare search/prompt activity across session types',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'searches_in_session',
+                description: 'Number of search queries submitted during the session',
+                type: 'integer',
+            },
+            {
+                key: 'prompts_in_session',
+                description: 'Number of AI prompts submitted during the session',
+                type: 'integer',
+            },
+        ],
     },
 }

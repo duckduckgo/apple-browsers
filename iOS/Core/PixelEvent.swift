@@ -1293,9 +1293,17 @@ extension Pixel {
         case aiChatExperimentalOmnibarFirstSearchSubmission
         case aiChatExperimentalOmnibarFirstPromptSubmission
         case aiChatExperimentalOmnibarFullConversionUser
+        case aiChatExperimentalOmnibarTextAreaFocused
+        case aiChatExperimentalOmnibarClearButtonPressed
+        case aiChatExperimentalOmnibarBackButtonPressed
+        case aiChatExperimentalOmnibarKeyboardGoPressed
+        case aiChatExperimentalOmnibarFloatingSubmitPressed
+        case aiChatExperimentalOmnibarFloatingReturnPressed
+        case aiChatExperimentalOmnibarSessionSummary
         case aiChatLegacyOmnibarShown
         case aiChatLegacyOmnibarQuerySubmitted
         case aiChatLegacyOmnibarAichatButtonPressed
+        case aiChatLegacyOmnibarBackButtonPressed
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -2534,9 +2542,17 @@ extension Pixel.Event {
         case .aiChatExperimentalOmnibarFirstSearchSubmission: return "m_aichat_experimental_omnibar_first_search_submission"
         case .aiChatExperimentalOmnibarFirstPromptSubmission: return "m_aichat_experimental_omnibar_first_prompt_submission"
         case .aiChatExperimentalOmnibarFullConversionUser: return "m_aichat_experimental_omnibar_full_conversion_user"
+        case .aiChatExperimentalOmnibarTextAreaFocused: return "m_aichat_experimental_omnibar_text_area_focused"
+        case .aiChatExperimentalOmnibarClearButtonPressed: return "m_aichat_experimental_omnibar_clear_button_pressed"
+        case .aiChatExperimentalOmnibarBackButtonPressed: return "m_aichat_experimental_omnibar_back_button_pressed"
+        case .aiChatExperimentalOmnibarKeyboardGoPressed: return "m_aichat_experimental_omnibar_keyboard_go_pressed"
+        case .aiChatExperimentalOmnibarFloatingSubmitPressed: return "m_aichat_experimental_omnibar_floating_submit_pressed"
+        case .aiChatExperimentalOmnibarFloatingReturnPressed: return "m_aichat_experimental_omnibar_floating_return_pressed"
+        case .aiChatExperimentalOmnibarSessionSummary: return "m_aichat_experimental_omnibar_session_summary"
         case .aiChatLegacyOmnibarShown: return "m_aichat_legacy_omnibar_shown"
         case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
         case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"
+        case .aiChatLegacyOmnibarBackButtonPressed: return "m_aichat_legacy_omnibar_back_button_pressed"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

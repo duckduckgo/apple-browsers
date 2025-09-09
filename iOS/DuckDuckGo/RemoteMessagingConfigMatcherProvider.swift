@@ -26,6 +26,7 @@ import Bookmarks
 import RemoteMessaging
 import VPN
 import Subscription
+import DDGSync
 
 extension DefaultVPNActivationDateStore: VPNActivationDateProviding {}
 
@@ -37,7 +38,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         internalUserDecider: InternalUserDecider,
         duckPlayerStorage: DuckPlayerStorage,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-        themeManager: ThemeManaging = ThemeManager.shared
+        themeManager: ThemeManaging = ThemeManager.shared,
+        syncService: DDGSyncing
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
@@ -45,6 +47,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.duckPlayerStorage = duckPlayerStorage
         self.featureFlagger = featureFlagger
         self.themeManager = themeManager
+        self.syncService = syncService
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -53,6 +56,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let internalUserDecider: InternalUserDecider
     let featureFlagger: FeatureFlagger
     let themeManager: ThemeManaging
+    let syncService: DDGSyncing
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -87,7 +91,10 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         var isDuckPlayerEnabled: Bool {
             appSettings.duckPlayerMode != .disabled
         }
-        
+        var isSyncEnabled: Bool {
+            syncService.authState != .inactive
+        }
+
         let surveyActionMapper: DefaultRemoteMessagingSurveyURLBuilder
 
         if let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst) {
@@ -147,7 +154,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isDuckPlayerEnabled: isDuckPlayerEnabled,
                                                        dismissedMessageIds: dismissedMessageIds,
                                                        shownMessageIds: shownMessageIds,
-                                                       enabledFeatureFlags: enabledFeatureFlags),
+                                                       enabledFeatureFlags: enabledFeatureFlags,
+                                                       isSyncEnabled: isSyncEnabled),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds

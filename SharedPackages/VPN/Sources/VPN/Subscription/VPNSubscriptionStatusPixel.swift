@@ -54,8 +54,6 @@ public enum VPNSubscriptionStatusPixel: PixelKitEvent, PixelKitEventWithCustomPr
         }
     }
 
-    public var error: (any Error)? { nil }
-
     public var parameters: [String: String]? {
         switch self {
         case .signedIn(let isSubscriptionActive, let isAuthV2, let sourceObject),

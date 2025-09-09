@@ -43,8 +43,4 @@ enum SessionRestorePromptPixel: PixelKitEvent {
     var parameters: [String: String]? {
         nil
     }
-
-    var error: (any Error)? {
-        nil
-    }
 }

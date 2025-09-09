@@ -23,6 +23,8 @@ import Common
 public protocol PixelKitEvent {
     var name: String { get }
     var parameters: [String: String]? { get }
+    /// Automatically implemented by the below extension using reflection, please implement the error, if needed as enum parameter
+    var error: NSError? { get }
 }
 
 /// Extract Error parameter from the PixelKitEvent, only one error is supported, if multiple errors are found we assert

@@ -49,6 +49,7 @@ final class SettingsViewModel: ObservableObject {
     let privacyProDataReporter: PrivacyProDataReporting?
     let textZoomCoordinator: TextZoomCoordinating
     let aiChatSettings: AIChatSettingsProvider
+    let serpSettings: SERPSettingsProvider
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     let themeManager: ThemeManaging
     var experimentalAIChatManager: ExperimentalAIChatManager
@@ -537,6 +538,7 @@ final class SettingsViewModel: ObservableObject {
          privacyProDataReporter: PrivacyProDataReporting,
          textZoomCoordinator: TextZoomCoordinating,
          aiChatSettings: AIChatSettingsProvider,
+         serpSettings: SERPSettingsProvider,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
          themeManager: ThemeManaging = ThemeManager.shared,
          experimentalAIChatManager: ExperimentalAIChatManager,
@@ -564,6 +566,7 @@ final class SettingsViewModel: ObservableObject {
         self.privacyProDataReporter = privacyProDataReporter
         self.textZoomCoordinator = textZoomCoordinator
         self.aiChatSettings = aiChatSettings
+        self.serpSettings = serpSettings
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.themeManager = themeManager
         self.experimentalAIChatManager = experimentalAIChatManager
@@ -1343,6 +1346,16 @@ extension SettingsViewModel {
             get: { self.aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled },
             set: { newValue in
                 self.aiChatSettings.enableAIChatTabSwitcherUserSettings(enable: newValue)
+            }
+        )
+    }
+    
+    var serpSettingsFollowUpQuestionsBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                self.serpSettings.isAllowFollowUpQuestionsEnabled },
+            set: { newValue in
+                self.serpSettings.enableAllowFollowUpQuestions(enable: newValue)
             }
         )
     }

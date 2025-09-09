@@ -316,6 +316,7 @@ extension MainViewController {
                                                             daxDialogsManager: daxDialogsManager)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
+        let serpSettings = SERPSettings()
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
                                                   isAuthV2Enabled: isAuthV2Enabled,
@@ -330,6 +331,7 @@ extension MainViewController {
                                                   privacyProDataReporter: privacyProDataReporter,
                                                   textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
+                                                  serpSettings: serpSettings,
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
                                                   themeManager: themeManager,
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),

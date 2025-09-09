@@ -769,6 +769,8 @@
 		85F996D02E54C268006B4641 /* OpenAIChatFromAddressBarHandlingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F996CF2E54C260006B4641 /* OpenAIChatFromAddressBarHandlingTests.swift */; };
 		8C4724502217A14B004C9B2D /* TabViewControllerLongPressBookmarkExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C47244F2217A14B004C9B2D /* TabViewControllerLongPressBookmarkExtension.swift */; };
 		8C4838B5221C8F7F008A6739 /* GestureToolbarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C4838B4221C8F7F008A6739 /* GestureToolbarButton.swift */; };
+		9727DF772E70545300378925 /* SERPSettingsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9727DF762E70544A00378925 /* SERPSettingsProvider.swift */; };
+		9727DF792E7054F700378925 /* SERPSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9727DF782E7054EC00378925 /* SERPSettings.swift */; };
 		980891A222369ADB00313A70 /* FeedbackUserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 980891A122369ADB00313A70 /* FeedbackUserText.swift */; };
 		980891A32237146B00313A70 /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 982E562D222C39F8008D861B /* Feedback.swift */; };
 		980891A52237D4F500313A70 /* FeedbackNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 980891A42237D4F500313A70 /* FeedbackNavigator.swift */; };
@@ -2665,6 +2667,8 @@
 		85F996CF2E54C260006B4641 /* OpenAIChatFromAddressBarHandlingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIChatFromAddressBarHandlingTests.swift; sourceTree = "<group>"; };
 		8C47244F2217A14B004C9B2D /* TabViewControllerLongPressBookmarkExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewControllerLongPressBookmarkExtension.swift; sourceTree = "<group>"; };
 		8C4838B4221C8F7F008A6739 /* GestureToolbarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureToolbarButton.swift; sourceTree = "<group>"; };
+		9727DF762E70544A00378925 /* SERPSettingsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SERPSettingsProvider.swift; sourceTree = "<group>"; };
+		9727DF782E7054EC00378925 /* SERPSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SERPSettings.swift; sourceTree = "<group>"; };
 		9801F08927E4B21100191874 /* EmbeddedTrackerDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedTrackerDataTests.swift; sourceTree = "<group>"; };
 		98056C77251EABC000298AF6 /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = da; path = da.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		98056C79251EABC000298AF6 /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = da; path = da.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -7398,6 +7402,8 @@
 		CB1A79722E4CAD54009C96C1 /* SERP */ = {
 			isa = PBXGroup;
 			children = (
+				9727DF782E7054EC00378925 /* SERPSettings.swift */,
+				9727DF762E70544A00378925 /* SERPSettingsProvider.swift */,
 				CB1A79702E4CAD45009C96C1 /* SERPSettingsUserScript.swift */,
 			);
 			path = SERP;
@@ -10432,6 +10438,7 @@
 				D64648AF2B5993890033090B /* SubscriptionEmailViewModel.swift in Sources */,
 				9F8E0F3D2CCFD072001EA7C5 /* AddToDockPromoViewModel.swift in Sources */,
 				1EF24235273BB9D200DE3D02 /* IntervalSlider.swift in Sources */,
+				9727DF792E7054F700378925 /* SERPSettings.swift in Sources */,
 				F1D796EE1E7AF2EB0019D451 /* UIViewControllerExtension.swift in Sources */,
 				1EE411F12857C3640003FE64 /* TrackerAnimationImageProvider.swift in Sources */,
 				1E7A711C2934EEBC00B7EA19 /* OmniBarNotification.swift in Sources */,
@@ -10456,6 +10463,7 @@
 				AA3D854723D9E88E00788410 /* AppIconSettingsCell.swift in Sources */,
 				316931D927BD22A80095F5ED /* DownloadActionMessageViewHelper.swift in Sources */,
 				9F69331F2C5B1D0C00CD6A5D /* OnFirstAppearViewModifier.swift in Sources */,
+				9727DF772E70545300378925 /* SERPSettingsProvider.swift in Sources */,
 				BDF8D0022C1B87F4003E3B27 /* NetworkProtectionDNSSettingsViewModel.swift in Sources */,
 				9838059F2228208E00385F1A /* PositiveFeedbackViewController.swift in Sources */,
 				46DD3D5A2D0A29F600F33D49 /* CrashReportSenderExtensions.swift in Sources */,

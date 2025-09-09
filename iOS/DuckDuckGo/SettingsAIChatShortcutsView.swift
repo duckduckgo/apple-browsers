@@ -43,10 +43,9 @@ struct SettingsAIChatShortcutsView: View {
             }
             
             if viewModel.isSERPSettingsFollowUpQuestionsEnabled {
-#warning("TODO: implement proper binding")
                 Section("❗️Section 2") {
                     SettingsCellView(label: "❗️Allow Follow-up Questions",
-                                     accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
+                                     accessory: .toggle(isOn: viewModel.serpSettingsFollowUpQuestionsBinding))
                 }
             }
         }

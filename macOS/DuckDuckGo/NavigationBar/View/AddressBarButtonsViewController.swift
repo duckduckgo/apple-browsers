@@ -199,8 +199,8 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private var isInPopUpWindow: Bool {
         guard let addressBarViewController = parent as? AddressBarViewController else {
-            assertionFailure("AddressBarButtonsViewController is not a child of AddressBarViewController")
-            return view.window is PopUpWindow
+            assert(view.window == nil, "AddressBarButtonsViewController is not a child of AddressBarViewController")
+            return false
         }
         return addressBarViewController.isInPopUpWindow
     }

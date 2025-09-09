@@ -117,8 +117,8 @@ final class AddressBarViewController: NSViewController {
 
     var isInPopUpWindow: Bool {
         guard let navigationBarViewController = parent as? NavigationBarViewController else {
-            assertionFailure("AddressBarViewController is not a child of NavigationBarViewController")
-            return view.window is PopUpWindow
+            assert(view.window == nil, "AddressBarViewController is not a child of NavigationBarViewController")
+            return false
         }
         return navigationBarViewController.isInPopUpWindow
     }

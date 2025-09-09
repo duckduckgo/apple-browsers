@@ -178,8 +178,8 @@ final class NavigationBarViewController: NSViewController {
 
     var isInPopUpWindow: Bool {
         guard let mainViewController = parent as? MainViewController else {
-            assertionFailure("NavigationBarViewController is not a child of MainViewController")
-            return view.window is PopUpWindow
+            assert(view.window == nil, "NavigationBarViewController is not a child of MainViewController")
+            return false
         }
         return mainViewController.isInPopUpWindow
     }

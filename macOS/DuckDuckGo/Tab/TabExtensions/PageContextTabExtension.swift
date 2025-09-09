@@ -47,6 +47,7 @@ final class PageContextTabExtension {
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     private let isLoadedInSidebar: Bool
     private var cachedPageContext: AIChatPageContextData?
+    private var shouldAllowCollectionResult: Bool = false
 
     private weak var webView: WKWebView?
     private weak var pageContextUserScript: PageContextUserScript? {
@@ -112,7 +113,7 @@ final class PageContextTabExtension {
                 /// This closure is responsible for passing cached page context to the newly displayed sidebar.
                 /// It's only called when sidebar for tabID is non-nil.
                 /// Additionally, we're only calling `handle` if there's a cached page context.
-                guard let cachedPageContext, aiChatMenuConfiguration.shouldAutomaticallySendPageContext else {
+                guard let cachedPageContext, aiChatMenuConfiguration.shouldAutomaticallySendPageContext || shouldAllowCollectionResult else {
                     return
                 }
                 handle(cachedPageContext)
@@ -142,8 +143,11 @@ final class PageContextTabExtension {
         pageContextUserScript.collectionResultPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageContext in
+                guard let self, shouldAllowCollectionResult || aiChatMenuConfiguration.shouldAutomaticallySendPageContext else {
+                    return
+                }
                 /// This closure is responsible for handling page context received from the user script.
-                self?.handle(pageContext)
+                handle(pageContext)
             }
             .store(in: &userScriptCancellables)
     }
@@ -157,6 +161,7 @@ final class PageContextTabExtension {
         sidebar.sidebarViewController.pageContextRequestedPublisher?
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
+                self?.shouldAllowCollectionResult = true
                 self?.collectPageContextIfNeeded(force: true)
             }
             .store(in: &sidebarCancellables)
@@ -169,6 +174,7 @@ final class PageContextTabExtension {
         guard featureFlagger.isFeatureOn(.aiChatPageContext) else {
             return
         }
+        shouldAllowCollectionResult = false
         cachedPageContext = pageContext
         if let sidebar = aiChatSidebarProvider.getSidebar(for: tabID) {
             sidebar.sidebarViewController.setPageContext(pageContext)
@@ -180,22 +186,6 @@ final class PageContextTabExtension {
             return
         }
         pageContextUserScript?.collect()
-    }
-}
-
-extension PageContextTabExtension: NavigationResponder {
-    func navigationDidFinish(_ navigation: Navigation) {
-        guard !isLoadedInSidebar else {
-            return
-        }
-        collectPageContextIfNeeded()
-    }
-
-    func navigation(_ navigation: Navigation, didSameDocumentNavigationOf navigationType: WKSameDocumentNavigationType) {
-        guard !isLoadedInSidebar, navigationType != .anchorNavigation, navigationType != .sessionStateReplace else {
-            return
-        }
-        collectPageContextIfNeeded()
     }
 }
 

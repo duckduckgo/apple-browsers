@@ -51,7 +51,7 @@ final class DebugDatabaseBrowserViewModel: ObservableObject {
         guard let database = self.database else { return }
 
         Task {
-            guard let data = try? database.fetchAllBrokerProfileQueryData(),
+            guard let data = try? database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false),
                   let attempts = try? database.fetchAllAttempts() else {
                 assertionFailure("DataManager error during DataBrokerDatavaseBrowserViewModel.updateTables")
                 return

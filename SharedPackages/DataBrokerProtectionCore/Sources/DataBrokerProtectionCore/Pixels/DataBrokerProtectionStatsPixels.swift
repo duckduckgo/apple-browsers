@@ -205,7 +205,7 @@ public final class DataBrokerProtectionStatsPixels: StatsPixels {
     }
 
     public func tryToFireStatsPixels() {
-        guard let brokerProfileQueryData = try? database.fetchAllBrokerProfileQueryData() else {
+        guard let brokerProfileQueryData = try? database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) else {
             return
         }
 
@@ -232,7 +232,7 @@ public final class DataBrokerProtectionStatsPixels: StatsPixels {
         let startDate = repository.customStatsPixelsLastSentTimestamp
 
         guard customStatsPixelsTrigger.shouldFireCustomStatsPixels(fromDate: startDate),
-        let queryData = try? database.fetchAllBrokerProfileQueryData() else { return }
+        let queryData = try? database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) else { return }
 
         let endDate = Date.nowMinus(hours: 24)
 

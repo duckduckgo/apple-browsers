@@ -30,6 +30,9 @@ public enum EmailError: Error, Equatable, Codable {
     case cancelled
     case httpError(statusCode: Int)
     case unknownHTTPError
+    case extractionError
+    case requestError
+    case serverError
 }
 
 public struct EmailData: Decodable {

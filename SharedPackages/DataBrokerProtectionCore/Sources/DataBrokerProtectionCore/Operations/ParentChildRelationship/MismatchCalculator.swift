@@ -55,7 +55,7 @@ public struct DefaultMismatchCalculator: MismatchCalculator {
     public func calculateMismatches() {
         let brokerProfileQueryData: [BrokerProfileQueryData]
         do {
-            brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData()
+            brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true)
         } catch {
             Logger.dataBrokerProtection.error("MismatchCalculatorUseCase error: calculateMismatches, error: \(error.localizedDescription, privacy: .public)")
             return

@@ -67,7 +67,8 @@ import SystemSettingsPiPTutorialTestSupport
             errorEvents: nil,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
             duckPlayerStorage: MockDuckPlayerStorage(),
-            configurationURLProvider: MockCustomURLProvider()
+            configurationURLProvider: MockCustomURLProvider(),
+            syncService: MockDDGSyncing()
         )
         let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter(), isStillOnboarding: { false })
         let tabsModel = TabsModel(desktop: true)
@@ -139,6 +140,8 @@ import SystemSettingsPiPTutorialTestSupport
             customConfigurationURLProvider: MockCustomURLProvider(),
             systemSettingsPiPTutorialManager: MockSystemSettingsPiPTutorialManager(),
             daxDialogsManager: DummyDaxDialogsManager(),
+            launchSourceManager: LaunchSourceManager(),
+            remoteMessageStore: remoteMessagingClient.store
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

@@ -52,6 +52,24 @@ class PinnedTabsTests: UITestCase {
         assertCurrentPageCanBeUnpinned()
     }
 
+    func testBookmarksCanBePinned() {
+        app.openBookmarksManager()
+        pinCurrentPage()
+        assertCurrentPageCanBeUnpinned()
+    }
+    
+    func testHistoryCanBePinned() {
+        app.openHistory()
+        pinCurrentPage()
+        assertCurrentPageCanBeUnpinned()
+    }
+
+    func testNewTabPageCanBePinned() {
+        app.openNewTab()
+        pinCurrentPage()
+        assertCurrentPageCanBeUnpinned()
+    }
+    
     // MARK: - Utilities
 
     private func openThreeSitesOnSameWindow() {

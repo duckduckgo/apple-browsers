@@ -162,6 +162,11 @@ extension XCUIApplication {
     func openDownloads() {
         typeKey("j", modifierFlags: .command)
     }
+    
+    /// Opens history
+    func openHistory() {
+        typeKey("y", modifierFlags: .command)
+    }
 
     /// Opens settings
     func openSettings() {

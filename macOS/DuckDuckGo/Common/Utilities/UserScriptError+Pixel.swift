@@ -22,10 +22,10 @@ import PixelKit
 
 extension UserScriptError {
     public func fireLoadJSFailedPixelIfNeeded(pixelFiring: PixelFiring? = PixelKit.shared) {
-        guard case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = self else {
+        guard case let UserScriptError.failedToLoadJS(jsFile, error) = self else {
             return
         }
-        pixelFiring?.fire(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, path: filePath, error: error), frequency: .dailyAndCount)
+        pixelFiring?.fire(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, error: error), frequency: .dailyAndCount)
         Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
     }
 }

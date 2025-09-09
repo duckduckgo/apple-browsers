@@ -98,7 +98,6 @@ public enum DataBrokerProtectionSharedPixels {
         public static let totalByBroker = "total_by_broker"
         public static let stalledByBroker = "stalled_by_broker"
         public static let jsFile = "jsFile"
-        public static let path = "path"
 
     }
 
@@ -193,7 +192,7 @@ public enum DataBrokerProtectionSharedPixels {
     case weeklyChildBrokerOrphanedOptOuts(dataBrokerName: String, childParentRecordDifference: Int, calculatedOrphanedRecords: Int)
 
     // UserScript
-    case userScriptLoadJSFailed(jsFile: String, path: String, error: Error)
+    case userScriptLoadJSFailed(jsFile: String, error: Error)
 }
 
 extension DataBrokerProtectionSharedPixels: PixelKitEvent {
@@ -467,8 +466,8 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return [Consts.dataBrokerParamKey: dataBrokerName,
                     Consts.childParentRecordDifference: String(childParentRecordDifference),
                     Consts.calculatedOrphanedRecords: String(calculatedOrphanedRecords)]
-        case .userScriptLoadJSFailed(let jsFile, let path, _):
-            return [Consts.jsFile: jsFile, Consts.path: path]
+        case .userScriptLoadJSFailed(let jsFile, _):
+            return [Consts.jsFile: jsFile]
         }
     }
 }
@@ -511,7 +510,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
             case .databaseError(let error, _),
                     .cocoaError(let error, _),
                     .miscError(let error, _),
-                    .userScriptLoadJSFailed(_, _, let error):
+                    .userScriptLoadJSFailed(_, let error):
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultInitError(let error),
                     .secureVaultError(let error),

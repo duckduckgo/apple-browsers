@@ -89,8 +89,8 @@ public final class DBPUIViewModel {
 
             return configuration
         } catch {
-            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
-                pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, path: filePath, error: error))
+            if case let UserScriptError.failedToLoadJS(jsFile, error) = error {
+                pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
                 Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
             }
             fatalError("Failed to apply DBPUI configuration: \(error)")

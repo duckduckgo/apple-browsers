@@ -74,7 +74,7 @@ extension UserScript {
 
             return js
         } catch {
-            throw UserScriptError.failedToLoadJS(jsFile: jsFile, path: path, error: error)
+            throw UserScriptError.failedToLoadJS(jsFile: jsFile, error: error)
         }
     }
 
@@ -138,5 +138,5 @@ extension StaticUserScript {
 }
 
 public enum UserScriptError: Error {
-    case failedToLoadJS(jsFile: String, path: String, error: Error)
+    case failedToLoadJS(jsFile: String, error: Error)
 }

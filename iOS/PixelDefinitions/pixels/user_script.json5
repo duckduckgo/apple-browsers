@@ -17,11 +17,6 @@
                 description: 'Name of the JS file that failed to load.',
                 type: 'string',
             },
-            {
-                key: 'path',
-                description: 'Path to the JS file that failed to load.',
-                type: 'string',
-            },
         ],
     },
 }

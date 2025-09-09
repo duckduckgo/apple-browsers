@@ -188,7 +188,6 @@ public struct PixelParameters {
 
     // UserScript
     public static let jsFile = "jsFile"
-    public static let path = "path"
 }
 
 public struct PixelValues {

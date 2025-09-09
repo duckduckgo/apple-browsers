@@ -435,10 +435,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 }
                             }
                             group.leave()
-                        } catch let UserScriptError.failedToLoadJS(jsFile, filePath, error) {
-                            pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, path: filePath, error: error))
+                        } catch let UserScriptError.failedToLoadJS(jsFile, error) {
+                            pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
                             try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
-                            fatalError("Failed to load JS file \(jsFile) at path \(filePath): \(error)")
+                            fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
                         } catch {
                             self.error = error
                             group.leave()
@@ -493,10 +493,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     self.alert = AlertUI(title: "Success!", description: "We finished the opt out process for the selected profile.")
                 }
 
-            } catch let UserScriptError.failedToLoadJS(jsFile, filePath, error) {
-                pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, path: filePath, error: error))
+            } catch let UserScriptError.failedToLoadJS(jsFile, error) {
+                pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
                 try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
-                fatalError("Failed to load JS file \(jsFile) at path \(filePath): \(error)")
+                fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
             } catch {
                 showAlert(for: error)
             }

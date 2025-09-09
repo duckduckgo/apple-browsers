@@ -130,6 +130,14 @@ final class SettingsViewModel: ObservableObject {
     var isRefreshButtonPositionEnabled: Bool {
         featureFlagger.isFeatureOn(.refreshButtonPosition)
     }
+    
+    var firstSectionTitle: String {
+        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) ? "❗️Section 1" : ""
+    }
+    
+    var isSERPSettingsFollowUpQuestionsEnabled: Bool {
+        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions)
+    }
 
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false

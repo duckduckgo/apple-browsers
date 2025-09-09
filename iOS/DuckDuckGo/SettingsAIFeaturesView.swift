@@ -110,6 +110,7 @@ struct SettingsAIFeaturesView: View {
                     }
                     .listRowBackground(Color(designSystemColor: .surface))
                 } else {
+                    #warning("Update text here")
                     Section(header: Text(UserText.settingsAiChatShortcuts)) {
                         SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
                                          accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
@@ -124,6 +125,14 @@ struct SettingsAIFeaturesView: View {
 
                         SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
                                          accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
+                    }
+                    
+                    if viewModel.isSERPSettingsFollowUpQuestionsEnabled {
+                        Section("❗️Section 2") {
+#warning("TODO: implement proper binding")
+                            SettingsCellView(label: "❗️Allow Follow-up Questions",
+                                             accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
+                        }
                     }
                 }
             }

@@ -69,7 +69,7 @@ struct Foreground: ForegroundHandling {
             urlHandler: appDependencies.mainCoordinator,
             shortcutItemHandler: appDependencies.mainCoordinator,
             keyboardPresenter: KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller),
-            launchSourceService: appDependencies.services.launchSourceManager
+            launchSourceService: appDependencies.launchSourceManager
         )
         interactionManager = UIInteractionManager(
             authenticationService: appDependencies.services.authenticationService,
@@ -122,7 +122,7 @@ struct Foreground: ForegroundHandling {
         services.dbpService.resume()
         services.inactivityNotificationSchedulerService.resume()
         services.widePixelService.resume()
-        services.launchSourceManager.handleAppAction(launchAction)
+        appDependencies.launchSourceManager.handleAppAction(launchAction)
         appDependencies.mainCoordinator.onForeground()
     }
 

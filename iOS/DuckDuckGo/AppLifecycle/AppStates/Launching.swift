@@ -54,6 +54,7 @@ struct Launching: LaunchingHandling {
     private let services: AppServices
     private let mainCoordinator: MainCoordinator
     private let launchTaskManager = LaunchTaskManager()
+    private let launchSourceManager = LaunchSourceManager()
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
@@ -114,8 +115,6 @@ struct Launching: LaunchingHandling {
 
         // Has to be intialised after configuration.start in case values need to be migrated
         aiChatSettings = AIChatSettings()
-
-        let launchSourceManager = LaunchSourceManager()
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
@@ -190,8 +189,7 @@ struct Launching: LaunchingHandling {
                                defaultBrowserPromptService: defaultBrowserPromptService,
                                systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
                                inactivityNotificationSchedulerService: inactivityNotificationSchedulerService,
-                               widePixelService: widePixelService,
-                               launchSourceManager: launchSourceManager
+                               widePixelService: widePixelService
         )
 
         // Register background tasks that run after app is ready
@@ -242,7 +240,8 @@ struct Launching: LaunchingHandling {
         .init(
             mainCoordinator: mainCoordinator,
             services: services,
-            launchTaskManager: launchTaskManager
+            launchTaskManager: launchTaskManager,
+            launchSourceManager: launchSourceManager
         )
     }
     

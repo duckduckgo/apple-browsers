@@ -69,11 +69,10 @@ class UserScriptTests: XCTestCase {
         mockBundle.pathToReturn = "/invalidPath/to/testUserScript.js"
 
         XCTAssertThrowsError(try TestUserScript.loadJS(fileName, from: mockBundle, withReplacements: [:])) { error in
-            guard case let UserScriptError.failedToLoadJS(jsFile, path, underlyingError) = error else {
+            guard case let UserScriptError.failedToLoadJS(jsFile, underlyingError) = error else {
                 return XCTFail("Expected failedToLoadJS error but got: \(error)")
             }
             XCTAssertEqual(fileName, jsFile)
-            XCTAssertEqual(mockBundle.pathToReturn, path)
             XCTAssertNotNil(underlyingError)
         }
     }

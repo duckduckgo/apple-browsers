@@ -52,7 +52,7 @@ public class DBPIOSInterface {
 
     public protocol AppLifecycleEventsDelegate: AnyObject {
         func appDidEnterBackground()
-        func appWillResume()
+        func appDidBecomeActive()
     }
 
     public protocol BackgroundTaskInformationDelegate: AnyObject {
@@ -198,7 +198,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
         scheduleBGProcessingTask()
     }
 
-    public func appWillResume() {
+    public func appDidBecomeActive() {
         tryToFireWeeklyPixels()
     }
 }

@@ -81,7 +81,7 @@ final class DBPService: NSObject {
     }
 
     func resume() {
-        dbpIOSManager?.appWillResume()
+        dbpIOSManager?.appDidBecomeActive()
     }
 }
 

@@ -25,11 +25,12 @@ public protocol PixelKitEvent {
     var parameters: [String: String]? { get }
 }
 
-/// Using reflection for extracting Error parameters
+/// Extract Error parameter from the PixelKitEvent, only one error is supported, if multiple errors are found we assert
 public extension PixelKitEvent {
 
     var error: NSError? {
         let mirror = Mirror(reflecting: self)
+        var resultError: NSError?
         for child in mirror.children {
             let associated = child.value
             // Check if the associated value is directly an Error
@@ -41,10 +42,14 @@ public extension PixelKitEvent {
             let associatedMirror = Mirror(reflecting: associated)
             for child in associatedMirror.children {
                 if let error = child.value as? NSError {
-                    return error
+                    guard resultError == nil else {
+                        assertionFailure("Multiple errors found in PixelKitEvent, only one error is supported")
+                        return resultError
+                    }
+                    resultError = error
                 }
             }
         }
-        return nil
+        return resultError
     }
 }

@@ -63,17 +63,37 @@ final class MockKeyboardPresenter: KeyboardPresenting {
 
 }
 
+final class MockLaunchSourceManager: LaunchSourceManaging {
+    
+    var source: LaunchSource = .standard
+    var setSourceCallCount = 0
+    var lastSetSource: LaunchSource?
+    
+    func setSource(_ source: LaunchSource) {
+        self.source = source
+        self.lastSetSource = source
+        setSourceCallCount += 1
+    }
+
+    func handleAppAction(_ appAction: LaunchAction) {
+        
+    }
+
+}
+
 @MainActor
 final class LaunchActionHandlerTests {
 
     let urlHandler = MockURLHandler()
     let shortcutItemHandler = MockShortcutItemHandler()
     let keyboardPresenter = MockKeyboardPresenter()
+    let launchSourceManager = MockLaunchSourceManager()
     let pixelFiringMock = PixelFiringMock.self
     lazy var launchActionHandler = LaunchActionHandler(
         urlHandler: urlHandler,
         shortcutItemHandler: shortcutItemHandler,
         keyboardPresenter: keyboardPresenter,
+        launchSourceService: launchSourceManager,
         pixelFiring: pixelFiringMock
     )
 
@@ -166,6 +186,107 @@ final class LaunchActionHandlerTests {
         // THEN
         #expect(pixelFiringMock.allPixelsFired.count == 1)
         #expect(pixelFiringMock.allPixelsFired.first?.pixelName == Pixel.Event.appLaunchFromShareExtension.name)
+    }
+
+    // MARK: - LaunchSourceManager Integration Tests
+
+    @Test("LaunchSourceManager is set to URL when handling openURL action")
+    func launchSourceManagerSetToURLWhenHandlingOpenURL() {
+        let url = URL(string: "https://example.com")!
+        let action = LaunchAction.openURL(url)
+        
+        #expect(launchSourceManager.source == .standard)
+        #expect(launchSourceManager.setSourceCallCount == 0)
+        
+        launchActionHandler.handleLaunchAction(action)
+        
+        #expect(launchSourceManager.source == .URL)
+        #expect(launchSourceManager.lastSetSource == .URL)
+        #expect(launchSourceManager.setSourceCallCount == 1)
+    }
+    
+    @Test("LaunchSourceManager is set to shortcut when handling shortcut item action")
+    func launchSourceManagerSetToShortcutWhenHandlingShortcutItem() {
+        let shortcutItem = UIApplicationShortcutItem(type: "TestType", localizedTitle: "Test")
+        let action = LaunchAction.handleShortcutItem(shortcutItem)
+        
+        #expect(launchSourceManager.source == .standard)
+        #expect(launchSourceManager.setSourceCallCount == 0)
+        
+        launchActionHandler.handleLaunchAction(action)
+        
+        #expect(launchSourceManager.source == .shortcut)
+        #expect(launchSourceManager.lastSetSource == .shortcut)
+        #expect(launchSourceManager.setSourceCallCount == 1)
+    }
+    
+    @Test("LaunchSourceManager is set to standard when showing keyboard")
+    func launchSourceManagerSetToStandardWhenShowingKeyboard() {
+        let date = Date()
+        let action = LaunchAction.showKeyboard(date)
+        
+        launchSourceManager.setSource(.URL)
+        #expect(launchSourceManager.source == .URL)
+        
+        launchActionHandler.handleLaunchAction(action)
+        
+        #expect(launchSourceManager.source == .standard)
+        #expect(launchSourceManager.lastSetSource == .standard)
+        #expect(launchSourceManager.setSourceCallCount == 2)
+    }
+    
+    @Test("LaunchSourceManager source is set before URL processing when shouldProcessDeepLink is false")
+    func launchSourceManagerSourceSetBeforeURLProcessingWhenShouldProcessDeepLinkIsFalse() {
+        let url = URL(string: "https://example.com")!
+        let action = LaunchAction.openURL(url)
+        
+        urlHandler.shouldProcessDeepLinkResult = false
+        
+        launchActionHandler.handleLaunchAction(action)
+        
+        #expect(launchSourceManager.source == .URL)
+        #expect(launchSourceManager.lastSetSource == .URL)
+        #expect(launchSourceManager.setSourceCallCount == 1)
+        #expect(!urlHandler.handleURLCalled)
+    }
+    
+    @Test("LaunchSourceManager maintains source across multiple actions")
+    func launchSourceManagerMaintainsSourceAcrossMultipleActions() {
+
+        #expect(launchSourceManager.source == .standard)
+        
+        let urlAction = LaunchAction.openURL(URL(string: "https://example.com")!)
+        launchActionHandler.handleLaunchAction(urlAction)
+        #expect(launchSourceManager.source == .URL)
+        #expect(launchSourceManager.setSourceCallCount == 1)
+        
+        let shortcutAction = LaunchAction.handleShortcutItem(UIApplicationShortcutItem(type: "TestType", localizedTitle: "Test"))
+        launchActionHandler.handleLaunchAction(shortcutAction)
+        #expect(launchSourceManager.source == .shortcut)
+        #expect(launchSourceManager.setSourceCallCount == 2)
+        
+        let keyboardAction = LaunchAction.showKeyboard(Date())
+        launchActionHandler.handleLaunchAction(keyboardAction)
+        #expect(launchSourceManager.source == .standard)
+        #expect(launchSourceManager.setSourceCallCount == 3)
+    }
+    
+    @Test("LaunchSourceManager integration with all LaunchAction types")
+    func launchSourceManagerIntegrationWithAllLaunchActionTypes() {
+
+        let testCases: [(LaunchAction, LaunchSource)] = [
+            (.openURL(URL(string: "https://example.com")!), .URL),
+            (.handleShortcutItem(UIApplicationShortcutItem(type: "TestType", localizedTitle: "Test")), .shortcut),
+            (.showKeyboard(Date()), .standard)
+        ]
+        
+        for (index, (action, expectedSource)) in testCases.enumerated() {
+            launchActionHandler.handleLaunchAction(action)
+            
+            #expect(launchSourceManager.source == expectedSource, "Failed at index \(index) for action \(action)")
+            #expect(launchSourceManager.lastSetSource == expectedSource, "Failed at index \(index) for action \(action)")
+            #expect(launchSourceManager.setSourceCallCount == index + 1, "Failed at index \(index) for action \(action)")
+        }
     }
 
 }

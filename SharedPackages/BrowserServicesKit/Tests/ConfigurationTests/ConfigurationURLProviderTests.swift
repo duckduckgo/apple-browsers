@@ -94,7 +94,7 @@ final class ConfigurationURLProviderTests {
 
         // When
         let customURL = URL(string: urlString)!
-        sut.setCustomURL(customURL, for: config)
+        try? sut.setCustomURL(customURL, for: config)
 
         // Then
         var value: URL?
@@ -117,7 +117,7 @@ final class ConfigurationURLProviderTests {
         let customURL = URL(string: urlString)!
 
         // When
-        sut.setCustomURL(customURL, for: config)
+        try? sut.setCustomURL(customURL, for: config)
 
         // Then
         var value: URL?
@@ -141,7 +141,7 @@ final class ConfigurationURLProviderTests {
         setCustomURL(mockStore, customURL)
 
         // When
-        sut.setCustomURL(nil, for: config)
+        try? sut.setCustomURL(nil, for: config)
 
         // Then
         var value: URL?

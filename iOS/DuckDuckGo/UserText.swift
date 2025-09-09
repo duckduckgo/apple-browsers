@@ -1851,7 +1851,7 @@ public struct UserText {
     public static let settingsAiExperimentalPickerSearchOnly = NSLocalizedString("settings.ai.experimental.picker.search_only", value: "Search Only", comment: "Title for the 'Search Only' option in the AI experimental picker")
     
     // MARK: - New Address Bar Picker
-    public static let newAddressBarPickerTitle = NSLocalizedString("new.address.bar.picker.title", value: "New Address Bar Option", comment: "Title for the new address bar picker modal")
+    public static let newAddressBarPickerTitle = NSLocalizedString("new.address.bar.picker.title", value: "Choose a new address bar", comment: "Title for the new address bar picker modal")
     public static let newAddressBarPickerSubtitle = NSLocalizedString("new.address.bar.picker.subtitle", value: "Toggle between search and AI chat", comment: "Subtitle for the new address bar picker modal")
     public static let newAddressBarPickerDescription = NSLocalizedString("new.address.bar.picker.description", value: "AI features are always optional.", comment: "Description text for the new address bar picker modal")
     public static let newAddressBarPickerSearchOnly = NSLocalizedString("new.address.bar.picker.search.only", value: "Search Only", comment: "Option for search only in the new address bar picker")

@@ -59,11 +59,17 @@ struct SwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding {
     private let featureDiscovery: FeatureDiscovery
     private let textLengthBucketKey = "text_length_bucket"
     
-    init(featureDiscovery: FeatureDiscovery) {
+    /// Initialize with feature discovery service for entry point data.
+    /// - Parameter featureDiscovery: Service for tracking first-time vs returning user behavior
+    init(featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.featureDiscovery = featureDiscovery
     }
     
-    /// Process text submission and fire pixel with length bucket parameter
+    /// Process text submission and fire pixel with length bucket and feature discovery parameters
+    /// - Note: AI Chat submissions also include "was_used_before" parameter via feature discovery
+    /// - Parameters:
+    ///   - text: Input text
+    ///   - submissionMode: Whether this is a search query or AI chat prompt
     func process(_ text: String, for submissionMode: TextEntryMode) {
         guard let bucket = SwitchBarTextBucket(text) else { return }
         

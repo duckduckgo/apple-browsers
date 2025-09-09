@@ -49512,7 +49512,7 @@
       }
     },
     "newtabpage.context.menu.favorites" : {
-      "comment" : "Context menu item to manage Favorites section on the New Tap Page",
+      "comment" : "Context menu item to manage Favorites section on the New Tab Page",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -49524,7 +49524,7 @@
       }
     },
     "newtabpage.context.menu.open.duckai.settings" : {
-      "comment" : "Context menu item to open Duck.ai Settings from the New Tap Page",
+      "comment" : "Context menu item to open Duck.ai Settings from the New Tab Page",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -49536,7 +49536,7 @@
       }
     },
     "newtabpage.context.menu.protections.report" : {
-      "comment" : "Context menu item to manage Protections Report section on the New Tap Page",
+      "comment" : "Context menu item to manage Protections Report section on the New Tab Page",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -49548,7 +49548,7 @@
       }
     },
     "newtabpage.context.menu.search" : {
-      "comment" : "Context menu item to manage Search section on the New Tap Page",
+      "comment" : "Context menu item to manage Search section on the New Tab Page",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -49560,7 +49560,7 @@
       }
     },
     "newtabpage.context.menu.show.duckai" : {
-      "comment" : "Context menu item to manage Duck.ai on the New Tap Page",
+      "comment" : "Context menu item to manage Duck.ai on the New Tab Page",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {

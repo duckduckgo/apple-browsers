@@ -69,7 +69,7 @@ class PinnedTabsTests: UITestCase {
         pinCurrentPage()
         assertCurrentPageCanBeUnpinned()
     }
-    
+
     func testReleaseNotesCannotBePinned() {
         app.openHelp()
         app.openReleaseNotes()

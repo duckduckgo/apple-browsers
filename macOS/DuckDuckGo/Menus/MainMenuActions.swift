@@ -770,14 +770,22 @@ extension AppDelegate {
         Application.appDelegate.configurationManager.forceRefresh(isDebug: true)
     }
 
-    private func setPrivacyConfigurationUrl(_ configurationUrl: URL?) {
-        configurationURLProvider.setCustomURL(configurationUrl, for: .privacyConfiguration)
+    private func setPrivacyConfigurationUrl(_ configurationUrl: URL?) throws {
+        try configurationURLProvider.setCustomURL(configurationUrl, for: .privacyConfiguration)
         Application.appDelegate.configurationManager.forceRefresh(isDebug: true)
         if let configurationUrl {
             Logger.config.debug("New configuration URL set to \(configurationUrl.absoluteString)")
         } else {
             Logger.config.log("New configuration URL reset to default")
         }
+    }
+
+    private func showErrorAlert(message: String) {
+        let alert = NSAlert()
+        alert.messageText = "Error"
+        alert.informativeText = message
+        alert.alertStyle = .warning
+        alert.runModal()
     }
 
     @objc func setCustomPrivacyConfigurationURL(_ sender: Any?) {
@@ -789,13 +797,22 @@ extension AppDelegate {
                 Logger.config.error("Failed to set custom configuration URL")
                 return
             }
-
-            setPrivacyConfigurationUrl(newConfigurationUrl)
+            do {
+                try setPrivacyConfigurationUrl(newConfigurationUrl)
+            } catch let error {
+                let message = (error as? URLSettingError)?.description ?? "It was not possible the set the configuration"
+                showErrorAlert(message: message)
+            }
         }
     }
 
     @objc func resetPrivacyConfigurationToDefault(_ sender: Any?) {
-        setPrivacyConfigurationUrl(nil)
+        do {
+            try setPrivacyConfigurationUrl(nil)
+        } catch let error {
+            let message = (error as? URLSettingError)?.description ?? "It was not possible the set the configuration"
+            showErrorAlert(message: message)
+        }
     }
 
     @objc func resetInstallStatistics() {

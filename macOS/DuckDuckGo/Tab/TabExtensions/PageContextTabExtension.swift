@@ -47,7 +47,12 @@ final class PageContextTabExtension {
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     private let isLoadedInSidebar: Bool
     private var cachedPageContext: AIChatPageContextData?
-    private var shouldAllowCollectionResult: Bool = false
+
+    /// This flag is set when context collection was requested by the user from the sidebar.
+    ///
+    /// It allows to override the AI Features setting for automatic context collection.
+    /// The flag is automatically cleared after receiving a `collectionResult` message.
+    private var shouldForceContextCollection: Bool = false
 
     private weak var webView: WKWebView?
     private weak var pageContextUserScript: PageContextUserScript? {
@@ -113,7 +118,7 @@ final class PageContextTabExtension {
                 /// This closure is responsible for passing cached page context to the newly displayed sidebar.
                 /// It's only called when sidebar for tabID is non-nil.
                 /// Additionally, we're only calling `handle` if there's a cached page context.
-                guard let cachedPageContext, aiChatMenuConfiguration.shouldAutomaticallySendPageContext || shouldAllowCollectionResult else {
+                guard let cachedPageContext, aiChatMenuConfiguration.shouldAutomaticallySendPageContext || shouldForceContextCollection else {
                     return
                 }
                 handle(cachedPageContext)
@@ -143,7 +148,7 @@ final class PageContextTabExtension {
         pageContextUserScript.collectionResultPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageContext in
-                guard let self, shouldAllowCollectionResult || aiChatMenuConfiguration.shouldAutomaticallySendPageContext else {
+                guard let self, isContextCollectionEnabled else {
                     return
                 }
                 /// This closure is responsible for handling page context received from the user script.
@@ -161,8 +166,8 @@ final class PageContextTabExtension {
         sidebar.sidebarViewController.pageContextRequestedPublisher?
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.shouldAllowCollectionResult = true
-                self?.collectPageContextIfNeeded(force: true)
+                self?.shouldForceContextCollection = true
+                self?.collectPageContextIfNeeded()
             }
             .store(in: &sidebarCancellables)
     }
@@ -174,18 +179,24 @@ final class PageContextTabExtension {
         guard featureFlagger.isFeatureOn(.aiChatPageContext) else {
             return
         }
-        shouldAllowCollectionResult = false
+        shouldForceContextCollection = false
         cachedPageContext = pageContext
         if let sidebar = aiChatSidebarProvider.getSidebar(for: tabID) {
             sidebar.sidebarViewController.setPageContext(pageContext)
         }
     }
 
-    private func collectPageContextIfNeeded(force: Bool = false) {
-        guard case .url = content, force || aiChatMenuConfiguration.shouldAutomaticallySendPageContext else {
+    private func collectPageContextIfNeeded() {
+        guard case .url = content, isContextCollectionEnabled else {
             return
         }
         pageContextUserScript?.collect()
+    }
+
+    /// Context collection is allowed when it's set to automatic in AI Features Settings
+    /// or when we allow one-time collection requested by the user.
+    private var isContextCollectionEnabled: Bool {
+        aiChatMenuConfiguration.shouldAutomaticallySendPageContext || shouldForceContextCollection
     }
 }
 

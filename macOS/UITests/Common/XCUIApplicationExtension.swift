@@ -181,10 +181,10 @@ extension XCUIApplication {
         XCTAssertTrue(
             releaseNotesMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence)
         )
-        
+
         releaseNotesMenu.click()
     }
-    
+
     /// Opens settings
     func openSettings() {
         typeKey(",", modifierFlags: .command)
@@ -619,7 +619,7 @@ extension XCUIApplication {
     var releaseNotesMenu: XCUIElement {
         menuBars.menus.menuItems[AccessibilityIdentifiers.releaseNotesMenuItem]
     }
-    
+
     var bookmarksMenu: XCUIElement {
         menuBarItems[AccessibilityIdentifiers.bookmarksMenu]
     }

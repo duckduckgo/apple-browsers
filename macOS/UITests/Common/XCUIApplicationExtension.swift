@@ -43,6 +43,8 @@ extension XCUIApplication {
         static let mainMenuPinTabMenuItem = "Pin Tab"
         static let mainMenuUnpinTabMenuItem = "Unpin Tab"
         static let preferencesMenuItem = "MainMenu.preferencesMenuItem"
+        static let helpMenuItem = "Help"
+        static let releaseNotesMenuItem = "Release Notes"
 
         static let settingsScrollView = "Settings.ScrollView"
         static let preferencesGeneralButton = "PreferencesSidebar.generalButton"
@@ -163,11 +165,26 @@ extension XCUIApplication {
         typeKey("j", modifierFlags: .command)
     }
 
+    /// Opens Help
+    func openHelp() {
+        helpMenu.click()
+    }
+
     /// Opens history
     func openHistory() {
         typeKey("y", modifierFlags: .command)
     }
 
+    /// Opens release notes
+    func openReleaseNotes() {
+        let releaseNotesMenu = releaseNotesMenu
+        XCTAssertTrue(
+            releaseNotesMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence)
+        )
+        
+        releaseNotesMenu.click()
+    }
+    
     /// Opens settings
     func openSettings() {
         typeKey(",", modifierFlags: .command)
@@ -591,10 +608,18 @@ extension XCUIApplication {
         buttons[AccessibilityIdentifiers.downloadsButton]
     }
 
+    var helpMenu: XCUIElement {
+        menuBarItems[AccessibilityIdentifiers.helpMenuItem]
+    }
+
     var historyMenu: XCUIElement {
         menuBarItems[AccessibilityIdentifiers.historyMenu]
     }
 
+    var releaseNotesMenu: XCUIElement {
+        menuBars.menus.menuItems[AccessibilityIdentifiers.releaseNotesMenuItem]
+    }
+    
     var bookmarksMenu: XCUIElement {
         menuBarItems[AccessibilityIdentifiers.bookmarksMenu]
     }

@@ -69,6 +69,12 @@ class PinnedTabsTests: UITestCase {
         pinCurrentPage()
         assertCurrentPageCanBeUnpinned()
     }
+    
+    func testReleaseNotesCannotBePinned() {
+        app.openHelp()
+        app.openReleaseNotes()
+        assertCurrentPageCannotBePinned()
+    }
 
     // MARK: - Utilities
 
@@ -185,6 +191,16 @@ class PinnedTabsTests: UITestCase {
         XCTAssertTrue(
             app.menuItems["Unpin Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence)
         )
+    }
+
+    private func assertCurrentPageCannotBePinned() {
+        let pinItem = app.menuItems["Pin Tab"]
+
+        XCTAssertTrue(
+            pinItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Pin Tab menu item didn't become available in a reasonable timeframe."
+        )
+        XCTAssertFalse(pinItem.isHittable)
     }
 
     private func waitForSite(pageTitle: String) {

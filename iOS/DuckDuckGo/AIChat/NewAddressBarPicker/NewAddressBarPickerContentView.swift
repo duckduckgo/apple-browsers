@@ -188,7 +188,7 @@ private enum AddressBarPickerAnimation: String {
 private struct CTAView: View {
     let aiChatSettings: AIChatSettingsProvider
     let onDismiss: () -> Void
-    @State private var selectedOption: Int = 0
+    @State private var selectedOption: Int = 1
 
     var body: some View {
         VStack(spacing: 0) {

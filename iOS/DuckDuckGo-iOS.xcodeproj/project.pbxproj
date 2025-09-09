@@ -4899,6 +4899,195 @@
 			path = AppServices;
 			sourceTree = "<group>";
 		};
+		36DCC94F2E70611E00E5D6A0 /* DuckDuckGo */ = {
+			isa = PBXGroup;
+			children = (
+				36DCC9622E7074CE00E5D6A0 /* Tutorials */,
+				36DCC9612E70749B00E5D6A0 /* Tabs */,
+				36DCC9602E70747600E5D6A0 /* OmniBar */,
+				36DCC95F2E70743E00E5D6A0 /* NewTabPage */,
+				36DCC95E2E70742500E5D6A0 /* Application */,
+				98E563B42DE8B32D00E6E75F /* MockVoiceSearchHelper.swift */,
+				98E563AD2DE8B32D00E6E75F /* MockTextZoomCoordinator.swift */,
+				98E563AC2DE8B32D00E6E75F /* MockTabPreviewsSource.swift */,
+				9876DF2A2DEEE21700E30713 /* MockThemeManager.swift */,
+				98E563952DE8B32D00E6E75F /* DuckPlayerMocks.swift */,
+				98E563A72DE8B32D00E6E75F /* MockPrivacyDataReporter.swift */,
+			);
+			path = DuckDuckGo;
+			sourceTree = "<group>";
+		};
+		36DCC9532E70625200E5D6A0 /* BrowserServiceKit */ = {
+			isa = PBXGroup;
+			children = (
+				36DCC95D2E706F6B00E5D6A0 /* Bookmarks */,
+				36DCC95C2E706AB300E5D6A0 /* Statistics */,
+				36DCC95B2E706A6500E5D6A0 /* PrivacyConfig */,
+				36DCC95A2E706A4200E5D6A0 /* MaliciousSiteProtection */,
+				986CD53C2DE8FA0500AFA98A /* ConfigurationMocks.swift */,
+				98E563982DE8B32D00E6E75F /* MockBundle.swift */,
+				98E5639B2DE8B32D00E6E75F /* MockDDGSyncing.swift */,
+				F1A83D852E0AB27E00054B03 /* MockFeatureFlagger.swift */,
+				98E563A82DE8B32D00E6E75F /* MockSecureVault.swift */,
+				98E563B22DE8B32D00E6E75F /* MockUserAgent.swift */,
+			);
+			path = BrowserServiceKit;
+			sourceTree = "<group>";
+		};
+		36DCC9542E7062DC00E5D6A0 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				36DCC9592E70676C00E5D6A0 /* Utilities */,
+				36DCC9582E70670400E5D6A0 /* Statistics */,
+				36DCC9572E70662900E5D6A0 /* Web */,
+				36DCC9562E7065C200E5D6A0 /* Sync */,
+				98E564322DE8B63E00E6E75F /* HistoryMocks.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		36DCC9552E70638100E5D6A0 /* AIChat */ = {
+			isa = PBXGroup;
+			children = (
+				98E563962DE8B32D00E6E75F /* MockAIChatSettingsProvider.swift */,
+			);
+			path = AIChat;
+			sourceTree = "<group>";
+		};
+		36DCC9562E7065C200E5D6A0 /* Sync */ = {
+			isa = PBXGroup;
+			children = (
+				98E5649A2DE8ED1000E6E75F /* SyncMocks.swift */,
+				98E564A92DE8EDF000E6E75F /* CapturingAdapterErrorHandler.swift */,
+				98E564A42DE8EDE200E6E75F /* CapturingAlertPresenter.swift */,
+				98E5649F2DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift */,
+			);
+			path = Sync;
+			sourceTree = "<group>";
+		};
+		36DCC9572E70662900E5D6A0 /* Web */ = {
+			isa = PBXGroup;
+			children = (
+				98E563B52DE8B32D00E6E75F /* MockWebsiteDataManager.swift */,
+				98E5639F2DE8B32D00E6E75F /* MockFireproofing.swift */,
+			);
+			path = Web;
+			sourceTree = "<group>";
+		};
+		36DCC9582E70670400E5D6A0 /* Statistics */ = {
+			isa = PBXGroup;
+			children = (
+				98E5639D2DE8B32D00E6E75F /* MockFeatureDiscovery.swift */,
+				98E563A42DE8B32D00E6E75F /* MockPersistentPixel.swift */,
+				98E563A52DE8B32D00E6E75F /* MockPixelFiring.swift */,
+			);
+			path = Statistics;
+			sourceTree = "<group>";
+		};
+		36DCC9592E70676C00E5D6A0 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				98E563AE2DE8B32D00E6E75F /* MockTimer.swift */,
+				98E563B02DE8B32D00E6E75F /* MockURLOpener.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		36DCC95A2E706A4200E5D6A0 /* MaliciousSiteProtection */ = {
+			isa = PBXGroup;
+			children = (
+				98E564B32DE8F34E00E6E75F /* MaliciousSiteProtectionMocks.swift */,
+				98E564B42DE8F34E00E6E75F /* MockMaliciousSiteProtectionManager.swift */,
+			);
+			path = MaliciousSiteProtection;
+			sourceTree = "<group>";
+		};
+		36DCC95B2E706A6500E5D6A0 /* PrivacyConfig */ = {
+			isa = PBXGroup;
+			children = (
+				98E564362DE8B6BF00E6E75F /* PrivacyConfigurationManagerMock.swift */,
+				98E563A62DE8B32D00E6E75F /* MockPrivacyConfiguration.swift */,
+			);
+			path = PrivacyConfig;
+			sourceTree = "<group>";
+		};
+		36DCC95C2E706AB300E5D6A0 /* Statistics */ = {
+			isa = PBXGroup;
+			children = (
+				98E563B12DE8B32D00E6E75F /* MockUsageSegmentation.swift */,
+				98E563B32DE8B32D00E6E75F /* MockVariantManager.swift */,
+				98E563A92DE8B32D00E6E75F /* MockStatisticsStore.swift */,
+			);
+			path = Statistics;
+			sourceTree = "<group>";
+		};
+		36DCC95D2E706F6B00E5D6A0 /* Bookmarks */ = {
+			isa = PBXGroup;
+			children = (
+				986CD5502DE913EC00AFA98A /* MockFavoritesListInteracting.swift */,
+				98E5639C2DE8B32D00E6E75F /* MockFaviconStore.swift */,
+				98E563972DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift */,
+			);
+			path = Bookmarks;
+			sourceTree = "<group>";
+		};
+		36DCC95E2E70742500E5D6A0 /* Application */ = {
+			isa = PBXGroup;
+			children = (
+				36F2CA5A2E60588F00C7039D /* MockUNUserNotificationCenter.swift */,
+				98E563922DE8B32D00E6E75F /* AppSettingsMock.swift */,
+			);
+			path = Application;
+			sourceTree = "<group>";
+		};
+		36DCC95F2E70743E00E5D6A0 /* NewTabPage */ = {
+			isa = PBXGroup;
+			children = (
+				98E563A12DE8B32D00E6E75F /* MockMessageNavigationDelegate.swift */,
+				986CD54B2DE9139300AFA98A /* HomePageMessagesConfigurationMock.swift */,
+			);
+			path = NewTabPage;
+			sourceTree = "<group>";
+		};
+		36DCC9602E70747600E5D6A0 /* OmniBar */ = {
+			isa = PBXGroup;
+			children = (
+				98E563A32DE8B32D00E6E75F /* MockOmnibarDependency.swift */,
+				98E563A22DE8B32D00E6E75F /* MockOmniBar.swift */,
+			);
+			path = OmniBar;
+			sourceTree = "<group>";
+		};
+		36DCC9612E70749B00E5D6A0 /* Tabs */ = {
+			isa = PBXGroup;
+			children = (
+				98E563AA2DE8B32D00E6E75F /* MockTabDelegate.swift */,
+				98E563AB2DE8B32D00E6E75F /* MockTabInteractionStateSource.swift */,
+			);
+			path = Tabs;
+			sourceTree = "<group>";
+		};
+		36DCC9622E7074CE00E5D6A0 /* Tutorials */ = {
+			isa = PBXGroup;
+			children = (
+				36DCC9632E7074E900E5D6A0 /* Onboarding */,
+				98E563AF2DE8B32D00E6E75F /* MockTutorialSettings.swift */,
+			);
+			path = Tutorials;
+			sourceTree = "<group>";
+		};
+		36DCC9632E7074E900E5D6A0 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				98E563932DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift */,
+				98E563B62DE8B32D00E6E75F /* OnboardingFirePixelMock.swift */,
+				98E563B72DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift */,
+				98E563B82DE8B32D00E6E75F /* OnboardingManagerMock.swift */,
+				98E563B92DE8B32D00E6E75F /* OnboardingPixelReporterMock.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
 		377D80202AB4853A002AF251 /* SettingSyncHandlers */ = {
 			isa = PBXGroup;
 			children = (
@@ -6168,57 +6357,11 @@
 		98E562FE2DE8AF3100E6E75F /* Mocks */ = {
 			isa = PBXGroup;
 			children = (
-				36F2CA5A2E60588F00C7039D /* MockUNUserNotificationCenter.swift */,
-				9876DF2A2DEEE21700E30713 /* MockThemeManager.swift */,
-				986CD5502DE913EC00AFA98A /* MockFavoritesListInteracting.swift */,
-				986CD54B2DE9139300AFA98A /* HomePageMessagesConfigurationMock.swift */,
-				986CD53C2DE8FA0500AFA98A /* ConfigurationMocks.swift */,
-				98E564B32DE8F34E00E6E75F /* MaliciousSiteProtectionMocks.swift */,
-				98E564B42DE8F34E00E6E75F /* MockMaliciousSiteProtectionManager.swift */,
-				98E564B52DE8F34E00E6E75F /* TimeTraveller.swift */,
-				98E564A92DE8EDF000E6E75F /* CapturingAdapterErrorHandler.swift */,
-				98E564A42DE8EDE200E6E75F /* CapturingAlertPresenter.swift */,
-				98E5649F2DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift */,
-				98E5649A2DE8ED1000E6E75F /* SyncMocks.swift */,
-				98E564362DE8B6BF00E6E75F /* PrivacyConfigurationManagerMock.swift */,
-				98E564322DE8B63E00E6E75F /* HistoryMocks.swift */,
-				98E563922DE8B32D00E6E75F /* AppSettingsMock.swift */,
-				98E563932DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift */,
-				98E563952DE8B32D00E6E75F /* DuckPlayerMocks.swift */,
-				98E563962DE8B32D00E6E75F /* MockAIChatSettingsProvider.swift */,
-				98E563972DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift */,
-				98E563982DE8B32D00E6E75F /* MockBundle.swift */,
+				36DCC9552E70638100E5D6A0 /* AIChat */,
+				36DCC9542E7062DC00E5D6A0 /* Core */,
+				36DCC9532E70625200E5D6A0 /* BrowserServiceKit */,
+				36DCC94F2E70611E00E5D6A0 /* DuckDuckGo */,
 				98E5639A2DE8B32D00E6E75F /* MockDataExtensions.swift */,
-				98E5639B2DE8B32D00E6E75F /* MockDDGSyncing.swift */,
-				98E5639C2DE8B32D00E6E75F /* MockFaviconStore.swift */,
-				F1A83D852E0AB27E00054B03 /* MockFeatureFlagger.swift */,
-				98E5639D2DE8B32D00E6E75F /* MockFeatureDiscovery.swift */,
-				98E5639F2DE8B32D00E6E75F /* MockFireproofing.swift */,
-				98E563A12DE8B32D00E6E75F /* MockMessageNavigationDelegate.swift */,
-				98E563A22DE8B32D00E6E75F /* MockOmniBar.swift */,
-				98E563A32DE8B32D00E6E75F /* MockOmnibarDependency.swift */,
-				98E563A42DE8B32D00E6E75F /* MockPersistentPixel.swift */,
-				98E563A52DE8B32D00E6E75F /* MockPixelFiring.swift */,
-				98E563A62DE8B32D00E6E75F /* MockPrivacyConfiguration.swift */,
-				98E563A72DE8B32D00E6E75F /* MockPrivacyDataReporter.swift */,
-				98E563A82DE8B32D00E6E75F /* MockSecureVault.swift */,
-				98E563A92DE8B32D00E6E75F /* MockStatisticsStore.swift */,
-				98E563AA2DE8B32D00E6E75F /* MockTabDelegate.swift */,
-				98E563AB2DE8B32D00E6E75F /* MockTabInteractionStateSource.swift */,
-				98E563AC2DE8B32D00E6E75F /* MockTabPreviewsSource.swift */,
-				98E563AD2DE8B32D00E6E75F /* MockTextZoomCoordinator.swift */,
-				98E563AE2DE8B32D00E6E75F /* MockTimer.swift */,
-				98E563AF2DE8B32D00E6E75F /* MockTutorialSettings.swift */,
-				98E563B02DE8B32D00E6E75F /* MockURLOpener.swift */,
-				98E563B12DE8B32D00E6E75F /* MockUsageSegmentation.swift */,
-				98E563B22DE8B32D00E6E75F /* MockUserAgent.swift */,
-				98E563B32DE8B32D00E6E75F /* MockVariantManager.swift */,
-				98E563B42DE8B32D00E6E75F /* MockVoiceSearchHelper.swift */,
-				98E563B52DE8B32D00E6E75F /* MockWebsiteDataManager.swift */,
-				98E563B62DE8B32D00E6E75F /* OnboardingFirePixelMock.swift */,
-				98E563B72DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift */,
-				98E563B82DE8B32D00E6E75F /* OnboardingManagerMock.swift */,
-				98E563B92DE8B32D00E6E75F /* OnboardingPixelReporterMock.swift */,
 			);
 			path = Mocks;
 			sourceTree = "<group>";
@@ -6230,6 +6373,7 @@
 				98E562FF2DE8AF3100E6E75F /* CombineTestUtilities.swift */,
 				98E563002DE8AF3100E6E75F /* CoreDataDatabaseTestUtilities.swift */,
 				98E563012DE8AF3100E6E75F /* CoreDataTestUtilities.swift */,
+				98E564B52DE8F34E00E6E75F /* TimeTraveller.swift */,
 				98E563022DE8AF3100E6E75F /* HtmlTestDataLoader.swift */,
 				98E563032DE8AF3100E6E75F /* InitHelpers.swift */,
 				98E563042DE8AF3100E6E75F /* JsonTestDataLoader.swift */,

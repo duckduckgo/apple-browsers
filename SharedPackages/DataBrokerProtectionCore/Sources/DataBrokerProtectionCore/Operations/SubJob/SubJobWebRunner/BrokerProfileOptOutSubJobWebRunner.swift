@@ -148,8 +148,14 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                                 assertionFailure("Missing ActionsHandler")
                             }
                         case .optOut:
+                            if let actionsHandler {
+                                assertionFailure("Use .testing variant instead")
+                            }
                             self.actionsHandler = ActionsHandler.forOptOut(optOutStep, haltsAtEmailConfirmation: featureFlagger.isEmailConfirmationDecouplingFeatureOn)
                         case .emailConfirmation(let url):
+                            if let actionsHandler {
+                                assertionFailure("Use .testing variant instead")
+                            }
                             self.actionsHandler = ActionsHandler.forEmailConfirmationContinuation(optOutStep, confirmationURL: url)
                         }
 

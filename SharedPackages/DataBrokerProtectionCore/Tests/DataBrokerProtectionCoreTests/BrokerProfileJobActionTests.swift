@@ -280,7 +280,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: stageCalulator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            variant: .testing,
             shouldRunNextStep: { true }
         )
         let actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)

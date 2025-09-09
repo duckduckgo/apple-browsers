@@ -60,7 +60,7 @@ struct SwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding {
     private let textLengthBucketKey = "text_length_bucket"
     
     /// Initialize with feature discovery service for entry point data.
-    /// - Parameter featureDiscovery: Service for tracking first-time vs returning user behavior
+    /// - Parameter featureDiscovery: Service for first-time vs returning user behavior
     init(featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.featureDiscovery = featureDiscovery
     }

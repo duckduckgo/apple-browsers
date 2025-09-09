@@ -27,7 +27,7 @@
                 key: 'status',
                 description: 'UNNotificationAuthorizationStatus string',
                 type: 'string',
-                enum: ['notDetermined', 'denied', 'authorized', 'provisional', 'ephemeral'] // recommended
+                enum: ['notDetermined', 'denied', 'authorized', 'provisional', 'ephemeral']
             },
         ],
     },

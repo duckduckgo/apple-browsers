@@ -26,6 +26,7 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
     private var client: NewTabPageConfigurationClient!
     private var sectionsAvailabilityProvider: MockNewTabPageSectionsAvailabilityProvider!
     private var sectionsVisibilityProvider: MockNewTabPageSectionsVisibilityProvider!
+    private var omnibarConfigProvider: MockNewTabPageOmnibarConfigProvider!
     private var contextMenuPresenter: CapturingNewTabPageContextMenuPresenter!
     private var userScript: NewTabPageUserScript!
     private var messageHelper: MessageHelper<NewTabPageConfigurationClient.MessageName>!
@@ -35,11 +36,13 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
         try super.setUpWithError()
         sectionsVisibilityProvider = MockNewTabPageSectionsVisibilityProvider()
         sectionsAvailabilityProvider = MockNewTabPageSectionsAvailabilityProvider()
+        omnibarConfigProvider = MockNewTabPageOmnibarConfigProvider()
         contextMenuPresenter = CapturingNewTabPageContextMenuPresenter()
         eventMapper = CapturingNewTabPageConfigurationEventHandler()
         client = NewTabPageConfigurationClient(
             sectionsAvailabilityProvider: sectionsAvailabilityProvider,
             sectionsVisibilityProvider: sectionsVisibilityProvider,
+            omnibarConfigProvider: omnibarConfigProvider,
             customBackgroundProvider: CapturingNewTabPageCustomBackgroundProvider(),
             contextMenuPresenter: contextMenuPresenter,
             linkOpener: CapturingNewTabPageLinkOpener(),

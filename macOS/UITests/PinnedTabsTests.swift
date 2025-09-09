@@ -87,7 +87,7 @@ class PinnedTabsTests: UITestCase {
         app.typeKey("]", modifierFlags: [.command, .shift])
         pinCurrentPage()
     }
-    
+
     private func pinCurrentPage() {
         app.menuItems["Pin Tab"].tap()
     }
@@ -168,7 +168,7 @@ class PinnedTabsTests: UITestCase {
             app.menuItems["Unpin Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence)
         )
     }
-    
+
     private func waitForSite(pageTitle: String) {
         XCTAssertTrue(app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }

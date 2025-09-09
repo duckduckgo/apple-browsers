@@ -46,16 +46,7 @@ final class LaunchSourceManagerTests {
         
         #expect(manager.source == .shortcut)
     }
-    
-    @Test("LaunchSourceManager sets source to notification")
-    func setsSourceToNotification() {
-        let manager = LaunchSourceManager()
-        
-        manager.setSource(.notification)
-        
-        #expect(manager.source == .notification)
-    }
-    
+
     @Test("LaunchSourceManager sets source to standard")
     func setsSourceToStandard() {
         let manager = LaunchSourceManager()
@@ -75,10 +66,7 @@ final class LaunchSourceManagerTests {
         
         manager.setSource(.shortcut)
         #expect(manager.source == .shortcut)
-        
-        manager.setSource(.notification)
-        #expect(manager.source == .notification)
-        
+
         manager.setSource(.standard)
         #expect(manager.source == .standard)
     }

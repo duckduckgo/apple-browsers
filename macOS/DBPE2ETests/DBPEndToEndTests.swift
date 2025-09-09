@@ -44,7 +44,6 @@ final class DBPEndToEndTests: XCTestCase {
 
         loginItemsManager = LoginItemsManager()
         loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
-        loginItemsManager.enableLoginItems([LoginItem.dbpBackgroundAgent])
 
         communicationLayer = DBPUICommunicationLayer(webURLSettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
                                                      privacyConfig: PrivacyConfigurationManagingMock())

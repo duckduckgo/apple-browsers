@@ -57,6 +57,7 @@ private struct ContentView: View {
 
             backgroundView
             VStack {
+                topSpacer
                 headerView
                     .frame(width: 300)
                     .padding(.top, 64)
@@ -64,6 +65,15 @@ private struct ContentView: View {
                 AnimationView()
             }
             .padding(.horizontal)
+        }
+    }
+
+    @ViewBuilder
+    private var topSpacer: some View {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            Spacer()
+        } else {
+            EmptyView()
         }
     }
 
@@ -188,7 +198,7 @@ private enum AddressBarPickerAnimation: String {
 private struct CTAView: View {
     let aiChatSettings: AIChatSettingsProvider
     let onDismiss: () -> Void
-    @State private var selectedOption: Int = 0
+    @State private var selectedOption: Int = 1
 
     var body: some View {
         VStack(spacing: 0) {
@@ -198,8 +208,7 @@ private struct CTAView: View {
                     UserText.newAddressBarPickerSearchAndAI
                 ],
                 selectedIndex: selectedOption,
-                configuration: RadioButtonConfiguration(
-                )
+                configuration: RadioButtonConfiguration(layout: UIDevice.current.userInterfaceIdiom == .pad ? .horizontal : .vertical)
             ) { _, selectedIndex in
                 if let index = selectedIndex {
                     self.selectedOption = index

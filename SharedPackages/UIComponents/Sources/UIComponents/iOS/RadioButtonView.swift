@@ -62,7 +62,7 @@ public struct RadioButtonConfiguration {
         selectedBackgroundColor: Color = .init(designSystemColor: .accent).opacity(0.2),
         unselectedBackgroundColor: Color = .clear,
         selectedBorderColor: Color = .init(designSystemColor: .accent),
-        unselectedBorderColor: Color = .init(designSystemColor: .border),
+        unselectedBorderColor: Color = .init(designSystemColor: .lines),
         selectedCheckboxColor: Color = .init(designSystemColor: .accent),
         unselectedCheckboxColor: Color = .gray.opacity(0.6),
         selectedCheckboxImage: Image = Image(uiImage: DesignSystemImages.Glyphs.Size24.checkRecolorable),

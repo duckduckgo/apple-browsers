@@ -2237,16 +2237,16 @@ https://duckduckgo.com/mac";
 "new.address.bar.picker.not.now" = "Not Now";
 
 /* Option for search and AI in the new address bar picker */
-"new.address.bar.picker.search.and.ai" = "Search & Duck.ai";
+"new.address.bar.picker.search.and.ai" = "New Search & Duck.ai";
 
 /* Option for search only in the new address bar picker */
-"new.address.bar.picker.search.only" = "Search Only";
+"new.address.bar.picker.search.only" = "Classic Search Only";
 
 /* Subtitle for the new address bar picker modal */
 "new.address.bar.picker.subtitle" = "Toggle between search and AI chat";
 
 /* Title for the new address bar picker modal */
-"new.address.bar.picker.title" = "New Address Bar Option";
+"new.address.bar.picker.title" = "Choose a new address bar";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies Managed";

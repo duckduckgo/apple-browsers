@@ -45,7 +45,7 @@ import DesignResourcesKitIcons
 import Configuration
 import PixelKit
 import SystemSettingsPiPTutorial
-import RemoteMessaging
+import DataBrokerProtection_iOS
 
 class MainViewController: UIViewController {
 
@@ -201,6 +201,7 @@ class MainViewController: UIViewController {
     let customConfigurationURLProvider: CustomConfigurationURLProviding
     let experimentalAIChatManager: ExperimentalAIChatManager
     let daxDialogsManager: DaxDialogsManaging
+    let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
 
     var appDidFinishLaunchingStartTime: CFAbsoluteTime?
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
@@ -237,7 +238,6 @@ class MainViewController: UIViewController {
 
     private let internalUserCommands: URLBasedDebugCommands = InternalUserCommands()
     private let launchSourceManager: LaunchSourceManaging
-    private let remoteMessageStore: RemoteMessagingStoring
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -273,8 +273,8 @@ class MainViewController: UIViewController {
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: DaxDialogsManaging,
         daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
-        launchSourceManager: LaunchSourceManaging,
-        remoteMessageStore: RemoteMessagingStoring
+        dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
+        launchSourceManager: LaunchSourceManaging
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -312,8 +312,8 @@ class MainViewController: UIViewController {
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
         self.daxEasterEggPresenter = daxEasterEggPresenter
+        self.dbpIOSPublicInterface = dbpIOSPublicInterface
         self.launchSourceManager = launchSourceManager
-        self.remoteMessageStore = remoteMessageStore
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -622,8 +622,7 @@ class MainViewController: UIViewController {
             experimentalAIChatManager: experimentalAIChatManager,
             appSettings: appSettings,
             pickerStorage: NewAddressBarPickerStorage(),
-            launchSourceManager: launchSourceManager,
-            remoteMessageStore: remoteMessageStore
+            launchSourceManager: launchSourceManager
         )
         guard validator.shouldDisplayNewAddressBarPicker() else { return }
 

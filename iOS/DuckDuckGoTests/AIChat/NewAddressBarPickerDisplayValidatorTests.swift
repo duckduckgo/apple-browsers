@@ -57,7 +57,6 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         )
         pickerStorage = NewAddressBarPickerStorage(keyValueStore: mockKeyValueStore)
 
-        let remoteMessageStoreMock = MockRemoteMessagingStore()
         validator = NewAddressBarPickerDisplayValidator(
             aiChatSettings: mockAIChatSettings,
             tutorialSettings: mockTutorialSettings,
@@ -65,7 +64,7 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
             experimentalAIChatManager: experimentalAIChatManager,
             appSettings: mockAppSettings,
             pickerStorage: pickerStorage,
-            launchSourceManager: LaunchSourceManager(), remoteMessageStore: remoteMessageStoreMock
+            launchSourceManager: LaunchSourceManager()
         )
     }
 
@@ -176,60 +175,6 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
 
         // Then
         XCTAssertFalse(result)
-    }
-
-    func testShouldDisplayPicker_WhenHasInteractedWithAddressBarRemoteMessage_ReturnsFalse() {
-        // Given
-        setupShowCriteriaMet()
-        setupNoExclusionCriteria()
-        
-        let remoteMessageStoreMock = MockRemoteMessagingStore(
-            dismissedRemoteMessagesIDs: ["search_duck_ai_announcement"]
-        )
-        
-        validator = NewAddressBarPickerDisplayValidator(
-            aiChatSettings: mockAIChatSettings,
-            tutorialSettings: mockTutorialSettings,
-            featureFlagger: mockFeatureFlagger,
-            experimentalAIChatManager: experimentalAIChatManager,
-            appSettings: mockAppSettings,
-            pickerStorage: pickerStorage,
-            launchSourceManager: LaunchSourceManager(),
-            remoteMessageStore: remoteMessageStoreMock
-        )
-
-        // When
-        let result = validator.shouldDisplayNewAddressBarPicker()
-
-        // Then
-        XCTAssertFalse(result)
-    }
-
-    func testShouldDisplayPicker_WhenHasNotInteractedWithAddressBarRemoteMessage_ReturnsTrue() {
-        // Given
-        setupShowCriteriaMet()
-        setupNoExclusionCriteria()
-        
-        let remoteMessageStoreMock = MockRemoteMessagingStore(
-            dismissedRemoteMessagesIDs: [] // Empty array means no interaction
-        )
-        
-        validator = NewAddressBarPickerDisplayValidator(
-            aiChatSettings: mockAIChatSettings,
-            tutorialSettings: mockTutorialSettings,
-            featureFlagger: mockFeatureFlagger,
-            experimentalAIChatManager: experimentalAIChatManager,
-            appSettings: mockAppSettings,
-            pickerStorage: pickerStorage,
-            launchSourceManager: LaunchSourceManager(),
-            remoteMessageStore: remoteMessageStoreMock
-        )
-
-        // When
-        let result = validator.shouldDisplayNewAddressBarPicker()
-
-        // Then
-        XCTAssertTrue(result)
     }
 
     // MARK: - Mark As Seen Tests

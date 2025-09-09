@@ -23,30 +23,12 @@ import UserScript
 
 public final class DBPUIUserContentController: WKUserContentController {
 
-    public let dbpUIUserScripts: DBPUIUserScript?
+    public let dbpUIUserScripts: DBPUIUserScript
 
     @MainActor
-    init(with privacyConfigurationManager: PrivacyConfigurationManaging,
-         prefs: ContentScopeProperties,
-         delegate: DBPUICommunicationDelegate,
-         webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-         vpnBypassService: VPNBypassServiceProvider?) throws {
+    init(dbpUIUserScript: DBPUIUserScript) {
 
-        let dbpUIUserScripts: DBPUIUserScript
-        do {
-            dbpUIUserScripts = try DBPUIUserScript(privacyConfig: privacyConfigurationManager,
-                                                   prefs: prefs,
-                                                   delegate: delegate,
-                                                   webUISettings: webUISettings,
-                                                   vpnBypassService: vpnBypassService)
-        } catch {
-            // Finish initialization before throwing
-            self.dbpUIUserScripts = nil
-            super.init()
-            throw error
-        }
-
-        self.dbpUIUserScripts = dbpUIUserScripts
+        self.dbpUIUserScripts = dbpUIUserScript
         super.init()
 
         dbpUIUserScripts.userScripts.forEach {
@@ -117,11 +99,11 @@ extension WKWebViewConfiguration {
                                         webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                                         vpnBypassService: VPNBypassServiceProvider?) throws {
         preferences.isFraudulentWebsiteWarningEnabled = false
-        let userContentController = try DBPUIUserContentController(with: privacyConfig,
-                                                                   prefs: prefs,
-                                                                   delegate: delegate,
-                                                                   webUISettings: webUISettings,
-                                                                   vpnBypassService: vpnBypassService)
-        self.userContentController = userContentController
+        let dBPUIUserScript = try DBPUIUserScript(privacyConfig: privacyConfig,
+                                                  prefs: prefs,
+                                                  delegate: delegate,
+                                                  webUISettings: webUISettings,
+                                                  vpnBypassService: vpnBypassService)
+        self.userContentController = DBPUIUserContentController(dbpUIUserScript: dBPUIUserScript)
      }
 }

@@ -115,6 +115,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didGetPageContext = false
     var didSubmitPageContext = false
     var pageContextSubject = PassthroughSubject<AIChatPageContextData, Never>()
+    var pageContextRequestedSubject = PassthroughSubject<Void, Never>()
 
     var messageHandling: any DuckDuckGo_Privacy_Browser.AIChatMessageHandling
 
@@ -187,6 +188,10 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var pageContextPublisher: AnyPublisher<AIChatPageContextData, Never> {
         pageContextSubject.eraseToAnyPublisher()
+    }
+
+    var pageContextRequestedPublisher: AnyPublisher<Void, Never> {
+        pageContextRequestedSubject.eraseToAnyPublisher()
     }
 
     func submitPageContext(_ pageContext: AIChatPageContextData) {

@@ -45,7 +45,7 @@ public class DBPIOSInterface {
      Where possible, avoid using this and prefer to use individual delegates
      This is only used for injecting through layers of the app that don't care about DBP
      */
-    public typealias PublicInterface = AppLifecycleEventsDelegate & DatabaseDelegate & DebuggingDelegate & RunPrerequisitesDelegate & DataBrokerProtectionViewControllerProvider
+    public typealias PublicInterface = AppLifecycleEventsDelegate & DatabaseDelegate & DebuggingDelegate & RunPrerequisitesDelegate & DataBrokerProtectionViewControllerProvider & EmailConfirmationDataDelegate
 
     public typealias DebuggingDelegate = DebugInformationDelegate & DebugCommandsDelegate
     public typealias DebugInformationDelegate = BackgroundTaskInformationDelegate & JobQueueInformationDelegate & RunPrerequisitesDelegate
@@ -94,6 +94,10 @@ public class DBPIOSInterface {
 
     public protocol DataBrokerProtectionViewControllerProvider: AnyObject {
         func dataBrokerProtectionViewController() -> DataBrokerProtectionViewController
+    }
+
+    public protocol EmailConfirmationDataDelegate: AnyObject {
+        func checkForEmailConfirmationData() async
     }
 
     // MARK: - Private interface
@@ -384,6 +388,16 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
     }
 }
 
+extension DataBrokerProtectionIOSManager: DBPIOSInterface.EmailConfirmationDataDelegate {
+    public func checkForEmailConfirmationData() async {
+        do {
+            try await emailConfirmationDataService.checkForEmailConfirmationData()
+        } catch {
+            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
+        }
+    }
+}
+
 // MARK: - Private protocol implementations
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.WeeklyPixelsDelegate {
@@ -518,14 +532,6 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
                 self.scheduleBGProcessingTask()
                 task.setTaskCompleted(success: true)
             }
-        }
-    }
-
-    public func checkForEmailConfirmationData() async {
-        do {
-            try await emailConfirmationDataService.checkForEmailConfirmationData()
-        } catch {
-            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
         }
     }
 

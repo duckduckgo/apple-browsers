@@ -167,6 +167,10 @@ public class DataBrokerProtectionAgentManagerProvider {
     }
 }
 
+public protocol EmailConfirmationDataDelegate {
+    func checkForEmailConfirmationData() async
+}
+
 public final class DataBrokerProtectionAgentManager {
 
     private let eventsHandler: EventMapping<JobEvent>
@@ -248,14 +252,6 @@ public final class DataBrokerProtectionAgentManager {
             /// Monitors entitlement changes every 60 minutes to optimize system performance and resource utilization by avoiding unnecessary operations when entitlement is invalid.
             /// While keeping the agent active with invalid entitlement has no significant risk, setting the monitoring interval at 60 minutes is a good balance to minimize backend checks.
             agentStopper.monitorEntitlementAndStopAgentIfEntitlementIsInvalidAndUserIsNotFreemium(interval: .minutes(60))
-        }
-    }
-
-    public func checkForEmailConfirmationData() async {
-        do {
-            try await emailConfirmationDataService.checkForEmailConfirmationData()
-        } catch {
-            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
         }
     }
 }
@@ -472,13 +468,6 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
                                                     completion: nil))
     }
 
-    public func checkForEmailConfirmationData() {
-        Task {
-            Logger.dataBrokerProtection.log("Checking for email confirmation data from debug menu...")
-            await checkForEmailConfirmationData()
-        }
-    }
-
     public func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {
 
         if let backgroundAgentVersion = Bundle.main.releaseVersionNumber,
@@ -499,4 +488,14 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionAppToAgentInterface {
 
+}
+
+extension DataBrokerProtectionAgentManager: EmailConfirmationDataDelegate {
+    public func checkForEmailConfirmationData() async {
+        do {
+            try await emailConfirmationDataService.checkForEmailConfirmationData()
+        } catch {
+            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
+        }
+    }
 }

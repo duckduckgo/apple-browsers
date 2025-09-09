@@ -16,7 +16,7 @@
         ],
     },
     'm_push-notification_user-notification-authorization-status': {
-        description: 'Fires daily at launch with user's current notification center authorization status.',
+        description: 'Fires daily at launch with users current notification center authorization status.',
         owners: ['hanyutang-sandra'],
         triggers: ['other'],
         suffixes: ['form_factor', 'daily'],

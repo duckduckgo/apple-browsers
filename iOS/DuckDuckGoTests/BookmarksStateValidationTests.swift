@@ -62,7 +62,7 @@ class BookmarksStateValidationTests: XCTestCase {
             BookmarkUtils.prepareFoldersStructure(in: context)
         }
 
-        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore) { error, _  in
+        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore, isSyncEnabled: false) { error, _  in
             XCTFail("Did not expect error: \(error)")
         }
 
@@ -77,7 +77,7 @@ class BookmarksStateValidationTests: XCTestCase {
 
     func testWhenDatabaseIsEmptyButItHasNotBeenInitiatedThenThereIsNoError() {
 
-        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore) { error, _ in
+        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore, isSyncEnabled: false) { error, _ in
             XCTFail("Did not expect error: \(error)")
         }
 
@@ -92,7 +92,7 @@ class BookmarksStateValidationTests: XCTestCase {
         let expectation1 = expectation(description: "Lost structure Error raised")
         let expectation2 = expectation(description: "Broken structure Error raised")
 
-        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore) { error, _ in
+        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore, isSyncEnabled: false) { error, _ in
             switch error {
             case .bookmarksStructureLost:
                 expectation1.fulfill()
@@ -130,7 +130,7 @@ class BookmarksStateValidationTests: XCTestCase {
 
         let expectation = expectation(description: "Broken structure Error raised")
 
-        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore) { error, params in
+        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore, isSyncEnabled: false) { error, params in
             switch error {
             case .bookmarksStructureBroken:
                 expectation.fulfill()
@@ -170,7 +170,7 @@ class BookmarksStateValidationTests: XCTestCase {
 
         let expectation = expectation(description: "Broken structure Error raised")
 
-        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore) { error, params in
+        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore, isSyncEnabled: false) { error, params in
             switch error {
             case .bookmarksStructureBroken:
                 expectation.fulfill()

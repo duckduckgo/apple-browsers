@@ -33,7 +33,7 @@ struct AppConfiguration {
     let atbAndVariantConfiguration = ATBAndVariantConfiguration()
     let contentBlockingConfiguration = ContentBlockingConfiguration()
 
-    func start() throws -> Bool {
+    func start(syncKeyValueStore: ThrowingKeyValueStoring) throws -> Bool {
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
         PixelConfiguration.configure(with: featureFlagger)
 
@@ -42,7 +42,7 @@ struct AppConfiguration {
 
         onboardingConfiguration.migrateToNewOnboarding()
         clearTemporaryDirectory()
-        let isBookmarksStructureMissing = try persistentStoresConfiguration.configure()
+        let isBookmarksStructureMissing = try persistentStoresConfiguration.configure(syncKeyValueStore: syncKeyValueStore)
         migrateAIChatSettings()
 
         WidgetCenter.shared.reloadAllTimelines()

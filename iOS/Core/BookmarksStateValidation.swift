@@ -48,11 +48,14 @@ public class BookmarksStateValidator: BookmarksStateValidation {
     }
 
     let keyValueStore: KeyValueStoring
+    let isSyncEnabled: Bool
     let errorHandler: (ValidationError, [String: String]?) -> Void
 
     public init(keyValueStore: KeyValueStoring,
+                isSyncEnabled: Bool = false,
                 errorHandler: @escaping (ValidationError, [String: String]?) -> Void) {
         self.keyValueStore = keyValueStore
+        self.isSyncEnabled = isSyncEnabled
         self.errorHandler = errorHandler
     }
 
@@ -130,12 +133,7 @@ public class BookmarksStateValidator: BookmarksStateValidation {
     }
     
     // MARK: - Diagnostic Helper Methods
-    
-    private var isSyncEnabled: Bool {
-        let syncEnabledKey = "com.duckduckgo.sync.enabled"
-        return UserDefaults.standard.object(forKey: syncEnabledKey) != nil
-    }
-    
+        
     private var hasLaunchedSuccessfullyBefore: Bool {
         guard let marker = BoolFileMarker(name: .hasSuccessfullyLaunchedBefore) else {
             return false

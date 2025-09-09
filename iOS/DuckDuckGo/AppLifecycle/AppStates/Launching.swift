@@ -60,18 +60,18 @@ struct Launching: LaunchingHandling {
     init() throws {
         Logger.lifecycle.info("Launching: \(#function)")
 
+        let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
+
         // MARK: - Application Setup
         // Handles one-time application setup during launch
-        let isBookmarksStructureMissing = try configuration.start()
+        let isBookmarksStructureMissing = try configuration.start(syncKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
-        // MARK: - Service Initialization
-        // Create and initialize core services
+        // MARK: - Service Initialization (continued)
+        // Create and initialize remaining core services
         // These services are instantiated early in the app lifecycle for two main reasons:
         // 1. To begin their essential work immediately, without waiting for UI or other components
         // 2. To potentially complete their tasks before the app becomes visible to the user
         // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
-
-        let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
         let autofillService = AutofillService()
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared)

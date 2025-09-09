@@ -37,8 +37,8 @@ struct BookmarksDatabaseSetup {
         self.migrationAssertion = migrationAssertion
     }
 
-    static func makeValidator() -> BookmarksStateValidator {
-        return BookmarksStateValidator(keyValueStore: UserDefaults.app) { validationError, additionalParams in
+    static func makeValidator(isSyncEnabled: Bool = false) -> BookmarksStateValidator {
+        return BookmarksStateValidator(keyValueStore: UserDefaults.app, isSyncEnabled: isSyncEnabled) { validationError, additionalParams in
             switch validationError {
             case .bookmarksStructureLost:
                 DailyPixel.fireDailyAndCount(pixel: .debugBookmarksStructureLost,

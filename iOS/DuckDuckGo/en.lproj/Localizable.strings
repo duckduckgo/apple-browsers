@@ -2237,10 +2237,10 @@ https://duckduckgo.com/mac";
 "new.address.bar.picker.not.now" = "Not Now";
 
 /* Option for search and AI in the new address bar picker */
-"new.address.bar.picker.search.and.ai" = "Search & Duck.ai";
+"new.address.bar.picker.search.and.ai" = "New Search & Duck.ai";
 
 /* Option for search only in the new address bar picker */
-"new.address.bar.picker.search.only" = "Search Only";
+"new.address.bar.picker.search.only" = "Classic Search Only";
 
 /* Subtitle for the new address bar picker modal */
 "new.address.bar.picker.subtitle" = "Toggle between search and AI chat";

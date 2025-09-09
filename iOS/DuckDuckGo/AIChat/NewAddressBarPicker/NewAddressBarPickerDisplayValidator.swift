@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import os.log
 import Core
 import Persistence
 import BrowserServicesKit
@@ -65,15 +66,31 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     
     func shouldDisplayNewAddressBarPicker() -> Bool {
         /// https://app.asana.com/1/137249556945/task/1211152753855410?focus=true
+
+        Logger.addressBarPicker.info("Checking picker display conditions...")
+
         guard isMainDuckAIEnabled else { return false }
+        Logger.addressBarPicker.info("✓ Main DuckAI is enabled")
+
         guard isOnboardingCompletedOrSkipped else { return false }
+        Logger.addressBarPicker.info("✓ Onboarding is completed or skipped")
+        
         guard isFeatureFlagEnabled else { return false }
+        Logger.addressBarPicker.info("✓ Feature flag is enabled")
         
         guard !isDuckAIAddressBarDisabled else { return false }
+        Logger.addressBarPicker.info("✓ DuckAI address bar is enabled")
+        
         guard !isNewToggleExperimentEnabled else { return false }
+        Logger.addressBarPicker.info("✓ New toggle experiment is not enabled")
+        
         guard !hasForceChoiceBeenShown else { return false }
+        Logger.addressBarPicker.info("✓ Force choice has not been shown yet")
+        
         guard !isLaunchedFromExternalSource else { return false }
+        Logger.addressBarPicker.info("✓ App was not launched from external source")
 
+        Logger.addressBarPicker.info("All conditions passed - picker can be shown")
         return true
     }
 

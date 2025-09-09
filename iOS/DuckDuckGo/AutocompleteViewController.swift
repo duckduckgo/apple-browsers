@@ -55,6 +55,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private let bookmarksDatabase: CoreDataDatabase
     private let tabsModel: TabsModel
     private let aiChatSettings: AIChatSettingsProvider
+    private let featureDiscovery: FeatureDiscovery
 
     private var task: URLSessionDataTask?
 
@@ -79,11 +80,13 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
          historyMessageManager: HistoryMessageManager = HistoryMessageManager(),
          tabsModel: TabsModel,
          featureFlagger: FeatureFlagger,
-         aiChatSettings: AIChatSettingsProvider) {
+         aiChatSettings: AIChatSettingsProvider,
+         featureDiscovery: FeatureDiscovery) {
 
         self.tabsModel = tabsModel
         self.historyManager = historyManager
         self.bookmarksDatabase = bookmarksDatabase
+        self.featureDiscovery = featureDiscovery
 
         self.appSettings = appSettings
         self.historyMessageManager = historyMessageManager
@@ -284,10 +287,11 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
             Pixel.fire(pixel: .autocompleteClickOpenTab)
 
         case .askAIChat:
+            let params = featureDiscovery.addToParams([:], forFeature: .aiChat)
             if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
-                DailyPixel.fireDailyAndCount(pixel: .autocompleteAskAIChatExperimentalExperience)
+                DailyPixel.fireDailyAndCount(pixel: .autocompleteAskAIChatExperimentalExperience, withAdditionalParameters: params)
             } else {
-                DailyPixel.fireDailyAndCount(pixel: .autocompleteAskAIChatLegacyExperience)
+                DailyPixel.fireDailyAndCount(pixel: .autocompleteAskAIChatLegacyExperience, withAdditionalParameters: params)
             }
 
         default:

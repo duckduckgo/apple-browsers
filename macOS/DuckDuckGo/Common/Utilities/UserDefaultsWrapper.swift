@@ -174,7 +174,6 @@ public struct UserDefaultsWrapper<T> {
         case loggingCategories = "logging.categories"
 
         case firstLaunchDate = "first.app.launch.date"
-        case customConfigurationUrl = "custom.configuration.url"
 
         case lastRemoteMessagingRefreshDate = "last.remote.messaging.refresh.date"
 
@@ -249,7 +248,7 @@ public struct UserDefaultsWrapper<T> {
         case toastDismissStreakCounter = "brokenSitePrompt.toast-dismiss-streak-counter"
 
         // Web Extensions
-        case webExtensionPathsCache = "com.duckduckgo.web.extension.paths.cache"
+        case webExtensionStoredPaths = "com.duckduckgo.web.extension.stored-paths"
 
         // SAD/ATT Debug
         case debugSetDefaultAndAddToDockPromptCurrentDateKey = "com.duckduckgo.ios.debug.setDefaultAndAddToDockPromptCurrentDate"

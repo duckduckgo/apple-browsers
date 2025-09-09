@@ -23,36 +23,7 @@ import os.log
 
 struct AppConfigurationURLProvider: ConfigurationURLProviding {
 
-    // MARK: - Debug
-    internal init(privacyConfigurationManager: PrivacyConfigurationManaging,
-                  featureFlagger: FeatureFlagger,
-                  customPrivacyConfiguration: URL? = nil) {
-        let trackerDataUrlProvider = TrackerDataURLOverrider(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
-        self.init(trackerDataUrlProvider: trackerDataUrlProvider)
-        if let customPrivacyConfiguration {
-            // Overwrite custom privacy configuration if provided
-            self.customPrivacyConfiguration = customPrivacyConfiguration.absoluteString
-        }
-        // Otherwise use the default or already stored custom configuration
-    }
-
-    @UserDefaultsWrapper(key: .customConfigurationUrl, defaultValue: nil)
-    private var customPrivacyConfiguration: String?
-
-    private var customPrivacyConfigurationUrl: URL? {
-        if let customPrivacyConfiguration {
-            return URL(string: customPrivacyConfiguration)
-        }
-        return nil
-    }
-
-    mutating func resetToDefaultConfigurationUrl() {
-        self.customPrivacyConfiguration = nil
-    }
-
-    // MARK: - Main
-
-    private var trackerDataUrlProvider: TrackerDataURLProviding
+    private let trackerDataUrlProvider: TrackerDataURLProviding
 
     public enum Constants {
         public static let baseTdsURLString = "https://staticcdn.duckduckgo.com/trackerblocking/"
@@ -75,7 +46,7 @@ struct AppConfigurationURLProvider: ConfigurationURLProviding {
         case .bloomFilterBinary: return URL(string: "https://staticcdn.duckduckgo.com/https/https-mobile-v2-bloom.bin")!
         case .bloomFilterSpec: return URL(string: "https://staticcdn.duckduckgo.com/https/https-mobile-v2-bloom-spec.json")!
         case .bloomFilterExcludedDomains: return URL(string: "https://staticcdn.duckduckgo.com/https/https-mobile-v2-false-positives.json")!
-        case .privacyConfiguration: return customPrivacyConfigurationUrl ?? Constants.defaultPrivacyConfigurationURL
+        case .privacyConfiguration: return Constants.defaultPrivacyConfigurationURL
         case .surrogates: return URL(string: "https://staticcdn.duckduckgo.com/surrogates.txt")!
         case .trackerDataSet:
             return trackerDataUrlProvider.trackerDataURL ?? Constants.defaultTrackerDataURL

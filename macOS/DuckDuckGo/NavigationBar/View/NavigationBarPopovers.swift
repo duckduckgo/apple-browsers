@@ -339,6 +339,16 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         zoomPopover.scheduleCloseTimer(source: source)
     }
 
+    func showSessionRestorePromptPopover(from button: MouseOverButton,
+                                         withDelegate delegate: NSPopoverDelegate,
+                                         ctaCallback: @escaping (Bool) -> Void) {
+        guard closeTransientPopovers() else { return }
+
+        let popover = SessionRestorePromptPopover(ctaCallback: ctaCallback)
+        popover.delegate = delegate
+        show(popover, positionedBelow: button, simulatingMouseDown: false)
+    }
+
     func closeEditBookmarkPopover() {
         bookmarkPopover?.close()
     }

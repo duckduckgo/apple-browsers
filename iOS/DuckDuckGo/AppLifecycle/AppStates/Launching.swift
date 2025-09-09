@@ -54,6 +54,7 @@ struct Launching: LaunchingHandling {
     private let services: AppServices
     private let mainCoordinator: MainCoordinator
     private let launchTaskManager = LaunchTaskManager()
+    private let launchSourceManager = LaunchSourceManager()
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
@@ -90,7 +91,8 @@ struct Launching: LaunchingHandling {
                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                             configurationStore: AppDependencyProvider.shared.configurationStore,
                                                             privacyConfigurationManager: privacyConfigurationManager,
-                                                            configurationURLProvider: AppDependencyProvider.shared.configurationURLProvider)
+                                                            configurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
+                                                            syncService: syncService.sync)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
@@ -136,7 +138,8 @@ struct Launching: LaunchingHandling {
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                               defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                                               systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
-                                              daxDialogsManager: daxDialogs)
+                                              daxDialogsManager: daxDialogs,
+                                              launchSourceManager: launchSourceManager)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
@@ -160,6 +163,7 @@ struct Launching: LaunchingHandling {
             notificationServiceManager: notificationServiceManager,
             privacyConfigurationManager: privacyConfigurationManager
         )
+
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
@@ -236,7 +240,8 @@ struct Launching: LaunchingHandling {
         .init(
             mainCoordinator: mainCoordinator,
             services: services,
-            launchTaskManager: launchTaskManager
+            launchTaskManager: launchTaskManager,
+            launchSourceManager: launchSourceManager
         )
     }
     

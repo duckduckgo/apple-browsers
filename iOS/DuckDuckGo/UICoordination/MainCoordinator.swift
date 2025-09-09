@@ -53,6 +53,7 @@ final class MainCoordinator {
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let featureFlagger: FeatureFlagger
     private let defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
+    private let launchSourceManager: LaunchSourceManaging
 
     init(syncService: SyncService,
          bookmarksDatabase: CoreDataDatabase,
@@ -73,7 +74,8 @@ final class MainCoordinator {
          keyValueStore: ThrowingKeyValueStoring,
          defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
-         daxDialogsManager: DaxDialogsManaging
+         daxDialogsManager: DaxDialogsManaging,
+         launchSourceManager: LaunchSourceManaging
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -94,6 +96,8 @@ final class MainCoordinator {
         let textZoomCoordinator = Self.makeTextZoomCoordinator()
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
         interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
+        self.launchSourceManager = launchSourceManager
+
         tabManager = TabManager(model: tabsModel,
                                 persistence: tabsPersistence,
                                 previewsSource: previewsSource,
@@ -143,7 +147,9 @@ final class MainCoordinator {
                                         keyValueStore: keyValueStore,
                                         customConfigurationURLProvider: customConfigurationURLProvider,
                                         systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-                                        daxDialogsManager: daxDialogsManager)
+                                        daxDialogsManager: daxDialogsManager,
+                                        launchSourceManager: launchSourceManager,
+                                        remoteMessageStore: remoteMessagingService.remoteMessagingClient.store)
     }
 
     func start() {

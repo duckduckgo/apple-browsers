@@ -1,7 +1,7 @@
 //
-//  UpdateDialogHelper.swift
+//  NSObject+valueForIvar.h
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,22 +16,12 @@
 //  limitations under the License.
 //
 
-import Cocoa
-import Common
+#import <Foundation/Foundation.h>
 
-extension NSWindowController {
+NS_ASSUME_NONNULL_BEGIN
 
-    func hideUnnecessaryUpdateButtons() {
-        let buttonsToHide = ["_laterButton", "_skipButton", "_automaticallyInstallUpdatesButton"]
-        for button in buttonsToHide {
-            if let button = getButton(named: button) {
-                button.isHidden = true
-            }
-        }
-    }
+@interface NSObject (valueForIvar)
+- (void * _Nullable)valueForIvar:(NSString *)name;
+@end
 
-    private func getButton(named buttonName: String) -> NSButton? {
-        return value(forIvar: buttonName) as? NSButton
-    }
-
-}
+NS_ASSUME_NONNULL_END

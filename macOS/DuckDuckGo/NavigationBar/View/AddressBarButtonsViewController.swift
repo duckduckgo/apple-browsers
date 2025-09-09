@@ -258,16 +258,6 @@ final class AddressBarButtonsViewController: NSViewController {
         super.init(coder: coder)
     }
 
-    deinit {
-        // Cancel all subscriptions to prevent Combine from outliving view controller lifecycle
-        cancellables.removeAll()
-        permissionsCancellables.removeAll()
-        urlCancellable = nil
-        zoomLevelCancellable = nil
-        trackerAnimationTriggerCancellable = nil
-        privacyEntryPointIconUpdateCancellable = nil
-    }
-
     // MARK: - View Lifecycle
 
     override func viewDidLoad() {

@@ -148,8 +148,7 @@ final class MainCoordinator {
                                         customConfigurationURLProvider: customConfigurationURLProvider,
                                         systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                         daxDialogsManager: daxDialogsManager,
-                                        launchSourceManager: launchSourceManager,
-                                        remoteMessageStore: remoteMessagingService.remoteMessagingClient.store)
+                                        launchSourceManager: launchSourceManager)
     }
 
     func start() {

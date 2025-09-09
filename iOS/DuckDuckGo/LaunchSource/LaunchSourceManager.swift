@@ -29,7 +29,6 @@ enum LaunchSource: String {
     case standard
     case shortcut
     case URL
-    case notification
 }
 
 final class LaunchSourceManager: LaunchSourceManaging {

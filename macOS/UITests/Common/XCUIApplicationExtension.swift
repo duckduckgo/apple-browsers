@@ -163,6 +163,14 @@ extension XCUIApplication {
         typeKey("j", modifierFlags: .command)
     }
 
+    /// Opens settings
+    func openSettings() {
+        typeKey(",", modifierFlags: .command)
+        XCTAssertTrue(
+            preferencesWindow.scrollViews[AccessibilityIdentifiers.settingsScrollView].waitForExistence(timeout: UITests.Timeouts.elementExistence)
+        )
+    }
+
     func openSite(pageTitle: String) {
         let url = UITests.simpleServedPage(titled: pageTitle)
         let addressBar = addressBar

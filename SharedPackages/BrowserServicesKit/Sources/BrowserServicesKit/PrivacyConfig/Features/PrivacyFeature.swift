@@ -140,6 +140,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1210947754188321/task/1210869716452616?focus=true
     case refreshButtonPosition
+
+    /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211025661991697?focus=true
+    case serpSettingsFollowUpQuestions
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

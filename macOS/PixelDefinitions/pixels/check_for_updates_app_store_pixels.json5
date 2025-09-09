@@ -7,7 +7,7 @@
         parameters: [
             {
                 key: 'source',
-                type: 'enum',
+                type: 'string',
                 description: 'The source where the action happens',
                 enum: ['about', 'more_options', 'main_menu'],
             },

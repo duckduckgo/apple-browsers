@@ -1,6 +1,6 @@
 // See https://app.asana.com/1/137249556945/project/1209825025475019/task/1211054087327709
 {
-    m_ios_debug_user_script_load_js_failed: {
+    m_debug_user_script_load_js_failed: {
         description: 'Fired when BrowserServicesKit fails to load the contents of a Javascript file, to help investigate the cause of the failure.',
         owners: ['rachelmcr'],
         triggers: ['other'],

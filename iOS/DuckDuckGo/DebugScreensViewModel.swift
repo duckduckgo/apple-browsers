@@ -154,8 +154,7 @@ class DebugScreensViewModel: ObservableObject {
         do {
             try dependencies.customConfigurationURLProvider.setCustomURL(url, for: configuration)
         } catch {
-            let message = (error as? URLSettingError)?.description ?? error.localizedDescription
-            ActionMessageView.present(message: "Failed to set custom URL: \(message)")
+            ActionMessageView.present(message: "Failed to set custom URL: \(error.localizedDescription)")
         }
     }
 

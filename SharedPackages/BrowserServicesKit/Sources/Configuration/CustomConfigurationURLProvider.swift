@@ -29,10 +29,10 @@ public protocol CustomConfigurationURLSetting {
     func isURLOverridden(for configuration: Configuration) -> Bool
 }
 
-public enum URLSettingError: Error {
+public enum URLSettingError: LocalizedError {
     case notInternalUser
 
-    public var description: String {
+    public var errorDescription: String? {
         switch self {
         case .notInternalUser:
             return "Not an internal user"

@@ -800,8 +800,7 @@ extension AppDelegate {
             do {
                 try setPrivacyConfigurationUrl(newConfigurationUrl)
             } catch let error {
-                let message = (error as? URLSettingError)?.description ?? "It was not possible the set the configuration"
-                showErrorAlert(message: message)
+                showErrorAlert(message: error.localizedDescription)
             }
         }
     }
@@ -810,8 +809,7 @@ extension AppDelegate {
         do {
             try setPrivacyConfigurationUrl(nil)
         } catch let error {
-            let message = (error as? URLSettingError)?.description ?? "It was not possible the set the configuration"
-            showErrorAlert(message: message)
+            showErrorAlert(message: error.localizedDescription)
         }
     }
 

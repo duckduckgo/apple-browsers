@@ -215,10 +215,6 @@ final class MockIPCServer: DataBrokerProtectionIPCServer {
             await serverDelegate?.profileSaved()
         }
     }
-
-    func checkForEmailConfirmationData() {
-        serverDelegate?.checkForEmailConfirmationData()
-    }
 }
 
 final class MockAgentStopper: DataBrokerProtectionAgentStopper {

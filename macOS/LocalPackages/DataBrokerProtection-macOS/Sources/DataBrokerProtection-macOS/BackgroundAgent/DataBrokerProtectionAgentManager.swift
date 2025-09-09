@@ -167,7 +167,7 @@ public class DataBrokerProtectionAgentManagerProvider {
     }
 }
 
-public protocol EmailConfirmationDataDelegate {
+public protocol EmailConfirmationDataDelegate: AnyObject {
     func checkForEmailConfirmationData() async
 }
 

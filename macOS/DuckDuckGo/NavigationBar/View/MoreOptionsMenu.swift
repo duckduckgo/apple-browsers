@@ -252,8 +252,11 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         addItem(helpItem)
 
 #if APPSTORE
-        let checkForAppStoreUpdates = NSMenuItem(title: UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""), action: #selector(checkForUpdates(_:)), keyEquivalent: "")
+        let checkForAppStoreUpdates = NSMenuItem(title: UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""),
+                                                 action: #selector(checkForUpdates(_:)),
+                                                 keyEquivalent: "")
             .withImage(DesignSystemImages.Glyphs.Size16.update)
+            .targetting(self)
         addItem(checkForAppStoreUpdates)
 #endif
 
@@ -329,7 +332,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     @objc func checkForUpdates(_ sender: NSMenuItem) {
-        PixelKit.fire(CheckForUpdatesAppStorePixels.checkForUpdate(source: .moreOptionesMenu))
+        PixelKit.fire(CheckForUpdatesAppStorePixels.checkForUpdate(source: .moreOptionsMenu))
         NSWorkspace.shared.open(.appStore)
     }
 

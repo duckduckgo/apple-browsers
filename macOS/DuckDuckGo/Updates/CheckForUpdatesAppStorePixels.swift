@@ -51,7 +51,7 @@ enum CheckForUpdatesAppStorePixels: PixelKitEventV2 {
 
     enum Source: String {
         case mainMenu = "main_menu"
-        case moreOptionesMenu = "more_options"
+        case moreOptionsMenu = "more_options"
         case aboutMenu = "about"
     }
 }

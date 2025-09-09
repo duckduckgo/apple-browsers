@@ -100,6 +100,9 @@
 /* Refresh action - button shown in alert */
 "action.title.refresh" = "Reîmprospătare";
 
+/* Refresh page action */
+"action.title.refreshPage" = "Reîncarcă pagina";
+
 /* Remove Favorite action */
 "action.title.remove.favorite" = "Elimină Favoritul";
 
@@ -2934,6 +2937,15 @@
 
 /* Explanation in Settings how the private search feature works */
 "settings.private.search.explanation" = "DuckDuckGo Private Search este motorul tău de căutare implicit, astfel încât poți căuta pe web fără a fi urmărit(ă).";
+
+/* Settings screen option to set refresh button in the address bar */
+"settings.refreshButton.position.addressBar" = "Bara de adrese";
+
+/* Settings screen option to set refresh button in the menu */
+"settings.refreshButton.position.menu" = "Meniu";
+
+/* Settings screen cell text for setting the refresh button position. */
+"settings.refreshButton.position.title" = "Reîncarcă poziția butonului";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Setări de căutare";

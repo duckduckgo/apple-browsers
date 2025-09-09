@@ -52,7 +52,7 @@ class MockFeatureDiscovery: FeatureDiscovery {
     func addToParams(_ params: [String: String], forFeature feature: Core.WasUsedBeforeFeature) -> [String: String] {
         var updatedParams = params
         let wasUsed = wasUsedBefore(feature)
-        updatedParams["was_used_before"] = String(wasUsed)
+        updatedParams["was_used_before"] = wasUsed ? "1" : "0"
         return updatedParams
     }
 }

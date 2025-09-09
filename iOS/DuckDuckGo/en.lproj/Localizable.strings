@@ -2224,6 +2224,30 @@ https://duckduckgo.com/mac";
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Shortcuts";
 
+/* Confirm button for the new address bar picker */
+"new.address.bar.picker.confirm" = "Confirm";
+
+/* Description text for the new address bar picker modal */
+"new.address.bar.picker.description" = "AI features are always optional.";
+
+/* Footer text for the new address bar picker */
+"new.address.bar.picker.footer" = "Adjust in Settings > AI Features";
+
+/* Not now button for the new address bar picker */
+"new.address.bar.picker.not.now" = "Not Now";
+
+/* Option for search and AI in the new address bar picker */
+"new.address.bar.picker.search.and.ai" = "Search & Duck.ai";
+
+/* Option for search only in the new address bar picker */
+"new.address.bar.picker.search.only" = "Search Only";
+
+/* Subtitle for the new address bar picker modal */
+"new.address.bar.picker.subtitle" = "Toggle between search and AI chat";
+
+/* Title for the new address bar picker modal */
+"new.address.bar.picker.title" = "New Address Bar Option";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies Managed";
 

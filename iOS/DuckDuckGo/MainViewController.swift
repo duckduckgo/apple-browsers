@@ -45,6 +45,7 @@ import DesignResourcesKitIcons
 import Configuration
 import PixelKit
 import SystemSettingsPiPTutorial
+import RemoteMessaging
 
 class MainViewController: UIViewController {
 
@@ -234,6 +235,10 @@ class MainViewController: UIViewController {
     
     private let daxEasterEggPresenter: DaxEasterEggPresenting
 
+    private let internalUserCommands: URLBasedDebugCommands = InternalUserCommands()
+    private let launchSourceManager: LaunchSourceManaging
+    private let remoteMessageStore: RemoteMessagingStoring
+
     init(
         bookmarksDatabase: CoreDataDatabase,
         bookmarksDatabaseCleaner: BookmarkDatabaseCleaner,
@@ -267,7 +272,9 @@ class MainViewController: UIViewController {
         customConfigurationURLProvider: CustomConfigurationURLProviding,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: DaxDialogsManaging,
-        daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter()
+        daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
+        launchSourceManager: LaunchSourceManaging,
+        remoteMessageStore: RemoteMessagingStoring
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -305,6 +312,8 @@ class MainViewController: UIViewController {
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
         self.daxEasterEggPresenter = daxEasterEggPresenter
+        self.launchSourceManager = launchSourceManager
+        self.remoteMessageStore = remoteMessageStore
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -348,7 +357,8 @@ class MainViewController: UIViewController {
                                                                                          newTabDaxDialogManager: daxDialogsManager,
                                                                                          faviconLoader: faviconLoader,
                                                                                          messageNavigationDelegate: self,
-                                                                                         appSettings: appSettings)
+                                                                                         appSettings: appSettings,
+                                                                                         internalUserCommands: internalUserCommands)
 
         let suggestionTrayDependencies = SuggestionTrayDependencies(favoritesViewModel: favoritesViewModel,
                                                                     bookmarksDatabase: bookmarksDatabase,
@@ -446,6 +456,8 @@ class MainViewController: UIViewController {
         if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
+
+        presentNewAddressBarPickerIfNeeded()
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -600,6 +612,27 @@ class MainViewController: UIViewController {
 
         guard showOnboarding else { return }
         segueToDaxOnboarding()
+    }
+    
+    private func presentNewAddressBarPickerIfNeeded() {
+        let validator = NewAddressBarPickerDisplayValidator(
+            aiChatSettings: aiChatSettings,
+            tutorialSettings: tutorialSettings,
+            featureFlagger: featureFlagger,
+            experimentalAIChatManager: experimentalAIChatManager,
+            appSettings: appSettings,
+            pickerStorage: NewAddressBarPickerStorage(),
+            launchSourceManager: launchSourceManager,
+            remoteMessageStore: remoteMessageStore
+        )
+        guard validator.shouldDisplayNewAddressBarPicker() else { return }
+
+        let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: aiChatSettings)
+        pickerViewController.modalPresentationStyle = .pageSheet
+        pickerViewController.modalTransitionStyle = .coverVertical
+        pickerViewController.isModalInPresentation = true
+        validator.markPickerDisplayAsSeen()
+        self.present(pickerViewController, animated: true)
     }
 
     func presentNetworkProtectionStatusSettingsModal() {
@@ -1005,7 +1038,8 @@ class MainViewController: UIViewController {
                                                   daxDialogsManager: daxDialogsManager,
                                                   faviconLoader: faviconLoader,
                                                   messageNavigationDelegate: self,
-                                                  appSettings: appSettings)
+                                                  appSettings: appSettings,
+                                                  internalUserCommands: internalUserCommands)
 
         controller.delegate = self
         controller.chromeDelegate = self
@@ -2316,6 +2350,13 @@ extension MainViewController: BrowserChromeDelegate {
 
     private func handleFavoriteSelected(_ favorite: BookmarkEntity) {
         guard let url = favorite.urlObject else { return }
+
+        // Handle shortcuts for internal testing
+        if let favUrl = favorite.url, let url = URL(string: favUrl), internalUserCommands.handle(url: url) {
+            dismissSuggestionTray()
+            return
+        }
+
         Pixel.fire(pixel: .favoriteLaunchedWebsite)
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()

@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import Combine
 import DesignResourcesKitIcons
+import Core
 
 class SwitchBarTextEntryView: UIView {
 
@@ -130,6 +131,7 @@ class SwitchBarTextEntryView: UIView {
 
     private func setupButtonsView() {
         buttonsView.onClearTapped = { [weak self] in
+            self?.fireClearButtonPressedPixel()
             self?.handler.clearText()
             self?.handler.clearButtonTapped()
         }
@@ -324,6 +326,10 @@ class SwitchBarTextEntryView: UIView {
 
 extension SwitchBarTextEntryView: UITextViewDelegate {
 
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        fireTextAreaFocusedPixel()
+    }
+
     func textViewDidChange(_ textView: UITextView) {
         hasBeenInteractedWith = true
         
@@ -338,6 +344,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
+            fireKeyboardGoPressedPixel()
             /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210629837418046?focus=true
             let currentText = textView.text ?? ""
             if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -348,5 +355,30 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
             return false
         }
         return true
+    }
+}
+
+// MARK: Pixels
+
+private extension SwitchBarTextEntryView {
+    func fireTextAreaFocusedPixel() {
+        let parameters = ["orientation": UIDevice.current.orientation.orientationDescription]
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarTextAreaFocused, withAdditionalParameters: parameters)
+    }
+    
+    func fireClearButtonPressedPixel() {
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarClearButtonPressed, withAdditionalParameters: handler.modeParameters)
+    }
+    
+    func fireKeyboardGoPressedPixel() {
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarKeyboardGoPressed, withAdditionalParameters: handler.modeParameters)
+    }
+}
+
+// MARK: Other extensions
+
+private extension UIDeviceOrientation {
+    var orientationDescription: String {
+        isLandscape ? "landscape" : "portrait"
     }
 }

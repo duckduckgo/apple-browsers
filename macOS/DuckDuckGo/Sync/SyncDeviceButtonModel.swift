@@ -42,12 +42,6 @@ public final class SyncDeviceButtonModel: ObservableObject {
     }
 }
 
-fileprivate extension FeatureFlagger {
-    var isNewSyncEntryPointsFeatureOn: Bool {
-        isFeatureOn(.newSyncEntryPoints) && isFeatureOn(.refactorOfSyncPreferences)
-    }
-}
-
 extension SyncDeviceButtonModel {
     convenience init() {
         let authStatePublisher: AnyPublisher<SyncAuthState, Never>

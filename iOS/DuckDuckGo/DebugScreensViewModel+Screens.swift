@@ -24,6 +24,7 @@ import WebKit
 import BareBonesBrowserKit
 import Core
 import DataBrokerProtection_iOS
+import AIChat
 
 extension DebugScreensViewModel {
 
@@ -62,6 +63,8 @@ extension DebugScreensViewModel {
 
                 controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
+            .action(title: "Show New AddressBar Modal", showNewAddressBarModal),
+            .action(title: "Reset New Address Bar Picker Data", resetNewAddressBarPickerData),
 
             // MARK: SwiftUI Views
             .view(title: "AI Chat", { _ in
@@ -220,6 +223,24 @@ extension DebugScreensViewModel {
                 return onboardingController
             }),
         ].compactMap { $0 }
+    }
+    
+    private func showNewAddressBarModal(_ dependencies: DebugScreen.Dependencies) {
+        guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
+        
+        let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: AIChatSettings())
+        pickerViewController.modalPresentationStyle = .pageSheet
+        pickerViewController.modalTransitionStyle = .coverVertical
+        pickerViewController.isModalInPresentation = true
+
+        controller.present(pickerViewController, animated: true)
+    }
+    
+    private func resetNewAddressBarPickerData(_ dependencies: DebugScreen.Dependencies) {
+        let pickerStorage = NewAddressBarPickerStorage()
+        pickerStorage.reset()
+        
+        ActionMessageView.present(message: "New Address Bar Picker data reset successfully")
     }
 
 }

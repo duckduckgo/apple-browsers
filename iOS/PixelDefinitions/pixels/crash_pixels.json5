@@ -173,10 +173,12 @@
             'appVersion',
             {
                 key: 'root-uuid',
-                description: 'UUID of the root folder that sync attempted to delete',
+                description: 'Name of the root folder that sync attempted to delete',
                 type: 'string',
+                enum: ['mobile_favorites_root', 'desktop_favorites_root', 'favorites_root', 'bookmarks_root'],
             },
         ],
+        expires: '2025-10-31',
     },
 
     // Specific database setup error pixels

@@ -250,7 +250,7 @@ final class TabBarViewItemTests: XCTestCase {
         XCTAssertFalse(duplicateItem?.isEnabled ?? true)
 
         let pinItem = menu.items.first { $0.title == UserText.pinTab }
-        XCTAssertTrue(pinItem?.isEnabled ?? true)
+        XCTAssertTrue(pinItem?.isEnabled ?? false)
     }
 
     func testWhenCanBookmarkAllOpenTabsThenBookmarkAllOpenTabsItemIsEnabled() throws {

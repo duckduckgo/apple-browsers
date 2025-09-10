@@ -37,4 +37,6 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     }
 
     var showCustomizePopover: Bool = true
+
+    var customizePopoverPresentationCount: Int = 0
 }

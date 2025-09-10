@@ -1,5 +1,5 @@
 //
-//  Attribution.swift
+//  AttributionManager.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,3 +16,8 @@
 //  limitations under the License.
 //
 //
+
+public final class AttributionManager {
+
+
+}

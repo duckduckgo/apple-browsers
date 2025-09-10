@@ -78,6 +78,10 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         case showCustomizePopover
     }
 
+    private enum Constants: Int {
+        case maxNumberOfPopoverPresentations = 5
+    }
+
     private let keyValueStore: ThrowingKeyValueStoring
     private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private let firePixel: (PixelKitEvent) -> Void
@@ -138,7 +142,18 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     var showCustomizePopover: Bool {
-        get { (try? keyValueStore.object(forKey: Key.showCustomizePopover.rawValue) as? Bool) ?? true }
+        get {
+            if customizePopoverPresentationCount > Constants.maxNumberOfPopoverPresentations.rawValue {
+                return false
+            } else {
+                return (try? keyValueStore.object(forKey: Key.showCustomizePopover.rawValue) as? Bool) ?? true
+            }
+        }
+        set { try? keyValueStore.set(newValue, forKey: Key.showCustomizePopover.rawValue) }
+    }
+
+    var customizePopoverPresentationCount: Int {
+        get { (try? keyValueStore.object(forKey: Key.showCustomizePopover.rawValue) as? Int) ?? 0 }
         set { try? keyValueStore.set(newValue, forKey: Key.showCustomizePopover.rawValue) }
     }
 }

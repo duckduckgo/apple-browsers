@@ -70,7 +70,12 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        NewTabPageDataModel.OmnibarConfig(
+        // Count the number of popover presentations
+        if configProvider.showCustomizePopover {
+            configProvider.customizePopoverPresentationCount += 1
+        }
+
+        return NewTabPageDataModel.OmnibarConfig(
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,
             showAiSetting: configProvider.isAIChatSettingVisible,

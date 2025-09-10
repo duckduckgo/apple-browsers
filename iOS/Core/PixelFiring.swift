@@ -19,6 +19,7 @@
 
 import Foundation
 import Networking
+import PixelKit
 
 public protocol PixelFiring {
 

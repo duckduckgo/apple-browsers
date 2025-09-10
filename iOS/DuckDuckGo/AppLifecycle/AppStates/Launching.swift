@@ -228,12 +228,6 @@ struct Launching: LaunchingHandling {
         mainCoordinator.start()
     }
 
-    private func logAppLaunchTime() {
-        let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
-        Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
-                   withAdditionalParameters: [PixelParameters.time: String(launchTime)])
-    }
-
     // MARK: -
 
     private var appDependencies: AppDependencies {
@@ -245,6 +239,17 @@ struct Launching: LaunchingHandling {
         )
     }
     
+}
+
+// MARK: - Logging
+
+private extension Launching {
+    
+    func logAppLaunchTime() {
+        let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
+        Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
+                   withAdditionalParameters: [PixelParameters.time: String(launchTime)])
+    }
 }
 
 extension Launching {

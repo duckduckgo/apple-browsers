@@ -1380,6 +1380,7 @@ extension Pixel {
         
         // MARK: - Push Notifications
         case inactiveUserProvisionalPushNotificationTapped
+        case userNotificationAuthorizationStatusDaily
     }
 
 }
@@ -2692,6 +2693,7 @@ extension Pixel.Event {
             
         // MARK: Push Notification
         case .inactiveUserProvisionalPushNotificationTapped: return "m_push-notification_local-provisional_inactive-user-tap"
+        case .userNotificationAuthorizationStatusDaily: return "m_push-notification_user-notification-authorization-status"
         }
     }
 }
@@ -2845,7 +2847,7 @@ public extension Pixel.Event {
             }
         }
 
-        private var event: PixelKitEventV2 {
+        private var event: PixelKitEvent {
             switch self {
             case .errorPageShown(let category, let clientSideHit):
                 return MaliciousSiteProtection.Event.errorPageShown(category: category, clientSideHit: clientSideHit)

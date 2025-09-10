@@ -19,7 +19,7 @@
 import Foundation
 import PixelKit
 
-enum SyncPromoPixelKitEvent: PixelKitEventV2 {
+enum SyncPromoPixelKitEvent: PixelKitEvent {
     case syncPromoDisplayed
     case syncPromoConfirmed
     case syncPromoDismissed
@@ -33,10 +33,6 @@ enum SyncPromoPixelKitEvent: PixelKitEventV2 {
     }
 
     var parameters: [String: String]? {
-        nil
-    }
-
-    var error: (any Error)? {
         nil
     }
 

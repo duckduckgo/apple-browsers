@@ -100,6 +100,9 @@
 /* Refresh action - button shown in alert */
 "action.title.refresh" = "Odśwież";
 
+/* Refresh page action */
+"action.title.refreshPage" = "Załaduj ponownie stronę";
+
 /* Remove Favorite action */
 "action.title.remove.favorite" = "Usuń ulubione";
 
@@ -2934,6 +2937,15 @@
 
 /* Explanation in Settings how the private search feature works */
 "settings.private.search.explanation" = "DuckDuckGo Private Search to domyślna wyszukiwarka, dzięki której możesz wyszukiwać treści w sieci, unikając śledzenia.";
+
+/* Settings screen option to set refresh button in the address bar */
+"settings.refreshButton.position.addressBar" = "Pasek adresu";
+
+/* Settings screen option to set refresh button in the menu */
+"settings.refreshButton.position.menu" = "Menu";
+
+/* Settings screen cell text for setting the refresh button position. */
+"settings.refreshButton.position.title" = "Pozycja przycisku ponownego załadowania";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Ustawienia wyszukiwania";

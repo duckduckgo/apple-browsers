@@ -93,7 +93,7 @@ private struct ContentView: View {
 
             Text(UserText.newAddressBarPickerDescription)
                 .daxCaption()
-                .foregroundColor(.secondary)
+                .foregroundColor(Color(designSystemColor: .textSecondary))
                 .multilineTextAlignment(.center)
                 .padding(.bottom, 16)
         }

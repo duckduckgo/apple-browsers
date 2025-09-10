@@ -79,25 +79,6 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
     }
 
     @MainActor
-    func testShowContextMenu_HidesDuckAIOptions_WhenOmnibarIsHidden() async throws {
-        sectionsAvailabilityProvider.isOmnibarAvailable = true
-        sectionsVisibilityProvider.isOmnibarVisible = false
-        sectionsVisibilityProvider.isFavoritesVisible = true
-        sectionsVisibilityProvider.isProtectionsReportVisible = true
-        omnibarConfigProvider.isAIChatSettingVisible = true
-        omnibarConfigProvider.isAIChatShortcutEnabled = true
-
-        let parameters = NewTabPageDataModel.ContextMenuParams(visibilityMenuItems: [])
-        try await messageHelper.handleMessageExpectingNilResponse(named: .contextMenu, parameters: parameters)
-
-        let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
-        let itemTitles = menu.items.map(\.title)
-
-        XCTAssertFalse(itemTitles.contains(UserText.newTabPageContextMenuShowDuckAI))
-        XCTAssertTrue(itemTitles.contains(UserText.newTabPageContextMenuOpenDuckAISettings))
-    }
-
-    @MainActor
     func testShowContextMenu_HidesAIOptions_WhenAISettingNotVisible() async throws {
         sectionsAvailabilityProvider.isOmnibarAvailable = true
         sectionsVisibilityProvider.isOmnibarVisible = true

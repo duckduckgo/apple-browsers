@@ -243,9 +243,9 @@ struct Launching: LaunchingHandling {
 
 // MARK: - Logging
 
-extension Launching {
+private extension Launching {
     
-    private func logAppLaunchTime() {
+    func logAppLaunchTime() {
         let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
         Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
                    withAdditionalParameters: [PixelParameters.time: String(launchTime)])

@@ -93,7 +93,7 @@ final class ReportingService {
 
 private extension ReportingService {
     
-    private func reportWidgetUsage() {
+    func reportWidgetUsage() {
         guard featureFlagging.isFeatureOn(.widgetReporting) else { return }
         WidgetCenter.shared.getCurrentConfigurations { result in
             switch result {
@@ -113,13 +113,13 @@ private extension ReportingService {
         }
     }
 
-    private func reportAdAttribution() {
+    func reportAdAttribution() {
         Task.detached(priority: .background) {
             await AdAttributionPixelReporter.shared.reportAttributionIfNeeded()
         }
     }
     
-    private func reportUserNotificationAuthStatus() {
+    func reportUserNotificationAuthStatus() {
         Task.detached(priority: .utility) {
             let status = await UNUserNotificationCenter.current().authorizationStatus()
             // We only care about authorized or denined at the moment for provisional notification
@@ -130,7 +130,7 @@ private extension ReportingService {
         }
     }
     
-    private func reportFailedCompilationsPixelIfNeeded() {
+    func reportFailedCompilationsPixelIfNeeded() {
         let store = FailedCompilationsStore()
         if store.hasAnyFailures {
             DailyPixel.fire(pixel: .compilationFailed, withAdditionalParameters: store.summary) { error in

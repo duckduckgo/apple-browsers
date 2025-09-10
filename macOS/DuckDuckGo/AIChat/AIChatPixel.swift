@@ -97,9 +97,13 @@ enum AIChatPixel: PixelKitEvent {
     case aiChatSummarizeSourceLinkClicked
 
     /// Event Trigger: User adds page context to the prompt using a button in the input field
+    ///
+    /// Note: This pixel is for internal use only and needs to be privacy-triaged before being released publicly
     case aiChatPageContextAdded
 
     /// Event Trigger: User removes page context from the prompt using a button in the input field
+    ///
+    /// Note: This pixel is for internal use only and needs to be privacy-triaged before being released publicly
     case aiChatPageContextRemoved
 
     // MARK: -

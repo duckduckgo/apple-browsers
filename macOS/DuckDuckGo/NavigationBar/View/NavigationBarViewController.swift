@@ -337,7 +337,6 @@ final class NavigationBarViewController: NSViewController {
 
     override func viewDidLoad() {
         setupAccessibility()
-        setupNavigationButtons()
 
         view.wantsLayer = true
         view.layer?.masksToBounds = false
@@ -347,6 +346,7 @@ final class NavigationBarViewController: NSViewController {
         setupBackgroundViewsAndColors()
         menuButtons.spacing = visualStyle.navigationToolbarButtonsSpacing
 
+        setupNavigationButtons()
         setupOverflowMenu()
         setupNetworkProtectionButton()
 
@@ -354,7 +354,6 @@ final class NavigationBarViewController: NSViewController {
         listenToPasswordManagerNotifications()
         listenToMessageNotifications()
         listenToFeedbackFormNotifications()
-        subscribeToDownloads()
 
         updateDownloadsButton(source: .default)
         updatePasswordManagementButton()
@@ -382,7 +381,7 @@ final class NavigationBarViewController: NSViewController {
                 addressBarStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -72),
             ])
 
-        } else /* if !isInPopUpWindow */ {
+        } else /* !isInPopUpWindow */ {
             updateHomeButton()
             addContextMenu()
 
@@ -406,6 +405,12 @@ final class NavigationBarViewController: NSViewController {
                 await WebExtensionNavigationBarUpdater(webExtensionManager: webExtensionManager, container: self?.menuButtons).runUpdateLoop()
             }
         }
+    }
+
+    override func viewWillAppear() {
+        // should be called when the view is about to appear,
+        // otherwise the progress indicator gets misplaced
+        subscribeToDownloads()
     }
 
     override func viewDidAppear() {

@@ -80,7 +80,7 @@
         description: 'Wide pixel sent at the end of a subscription purchase flow',
         owners: ['samsymons'],
         triggers: ['other'],
-        suffixes: [],
+        suffixes: ['daily_standard'],
         parameters: [
             'widePixelAppName',
             'widePixelAppVersion',

@@ -230,7 +230,7 @@ public final class WidePixel: WidePixelManaging {
 
         pixelKit.fire(
             widePixelEvent,
-            frequency: .standard,
+            frequency: .dailyAndStandard,
             withHeaders: nil,
             withAdditionalParameters: nil,
             allowedQueryReservedCharacters: nil,

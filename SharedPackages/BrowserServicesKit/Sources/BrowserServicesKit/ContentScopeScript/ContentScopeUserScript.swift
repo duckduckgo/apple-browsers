@@ -49,18 +49,20 @@ public final class ContentScopeProperties: Encodable {
     public let sessionKey: String
     public let messageSecret: String
     public let languageCode: String
-    public let platform = ContentScopePlatform()
+    public let platform: ContentScopePlatform
     public let features: [String: ContentScopeFeature]
     public var currentCohorts: [ContentScopeExperimentData]
 
     public init(gpcEnabled: Bool,
                 sessionKey: String,
                 messageSecret: String,
+                isInternalUser: Bool = false,
                 featureToggles: ContentScopeFeatureToggles,
                 currentCohorts: [ContentScopeExperimentData] = []) {
         self.globalPrivacyControlValue = gpcEnabled
         self.sessionKey = sessionKey
         self.messageSecret = messageSecret
+        self.platform = ContentScopePlatform(isInternal: isInternalUser)
         languageCode = Locale.current.languageCode ?? "en"
         features = [
             "autofill": ContentScopeFeature(featureToggles: featureToggles)
@@ -181,6 +183,12 @@ public struct ContentScopePlatform: Encodable {
     #else
     let name = "unknown"
     #endif
+
+    let `internal`: Bool
+
+    init(isInternal: Bool) {
+        self.internal = isInternal
+    }
 }
 
 public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessaging, UserScriptWithContentScope {

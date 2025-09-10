@@ -684,7 +684,7 @@ class MainViewController: UIViewController {
         if #available(iOS 26, *) {
             // Make sure the UI adjusts properly.
             // Fix for a weird behavior on iOS 26, firing `keyboardWillChangeFrame` event
-            // with the same frame when keyboard is shown and hidded rapidly.
+            // with the same frame when keyboard is shown and hidden rapidly.
             // https://app.asana.com/1/137249556945/project/414709148257752/task/1211140989378405
             adjustUI(withKeyboardFrame: .zero)
         }

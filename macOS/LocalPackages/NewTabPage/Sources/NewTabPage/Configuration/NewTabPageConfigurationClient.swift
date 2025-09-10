@@ -141,6 +141,20 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         pushMessage(named: MessageName.widgetsOnConfigUpdated.rawValue, params: widgetConfigs)
     }
 
+    private func makeShowDuckAIMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: UserText.newTabPageContextMenuShowDuckAI,
+                              action: sectionsVisibilityProvider.isOmnibarVisible ? #selector(self.toggleDuckAI(_:)) : nil,
+                              keyEquivalent: "")
+        if sectionsVisibilityProvider.isOmnibarVisible {
+            item.target = self
+        }
+        item.representedObject = 0
+        item.state = omnibarConfigProvider.isAIChatShortcutEnabled ? .on : .off
+        item.isEnabled = sectionsVisibilityProvider.isOmnibarVisible
+        item.withAccessibilityIdentifier("HomePage.Views.Menu.ShowDuckAI")
+        return item
+    }
+
     @MainActor
     private func showContextMenu(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let menu = NSMenu {
@@ -174,15 +188,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             // Show only when the search box is available and Duck.ai settings are visible
             if sectionsAvailabilityProvider.isOmnibarAvailable && omnibarConfigProvider.isAIChatSettingVisible {
 
-                // Show only when the Search box is visible
-                if sectionsVisibilityProvider.isOmnibarVisible {
-                    NSMenuItem(title: UserText.newTabPageContextMenuShowDuckAI,
-                               action: #selector(self.toggleDuckAI(_:)),
-                               target: self,
-                               representedObject: 0,
-                               state: omnibarConfigProvider.isAIChatShortcutEnabled ? .on : .off)
-                    .withAccessibilityIdentifier("HomePage.Views.Menu.ShowDuckAI")
-                }
+                makeShowDuckAIMenuItem()
 
                 NSMenuItem(title: UserText.newTabPageContextMenuOpenDuckAISettings,
                            action: #selector(self.openDuckAISettings(_:)),

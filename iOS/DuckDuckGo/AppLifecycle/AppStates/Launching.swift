@@ -211,7 +211,6 @@ struct Launching: LaunchingHandling {
 
         setupWindow()
         logAppLaunchTime()
-        logUserNotificationAuthStatus()
 
         // Keep this init method minimal and think twice before adding anything here.
         // - Use AppConfiguration for one-time setup.
@@ -250,16 +249,6 @@ extension Launching {
         Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
                    withAdditionalParameters: [PixelParameters.time: String(launchTime)])
     }
-    
-    private func logUserNotificationAuthStatus() {
-        Task.detached(priority: .utility) {
-            let statusString = await UNUserNotificationCenter.current().authorizationStatus().stringValue
-            guard statusString != "unknown" else { return }
-            DailyPixel.fire(pixel: .userNotificationAuthorizationStatusDaily, withAdditionalParameters: [
-                "status": statusString
-            ])
-        }
-    }
 }
 
 extension Launching {
@@ -284,19 +273,4 @@ extension Launching {
         Foreground(stateContext: makeStateContext(), actionToHandle: actionToHandle)
     }
 
-}
-
-// MARK: - UNAuthorizationStatus Extension
-
-private extension UNAuthorizationStatus {
-    var stringValue: String {
-        switch self {
-        case .notDetermined: "notDetermined"
-        case .denied:        "denied"
-        case .authorized:    "authorized"
-        case .provisional:   "provisional"
-        case .ephemeral:     "ephemeral"
-        @unknown default:    "unknown"
-        }
-    }
 }

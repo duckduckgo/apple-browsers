@@ -64,8 +64,35 @@ final class ReportingService {
         reportAdAttribution()
         reportWidgetUsage()
         onboardingPixelReporter.fireEnqueuedPixelsIfNeeded()
+        reportUserNotificationAuthStatus()
     }
 
+    func setupStorageForMarketPlacePostback() {
+        marketplaceAdPostbackManager.updateReturningUserValue()
+    }
+
+    // MARK: - Resume
+
+    func resume() {
+        Task {
+            await privacyProDataReporter.saveWidgetAdded()
+        }
+        reportFailedCompilationsPixelIfNeeded()
+        AppDependencyProvider.shared.persistentPixel.sendQueuedPixels { _ in }
+    }
+
+    // MARK: - Suspend
+
+    func suspend() {
+        privacyProDataReporter.saveApplicationLastSessionEnded()
+    }
+
+}
+
+// MARK: - Pixels
+
+private extension ReportingService {
+    
     private func reportWidgetUsage() {
         guard featureFlagging.isFeatureOn(.widgetReporting) else { return }
         WidgetCenter.shared.getCurrentConfigurations { result in
@@ -91,22 +118,18 @@ final class ReportingService {
             await AdAttributionPixelReporter.shared.reportAttributionIfNeeded()
         }
     }
-
-    func setupStorageForMarketPlacePostback() {
-        marketplaceAdPostbackManager.updateReturningUserValue()
-    }
-
-    // MARK: - Resume
-
-    func resume() {
-        Task {
-            await privacyProDataReporter.saveWidgetAdded()
+    
+    private func reportUserNotificationAuthStatus() {
+        Task.detached(priority: .utility) {
+            let statusString = await UNUserNotificationCenter.current().authorizationStatus().stringValue
+            guard statusString != "unknown" else { return }
+            DailyPixel.fire(pixel: .userNotificationAuthorizationStatusDaily, withAdditionalParameters: [
+                "status": statusString
+            ])
         }
-        fireFailedCompilationsPixelIfNeeded()
-        AppDependencyProvider.shared.persistentPixel.sendQueuedPixels { _ in }
     }
-
-    private func fireFailedCompilationsPixelIfNeeded() {
+    
+    private func reportFailedCompilationsPixelIfNeeded() {
         let store = FailedCompilationsStore()
         if store.hasAnyFailures {
             DailyPixel.fire(pixel: .compilationFailed, withAdditionalParameters: store.summary) { error in
@@ -115,11 +138,4 @@ final class ReportingService {
             }
         }
     }
-
-    // MARK: - Suspend
-
-    func suspend() {
-        privacyProDataReporter.saveApplicationLastSessionEnded()
-    }
-
 }

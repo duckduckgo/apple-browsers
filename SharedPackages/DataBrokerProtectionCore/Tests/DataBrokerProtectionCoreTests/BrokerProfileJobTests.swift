@@ -53,7 +53,7 @@ final class BrokerProfileJobTests: XCTestCase {
 
     // MARK: - Lifecycle Tests
 
-    func testWhenFetchingBrokerProfileQueryDataFails_ThenJobCompletesWithNoOutput() {
+    func testWhenFetchingBrokerProfileQueryDataFails_ThenJobCompletesWithNoOutput() async {
         let delegate = MockBrokerProfileJobErrorDelegate()
         let database = MockDatabase()
         let mockDependencies = MockBrokerProfileJobDependencies()
@@ -67,16 +67,20 @@ final class BrokerProfileJobTests: XCTestCase {
                                    errorDelegate: delegate,
                                    jobDependencies: mockDependencies)
 
-        let finishedExpectation = expectation(for: NSPredicate(format: "isFinished == true"), evaluatedWith: job, handler: nil)
+        let expectation = XCTestExpectation(description: "Job should finish")
+        job.completionBlock = {
+            expectation.fulfill()
+        }
+
         job.start()
-        wait(for: [finishedExpectation], timeout: 10.0)
+        await fulfillment(of: [expectation], timeout: 5)
 
         XCTAssertTrue(job.isFinished)
         XCTAssertTrue(database.scanEvents.isEmpty)
         XCTAssertTrue(database.optOutEvents.isEmpty)
     }
 
-    func testWhenScanDataIsPresent_ThenScanEventsAreCreated() {
+    func testWhenScanDataIsPresent_ThenScanEventsAreCreated() async {
         let delegate = MockBrokerProfileJobErrorDelegate()
         let database = MockDatabase()
         let mockDependencies = MockBrokerProfileJobDependencies()
@@ -92,9 +96,13 @@ final class BrokerProfileJobTests: XCTestCase {
                                    errorDelegate: delegate,
                                    jobDependencies: mockDependencies)
 
-        let finishedExpectation = expectation(for: NSPredicate(format: "isFinished == true"), evaluatedWith: job, handler: nil)
+        let expectation = XCTestExpectation(description: "Job should finish")
+        job.completionBlock = {
+            expectation.fulfill()
+        }
+
         job.start()
-        wait(for: [finishedExpectation], timeout: 10.0)
+        await fulfillment(of: [expectation], timeout: 5)
 
         XCTAssertTrue(job.isFinished)
         XCTAssertTrue(database.scanEvents.contains(where: { $0.type == .scanStarted }))
@@ -102,7 +110,7 @@ final class BrokerProfileJobTests: XCTestCase {
         XCTAssertTrue(database.optOutEvents.isEmpty)
     }
 
-    func testWhenOptOutDataIsPresent_ThenOptOutEventsAreCreated() {
+    func testWhenOptOutDataIsPresent_ThenOptOutEventsAreCreated() async {
         let delegate = MockBrokerProfileJobErrorDelegate()
         let database = MockDatabase()
         let mockDependencies = MockBrokerProfileJobDependencies()
@@ -145,9 +153,13 @@ final class BrokerProfileJobTests: XCTestCase {
                                    errorDelegate: delegate,
                                    jobDependencies: mockDependencies)
 
-        let finishedExpectation = expectation(for: NSPredicate(format: "isFinished == true"), evaluatedWith: job, handler: nil)
+        let expectation = XCTestExpectation(description: "Job should finish")
+        job.completionBlock = {
+            expectation.fulfill()
+        }
+
         job.start()
-        wait(for: [finishedExpectation], timeout: 10.0)
+        await fulfillment(of: [expectation], timeout: 5)
 
         XCTAssertTrue(job.isFinished)
         XCTAssertTrue(database.scanEvents.contains(where: { $0.type == .scanStarted }))

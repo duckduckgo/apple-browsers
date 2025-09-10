@@ -75,6 +75,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     private enum Key: String {
         case newTabPageOmnibarMode
+        case showCustomizePopover
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -134,5 +135,10 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> {
         aiChatShortcutSettingProvider.isAIChatSettingVisiblePublisher
+    }
+
+    var showCustomizePopover: Bool {
+        get { (try? keyValueStore.object(forKey: Key.showCustomizePopover.rawValue) as? Bool) ?? true }
+        set { try? keyValueStore.set(newValue, forKey: Key.showCustomizePopover.rawValue) }
     }
 }

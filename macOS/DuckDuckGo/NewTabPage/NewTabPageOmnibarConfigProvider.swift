@@ -76,6 +76,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private enum Key: String {
         case newTabPageOmnibarMode
         case showCustomizePopover
+        case customizePopoverPresentationCount
     }
 
     private enum Constants: Int {
@@ -153,7 +154,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     var customizePopoverPresentationCount: Int {
-        get { (try? keyValueStore.object(forKey: Key.showCustomizePopover.rawValue) as? Int) ?? 0 }
-        set { try? keyValueStore.set(newValue, forKey: Key.showCustomizePopover.rawValue) }
+        get { (try? keyValueStore.object(forKey: Key.customizePopoverPresentationCount.rawValue) as? Int) ?? 0 }
+        set { try? keyValueStore.set(newValue, forKey: Key.customizePopoverPresentationCount.rawValue) }
     }
 }

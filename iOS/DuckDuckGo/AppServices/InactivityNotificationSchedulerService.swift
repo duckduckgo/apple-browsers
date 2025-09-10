@@ -76,6 +76,7 @@ final class InactivityNotificationSchedulerService {
         let request = buildUNNotificationRequest()
         do {
             try await userNotificationCenter.add(request)
+            print("👀 Scheduled")
         } catch {
             Logger.pushNotification.error("Inactivity notification scheduling failed with \(error.localizedDescription, privacy: .public)")
         }

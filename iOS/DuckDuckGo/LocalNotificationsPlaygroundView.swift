@@ -121,6 +121,12 @@ struct LocalNotificationsPlaygroundView: View {
             Button(action: model.sendLocalNotification) {
                 Text(verbatim: "Schedule \(model.notificationType.description) Notification in \(model.notificationSchedulingTime) seconds")
             }
+            
+            VStack(alignment: .leading) {
+                Text("Pending count \(String(model.pendingCount))")
+                Text("First pending notification ID \(model.firstId)")
+            }
+            
 
         }
         .onAppear(perform: model.onAppear)
@@ -143,6 +149,9 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
 
     @Published var notificationType: NotificationType = .provisional
     @Published var notificationSchedulingTime: Int = 5
+    
+    @Published var pendingCount: Int = 0
+    @Published var firstId: String = ""
 
     private var cancellable: AnyCancellable?
 
@@ -153,6 +162,7 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
     func onAppear() {
         Task {
             await refreshAuthorizationSettings()
+            await loadPendingNotifications()
         }
     }
 
@@ -208,6 +218,13 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
             return try await center.requestAuthorization(options: [option])
         } catch {
             return false
+        }
+    }
+    
+    private func loadPendingNotifications() async {
+        await self.pendingCount = center.pendingNotificationRequests().count
+        if let first = await center.pendingNotificationRequests().first {
+            self.firstId = first.identifier
         }
     }
 }

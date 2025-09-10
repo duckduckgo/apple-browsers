@@ -19,26 +19,59 @@
 import Foundation
 import CryptoKit
 import PixelKit
+import Common
 
-enum EncryptionKeyStoreError: Error, ErrorWithPixelParameters {
+enum EncryptionKeyStoreError: DDGError {
     case storageFailed(OSStatus)
     case readFailed(OSStatus)
     case deletionFailed(OSStatus)
     case cannotTransformDataToString(OSStatus)
-    case cannotTransfrotmStringToBase64Data(OSStatus)
+    case cannotTransformStringToBase64Data(OSStatus)
 
-    var errorParameters: [String: String] {
+    var errorDomain: String { "com.duckduckgo.EncryptionKeyStoreError" }
+
+    var errorCode: Int {
+        switch self {
+        case .storageFailed:
+            return 0
+        case .readFailed:
+            return 1
+        case .deletionFailed:
+            return 2
+        case .cannotTransformDataToString:
+            return 3
+        case .cannotTransformStringToBase64Data:
+            return 4
+        }
+    }
+
+    var underlyingError: Error? {
         switch self {
         case .storageFailed(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
+            return NSError(domain: NSOSStatusErrorDomain, code: Int(status))
         case .readFailed(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
+            return NSError(domain: NSOSStatusErrorDomain, code: Int(status))
         case .deletionFailed(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
+            return NSError(domain: NSOSStatusErrorDomain, code: Int(status))
         case .cannotTransformDataToString(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
-        case .cannotTransfrotmStringToBase64Data(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
+            return NSError(domain: NSOSStatusErrorDomain, code: Int(status))
+        case .cannotTransformStringToBase64Data(let status):
+            return NSError(domain: NSOSStatusErrorDomain, code: Int(status))
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .storageFailed(let status):
+            return "Failed to store encryption key in keychain with error code: \(status)"
+        case .readFailed(let status):
+            return "Failed to read encryption key from keychain with error code: \(status)"
+        case .deletionFailed(let status):
+            return "Failed to delete encryption key from keychain with error code: \(status)"
+        case .cannotTransformDataToString(let status):
+            return "Failed to transform data from keychain to string with error code: \(status)"
+        case .cannotTransformStringToBase64Data(let status):
+            return "Failed to transform string from keychain to base64 data with error code: \(status)"
         }
     }
 }
@@ -164,7 +197,7 @@ final class EncryptionKeyStore: EncryptionKeyStoring {
                     throw EncryptionKeyStoreError.cannotTransformDataToString(status)
                 }
                 guard let keyData = Data(base64Encoded: base64String) else {
-                    throw EncryptionKeyStoreError.cannotTransfrotmStringToBase64Data(status)
+                    throw EncryptionKeyStoreError.cannotTransformStringToBase64Data(status)
                 }
                 finalData = keyData
             }

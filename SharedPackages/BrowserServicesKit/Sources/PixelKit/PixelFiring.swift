@@ -1,6 +1,5 @@
 //
-//  DebugDatabaseBrowserViewController.swift
-//  DuckDuckGo
+//  PixelFiring.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,19 +16,22 @@
 //  limitations under the License.
 //
 
-import Foundation
-import SwiftUI
-import DataBrokerProtectionCore
+/// Protocol to support mocking pixel firing.
+public protocol PixelFiring {
+    func fire(_ event: PixelKitEvent)
 
-public final class DebugDatabaseBrowserViewController: UIHostingController<DebugDatabaseBrowserView> {
+    func fire(_ event: PixelKitEvent,
+              frequency: PixelKit.Frequency)
+}
 
-    public init(databaseDelegate: DBPIOSInterface.DatabaseDelegate?) {
-        let viewModel = DebugDatabaseBrowserViewModel(databaseDelegate: databaseDelegate)
-        let contentView = DebugDatabaseBrowserView(viewModel: viewModel)
-        super.init(rootView: contentView)
+extension PixelKit: PixelFiring {
+
+    public func fire(_ event: PixelKitEvent) {
+        fire(event, frequency: .standard)
     }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+
+    public func fire(_ event: PixelKitEvent,
+                     frequency: PixelKit.Frequency) {
+        fire(event, frequency: frequency, onComplete: { _, _ in })
     }
 }

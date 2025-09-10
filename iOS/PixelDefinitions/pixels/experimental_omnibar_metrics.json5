@@ -17,6 +17,11 @@
             'appVersion',
             'pixelSource',
             {
+                key: 'was_used_before',
+                description: 'Indicates if AI Chat was used before this submission: 1=returning user, 0=first-time user',
+                type: 'integer',
+            },
+            {
                 key: 'text_length_bucket',
                 description: 'Indicates length of AI prompt text using buckets: short (1-15), medium (16-40), long (41-100), very_long (100+)',
                 type: 'string',

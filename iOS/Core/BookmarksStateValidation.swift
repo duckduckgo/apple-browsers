@@ -22,6 +22,10 @@ import CoreData
 import Bookmarks
 import Persistence
 
+private extension BoolFileMarker.Name {
+    static let hasSuccessfullyLaunchedBefore = BoolFileMarker.Name(rawValue: "app-launched-successfully")
+}
+
 public protocol BookmarksStateValidation {
 
     func validateInitialState(context: NSManagedObjectContext,
@@ -39,16 +43,19 @@ public class BookmarksStateValidator: BookmarksStateValidation {
     public enum ValidationError {
         case bookmarksStructureLost
         case bookmarksStructureNotRecovered
-        case bookmarksStructureBroken(additionalParams: [String: String])
+        case bookmarksStructureBroken
         case validatorError(Error)
     }
 
     let keyValueStore: KeyValueStoring
-    let errorHandler: (ValidationError) -> Void
+    let isSyncEnabled: Bool
+    let errorHandler: (ValidationError, [String: String]?) -> Void
 
     public init(keyValueStore: KeyValueStoring,
-                errorHandler: @escaping (ValidationError) -> Void) {
+                isSyncEnabled: Bool = false,
+                errorHandler: @escaping (ValidationError, [String: String]?) -> Void) {
         self.keyValueStore = keyValueStore
+        self.isSyncEnabled = isSyncEnabled
         self.errorHandler = errorHandler
     }
 
@@ -60,11 +67,16 @@ public class BookmarksStateValidator: BookmarksStateValidation {
         do {
             let count = try context.count(for: fetch)
             if count == 0 {
-                errorHandler(validationError)
+                switch validationError {
+                case .bookmarksStructureLost:
+                    errorHandler(.bookmarksStructureLost, generateDiagnosticParameters())
+                default:
+                    errorHandler(validationError, nil)
+                }
                 return false
             }
         } catch {
-            errorHandler(.validatorError(error))
+            errorHandler(.validatorError(error), nil)
         }
 
         return true
@@ -95,10 +107,60 @@ public class BookmarksStateValidator: BookmarksStateValidation {
 
                 additionalParams["is-marked-as-initialized"] = isMarkedAsInitialized ? "true" : "false"
 
-                errorHandler(.bookmarksStructureBroken(additionalParams: additionalParams))
+                errorHandler(.bookmarksStructureBroken, additionalParams)
             }
         } catch {
-            errorHandler(.validatorError(error))
+            errorHandler(.validatorError(error), nil)
         }
     }
+    
+    private func generateDiagnosticParameters() -> [String: String] {
+        var params = [String: String]()
+        
+        params["sync-enabled"] = "\(isSyncEnabled)"
+
+        // Add recent bookmark error information
+        if let recentBookmarkError = getRecentBookmarkError() {
+            params["recent-bookmark-error-name"] = recentBookmarkError.name
+            params["recent-bookmark-error-domain"] = recentBookmarkError.domain
+            params["recent-bookmark-error-code"] = "\(recentBookmarkError.code)"
+        }
+        
+        // Check if launch marker file exists (helps distinguish restore vs corruption)
+        params["launch-marker-present"] = "\(hasLaunchedSuccessfullyBefore)"
+        
+        return params
+    }
+    
+    // MARK: - Diagnostic Helper Methods
+        
+    private var hasLaunchedSuccessfullyBefore: Bool {
+        guard let marker = BoolFileMarker(name: .hasSuccessfullyLaunchedBefore) else {
+            return false
+        }
+        return marker.isPresent
+    }
+
+    private func getRecentBookmarkError() -> (name: String, domain: String, code: Int)? {
+        let bookmarkErrorKey = "BookmarksValidator.lastBookmarkError"
+        let maxAgeSeconds: TimeInterval = 24 * 60 * 60 // 1 day
+
+        // Check UserDefaults for bookmark error
+        guard let errorInfo = UserDefaults.app.object(forKey: bookmarkErrorKey) as? [String: Any],
+              let timestamp = errorInfo["timestamp"] as? Date,
+              let name = errorInfo["bookmarkError"] as? String,
+              let domain = errorInfo["domain"] as? String,
+              let code = errorInfo["code"] as? Int else {
+            return nil
+        }
+
+        // Check if error is recent (within 1 day)
+        let secondsSinceError = Date().timeIntervalSince(timestamp)
+        guard secondsSinceError <= maxAgeSeconds else {
+            return nil
+        }
+
+        return (name: name, domain: domain, code: code)
+    }
+
 }

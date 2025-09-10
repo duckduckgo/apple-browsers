@@ -56,9 +56,20 @@ protocol SwitchBarSubmissionMetricsProviding {
 /// Handles text length analysis and pixel firing
 struct SwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding {
     
+    private let featureDiscovery: FeatureDiscovery
     private let textLengthBucketKey = "text_length_bucket"
     
-    /// Process text submission and fire pixel with length bucket parameter
+    /// Initialize with feature discovery service for entry point data.
+    /// - Parameter featureDiscovery: Service for first-time vs returning user behavior
+    init(featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
+        self.featureDiscovery = featureDiscovery
+    }
+    
+    /// Process text submission and fire pixel with length bucket and feature discovery parameters
+    /// - Note: AI Chat submissions also include "was_used_before" parameter via feature discovery
+    /// - Parameters:
+    ///   - text: Input text
+    ///   - submissionMode: Whether this is a search query or AI chat prompt
     func process(_ text: String, for submissionMode: TextEntryMode) {
         guard let bucket = SwitchBarTextBucket(text) else { return }
         
@@ -68,7 +79,9 @@ struct SwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding {
         case .search:
             DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarQuerySubmitted, withAdditionalParameters: additionalParams)
         case .aiChat:
-            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarPromptSubmitted, withAdditionalParameters: additionalParams)
+            let mergedParams = additionalParams.merging(featureDiscovery.addToParams([:], forFeature: .aiChat)) { (_, new) in new }
+            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarPromptSubmitted, withAdditionalParameters: mergedParams)
+            featureDiscovery.setWasUsedBefore(.aiChat)
         }
     }
 }

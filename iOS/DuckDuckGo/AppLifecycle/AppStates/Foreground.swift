@@ -20,6 +20,10 @@
 import UIKit
 import Core
 
+private extension BoolFileMarker.Name {
+    static let hasSuccessfullyLaunchedBefore = BoolFileMarker.Name(rawValue: "app-launched-successfully")
+}
+
 /// Represents the state where the app is in the Foreground and is visible to the user.
 /// - Usage:
 ///   - This state is typically associated with the `applicationDidBecomeActive(_:)` method.
@@ -106,6 +110,10 @@ struct Foreground: ForegroundHandling {
             /// This is called when the **app is ready to handle user interactions** after data clear and authentication are complete.
             onAppReadyForInteractions: {
                 appDependencies.launchTaskManager.start()
+                
+                // Mark that the app has successfully launched at least once
+                // This helps distinguish database corruption from fresh installs/restores
+                BoolFileMarker(name: .hasSuccessfullyLaunchedBefore)?.mark()
             }
         )
 

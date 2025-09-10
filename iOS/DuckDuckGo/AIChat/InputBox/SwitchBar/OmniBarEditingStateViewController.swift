@@ -71,7 +71,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     // MARK: - Initialization
 
-    internal init(switchBarHandler: any SwitchBarHandling, switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics()) {
+    internal init(switchBarHandler: any SwitchBarHandling,
+                  switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics()) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         super.init(nibName: nil, bundle: nil)

@@ -192,7 +192,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .daxEasterEggLogos,
              .subscriptionPurchaseWidePixelMeasurement,
-             .askAIChatSuggestion:
+             .askAIChatSuggestion,
+             .refreshButtonPosition:
             true
         default:
             false

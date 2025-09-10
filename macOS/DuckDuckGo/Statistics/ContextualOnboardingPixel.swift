@@ -26,7 +26,7 @@ import PixelKit
  * [Privacy Triage]()
  * [Detailed Pixels description](https://app.asana.com/0/1201621853593513/1208114308034584/f)
  */
-enum ContextualOnboardingPixel: PixelKitEventV2 {
+enum ContextualOnboardingPixel: PixelKitEvent {
     /**
      * Event Trigger: User types into the address bar when the search suggestions dialog is shown during the contextual onboarding
      *
@@ -159,7 +159,4 @@ enum ContextualOnboardingPixel: PixelKitEventV2 {
         nil
     }
 
-    var error: (any Error)? {
-        nil
-    }
 }

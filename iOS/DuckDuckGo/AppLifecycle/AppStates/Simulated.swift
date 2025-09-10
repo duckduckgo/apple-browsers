@@ -27,7 +27,7 @@ struct Simulated {
         Pixel.isDryRun = true
         _ = DefaultUserAgentManager.shared
         Database.shared.loadStore { _, _ in }
-        _ = BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: BookmarksDatabase.make())
+        _ = try? BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: BookmarksDatabase.make())
 
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIStoryboard.init(name: "LaunchScreen", bundle: nil).instantiateInitialViewController()

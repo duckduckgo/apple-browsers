@@ -101,39 +101,92 @@ final class SwitchBarSubmissionMetricsTests: XCTestCase {
     // MARK: - SwitchBarSubmissionMetrics Tests
     
     func testSubmissionMetricsProcessSearchShort() {
-        let metrics = SwitchBarSubmissionMetrics()
+        let metrics = SwitchBarSubmissionMetrics(featureDiscovery: MockFeatureDiscovery())
         let shortText = "test"
         
         metrics.process(shortText, for: .search)
     }
     
     func testSubmissionMetricsProcessAIChatMedium() {
-        let metrics = SwitchBarSubmissionMetrics()
+        let metrics = SwitchBarSubmissionMetrics(featureDiscovery: MockFeatureDiscovery())
         let mediumText = "This is a medium length prompt for AI"
         
         metrics.process(mediumText, for: .aiChat)
     }
     
     func testSubmissionMetricsProcessSearchLong() {
-        let metrics = SwitchBarSubmissionMetrics()
+        let metrics = SwitchBarSubmissionMetrics(featureDiscovery: MockFeatureDiscovery())
         let longText = "This is a very long search query that should be categorized as long text"
         
         metrics.process(longText, for: .search)
     }
     
     func testSubmissionMetricsProcessAIChatVeryLong() {
-        let metrics = SwitchBarSubmissionMetrics()
+        let metrics = SwitchBarSubmissionMetrics(featureDiscovery: MockFeatureDiscovery())
         let veryLongText = String(repeating: "This is a very long prompt. ", count: 10)
         
         metrics.process(veryLongText, for: .aiChat)
     }
     
     func testSubmissionMetricsProcessEmptyTextReturnsEarly() {
-        let metrics = SwitchBarSubmissionMetrics()
+        let metrics = SwitchBarSubmissionMetrics(featureDiscovery: MockFeatureDiscovery())
         
         // Should return early without firing pixels
         metrics.process("", for: .search)
         metrics.process("", for: .aiChat)
+    }
+    
+    // MARK: - Feature Discovery Tests
+    
+    func testAIChatSubmissionCallsSetWasUsedBefore() {
+        let mockFeatureDiscovery = MockFeatureDiscovery()
+        let metrics = SwitchBarSubmissionMetrics(featureDiscovery: mockFeatureDiscovery)
+        
+        metrics.process("test prompt", for: .aiChat)
+        
+        XCTAssertTrue(mockFeatureDiscovery.wasSetWasUsedBeforeCalled(for: .aiChat))
+        XCTAssertEqual(mockFeatureDiscovery.setWasUsedBeforeCallCount, 1)
+    }
+    
+    func testSearchSubmissionDoesNotCallSetWasUsedBefore() {
+        let mockFeatureDiscovery = MockFeatureDiscovery()
+        let metrics = SwitchBarSubmissionMetrics(featureDiscovery: mockFeatureDiscovery)
+        
+        metrics.process("test query", for: .search)
+        
+        XCTAssertFalse(mockFeatureDiscovery.wasSetWasUsedBeforeCalled(for: .aiChat))
+        XCTAssertEqual(mockFeatureDiscovery.setWasUsedBeforeCallCount, 0)
+    }
+    
+    func testAIChatSubmissionWithFirstTimeUser() {
+        let mockFeatureDiscovery = MockFeatureDiscovery()
+        mockFeatureDiscovery.setReturnValue(false, for: .aiChat)
+        let metrics = SwitchBarSubmissionMetrics(featureDiscovery: mockFeatureDiscovery)
+        
+        metrics.process("first prompt", for: .aiChat)
+        
+        XCTAssertTrue(mockFeatureDiscovery.wasSetWasUsedBeforeCalled(for: .aiChat))
+    }
+    
+    func testAIChatSubmissionWithReturningUser() {
+        let mockFeatureDiscovery = MockFeatureDiscovery()
+        mockFeatureDiscovery.setReturnValue(true, for: .aiChat)
+        let metrics = SwitchBarSubmissionMetrics(featureDiscovery: mockFeatureDiscovery)
+        
+        metrics.process("another prompt", for: .aiChat)
+        
+        XCTAssertTrue(mockFeatureDiscovery.wasSetWasUsedBeforeCalled(for: .aiChat))
+    }
+    
+    func testMultipleAIChatSubmissionsOnlyCallSetWasUsedBeforeMultipleTimes() {
+        let mockFeatureDiscovery = MockFeatureDiscovery()
+        let metrics = SwitchBarSubmissionMetrics(featureDiscovery: mockFeatureDiscovery)
+        
+        metrics.process("first prompt", for: .aiChat)
+        metrics.process("second prompt", for: .aiChat)
+        metrics.process("third prompt", for: .aiChat)
+        
+        XCTAssertEqual(mockFeatureDiscovery.setWasUsedBeforeCallCount, 3)
     }
 
 }

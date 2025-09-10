@@ -61,24 +61,23 @@ struct Launching: LaunchingHandling {
     init() throws {
         Logger.lifecycle.info("Launching: \(#function)")
 
+        let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
+
         // MARK: - Application Setup
         // Handles one-time application setup during launch
+        let isBookmarksStructureMissing = try configuration.start(syncKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
-        try configuration.start()
-
-        // MARK: - Service Initialization
-        // Create and initialize core services
+        // MARK: - Service Initialization (continued)
+        // Create and initialize remaining core services
         // These services are instantiated early in the app lifecycle for two main reasons:
         // 1. To begin their essential work immediately, without waiting for UI or other components
         // 2. To potentially complete their tasks before the app becomes visible to the user
         // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
-
-        let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
         let autofillService = AutofillService()
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared)
         let configurationService = RemoteConfigurationService()
-        let crashCollectionService = CrashCollectionService()
+        let crashCollectionService = CrashCollectionService(isBookmarksStructureMissing: isBookmarksStructureMissing)
         let statisticsService = StatisticsService()
         let reportingService = ReportingService(fireproofing: fireproofing, featureFlagging: featureFlagger)
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
@@ -139,6 +138,7 @@ struct Launching: LaunchingHandling {
                                               defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                                               systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
                                               daxDialogsManager: daxDialogs,
+                                              dbpIOSPublicInterface: dbpService.dbpIOSPublicInterface,
                                               launchSourceManager: launchSourceManager)
 
         // MARK: - UI-Dependent Services Setup

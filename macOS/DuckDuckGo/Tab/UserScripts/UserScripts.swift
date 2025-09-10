@@ -112,6 +112,10 @@ final class UserScripts: UserScriptsProvider {
         }
 
         if sourceProvider.featureFlagger.isFeatureOn(.newTabPagePerTab) {
+            assert(
+                sourceProvider.newTabPageActionsManager != nil,
+                "NewTabPageActionsManager must be available when newTabPagePerTab feature is enabled. Ensure it is properly initialized in UserScriptDependenciesProviding."
+            )
             let newTabPageUserScript = NewTabPageUserScript()
             sourceProvider.newTabPageActionsManager?.registerUserScript(newTabPageUserScript)
             self.newTabPageUserScript = newTabPageUserScript

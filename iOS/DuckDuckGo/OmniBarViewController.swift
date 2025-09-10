@@ -645,6 +645,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func onDismissPressed() {
+        Pixel.fire(pixel: .aiChatLegacyOmnibarBackButtonPressed)
         omniDelegate?.onCancelPressed()
         refreshState(state.onEditingStoppedState)
     }

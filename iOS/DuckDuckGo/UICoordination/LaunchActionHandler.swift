@@ -53,24 +53,30 @@ final class LaunchActionHandler: LaunchActionHandling {
     private let shortcutItemHandler: ShortcutItemHandling
     private let keyboardPresenter: KeyboardPresenting
     private let pixelFiring: PixelFiring.Type
+    private let launchSourceManager: LaunchSourceManaging
 
     init(urlHandler: URLHandling,
          shortcutItemHandler: ShortcutItemHandling,
          keyboardPresenter: KeyboardPresenting,
+         launchSourceService: LaunchSourceManaging,
          pixelFiring: PixelFiring.Type = Pixel.self) {
         self.urlHandler = urlHandler
         self.shortcutItemHandler = shortcutItemHandler
         self.keyboardPresenter = keyboardPresenter
+        self.launchSourceManager = launchSourceService
         self.pixelFiring = pixelFiring
     }
 
     func handleLaunchAction(_ action: LaunchAction) {
         switch action {
         case .openURL(let url):
+            launchSourceManager.setSource(.URL)
             openURL(url)
         case .handleShortcutItem(let shortcutItem):
+            launchSourceManager.setSource(.shortcut)
             shortcutItemHandler.handleShortcutItem(shortcutItem)
         case .showKeyboard(let lastBackgroundDate):
+            launchSourceManager.setSource(.standard)
             keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: lastBackgroundDate)
         }
     }

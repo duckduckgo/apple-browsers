@@ -186,7 +186,7 @@ public struct ContentScopePlatform: Encodable {
 
     let `internal`: Bool
 
-    init(isInternal: Bool) {
+    init(isInternal: Bool = false) {
         self.internal = isInternal
     }
 }

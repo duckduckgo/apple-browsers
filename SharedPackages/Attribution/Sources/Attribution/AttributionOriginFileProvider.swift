@@ -19,19 +19,19 @@
 import Foundation
 
 /// A type that provides the `origin` used to anonymously track installations without tracking retention.
-protocol AttributionOriginProvider: AnyObject {
+public protocol AttributionOriginProvider: AnyObject {
     /// A string representing the acquisition funnel.
     var origin: String? { get }
 }
 
-final class AttributionOriginFileProvider: AttributionOriginProvider {
-    let origin: String?
+public final class AttributionOriginFileProvider: AttributionOriginProvider {
+    public let origin: String?
 
     /// Creates an instance with the given file name and `Bundle`.
     /// - Parameters:
     ///   - name: The name of the Txt file to extract the origin from.
     ///   - bundle: The bundle where the file is located. In tests pass replace this with the test bundle.
-    init(resourceName name: String = "Origin", bundle: Bundle = .main) {
+    public init(resourceName name: String = "Origin", bundle: Bundle = .main) {
         let url = bundle.url(forResource: name, withExtension: "txt")
         origin = try? url
             .flatMap(String.init(contentsOf:))?

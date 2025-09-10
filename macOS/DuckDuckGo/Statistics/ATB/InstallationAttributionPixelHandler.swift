@@ -18,6 +18,7 @@
 
 import Foundation
 import PixelKit
+import Attribution
 
 /// A type that handles Pixels for acquisition attributions.
 protocol InstallationAttributionsPixelHandler: AnyObject {

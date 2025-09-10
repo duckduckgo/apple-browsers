@@ -45,7 +45,7 @@ public struct ContentScopeExperimentData: Encodable, Equatable {
 
 public final class ContentScopeProperties: Encodable {
     public let globalPrivacyControlValue: Bool
-    public let debug: Bool = false
+    public var debug: Bool = false
     public let sessionKey: String
     public let messageSecret: String
     public let languageCode: String
@@ -58,6 +58,9 @@ public final class ContentScopeProperties: Encodable {
                 messageSecret: String,
                 featureToggles: ContentScopeFeatureToggles,
                 currentCohorts: [ContentScopeExperimentData] = []) {
+        #if DEBUG
+        self.debug = true
+        #endif
         self.globalPrivacyControlValue = gpcEnabled
         self.sessionKey = sessionKey
         self.messageSecret = messageSecret

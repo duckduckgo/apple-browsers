@@ -114,7 +114,8 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var didGetPageContext = false
     var didSubmitPageContext = false
-    var pageContextSubject = PassthroughSubject<AIChatPageContextData, Never>()
+    var didTogglePageContextTelemetry = false
+    var pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     var pageContextRequestedSubject = PassthroughSubject<Void, Never>()
 
     var messageHandling: any DuckDuckGo_Privacy_Browser.AIChatMessageHandling
@@ -186,7 +187,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    var pageContextPublisher: AnyPublisher<AIChatPageContextData, Never> {
+    var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> {
         pageContextSubject.eraseToAnyPublisher()
     }
 
@@ -198,6 +199,10 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         didSubmitPageContext = true
     }
 
+    func togglePageContextTelemetry(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        didTogglePageContextTelemetry = true
+        return nil
+    }
 }
 
 final class AIChatMockDebugSettings: AIChatDebugURLSettingsRepresentable {

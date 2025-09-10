@@ -45,8 +45,15 @@ protocol AppConfigurationFetchStatistics {
     var backgroundFetchTaskExpirationCount: Int { get set }
 }
 
-class AppConfigurationFetch {
-    
+protocol AppConfigurationFetching {
+    func start(isBackgroundFetch: Bool,
+               isDebug: Bool,
+               forceRefresh: Bool,
+               completion: AppConfigurationFetchCompletion?)
+}
+
+class AppConfigurationFetch: AppConfigurationFetching {
+
     struct Constants {
         
         static let backgroundTaskName = "Fetch Configuration Task"

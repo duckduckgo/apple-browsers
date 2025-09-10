@@ -100,6 +100,9 @@
 /* Refresh action - button shown in alert */
 "action.title.refresh" = "Osveži";
 
+/* Refresh page action */
+"action.title.refreshPage" = "Znova naloži stran";
+
 /* Remove Favorite action */
 "action.title.remove.favorite" = "Odstrani priljubljene";
 
@@ -2934,6 +2937,15 @@
 
 /* Explanation in Settings how the private search feature works */
 "settings.private.search.explanation" = "DuckDuckGo Private Search je vaš privzeti iskalnik, zato lahko po spletu iščete, ne da bi vam kdo sledil.";
+
+/* Settings screen option to set refresh button in the address bar */
+"settings.refreshButton.position.addressBar" = "Naslovna vrstica";
+
+/* Settings screen option to set refresh button in the menu */
+"settings.refreshButton.position.menu" = "Meni";
+
+/* Settings screen cell text for setting the refresh button position. */
+"settings.refreshButton.position.title" = "Položaj gumba za ponovno nalaganje";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Nastavitve iskanja";

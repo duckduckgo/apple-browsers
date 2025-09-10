@@ -100,6 +100,9 @@
 /* Refresh action - button shown in alert */
 "action.title.refresh" = "Obnoviť";
 
+/* Refresh page action */
+"action.title.refreshPage" = "Znovu načítať stránku";
+
 /* Remove Favorite action */
 "action.title.remove.favorite" = "Odstrániť obľúbenú položku";
 
@@ -2934,6 +2937,15 @@
 
 /* Explanation in Settings how the private search feature works */
 "settings.private.search.explanation" = "Váš predvolený vyhľadávač je DuckDuckGo Private Search, takže môžete na webe vyhľadávať bez sledovania.";
+
+/* Settings screen option to set refresh button in the address bar */
+"settings.refreshButton.position.addressBar" = "Riadok adresy";
+
+/* Settings screen option to set refresh button in the menu */
+"settings.refreshButton.position.menu" = "Ponuka";
+
+/* Settings screen cell text for setting the refresh button position. */
+"settings.refreshButton.position.title" = "Poloha tlačidla obnovenia";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Nastavenia vyhľadávania";

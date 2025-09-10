@@ -742,7 +742,8 @@ final class BrowserTabViewController: NSViewController {
         // AI Chat sidebar user interaction dialog
         let aiChatSidebarUserDialog = NotificationCenter.default.publisher(for: .aiChatSidebarUserInteractionDialogChanged)
             .map { notification in
-                notification.userInfo?[NSNotification.Name.UserInfoKeys.userInteractionDialog] as? Tab.UserDialog
+                guard let window = self.view.window, window.isKeyWindow == true else { return nil as Tab.UserDialog? }
+                return notification.userInfo?[NSNotification.Name.UserInfoKeys.userInteractionDialog] as? Tab.UserDialog
             }
             .prepend(nil)
 

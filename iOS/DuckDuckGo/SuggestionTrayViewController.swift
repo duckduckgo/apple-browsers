@@ -116,6 +116,7 @@ class SuggestionTrayViewController: UIViewController {
         let faviconLoader: FavoritesFaviconLoading
         let messageNavigationDelegate: MessageNavigationDelegate
         let appSettings: AppSettings
+        let internalUserCommands: URLBasedDebugCommands
     }
 
     required init?(coder: NSCoder,
@@ -292,7 +293,8 @@ class SuggestionTrayViewController: UIViewController {
             daxDialogsManager: dependencies.newTabDaxDialogManager,
             faviconLoader: dependencies.faviconLoader,
             messageNavigationDelegate: dependencies.messageNavigationDelegate,
-            appSettings: dependencies.appSettings
+            appSettings: dependencies.appSettings,
+            internalUserCommands: dependencies.internalUserCommands
         )
 
         controller.delegate = newTabPageControllerDelegate

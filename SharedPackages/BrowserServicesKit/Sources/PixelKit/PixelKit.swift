@@ -114,7 +114,6 @@ public final class PixelKit {
         _ callBackOnMainThread: Bool,
         _ onComplete: @escaping CompletionBlock) -> Void
 
-    public typealias Event = PixelKitEvent
     public static let duckDuckGoMorePrivacyInfo = URL(string: "https://help.duckduckgo.com/duckduckgo-help-pages/privacy/atb/")!
     private let defaults: UserDefaults
 
@@ -188,11 +187,11 @@ public final class PixelKit {
 
     // MARK: - Public Fire
 
-    public func fire(_ event: Event,
+    /// Main function for firing pixels
+    public func fire(_ event: PixelKitEvent,
                      frequency: Frequency = .standard,
                      withHeaders headers: [String: String]? = nil,
                      withAdditionalParameters params: [String: String]? = nil,
-                     withDDGError error: (any DDGError)? = nil,
                      withNamePrefix namePrefix: String? = nil,
                      allowedQueryReservedCharacters: CharacterSet? = nil,
                      includeAppVersionParameter: Bool = true,
@@ -231,78 +230,21 @@ public final class PixelKit {
             }
         }
 
-        let newError: (any DDGError)?
-
-        /*
-         We have 2 options here:
-         - The event is a PixelKitEvent: We handle the error passed in this call
-         - The event is a PixelKitEventV2: We only consider the error in the returned by the PixelKitEventV2 `var error` and assert if an error is also passed to this function
-         */
-
-        if let event = event as? PixelKitEventV2,
-           let eventError = event.error {
-
-            // For v2 events we only consider the error specified in the event
-            // and purposely ignore the parameter in this call.
-            // This is to encourage moving the error over to the protocol error
-            // instead of still relying on the parameter of this call.
-
-            guard error == nil else {
-                let throwingError = PixelKitError.doubleError
-                assertionFailure(throwingError.description)
-                logger.error("\(throwingError.description, privacy: .public)")
-                onComplete(false, throwingError)
-                return
-            }
-
-            if let ddgError = eventError as? any DDGError {
-                newError = ddgError
-            } else {
-                newError = DDGErrorPixelKitWrapper.wrapper(eventError)
-            }
-        } else {
-            newError = error
-        }
-
         fire(pixelNamed: pixelName,
              frequency: frequency,
              withHeaders: headers,
              withAdditionalParameters: newParams,
-             withDDGError: newError,
+             withError: event.error,
              allowedQueryReservedCharacters: allowedQueryReservedCharacters,
              includeAppVersionParameter: includeAppVersionParameter,
              includePixelSourceParameter: includePixelSourceParameter,
              onComplete: onComplete)
     }
 
-    @available(*, deprecated, message: "Use of generic `withError: Error` in PixelKit is deprecated. Use `withDDGError: DDGError` instead.")
-    public func fire(_ event: Event,
-                     frequency: Frequency = .standard,
-                     withHeaders headers: [String: String]? = nil,
-                     withAdditionalParameters params: [String: String]? = nil,
-                     withError error: Error? = nil,
-                     withNamePrefix namePrefix: String? = nil,
-                     allowedQueryReservedCharacters: CharacterSet? = nil,
-                     includeAppVersionParameter: Bool = true,
-                     includePixelSourceParameter: Bool = true,
-                     onComplete: @escaping CompletionBlock = { _, _ in }) {
-        let wrappedError = error != nil ? DDGErrorPixelKitWrapper.wrapper(error) : nil
-        fire(event, frequency: frequency,
-             withHeaders: headers,
-             withAdditionalParameters: params,
-             withDDGError: wrappedError,
-             withNamePrefix: namePrefix,
-             allowedQueryReservedCharacters: allowedQueryReservedCharacters,
-             includeAppVersionParameter: includeAppVersionParameter,
-             includePixelSourceParameter: includePixelSourceParameter,
-             onComplete: onComplete)
-    }
-
-    public static func fire(_ event: Event,
+    public static func fire(_ event: PixelKitEvent,
                             frequency: Frequency = .standard,
                             withHeaders headers: [String: String] = [:],
                             withAdditionalParameters parameters: [String: String]? = nil,
-                            withDDGError error: (any DDGError)? = nil,
                             withNamePrefix namePrefix: String? = nil,
                             allowedQueryReservedCharacters: CharacterSet? = nil,
                             includeAppVersionParameter: Bool = true,
@@ -313,66 +255,6 @@ public final class PixelKit {
                           frequency: frequency,
                           withHeaders: headers,
                           withAdditionalParameters: parameters,
-                          withDDGError: error,
-                          withNamePrefix: namePrefix,
-                          allowedQueryReservedCharacters: allowedQueryReservedCharacters,
-                          includeAppVersionParameter: includeAppVersionParameter,
-                          includePixelSourceParameter: includePixelSourceParameter,
-                          onComplete: onComplete)
-    }
-
-    enum DDGErrorPixelKitWrapper: DDGError {
-        case wrapper(Error?)
-
-        var underlyingError: (any Error)? {
-            switch self {
-            case .wrapper(let error):
-                return error
-            }
-        }
-
-        var description: String {
-            switch self {
-            case .wrapper(let error):
-                return "Wrapper of error:\(String(describing: error))"
-            }
-        }
-
-        var errorDomain: String { "com.duckduckgo.PixelKit.DDGErrorPixelKitWrapper" }
-
-        var errorCode: Int {
-            switch self {
-            case .wrapper:
-                return 0
-            }
-        }
-
-        static func == (lhs: PixelKit.DDGErrorPixelKitWrapper, rhs: PixelKit.DDGErrorPixelKitWrapper) -> Bool {
-            switch (lhs, rhs) {
-            case (.wrapper(let lhs), .wrapper(let rhs)):
-                return String(describing: lhs) == String(describing: rhs)
-            }
-        }
-    }
-
-    @available(*, deprecated, message: "Use of generic `withError: Error` in PixelKit is deprecated. Use `withDDGError: DDGError` instead.")
-    public static func fire(_ event: Event,
-                            frequency: Frequency = .standard,
-                            withHeaders headers: [String: String] = [:],
-                            withAdditionalParameters parameters: [String: String]? = nil,
-                            withError error: Error? = nil,
-                            withNamePrefix namePrefix: String? = nil,
-                            allowedQueryReservedCharacters: CharacterSet? = nil,
-                            includeAppVersionParameter: Bool = true,
-                            includePixelSourceParameter: Bool = true,
-                            onComplete: @escaping CompletionBlock = { _, _ in }) {
-
-        let wrappedError = error != nil ? DDGErrorPixelKitWrapper.wrapper(error) : nil
-        Self.shared?.fire(event,
-                          frequency: frequency,
-                          withHeaders: headers,
-                          withAdditionalParameters: parameters,
-                          withDDGError: wrappedError,
                           withNamePrefix: namePrefix,
                           allowedQueryReservedCharacters: allowedQueryReservedCharacters,
                           includeAppVersionParameter: includeAppVersionParameter,
@@ -386,7 +268,7 @@ public final class PixelKit {
                       frequency: Frequency,
                       withHeaders headers: [String: String]?,
                       withAdditionalParameters params: [String: String]?,
-                      withDDGError error: (any DDGError)?,
+                      withError error: NSError?,
                       allowedQueryReservedCharacters: CharacterSet?,
                       includeAppVersionParameter: Bool,
                       includePixelSourceParameter: Bool,
@@ -647,7 +529,7 @@ public final class PixelKit {
             fireRequest(pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete)
         }
 
-    private func prefixedAndSuffixedName(for event: Event, namePrefix: String?) -> String {
+    private func prefixedAndSuffixedName(for event: PixelKitEvent, namePrefix: String?) -> String {
 
         if let pixelWithCustomPrefix = event as? PixelKitEventWithCustomPrefix {
             return pixelWithCustomPrefix.namePrefix + event.name + platformSuffix
@@ -726,7 +608,7 @@ public final class PixelKit {
         Self.shared?.cohort(from: cohortLocalDate, dateGenerator: dateGenerator) ?? ""
     }
 
-    public static func pixelLastFireDate(event: Event, namePrefix: String? = nil) -> Date? {
+    public static func pixelLastFireDate(event: PixelKitEvent, namePrefix: String? = nil) -> Date? {
         Self.shared?.pixelLastFireDate(event: event, namePrefix: namePrefix)
     }
 
@@ -738,7 +620,7 @@ public final class PixelKit {
         return date
     }
 
-    public func pixelLastFireDate(event: Event, namePrefix: String? = nil) -> Date? {
+    public func pixelLastFireDate(event: PixelKitEvent, namePrefix: String? = nil) -> Date? {
         pixelLastFireDate(pixelName: prefixedAndSuffixedName(for: event, namePrefix: namePrefix))
     }
 
@@ -767,7 +649,7 @@ public final class PixelKit {
         pixelLastFireDate(pixelName: name) != nil
     }
 
-    public func clearFrequencyHistoryFor(pixel: PixelKitEventV2) {
+    public func clearFrequencyHistoryFor(pixel: PixelKitEvent) {
         guard let name = Self.shared?.userDefaultsKeyName(forPixelName: pixel.name) else {
             return
         }
@@ -801,63 +683,22 @@ public final class PixelKit {
 
 internal extension Dictionary where Key == String, Value == String {
 
-    mutating func appendErrorPixelParams(error: any Error) {
+    mutating func appendErrorPixelParams(error: NSError) {
+        var params = [String: String]()
+        params[PixelKit.Parameters.errorCode] = "\(error.code)"
+        params[PixelKit.Parameters.errorDomain] = error.domain
 
-        let errorToProcess: Error
-        if let ddgError = error as? PixelKit.DDGErrorPixelKitWrapper,
-           let underlyingError = ddgError.underlyingError{
-            // The first error in the chain is just a wrapper because the error passed was not a DDGError. We discard it
-            errorToProcess = underlyingError
-        } else {
-            errorToProcess = error
+        let underlyingErrorParameters = self.underlyingErrorParameters(for: error)
+        params.merge(underlyingErrorParameters) { first, _ in
+            return first
         }
 
-        var params = [String: String]()
+        if let sqlErrorCode = error.userInfo["SQLiteResultCode"] as? NSNumber {
+            params[PixelKit.Parameters.underlyingErrorSQLiteCode] = "\(sqlErrorCode.intValue)"
+        }
 
-        // DDGError
-        if let ddgError = errorToProcess as? any DDGError {
-            params[PixelKit.Parameters.errorCode] = String(ddgError.errorCode)
-            params[PixelKit.Parameters.errorDomain] = ddgError.errorDomain
-
-            // Add underlying errors (skip first element which is the main error itself)
-            let underlyingErrors = Array(ddgError.errorsChain.dropFirst())
-            var level = 0
-            for underlyingError in underlyingErrors {
-                let errorCodeParameterName = PixelKit.Parameters.underlyingErrorCode + (level == 0 ? "" : String(level + 1))
-                let errorDomainParameterName = PixelKit.Parameters.underlyingErrorDomain + (level == 0 ? "" : String(level + 1))
-                if let ddgError = underlyingError as? any DDGError {
-                    params[errorCodeParameterName] = String(ddgError.errorCode)
-                    params[errorDomainParameterName] = ddgError.errorDomain
-                } else {
-                    let nsError = underlyingError as NSError
-                    params[errorCodeParameterName] = String(nsError.code)
-                    params[errorDomainParameterName] = nsError.domain
-                }
-                level+=1
-            }
-        } else {
-            // Standard Error
-            if let errorWithUserInfo = errorToProcess as? ErrorWithPixelParameters {
-                params = errorWithUserInfo.errorParameters
-            }
-
-            let nsError = errorToProcess as NSError
-
-            params[PixelKit.Parameters.errorCode] = "\(nsError.code)"
-            params[PixelKit.Parameters.errorDomain] = nsError.domain
-
-            let underlyingErrorParameters = self.underlyingErrorParameters(for: nsError)
-            params.merge(underlyingErrorParameters) { first, _ in
-                return first
-            }
-
-            if let sqlErrorCode = nsError.userInfo["SQLiteResultCode"] as? NSNumber {
-                params[PixelKit.Parameters.underlyingErrorSQLiteCode] = "\(sqlErrorCode.intValue)"
-            }
-
-            if let sqlExtendedErrorCode = nsError.userInfo["SQLiteExtendedResultCode"] as? NSNumber {
-                params[PixelKit.Parameters.underlyingErrorSQLiteExtendedCode] = "\(sqlExtendedErrorCode.intValue)"
-            }
+        if let sqlExtendedErrorCode = error.userInfo["SQLiteExtendedResultCode"] as? NSNumber {
+            params[PixelKit.Parameters.underlyingErrorSQLiteExtendedCode] = "\(sqlExtendedErrorCode.intValue)"
         }
 
         // Merge the collected parameters into self

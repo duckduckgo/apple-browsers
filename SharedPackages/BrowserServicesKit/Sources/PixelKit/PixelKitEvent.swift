@@ -17,10 +17,41 @@
 //
 
 import Foundation
+import Common
 
 /// An event that can be fired using PixelKit.
-///
 public protocol PixelKitEvent {
     var name: String { get }
     var parameters: [String: String]? { get }
+    /// Automatically implemented by the below extension using reflection, please implement the error, if needed as enum parameter
+    var error: NSError? { get }
+}
+
+/// Extract Error parameter from the PixelKitEvent, only one error is supported, if multiple errors are found we assert
+public extension PixelKitEvent {
+
+    var error: NSError? {
+        let mirror = Mirror(reflecting: self)
+        var resultError: NSError?
+        for child in mirror.children {
+            let associated = child.value
+            // Check if the associated value is directly an Error
+            if let error = associated as? NSError {
+                return error
+            }
+
+            // If it's a tuple (multiple associated values), check each one
+            let associatedMirror = Mirror(reflecting: associated)
+            for child in associatedMirror.children {
+                if let error = child.value as? NSError {
+                    guard resultError == nil else {
+                        assertionFailure("Multiple errors found in PixelKitEvent, only one error is supported")
+                        return resultError
+                    }
+                    resultError = error
+                }
+            }
+        }
+        return resultError
+    }
 }

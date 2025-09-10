@@ -32,7 +32,7 @@ public extension XCTestCase {
         PixelKit.Parameters.test
     ]
 
-    /// List of errror pixel parameters
+    /// List of error pixel parameters
     private static var errorPixelParameters = [
         PixelKit.Parameters.errorCode,
         PixelKit.Parameters.errorDomain
@@ -56,27 +56,14 @@ public extension XCTestCase {
     /// They're not a complete list of parameters for the event, as the fire call may contain extra information
     /// that results in additional parameters.  Ideally we want most (if not all) that information to eventually
     /// make part of the pixel definition.
-    func knownExpectedParameters(for event: PixelKitEventV2) -> [String: String] {
+    func knownExpectedParameters(for event: PixelKitEvent) -> [String: String] {
         var expectedParameters = [String: String]()
 
         if let error = event.error {
-            // Check if this is a DDGErrorPixelKitWrapper by domain and unwrap it
-            let errorToProcess: Error
-            let nsError = error as NSError
+            expectedParameters[PixelKit.Parameters.errorCode] = "\(error.code)"
+            expectedParameters[PixelKit.Parameters.errorDomain] = error.domain
 
-            if nsError.domain.contains("DDGErrorPixelKitWrapper"),
-               let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
-                // The wrapper will be unwrapped by PixelKit, so use the underlying error
-                errorToProcess = underlyingError
-            } else {
-                errorToProcess = error
-            }
-
-            let finalNSError = errorToProcess as NSError
-            expectedParameters[PixelKit.Parameters.errorCode] = "\(finalNSError.code)"
-            expectedParameters[PixelKit.Parameters.errorDomain] = finalNSError.domain
-
-            if let underlyingError = finalNSError.userInfo[NSUnderlyingErrorKey] as? NSError {
+            if let underlyingError = error.userInfo[NSUnderlyingErrorKey] as? NSError {
                 expectedParameters[PixelKit.Parameters.underlyingErrorCode] = "\(underlyingError.code)"
                 expectedParameters[PixelKit.Parameters.underlyingErrorDomain] = underlyingError.domain
 
@@ -86,6 +73,8 @@ public extension XCTestCase {
                     expectedParameters[PixelKit.Parameters.underlyingErrorDomain + "2"] = secondUnderlyingError.domain
                 }
             }
+        } else {
+            return expectedParameters
         }
 
         return expectedParameters
@@ -99,14 +88,14 @@ public extension XCTestCase {
 
     // MARK: - Pixel Firing Expectations
 
-    func fire(_ event: PixelKitEventV2, frequency: PixelKit.Frequency, and expectations: PixelFireExpectations, file: StaticString, line: UInt) {
+    func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency, and expectations: PixelFireExpectations, file: StaticString, line: UInt) {
         verifyThat(event, frequency: frequency, meets: expectations, file: file, line: line)
     }
 
     /// Provides some snapshot of a fired pixel so that external libraries can validate all the expected info is included.
     ///
     /// This method also checks that there is internal consistency in the expected fields.
-    func verifyThat(_ event: PixelKitEventV2,
+    func verifyThat(_ event: PixelKitEvent,
                     frequency: PixelKit.Frequency,
                     meets expectations: PixelFireExpectations,
                     file: StaticString,

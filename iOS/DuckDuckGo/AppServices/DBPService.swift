@@ -27,6 +27,9 @@ import Networking
 
 final class DBPService: NSObject, EmailConfirmationDataChecking {
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
+    public var dbpIOSPublicInterface: DBPIOSInterface.PublicInterface? {
+        return dbpIOSManager
+    }
 
     public var emailConfirmationDataService: EmailConfirmationDataServiceProvider? {
         dbpIOSManager?.emailConfirmationDataService
@@ -69,7 +72,6 @@ final class DBPService: NSObject, EmailConfirmationDataChecking {
                     return view
                 })
 
-            DataBrokerProtectionIOSManager.shared = self.dbpIOSManager
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil
@@ -78,15 +80,11 @@ final class DBPService: NSObject, EmailConfirmationDataChecking {
     }
 
     func onBackground() {
-        dbpIOSManager?.scheduleBGProcessingTask()
+        dbpIOSManager?.appDidEnterBackground()
     }
 
     func resume() {
-        dbpIOSManager?.tryToFireWeeklyPixels()
-
-        Task {
-            await dbpIOSManager?.checkForEmailConfirmationData()
-        }
+        dbpIOSManager?.appDidBecomeActive()
     }
 }
 

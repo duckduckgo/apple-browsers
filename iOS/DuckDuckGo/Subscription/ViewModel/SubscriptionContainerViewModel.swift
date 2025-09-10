@@ -20,6 +20,7 @@
 import Foundation
 import Subscription
 import Combine
+import DataBrokerProtection_iOS
 
 final class SubscriptionContainerViewModel: ObservableObject {
 
@@ -34,7 +35,8 @@ final class SubscriptionContainerViewModel: ObservableObject {
          redirectPurchaseURL: URL? = nil,
          isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
-         subFeature: any SubscriptionPagesUseSubscriptionFeature) {
+         subFeature: any SubscriptionPagesUseSubscriptionFeature,
+         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
 
         self.userScript = userScript
 
@@ -45,13 +47,15 @@ final class SubscriptionContainerViewModel: ObservableObject {
                                               isInternalUser: isInternalUser,
                                               userScript: userScript,
                                               subFeature: subFeature,
-                                              subscriptionManager: subscriptionManager)
+                                              subscriptionManager: subscriptionManager,
+                                              dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider)
         self.restore = SubscriptionRestoreViewModel(userScript: userScript,
                                                     subFeature: subFeature)
         self.email = SubscriptionEmailViewModel(isInternalUser: isInternalUser,
                                                 userScript: userScript,
                                                 subFeature: subFeature,
-                                                subscriptionManager: subscriptionManager)
+                                                subscriptionManager: subscriptionManager,
+                                                dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider)
     }
 
 }

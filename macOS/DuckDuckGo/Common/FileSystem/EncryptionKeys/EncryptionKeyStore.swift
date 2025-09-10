@@ -74,6 +74,17 @@ enum EncryptionKeyStoreError: DDGError {
             return "Failed to transform string from keychain to base64 data with error code: \(status)"
         }
     }
+
+    var debugPixel: PixelKitEvent? {
+        switch self {
+        case .storageFailed:
+            return DebugEvent(GeneralPixel.encryptionKeystoreWriteKeyFailed, error: self)
+        case .readFailed:
+            return DebugEvent(GeneralPixel.encryptionKeystoreReadKeyFailed, error: self)
+        default:
+            return nil
+        }
+    }
 }
 
 final class EncryptionKeyStore: EncryptionKeyStoring {

@@ -306,13 +306,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } catch {
             Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
             fileStore = EncryptedFileStore()
-            switch error as? EncryptionKeyStoreError {
-            case .readFailed:
-                PixelKit.fire(DebugEvent(GeneralPixel.encryptionKeystoreReadKeyFailed, error: error), frequency: .dailyAndCount)
-            case .storageFailed:
-                PixelKit.fire(DebugEvent(GeneralPixel.encryptionKeystoreWriteKeyFailed, error: error), frequency: .dailyAndCount)
-            default:
-                break
+            if let pixelEvent = (error as? EncryptionKeyStoreError)?.debugPixel {
+                PixelKit.fire(pixelEvent, frequency: .dailyAndCount)
             }
         }
 

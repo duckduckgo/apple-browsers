@@ -59,8 +59,10 @@ final class InactivityNotificationSchedulerService {
     func resume() -> Task<Void, Never> {
         guard isFeatureEnabled() else {
             cancelPendingNotifications()
+            showDebugAlert(with: "Feature is not enabled!")
             return Task {} // noop
         }
+        showDebugAlert(with: "Feature is enabled!")
         return Task {
             await schedule()
         }
@@ -141,6 +143,20 @@ final class InactivityNotificationSchedulerService {
             content: makeUNNotificationContent(with: daysInactive),
             trigger: trigger
         )
+    }
+    
+    private func showDebugAlert(with content: String) {
+        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = scene.windows.first,
+           let rootVC = window.rootViewController {
+            
+            let alert = UIAlertController(title: "Debug", message: content, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            
+            DispatchQueue.main.async {
+                rootVC.present(alert, animated: true)
+            }
+        }
     }
 }
 

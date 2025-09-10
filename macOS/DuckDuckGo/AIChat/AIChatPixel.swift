@@ -26,7 +26,7 @@ import PixelKit
 /// [Sidebar Pixel Triage](https://app.asana.com/1/137249556945/project/1209671977594486/task/1210676151750614)
 /// [Summarization Pixel Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210636012460969?focus=true)
 
-enum AIChatPixel: PixelKitEventV2 {
+enum AIChatPixel: PixelKitEvent {
 
     /// Event Trigger: AI Chat is opened via the ... Menu -> New Duck.ai Chat
     case aichatApplicationMenuAppClicked
@@ -170,9 +170,6 @@ enum AIChatPixel: PixelKitEventV2 {
         }
     }
 
-    var error: (any Error)? {
-        nil
-    }
 }
 
 // MARK: - Parameter values

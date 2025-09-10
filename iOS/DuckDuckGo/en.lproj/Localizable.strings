@@ -95,7 +95,7 @@
 "action.title.refresh" = "Refresh";
 
 /* Refresh page action */
-"action.title.refreshPage" = "Refresh Page";
+"action.title.refreshPage" = "Reload Page";
 
 /* Remove Favorite action */
 "action.title.remove.favorite" = "Remove Favorite";
@@ -2867,7 +2867,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.refreshButton.position.menu" = "Menu";
 
 /* Settings screen cell text for setting the refresh button position. */
-"settings.refreshButton.position.title" = "Refresh Button Position";
+"settings.refreshButton.position.title" = "Reload Button Position";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Search Settings";

@@ -194,7 +194,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         pageContextRequestedSubject.eraseToAnyPublisher()
     }
 
-    func submitPageContext(_ pageContext: AIChatPageContextData) {
+    func submitPageContext(_ pageContext: AIChatPageContextData?) {
         didSubmitPageContext = true
     }
 

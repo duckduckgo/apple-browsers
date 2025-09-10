@@ -38,22 +38,22 @@ protocol AIChatUserScriptHandling {
     var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> { get }
 
     func getPageContext(params: Any, message: UserScriptMessage) -> Encodable?
-    var pageContextPublisher: AnyPublisher<AIChatPageContextData, Never> { get }
+    var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
-    func submitPageContext(_ pageContext: AIChatPageContextData)
+    func submitPageContext(_ pageContext: AIChatPageContextData?)
 }
 
 struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let messageHandling: AIChatMessageHandling
     public let aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never>
-    public let pageContextPublisher: AnyPublisher<AIChatPageContextData, Never>
+    public let pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never>
     public let pageContextRequestedPublisher: AnyPublisher<Void, Never>
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
-    private let pageContextSubject = PassthroughSubject<AIChatPageContextData, Never>()
+    private let pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     private let storage: AIChatPreferencesStorage
     private let windowControllersManager: WindowControllersManagerProtocol
@@ -105,8 +105,8 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
             return nil
         }
 
-        let data = messageHandling.getDataForMessageType(.pageContext)
-        if data == nil, payload.explicitConsent {
+        let data = messageHandling.getDataForMessageType(.pageContext) as? PageContextPayload
+        if data?.serializedPageData == nil, payload.explicitConsent {
             pageContextRequestedSubject.send()
         }
         return data
@@ -168,7 +168,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         aiChatNativePromptSubject.send(prompt)
     }
 
-    func submitPageContext(_ pageContext: AIChatPageContextData) {
+    func submitPageContext(_ pageContext: AIChatPageContextData?) {
         pageContextSubject.send(pageContext)
     }
 }

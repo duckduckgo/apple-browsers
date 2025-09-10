@@ -148,11 +148,11 @@ final class PageContextTabExtension {
         pageContextUserScript.collectionResultPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageContext in
-                guard let self, isContextCollectionEnabled else {
+                guard let self else {
                     return
                 }
                 /// This closure is responsible for handling page context received from the user script.
-                handle(pageContext)
+                handle(isContextCollectionEnabled ? pageContext : nil)
             }
             .store(in: &userScriptCancellables)
     }
@@ -175,7 +175,7 @@ final class PageContextTabExtension {
     /// This is the main place where page context handling happens.
     /// We always cache the latest context, and if sidebar is open,
     /// we're passing the context to it.
-    private func handle(_ pageContext: AIChatPageContextData) {
+    private func handle(_ pageContext: AIChatPageContextData?) {
         guard featureFlagger.isFeatureOn(.aiChatPageContext) else {
             return
         }
@@ -200,7 +200,7 @@ final class PageContextTabExtension {
     }
 }
 
-protocol PageContextProtocol: AnyObject, NavigationResponder {
+protocol PageContextProtocol: AnyObject {
 }
 
 extension PageContextTabExtension: PageContextProtocol, TabExtension {

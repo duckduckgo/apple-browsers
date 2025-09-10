@@ -132,7 +132,7 @@ final class AIChatTabExtension {
     }
 
     private var temporaryPageContext: AIChatPageContextData?
-    func submitPageContext(_ pageContext: AIChatPageContextData) {
+    func submitPageContext(_ pageContext: AIChatPageContextData?) {
         // Page Context functionality is only for the sidebar.
         guard isLoadedInSidebar else {
             return
@@ -180,7 +180,7 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     func setAIChatNativeHandoffData(payload: AIChatPayload)
     func setAIChatRestorationData(data: AIChatRestorationData)
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
-    func submitPageContext(_ pageContext: AIChatPageContextData)
+    func submitPageContext(_ pageContext: AIChatPageContextData?)
 
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
 }

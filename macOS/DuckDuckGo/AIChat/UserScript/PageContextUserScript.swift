@@ -25,11 +25,11 @@ import UserScript
 import WebKit
 
 struct PageContextPayload: Codable {
-    let serializedPageData: AIChatPageContextData
+    let serializedPageData: AIChatPageContextData?
 }
 
 final class PageContextUserScript: NSObject, Subfeature {
-    public let collectionResultPublisher: AnyPublisher<String, Never>
+    public let collectionResultPublisher: AnyPublisher<AIChatPageContextData?, Never>
     static public let featureName: String = "pageContext"
     public var featureName: String {
         Self.featureName
@@ -38,7 +38,7 @@ final class PageContextUserScript: NSObject, Subfeature {
     weak var webView: WKWebView?
     let messageOriginPolicy: MessageOriginPolicy = .all
 
-    private let collectionResultSubject = PassthroughSubject<String, Never>()
+    private let collectionResultSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     private var cancellables: Set<AnyCancellable> = []
 
     public func with(broker: UserScriptMessageBroker) {

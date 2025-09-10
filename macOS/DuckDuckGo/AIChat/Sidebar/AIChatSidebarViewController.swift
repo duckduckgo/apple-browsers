@@ -82,7 +82,7 @@ final class AIChatSidebarViewController: NSViewController {
         aiTab.aiChat?.submitAIChatNativePrompt(prompt)
     }
 
-    public func setPageContext(_ pageContext: AIChatPageContextData) {
+    public func setPageContext(_ pageContext: AIChatPageContextData?) {
         aiTab.aiChat?.submitPageContext(pageContext)
     }
 

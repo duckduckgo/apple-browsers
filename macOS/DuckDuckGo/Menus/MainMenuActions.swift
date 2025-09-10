@@ -1256,6 +1256,8 @@ extension MainViewController {
         tabCollectionViewModel.append(tabs: otherTabs, andSelect: false)
         tabCollectionViewModel.tabCollection.localHistoryOfRemovedTabs += otherLocalHistoryOfRemovedTabs
 
+        // Tabs from `otherTabCollectionViewModels` were moved to `tabCollectionViewModel`
+        // clear the collection models so they are empty at `deinit` and no deinit checks assert.
         otherTabCollectionViewModels.forEach { $0.clearAfterMerge() }
     }
 

@@ -123,6 +123,9 @@ extension NSObject {
 
 }
 #if DEBUG
+/// Check if an instance _lazy_ variable was initialized or not.
+/// Uses `Mirror(reflecting object)` and lazy var storage seek is used.
+/// `DEBUG`-only
 public func isLazyVar(named name: StaticString, initializedIn object: Any) -> Bool {
     let children = Mirror(reflecting: object).children
     guard let child = children.first(where: { $0.label?.hasSuffix("_\(name)") == true }) else {

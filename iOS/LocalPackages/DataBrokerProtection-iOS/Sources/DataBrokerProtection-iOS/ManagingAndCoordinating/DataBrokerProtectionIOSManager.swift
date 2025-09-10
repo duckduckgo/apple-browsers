@@ -395,7 +395,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.EmailConfirmationDataDelegate {
     public func checkForEmailConfirmationData() async {
         do {
-            try await emailConfirmationDataService.checkForEmailConfirmationData()
+            try await emailConfirmationDataService?.checkForEmailConfirmationData()
         } catch {
             Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
         }

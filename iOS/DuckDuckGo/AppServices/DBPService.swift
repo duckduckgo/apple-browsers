@@ -25,14 +25,10 @@ import BrowserServicesKit
 import PixelKit
 import Networking
 
-final class DBPService: NSObject, EmailConfirmationDataChecking {
+final class DBPService: NSObject {
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
     public var dbpIOSPublicInterface: DBPIOSInterface.PublicInterface? {
         return dbpIOSManager
-    }
-
-    public var emailConfirmationDataService: EmailConfirmationDataServiceProvider? {
-        dbpIOSManager?.emailConfirmationDataService
     }
 
     init(appDependencies: DependencyProvider) {

@@ -43,8 +43,7 @@ extension AppDelegate {
 #if APPSTORE
         PixelKit.fire(CheckForUpdatesAppStorePixels.checkForUpdate(source: .mainMenu))
         NSWorkspace.shared.open(.appStore)
-#endif
-#if SPARKLE
+#elseif SPARKLE
         if let warning = SupportedOSChecker().supportWarning,
            case .unsupported = warning {
 

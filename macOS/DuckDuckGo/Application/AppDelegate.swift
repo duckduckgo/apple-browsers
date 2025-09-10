@@ -285,6 +285,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             didCrashDuringCrashHandlersSetUp.wrappedValue = false
         }
 
+        if AppVersion.runType.requiresEnvironment {
+            Self.configurePixelKit()
+        }
+
         do {
             keyValueStore = try KeyValueFileStore(location: URL.sandboxApplicationSupportURL, name: "AppKeyValueStore")
             // perform a dummy read to ensure that KVS is accessible
@@ -298,9 +302,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         do {
             let encryptionKey = AppVersion.runType.requiresEnvironment ? try keyStore.readKey() : nil
             fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
+            PixelKit.fire(DebugEvent(GeneralPixel.encryptionKeystoreReadKeySucceeded), frequency: .dailyAndCount)
         } catch {
             Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
             fileStore = EncryptedFileStore()
+            switch error as? EncryptionKeyStoreError {
+            case .readFailed:
+                PixelKit.fire(DebugEvent(GeneralPixel.encryptionKeystoreReadKeyFailed, error: error), frequency: .dailyAndCount)
+            case .storageFailed:
+                PixelKit.fire(DebugEvent(GeneralPixel.encryptionKeystoreWriteKeyFailed, error: error), frequency: .dailyAndCount)
+            default:
+                break
+            }
         }
 
         bookmarkDatabase = BookmarkDatabase()
@@ -309,7 +322,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
 
         if AppVersion.runType.requiresEnvironment {
-            Self.configurePixelKit()
             let commonDatabase = Database()
             database = commonDatabase
 

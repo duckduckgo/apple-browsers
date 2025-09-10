@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Common
 import Foundation
 import AppKitExtensions
+import URLPredictor
 import os.log
 
 extension URL.NavigationalScheme {
@@ -122,16 +123,20 @@ extension URL {
 
         let trimmed = addressBarString.trimmingWhitespace()
 
-        if let addressBarUrl = URL(trimmedAddressBarString: trimmed), addressBarUrl.isValid {
-            return addressBarUrl
+        do {
+            switch try Classifier.classify(input: trimmed) {
+            case .navigate(let url):
+                return url
+            case .search(let query):
+                return URL.makeSearchUrl(from: query)
+            }
+        } catch let error as Classifier.Error {
+            Logger.general.error("Failed to classify \"\(addressBarString)\" as URL or search phrase: \(error)")
+            return nil
+        } catch {
+            Logger.general.error("URL extension: Making URL from \(addressBarString) failed")
+            return nil
         }
-
-        if let searchUrl = URL.makeSearchUrl(from: trimmed) {
-            return searchUrl
-        }
-
-        Logger.general.error("URL extension: Making URL from \(addressBarString) failed")
-        return nil
     }
 
     static func makeURL(fromSuggestionPhrase phrase: String) -> URL? {

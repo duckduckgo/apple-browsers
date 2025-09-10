@@ -1,6 +1,6 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
-    'm_mac_aichat_page_context_added': {
+    m_mac_aichat_page_context_added: {
         description: 'Fired when the page context is added to the prompt using a button in the sidebar chat input field',
         owners: ['ayoy'],
         triggers: ['other'],
@@ -16,7 +16,7 @@
             },
         ],
     },
-    'm_mac_aichat_page_context_removed': {
+    m_mac_aichat_page_context_removed: {
         description: 'Fired when the page context is removed from the prompt using a button in the sidebar chat input field',
         owners: ['ayoy'],
         triggers: ['other'],

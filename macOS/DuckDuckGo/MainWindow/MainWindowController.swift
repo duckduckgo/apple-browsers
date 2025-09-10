@@ -88,6 +88,15 @@ final class MainWindowController: NSWindowController {
     }
 
     deinit {
+#if DEBUG
+        MainActor.assumeMainThread {
+            // Check that the window deallocates
+            window?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+
+            // Check that the main view controller deallocates
+            mainViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+#endif
         NotificationCenter.default.removeObserver(self)
     }
 
@@ -432,6 +441,11 @@ extension MainWindowController: NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
+        // close all presented popovers before closing to avoid leaks
+        for case let .some(popover as NSPopover) in (window?.childWindows ?? []).map(\.contentViewController?.nextResponder) where popover.isShown {
+            popover.close()
+        }
+
         mainViewController.windowWillClose()
 
         window?.resignKey()
@@ -446,6 +460,10 @@ extension MainWindowController: NSWindowDelegate {
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
             webExtensionManager.eventsListener.didCloseWindow(self)
         }
+#if DEBUG
+        // Check that the window controller deallocates after close
+        self.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
     }
 
     func windowShouldClose(_ window: NSWindow) -> Bool {

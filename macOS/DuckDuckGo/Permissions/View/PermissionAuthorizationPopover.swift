@@ -34,6 +34,13 @@ final class PermissionAuthorizationPopover: NSPopover {
         fatalError("PermissionAuthorizationPopover: Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        // Check that our content view controller deallocates
+        contentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     // swiftlint:disable force_cast
     var viewController: PermissionAuthorizationViewController { contentViewController as! PermissionAuthorizationViewController }
     // swiftlint:enable force_cast

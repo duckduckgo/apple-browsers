@@ -166,7 +166,16 @@ final class DBPHomeViewController: NSViewController {
     }
 
     deinit {
-        if let observer = observer {
+#if DEBUG
+        currentChildViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        if isLazyVar(named: "errorViewController", initializedIn: self) {
+            errorViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+        if isLazyVar(named: "dataBrokerProtectionViewController", initializedIn: self) {
+            dataBrokerProtectionViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+#endif
+        if let observer {
             NotificationCenter.default.removeObserver(observer)
         }
     }

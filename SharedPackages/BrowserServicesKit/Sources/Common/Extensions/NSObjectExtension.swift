@@ -122,3 +122,19 @@ extension NSObject {
     }
 
 }
+#if DEBUG
+public func isLazyVar(named name: StaticString, initializedIn object: Any) -> Bool {
+    let children = Mirror(reflecting: object).children
+    guard let child = children.first(where: { $0.label?.hasSuffix("_\(name)") == true }) else {
+        fatalError("Lazy var named \(name) not found in \(object)")
+    }
+    guard let value = child.value as? AnyOptional else {
+        fatalError("Unexpected non-optional value of a lazy var `\(child.label!)`: \(child.value)")
+    }
+    return value.isNil == false
+}
+#else
+public func isLazyVarInitialized(_ name: String) -> Bool {
+    return false
+}
+#endif

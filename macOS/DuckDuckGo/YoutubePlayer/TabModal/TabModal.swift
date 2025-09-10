@@ -56,6 +56,15 @@ public final class TabModal {
         fatalError("OnboardingModal: Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        if (Mirror(reflecting: self).children.first(where: { $0.label?.hasSuffix("_windowController") == true })?.value as? AnyOptional)?.isNil == false {
+            windowController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+        modalViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     // MARK: - Private methods
 
     private func windowDidResize(_ parent: NSWindow) {

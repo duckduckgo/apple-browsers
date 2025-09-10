@@ -224,6 +224,12 @@ final class AddressBarViewController: NSViewController {
         activeBackgroundViewWithSuggestions.backgroundColor = visualStyle.colorsProvider.suggestionsBackgroundColor
     }
 
+    deinit {
+#if DEBUG
+        addressBarButtonsViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     override func viewWillAppear() {
         if isInPopUpWindow {
             addressBarTextField.isHidden = true

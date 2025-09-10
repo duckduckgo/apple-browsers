@@ -314,6 +314,38 @@ final class NavigationBarViewController: NSViewController {
         fatalError("NavigationBarViewController: Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        addressBarViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        if isLazyVar(named: "downloadsProgressView", initializedIn: self) {
+            downloadsProgressView.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+        popovers.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+
+        if isViewLoaded {
+            goBackButton.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            goForwardButton.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            refreshOrStopButton.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            optionsButton.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            overflowButton.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            bookmarkListButton.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            passwordManagementButton.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            homeButton.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            homeButtonSeparator.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            downloadsButton.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            shareButton.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            networkProtectionButton.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            navigationButtons.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            addressBarContainer.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            daxLogo.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            addressBarStack.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            menuButtons.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            backgroundColorView.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            backgroundBaseColorView.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+#endif
+    }
+
     @IBSegueAction func createAddressBarViewController(_ coder: NSCoder) -> AddressBarViewController? {
         let onboardingPixelReporter = OnboardingPixelReporter()
         guard let addressBarViewController = AddressBarViewController(coder: coder,
@@ -1380,8 +1412,8 @@ final class NavigationBarViewController: NSViewController {
 
         DispatchQueue.main.async {
             self.popovers.showAutofillOnboardingPopover(from: self.passwordManagementButton,
-                                                   withDelegate: self) { [weak self] didAddShortcut in
-                guard let self = self else { return }
+                                                        withDelegate: self) { [weak self] didAddShortcut in
+                guard let self else { return }
                 self.popovers.closeAutofillOnboardingPopover()
 
                 if didAddShortcut {

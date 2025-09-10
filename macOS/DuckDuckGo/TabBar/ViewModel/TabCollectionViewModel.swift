@@ -204,6 +204,19 @@ final class TabCollectionViewModel: NSObject {
                   windowControllersManager: windowControllersManager)
     }
 
+    deinit {
+#if DEBUG
+        // Check that the tab collection deallocates
+        tabCollection.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+
+        // Check that all tab view models deallocate
+        for (tab, viewModel) in tabViewModels {
+            tab.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            viewModel.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+#endif
+    }
+
     var selectedTabCancellable: AnyCancellable?
     private func subscribeToSelectedTab() {
         selectedTabCancellable = $selectedTabViewModel
@@ -894,6 +907,12 @@ final class TabCollectionViewModel: NSObject {
             selectedTabViewModel?.tab.lastSelectedAt = Date()
             self.selectedTabViewModel = selectedTabViewModel
         }
+    }
+
+    /// Clears tabViewModels and tabCollection after the tabs were moved to another collection
+    func clearAfterMerge() {
+        tabViewModels.removeAll()
+        tabCollection.clearAfterMerge()
     }
 }
 

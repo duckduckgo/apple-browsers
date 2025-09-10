@@ -161,7 +161,10 @@ extension DebugScreensViewModel {
             AppDependencyProvider.shared.featureFlagger.isFeatureOn(.personalInformationRemoval) ? .controller(title: "PIR", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
                 return storyboard.instantiateViewController(identifier: "DataBrokerProtectionDebugViewController") { coder in
-                    DataBrokerProtectionDebugViewController(coder: coder)
+                    DataBrokerProtectionDebugViewController(coder: coder,
+                                                            databaseDelegate: self.dependencies.databaseDelegate,
+                                                            debuggingDelegate: self.dependencies.debuggingDelegate,
+                                                            runPrequisitesDelegate: self.dependencies.runPrequisitesDelegate)
                 }
             }) : nil,
             .controller(title: "File Size Inspector", { _ in

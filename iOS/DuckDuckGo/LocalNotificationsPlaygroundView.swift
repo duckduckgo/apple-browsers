@@ -20,6 +20,7 @@
 import SwiftUI
 import Combine
 import UserNotifications
+import BrowserServicesKit
 
 struct LocalNotificationsPlaygroundView: View {
     @StateObject private var model = LocalNotificationsPlaygroundViewModel()
@@ -125,6 +126,7 @@ struct LocalNotificationsPlaygroundView: View {
             VStack(alignment: .leading) {
                 Text("Pending count \(String(model.pendingCount))")
                 Text("First pending notification ID \(model.firstId)")
+                Text("Is inactive notification feature on\(AppDependencyProvider.shared.featureFlagger.isFeatureOn(.inactivityNotification))")
             }
             
 

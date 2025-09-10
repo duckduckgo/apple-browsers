@@ -59,10 +59,8 @@ final class InactivityNotificationSchedulerService {
     func resume() -> Task<Void, Never> {
         guard isFeatureEnabled() else {
             cancelPendingNotifications()
-            showDebugAlert(with: "Feature is not enabled!")
             return Task {} // noop
         }
-        showDebugAlert(with: "Feature is enabled!")
         return Task {
             await schedule()
         }
@@ -78,7 +76,6 @@ final class InactivityNotificationSchedulerService {
         let request = buildUNNotificationRequest()
         do {
             try await userNotificationCenter.add(request)
-            print("👀 Scheduled")
         } catch {
             Logger.pushNotification.error("Inactivity notification scheduling failed with \(error.localizedDescription, privacy: .public)")
         }

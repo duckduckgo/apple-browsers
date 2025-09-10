@@ -137,7 +137,7 @@ public func isLazyVar(named name: StaticString, initializedIn object: Any) -> Bo
     return value.isNil == false
 }
 #else
-public func isLazyVarInitialized(_ name: String) -> Bool {
+public func isLazyVar(named name: StaticString, initializedIn object: Any) -> Bool {
     return false
 }
 #endif

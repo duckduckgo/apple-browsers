@@ -832,6 +832,10 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         return []
     }
 
+    public func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier> {
+        return Set<OptOutIdentifier>()
+    }
+
     public func updateOptOutEmailConfirmationLink(_ link: String?, emailConfirmationLinkObtainedOnBEDate: Date?, profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
     }
 
@@ -1028,6 +1032,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     }
 
     public var recordsAwaitingLink: [OptOutEmailConfirmationJobData] = []
+    public var activeConfirmationIdentifiers: Set<OptOutIdentifier> = []
 
     public func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData] {
         return recordsAwaitingLink
@@ -1038,7 +1043,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     }
 
     public func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier> {
-        return Set<OptOutIdentifier>()
+        return activeConfirmationIdentifiers
     }
 
     public func updateOptOutEmailConfirmationLink(_ link: String?,

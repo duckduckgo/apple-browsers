@@ -138,7 +138,7 @@ extension Preferences {
                         })
                     }))
 
-                Button(UserText.checkForUpdate) {
+                Button(UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: "")) {
                     model.checkForAppStoreUpdate()
                 }
                 .buttonStyle(UpdateButtonStyle(enabled: true))

@@ -17,7 +17,7 @@
 //
 import PixelKit
 
-enum CheckForUpdatesAppStorePixels: PixelKitEventV2 {
+enum CheckForUpdatesAppStorePixels: PixelKitEvent {
 
     /**
      * Event Trigger: Check for Updates tapped on App Store builds

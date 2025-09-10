@@ -71,16 +71,22 @@ struct SwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding {
     ///   - text: Input text
     ///   - submissionMode: Whether this is a search query or AI chat prompt
     func process(_ text: String, for submissionMode: TextEntryMode) {
-        guard let bucket = SwitchBarTextBucket(text) else { return }
+        // Temp disable until privacy triage done
+//        guard let bucket = SwitchBarTextBucket(text) else { return }
         
-        let additionalParams = [textLengthBucketKey: bucket.rawValue]
+        // Temp disable until privacy triage done
+//        let additionalParams = [textLengthBucketKey: bucket.rawValue]
         
         switch submissionMode {
         case .search:
-            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarQuerySubmitted, withAdditionalParameters: additionalParams)
+            // Temp disable until privacy triage done
+//            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarQuerySubmitted, withAdditionalParameters: additionalParams)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarQuerySubmitted)
         case .aiChat:
-            let mergedParams = additionalParams.merging(featureDiscovery.addToParams([:], forFeature: .aiChat)) { (_, new) in new }
-            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarPromptSubmitted, withAdditionalParameters: mergedParams)
+            // Temp disable until privacy trige done
+//            let mergedParams = additionalParams.merging(featureDiscovery.addToParams([:], forFeature: .aiChat)) { (_, new) in new }
+//            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarPromptSubmitted, withAdditionalParameters: mergedParams)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarPromptSubmitted, withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
             featureDiscovery.setWasUsedBefore(.aiChat)
         }
     }

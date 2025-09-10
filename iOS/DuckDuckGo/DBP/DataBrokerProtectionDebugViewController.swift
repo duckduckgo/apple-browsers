@@ -590,12 +590,12 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             self.jobExecutionState = .running
 
             do {
-                guard await manager.validateRunPrerequisites() else {
+                guard let runPrerequisitesDelegate, await runPrerequisitesDelegate.validateRunPrerequisites() else {
                     self.jobExecutionState = .failed(error: "PIR prerequisites not met")
                     return
                 }
 
-                await manager.runEmailConfirmationOperations()
+                try await debuggingDelegate?.runEmailConfirmationJobs()
 
                 self.jobCounts = await calculatePendingJobCounts()
                 self.jobExecutionState = .idle

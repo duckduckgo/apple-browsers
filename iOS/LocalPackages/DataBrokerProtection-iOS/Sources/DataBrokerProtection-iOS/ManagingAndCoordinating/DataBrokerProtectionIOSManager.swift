@@ -68,6 +68,7 @@ public class DBPIOSInterface {
         func runScheduledJobs(type: JobType,
                               errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                               completionHandler: (() -> Void)?)
+        func runEmailConfirmationJobs() async throws
         func fireWeeklyPixels()
     }
 
@@ -337,6 +338,11 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         case .manualScan:
             completionHandler?()
         }
+    }
+
+    public func runEmailConfirmationJobs() async throws {
+        try await emailConfirmationDataService?.checkForEmailConfirmationData()
+        queueManager.addEmailConfirmationJobs(showWebView: true, jobDependencies: jobDependencies)
     }
 
     public func fireWeeklyPixels() {

@@ -87,7 +87,6 @@ final class SubscriptionWidePixelTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: true,
-            experimentIDs: ["experiment-test", "experiment-test-2"],
             contextData: context
         )
 
@@ -139,7 +138,6 @@ final class SubscriptionWidePixelTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.purchase_platform"], "app_store")
         XCTAssertEqual(params["feature.data.ext.subscription_identifier"], "ddg.privacy.pro.monthly.renews.us")
         XCTAssertEqual(params["feature.data.ext.free_trial_eligible"], "true")
-        XCTAssertEqual(params["feature.experiment_ids"], "experiment-test,experiment-test-2")
         XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.account_payment_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.account_activation_latency_ms_bucketed"], "10000")
@@ -189,7 +187,6 @@ final class SubscriptionWidePixelTests: XCTestCase {
         let params = firedPixels[0].parameters
         XCTAssertEqual(params["feature.data.ext.purchase_platform"], "stripe")
         XCTAssertEqual(params["feature.data.ext.free_trial_eligible"], "false")
-        XCTAssertNil(params["feature.experiment_ids"]) // Empty experimentIDs array should not be included
         XCTAssertEqual(params["context.name"], "funnel_onboarding_ios")
     }
 

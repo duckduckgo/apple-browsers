@@ -82,6 +82,8 @@ public enum WidePixelParameter {
         static let name = "app.name"
         static let version = "app.version"
         static let internalUser = "app.internal_user"
+        static let nativeAppsExperimentIDs = "app.native_apps_experiment_ids"
+        static let atbExperimentIDs = "app.atb_experiment_ids"
     }
 
     public enum Context {
@@ -92,7 +94,6 @@ public enum WidePixelParameter {
         static let name = "feature.name"
         static let status = "feature.status"
         static let statusReason = "feature.status_reason"
-        static let experimentIDs = "feature.experiment_ids"
 
         static let errorDomain = "feature.data.error.domain"
         static let errorCode = "feature.data.error.code"

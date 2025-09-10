@@ -835,7 +835,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
                 purchasePlatform: .appStore,
                 subscriptionIdentifier: subscriptionSelection.id,
                 freeTrialEligible: freeTrialEligible,
-                experimentIDs: [experiment].compactMap(\.self),
                 contextData: WidePixelContextData(name: subscriptionAttributionOrigin),
                 appData: WidePixelAppData(internalUser: internalUserDecider.isInternalUser)
             )

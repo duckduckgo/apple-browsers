@@ -107,6 +107,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.openSummarizationSourceLink
         case .getPageContext:
             return handler.getPageContext
+        case .togglePageContextTelemetry:
+            return handler.togglePageContextTelemetry
         default:
             return nil
         }

@@ -96,6 +96,12 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User clicks the website link on a summarize prompt in Duck.ai tab or sidebar
     case aiChatSummarizeSourceLinkClicked
 
+    /// Event Trigger: User adds page context to the prompt using a button in the input field
+    case aiChatPageContextAdded
+
+    /// Event Trigger: User removes page context from the prompt using a button in the input field
+    case aiChatPageContextRemoved
+
     // MARK: -
 
     var name: String {
@@ -138,6 +144,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_summarize_text"
         case .aiChatSummarizeSourceLinkClicked:
             return "aichat_summarize_source_link_clicked"
+        case .aiChatPageContextAdded:
+            return "aichat_page_context_added"
+        case .aiChatPageContextRemoved:
+            return "aichat_page_context_removed"
         }
     }
 
@@ -157,7 +167,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSettingsDisplayed,
                 .aiChatSidebarExpanded,
                 .aiChatSidebarSettingChanged,
-                .aiChatSummarizeSourceLinkClicked:
+                .aiChatSummarizeSourceLinkClicked,
+                .aiChatPageContextAdded,
+                .aiChatPageContextRemoved:
             return nil
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]

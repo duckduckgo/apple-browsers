@@ -44,6 +44,8 @@ protocol AIChatUserScriptHandling {
     var messageHandling: AIChatMessageHandling { get }
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitPageContext(_ pageContext: AIChatPageContextData?)
+
+    func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
 }
 
 struct AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -171,6 +173,14 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     func submitPageContext(_ pageContext: AIChatPageContextData?) {
         pageContextSubject.send(pageContext)
     }
+
+    func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard let payload: TogglePageContextTelemetry = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        pixelFiring?.fire(payload.enabled ? AIChatPixel.aiChatPageContextAdded : AIChatPixel.aiChatPageContextRemoved, frequency: .dailyAndStandard)
+        return nil
+    }
 }
 
 extension NSNotification.Name {
@@ -192,5 +202,9 @@ extension AIChatUserScriptHandler {
 
     struct GetPageContext: Codable, Equatable {
         let explicitConsent: Bool
+    }
+
+    struct TogglePageContextTelemetry: Codable, Equatable {
+        let enabled: Bool
     }
 }

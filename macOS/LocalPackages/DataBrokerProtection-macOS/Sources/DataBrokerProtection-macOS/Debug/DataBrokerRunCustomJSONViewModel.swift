@@ -487,7 +487,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: .init(),
-                    variant: .optOut,
+                    actionsHandlerMode: .optOut,
                     shouldRunNextStep: { true }
                 )
 

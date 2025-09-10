@@ -54,15 +54,15 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 showWebView: Bool,
                 errorDelegate: EmailConfirmationErrorDelegate?,
                 jobDependencies: EmailConfirmationJobDependencyProviding,
-                webRunner: BrokerProfileOptOutSubJobWebProtocol? = nil,
-                webViewHandler: WebViewHandler? = nil,
+                webRunnerForTesting: BrokerProfileOptOutSubJobWebProtocol? = nil,
+                webViewHandlerForTesting: WebViewHandler? = nil,
                 waitTimeBeforeRetry: TimeInterval = .seconds(3)) {
         self.jobData = jobData
         self.showWebView = showWebView
         self.errorDelegate = errorDelegate
         self.jobDependencies = jobDependencies
-        self.webRunnerForTesting = webRunner
-        self.webViewHandlerForTesting = webViewHandler
+        self.webRunnerForTesting = webRunnerForTesting
+        self.webViewHandlerForTesting = webViewHandlerForTesting
         self.waitTimeBeforeRetry = waitTimeBeforeRetry
         super.init()
     }

@@ -116,8 +116,8 @@ final class EmailConfirmationJobTests: XCTestCase {
             showWebView: false,
             errorDelegate: mockErrorDelegate,
             jobDependencies: mockDependencies,
-            webRunner: mockWebRunner,
-            webViewHandler: mockWebViewHandler
+            webRunnerForTesting: mockWebRunner,
+            webViewHandlerForTesting: mockWebViewHandler
         )
 
         let expectation = XCTestExpectation(description: "Job should complete successfully")
@@ -170,8 +170,8 @@ final class EmailConfirmationJobTests: XCTestCase {
             showWebView: false,
             errorDelegate: mockErrorDelegate,
             jobDependencies: mockDependencies,
-            webRunner: mockWebRunner,
-            webViewHandler: mockWebViewHandler,
+            webRunnerForTesting: mockWebRunner,
+            webViewHandlerForTesting: mockWebViewHandler,
             waitTimeBeforeRetry: .seconds(0)
         )
 
@@ -218,8 +218,8 @@ final class EmailConfirmationJobTests: XCTestCase {
             showWebView: false,
             errorDelegate: mockErrorDelegate,
             jobDependencies: mockDependencies,
-            webRunner: mockWebRunner,
-            webViewHandler: mockWebViewHandler,
+            webRunnerForTesting: mockWebRunner,
+            webViewHandlerForTesting: mockWebViewHandler,
             waitTimeBeforeRetry: .seconds(0)
         )
 

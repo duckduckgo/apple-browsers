@@ -169,6 +169,10 @@ public class DataBrokerProtectionAgentManagerProvider {
     }
 }
 
+public protocol EmailConfirmationDataDelegate: AnyObject {
+    func checkForEmailConfirmationData() async
+}
+
 public final class DataBrokerProtectionAgentManager {
 
     private let eventsHandler: EventMapping<JobEvent>
@@ -252,7 +256,6 @@ public final class DataBrokerProtectionAgentManager {
             agentStopper.monitorEntitlementAndStopAgentIfEntitlementIsInvalidAndUserIsNotFreemium(interval: .minutes(60))
         }
     }
-
 }
 
 // MARK: - Regular monitoring pixels
@@ -305,9 +308,12 @@ private extension DataBrokerProtectionAgentManager {
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivitySchedulerDelegate {
 
     public func dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(_ activityScheduler: any DataBrokerProtectionBackgroundActivityScheduler) async {
-        await activityScheduler.dataSource?
-            .emailConfirmationDataServiceForDataBrokerProtectionBackgroundActivityScheduler(activityScheduler)?
-            .checkForEmailConfirmationData()
+        do {
+            let emailConfirmationDataService = activityScheduler.dataSource?.emailConfirmationDataServiceForDataBrokerProtectionBackgroundActivityScheduler(activityScheduler)
+            try await emailConfirmationDataService?.checkForEmailConfirmationData()
+        } catch {
+            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
+        }
         await startScheduledOperations()
     }
 
@@ -328,8 +334,8 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
 }
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivitySchedulerDataSource {
-    public func emailConfirmationDataServiceForDataBrokerProtectionBackgroundActivityScheduler(_ activityScheduler: any DataBrokerProtectionBackgroundActivityScheduler) -> EmailConfirmationDataChecking? {
-        self
+    public func emailConfirmationDataServiceForDataBrokerProtectionBackgroundActivityScheduler(_ activityScheduler: any DataBrokerProtectionBackgroundActivityScheduler) -> EmailConfirmationDataServiceProvider? {
+        emailConfirmationDataService
     }
 }
 
@@ -487,5 +493,16 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
     }
 }
 
-extension DataBrokerProtectionAgentManager: DataBrokerProtectionAppToAgentInterface {}
-extension DataBrokerProtectionAgentManager: EmailConfirmationDataChecking {}
+extension DataBrokerProtectionAgentManager: DataBrokerProtectionAppToAgentInterface {
+
+}
+
+extension DataBrokerProtectionAgentManager: EmailConfirmationDataDelegate {
+    public func checkForEmailConfirmationData() async {
+        do {
+            try await emailConfirmationDataService?.checkForEmailConfirmationData()
+        } catch {
+            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
+        }
+    }
+}

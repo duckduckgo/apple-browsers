@@ -36,7 +36,7 @@ public protocol DataBrokerProtectionBackgroundActivitySchedulerDelegate: AnyObje
 }
 
 public protocol DataBrokerProtectionBackgroundActivitySchedulerDataSource: AnyObject {
-    func emailConfirmationDataServiceForDataBrokerProtectionBackgroundActivityScheduler(_ activityScheduler: DataBrokerProtectionBackgroundActivityScheduler) -> EmailConfirmationDataChecking?
+    func emailConfirmationDataServiceForDataBrokerProtectionBackgroundActivityScheduler(_ activityScheduler: DataBrokerProtectionBackgroundActivityScheduler) -> EmailConfirmationDataServiceProvider?
 }
 
 public final class DefaultDataBrokerProtectionBackgroundActivityScheduler: DataBrokerProtectionBackgroundActivityScheduler, @unchecked Sendable {

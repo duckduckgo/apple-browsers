@@ -33,7 +33,6 @@ extension CrashReportSender {
                               frequency: .standard,
                               withHeaders: [:],
                               withAdditionalParameters: ["HTTPStatusCode": "\(error.statusCode)"],
-                              withError: nil,
                               allowedQueryReservedCharacters: nil)
             } else {
                 PixelKit.fire(GeneralPixel.crashReportingSubmissionFailed)

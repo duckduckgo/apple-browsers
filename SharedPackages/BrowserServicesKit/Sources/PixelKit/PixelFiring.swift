@@ -1,7 +1,7 @@
 //
-//  NonStandardEvent.swift
+//  PixelFiring.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,23 +16,22 @@
 //  limitations under the License.
 //
 
-import Foundation
+/// Protocol to support mocking pixel firing.
+public protocol PixelFiring {
+    func fire(_ event: PixelKitEvent)
 
-/// This custom event is used for special cases, like pixels with non-standard names and uses, these pixels are sent as is and the names remain unchanged
-public final class NonStandardEvent: PixelKitEvent {
+    func fire(_ event: PixelKitEvent,
+              frequency: PixelKit.Frequency)
+}
 
-    let event: PixelKitEvent
+extension PixelKit: PixelFiring {
 
-    public init(_ event: PixelKitEvent) {
-        self.event = event
+    public func fire(_ event: PixelKitEvent) {
+        fire(event, frequency: .standard)
     }
 
-    public var name: String {
-        event.name
+    public func fire(_ event: PixelKitEvent,
+                     frequency: PixelKit.Frequency) {
+        fire(event, frequency: frequency, onComplete: { _, _ in })
     }
-
-    public var parameters: [String: String]? {
-        event.parameters
-    }
-
 }

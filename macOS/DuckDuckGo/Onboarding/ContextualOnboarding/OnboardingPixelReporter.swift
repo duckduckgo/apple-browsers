@@ -41,13 +41,13 @@ protocol OnboardingFireReporting: AnyObject {
 final class OnboardingPixelReporter {
 
     private weak var onboardingStateProvider: (ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater)?
-    private let fire: (PixelKitEventV2, PixelKit.Frequency) -> Void
+    private let fire: (PixelKitEvent, PixelKit.Frequency) -> Void
     private let userDefaults: UserDefaults
 
     init(onboardingStateProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
  = Application.appDelegate.onboardingContextualDialogsManager,
          userDefaults: UserDefaults = UserDefaults.standard,
-         fireAction: @escaping (PixelKitEventV2, PixelKit.Frequency) -> Void = { event, frequency in PixelKit.fire(event, frequency: frequency) }) {
+         fireAction: @escaping (PixelKitEvent, PixelKit.Frequency) -> Void = { event, frequency in PixelKit.fire(event, frequency: frequency) }) {
         self.onboardingStateProvider = onboardingStateProvider
         self.fire = fireAction
         self.userDefaults = userDefaults

@@ -1037,6 +1037,10 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         return []
     }
 
+    public func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier> {
+        return Set<OptOutIdentifier>()
+    }
+
     public func updateOptOutEmailConfirmationLink(_ link: String?,
                                                   emailConfirmationLinkObtainedOnBEDate: Date?,
                                                   profileQueryId: Int64,

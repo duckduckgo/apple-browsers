@@ -96,11 +96,20 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
         guard featureFlagger.isEmailConfirmationDecouplingFeatureOn else { return }
 
         let recordsAwaitingLink = try database.fetchOptOutEmailConfirmationsAwaitingLink()
+        let activeConfirmationIdentifiers = try database.fetchIdentifiersForActiveEmailConfirmations()
+
+        let filteredRecords = recordsAwaitingLink.filter { record in
+            activeConfirmationIdentifiers.contains(where: {
+                $0.brokerId == record.brokerId &&
+                $0.profileQueryId == record.profileQueryId &&
+                $0.extractedProfileId == record.extractedProfileId
+            })
+        }
 
         var itemsToDelete: [EmailDataRequestItemV1] = []
 
         // Chunk requests to respect API rate limits
-        for chunk in recordsAwaitingLink.chunks(ofCount: EmailServiceV1.Constants.maxBatchSize) {
+        for chunk in filteredRecords.chunks(ofCount: EmailServiceV1.Constants.maxBatchSize) {
             let records = Array(chunk)
             let response = try await emailServiceV1.fetchEmailData(items: records.toEmailDataRequestItems())
 

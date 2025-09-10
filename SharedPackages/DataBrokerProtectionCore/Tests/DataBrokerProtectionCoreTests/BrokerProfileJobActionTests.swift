@@ -52,7 +52,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: stageCalulator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
 
@@ -80,7 +80,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: stageCalulator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
 
@@ -115,7 +115,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: stageCalulator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
 
@@ -148,7 +148,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: stageCalulator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
@@ -174,7 +174,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: stageCalulator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
         emailConfirmationDataService.shouldThrow = true
@@ -206,7 +206,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: stageCalulator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
@@ -229,7 +229,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: stageCalulator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
@@ -254,7 +254,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: stageCalulator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
@@ -280,7 +280,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: stageCalulator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .testing,
+            actionsHandlerMode: .testing,
             shouldRunNextStep: { true }
         )
         let actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
@@ -313,7 +313,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: stageCalulator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
@@ -339,7 +339,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: stageCalulator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
         sut.resetRetriesCount()
@@ -366,7 +366,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: stageCalulator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
@@ -388,7 +388,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: stageCalulator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
@@ -412,7 +412,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
 
@@ -435,7 +435,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
 
@@ -458,7 +458,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
 
@@ -500,7 +500,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: MockStageDurationCalculator(),
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
 
@@ -553,7 +553,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
 
@@ -576,7 +576,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: stageCalulator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
 
@@ -601,7 +601,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: stageCalulator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
 
@@ -629,7 +629,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
@@ -657,7 +657,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
@@ -714,7 +714,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
@@ -748,7 +748,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
@@ -781,7 +781,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
@@ -827,7 +827,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
                 stageCalculator: mockStageCalculator,
                 pixelHandler: pixelHandler,
                 executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
                 shouldRunNextStep: { true }
             )
             sut.webViewHandler = webViewHandler
@@ -860,7 +860,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
@@ -895,7 +895,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
             executionConfig: BrokerJobExecutionConfig(),
-            variant: .optOut,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler

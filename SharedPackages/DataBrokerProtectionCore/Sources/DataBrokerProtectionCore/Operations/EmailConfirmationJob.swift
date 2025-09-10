@@ -183,7 +183,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 stageCalculator: stageDurationCalculator,
                 pixelHandler: jobDependencies.pixelHandler,
                 executionConfig: jobDependencies.executionConfig,
-                variant: .emailConfirmation(confirmationURL),
+                actionsHandlerMode: .emailConfirmation(confirmationURL),
                 shouldRunNextStep: { [weak self] in
                     guard let self = self else { return false }
                     return !self.isCancelled && !Task.isCancelled

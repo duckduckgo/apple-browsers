@@ -148,7 +148,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         if sectionsVisibilityProvider.isOmnibarVisible {
             item.target = self
         }
-        item.representedObject = 0
+        item.representedObject = nil
         item.state = omnibarConfigProvider.isAIChatShortcutEnabled ? .on : .off
         item.isEnabled = sectionsVisibilityProvider.isOmnibarVisible
         item.withAccessibilityIdentifier("HomePage.Views.Menu.ShowDuckAI")
@@ -193,7 +193,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
                 NSMenuItem(title: UserText.newTabPageContextMenuOpenDuckAISettings,
                            action: #selector(self.openDuckAISettings(_:)),
                            target: self,
-                           representedObject: 0)
+                           representedObject: nil)
                 .withAccessibilityIdentifier("HomePage.Views.Menu.OpenDuckAISettings")
             }
         }

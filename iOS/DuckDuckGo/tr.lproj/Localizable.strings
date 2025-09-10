@@ -100,6 +100,9 @@
 /* Refresh action - button shown in alert */
 "action.title.refresh" = "Yenile";
 
+/* Refresh page action */
+"action.title.refreshPage" = "Sayfayı Yeniden Yükle";
+
 /* Remove Favorite action */
 "action.title.remove.favorite" = "Favoriyi Kaldır";
 
@@ -2934,6 +2937,15 @@
 
 /* Explanation in Settings how the private search feature works */
 "settings.private.search.explanation" = "DuckDuckGo Private Search, varsayılan arama motorunuz olduğunda web'de izlenmeden arama yapabilirsiniz.";
+
+/* Settings screen option to set refresh button in the address bar */
+"settings.refreshButton.position.addressBar" = "Adres Çubuğu";
+
+/* Settings screen option to set refresh button in the menu */
+"settings.refreshButton.position.menu" = "Menü";
+
+/* Settings screen cell text for setting the refresh button position. */
+"settings.refreshButton.position.title" = "Yeniden Yükle Düğmesi Konumu";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Arama Ayarları";

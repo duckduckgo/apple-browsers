@@ -100,6 +100,9 @@
 /* Refresh action - button shown in alert */
 "action.title.refresh" = "Opdater";
 
+/* Refresh page action */
+"action.title.refreshPage" = "Genindlæs side";
+
 /* Remove Favorite action */
 "action.title.remove.favorite" = "Fjern favorit";
 
@@ -2934,6 +2937,15 @@
 
 /* Explanation in Settings how the private search feature works */
 "settings.private.search.explanation" = "DuckDuckGo Private Search er din standardsøgemaskine, så du kan søge på nettet uden at blive sporet.";
+
+/* Settings screen option to set refresh button in the address bar */
+"settings.refreshButton.position.addressBar" = "Adresselinje";
+
+/* Settings screen option to set refresh button in the menu */
+"settings.refreshButton.position.menu" = "Menu";
+
+/* Settings screen cell text for setting the refresh button position. */
+"settings.refreshButton.position.title" = "Placering af genindlæsningsknap";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Indstillinger for søgning";

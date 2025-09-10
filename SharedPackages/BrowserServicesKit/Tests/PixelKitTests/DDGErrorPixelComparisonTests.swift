@@ -33,7 +33,7 @@ final class DDGErrorPixelComparisonTests: XCTestCase {
         case testError
         case testErrorWithUnderlying(underlying: Error?)
 
-        var errorDomain: String { "com.duckduckgo.test.ddgerror" }
+        static var errorDomain: String { "com.duckduckgo.test.ddgerror" }
 
         var errorCode: Int {
             switch self {
@@ -96,7 +96,7 @@ final class DDGErrorPixelComparisonTests: XCTestCase {
 
     // MARK: - Test Events
 
-    private struct TestEventWithDDGError: PixelKitEventV2 {
+    private struct TestEventWithDDGError: PixelKitEvent {
         let name = "test_ddg_error_event"
         let error: Error?
         var parameters: [String: String]? { nil }
@@ -143,9 +143,9 @@ final class DDGErrorPixelComparisonTests: XCTestCase {
         let ddgEvent = TestEventWithDDGError(error: ddgError)
         pixelKit.fire(ddgEvent)
 
-        // Fire pixel with standard Error (deprecated approach - need to use the fire method with error parameter)
-        let standardEvent = TestEventWithStandardError(error: nil)  // Don't put error in event
-        pixelKit.fire(standardEvent, withError: standardError)
+        // Fire pixel with standard Error
+        let standardEvent = TestEventWithStandardError(error: standardError)
+        pixelKit.fire(standardEvent)
 
         // Verify both approaches generate parameters
         XCTAssertNotNil(ddgErrorParams, "DDGError should generate parameters")
@@ -156,7 +156,7 @@ final class DDGErrorPixelComparisonTests: XCTestCase {
         XCTAssertNotNil(standardErrorParams?["e"], "Standard Error should set error code")
 
         // Compare error domain parameters
-        XCTAssertEqual(ddgErrorParams?["d"], ddgError.errorDomain, "DDGError should set error domain")
+        XCTAssertEqual(ddgErrorParams?["d"], TestDDGError.errorDomain, "DDGError should set error domain")
         XCTAssertNotNil(standardErrorParams?["d"], "Standard Error should set error domain")
     }
 
@@ -193,8 +193,8 @@ final class DDGErrorPixelComparisonTests: XCTestCase {
         pixelKit.fire(ddgEvent)
 
         // Fire pixel with standard NSError (use withDDGError parameter to pass the error)
-        let standardEvent = TestEventWithStandardError(error: nil)
-        pixelKit.fire(standardEvent, withError: standardError)
+        let standardEvent = TestEventWithStandardError(error: standardError)
+        pixelKit.fire(standardEvent)
 
         // Verify both approaches generate parameters
         XCTAssertNotNil(ddgErrorParams, "DDGError with underlying should generate parameters")
@@ -258,8 +258,8 @@ final class DDGErrorPixelComparisonTests: XCTestCase {
         pixelKit.fire(ddgEvent)
 
         // Fire pixel with NSError chain (use withDDGError parameter to pass the error)
-        let standardEvent = TestEventWithStandardError(error: nil)
-        pixelKit.fire(standardEvent, withError: topNSError)
+        let standardEvent = TestEventWithStandardError(error: topNSError)
+        pixelKit.fire(standardEvent)
 
         // Verify both approaches generate parameters
         XCTAssertNotNil(ddgErrorParams, "DDGError chain should generate parameters")
@@ -303,8 +303,8 @@ final class DDGErrorPixelComparisonTests: XCTestCase {
         }
 
         // Use the deprecated fire method with standard Error
-        let standardEvent = TestEventWithStandardError(error: nil)
-        pixelKit.fire(standardEvent, withError: standardError)
+        let standardEvent = TestEventWithStandardError(error: standardError)
+        pixelKit.fire(standardEvent)
 
         // Verify wrapped error generates parameters
         XCTAssertNotNil(wrappedErrorParams, "Wrapped standard error should generate parameters")

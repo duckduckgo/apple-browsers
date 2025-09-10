@@ -113,7 +113,7 @@ extension VPNUninstaller {
         case sysexInstallationRequiresAuthorization
     }
 
-    enum VPNUninstallAttempt: PixelKitEventV2 {
+    enum VPNUninstallAttempt: PixelKitEvent {
         case begin
         case cancelled(_ reason: UninstallCancellationReason)
         case success
@@ -146,15 +146,5 @@ extension VPNUninstaller {
             }
         }
 
-        var error: Error? {
-            switch self {
-            case .begin,
-                    .cancelled,
-                    .success:
-                return nil
-            case .failure(let error):
-                return error
-            }
-        }
     }
 }

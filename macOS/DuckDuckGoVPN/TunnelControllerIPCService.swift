@@ -51,20 +51,13 @@ final class TunnelControllerIPCService {
         }
     }
 
-    enum UDSError: PixelKitEventV2 {
+    enum UDSError: PixelKitEvent {
         case udsServerStartFailure(_ error: Error)
 
         var name: String {
             switch self {
             case .udsServerStartFailure:
                 return "vpn_agent_uds_server_start_failure"
-            }
-        }
-
-        var error: Error? {
-            switch self {
-            case .udsServerStartFailure(let error):
-                return error
             }
         }
 

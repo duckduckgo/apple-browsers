@@ -99,10 +99,10 @@ final class DebugSaveProfileViewModel: ObservableObject {
     @Published var names = [NameUI.empty()]
     @Published var addresses = [AddressUI.empty()]
 
-    private let database: DataBrokerProtectionRepository
+    private weak var databaseDelegate: DBPIOSInterface.DatabaseDelegate?
 
-    internal init(database: DataBrokerProtectionRepository) {
-        self.database = database
+    internal init(databaseDelegate: DBPIOSInterface.DatabaseDelegate?) {
+        self.databaseDelegate = databaseDelegate
     }
 
     private func createBrokerProfileQueryData(for broker: DataBroker) -> [BrokerProfileQueryData] {
@@ -139,7 +139,7 @@ final class DebugSaveProfileViewModel: ObservableObject {
             )
         Task {
             do {
-                try await database.save(profile)
+                try await databaseDelegate?.saveProfile(profile)
                 Task { @MainActor in
                     self.alert = AlertUI.savedProfile()
                     self.showAlert = true

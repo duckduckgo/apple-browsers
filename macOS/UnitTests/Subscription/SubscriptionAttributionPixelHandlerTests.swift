@@ -28,12 +28,12 @@ final class SubscriptionAttributionPixelHandlerTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         capturedParams = PixelCapturedParameters()
-        fireRequest = { event, frequency, headers, parameters, error, namePrefix, reservedCharacters, includeAppVersion, includePixelSource, onComplete in
+        fireRequest = { event, frequency, headers, parameters, namePrefix, reservedCharacters, includeAppVersion, includePixelSource, onComplete in
             self.capturedParams.event = event
             self.capturedParams.frequency = frequency
             self.capturedParams.headers = headers
             self.capturedParams.parameters = parameters
-            self.capturedParams.error = error
+            self.capturedParams.error = event.error
             self.capturedParams.namePrefix = namePrefix
             self.capturedParams.reservedCharacters = reservedCharacters
             self.capturedParams.includeAppVersion = includeAppVersion

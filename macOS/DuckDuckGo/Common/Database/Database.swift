@@ -141,7 +141,7 @@ extension NSManagedObjectModel {
 
 extension NSManagedObjectContext {
 
-    func save(onErrorFire event: PixelKitEventV2) throws {
+    func save(onErrorFire event: PixelKitEvent) throws {
         do {
             try save()
         } catch {

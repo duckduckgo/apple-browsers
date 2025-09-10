@@ -100,6 +100,9 @@
 /* Refresh action - button shown in alert */
 "action.title.refresh" = "Värskenda";
 
+/* Refresh page action */
+"action.title.refreshPage" = "Laadi leht uuesti";
+
 /* Remove Favorite action */
 "action.title.remove.favorite" = "Eemalda lemmik";
 
@@ -2934,6 +2937,15 @@
 
 /* Explanation in Settings how the private search feature works */
 "settings.private.search.explanation" = "DuckDuckGo Private Search on sinu vaikeotsimootor, mille abil saad veebis otsida ilma, et sind jälgitaks.";
+
+/* Settings screen option to set refresh button in the address bar */
+"settings.refreshButton.position.addressBar" = "Aadressiriba";
+
+/* Settings screen option to set refresh button in the menu */
+"settings.refreshButton.position.menu" = "Menüü";
+
+/* Settings screen cell text for setting the refresh button position. */
+"settings.refreshButton.position.title" = "Uuesti laadimise nupu asukoht";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Otsingu seaded";

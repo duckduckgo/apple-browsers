@@ -21,6 +21,54 @@ import Foundation
 import CoreData
 import Bookmarks
 
+public enum BookmarksDatabaseError: Error {
+    // Legacy storage errors
+    case noDBSchemeFound
+    case unableToLoadPersistentStores(Error)
+    case errorCreatingTopLevelBookmarksFolder
+    case errorCreatingTopLevelFavoritesFolder
+    case couldNotFixBookmarkFolder
+    case couldNotFixFavoriteFolder
+    
+    // Migration errors
+    case couldNotPrepareBookmarksDBStructure(Error)
+    case couldNotWriteToBookmarksDB(Error)
+    
+    // Database setup errors
+    case couldNotGetFavoritesOrder(Error)
+    case couldNotPrepareDatabase(Error)
+    
+    // Generic
+    case other(Error)
+
+    public var name: String {
+        switch self {
+        case .noDBSchemeFound:
+            return "noDBSchemeFound"
+        case .unableToLoadPersistentStores:
+            return "unableToLoadPersistentStores"
+        case .errorCreatingTopLevelBookmarksFolder:
+            return "errorCreatingTopLevelBookmarksFolder"
+        case .errorCreatingTopLevelFavoritesFolder:
+            return "errorCreatingTopLevelFavoritesFolder"
+        case .couldNotFixBookmarkFolder:
+            return "couldNotFixBookmarkFolder"
+        case .couldNotFixFavoriteFolder:
+            return "couldNotFixFavoriteFolder"
+        case .couldNotPrepareBookmarksDBStructure:
+            return "couldNotPrepareBookmarksDBStructure"
+        case .couldNotWriteToBookmarksDB:
+            return "couldNotWriteToBookmarksDB"
+        case .couldNotGetFavoritesOrder:
+            return "couldNotGetFavoritesOrder"
+        case .couldNotPrepareDatabase:
+            return "couldNotPrepareDatabase"
+        case .other:
+            return "other"
+        }
+    }
+}
+
 public class LegacyBookmarksCoreDataStorage {
 
     private let storeLoadedCondition = RunLoop.ResumeCondition()
@@ -45,10 +93,10 @@ public class LegacyBookmarksCoreDataStorage {
     private var cachedReadOnlyTopLevelBookmarksFolder: BookmarkFolderManagedObject?
     private var cachedReadOnlyTopLevelFavoritesFolder: BookmarkFolderManagedObject?
 
-    internal static var managedObjectModel: NSManagedObjectModel {
+    internal static func getManagedObjectModel() throws -> NSManagedObjectModel {
         let coreBundle = Bundle(identifier: "com.duckduckgo.mobile.ios.Core")!
         guard let managedObjectModel = NSManagedObjectModel.mergedModel(from: [coreBundle]) else {
-            fatalError("No DB scheme found")
+            throw BookmarksDatabaseError.noDBSchemeFound
         }
         return managedObjectModel
     }
@@ -64,7 +112,7 @@ public class LegacyBookmarksCoreDataStorage {
 
     private let storeURL: URL
 
-    public init?(storeURL: URL = defaultStoreURL, createIfNeeded: Bool = false) {
+    public init?(storeURL: URL = defaultStoreURL, createIfNeeded: Bool = false) throws {
         if !FileManager.default.fileExists(atPath: storeURL.path),
            createIfNeeded == false {
             return nil
@@ -72,7 +120,8 @@ public class LegacyBookmarksCoreDataStorage {
 
         self.storeURL = storeURL
 
-        persistentContainer = NSPersistentContainer(name: Constants.databaseName, managedObjectModel: Self.managedObjectModel)
+        let managedObjectModel = try Self.getManagedObjectModel()
+        persistentContainer = NSPersistentContainer(name: Constants.databaseName, managedObjectModel: managedObjectModel)
         persistentContainer.persistentStoreDescriptions = [storeDescription]
     }
 
@@ -103,48 +152,55 @@ public class LegacyBookmarksCoreDataStorage {
         try? FileManager.default.removeItem(atPath: storeURL.path.appending("-shm"))
     }
 
-    public func loadStoreAndCaches(andMigrate handler: @escaping (NSManagedObjectContext) -> Void = { _ in }) {
+    public func loadStoreAndCaches(andMigrate handler: @escaping (NSManagedObjectContext) -> Void = { _ in }) throws {
 
-        loadStore(andMigrate: handler)
+        try loadStore(andMigrate: handler)
 
         RunLoop.current.run(until: storeLoadedCondition)
-        cacheReadOnlyTopLevelBookmarksFolder()
-        cacheReadOnlyTopLevelFavoritesFolder()
+        try cacheReadOnlyTopLevelBookmarksFolder()
+        try cacheReadOnlyTopLevelFavoritesFolder()
     }
 
-    internal func loadStore(andMigrate handler: @escaping (NSManagedObjectContext) -> Void = { _ in }) {
+    internal func loadStore(andMigrate handler: @escaping (NSManagedObjectContext) -> Void = { _ in }) throws {
 
-        persistentContainer = NSPersistentContainer(name: Constants.databaseName, managedObjectModel: Self.managedObjectModel)
+        let managedObjectModel = try Self.getManagedObjectModel()
+        persistentContainer = NSPersistentContainer(name: Constants.databaseName, managedObjectModel: managedObjectModel)
         persistentContainer.persistentStoreDescriptions = [storeDescription]
+        
+        var loadError: Error?
         persistentContainer.loadPersistentStores { _, error in
             if let error = error {
-                fatalError("Unable to load persistent stores: \(error)")
+                loadError = error
+            } else {
+                let context = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+                context.persistentStoreCoordinator = self.persistentContainer.persistentStoreCoordinator
+                context.name = "Migration"
+                context.performAndWait {
+                    handler(context)
+                    self.storeLoadedCondition.resolve()
+                }
             }
-
-            let context = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
-            context.persistentStoreCoordinator = self.persistentContainer.persistentStoreCoordinator
-            context.name = "Migration"
-            context.performAndWait {
-                handler(context)
-                self.storeLoadedCondition.resolve()
-            }
+        }
+        
+        if let loadError = loadError {
+            throw BookmarksDatabaseError.unableToLoadPersistentStores(loadError)
         }
     }
 
-    static internal func rootFolderManagedObject(_ context: NSManagedObjectContext) -> BookmarkFolderManagedObject {
+    static internal func rootFolderManagedObject(_ context: NSManagedObjectContext) throws -> BookmarkFolderManagedObject {
         guard let bookmarksFolder = NSEntityDescription.insertNewObject(forEntityName: "BookmarkFolderManagedObject", into: context)
                 as? BookmarkFolderManagedObject else {
-            fatalError("Error creating top level bookmarks folder")
+            throw BookmarksDatabaseError.errorCreatingTopLevelBookmarksFolder
         }
 
         bookmarksFolder.isFavorite = false
         return bookmarksFolder
     }
 
-    static internal func rootFavoritesFolderManagedObject(_ context: NSManagedObjectContext) -> BookmarkFolderManagedObject {
+    static internal func rootFavoritesFolderManagedObject(_ context: NSManagedObjectContext) throws -> BookmarkFolderManagedObject {
         guard let bookmarksFolder = NSEntityDescription.insertNewObject(forEntityName: "BookmarkFolderManagedObject", into: context)
                 as? BookmarkFolderManagedObject else {
-            fatalError("Error creating top level favorites folder")
+            throw BookmarksDatabaseError.errorCreatingTopLevelFavoritesFolder
         }
 
         bookmarksFolder.isFavorite = true
@@ -214,12 +270,12 @@ extension LegacyBookmarksCoreDataStorage {
         return folder
     }
 
-    internal func cacheReadOnlyTopLevelBookmarksFolder() {
+    internal func cacheReadOnlyTopLevelBookmarksFolder() throws {
         guard let folder = fetchReadOnlyTopLevelFolder(withFolderType: .bookmark) else {
-            fixFolderDataStructure(withFolderType: .bookmark)
+            try fixFolderDataStructure(withFolderType: .bookmark)
 
             guard let fixedFolder = fetchReadOnlyTopLevelFolder(withFolderType: .bookmark) else {
-                fatalError("Coudn't fix bookmark folder")
+                throw BookmarksDatabaseError.couldNotFixBookmarkFolder
             }
             self.cachedReadOnlyTopLevelBookmarksFolder = fixedFolder
             return
@@ -227,12 +283,12 @@ extension LegacyBookmarksCoreDataStorage {
         self.cachedReadOnlyTopLevelBookmarksFolder = folder
     }
 
-    internal func cacheReadOnlyTopLevelFavoritesFolder() {
+    internal func cacheReadOnlyTopLevelFavoritesFolder() throws {
         guard let folder = fetchReadOnlyTopLevelFolder(withFolderType: .favorite) else {
-            fixFolderDataStructure(withFolderType: .favorite)
+            try fixFolderDataStructure(withFolderType: .favorite)
 
             guard let fixedFolder = fetchReadOnlyTopLevelFolder(withFolderType: .favorite) else {
-                fatalError("Coudn't fix favorite folder")
+                throw BookmarksDatabaseError.couldNotFixFavoriteFolder
             }
             self.cachedReadOnlyTopLevelFavoritesFolder = fixedFolder
             return
@@ -288,7 +344,7 @@ extension LegacyBookmarksCoreDataStorage {
      i.e: Favorites and Bookmarks each have their own root folder
      */
     private func createMissingTopLevelFolder(onContext context: NSManagedObjectContext,
-                                             withFolderType folderType: TopLevelFolderType) {
+                                             withFolderType folderType: TopLevelFolderType) throws {
 
         // Get all bookmarks
         let bookmarksFetchRequest = NSFetchRequest<BookmarkManagedObject>(entityName: Constants.bookmarkClassName)
@@ -302,9 +358,9 @@ extension LegacyBookmarksCoreDataStorage {
         // Create root folder for the specified folder type
         let bookmarksFolder: BookmarkFolderManagedObject
         if folderType == .favorite {
-            bookmarksFolder = Self.rootFavoritesFolderManagedObject(context)
+            bookmarksFolder = try Self.rootFavoritesFolderManagedObject(context)
         } else {
-            bookmarksFolder = Self.rootFolderManagedObject(context)
+            bookmarksFolder = try Self.rootFolderManagedObject(context)
         }
 
         // Assign all bookmarks to the parent folder
@@ -313,29 +369,39 @@ extension LegacyBookmarksCoreDataStorage {
         }
     }
 
-    internal func fixFolderDataStructure(withFolderType folderType: TopLevelFolderType) {
+    internal func fixFolderDataStructure(withFolderType folderType: TopLevelFolderType) throws {
         let privateContext = getTemporaryPrivateContext()
 
+        var thrownError: Error?
         privateContext.performAndWait {
-            let fetchRequest = NSFetchRequest<BookmarkFolderManagedObject>(entityName: Constants.folderClassName)
-            fetchRequest.predicate = NSPredicate(format: "%K == nil AND %K == %@",
-                                                 #keyPath(BookmarkManagedObject.parent),
-                                                 #keyPath(BookmarkManagedObject.isFavorite),
-                                                 NSNumber(value: folderType == .favorite))
-
-            let results = try? privateContext.fetch(fetchRequest)
-
-            if let orphanedFolders = results, orphanedFolders.count > 1 {
-                deleteExtraOrphanedFolders(orphanedFolders, onContext: privateContext, withFolderType: folderType)
-            } else {
-                createMissingTopLevelFolder(onContext: privateContext, withFolderType: folderType)
-            }
-
             do {
-                try privateContext.save()
+                let fetchRequest = NSFetchRequest<BookmarkFolderManagedObject>(entityName: Constants.folderClassName)
+                fetchRequest.predicate = NSPredicate(format: "%K == nil AND %K == %@",
+                                                     #keyPath(BookmarkManagedObject.parent),
+                                                     #keyPath(BookmarkManagedObject.isFavorite),
+                                                     NSNumber(value: folderType == .favorite))
+
+                let results = try? privateContext.fetch(fetchRequest)
+
+                if let orphanedFolders = results, orphanedFolders.count > 1 {
+                    deleteExtraOrphanedFolders(orphanedFolders, onContext: privateContext, withFolderType: folderType)
+                } else {
+                    try createMissingTopLevelFolder(onContext: privateContext, withFolderType: folderType)
+                }
+
+                do {
+                    try privateContext.save()
+                } catch {
+                    DailyPixel.fireDailyAndCount(pixel: .debugBookmarksTopFolderSaveFailed)
+                    assertionFailure("Failure saving bookmark top folder fix")
+                }
             } catch {
-                assertionFailure("Failure saving bookmark top folder fix")
+                thrownError = error
             }
+        }
+        
+        if let thrownError = thrownError {
+            throw thrownError
         }
     }
 }

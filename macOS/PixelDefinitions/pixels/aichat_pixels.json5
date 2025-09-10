@@ -23,4 +23,11 @@
         suffixes: ['first_daily_count'],
         parameters: ['appVersion', 'pixelSource'],
     },
+    m_mac_aichat_translation_source_link_clicked: {
+        description: 'Fired when user clicks the website link on a translation prompt in Duck.ai tab or sidebar',
+        owners: ['miasma13'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
 }

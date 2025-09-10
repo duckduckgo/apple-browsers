@@ -99,6 +99,9 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User triggers translate action
     case aiChatTranslateText
 
+    /// Event Trigger: User clicks the website link on a translation prompt in Duck.ai tab or sidebar
+    case aiChatTranslationSourceLinkClicked
+
     // MARK: -
 
     var name: String {
@@ -143,6 +146,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_summarize_source_link_clicked"
         case .aiChatTranslateText:
             return "aichat_translate_text"
+        case .aiChatTranslationSourceLinkClicked:
+            return "aichat_translation_source_link_clicked"
         }
     }
 
@@ -163,7 +168,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSidebarExpanded,
                 .aiChatSidebarSettingChanged,
                 .aiChatSummarizeSourceLinkClicked,
-                .aiChatTranslateText:
+                .aiChatTranslateText,
+                .aiChatTranslationSourceLinkClicked:
             return nil
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]

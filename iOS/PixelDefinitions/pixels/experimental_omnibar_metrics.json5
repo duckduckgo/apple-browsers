@@ -242,4 +242,11 @@
             },
         ],
     },
+    m_aichat_duckai_keyboard_return_pressed: {
+        description: 'Fires when user presses return/enter key in full Duck AI interface',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
 }

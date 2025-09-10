@@ -123,10 +123,14 @@ struct LocalNotificationsPlaygroundView: View {
                 Text(verbatim: "Schedule \(model.notificationType.description) Notification in \(model.notificationSchedulingTime) seconds")
             }
             
-            VStack(alignment: .leading) {
-                Text("Pending count \(String(model.pendingCount))")
-                Text("First pending notification ID \(model.firstId)")
-                Text("Is inactive notification feature on\(AppDependencyProvider.shared.featureFlagger.isFeatureOn(.inactivityNotification))")
+            Section {
+                VStack(alignment: .leading) {
+                    Text(verbatim: "Pending notification count: \(String(model.pendingCount))")
+                    Text(verbatim: "First pending notification ID: \(model.firstId)")
+                    Text("Is inactive notification feature on: \(AppDependencyProvider.shared.featureFlagger.isFeatureOn(.inactivityNotification))")
+                }
+            } header: {
+                Text(verbatim: "Inactivity Notification Debug Zone")
             }
             
 
@@ -153,7 +157,7 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
     @Published var notificationSchedulingTime: Int = 5
     
     @Published var pendingCount: Int = 0
-    @Published var firstId: String = ""
+    @Published var firstId: String = "unknown"
 
     private var cancellable: AnyCancellable?
 

@@ -20,20 +20,26 @@ import PackageDescription
 
 let package = Package(
     name: "Attribution",
+    platforms: [
+        .iOS("15.0"),
+        .macOS("11.4")
+    ],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
             name: "Attribution",
             targets: ["Attribution"]),
     ],
     dependencies: [
-        .package(path: "../BrowserServicesKit/PixelKit")
+        .package(path: "../BrowserServicesKit")
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "Attribution"),
+            name: "Attribution",
+            dependencies: [
+                .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "BrowserServicesKit"),
+            ],
+        ),
         .testTarget(
             name: "AttributionTests",
             dependencies: ["Attribution"]

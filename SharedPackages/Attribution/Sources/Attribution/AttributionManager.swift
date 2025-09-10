@@ -17,7 +17,33 @@
 //
 //
 
+import Foundation
+import PixelKit
+import Combine
+
 public final class AttributionManager {
 
+    let pixelKit: PixelKit
+    let userDefaults: UserDefaults
+    let originProvider: (any AttributionOriginProvider)?
+    private var cancellables = Set<AnyCancellable>()
 
+    init(pixelKit: PixelKit, userDefaults: UserDefaults, originProvider: (any AttributionOriginProvider)?) {
+        self.pixelKit = pixelKit
+        self.userDefaults = userDefaults
+        self.originProvider = originProvider
+
+        registerNotifications()
+    }
+
+    func registerNotifications() {
+
+//        NotificationCenter.default
+//            .publisher(for: UIApplication.didEnterBackgroundNotification)
+//            .sink { [weak self] _ in
+//                self?.appDidEnterBackground()
+//            }
+//            .store(in: &cancellables)
+
+    }
 }

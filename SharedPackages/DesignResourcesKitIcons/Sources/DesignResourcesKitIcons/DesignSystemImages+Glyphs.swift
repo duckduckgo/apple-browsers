@@ -337,6 +337,7 @@ public extension DesignSystemImages {
             public static var bookmarksOpen: DesignSystemImage { .init(resource: .bookmarksOpen24) }
             public static var calendar: DesignSystemImage { .init(resource: .calendar24) }
             public static var card: DesignSystemImage { .init(resource: .card24) }
+            public static var checkAccent: DesignSystemImage { .init(resource: .checkAccent24) }
             public static var checkRecolorable: DesignSystemImage { .init(resource: .checkRecolorable24) }
             public static var checkCircle: DesignSystemImage { .init(resource: .checkCircle24) }
             public static var checkSolid: DesignSystemImage { .init(resource: .checkSolid24) }

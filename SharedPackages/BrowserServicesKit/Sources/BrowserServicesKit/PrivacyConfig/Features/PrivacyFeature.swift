@@ -218,6 +218,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Adds support for passing currently visible website context to the sidebar
     case pageContext
+
+    /// Show AI Chat address bar choice screen
+    case showAIChatAddressBarChoiceScreen
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

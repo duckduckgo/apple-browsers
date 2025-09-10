@@ -41,12 +41,9 @@ final class PixelKitTests: XCTestCase {
             return nil
         }
 
-        var error: Error? {
-            return nil
-        }
     }
 
-    private enum TestEventV2: String, PixelKitEventV2 {
+    private enum TestEventV2: String, PixelKitEvent {
 
         case testEvent
         case testEventWithoutParameters
@@ -71,10 +68,6 @@ final class PixelKitTests: XCTestCase {
             default:
                 return nil
             }
-        }
-
-        var error: Error? {
-            return nil
         }
 
         var frequency: PixelKit.Frequency {

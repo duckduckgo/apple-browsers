@@ -150,9 +150,9 @@ class MockDDGSyncing: DDGSyncing {
 
 final class MockSyncConnectionControlling: SyncConnectionControlling {
 
-    var cancelCalled: Bool = false
+    var cancelCalled = { }
     func cancel() async {
-        cancelCalled = true
+        cancelCalled()
     }
 
     var spyStartExchangeModelShouldGenerateURLBasedCode: Bool?

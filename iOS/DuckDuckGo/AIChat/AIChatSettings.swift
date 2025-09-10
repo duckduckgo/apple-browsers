@@ -52,16 +52,20 @@ final class AIChatSettings: AIChatSettingsProvider {
     private let keyValueStore: KeyValueStoring
     private let notificationCenter: NotificationCenter
     private let featureFlagger: FeatureFlagger
+    private let switchBarFunnel: SwitchBarFunnelProviding
+    
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
          notificationCenter: NotificationCenter = .default,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         switchBarFunnel: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard)) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.debugSettings = debugSettings
         self.keyValueStore = keyValueStore
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
+        self.switchBarFunnel = switchBarFunnel
     }
 
     // MARK: - Public
@@ -167,8 +171,15 @@ final class AIChatSettings: AIChatSettingsProvider {
 
         if enable {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsSearchInputTurnedOn)
+            
+            
+            // Process feature enabled funnel step
+            switchBarFunnel.processStep(.featureEnabled)
         } else {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsSearchInputTurnedOff)
+            
+            // Reset funnel when feature is disabled
+            resetFunnelStorage()
         }
     }
 
@@ -192,6 +203,13 @@ final class AIChatSettings: AIChatSettingsProvider {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsTabManagerTurnedOff)
         }
     }
+    
+    /// Process the settings view funnels step
+    func processSettingsViewedFunnelStep() {
+        if !isAIChatSearchInputUserSettingsEnabled {
+            switchBarFunnel.processStep(.settingsViewed)
+        }
+    }
 
     // MARK: - Private
 
@@ -206,6 +224,11 @@ final class AIChatSettings: AIChatSettingsProvider {
             Pixel.fire(pixel: .aiChatNoRemoteSettingsFound(settings: value.rawValue))
             return value.defaultValue
         }
+    }
+    
+    /// Reset all funnel storage when the new input feature is disabled
+    private func resetFunnelStorage() {
+        switchBarFunnel.resetAllFunnelState()
     }
 }
 

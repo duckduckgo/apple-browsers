@@ -77,7 +77,7 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
         static let mockParams: [String: String] = [:]
         static let mockScriptMessage = MockWKScriptMessage(name: "", body: "", webView: WKWebView() )
 
-        static let invalidTokenError = APIServiceError.serverError(statusCode: 401, errorCode: "invalid_token")
+        static let invalidTokenError = APIServiceError.serverError(statusCode: 401, statusDescription: "invalid_token")
     }
 
     var userDefaults: UserDefaults!

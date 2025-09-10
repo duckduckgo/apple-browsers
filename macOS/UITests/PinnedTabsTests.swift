@@ -49,16 +49,16 @@ class PinnedTabsTests: UITestCase {
     // MARK: - Utilities
 
     private func openThreeSitesOnSameWindow() {
-        openSite(pageTitle: "Page #1")
+        app.openSite(pageTitle: "Page #1")
         app.openNewTab()
-        openSite(pageTitle: "Page #2")
+        app.openSite(pageTitle: "Page #2")
         app.openNewTab()
-        openSite(pageTitle: "Page #3")
+        app.openSite(pageTitle: "Page #3")
     }
 
     private func openNewWindowAndLoadSite() {
         app.openNewWindow()
-        openSite(pageTitle: "Page #4")
+        app.openSite(pageTitle: "Page #4")
     }
 
     private func moveBackToPreviousWindows() {
@@ -69,20 +69,6 @@ class PinnedTabsTests: UITestCase {
         )
         menuItem.hover()
         app.typeKey(XCUIKeyboardKey.return, modifierFlags: [])
-    }
-
-    private func openSite(pageTitle: String) {
-        let url = UITests.simpleServedPage(titled: pageTitle)
-        let addressBar = app.addressBar
-        XCTAssertTrue(
-            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The address bar text field didn't become available in a reasonable timeframe."
-        )
-        addressBar.typeURL(url)
-        XCTAssertTrue(
-            app.windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Visited site didn't load with the expected title in a reasonable timeframe."
-        )
     }
 
     private func pinsPageOne() {

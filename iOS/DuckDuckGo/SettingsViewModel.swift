@@ -56,7 +56,8 @@ final class SettingsViewModel: ObservableObject {
     private let duckPlayerPixelHandler: DuckPlayerPixelFiring.Type
     let featureDiscovery: FeatureDiscovery
     private let urlOpener: URLOpener
-    let dataBrokerProtectionIOSManager: DataBrokerProtectionIOSManager?
+    private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
+    var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -121,6 +122,12 @@ final class SettingsViewModel: ObservableObject {
 
     var isPIREnabled: Bool {
         featureFlagger.isFeatureOn(.personalInformationRemoval)
+    }
+
+    var dbpMeetsProfileRunPrequisite: Bool {
+        get {
+            (try? runPrerequisitesDelegate?.meetsProfileRunPrequisite) ?? false
+        }
     }
 
     var isUpdatedAIFeaturesSettingsEnabled: Bool {
@@ -539,7 +546,8 @@ final class SettingsViewModel: ObservableObject {
          urlOpener: URLOpener = UIApplication.shared,
          keyValueStore: ThrowingKeyValueStoring,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
-         dataBrokerProtectionIOSManager: DataBrokerProtectionIOSManager? = .shared
+         runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
+         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     ) {
 
         self.state = SettingsState.defaults
@@ -566,7 +574,8 @@ final class SettingsViewModel: ObservableObject {
         self.urlOpener = urlOpener
         self.keyValueStore = keyValueStore
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
-        self.dataBrokerProtectionIOSManager = dataBrokerProtectionIOSManager
+        self.runPrerequisitesDelegate = runPrerequisitesDelegate
+        self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }

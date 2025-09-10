@@ -185,6 +185,9 @@ public struct PixelParameters {
 
     // Default Browser Prompt
     public static let defaultBrowserPromptNumberOfModalsShown = "numberOfModalsShown"
+
+    // New Address Bar Picker
+    public static let selection = "selection"
 }
 
 public struct PixelValues {

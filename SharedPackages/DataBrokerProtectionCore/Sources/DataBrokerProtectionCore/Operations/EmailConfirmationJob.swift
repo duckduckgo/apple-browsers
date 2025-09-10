@@ -35,7 +35,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     private let showWebView: Bool
     private(set) weak var errorDelegate: EmailConfirmationErrorDelegate? // Internal read-only to enable mocking
     private let jobDependencies: EmailConfirmationJobDependencyProviding
-    private let waitTimeBeforeRetry: TimeInterval
 
     private let webRunnerForTesting: BrokerProfileOptOutSubJobWebProtocol?
     private let webViewHandlerForTesting: WebViewHandler?
@@ -54,16 +53,14 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 showWebView: Bool,
                 errorDelegate: EmailConfirmationErrorDelegate?,
                 jobDependencies: EmailConfirmationJobDependencyProviding,
-                webRunner: BrokerProfileOptOutSubJobWebProtocol? = nil,
-                webViewHandler: WebViewHandler? = nil,
-                waitTimeBeforeRetry: TimeInterval = .seconds(3)) {
+                webRunnerForTesting: BrokerProfileOptOutSubJobWebProtocol? = nil,
+                webViewHandlerForTesting: WebViewHandler? = nil) {
         self.jobData = jobData
         self.showWebView = showWebView
         self.errorDelegate = errorDelegate
         self.jobDependencies = jobDependencies
-        self.webRunnerForTesting = webRunner
-        self.webViewHandlerForTesting = webViewHandler
-        self.waitTimeBeforeRetry = waitTimeBeforeRetry
+        self.webRunnerForTesting = webRunnerForTesting
+        self.webViewHandlerForTesting = webViewHandlerForTesting
         super.init()
     }
 
@@ -102,17 +99,21 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     private func runJob() async {
         Logger.dataBrokerProtection.log("✉️ Starting email confirmation job for broker: \(self.jobData.brokerId), profile: \(self.jobData.extractedProfileId)")
 
-        guard let emailConfirmationLink = jobData.emailConfirmationLink,
-              let confirmationURL = URL(string: emailConfirmationLink) else {
-            Logger.dataBrokerProtection.error("✉️ Email confirmation job started without valid link")
-            await handleError(EmailError.invalidEmailLink)
-            return
-        }
-
         // Fetch the broker data
         guard let broker = try? jobDependencies.database.fetchBroker(with: jobData.brokerId) else {
             Logger.dataBrokerProtection.error("✉️ Failed to fetch broker with id: \(self.jobData.brokerId)")
             await handleError(DataBrokerProtectionError.dataNotInDatabase)
+            return
+        }
+
+        // Ensure confirmation link exists
+        guard let emailConfirmationLink = jobData.emailConfirmationLink,
+              let confirmationURL = URL(string: emailConfirmationLink) else {
+            Logger.dataBrokerProtection.error("✉️ Email confirmation job started without valid link")
+            await handleError(EmailError.invalidEmailLink,
+                              brokerName: broker.name,
+                              version: broker.version,
+                              schedulingConfig: broker.schedulingConfig)
             return
         }
 
@@ -125,8 +126,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
         let extractedProfile = extractedProfileData.profile
 
-        var attemptCount = jobData.emailConfirmationAttemptCount
-
         let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
             dataBroker: broker.url,
             dataBrokerVersion: broker.version,
@@ -135,28 +134,21 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
         )
 
-        while attemptCount < Self.maxRetries {
-            if isCancelled { return }
+        let attemptNumber = Int(jobData.emailConfirmationAttemptCount) + 1
+        Logger.dataBrokerProtection.log("✉️ Email confirmation attempt \(attemptNumber) of \(Self.maxRetries)")
 
-            Logger.dataBrokerProtection.log("✉️ Email confirmation attempt \(attemptCount + 1) of \(Self.maxRetries)")
-
-            do {
-                try await executeEmailConfirmation(with: confirmationURL, broker: broker, extractedProfile: extractedProfile, stageDurationCalculator: stageDurationCalculator)
-                try await markAsSuccessful(stageDurationCalculator: stageDurationCalculator, broker: broker)
-                Logger.dataBrokerProtection.log("✉️ Email confirmation completed successfully")
-                return
-            } catch {
-                attemptCount += 1
-                Logger.dataBrokerProtection.error("✉️ Email confirmation attempt \(attemptCount) failed: \(error)")
-
-                if attemptCount < Self.maxRetries {
-                    try? await incrementAttemptCount()
-                    try? await Task.sleep(nanoseconds: UInt64(waitTimeBeforeRetry) * 1_000_000_000)
-                }
-            }
+        do {
+            try await incrementAttemptCount()
+            try await executeEmailConfirmation(with: confirmationURL, broker: broker, extractedProfile: extractedProfile, stageDurationCalculator: stageDurationCalculator)
+            try await markAsSuccessful(stageDurationCalculator: stageDurationCalculator, broker: broker)
+            Logger.dataBrokerProtection.log("✉️ Email confirmation completed successfully")
+        } catch {
+            Logger.dataBrokerProtection.error("✉️ Email confirmation attempt \(attemptNumber) failed: \(error)")
+            await handleAttemptFailure(error,
+                                       broker: broker,
+                                       attemptNumber: attemptNumber,
+                                       schedulingConfig: broker.schedulingConfig)
         }
-
-        await handleMaxRetriesExceeded(brokerName: broker.name, version: broker.version, schedulingConfig: broker.schedulingConfig)
     }
 
     private func executeEmailConfirmation(
@@ -319,6 +311,17 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             )
         } catch {
             Logger.dataBrokerProtection.log("✉️ Can't update operation date after error: \(error)")
+        }
+    }
+
+    private func handleAttemptFailure(_ error: Error,
+                                      broker: DataBroker,
+                                      attemptNumber: Int,
+                                      schedulingConfig: DataBrokerScheduleConfig) async {
+        if attemptNumber == Self.maxRetries {
+            await handleMaxRetriesExceeded(brokerName: broker.name, version: broker.version, schedulingConfig: schedulingConfig)
+        } else {
+            await handleError(error, brokerName: broker.name, version: broker.version, schedulingConfig: schedulingConfig)
         }
     }
 

@@ -46,6 +46,7 @@ final class EmailConfirmationJobTests: XCTestCase {
             attemptID: "test-attempt",
             emailConfirmationLink: nil
         )
+        mockDatabase.brokerToReturn = DataBroker.mock
 
         sut = EmailConfirmationJob(
             jobData: jobData,
@@ -64,6 +65,8 @@ final class EmailConfirmationJobTests: XCTestCase {
 
         XCTAssertTrue(mockErrorDelegate.didCallError)
         XCTAssertTrue(mockErrorDelegate.lastError is EmailError)
+        XCTAssertFalse(mockDatabase.wasIncrementAttemptCountCalled)
+        XCTAssertEqual(mockDatabase.incrementAttemptCountCallCount, 0)
     }
 
     func testRunJobWithDataNotInDatabase() async {
@@ -95,6 +98,8 @@ final class EmailConfirmationJobTests: XCTestCase {
 
         XCTAssertTrue(mockErrorDelegate.didCallError)
         XCTAssertEqual(mockErrorDelegate.lastError as? DataBrokerProtectionError, .dataNotInDatabase)
+        XCTAssertFalse(mockDatabase.wasIncrementAttemptCountCalled)
+        XCTAssertEqual(mockDatabase.incrementAttemptCountCallCount, 0)
     }
 
     func testSuccessfulJobDeletesEmailConfirmationAndAddHistoryEvent() async {
@@ -116,8 +121,8 @@ final class EmailConfirmationJobTests: XCTestCase {
             showWebView: false,
             errorDelegate: mockErrorDelegate,
             jobDependencies: mockDependencies,
-            webRunner: mockWebRunner,
-            webViewHandler: mockWebViewHandler
+            webRunnerForTesting: mockWebRunner,
+            webViewHandlerForTesting: mockWebViewHandler
         )
 
         let expectation = XCTestExpectation(description: "Job should complete successfully")
@@ -130,8 +135,8 @@ final class EmailConfirmationJobTests: XCTestCase {
 
         XCTAssertFalse(mockErrorDelegate.didCallError)
 
-        XCTAssertFalse(mockDatabase.wasIncrementAttemptCountCalled)
-        XCTAssertEqual(mockDatabase.incrementAttemptCountCallCount, 0)
+        XCTAssertTrue(mockDatabase.wasIncrementAttemptCountCalled)
+        XCTAssertEqual(mockDatabase.incrementAttemptCountCallCount, 1)
 
         XCTAssertTrue(mockDatabase.wasDeleteOptOutEmailConfirmationCalled)
         XCTAssertEqual(mockDatabase.lastDeletedEmailConfirmationBrokerId, 1)
@@ -148,55 +153,7 @@ final class EmailConfirmationJobTests: XCTestCase {
         XCTAssertEqual(mockWebRunner.attemptCount, 1)
     }
 
-    func testRetryOnFailure() async {
-        let jobData = OptOutEmailConfirmationJobData(
-            brokerId: 1,
-            profileQueryId: 1,
-            extractedProfileId: 1,
-            generatedEmail: "test@example.com",
-            attemptID: "test-attempt",
-            emailConfirmationLink: "https://example.com/confirm",
-            emailConfirmationAttemptCount: 0
-        )
-
-        mockDatabase.brokerToReturn = DataBroker.mockWithEmailConfirmation
-        mockDatabase.profileQueryToReturn = ProfileQuery.mock
-        mockDatabase.extractedProfileToReturn = ExtractedProfile.mockWithoutRemovedDate
-
-        mockWebRunner.shouldOptOutThrow = { $0 == 1 }
-
-        sut = EmailConfirmationJob(
-            jobData: jobData,
-            showWebView: false,
-            errorDelegate: mockErrorDelegate,
-            jobDependencies: mockDependencies,
-            webRunner: mockWebRunner,
-            webViewHandler: mockWebViewHandler,
-            waitTimeBeforeRetry: .seconds(0)
-        )
-
-        let expectation = XCTestExpectation(description: "Job should retry once and succeed")
-
-        sut.completionBlock = {
-            expectation.fulfill()
-        }
-
-        sut.start()
-        await fulfillment(of: [expectation], timeout: 0.1)
-
-        XCTAssertFalse(mockErrorDelegate.didCallError)
-
-        XCTAssertTrue(mockDatabase.wasIncrementAttemptCountCalled)
-        XCTAssertEqual(mockDatabase.incrementAttemptCountCallCount, 1)
-
-        XCTAssertTrue(mockDatabase.wasDeleteOptOutEmailConfirmationCalled)
-        XCTAssertTrue(mockDatabase.wasAddHistoryEventCalled)
-        XCTAssertEqual(mockDatabase.lastAddedHistoryEvent?.type, .optOutRequested)
-
-        XCTAssertEqual(mockWebRunner.attemptCount, 2)
-    }
-
-    func testMaxRetriesExceeded() async {
+    func testFailedJobIncrementsAttemptCount() async {
         let jobData = OptOutEmailConfirmationJobData(
             brokerId: 1,
             profileQueryId: 1,
@@ -218,12 +175,12 @@ final class EmailConfirmationJobTests: XCTestCase {
             showWebView: false,
             errorDelegate: mockErrorDelegate,
             jobDependencies: mockDependencies,
-            webRunner: mockWebRunner,
-            webViewHandler: mockWebViewHandler,
-            waitTimeBeforeRetry: .seconds(0)
+            webRunnerForTesting: mockWebRunner,
+            webViewHandlerForTesting: mockWebViewHandler
         )
 
-        let expectation = XCTestExpectation(description: "Job should fail after max retries")
+        let expectation = XCTestExpectation(description: "Job should fail")
+
         sut.completionBlock = {
             expectation.fulfill()
         }
@@ -233,12 +190,52 @@ final class EmailConfirmationJobTests: XCTestCase {
 
         XCTAssertTrue(mockErrorDelegate.didCallError)
 
-        XCTAssertEqual(mockDatabase.incrementAttemptCountCallCount, 2)
+        XCTAssertTrue(mockDatabase.wasIncrementAttemptCountCalled)
+        XCTAssertEqual(mockDatabase.incrementAttemptCountCallCount, 1)
+
+        XCTAssertFalse(mockDatabase.wasDeleteOptOutEmailConfirmationCalled)
+        XCTAssertFalse(mockDatabase.wasAddHistoryEventCalled)
+    }
+
+    func testMaxRetriesExceeded() async {
+        let jobData = OptOutEmailConfirmationJobData(
+            brokerId: 1,
+            profileQueryId: 1,
+            extractedProfileId: 1,
+            generatedEmail: "test@example.com",
+            attemptID: "test-attempt",
+            emailConfirmationLink: "https://example.com/confirm",
+            emailConfirmationAttemptCount: 2
+        )
+
+        mockDatabase.brokerToReturn = DataBroker.mockWithEmailConfirmation
+        mockDatabase.profileQueryToReturn = ProfileQuery.mock
+        mockDatabase.extractedProfileToReturn = ExtractedProfile.mockWithoutRemovedDate
+        mockWebRunner.shouldOptOutThrow = { _ in true }
+
+        sut = EmailConfirmationJob(
+            jobData: jobData,
+            showWebView: false,
+            errorDelegate: mockErrorDelegate,
+            jobDependencies: mockDependencies,
+            webRunnerForTesting: mockWebRunner,
+            webViewHandlerForTesting: mockWebViewHandler
+        )
+
+        let expectation = XCTestExpectation(description: "Job should handle max retries exceeded")
+        sut.completionBlock = {
+            expectation.fulfill()
+        }
+
+        sut.start()
+        await fulfillment(of: [expectation], timeout: 0.1)
+
+        XCTAssertTrue(mockErrorDelegate.didCallError)
+
+        XCTAssertEqual(mockDatabase.incrementAttemptCountCallCount, 1)
         XCTAssertTrue(mockDatabase.wasDeleteOptOutEmailConfirmationCalled)
         XCTAssertTrue(mockDatabase.wasAddHistoryEventCalled)
         XCTAssertEqual(mockDatabase.lastAddedHistoryEvent?.type, .error(error: .emailError(.retriesExceeded)))
-
-        XCTAssertEqual(mockWebRunner.attemptCount, 3)
     }
 }
 

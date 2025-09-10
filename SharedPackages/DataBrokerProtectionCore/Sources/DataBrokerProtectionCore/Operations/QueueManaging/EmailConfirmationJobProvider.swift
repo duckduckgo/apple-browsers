@@ -33,9 +33,12 @@ public final class EmailConfirmationJobProvider: EmailConfirmationJobProviding {
                                             errorDelegate: EmailConfirmationErrorDelegate,
                                             jobDependencies: EmailConfirmationJobDependencyProviding) throws -> [EmailConfirmationJob] {
         let confirmations = try jobDependencies.database.fetchOptOutEmailConfirmationsWithLink()
-        Logger.dataBrokerProtection.log("✉️ [EmailConfirmationJobProvider] Creating \(confirmations.count, privacy: .public) email confirmation jobs")
+        Logger.dataBrokerProtection.log("✉️ [EmailConfirmationJobProvider] Fetched \(confirmations.count, privacy: .public) email confirmations")
 
-        let sorted = confirmations.sorted { lhs, rhs in
+        let validConfirmations = confirmations.filter { $0.emailConfirmationAttemptCount < 3 }
+        Logger.dataBrokerProtection.log("✉️ [EmailConfirmationJobProvider] \(validConfirmations.count, privacy: .public) confirmations are below max retry limit")
+
+        let sorted = validConfirmations.sorted { lhs, rhs in
             let date1 = lhs.emailConfirmationLinkObtainedOnBEDate ?? .distantFuture
             let date2 = rhs.emailConfirmationLinkObtainedOnBEDate ?? .distantFuture
             return date1 < date2

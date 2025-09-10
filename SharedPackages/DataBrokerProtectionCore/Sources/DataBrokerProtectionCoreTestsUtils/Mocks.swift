@@ -1754,7 +1754,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
         self.database = MockDatabase()
         self.contentScopeProperties = ContentScopeProperties.mock
         self.privacyConfig = PrivacyConfigurationManagingMock()
-        self.executionConfig = BrokerJobExecutionConfig()
+        self.executionConfig = BrokerJobExecutionConfig(intervalBetweenSameBrokerJobs: 0)
         self.notificationCenter = .default
         self.pixelHandler = MockPixelHandler()
         self.eventsHandler = MockOperationEventsHandler()

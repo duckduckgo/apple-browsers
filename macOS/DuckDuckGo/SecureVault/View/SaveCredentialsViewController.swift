@@ -554,7 +554,7 @@ final class SaveCredentialsViewController: NSViewController {
         }
     }
 
-    private func firePixel(for action: Action, confirmedPixel: PixelKitEventV2, dismissedPixel: PixelKitEventV2, backfilled: Bool) {
+    private func firePixel(for action: Action, confirmedPixel: PixelKitEvent, dismissedPixel: PixelKitEvent, backfilled: Bool) {
         let pixel = action == .confirmed ? confirmedPixel : dismissedPixel
         PixelKit.fire(pixel, withAdditionalParameters: [backfilledKey: String(describing: backfilled)])
     }

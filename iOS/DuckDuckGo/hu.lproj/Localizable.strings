@@ -100,6 +100,9 @@
 /* Refresh action - button shown in alert */
 "action.title.refresh" = "Frissítés";
 
+/* Refresh page action */
+"action.title.refreshPage" = "Oldal újratöltése";
+
 /* Remove Favorite action */
 "action.title.remove.favorite" = "Kedvenc eltávolítása";
 
@@ -2934,6 +2937,15 @@
 
 /* Explanation in Settings how the private search feature works */
 "settings.private.search.explanation" = "A DuckDuckGo Private Search az alapértelmezett keresőmotor, így nyomon követés nélkül kereshetsz az interneten.";
+
+/* Settings screen option to set refresh button in the address bar */
+"settings.refreshButton.position.addressBar" = "Címsor";
+
+/* Settings screen option to set refresh button in the menu */
+"settings.refreshButton.position.menu" = "Menü";
+
+/* Settings screen cell text for setting the refresh button position. */
+"settings.refreshButton.position.title" = "Újratöltési gomb elhelyezkedése";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Keresési beállítások";

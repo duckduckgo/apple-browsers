@@ -28,7 +28,7 @@ public extension PixelKit {
     }
 }
 
-public enum Event: PixelKitEventV2 {
+public enum Event: PixelKitEvent {
     case errorPageShown(category: ThreatKind, clientSideHit: Bool?)
     case visitSite(category: ThreatKind)
     case iframeLoaded(category: ThreatKind)
@@ -89,24 +89,4 @@ public enum Event: PixelKitEventV2 {
             ]
         }
     }
-
-    public var error: (any Error)? {
-        switch self {
-        case .errorPageShown:
-            return nil
-        case .visitSite:
-            return nil
-        case .iframeLoaded:
-            return nil
-        case .settingToggled:
-            return nil
-        case .matchesApiTimeout:
-            return nil
-        case .matchesApiFailure(let error):
-            return error
-        case .failedToDownloadInitialDataSets:
-            return nil
-        }
-    }
-
 }

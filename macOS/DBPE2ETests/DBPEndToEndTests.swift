@@ -72,7 +72,7 @@ final class DBPEndToEndTests: XCTestCase {
     }
 
     /*
-     Tests the entire PIR process with both active and removed brokers, broken down into 9 steps.
+     Tests the entire PIR process with both removed and non-removed brokers, broken down into 9 steps.
      Kicks the process off by simulating a save profile message from the FE
      From there it performs a series of various introspections to check each step
      E.g. checking correct pixels are fired, checking operation statuses and events in the DB etc.

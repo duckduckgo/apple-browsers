@@ -121,10 +121,11 @@ private extension ReportingService {
     
     private func reportUserNotificationAuthStatus() {
         Task.detached(priority: .utility) {
-            let statusString = await UNUserNotificationCenter.current().authorizationStatus().stringValue
-            guard statusString != "unknown" else { return }
+            let status = await UNUserNotificationCenter.current().authorizationStatus()
+            // We only care about authorized or denined at the moment for provisional notification
+            guard status == .authorized || status == .denied else { return }
             DailyPixel.fire(pixel: .userNotificationAuthorizationStatusDaily, withAdditionalParameters: [
-                "status": statusString
+                "status": status.stringValue
             ])
         }
     }

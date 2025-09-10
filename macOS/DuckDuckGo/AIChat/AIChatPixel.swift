@@ -97,14 +97,10 @@ enum AIChatPixel: PixelKitEvent {
     case aiChatSummarizeSourceLinkClicked
 
     /// Event Trigger: User adds page context to the prompt using a button in the input field
-    ///
-    /// Note: This pixel is for internal use only and needs to be privacy-triaged before being released publicly
-    case aiChatPageContextAdded
+    case aiChatPageContextAdded(automaticEnabled: Bool)
 
     /// Event Trigger: User removes page context from the prompt using a button in the input field
-    ///
-    /// Note: This pixel is for internal use only and needs to be privacy-triaged before being released publicly
-    case aiChatPageContextRemoved
+    case aiChatPageContextRemoved(automaticEnabled: Bool)
 
     // MARK: -
 
@@ -171,9 +167,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSettingsDisplayed,
                 .aiChatSidebarExpanded,
                 .aiChatSidebarSettingChanged,
-                .aiChatSummarizeSourceLinkClicked,
-                .aiChatPageContextAdded,
-                .aiChatPageContextRemoved:
+                .aiChatSummarizeSourceLinkClicked:
             return nil
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
@@ -183,6 +177,8 @@ enum AIChatPixel: PixelKitEvent {
             return ["source": source.rawValue]
         case .aiChatSummarizeText(let source):
             return ["source": source.rawValue]
+        case .aiChatPageContextAdded(let automaticEnabled), .aiChatPageContextRemoved(let automaticEnabled):
+            return ["automaticEnabled": String(automaticEnabled)]
         }
     }
 

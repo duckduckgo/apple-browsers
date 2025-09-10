@@ -178,7 +178,13 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         guard let payload: TogglePageContextTelemetry = DecodableHelper.decode(from: params) else {
             return nil
         }
-        pixelFiring?.fire(payload.enabled ? AIChatPixel.aiChatPageContextAdded : AIChatPixel.aiChatPageContextRemoved, frequency: .dailyAndStandard)
+        let pixel: PixelKitEvent = {
+            if payload.enabled {
+                return AIChatPixel.aiChatPageContextAdded(automaticEnabled: storage.shouldAutomaticallySendPageContext)
+            }
+            return AIChatPixel.aiChatPageContextRemoved(automaticEnabled: storage.shouldAutomaticallySendPageContext)
+        }()
+        pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
         return nil
     }
 }

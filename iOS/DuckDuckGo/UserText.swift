@@ -1842,9 +1842,9 @@ public struct UserText {
 
     // MARK: - AI Features Experimental Picker Footer
     public static let settingsAiExperimentalPickerFooterDescription = NSLocalizedString(
-        "settings.ai.experimental.picker.footer",
-        value: "Try our experimental option to ask Duck.ai directly from the Address Bar.",
-        comment: "Footer under the AI experimental picker, descriptive sentence without link"
+        "settings.ai.new.picker.footer",
+        value: "Try our new option to ask Duck.ai directly from the Address Bar.",
+        comment: "Footer under the AI picker, descriptive sentence without link"
     )
 
     // MARK: - AI Experimental Picker
@@ -1859,9 +1859,7 @@ public struct UserText {
     public static let newAddressBarPickerConfirm = NSLocalizedString("new.address.bar.picker.confirm", value: "Confirm", comment: "Confirm button for the new address bar picker")
     public static let newAddressBarPickerNotNow = NSLocalizedString("new.address.bar.picker.not.now", value: "Not Now", comment: "Not now button for the new address bar picker")
     public static let newAddressBarPickerFooter = NSLocalizedString("new.address.bar.picker.footer", value: "Adjust in Settings > AI Features", comment: "Footer text for the new address bar picker")
-    public static let settingsAiExperimentalPickerDefault = NSLocalizedString("settings.ai.experimental.picker.default", value: "(Default)", comment: "Caption indicating the default option in the AI experimental picker")
     public static let settingsAiExperimentalPickerSearchAndDuckAI = NSLocalizedString("settings.ai.experimental.picker.search_and_duckai", value: "Search & Duck.ai", comment: "Title for the 'Search & Duck.ai' option in the AI experimental picker")
-    public static let settingsAiExperimentalPickerExperimental = NSLocalizedString("settings.ai.experimental.picker.experimental", value: "(Experimental)", comment: "Caption indicating the experimental option in the AI experimental picker")
 
     public enum MaliciousSiteProtectionSettings {
         public static let header = NSLocalizedString("malicious-site-protection.settings.header", value: "Site Safety Warnings", comment: "Header text for Malicious Site Protection settings")

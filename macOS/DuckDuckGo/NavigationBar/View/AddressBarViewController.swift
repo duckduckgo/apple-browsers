@@ -54,7 +54,7 @@ final class AddressBarViewController: NSViewController {
     }
 
     @IBOutlet var addressBarTextField: AddressBarTextField!
-    @IBOutlet var passiveTextField: NSTextField!
+    @IBOutlet var passiveTextField: PassiveAddressBarTextField!
     @IBOutlet var inactiveBackgroundView: ColorView!
     @IBOutlet var activeBackgroundView: ColorView!
     @IBOutlet var activeOuterBorderView: ColorView!
@@ -203,6 +203,8 @@ final class AddressBarViewController: NSViewController {
         setupAddressBarPlaceHolder()
         addressBarTextField.setAccessibilityIdentifier("AddressBarViewController.addressBarTextField")
 
+        passiveTextField.isSelectable = !isInPopUpWindow
+
         switchToTabBox.isHidden = true
         switchToTabLabel.attributedStringValue = SuggestionTableCellView.switchToTabAttributedString
 
@@ -244,6 +246,7 @@ final class AddressBarViewController: NSViewController {
             subscribeToFirstResponder()
         }
         addressBarTextField.tabCollectionViewModel = tabCollectionViewModel
+        passiveTextField.tabCollectionViewModel = tabCollectionViewModel
 
         subscribeToSelectedTabViewModel()
         subscribeToAddressBarValue()
@@ -254,6 +257,7 @@ final class AddressBarViewController: NSViewController {
     override func viewWillDisappear() {
         cancellables.removeAll()
         addressBarTextField.tabCollectionViewModel = nil
+        passiveTextField.tabCollectionViewModel = nil
     }
 
     override func viewDidLayout() {
@@ -303,7 +307,6 @@ final class AddressBarViewController: NSViewController {
                 tabViewModelCancellables.removeAll()
 
                 subscribeToTabContent()
-                subscribeToPassiveAddressBarString()
                 subscribeToProgressEvents()
 
                 // don't resign first responder on tab switching
@@ -329,17 +332,6 @@ final class AddressBarViewController: NSViewController {
         tabViewModel?.tab.$content
             .map { $0 == .newtab }
             .assign(to: \.isHomePage, onWeaklyHeld: self)
-            .store(in: &tabViewModelCancellables)
-    }
-
-    private func subscribeToPassiveAddressBarString() {
-        guard let tabViewModel else {
-            passiveTextField.stringValue = ""
-            return
-        }
-        tabViewModel.$passiveAddressBarAttributedString
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.attributedStringValue, onWeaklyHeld: passiveTextField)
             .store(in: &tabViewModelCancellables)
     }
 
@@ -467,7 +459,6 @@ final class AddressBarViewController: NSViewController {
         let isPassiveTextFieldHidden = isFirstResponder || mode.isEditing
         addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
         passiveTextField.isHidden = isPassiveTextFieldHidden ? true : false
-        passiveTextField.textColor = visualStyle.colorsProvider.textPrimaryColor
 
         updateShadowViewPresence(isFirstResponder)
         inactiveBackgroundView.backgroundColor = visualStyle.colorsProvider.inactiveAddressBarBackgroundColor
@@ -680,12 +671,13 @@ final class AddressBarViewController: NSViewController {
     }
 
     override func mouseEntered(with event: NSEvent) {
+        guard !isInPopUpWindow else { return }
         NSCursor.iBeam.set()
         super.mouseEntered(with: event)
     }
 
     override func mouseMoved(with event: NSEvent) {
-        guard event.window === self.view.window else { return }
+        guard event.window === self.view.window, !isInPopUpWindow else { return }
 
         let point = self.view.convert(event.locationInWindow, from: nil)
         let view = self.view.hitTest(point)

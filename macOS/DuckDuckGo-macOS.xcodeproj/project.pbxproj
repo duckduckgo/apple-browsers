@@ -2397,6 +2397,8 @@
 		847642EE2E570E5C00AA33EE /* WindowControllersManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847642EC2E570E5B00AA33EE /* WindowControllersManagerMock.swift */; };
 		847873DE2E02A32C00A8CB04 /* Logger+UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */; };
 		847873DF2E02A32C00A8CB04 /* Logger+UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */; };
+		84832D992E71C32100D01735 /* PassiveAddressBarTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84832D982E71C31A00D01735 /* PassiveAddressBarTextField.swift */; };
+		84832D9A2E71C32100D01735 /* PassiveAddressBarTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84832D982E71C31A00D01735 /* PassiveAddressBarTextField.swift */; };
 		848648A12C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
 		848648A22C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
 		84A03D2B2DBBE06B00A3685B /* DraggingDestinationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A03D2A2DBBE06700A3685B /* DraggingDestinationView.swift */; };
@@ -5018,6 +5020,7 @@
 		845B43332DB69F2C00D46001 /* SwiftObjectRetainCycleBreakerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftObjectRetainCycleBreakerTests.swift; sourceTree = "<group>"; };
 		846F4CD02E04829D00266DB7 /* TabContent+DisplayedFavicon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TabContent+DisplayedFavicon.swift"; sourceTree = "<group>"; };
 		847642EC2E570E5B00AA33EE /* WindowControllersManagerMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowControllersManagerMock.swift; sourceTree = "<group>"; };
+		84832D982E71C31A00D01735 /* PassiveAddressBarTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassiveAddressBarTextField.swift; sourceTree = "<group>"; };
 		848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarMenuViewController.swift; sourceTree = "<group>"; };
 		84A03D2A2DBBE06700A3685B /* DraggingDestinationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraggingDestinationView.swift; sourceTree = "<group>"; };
 		84A03D2D2DDC275200A3685B /* BookmarksBarVisibilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarVisibilityTests.swift; sourceTree = "<group>"; };
@@ -7243,19 +7246,17 @@
 		37EE55D72D5F197300D53C7C /* View */ = {
 			isa = PBXGroup;
 			children = (
-				BBFE94EA2E391421000D4920 /* NetworkProtectionButton.swift */,
-				BBFE94EB2E391421000D4920 /* NotificationDotProviding.swift */,
 				37EE55C42D5F197300D53C7C /* Animations */,
 				37EE55C52D5F197300D53C7C /* AddressBarButton.swift */,
-				31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */,
 				37EE55C62D5F197300D53C7C /* AddressBarButtonsViewController.swift */,
+				31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */,
 				37EE55C72D5F197300D53C7C /* AddressBarTextEditor.swift */,
 				37EE55C82D5F197300D53C7C /* AddressBarTextField.swift */,
 				37EE55C92D5F197300D53C7C /* AddressBarTextSelectionNavigation.swift */,
 				37EE55CA2D5F197300D53C7C /* AddressBarViewController.swift */,
 				37EE55CB2D5F197300D53C7C /* HomeButtonMenuFactory.swift */,
-				37EE55CC2D5F197300D53C7C /* MenuItemWithNotificationDot.swift */,
 				C149975C2DE8A04600FF8F0F /* MenuItemWithBadge.swift */,
+				37EE55CC2D5F197300D53C7C /* MenuItemWithNotificationDot.swift */,
 				37EE55CD2D5F197300D53C7C /* MoreOptionsMenu.swift */,
 				37EE55CE2D5F197300D53C7C /* MoreOptionsMenuButton.swift */,
 				37EE55CF2D5F197300D53C7C /* NavigationBar.storyboard */,
@@ -7263,6 +7264,9 @@
 				37EE55D12D5F197300D53C7C /* NavigationBarViewController.swift */,
 				37EE55D22D5F197300D53C7C /* NavigationButtonMenuDelegate.swift */,
 				37EE55D32D5F197300D53C7C /* NetPPopoverManagerMock.swift */,
+				BBFE94EA2E391421000D4920 /* NetworkProtectionButton.swift */,
+				BBFE94EB2E391421000D4920 /* NotificationDotProviding.swift */,
+				84832D982E71C31A00D01735 /* PassiveAddressBarTextField.swift */,
 				37EE55D42D5F197300D53C7C /* ShowToolbarsOnFullScreenMenuCoordinator.swift */,
 				37EE55D52D5F197300D53C7C /* ZoomPopover.swift */,
 				37EE55D62D5F197300D53C7C /* ZoomPopoverViewController.swift */,
@@ -13368,6 +13372,7 @@
 				C1858CD32C7C971D00C9BEAB /* FreemiumDBPFeature.swift in Sources */,
 				37A0BA1D2D7475BC00130447 /* HistoryViewTabOpening.swift in Sources */,
 				3706FBA2293F65D500E42796 /* GeolocationService.swift in Sources */,
+				84832D9A2E71C32100D01735 /* PassiveAddressBarTextField.swift in Sources */,
 				3706FBA3293F65D500E42796 /* FireproofingURLExtensions.swift in Sources */,
 				3169132A2BD2C7570051B46D /* DataBrokerProtectionErrorViewController.swift in Sources */,
 				1DDD3EC12B84F5D5004CBF2B /* PreferencesCookiePopupProtectionView.swift in Sources */,
@@ -14936,6 +14941,7 @@
 				85480FCF25D1AA22009424E3 /* ConfigurationStore.swift in Sources */,
 				AA3D531B27A2F57E00074EC1 /* Feedback.swift in Sources */,
 				4B0A63E8289DB58E00378EF7 /* FirefoxFaviconsReader.swift in Sources */,
+				84832D992E71C32100D01735 /* PassiveAddressBarTextField.swift in Sources */,
 				1E7E2E9029029A2A00C01B54 /* ContentBlockingRulesUpdateObserver.swift in Sources */,
 				4B8AC93926B48A5100879451 /* FirefoxLoginReader.swift in Sources */,
 				F18826902BC0105800D9AC4F /* PixelDataRecord.swift in Sources */,

@@ -100,6 +100,7 @@ final class MainMenu: NSMenu {
     let customConfigurationUrlMenuItem = NSMenuItem(title: "Last Update Time", action: nil)
     let configurationDateAndTimeMenuItem = NSMenuItem(title: "Configuration URL", action: nil)
     let autofillDebugScriptMenuItem = NSMenuItem(title: "Autofill Debug Script", action: #selector(MainMenu.toggleAutofillScriptDebugSettingsAction))
+    let contentScopeDebugModeMenuItem = NSMenuItem(title: "Content Scope Scripts Debug Mode", action: #selector(MainMenu.toggleContentScopeScriptDebugSettingsAction))
     let toggleWatchdogMenuItem = NSMenuItem(title: "Toggle Hang Watchdog", action: #selector(MainViewController.toggleWatchdog))
     let toggleWatchdogCrashMenuItem = NSMenuItem(title: "Crash on timeout", action: #selector(MainViewController.toggleWatchdogCrash))
 
@@ -501,6 +502,7 @@ final class MainMenu: NSMenu {
         updateInternalUserItem()
         updateRemoteConfigurationInfo()
         updateAutofillDebugScriptMenuItem()
+        updateContentScopeDebugModeMenuItem()
         updateShowToolbarsOnFullScreenMenuItem()
         updateWatchdogMenuItems()
         updateWebExtensionsMenuItem()
@@ -900,6 +902,8 @@ final class MainMenu: NSMenu {
         let menu = NSMenu(title: "")
         menu.addItem(autofillDebugScriptMenuItem
             .targetting(self))
+        menu.addItem(contentScopeDebugModeMenuItem
+            .targetting(self))
         menu.addItem(.separator())
         let exportLogsMenuItem = NSMenuItem(title: "Export Logs…", action: #selector(MainViewController.exportLogs))
         menu.addItem(exportLogsMenuItem)
@@ -918,6 +922,10 @@ final class MainMenu: NSMenu {
 
     private func updateAutofillDebugScriptMenuItem() {
         autofillDebugScriptMenuItem.state = AutofillPreferences().debugScriptEnabled ? .on : .off
+    }
+
+    private func updateContentScopeDebugModeMenuItem() {
+        contentScopeDebugModeMenuItem.state = ContentScopePreferences.shared.isDebugModeEnabled ? .on : .off
     }
 
     @MainActor
@@ -948,6 +956,12 @@ final class MainMenu: NSMenu {
         AutofillPreferences().debugScriptEnabled = !AutofillPreferences().debugScriptEnabled
         NotificationCenter.default.post(name: .autofillScriptDebugSettingsDidChange, object: nil)
         updateAutofillDebugScriptMenuItem()
+    }
+
+    @objc private func toggleContentScopeScriptDebugSettingsAction(_ sender: NSMenuItem) {
+        ContentScopePreferences.shared.isDebugModeEnabled = !ContentScopePreferences.shared.isDebugModeEnabled
+        NotificationCenter.default.post(name: .contentScopeDebugModeDidChange, object: nil)
+        updateContentScopeDebugModeMenuItem()
     }
 
     @MainActor

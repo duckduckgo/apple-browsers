@@ -2170,6 +2170,8 @@
 		7BBD45B22A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBD45B02A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift */; };
 		7BBE2B7B2B61663C00697445 /* NetworkProtectionProxy in Frameworks */ = {isa = PBXBuildFile; productRef = 7BBE2B7A2B61663C00697445 /* NetworkProtectionProxy */; };
 		7BC15A1C2E1917D6000062C8 /* VPNNotifications in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC15A1B2E1917D6000062C8 /* VPNNotifications */; };
+		7BC16BA92E724CF80016EE8E /* ContentScopePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BC16BA82E724CF80016EE8E /* ContentScopePreferences.swift */; };
+		7BC16BAA2E724CF80016EE8E /* ContentScopePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BC16BA82E724CF80016EE8E /* ContentScopePreferences.swift */; };
 		7BC26CA42DFC103D00E52480 /* VPN in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26CA32DFC103D00E52480 /* VPN */; };
 		7BC26CA62DFC104700E52480 /* VPN in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26CA52DFC104700E52480 /* VPN */; };
 		7BC26CA82DFC105400E52480 /* VPN in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26CA72DFC105400E52480 /* VPN */; };
@@ -5020,6 +5022,7 @@
 		7BB4BC692C5CD96200E06FC8 /* ActiveDomainPublisher.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActiveDomainPublisher.swift; sourceTree = "<group>"; };
 		7BB9F8E72DFC1AB700741690 /* VPN */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = VPN; path = ../SharedPackages/VPN; sourceTree = SOURCE_ROOT; };
 		7BBD45B02A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionDebugUtilities.swift; sourceTree = "<group>"; };
+		7BC16BA82E724CF80016EE8E /* ContentScopePreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentScopePreferences.swift; sourceTree = "<group>"; };
 		7BC5F7DF2D49044C0005B3D9 /* PreferencesUI-macOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "PreferencesUI-macOS"; sourceTree = "<group>"; };
 		7BC641142DD1FBD600272A9D /* UpdatesDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatesDebugMenu.swift; sourceTree = "<group>"; };
 		7BCB90C12C18626E008E3543 /* VPNControllerXPCClient+ConvenienceInitializers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VPNControllerXPCClient+ConvenienceInitializers.swift"; sourceTree = "<group>"; };
@@ -7254,6 +7257,7 @@
 				37CD54C727F2FDD100F1F7B9 /* AppearancePreferences.swift */,
 				37F09AD52DDE483100643A1B /* AppearancePreferencesMock.swift */,
 				37CD54C227F2FDD100F1F7B9 /* AutofillPreferencesModel.swift */,
+				7BC16BA82E724CF80016EE8E /* ContentScopePreferences.swift */,
 				3776582E27F82E62009A6B35 /* AutofillPreferences.swift */,
 				1D01A3D32B88CF7700FE8150 /* AccessibilityPreferences.swift */,
 				37CD54C127F2FDD100F1F7B9 /* DataClearingPreferences.swift */,
@@ -13202,6 +13206,7 @@
 				31C9ADE62AF0564500CEF57D /* WaitlistFeatureSetupHandler.swift in Sources */,
 				566B736D2BECC3C600FF1959 /* SyncPausedStateManaging.swift in Sources */,
 				B65211262B29A42E00B30633 /* BookmarkStoreMock.swift in Sources */,
+				7BC16BA92E724CF80016EE8E /* ContentScopePreferences.swift in Sources */,
 				3706FAF5293F65D500E42796 /* SafariVersionReader.swift in Sources */,
 				EE4624E52E69DB53001CD9E6 /* FeatureFlagger+Sync.swift in Sources */,
 				3706FAF6293F65D500E42796 /* LoginFaviconView.swift in Sources */,
@@ -15351,6 +15356,7 @@
 				B63ED0E526BB8FB900A9DAD1 /* SharingMenu.swift in Sources */,
 				AA4FF40C2624751A004E2377 /* GrammarFeaturesManager.swift in Sources */,
 				4B9DB0442A983B24000927DB /* WaitlistModalViewController.swift in Sources */,
+				7BC16BAA2E724CF80016EE8E /* ContentScopePreferences.swift in Sources */,
 				4B0AACAE28BC6FD0001038AC /* SafariFaviconsReader.swift in Sources */,
 				376E8C1A2D41186B00D5D2EC /* DefaultRecentActivityActionsHandler.swift in Sources */,
 				B6B3E0E12657EA7A0040E0A2 /* NSScreenExtension.swift in Sources */,

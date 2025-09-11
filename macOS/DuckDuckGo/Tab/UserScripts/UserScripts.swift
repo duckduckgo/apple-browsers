@@ -92,6 +92,7 @@ final class UserScripts: UserScriptsProvider {
                                            sessionKey: sessionKey,
                                            messageSecret: messageSecret,
                                            isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser,
+                                           debug: ContentScopePreferences.shared.isDebugModeEnabled,
                                            featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
                                            currentCohorts: currentCohorts)
         do {

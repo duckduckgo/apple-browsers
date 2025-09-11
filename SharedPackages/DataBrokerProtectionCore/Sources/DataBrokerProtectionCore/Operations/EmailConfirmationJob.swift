@@ -175,7 +175,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             }
         )
 
-        let webViewHandler = await DataBrokerProtectionWebViewHandler(
+        let webViewHandler = try await DataBrokerProtectionWebViewHandler(
             privacyConfig: jobDependencies.privacyConfig,
             prefs: jobDependencies.contentScopeProperties,
             delegate: webRunner,

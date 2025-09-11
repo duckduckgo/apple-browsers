@@ -87,7 +87,13 @@ final class AIChatTranslator: AIChatTranslating {
 
         if aiChatMenuConfig.shouldOpenAIChatInSidebar {
             if !aiChatSidebarPresenter.isSidebarOpenForCurrentTab() {
-                pixelFiring?.fire(AIChatPixel.aiChatSidebarOpened(source: .translation), frequency: .dailyAndStandard)
+                pixelFiring?.fire(
+                    AIChatPixel.aiChatSidebarOpened(
+                        source: .translation,
+                        shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue
+                    ),
+                    frequency: .dailyAndStandard
+                )
             }
             aiChatSidebarPresenter.presentSidebar(for: prompt)
         } else {

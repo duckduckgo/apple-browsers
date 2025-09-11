@@ -140,23 +140,22 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
 
     // MARK: - Exclusion Criteria Tests
 
-    func testShouldDisplayPicker_WhenAddressBarDisabled_ReturnsFalse() {
+    func testShouldDisplayPicker_WhenAddressBarSearchInputDisabled_ReturnsTrue() {
         // Given
         setupShowCriteriaMet()
-        mockAIChatSettings.isAIChatAddressBarUserSettingsEnabled = false
+        mockAIChatSettings.isAIChatSearchInputUserSettingsEnabled = false
 
         // When
         let result = validator.shouldDisplayNewAddressBarPicker()
 
         // Then
-        XCTAssertFalse(result)
+        XCTAssertTrue(result)
     }
 
-    func testShouldDisplayPicker_WhenExperimentalSettingsEnabled_ReturnsFalse() {
+    func testShouldDisplayPicker_WhenAddressBarSearchInputEnabled_ReturnsFalse() {
         // Given
         setupShowCriteriaMet()
-
-        testUserDefaults.set(true, forKey: "experimentalAIChatSettingsEnabled")
+        mockAIChatSettings.isAIChatSearchInputUserSettingsEnabled = true
 
         // When
         let result = validator.shouldDisplayNewAddressBarPicker()

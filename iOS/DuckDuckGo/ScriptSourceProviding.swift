@@ -21,6 +21,7 @@ import Foundation
 import Core
 import Combine
 import BrowserServicesKit
+import enum UserScript.UserScriptError
 
 protocol ScriptSourceProviding {
 
@@ -89,11 +90,18 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     
     private static func makeAutofillSource(privacyConfigurationManager: PrivacyConfigurationManaging,
                                            properties: ContentScopeProperties) -> AutofillUserScriptSourceProvider {
-        return DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
-                                                     properties: properties,
-                                                     isDebug: AppUserDefaults().autofillDebugScriptEnabled)
-        .withJSLoading()
-        .build()
+        do {
+            return try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
+                                                             properties: properties,
+                                                             isDebug: AppUserDefaults().autofillDebugScriptEnabled)
+            .withJSLoading()
+            .build()
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to build DefaultAutofillSourceProvider: \(error)")
+        }
     }
     
     private static func buildContentBlockerRulesConfig(contentBlockingManager: ContentBlockerRulesManagerProtocol,
@@ -102,11 +110,18 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         let currentMainRules = contentBlockingManager.currentMainRules
         let privacyConfig = privacyConfigurationManager.privacyConfig
 
-        return DefaultContentBlockerUserScriptConfig(privacyConfiguration: privacyConfig,
-                                                     trackerData: currentMainRules?.trackerData,
-                                                     ctlTrackerData: nil,
-                                                     tld: AppDependencyProvider.shared.storageCache.tld,
-                                                     trackerDataManager: ContentBlocking.shared.trackerDataManager)
+        do {
+            return try DefaultContentBlockerUserScriptConfig(privacyConfiguration: privacyConfig,
+                                                             trackerData: currentMainRules?.trackerData,
+                                                             ctlTrackerData: nil,
+                                                             tld: AppDependencyProvider.shared.storageCache.tld,
+                                                             trackerDataManager: ContentBlocking.shared.trackerDataManager)
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to initialize DefaultContentBlockerUserScriptConfig: \(error)")
+        }
     }
 
     private static func buildSurrogatesConfig(contentBlockingManager: ContentBlockerRulesManagerProtocol,
@@ -115,15 +130,22 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         let surrogates = FileStore().loadAsString(for: .surrogates) ?? ""
         let currentMainRules = contentBlockingManager.currentMainRules
 
-        let surrogatesConfig = DefaultSurrogatesUserScriptConfig(privacyConfig: privacyConfigurationManager.privacyConfig,
-                                                                 surrogates: surrogates,
-                                                                 trackerData: currentMainRules?.trackerData,
-                                                                 encodedSurrogateTrackerData: currentMainRules?.encodedTrackerData,
-                                                                 trackerDataManager: ContentBlocking.shared.trackerDataManager,
-                                                                 tld: AppDependencyProvider.shared.storageCache.tld,
-                                                                 isDebugBuild: isDebugBuild)
+        do {
+            let surrogatesConfig = try DefaultSurrogatesUserScriptConfig(privacyConfig: privacyConfigurationManager.privacyConfig,
+                                                                         surrogates: surrogates,
+                                                                         trackerData: currentMainRules?.trackerData,
+                                                                         encodedSurrogateTrackerData: currentMainRules?.encodedTrackerData,
+                                                                         trackerDataManager: ContentBlocking.shared.trackerDataManager,
+                                                                         tld: AppDependencyProvider.shared.storageCache.tld,
+                                                                         isDebugBuild: isDebugBuild)
 
-        return surrogatesConfig
+            return surrogatesConfig
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to initialize DefaultSurrogatesUserScriptConfig: \(error)")
+        }
     }
 
     private static func generateCurrentCohorts(experimentManager: ContentScopeExperimentsManaging) -> [ContentScopeExperimentData] {

@@ -21,7 +21,7 @@ import PixelKit
 
 struct DataBrokerProtectionLoginItemPixels {
 
-    static func fire(pixel: PixelKitEventV2, frequency: PixelKit.Frequency) {
+    static func fire(pixel: PixelKitEvent, frequency: PixelKit.Frequency) {
 
         DispatchQueue.main.async { // delegateTyped needs to be called in the main thread
             let isInternalUser = NSApp.delegateTyped.internalUserDecider.isInternalUser

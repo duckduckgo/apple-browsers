@@ -423,14 +423,16 @@ class MainMenuTests: XCTestCase {
     }
 }
 
-private class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
+class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplayNewTabPageShortcut = false
     var shouldDisplayApplicationMenuShortcut = false
     var shouldDisplayAddressBarShortcut = false
     var shouldDisplayAnyAIChatFeature = false
     var shouldOpenAIChatInSidebar = false
     var shouldDisplaySummarizationMenuItem = false
-    var isPageContextEnabled = false
+    var shouldDisplayTranslationMenuItem = false
+    var shouldAutomaticallySendPageContext = false
+    var shouldAutomaticallySendPageContextTelemetryValue: Bool?
 
     var valuesChangedPublisher: PassthroughSubject<Void, Never> {
         return PassthroughSubject<Void, Never>()

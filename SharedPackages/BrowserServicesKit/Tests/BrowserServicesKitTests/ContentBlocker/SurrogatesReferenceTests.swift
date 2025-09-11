@@ -206,26 +206,30 @@ final class SurrogatesReferenceTests: XCTestCase {
                                     configuration: configuration)
             webView.navigationDelegate = self.navigationDelegateMock
 
-            let config = TestSchemeSurrogatesUserScriptConfig(privacyConfig: privacyConfig,
-                                                              surrogates: surrogates,
-                                                              trackerData: trackerData,
-                                                              encodedSurrogateTrackerData: encodedTrackerData,
-                                                              tld: self.tld,
-                                                              isDebugBuild: true)
+            do {
+                let config = try TestSchemeSurrogatesUserScriptConfig(privacyConfig: privacyConfig,
+                                                                      surrogates: surrogates,
+                                                                      trackerData: trackerData,
+                                                                      encodedSurrogateTrackerData: encodedTrackerData,
+                                                                      tld: self.tld,
+                                                                      isDebugBuild: true)
 
-            let userScript = SurrogatesUserScript(configuration: config)
-            userScript.delegate = self.userScriptDelegateMock
+                let userScript = SurrogatesUserScript(configuration: config)
+                userScript.delegate = self.userScriptDelegateMock
 
-            for messageName in userScript.messageNames {
-                configuration.userContentController.addScriptMessageHandler(userScript, contentWorld: .page, name: messageName)
+                for messageName in userScript.messageNames {
+                    configuration.userContentController.addScriptMessageHandler(userScript, contentWorld: .page, name: messageName)
+                }
+
+                configuration.userContentController.addUserScript(WKUserScript(source: userScript.source,
+                                                                               injectionTime: .atDocumentStart,
+                                                                               forMainFrameOnly: false))
+                configuration.userContentController.add(rules)
+
+                completion(webView)
+            } catch {
+                XCTFail("Failed to initialize TestSchemeSurrogatesUserScriptConfig: \(error)")
             }
-
-            configuration.userContentController.addUserScript(WKUserScript(source: userScript.source,
-                                                                           injectionTime: .atDocumentStart,
-                                                                           forMainFrameOnly: false))
-            configuration.userContentController.add(rules)
-
-            completion(webView)
         }
     }
 }

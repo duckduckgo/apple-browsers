@@ -47,6 +47,9 @@ protocol SwitchBarHandling: AnyObject {
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> { get }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { get }
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { get }
+    
+    // Provide toggle mode parameters. Used in pixels.
+    var modeParameters: [String: String] { get }
 
     // MARK: - Methods
     func updateCurrentText(_ text: String)
@@ -85,6 +88,10 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     var isVoiceSearchEnabled: Bool {
         voiceSearchHelper.isVoiceSearchEnabled
+    }
+    
+    var modeParameters: [String: String] {
+        ["mode": currentToggleState.rawValue]
     }
 
     var currentTextPublisher: AnyPublisher<String, Never> {
@@ -168,7 +175,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         saveToggleState()
         
         if isStateChanging {
-            Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched)
+            fireModeSwitchedPixel(to: state)
         }
     }
 
@@ -247,5 +254,17 @@ final class SwitchBarHandler: SwitchBarHandling {
     private static func resetSessionFlags() {
         hasUsedSearchInSession = false
         hasUsedAIChatInSession = false
+    }
+    
+    // MARK: - Pixels
+    
+    private func fireModeSwitchedPixel(to state: TextEntryMode) {
+        let direction = state == .search ? "to_search" : "to_duckai"
+        let hadText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let parameters = [
+            "direction": direction,
+            "had_text": String(hadText)
+        ]
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched, withAdditionalParameters: parameters)
     }
 }

@@ -123,14 +123,14 @@ final class TestSchemeContentBlockerUserScriptConfig: ContentBlockerUserScriptCo
     public init(privacyConfiguration: PrivacyConfiguration,
                 trackerData: TrackerData?,
                 ctlTrackerData: TrackerData?,
-                tld: TLD) {
+                tld: TLD) throws {
         self.privacyConfiguration = privacyConfiguration
         self.trackerData = trackerData
         self.ctlTrackerData = ctlTrackerData
         self.tld = tld
 
         // UserScripts contain TrackerAllowlist rules in form of regular expressions - we need to ensure test scheme is matched instead of http/https
-        let orginalSource = ContentBlockerRulesUserScript.generateSource(privacyConfiguration: privacyConfiguration)
+        let orginalSource = try ContentBlockerRulesUserScript.generateSource(privacyConfiguration: privacyConfiguration)
         source = orginalSource.replacingOccurrences(of: "http", with: "test")
     }
 }
@@ -150,7 +150,7 @@ public class TestSchemeSurrogatesUserScriptConfig: SurrogatesUserScriptConfig {
                 trackerData: TrackerData?,
                 encodedSurrogateTrackerData: String?,
                 tld: TLD,
-                isDebugBuild: Bool) {
+                isDebugBuild: Bool) throws {
 
         self.privacyConfig = privacyConfig
         self.surrogates = surrogates
@@ -159,7 +159,7 @@ public class TestSchemeSurrogatesUserScriptConfig: SurrogatesUserScriptConfig {
         self.tld = tld
 
         // UserScripts contain TrackerAllowlist rules in form of regular expressions - we need to ensure test scheme is matched instead of http/https
-        let orginalSource = SurrogatesUserScript.generateSource(privacyConfiguration: privacyConfig,
+        let orginalSource = try SurrogatesUserScript.generateSource(privacyConfiguration: privacyConfig,
                                                                 surrogates: surrogates,
                                                                 encodedSurrogateTrackerData: encodedSurrogateTrackerData,
                                                                 isDebugBuild: isDebugBuild)

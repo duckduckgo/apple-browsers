@@ -108,9 +108,13 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 }
 
                 task = Task {
-                    await initialize(handler: webViewHandler,
-                                     isFakeBroker: context.dataBroker.isFakeBroker,
-                                     showWebView: showWebView)
+                    do {
+                        try await initialize(handler: webViewHandler,
+                                         isFakeBroker: context.dataBroker.isFakeBroker,
+                                         showWebView: showWebView)
+                    } catch {
+                        failed(with: error)
+                    }
 
                     if let optOutStep = context.dataBroker.optOutStep() {
                         if let actionsHandler = actionsHandler {

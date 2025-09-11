@@ -3840,9 +3840,9 @@ extension TabViewController: SERPSettingsUserScriptDelegate {
         }
     }
     
-    func serpSettingsUserScriptDidRequestToOpenDuckAISettings(_ userScript: SERPSettingsUserScript) {
+    func serpSettingsUserScript(_ userScript: SERPSettingsUserScript, didRequestToOpenAIFeaturesSettingsWithSearchAssistSettingsHidden searchAssistSettingsHidden: Bool) {
         guard let mainVC = parent as? MainViewController else { return }
-        mainVC.segueToSettingsAIChat {
+        mainVC.segueToSettingsAIChat(shouldShowSearchAssistSettings: !searchAssistSettingsHidden) {
             mainVC.closeTab(self.tabModel)
             mainVC.showBars()
         }

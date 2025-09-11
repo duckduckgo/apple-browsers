@@ -49,7 +49,7 @@ final class SettingsViewModel: ObservableObject {
     let privacyProDataReporter: PrivacyProDataReporting?
     let textZoomCoordinator: TextZoomCoordinating
     let aiChatSettings: AIChatSettingsProvider
-    let serpSettings: SERPSettingsProvider
+    let serpSettings: SERPSettingsProviding
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     let themeManager: ThemeManaging
     var experimentalAIChatManager: ExperimentalAIChatManager
@@ -125,6 +125,7 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var isUpdatedAIFeaturesSettingsEnabled: Bool {
+//        return false
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
     
@@ -538,7 +539,7 @@ final class SettingsViewModel: ObservableObject {
          privacyProDataReporter: PrivacyProDataReporting,
          textZoomCoordinator: TextZoomCoordinating,
          aiChatSettings: AIChatSettingsProvider,
-         serpSettings: SERPSettingsProvider,
+         serpSettings: SERPSettingsProviding,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
          themeManager: ThemeManaging = ThemeManager.shared,
          experimentalAIChatManager: ExperimentalAIChatManager,
@@ -877,7 +878,9 @@ extension SettingsViewModel {
         Pixel.fire(pixel: .settingsOpenAssistSettings)
         let url = URL.assistSettings.appendingParameter(name: SERPSettingsConstants.returnParameterKey,
                                                         value: SERPSettingsConstants.aiFeatures)
-        urlOpener.open(url)
+//        urlOpener.open(url)
+        #warning("temp")
+        urlOpener.open(URL(string: "https://bhall.duck.co")!)
     }
 
     func openAIChat() {
@@ -1350,10 +1353,11 @@ extension SettingsViewModel {
         )
     }
     
+    #warning("Are we staying here with Bool or Bool?")
     var serpSettingsFollowUpQuestionsBinding: Binding<Bool> {
         Binding<Bool>(
             get: {
-                self.serpSettings.isAllowFollowUpQuestionsEnabled },
+                self.serpSettings.isAllowFollowUpQuestionsEnabled ?? true },
             set: { newValue in
                 self.serpSettings.enableAllowFollowUpQuestions(enable: newValue)
             }

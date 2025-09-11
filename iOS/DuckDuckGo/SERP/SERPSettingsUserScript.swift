@@ -23,9 +23,10 @@ import Foundation
 import WebKit
 
 public enum SERPSettingsUserScriptMessages: String, CaseIterable {
-
     case openNativeSettings
-
+    case updateNativeSettings
+    case getNativeSettings
+    case nativeSettingsDidChange
 }
 
 
@@ -34,8 +35,20 @@ public enum SERPSettingsUserScriptMessages: String, CaseIterable {
 protocol SERPSettingsUserScriptDelegate: AnyObject {
 
     func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript)
-    func serpSettingsUserScriptDidRequestToOpenDuckAISettings(_ userScript: SERPSettingsUserScript)
+    func serpSettingsUserScript(_ userScript: SERPSettingsUserScript, didRequestToOpenAIFeaturesSettingsWithSearchAssistSettingsHidden searchAssistSettingsHidden: Bool)
+}
 
+public struct SERPUserSettings: Codable {
+    public let duckAI: Bool?
+    
+    public init(provider: SERPSettingsProviding) {
+        #warning("if needs migration = true, send empty {}/nil/or flag -- to confirm")
+        self.duckAI = provider.isAllowFollowUpQuestionsEnabled
+    }
+    
+    private enum CodingKeys: String, CodingKey {
+        case duckAI = "kbg"
+    }
 }
 
 enum SERPSettingsConstants {
@@ -59,12 +72,20 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
     private(set) var messageOriginPolicy: MessageOriginPolicy
 
     let featureName: String = "serpSettings"
+    private let serpSettingsProvider: SERPSettingsProviding
 
     // MARK: - Initialization
 
-    override init() {
+    init(serpSettingsProvider: SERPSettingsProviding) {
+        self.serpSettingsProvider = serpSettingsProvider
         self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules())
         super.init()
+        
+        NotificationCenter.default.addObserver(forName: .aiChatSettingsChanged,
+                                               object: nil,
+                                               queue: .main) { _ in
+            self.nativeSettingsDidChange()
+        }
     }
 
     private static func buildMessageOriginRules() -> [HostnameMatchingRule] {
@@ -92,7 +113,20 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
         switch message {
         case .openNativeSettings:
             return openNativeSettings
+        case .updateNativeSettings:
+            return updateNativeSettings
+        case .getNativeSettings:
+            return getNativeSettings
+        case .nativeSettingsDidChange:
+            // This method is not called by SERP, return nil in this case.
+            return nil
         }
+    }
+    
+    // step 1
+    @MainActor
+    func getNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
+        SERPUserSettings(provider: serpSettingsProvider)
     }
 
     @MainActor
@@ -101,9 +135,41 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
         if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.privateSearch {
             delegate?.serpSettingsUserScriptDidRequestToOpenPrivacySettings(self)
         } else if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.aiFeatures {
-            delegate?.serpSettingsUserScriptDidRequestToOpenDuckAISettings(self)
+            delegate?.serpSettingsUserScript(self, didRequestToOpenAIFeaturesSettingsWithSearchAssistSettingsHidden: false)
         }
+#warning("todo, finish implementation")
+        /*else if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.aiFeatures {
+            #warning("todo, handle Enable Duck.ai in AI Features Settings")
+            delegate?.serpSettingsUserScript(self, didRequestToOpenAIFeaturesSettingsWithSearchAssistSettingsHidden: true)
+        }*/
         return nil
     }
-
+    
+    // step 2, called only during migration
+    @MainActor
+    private func updateNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard let parameters = params as? [String: String] else { return nil }
+        
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: parameters),
+              let serpSettings = try? JSONDecoder().decode(SERPUserSettings.self, from: jsonData),
+              let duckAISetting = serpSettings.duckAI else {
+            return nil
+        }
+        
+        serpSettingsProvider.migrateAllowFollowUpQuestions(enable: duckAISetting)
+        
+        /// Return nil, as SERP does not need updated settings at this point.
+        return nil
+    }
+    
+    // step 3, handling user-interaction
+    private func nativeSettingsDidChange() {
+        guard let webView else {
+            return
+        }
+        broker?.push(method: SERPSettingsUserScriptMessages.nativeSettingsDidChange.rawValue,
+                     params: SERPUserSettings(provider: serpSettingsProvider),
+                     for: self,
+                     into: webView)
+    }
 }

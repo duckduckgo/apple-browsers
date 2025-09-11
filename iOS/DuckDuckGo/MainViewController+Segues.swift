@@ -256,7 +256,7 @@ extension MainViewController {
         }
     }
 
-    func segueToSettingsAIChat(completion: (() -> Void)? = nil) {
+    func segueToSettingsAIChat(shouldShowSearchAssistSettings: Bool = true, completion: (() -> Void)? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings(completion: { _ in

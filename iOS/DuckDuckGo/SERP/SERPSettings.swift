@@ -23,18 +23,15 @@ import AIChat
 import Core
 import Persistence
 
-final class SERPSettings: SERPSettingsProvider {
+final class SERPSettings: SERPSettingsProviding {
     private let keyValueStore: KeyValueStoring
     
     init(keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()) {
         self.keyValueStore = keyValueStore
     }
     
-    var isAllowFollowUpQuestionsEnabled: Bool {
-        if let storedValue = keyValueStore.object(forKey: .allowFollowUpQuestionsKey) as? Bool {
-            return storedValue
-        }
-        return .allowFollowUpQuestionsKeyDefaultValue
+    var isAllowFollowUpQuestionsEnabled: Bool? {
+        keyValueStore.object(forKey: .allowFollowUpQuestionsKey) as? Bool
     }
     
     func enableAllowFollowUpQuestions(enable: Bool) {
@@ -47,16 +44,14 @@ final class SERPSettings: SERPSettingsProvider {
             // Pixel?
         }
     }
+    
+    func migrateAllowFollowUpQuestions(enable: Bool) {
+        keyValueStore.set(enable, forKey: .allowFollowUpQuestionsKey)
+    }
 }
 
 // MARK: - Keys for storage
 
 private extension String {
     static let allowFollowUpQuestionsKey = "serp.settings.allowFollowUpQuestions"
-}
-
-// MARK: - Default values for storage
-
-private extension Bool {
-    static let allowFollowUpQuestionsKeyDefaultValue: Bool = true
 }

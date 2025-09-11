@@ -105,13 +105,6 @@ struct FireDialogView: ModalView {
                 }
             }
             .animation(.easeOut(duration: 0.15), value: isShowingSitesOverlay)
-            .onExitCommand {
-                if isShowingSitesOverlay {
-                    isShowingSitesOverlay = false
-                } else {
-                    dismiss()
-                }
-            }
 
             footerView
                 .padding(.horizontal, 16)
@@ -226,6 +219,7 @@ struct FireDialogView: ModalView {
                     }
                     .buttonStyle(StandardButtonStyle(topPadding: 6, bottomPadding: 6, horizontalPadding: 6))
                     .clipShape(Circle())
+                    .keyboardShortcut(.cancelAction)
 
                     Spacer()
                 }
@@ -431,6 +425,7 @@ struct FireDialogView: ModalView {
             .keyboardShortcut(.defaultAction)
         }
         .padding(.vertical, 16)
+        .background(Color(singleUseColor: .fireDialogBackground))
     }
 
 }

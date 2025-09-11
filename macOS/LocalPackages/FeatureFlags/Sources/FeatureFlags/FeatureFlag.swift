@@ -114,6 +114,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1210012162616039?focus=true
     case aiChatTextSummarization
 
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210820085909882?focus=true
+    case aiChatTextTranslation
+
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210921598044116?focus=true
     case aiChatPageContext
 
@@ -176,6 +179,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211127159784126?focus=true
     case subscriptionPurchaseWidePixelMeasurement
+
+    /// https://app.asana.com/1/137249556945/project/1203822806345703/task/1211227407476981?focus=true
+    case syncFeatureLevel3
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -189,6 +195,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
+                .restoreSessionPrompt,
+                .refactorOfSyncPreferences,
                 .subscriptionPurchaseWidePixelMeasurement:
             true
         default:
@@ -236,6 +244,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatGlobalSwitch,
 				.aiChatSidebar,
                 .aiChatTextSummarization,
+                .aiChatTextTranslation,
                 .aiChatPageContext,
                 .shortHistoryMenu,
                 .subscriptionRebranding,
@@ -254,7 +263,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .refactorOfSyncPreferences,
                 .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,
-                .subscriptionPurchaseWidePixelMeasurement:
+                .subscriptionPurchaseWidePixelMeasurement,
+                .syncFeatureLevel3:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -347,6 +357,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatTextSummarization:
             return .remoteReleasable(.subfeature(AIChatSubfeature.textSummarization))
+        case .aiChatTextTranslation:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.textTranslation))
         case .aiChatPageContext:
             return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
         case .osSupportForceUnsupportedMessage:
@@ -380,15 +392,17 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .openFireWindowByDefault:
             return .remoteReleasable(.feature(.openFireWindowByDefault))
         case .restoreSessionPrompt:
-            return .disabled
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.restoreSessionPrompt))
         case .duckAISearchParameter:
             return .enabled
         case .subscriptionPurchaseWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         case .refactorOfSyncPreferences:
-            return .disabled
+            return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
         case .newSyncEntryPoints:
-            return .disabled
+            return .remoteReleasable(.subfeature(SyncSubfeature.newSyncEntryPoints))
+        case .syncFeatureLevel3:
+            return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
         }
     }
 }

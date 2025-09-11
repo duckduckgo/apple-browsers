@@ -41,7 +41,7 @@ public enum AppStoreRestoreFlowErrorV2: DDGError {
         }
     }
 
-    public var errorDomain: String { "com.duckduckgo.subscription.AppStoreRestoreFlowErrorV2" }
+    public static var errorDomain: String { "com.duckduckgo.subscription.AppStoreRestoreFlowErrorV2" }
 
     public var errorCode: Int {
         switch self {

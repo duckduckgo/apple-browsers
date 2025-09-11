@@ -84,16 +84,34 @@ struct AboutViewVersion: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
 
+    func copyVersion(_ version: String) {
+        guard viewModel.isInternalUser else { return }
+        UIPasteboard.general.string = version
+        // Internal user only so no translation required
+        ActionMessageView.present(message: "\"\(version)\" copied")
+    }
+
     var body: some View {
         Section(header: Text("DuckDuckGo for iOS"), footer: Text(UserText.settingsSendCrashReportsDescription)) {
 #if (ALPHA && !DEBUG)
             // The commit SHA is only set for release alpha builds, so debug alpha builds won't show it
             let version = "\(viewModel.state.version) (Alpha)"
-            SettingsCellView(label: UserText.settingsVersion, accessory: .rightDetail(version))
-            SettingsCellView(label: "Build", accessory: .rightDetail(AppVersion.shared.commitSHAShort))
+            let build = AppVersion.shared.commitSHAShort
+            let copyable = "\(version)-\(build)"
+            Group {
+                SettingsCellView(label: UserText.settingsVersion, accessory: .rightDetail(version))
+                SettingsCellView(label: "Build", accessory: .rightDetail(build))
+            }
+            .onTapGesture {
+                copyVersion(copyable)
+            }
+
 #else
             let version = viewModel.state.version
             SettingsCellView(label: UserText.settingsVersion, accessory: .rightDetail(version))
+                .onTapGesture {
+                    copyVersion(version)
+                }
 #endif
 
             // Send Crash Reports

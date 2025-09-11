@@ -40,7 +40,7 @@ public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridg
         subscriptionFeatures
     }
 
-    public func signOut(notifyUI: Bool) async {
+    public func signOut(notifyUI: Bool, userInitiated: Bool) async {
         accessTokenResult = .failure(SubscriptionManagerError.noTokenAvailable)
     }
 

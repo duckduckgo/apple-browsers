@@ -19,11 +19,11 @@
 import Foundation
 
 /// This custom event is used for special cases, like pixels with non-standard names and uses, these pixels are sent as is and the names remain unchanged
-public final class NonStandardEvent: PixelKitEventV2 {
+public final class NonStandardEvent: PixelKitEvent {
 
-    let event: PixelKitEventV2
+    let event: PixelKitEvent
 
-    public init(_ event: PixelKitEventV2) {
+    public init(_ event: PixelKitEvent) {
         self.event = event
     }
 
@@ -35,7 +35,4 @@ public final class NonStandardEvent: PixelKitEventV2 {
         event.parameters
     }
 
-    public var error: Error? {
-        event.error
-    }
 }

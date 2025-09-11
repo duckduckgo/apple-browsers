@@ -48,7 +48,7 @@ public enum APIRequestV2Error: DDGError {
         }
     }
 
-    public var errorDomain: String { "com.duckduckgo.networking.APIRequestV2" }
+    public static var errorDomain: String { "com.duckduckgo.networking.APIRequestV2" }
 
     public var errorCode: Int {
         switch self {

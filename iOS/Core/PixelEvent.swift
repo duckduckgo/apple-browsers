@@ -790,6 +790,20 @@ extension Pixel {
         case debugBookmarksStructureNotRecovered
         case debugBookmarksInvalidRoots
         case debugBookmarksValidationFailed
+        case debugBookmarksStructureLostAfterCrash
+        case debugBookmarksSyncAttemptedToDeleteRoot
+
+        case debugBookmarksNoDBSchemeFound
+        case debugBookmarksUnableToLoadPersistentStores
+        case debugBookmarksErrorCreatingTopLevelBookmarksFolder
+        case debugBookmarksErrorCreatingTopLevelFavoritesFolder
+        case debugBookmarksCouldNotFixBookmarkFolder
+        case debugBookmarksCouldNotFixFavoriteFolder
+        case debugBookmarksCouldNotPrepareDBStructure
+        case debugBookmarksCouldNotWriteToDB
+        case debugBookmarksCouldNotGetFavoritesOrder
+        case debugBookmarksCouldNotPrepareDatabase
+        case debugBookmarksTopFolderSaveFailed
 
         case debugBookmarksPendingDeletionFixed
         case debugBookmarksPendingDeletionRepairError
@@ -1280,6 +1294,11 @@ extension Pixel {
         case aiChatMetricSentPromptOngoingChat
         case aiChatInternalSwitchBarDisplayed
         case aiChatExperimentalAddressBarIsEnabledDaily
+
+        // MARK: New Address Bar Picker
+        case aiChatNewAddressBarPickerDisplayed
+        case aiChatNewAddressBarPickerConfirmed
+        case aiChatNewAddressBarPickerNotNow
         
         // MARK: Experimental Omnibar Metrics
         case aiChatExperimentalOmnibarShown
@@ -1287,9 +1306,23 @@ extension Pixel {
         case aiChatExperimentalOmnibarQuerySubmitted
         case aiChatExperimentalOmnibarModeSwitched
         case aiChatExperimentalOmnibarSessionBothModes
+        case aiChatExperimentalOmnibarFirstSettingsViewed
+        case aiChatExperimentalOmnibarFirstEnabled
+        case aiChatExperimentalOmnibarFirstInteraction
+        case aiChatExperimentalOmnibarFirstSearchSubmission
+        case aiChatExperimentalOmnibarFirstPromptSubmission
+        case aiChatExperimentalOmnibarFullConversionUser
+        case aiChatExperimentalOmnibarTextAreaFocused
+        case aiChatExperimentalOmnibarClearButtonPressed
+        case aiChatExperimentalOmnibarBackButtonPressed
+        case aiChatExperimentalOmnibarKeyboardGoPressed
+        case aiChatExperimentalOmnibarFloatingSubmitPressed
+        case aiChatExperimentalOmnibarFloatingReturnPressed
+        case aiChatExperimentalOmnibarSessionSummary
         case aiChatLegacyOmnibarShown
         case aiChatLegacyOmnibarQuerySubmitted
         case aiChatLegacyOmnibarAichatButtonPressed
+        case aiChatLegacyOmnibarBackButtonPressed
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1352,6 +1385,7 @@ extension Pixel {
         
         // MARK: - Push Notifications
         case inactiveUserProvisionalPushNotificationTapped
+        case userNotificationAuthorizationStatusDaily
     }
 
 }
@@ -2039,6 +2073,20 @@ extension Pixel.Event {
         case .debugBookmarksStructureNotRecovered: return "m_d_bookmarks_structure_not_recovered"
         case .debugBookmarksInvalidRoots: return "m_d_bookmarks_invalid_roots"
         case .debugBookmarksValidationFailed: return "m_d_bookmarks_validation_failed"
+        case .debugBookmarksStructureLostAfterCrash: return "m_debug_bookmarks_structure_lost_after_crash"
+        case .debugBookmarksSyncAttemptedToDeleteRoot: return "m_debug_bookmarks_sync_attempted_to_delete_root"
+        
+        case .debugBookmarksNoDBSchemeFound: return "m_debug_bookmarks_no_db_scheme_found"
+        case .debugBookmarksUnableToLoadPersistentStores: return "m_debug_bookmarks_unable_to_load_persistent_stores"
+        case .debugBookmarksErrorCreatingTopLevelBookmarksFolder: return "m_debug_bookmarks_error_creating_top_level_bookmarks_folder"
+        case .debugBookmarksErrorCreatingTopLevelFavoritesFolder: return "m_debug_bookmarks_error_creating_top_level_favorites_folder"
+        case .debugBookmarksCouldNotFixBookmarkFolder: return "m_debug_bookmarks_could_not_fix_bookmark_folder"
+        case .debugBookmarksCouldNotFixFavoriteFolder: return "m_debug_bookmarks_could_not_fix_favorite_folder"
+        case .debugBookmarksCouldNotPrepareDBStructure: return "m_debug_bookmarks_could_not_prepare_db_structure"
+        case .debugBookmarksCouldNotWriteToDB: return "m_debug_bookmarks_could_not_write_to_db"
+        case .debugBookmarksCouldNotGetFavoritesOrder: return "m_debug_bookmarks_could_not_get_favorites_order"
+        case .debugBookmarksCouldNotPrepareDatabase: return "m_debug_bookmarks_could_not_prepare_database"
+        case .debugBookmarksTopFolderSaveFailed: return "m_debug_bookmarks_top_folder_save_failed"
 
         case .debugBookmarksPendingDeletionFixed: return "m_debug_bookmarks_pending_deletion_fixed"
         case .debugBookmarksPendingDeletionRepairError: return "m_debug_bookmarks_pending_deletion_repair_error"
@@ -2515,6 +2563,11 @@ extension Pixel.Event {
         case .aiChatMetricSentPromptOngoingChat: return "m_aichat_sent_prompt_ongoing_chat"
         case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
         case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
+
+        // MARK: New Address Bar Picker
+        case .aiChatNewAddressBarPickerDisplayed: return "m_aichat_new_address_bar_picker_displayed"
+        case .aiChatNewAddressBarPickerConfirmed: return "m_aichat_new_address_bar_picker_confirmed"
+        case .aiChatNewAddressBarPickerNotNow: return "m_aichat_new_address_bar_picker_not_now"
         
         // MARK: Experimental Omnibar Metrics
         case .aiChatExperimentalOmnibarShown: return "m_aichat_experimental_omnibar_shown"
@@ -2522,9 +2575,23 @@ extension Pixel.Event {
         case .aiChatExperimentalOmnibarQuerySubmitted: return "m_aichat_experimental_omnibar_query_submitted"
         case .aiChatExperimentalOmnibarModeSwitched: return "m_aichat_experimental_omnibar_mode_switched"
         case .aiChatExperimentalOmnibarSessionBothModes: return "m_aichat_experimental_omnibar_session_both_modes"
+        case .aiChatExperimentalOmnibarFirstSettingsViewed: return "m_aichat_experimental_omnibar_first_settings_viewed"
+        case .aiChatExperimentalOmnibarFirstEnabled: return "m_aichat_experimental_omnibar_first_enabled"
+        case .aiChatExperimentalOmnibarFirstInteraction: return "m_aichat_experimental_omnibar_first_interaction"
+        case .aiChatExperimentalOmnibarFirstSearchSubmission: return "m_aichat_experimental_omnibar_first_search_submission"
+        case .aiChatExperimentalOmnibarFirstPromptSubmission: return "m_aichat_experimental_omnibar_first_prompt_submission"
+        case .aiChatExperimentalOmnibarFullConversionUser: return "m_aichat_experimental_omnibar_full_conversion_user"
+        case .aiChatExperimentalOmnibarTextAreaFocused: return "m_aichat_experimental_omnibar_text_area_focused"
+        case .aiChatExperimentalOmnibarClearButtonPressed: return "m_aichat_experimental_omnibar_clear_button_pressed"
+        case .aiChatExperimentalOmnibarBackButtonPressed: return "m_aichat_experimental_omnibar_back_button_pressed"
+        case .aiChatExperimentalOmnibarKeyboardGoPressed: return "m_aichat_experimental_omnibar_keyboard_go_pressed"
+        case .aiChatExperimentalOmnibarFloatingSubmitPressed: return "m_aichat_experimental_omnibar_floating_submit_pressed"
+        case .aiChatExperimentalOmnibarFloatingReturnPressed: return "m_aichat_experimental_omnibar_floating_return_pressed"
+        case .aiChatExperimentalOmnibarSessionSummary: return "m_aichat_experimental_omnibar_session_summary"
         case .aiChatLegacyOmnibarShown: return "m_aichat_legacy_omnibar_shown"
         case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
         case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"
+        case .aiChatLegacyOmnibarBackButtonPressed: return "m_aichat_legacy_omnibar_back_button_pressed"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"
@@ -2636,6 +2703,7 @@ extension Pixel.Event {
             
         // MARK: Push Notification
         case .inactiveUserProvisionalPushNotificationTapped: return "m_push-notification_local-provisional_inactive-user-tap"
+        case .userNotificationAuthorizationStatusDaily: return "m_push-notification_user-notification-authorization-status"
         }
     }
 }
@@ -2789,7 +2857,7 @@ public extension Pixel.Event {
             }
         }
 
-        private var event: PixelKitEventV2 {
+        private var event: PixelKitEvent {
             switch self {
             case .errorPageShown(let category, let clientSideHit):
                 return MaliciousSiteProtection.Event.errorPageShown(category: category, clientSideHit: clientSideHit)

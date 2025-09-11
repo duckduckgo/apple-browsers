@@ -30,6 +30,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
     private var presenter: AIChatSidebarPresenter!
     private var mockSidebarHost: MockAIChatSidebarHosting!
     private var mockSidebarProvider: MockAIChatSidebarProvider!
+    private var mockAIChatMenuConfig: DummyAIChatConfig!
     private var mockAIChatTabOpener: MockAIChatTabOpener!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockWindowControllersManager: WindowControllersManagerMock!
@@ -40,6 +41,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         super.setUp()
         mockSidebarHost = MockAIChatSidebarHosting()
         mockSidebarProvider = MockAIChatSidebarProvider()
+        mockAIChatMenuConfig = DummyAIChatConfig()
         mockAIChatTabOpener = MockAIChatTabOpener()
         mockFeatureFlagger = MockFeatureFlagger()
         mockWindowControllersManager = WindowControllersManagerMock()
@@ -52,6 +54,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         presenter = AIChatSidebarPresenter(
             sidebarHost: mockSidebarHost,
             sidebarProvider: mockSidebarProvider,
+            aiChatMenuConfig: mockAIChatMenuConfig,
             aiChatTabOpener: mockAIChatTabOpener,
             featureFlagger: mockFeatureFlagger,
             windowControllersManager: mockWindowControllersManager,
@@ -66,6 +69,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         mockWindowControllersManager = nil
         mockFeatureFlagger = nil
         mockAIChatTabOpener = nil
+        mockAIChatMenuConfig = nil
         mockSidebarProvider = nil
         mockSidebarHost = nil
         super.tearDown()
@@ -84,6 +88,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         // Given & When
         let presenter = AIChatSidebarPresenter(
             sidebarHost: mockSidebarHost,
+            aiChatMenuConfig: mockAIChatMenuConfig,
             aiChatTabOpener: mockAIChatTabOpener,
             featureFlagger: mockFeatureFlagger,
             windowControllersManager: mockWindowControllersManager,

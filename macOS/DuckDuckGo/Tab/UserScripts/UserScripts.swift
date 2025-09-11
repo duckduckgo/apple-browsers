@@ -88,9 +88,10 @@ final class UserScripts: UserScriptsProvider {
         let prefs = ContentScopeProperties(gpcEnabled: isGPCEnabled,
                                            sessionKey: sessionKey,
                                            messageSecret: messageSecret,
+                                           isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser,
                                            featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
                                            currentCohorts: currentCohorts)
-        contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+        contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, allowedNonisolatedFeatures: [PageContextUserScript.featureName], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         contentScopeUserScriptIsolated = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, isIsolated: true, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
 
         autofillScript = WebsiteAutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider!)
@@ -112,6 +113,10 @@ final class UserScripts: UserScriptsProvider {
         }
 
         if sourceProvider.featureFlagger.isFeatureOn(.newTabPagePerTab) {
+            assert(
+                sourceProvider.newTabPageActionsManager != nil,
+                "NewTabPageActionsManager must be available when newTabPagePerTab feature is enabled. Ensure it is properly initialized in UserScriptDependenciesProviding."
+            )
             let newTabPageUserScript = NewTabPageUserScript()
             sourceProvider.newTabPageActionsManager?.registerUserScript(newTabPageUserScript)
             self.newTabPageUserScript = newTabPageUserScript
@@ -149,7 +154,7 @@ final class UserScripts: UserScriptsProvider {
         }
 
         if let pageContextUserScript {
-            contentScopeUserScriptIsolated.registerSubfeature(delegate: pageContextUserScript)
+            contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
         }
 
         if let subscriptionUserScript {

@@ -74,8 +74,6 @@ final class BrowserTabViewController: NSViewController {
     @Published private var webViewSnapshot: NSView?
     private var containerStackView: NSStackView
 
-    private weak var webExtensionWebView: WebView?
-
     weak var delegate: BrowserTabViewControllerDelegate?
     var tabViewModel: TabViewModel?
 
@@ -648,6 +646,18 @@ final class BrowserTabViewController: NSViewController {
         switch tabContent {
         case .newtab:
             return featureFlagger.isFeatureOn(.newTabPagePerTab) ? tabViewModel.tab.webView : newTabPageWebViewModel.webView
+        case .webExtensionUrl(let url):
+            if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager,
+               let context = webExtensionManager.extensionContext(for: url),
+               let configuration = context.webViewConfiguration {
+
+                // Create web view with extension's configuration
+                let webView = WebView(frame: .zero, configuration: configuration)
+                let request = URLRequest(url: url)
+                webView.load(request)
+                return webView
+            }
+            return tabViewModel.tab.webView
         default:
             return tabViewModel.tab.webView
         }
@@ -731,8 +741,9 @@ final class BrowserTabViewController: NSViewController {
         }
         // AI Chat sidebar user interaction dialog
         let aiChatSidebarUserDialog = NotificationCenter.default.publisher(for: .aiChatSidebarUserInteractionDialogChanged)
-            .map { notification in
-                notification.userInfo?[NSNotification.Name.UserInfoKeys.userInteractionDialog] as? Tab.UserDialog
+            .map { [weak self] notification in
+                guard let window = self?.view.window, window.isKeyWindow == true else { return nil as Tab.UserDialog? }
+                return notification.userInfo?[NSNotification.Name.UserInfoKeys.userInteractionDialog] as? Tab.UserDialog
             }
             .prepend(nil)
 
@@ -812,7 +823,7 @@ final class BrowserTabViewController: NSViewController {
         case .newtab:
             // don‘t steal focus from the address bar at .newtab page
             return
-        case .url, .subscription, .identityTheftRestoration, .onboarding, .releaseNotes, .history, .aiChat:
+        case .url, .subscription, .identityTheftRestoration, .onboarding, .releaseNotes, .history, .aiChat, .webExtensionUrl:
             getView = { [weak self, weak tabViewModel] in
                 guard let self, let tabViewModel else { return nil }
                 return webView(for: tabViewModel, tabContent: tabContent)
@@ -823,8 +834,6 @@ final class BrowserTabViewController: NSViewController {
             getView = { [weak self] in self?.bookmarksViewController?.view }
         case .dataBrokerProtection:
             getView = { [weak self] in self?.dataBrokerProtectionHomeViewController?.view }
-        case .webExtensionUrl:
-            getView = { [weak self] in self?.webExtensionWebView }
         case .none:
             getView = nil
         }
@@ -893,9 +902,8 @@ final class BrowserTabViewController: NSViewController {
         preferencesViewController?.removeCompletely()
         bookmarksViewController?.removeCompletely()
         burnerHomePageViewController?.removeCompletely()
-        webExtensionWebView?.superview?.removeFromSuperview()
-        webExtensionWebView = nil
         dataBrokerProtectionHomeViewController?.removeCompletely()
+
         if includingWebView {
             self.removeWebViewFromHierarchy()
         }
@@ -962,17 +970,7 @@ final class BrowserTabViewController: NSViewController {
             addAndLayoutChild(dataBrokerProtectionViewController)
 
         case .webExtensionUrl:
-            removeAllTabContent()
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-            if #available(macOS 15.4, *) {
-                if let tab = tabViewModel?.tab,
-                   let url = tab.url,
-                   let webExtensionWebView = WebExtensionManager.shared.internalSiteHandler.webViewForExtensionUrl(url) {
-                    self.webExtensionWebView = webExtensionWebView
-                    self.addWebViewToViewHierarchy(webExtensionWebView, tab: tab)
-                }
-            }
-#endif
+            updateTabIfNeeded(tabViewModel: tabViewModel)
         default:
             removeAllTabContent()
         }

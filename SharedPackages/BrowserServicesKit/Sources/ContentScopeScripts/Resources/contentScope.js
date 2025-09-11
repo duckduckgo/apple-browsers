@@ -1328,9 +1328,16 @@
     const domains = ["duckduckgo.com", "duck.ai", "duck.co"];
     if (tabUrl?.hostname && domains.includes(tabUrl?.hostname)) {
       const url = new URL(tabUrl?.href);
-      return url.searchParams.has("duckai");
+      return url.searchParams.has("duckai") || url.searchParams.get("ia") === "chat";
     }
     return false;
+  }
+  function isDuckAiSidebar() {
+    const tabUrl = getTabUrl();
+    if (!tabUrl || !isDuckAi()) {
+      return false;
+    }
+    return tabUrl.searchParams.get("placement") === "sidebar";
   }
 
   // src/features.js
@@ -1375,7 +1382,7 @@
     ]
   );
   var platformSupport = {
-    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "duckAiListener"],
+    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "duckAiListener", "pageContext"],
     "apple-isolated": [
       "duckPlayer",
       "duckPlayerNative",
@@ -1383,8 +1390,7 @@
       "performanceMetrics",
       "clickToLoad",
       "messageBridge",
-      "favicon",
-      "pageContext"
+      "favicon"
     ],
     android: [...baseFeatures, "webCompat", "breakageReporting", "duckPlayer", "messageBridge"],
     "android-broker-protection": ["brokerProtection"],
@@ -1409,7 +1415,9 @@
       "brokerProtection",
       "breakageReporting",
       "messageBridge",
-      "webCompat"
+      "webCompat",
+      "pageContext",
+      "duckAiListener"
     ],
     firefox: ["cookie", ...baseFeatures, "clickToLoad"],
     chrome: ["cookie", ...baseFeatures, "clickToLoad"],
@@ -2425,7 +2433,6 @@
     constructor(config, messagingContext) {
       this.messagingContext = messagingContext;
       this.config = config;
-      this.config.sendInitialPing(messagingContext);
     }
     /**
      * @param {NotificationMessage} msg
@@ -4401,6 +4408,11 @@
        * @type {boolean}
        */
       __publicField(this, "listenForUpdateChanges", false);
+      /**
+       * Set this to true if you wish to receive configuration updates from initial ping responses (Android only).
+       * @type {boolean}
+       */
+      __publicField(this, "listenForConfigUpdates", false);
       /** @type {ImportMeta} */
       __privateAdd(this, _importConfig);
       this.setArgs(this.args);
@@ -4409,6 +4421,40 @@
     }
     get isDebug() {
       return this.args?.debug || false;
+    }
+    get shouldLog() {
+      return this.isDebug;
+    }
+    /**
+     * Logging utility for this feature (Stolen some inspo from DuckPlayer logger, will unify in the future)
+     */
+    get log() {
+      const shouldLog = this.shouldLog;
+      const prefix = `${this.name.padEnd(20, " ")} |`;
+      return {
+        // These are getters to have the call site be the reported line number.
+        get info() {
+          if (!shouldLog) {
+            return () => {
+            };
+          }
+          return console.log.bind(console, prefix);
+        },
+        get warn() {
+          if (!shouldLog) {
+            return () => {
+            };
+          }
+          return console.warn.bind(console, prefix);
+        },
+        get error() {
+          if (!shouldLog) {
+            return () => {
+            };
+          }
+          return console.error.bind(console, prefix);
+        }
+      };
     }
     get desktopModeEnabled() {
       return this.args?.desktopModeEnabled || false;
@@ -4555,6 +4601,14 @@
      * @deprecated - use messaging instead.
      */
     update() {
+    }
+    /**
+     * Called when user preferences are merged from initial ping response. (Android only)
+     * Override this method in your feature to handle user preference updates.
+     * This only happens once during initialization when the platform responds with user-specific settings.
+     * @param {object} _updatedConfig - The configuration with merged user preferences
+     */
+    onUserPreferencesMerged(_updatedConfig) {
     }
     /**
      * Register a flag that will be added to page breakage reports
@@ -4704,6 +4758,8 @@
       __privateAdd(this, _activeShareRequest, null);
       /** @type {Promise<any> | null} */
       __privateAdd(this, _activeScreenLockRequest, null);
+      // Opt in to receive configuration updates from initial ping responses
+      __publicField(this, "listenForConfigUpdates", true);
     }
     init() {
       if (this.getFeatureSettingEnabled("windowSizing")) {
@@ -4737,9 +4793,6 @@
       if (this.getFeatureSettingEnabled("webShare")) {
         this.shimWebShare();
       }
-      if (this.getFeatureSettingEnabled("viewportWidth")) {
-        this.viewportWidthFix();
-      }
       if (this.getFeatureSettingEnabled("screenLock")) {
         this.screenLockFix();
       }
@@ -4754,6 +4807,19 @@
       }
       if (this.getFeatureSettingEnabled("enumerateDevices")) {
         this.deviceEnumerationFix();
+      }
+    }
+    /**
+     * Handle user preference updates when merged during initialization.
+     * Re-applies viewport fixes if viewport configuration has changed.
+     * @param {object} _updatedConfig - The configuration with merged user preferences
+     */
+    onUserPreferencesMerged(_updatedConfig) {
+      if (this.getFeatureSettingEnabled("viewportWidth")) {
+        if (!this._viewportWidthFixApplied) {
+          this.viewportWidthFix();
+          this._viewportWidthFixApplied = true;
+        }
       }
     }
     /** Shim Web Share API in Android WebView */
@@ -4807,28 +4873,42 @@
       if (window.Notification) {
         return;
       }
+      const NotificationConstructor = function Notification() {
+        throw new TypeError("Failed to construct 'Notification': Illegal constructor");
+      };
+      const wrappedNotification = wrapToString(
+        NotificationConstructor,
+        NotificationConstructor,
+        "function Notification() { [native code] }"
+      );
       this.defineProperty(window, "Notification", {
-        value: () => {
-        },
+        value: wrappedNotification,
         writable: true,
         configurable: true,
         enumerable: false
       });
-      this.defineProperty(window.Notification, "requestPermission", {
-        value: () => {
-          return Promise.resolve("denied");
-        },
-        writable: true,
+      this.defineProperty(window.Notification, "permission", {
+        value: "denied",
+        writable: false,
         configurable: true,
         enumerable: true
       });
-      this.defineProperty(window.Notification, "permission", {
-        get: () => "denied",
-        configurable: true,
-        enumerable: false
-      });
       this.defineProperty(window.Notification, "maxActions", {
         get: () => 2,
+        configurable: true,
+        enumerable: true
+      });
+      const requestPermissionFunc = function requestPermission() {
+        return Promise.resolve("denied");
+      };
+      const wrappedRequestPermission = wrapToString(
+        requestPermissionFunc,
+        requestPermissionFunc,
+        "function requestPermission() { [native code] }"
+      );
+      this.defineProperty(window.Notification, "requestPermission", {
+        value: wrappedRequestPermission,
+        writable: true,
         configurable: true,
         enumerable: true
       });
@@ -8510,6 +8590,7 @@ ul.messages {
   var modifiedElements = /* @__PURE__ */ new WeakMap();
   var appliedRules = /* @__PURE__ */ new Set();
   var shouldInjectStyleTag = false;
+  var styleTagInjected = false;
   var mediaAndFormSelectors = "video,canvas,embed,object,audio,map,form,input,textarea,select,option,button";
   var hideTimeouts = [0, 100, 300, 500, 1e3, 2e3, 3e3];
   var unhideTimeouts = [1250, 2250, 3e3];
@@ -8649,6 +8730,9 @@ ul.messages {
     return timeoutRules;
   }
   function injectStyleTag(rules) {
+    if (styleTagInjected) {
+      return;
+    }
     let selector = "";
     rules.forEach((rule, i) => {
       if (i !== rules.length - 1) {
@@ -8660,6 +8744,7 @@ ul.messages {
     const styleTagProperties = "display:none!important;min-height:0!important;height:0!important;";
     const styleTagContents = `${forgivingSelector(selector)} {${styleTagProperties}}`;
     injectGlobalStyles(styleTagContents);
+    styleTagInjected = true;
   }
   function hideAdNodes(rules) {
     const document2 = globalThis.document;
@@ -8928,6 +9013,7 @@ ul.messages {
 
   // src/features/duck-ai-listener.js
   init_define_import_meta_trackerLookup();
+  var __isPageContextEnabled;
   var DuckAiListener = class extends ContentFeature {
     constructor() {
       super(...arguments);
@@ -8942,47 +9028,48 @@ ul.messages {
       /** @type {HTMLElement | null} */
       __publicField(this, "contextChip", null);
       /** @type {boolean} */
-      __publicField(this, "isPageContextEnabled", true);
+      __privateAdd(this, __isPageContextEnabled, false);
       /** @type {boolean} */
       __publicField(this, "hasContextBeenUsed", false);
+      /** @type {boolean} */
+      __publicField(this, "userExplicitlyDisabledContext", false);
       /** @type {string | null} */
       __publicField(this, "lastInjectedContext", null);
       /** @type {string | null} */
       __publicField(this, "globalPageContext", null);
       /** @type {HTMLButtonElement | null} */
       __publicField(this, "sendButton", null);
-    }
-    get shouldLog() {
-      return this.isDebug;
+      /** @type {boolean} */
+      __publicField(this, "isRequestInProgress", false);
+      /** @type {Function | null} */
+      __publicField(this, "contextPromiseResolve", null);
+      /** @type {DuckAiPromptTelemetry | null} */
+      __publicField(this, "promptTelemetry", null);
     }
     /**
-     * Logging utility for this feature
+     * Get the page context enabled state
+     * @returns {boolean}
      */
-    get log() {
-      const shouldLog = this.shouldLog;
-      return {
-        get info() {
-          if (!shouldLog) {
-            return () => {
-            };
-          }
-          return console.log;
-        },
-        get warn() {
-          if (!shouldLog) {
-            return () => {
-            };
-          }
-          return console.warn;
-        },
-        get error() {
-          if (!shouldLog) {
-            return () => {
-            };
-          }
-          return console.error;
+    get isPageContextEnabled() {
+      return __privateGet(this, __isPageContextEnabled);
+    }
+    /**
+     * Set the page context enabled state and update UI accordingly
+     * @param {boolean} enabled - Whether page context should be enabled
+     */
+    set isPageContextEnabled(enabled) {
+      if (__privateGet(this, __isPageContextEnabled) === enabled) {
+        return;
+      }
+      __privateSet(this, __isPageContextEnabled, enabled);
+      if (enabled) {
+        if (this.pageData && this.pageData.content && !this.hasContextBeenUsed) {
+          this.createContextChip();
         }
-      };
+      } else {
+        this.removeContextChip();
+      }
+      this.updateButtonAppearance();
     }
     init() {
       if (!this.shouldActivate()) {
@@ -8999,6 +9086,9 @@ ul.messages {
       this.createButtonUI();
       await this.setupMessageBridge();
       this.setupTextBoxDetection();
+      this.setupTelemetry();
+      this.cleanupExistingPrompts();
+      this.setupPromptCleanupObserver();
     }
     /**
      * Check if this feature should be active on the current domain
@@ -9008,7 +9098,7 @@ ul.messages {
       if (isBeingFramed()) {
         return false;
       }
-      return isDuckAi();
+      return isDuckAiSidebar();
     }
     /**
      * Create the page context button in the input field
@@ -9157,27 +9247,64 @@ ul.messages {
       this.log.info("Created page context button with wrapper structure");
     }
     /**
+     * Set up telemetry for prompt tracking
+     */
+    setupTelemetry() {
+      this.promptTelemetry = new DuckAiPromptTelemetry(this.messaging, this.log, this.getSizeCategories());
+      this.log.info("Set up prompt telemetry");
+    }
+    /**
+     * Get the defined size categories for prompt bucketing
+     * @returns {Array} Array of size category objects with name and maxSize
+     */
+    getSizeCategories() {
+      const defaultCategories = [
+        { name: "small", maxSize: 2499 },
+        { name: "medium", maxSize: 4999 },
+        { name: "large", maxSize: 7499 },
+        { name: "xlarge", maxSize: 9999 },
+        { name: "xxl", maxSize: Infinity }
+      ];
+      const configCategories = this.getFeatureSetting("sizeCategories");
+      if (configCategories && Array.isArray(configCategories) && configCategories.length > 0) {
+        const validCategories = configCategories.filter((cat) => cat && typeof cat.name === "string" && (typeof cat.maxSize === "number" || cat.maxSize === null)).map((cat) => ({
+          name: cat.name,
+          maxSize: cat.maxSize === null ? Infinity : cat.maxSize
+        }));
+        if (validCategories.length > 0) {
+          return validCategories;
+        }
+      }
+      return defaultCategories;
+    }
+    removeContextChip() {
+      if (this.contextChip) {
+        this.contextChip.remove();
+        this.contextChip = null;
+      }
+    }
+    /**
      * Create the context chip below the input field
      */
     createContextChip() {
       if (!this.pageData) {
-        this.log.info("createContextChip: No page data available, skipping");
         return;
       }
       if (this.hasContextBeenUsed) {
-        this.log.info("createContextChip: Context already used, skipping");
+        this.removeContextChip();
         return;
       }
-      if (this.contextChip) {
-        this.contextChip.remove();
-      }
+      this.removeContextChip();
       if (!this.pageData.content) {
         return;
       }
-      const textarea = document.querySelector('textarea[name="user-prompt"]');
-      if (!textarea) {
+      if (!this.textBox) {
+        this.findTextBox();
+      }
+      if (!this.textBox) {
         return;
       }
+      const textarea = this.textBox;
       this.contextChip = document.createElement("div");
       this.contextChip.id = "duck-ai-context-chip";
       this.contextChip.style.cssText = `
@@ -9206,10 +9333,7 @@ ul.messages {
             align-items: center;
             justify-content: center;
         `;
-      this.log.info("createContextChip called, this.pageData:", this.pageData);
-      this.log.info("this.pageData?.favicon:", this.pageData?.favicon);
       const favicon = this.pageData?.favicon?.[0]?.href;
-      this.log.info("favicon extracted:", favicon);
       let innerContent;
       if (favicon) {
         innerContent = `<image href="${favicon}" x="6" y="5" width="16" height="16" rx="1"/>`;
@@ -9268,7 +9392,7 @@ ul.messages {
             font-size: 12px;
             color: rgb(102, 102, 102);
         `;
-      subtitle.textContent = "Page Content";
+      subtitle.textContent = this.pageData.truncated ? "Page Content (Truncated)" : "Page Content";
       contentInfo.appendChild(title);
       contentInfo.appendChild(subtitle);
       const infoIcon = document.createElement("div");
@@ -9283,6 +9407,23 @@ ul.messages {
             color: rgb(102, 102, 102);
             cursor: pointer;
         `;
+      infoIcon.title = "Attach page context to the prompt";
+      const warningIcon = document.createElement("div");
+      if (this.pageData.truncated) {
+        warningIcon.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 1.5L15 14H1L8 1.5Z" stroke="#ff6b35" stroke-width="1.5" fill="none"/>
+                    <path d="M8 6V9M8 11H8.01" stroke="#ff6b35" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            `;
+        warningIcon.style.cssText = `
+                flex-shrink: 0;
+                color: #ff6b35;
+                cursor: pointer;
+                margin-left: 4px;
+            `;
+        warningIcon.title = "Content has been truncated due to size limits";
+      }
       if (this.isDarkMode()) {
         this.contextChip.style.background = "rgba(255, 255, 255, 0.1)";
         this.contextChip.style.borderColor = "rgba(255, 255, 255, 0.2)";
@@ -9294,6 +9435,9 @@ ul.messages {
       this.contextChip.appendChild(icon);
       this.contextChip.appendChild(contentInfo);
       this.contextChip.appendChild(infoIcon);
+      if (this.pageData.truncated) {
+        this.contextChip.appendChild(warningIcon);
+      }
       this.log.info("Context chip assembled, about to insert into DOM");
       const textareaParent = textarea.parentNode;
       this.log.info("textareaParent found:", !!textareaParent);
@@ -9306,23 +9450,41 @@ ul.messages {
       this.log.info("Created context chip");
     }
     /**
-     * Handle button click to toggle page context
+     * Handle button click to toggle page context or fetch context if not available
      */
-    handleButtonClick() {
+    async handleButtonClick() {
       if (!this.button || this.hasContextBeenUsed) return;
-      this.isPageContextEnabled = !this.isPageContextEnabled;
-      if (this.isPageContextEnabled) {
-        if (this.pageData && this.pageData.content) {
-          this.createContextChip();
+      const hasContext = this.pageData && this.pageData.content;
+      let newState;
+      if (!hasContext) {
+        this.log.info("No context available, attempting to fetch...");
+        const success = await this.requestPageContext(true);
+        if (success && this.pageData && this.pageData.content) {
+          newState = true;
+        } else {
+          newState = this.isPageContextEnabled;
         }
       } else {
-        if (this.contextChip) {
-          this.contextChip.remove();
-          this.contextChip = null;
-        }
+        newState = !this.isPageContextEnabled;
       }
-      this.updateButtonAppearance();
-      this.log.info("Page context toggled:", this.isPageContextEnabled);
+      if (!newState) {
+        this.userExplicitlyDisabledContext = true;
+      } else {
+        this.userExplicitlyDisabledContext = false;
+      }
+      this.isPageContextEnabled = newState;
+      this.sendToggleTelemetry();
+      this.triggerInputEvents();
+      this.log.info("Page context state:", this.isPageContextEnabled);
+    }
+    /**
+     * Send toggle telemetry if bridge is available
+     * @private
+     */
+    sendToggleTelemetry() {
+      if (this.bridge) {
+        this.bridge.notify("togglePageContextTelemetry", { enabled: this.isPageContextEnabled });
+      }
     }
     /**
      * Determine if dark mode is preferred
@@ -9332,11 +9494,12 @@ ul.messages {
       return window?.matchMedia("(prefers-color-scheme: dark)")?.matches;
     }
     /**
-     * Update button appearance based on enabled state and theme
+     * Update button appearance based on enabled state, context availability, and theme
      */
     updateButtonAppearance() {
       if (!this.button) return;
       const isDark = this.isDarkMode();
+      const hasContext = this.pageData && this.pageData.content;
       if (this.hasContextBeenUsed) {
         this.button.style.backgroundColor = "transparent";
         this.button.style.cursor = "not-allowed";
@@ -9345,7 +9508,7 @@ ul.messages {
         } else {
           this.button.style.color = "rgb(204, 204, 204)";
         }
-      } else if (this.isPageContextEnabled) {
+      } else if (this.isPageContextEnabled && hasContext) {
         if (isDark) {
           this.button.style.backgroundColor = "rgba(255, 255, 255, 0.18)";
           this.button.style.color = "rgb(255, 255, 255)";
@@ -9362,6 +9525,53 @@ ul.messages {
         } else {
           this.button.style.color = "rgb(102, 102, 102)";
         }
+      }
+    }
+    /**
+     * Request page context from the bridge with explicit consent tracking
+     * @param {boolean} explicitConsent - Whether this request has explicit user consent
+     * @returns {Promise<boolean>} - Whether context was successfully retrieved
+     */
+    async requestPageContext(explicitConsent = false) {
+      if (!this.bridge) {
+        this.log.warn("No bridge available to fetch context");
+        return false;
+      }
+      if (this.isRequestInProgress) {
+        this.log.info("Request already in progress, ignoring duplicate request");
+        return false;
+      }
+      this.isRequestInProgress = true;
+      try {
+        const getPageContext = await this.bridge.request("getPageContext", { explicitConsent });
+        const logMessage = explicitConsent ? "Fetched page context on demand:" : "Initial page context:";
+        this.log.info(logMessage, getPageContext);
+        this.handlePageContextData(getPageContext);
+        if (!explicitConsent) {
+          return !!(this.pageData && this.pageData.content);
+        }
+        const contextPromise = new Promise((resolve) => {
+          this.contextPromiseResolve = resolve;
+          setTimeout(() => {
+            if (this.contextPromiseResolve === resolve) {
+              this.contextPromiseResolve = null;
+              resolve(false);
+            }
+          }, 3e3);
+        });
+        if (!this.contextPromiseResolve) {
+          return true;
+        }
+        const success = await contextPromise;
+        this.log.info("Context promise resolved:", success);
+        return success;
+      } catch (error) {
+        this.contextPromiseResolve = null;
+        const logMessage = explicitConsent ? "Failed to fetch page context:" : "No initial page context available:";
+        this.log.info(logMessage, error);
+        return false;
+      } finally {
+        this.isRequestInProgress = false;
       }
     }
     /**
@@ -9384,13 +9594,7 @@ ul.messages {
           return;
         }
         this.log.info("Created message bridge successfully");
-        try {
-          const getPageContext = await this.bridge.request("getPageContext");
-          this.log.info("Initial page context:", getPageContext);
-          this.handlePageContextData(getPageContext);
-        } catch (error) {
-          this.log.info("No initial page context available:", error);
-        }
+        await this.requestPageContext(false);
         this.bridge.subscribe("submitPageContext", (event) => {
           this.log.info("Received page context update:", event);
           this.handlePageContextData(event);
@@ -9405,15 +9609,33 @@ ul.messages {
      */
     handlePageContextData(data) {
       try {
-        if (data.serializedPageData) {
+        if (data?.serializedPageData) {
           const pageDataParsed = JSON.parse(data.serializedPageData);
           this.log.info("Parsed page data:", pageDataParsed);
           if (pageDataParsed.content) {
             this.pageData = pageDataParsed;
-            this.globalPageContext = pageDataParsed.content;
-            this.createContextChip();
+            if (this.contextPromiseResolve) {
+              this.contextPromiseResolve(true);
+              this.contextPromiseResolve = null;
+            }
+            if (!this.hasContextBeenUsed && !this.isPageContextEnabled && !this.userExplicitlyDisabledContext) {
+              this.isPageContextEnabled = true;
+            } else {
+              this.updateButtonAppearance();
+              if (this.isPageContextEnabled && !this.hasContextBeenUsed) {
+                this.createContextChip();
+              }
+            }
+            if (pageDataParsed.truncated) {
+              this.log.warn("Page content has been truncated due to size limits");
+            }
             this.setupMessageInterception();
           }
+        } else {
+          this.log.info("No page data parsed");
+          this.pageData = null;
+          this.updateButtonAppearance();
+          this.removeContextChip();
         }
       } catch (error) {
         this.log.error("Error parsing page context data:", error);
@@ -9434,12 +9656,6 @@ ul.messages {
         this.sendButton = sendButton;
         const handleClick = this.handleSendMessage.bind(this);
         sendButton.addEventListener("click", handleClick, true);
-        sendButton.addEventListener("click", handleClick, false);
-        sendButton.addEventListener("mousedown", () => {
-          setTimeout(() => {
-            this.handleSendMessage();
-          }, 10);
-        });
         this.log.info("Set up message interception with multiple event listeners", sendButton);
       }
     }
@@ -9448,22 +9664,101 @@ ul.messages {
      */
     handleSendMessage() {
       this.log.info("handleSendMessage called");
-      if (!this.isPageContextEnabled || this.hasContextBeenUsed || !this.pageData?.content) {
-        this.log.info("Context attachment blocked:", {
-          isPageContextEnabled: this.isPageContextEnabled,
-          hasContextBeenUsed: this.hasContextBeenUsed,
-          hasPageData: !!this.pageData,
-          hasContent: !!this.pageData?.content
-        });
-        return;
+      this.triggerInputEvents();
+      if (this.textBox && this.promptTelemetry) {
+        const rawPromptText = this.getRawPromptText();
+        const totalPromptText = this.textBox.value;
+        const contextSize = this.pageData?.content?.length || 0;
+        const contextData = this.isPageContextEnabled && this.pageData?.content ? this.pageData : null;
+        this.promptTelemetry.onPromptSent(
+          rawPromptText,
+          totalPromptText,
+          this.isPageContextEnabled && this.pageData?.content ? contextSize : 0,
+          contextData
+        );
       }
       this.hasContextBeenUsed = true;
-      if (this.contextChip) {
-        this.contextChip.remove();
-        this.contextChip = null;
-      }
+      this.removeContextChip();
       this.updateButtonAppearance();
-      this.log.info("Successfully appended context to message");
+    }
+    /**
+     * Clean up a paragraph element if it contains a prompt structure
+     * @param {HTMLElement} paragraph - The paragraph element to check and clean
+     * @returns {boolean} - True if paragraph was cleaned up
+     */
+    cleanupPromptParagraph(paragraph) {
+      const text = paragraph.textContent || "";
+      const promptRegex = /<prompt-([^>]+)>\s*([\s\S]*?)\s*<\/prompt-\1>/;
+      const match = text.match(promptRegex);
+      if (match) {
+        const extractedPrompt = match[2].trim();
+        let cleanedContent = "";
+        if (extractedPrompt) {
+          cleanedContent = `${extractedPrompt}
+\u{1F4C4} Page context attached`;
+        }
+        paragraph.textContent = cleanedContent;
+        this.log.info("Cleaned up prompt paragraph");
+        return true;
+      }
+      return false;
+    }
+    /**
+     * Set up observer to continuously clean up prompt displays in conversation
+     */
+    setupPromptCleanupObserver() {
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE && node instanceof Element) {
+              const paragraphs = node.querySelectorAll("p");
+              const allParagraphs = node.tagName === "P" ? [node, ...paragraphs] : [...paragraphs];
+              allParagraphs.forEach((p) => {
+                this.cleanupPromptParagraph(
+                  /** @type {HTMLElement} */
+                  p
+                );
+              });
+            }
+          });
+        });
+      });
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+      this.log.info("Set up continuous observer for prompt cleanup");
+    }
+    /**
+     * Clean up any existing prompt structures in the conversation
+     * This runs once on script initialization to handle prompts already displayed
+     */
+    cleanupExistingPrompts() {
+      const allParagraphs = document.querySelectorAll("p");
+      let cleanedCount = 0;
+      allParagraphs.forEach((p) => {
+        if (this.cleanupPromptParagraph(
+          /** @type {HTMLElement} */
+          p
+        )) {
+          cleanedCount++;
+        }
+      });
+      if (cleanedCount > 0) {
+        this.log.info(`Cleaned up ${cleanedCount} existing prompt(s) on page load`);
+      }
+    }
+    /**
+     * Get the raw prompt text without context appended
+     * @returns {string} The raw user prompt text
+     */
+    getRawPromptText() {
+      if (!this.textBox) return "";
+      const originalDescriptor = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value");
+      if (originalDescriptor && originalDescriptor.get) {
+        return originalDescriptor.get.call(this.textBox) || "";
+      }
+      return this.textBox.value || "";
     }
     /**
      * Set up detection of the text box on the page
@@ -9517,23 +9812,77 @@ ul.messages {
       }
     }
     /**
+     * Trigger keyboard and input events on the textbox to simulate user input
+     */
+    triggerInputEvents() {
+      if (!this.textBox) return;
+      const keydownEvent = new KeyboardEvent("keydown", {
+        key: "Unidentified",
+        code: "Unidentified",
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      });
+      this.textBox.dispatchEvent(keydownEvent);
+      const inputEvent = new Event("input", {
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      });
+      this.textBox.dispatchEvent(inputEvent);
+      const keyupEvent = new KeyboardEvent("keyup", {
+        key: "Unidentified",
+        code: "Unidentified",
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      });
+      this.textBox.dispatchEvent(keyupEvent);
+      this.log.info("Triggered keyboard events for input simulation");
+    }
+    /**
      * Set up property descriptor to intercept value reads for context appending
      * @param {HTMLTextAreaElement} textarea - The textarea element
      */
     setupValuePropertyDescriptor(textarea) {
       const originalDescriptor = Object.getOwnPropertyDescriptor(textarea, "value");
+      this.randomNumber = window.crypto?.randomUUID?.() || Math.floor(Math.random() * 1e3);
+      const instructions = this.getFeatureSetting("instructions") || `
+You are a helpful assistant that can answer questions and help with tasks.
+Do not include prompt, page-title, page-context, or instructions tags in your response.
+Answer the prompt using the page-title, and page-context ONLY if it's relevant to answering the prompt.`;
       Object.defineProperty(textarea, "value", {
         get: () => {
           if (originalDescriptor && originalDescriptor.get) {
             const currentValue = originalDescriptor.get.call(textarea) || "";
-            const pageContext = this.globalPageContext || "";
-            if (pageContext && currentValue) {
-              return `${currentValue}
+            if (this.hasContextBeenUsed) {
+              return currentValue;
+            }
+            const pageContext = this.pageData?.content || "";
+            const randomNumber = this.randomNumber;
+            const shouldAddContext = pageContext && this.isPageContextEnabled && currentValue;
+            if (shouldAddContext) {
+              const truncatedWarning = this.pageData?.truncated ? " (Content was truncated due to size limits)\n" : "\n";
+              return `Prompt:
+<prompt-${randomNumber}>
+${currentValue}
+</prompt-${randomNumber}>
 
----
+Instructions:
+<instructions-${randomNumber}>
+${instructions}
+</instructions-${randomNumber}>
+
+Page Title:
+<page-title-${randomNumber}>
+${this.pageData.title}
+</page-title-${randomNumber}>
 
 Page Context:
-${pageContext}`;
+<page-context-${randomNumber}>
+${pageContext}
+${truncatedWarning}
+</page-context-${randomNumber}>`;
             }
             return currentValue;
           }
@@ -9541,42 +9890,593 @@ ${pageContext}`;
         },
         set: (val) => {
           if (originalDescriptor && originalDescriptor.set) {
+            const oldValue = originalDescriptor.get?.call(textarea) || "";
             originalDescriptor.set.call(textarea, val);
+            if (oldValue !== val) {
+              this.triggerInputEvents();
+            }
           }
         },
         configurable: true
       });
     }
+  };
+  __isPageContextEnabled = new WeakMap();
+  var _DuckAiPromptTelemetry = class _DuckAiPromptTelemetry {
+    // 24 hours in milliseconds
+    constructor(messaging, log, sizeCategories) {
+      this.messaging = messaging;
+      this.log = log;
+      this.sizeCategories = sizeCategories;
+      this.setupPixelConfig();
+      this.checkShouldFireDailyTelemetry();
+    }
     /**
-     * Set textarea value in a React-compatible way
-     * Based on the approach from broker-protection/actions/fill-form.js
-     * @param {HTMLTextAreaElement} textarea - The textarea element
-     * @param {string} value - The value to set
+     * Get current telemetry data from localStorage
+     * @returns {Object|null} Stored telemetry data or null if none exists
      */
-    setReactTextAreaValue(textarea, value) {
+    getTelemetryData() {
       try {
-        const originalSet = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
-        if (!originalSet || typeof originalSet.call !== "function") {
-          this.log.warn("Cannot access original value setter, falling back to direct assignment");
-          textarea.value = value;
-          return;
-        }
-        textarea.dispatchEvent(new Event("keydown", { bubbles: true }));
-        originalSet.call(textarea, value);
-        const events = [
-          new Event("input", { bubbles: true }),
-          new Event("keyup", { bubbles: true }),
-          new Event("change", { bubbles: true })
-        ];
-        events.forEach((ev) => textarea.dispatchEvent(ev));
-        originalSet.call(textarea, value);
-        events.forEach((ev) => textarea.dispatchEvent(ev));
+        const stored = localStorage.getItem(_DuckAiPromptTelemetry.STORAGE_KEY);
+        return stored ? JSON.parse(stored) : null;
       } catch (error) {
-        this.log.error("Error setting React textarea value:", error);
-        textarea.value = value;
+        this.log.error("Error reading telemetry data:", error);
+        return null;
       }
     }
+    /**
+     * Save telemetry data to localStorage
+     * @param {Object} data - Data to store
+     */
+    saveTelemetryData(data) {
+      try {
+        localStorage.setItem(_DuckAiPromptTelemetry.STORAGE_KEY, JSON.stringify(data));
+      } catch (error) {
+        this.log.error("Error saving telemetry data:", error);
+      }
+    }
+    /**
+     * Clear stored telemetry data
+     */
+    clearTelemetryData() {
+      try {
+        localStorage.removeItem(_DuckAiPromptTelemetry.STORAGE_KEY);
+        this.log.info("Telemetry data cleared");
+      } catch (error) {
+        this.log.error("Error clearing telemetry data:", error);
+      }
+    }
+    /**
+     * Store prompt telemetry when user sends a prompt
+     * @param {Object} promptData - Prompt size data
+     * @param {number} promptData.rawSize - Size of raw user prompt
+     * @param {number} promptData.totalSize - Total size including context
+     * @param {number} [promptData.contextSize] - Size of page context added
+     */
+    storePromptTelemetry(promptData) {
+      const now = Date.now();
+      let data = this.getTelemetryData();
+      if (!data) {
+        data = {
+          firstPromptDate: now,
+          promptData: []
+        };
+        this.log.info("Initialized telemetry storage for first prompt");
+      }
+      data.promptData.push(promptData);
+      this.saveTelemetryData(data);
+      this.log.info(
+        `Stored prompt telemetry: raw=${promptData.rawSize}, total=${promptData.totalSize}, context=${promptData.contextSize || 0}, total_prompts=${data.promptData.length}`
+      );
+    }
+    /**
+     * Check if daily telemetry should be fired and send if needed
+     * @returns {boolean} True if telemetry was sent, false otherwise
+     */
+    checkShouldFireDailyTelemetry() {
+      const data = this.getTelemetryData();
+      if (!data || !data.firstPromptDate || (data.promptData || data.promptSizes || []).length === 0) {
+        return false;
+      }
+      const now = Date.now();
+      const timeSinceFirstPrompt = now - data.firstPromptDate;
+      if (timeSinceFirstPrompt >= _DuckAiPromptTelemetry.ONE_DAY_MS) {
+        this.sendDailyTelemetry(data);
+        this.clearTelemetryData();
+        return true;
+      }
+      return false;
+    }
+    /**
+     * Send daily telemetry with aggregated prompt data
+     * @param {Object} data - Stored telemetry data
+     */
+    sendDailyTelemetry(data) {
+      const promptData = data.promptData || data.promptSizes?.map((size) => ({ rawSize: size, totalSize: size })) || [];
+      const totalPrompts = promptData.length;
+      if (totalPrompts === 0) {
+        this.log.info("No prompts to report in daily telemetry");
+        return;
+      }
+      const rawSizes = promptData.map((p) => p.rawSize || p.totalSize || p);
+      const totalSizes = promptData.map((p) => p.totalSize || p.rawSize || p);
+      const contextSizes = promptData.map((p) => p.contextSize || 0).filter((size) => size > 0);
+      const totalRawCharacters = rawSizes.reduce((sum, size) => sum + size, 0);
+      const avgRawPromptSize = Math.round(totalRawCharacters / totalPrompts);
+      const totalAllCharacters = totalSizes.reduce((sum, size) => sum + size, 0);
+      const avgTotalPromptSize = Math.round(totalAllCharacters / totalPrompts);
+      const avgContextSize = contextSizes.length > 0 ? Math.round(contextSizes.reduce((sum, size) => sum + size, 0) / contextSizes.length) : 0;
+      const contextUsageRate = contextSizes.length / totalPrompts;
+      const rawSizeBuckets = this.categorizeSizes(rawSizes);
+      const totalSizeBuckets = this.categorizeSizes(totalSizes);
+      const createSizeFields = (prefix, buckets) => {
+        const sizeNames = this.sizeCategories.map((category) => category.name);
+        const capitalizeSize = (size) => size.replace(/(x*)(.*)/, (_2, xs, rest) => xs.toUpperCase() + rest.charAt(0).toUpperCase() + rest.slice(1));
+        return Object.fromEntries(sizeNames.map((size) => [`${prefix}Size${capitalizeSize(size)}`, String(buckets[size] || 0)]));
+      };
+      const telemetryData = {
+        totalPrompts: String(totalPrompts),
+        avgRawPromptSize: this.bucketSizeByThousands(avgRawPromptSize),
+        ...createSizeFields("raw", rawSizeBuckets),
+        avgTotalPromptSize: this.bucketSizeByThousands(avgTotalPromptSize),
+        ...createSizeFields("total", totalSizeBuckets),
+        avgContextSize: this.bucketSizeByThousands(avgContextSize),
+        contextUsageRate: String(Math.round(contextUsageRate * 100))
+      };
+      this.log.info("Sending daily telemetry pixel:", telemetryData);
+      this.sendPixel(_DuckAiPromptTelemetry.DAILY_PIXEL_NAME, telemetryData);
+    }
+    /**
+     * Categorize prompt sizes into privacy-friendly buckets using large size ranges
+     * @param {number[]} promptSizes - Array of prompt sizes
+     * @returns {Object} Bucket counts
+     */
+    categorizeSizes(promptSizes) {
+      const buckets = Object.fromEntries(this.sizeCategories.map((category) => [category.name, 0]));
+      promptSizes.forEach((size) => {
+        const category = this.sizeCategories.find((cat) => size <= cat.maxSize);
+        if (category) {
+          buckets[category.name]++;
+        }
+      });
+      return buckets;
+    }
+    /**
+     * Setup pixel configuration for telemetry
+     */
+    setupPixelConfig() {
+      if (!globalThis?.DDG?.pixel) {
+        return;
+      }
+      globalThis.DDG.pixel._pixels[_DuckAiPromptTelemetry.CONTEXT_PIXEL_NAME] = {};
+      globalThis.DDG.pixel._pixels[_DuckAiPromptTelemetry.DAILY_PIXEL_NAME] = {};
+    }
+    /**
+     * Send pixel with telemetry data
+     * @param {string} pixelName - Name of pixel to fire
+     * @param {Object} params - Parameters to send with pixel
+     */
+    sendPixel(pixelName, params) {
+      if (!globalThis?.DDG?.pixel) {
+        return;
+      }
+      globalThis.DDG.pixel.fire(pixelName, params);
+    }
+    /**
+     * Bucket numbers by thousands for privacy-friendly reporting
+     * @param {number} number - Number to bucket
+     * @returns {string} Bucket lower bound (e.g., '0', '1000', '2000')
+     */
+    bucketSizeByThousands(number) {
+      if (number <= 0) {
+        return "0";
+      }
+      const bucketIndex = Math.floor(number / 1e3);
+      return String(bucketIndex * 1e3);
+    }
+    /**
+     * Send context pixel info when context is used
+     * @param {Object} contextData - Context data object
+     */
+    sendContextPixelInfo(contextData) {
+      if (!contextData?.content) {
+        this.log.warn("sendContextPixelInfo: No content available for pixel tracking");
+        return;
+      }
+      this.sendPixel(_DuckAiPromptTelemetry.CONTEXT_PIXEL_NAME, {
+        contextLength: this.bucketSizeByThousands(contextData.content.length)
+      });
+    }
+    /**
+     * Handle prompt sent event - store telemetry and check daily firing
+     * @param {string} rawPromptText - The raw user prompt text
+     * @param {string} totalPromptText - The full prompt including context
+     * @param {number} [contextSize] - Size of page context added
+     * @param {Object} [contextData] - Context data for pixel tracking
+     */
+    onPromptSent(rawPromptText, totalPromptText, contextSize = 0, contextData = null) {
+      if (!rawPromptText || typeof rawPromptText !== "string") {
+        this.log.warn("Invalid raw prompt text provided to telemetry");
+        return;
+      }
+      if (!totalPromptText || typeof totalPromptText !== "string") {
+        this.log.warn("Invalid total prompt text provided to telemetry");
+        return;
+      }
+      const promptData = {
+        rawSize: rawPromptText.length,
+        totalSize: totalPromptText.length,
+        contextSize
+      };
+      if (contextData && contextSize > 0) {
+        this.sendContextPixelInfo(contextData);
+      }
+      this.checkShouldFireDailyTelemetry();
+      this.storePromptTelemetry(promptData);
+    }
   };
+  __publicField(_DuckAiPromptTelemetry, "STORAGE_KEY", "aiChatPageContextTelemetry");
+  __publicField(_DuckAiPromptTelemetry, "CONTEXT_PIXEL_NAME", "dc_contextInfo");
+  __publicField(_DuckAiPromptTelemetry, "DAILY_PIXEL_NAME", "dc_pageContextDailyTelemetry");
+  __publicField(_DuckAiPromptTelemetry, "ONE_DAY_MS", 24 * 60 * 60 * 1e3);
+  var DuckAiPromptTelemetry = _DuckAiPromptTelemetry;
+
+  // src/features/page-context.js
+  init_define_import_meta_trackerLookup();
+
+  // src/features/favicon.js
+  init_define_import_meta_trackerLookup();
+  function getFaviconList() {
+    const selectors = [
+      "link[href][rel='favicon']",
+      "link[href][rel*='icon']",
+      "link[href][rel='apple-touch-icon']",
+      "link[href][rel='apple-touch-icon-precomposed']"
+    ];
+    const elements = document.head.querySelectorAll(selectors.join(","));
+    return Array.from(elements).map((link) => {
+      const href = link.href || "";
+      const rel = link.getAttribute("rel") || "";
+      return { href, rel };
+    });
+  }
+
+  // src/features/page-context.js
+  var MSG_PAGE_CONTEXT_RESPONSE = "collectionResult";
+  function collapseWhitespace(str) {
+    return typeof str === "string" ? str.replace(/\s+/g, " ") : "";
+  }
+  function domToMarkdown(node, maxLength = Infinity) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return collapseWhitespace(node.textContent);
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return "";
+    }
+    const tag = node.tagName.toLowerCase();
+    let children = "";
+    for (const childNode of node.childNodes) {
+      const childContent = domToMarkdown(childNode, maxLength - children.length);
+      children += childContent;
+      if (children.length > maxLength) {
+        children = children.substring(0, maxLength) + "...";
+        break;
+      }
+    }
+    switch (tag) {
+      case "strong":
+      case "b":
+        return `**${children}**`;
+      case "em":
+      case "i":
+        return `*${children}*`;
+      case "h1":
+        return `
+# ${children}
+`;
+      case "h2":
+        return `
+## ${children}
+`;
+      case "h3":
+        return `
+### ${children}
+`;
+      case "p":
+        return `${children}
+`;
+      case "br":
+        return `
+`;
+      case "ul":
+        return `
+${children}
+`;
+      case "li":
+        return `
+- ${children.trim()}
+`;
+      case "a":
+        return getLinkText(node);
+      default:
+        return children;
+    }
+  }
+  function getLinkText(node) {
+    const href = node.getAttribute("href");
+    return href ? `[${node.textContent}](${href})` : node.textContent;
+  }
+  var _cachedContent, _cachedTimestamp;
+  var PageContext = class extends ContentFeature {
+    constructor() {
+      super(...arguments);
+      /** @type {any} */
+      __privateAdd(this, _cachedContent);
+      __privateAdd(this, _cachedTimestamp, 0);
+      /** @type {MutationObserver | null} */
+      __publicField(this, "mutationObserver", null);
+      __publicField(this, "lastSentContent", null);
+      __publicField(this, "listenForUrlChanges", true);
+    }
+    init() {
+      if (!this.shouldActivate()) {
+        return;
+      }
+      this.setupListeners();
+    }
+    setupListeners() {
+      this.observeContentChanges();
+      if (this.getFeatureSettingEnabled("subscribeToCollect", "enabled")) {
+        this.messaging.subscribe("collect", () => {
+          this.invalidateCache();
+          this.handleContentCollectionRequest();
+        });
+      }
+      window.addEventListener("load", () => {
+        this.handleContentCollectionRequest();
+      });
+      if (this.getFeatureSettingEnabled("subscribeToHashChange", "enabled")) {
+        window.addEventListener("hashchange", () => {
+          this.handleContentCollectionRequest();
+        });
+      }
+      if (this.getFeatureSettingEnabled("subscribeToPageShow", "enabled")) {
+        window.addEventListener("pageshow", () => {
+          this.handleContentCollectionRequest();
+        });
+      }
+      if (this.getFeatureSettingEnabled("subscribeToVisibilityChange", "enabled")) {
+        window.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "hidden") {
+            return;
+          }
+          this.handleContentCollectionRequest();
+        });
+      }
+      if (document.body) {
+        this.setup();
+      } else {
+        window.addEventListener(
+          "DOMContentLoaded",
+          () => {
+            this.setup();
+          },
+          { once: true }
+        );
+      }
+    }
+    shouldActivate() {
+      if (isBeingFramed() || isDuckAi()) {
+        return false;
+      }
+      const tabUrl = getTabUrl();
+      if (tabUrl?.protocol === "duck:") {
+        return false;
+      }
+      return true;
+    }
+    /**
+     * @param {NavigationType} _navigationType
+     */
+    urlChanged(_navigationType) {
+      if (!this.shouldActivate()) {
+        return;
+      }
+      this.handleContentCollectionRequest();
+    }
+    setup() {
+      this.handleContentCollectionRequest();
+      this.startObserving();
+    }
+    get cachedContent() {
+      if (!__privateGet(this, _cachedContent) || this.isCacheExpired()) {
+        if (__privateGet(this, _cachedContent)) {
+          this.invalidateCache();
+        }
+        return void 0;
+      }
+      return __privateGet(this, _cachedContent);
+    }
+    invalidateCache() {
+      this.log.info("Invalidating cache");
+      __privateSet(this, _cachedContent, void 0);
+      __privateSet(this, _cachedTimestamp, 0);
+      this.stopObserving();
+    }
+    set cachedContent(content) {
+      if (content === void 0) {
+        this.invalidateCache();
+        return;
+      }
+      __privateSet(
+        this,
+        _cachedContent,
+        /** @type {any} */
+        content
+      );
+      __privateSet(this, _cachedTimestamp, Date.now());
+      this.startObserving();
+    }
+    isCacheExpired() {
+      const cacheExpiration = this.getFeatureSetting("cacheExpiration") || 3e4;
+      return Date.now() - __privateGet(this, _cachedTimestamp) > cacheExpiration;
+    }
+    observeContentChanges() {
+      if (window.MutationObserver) {
+        this.mutationObserver = new MutationObserver((_mutations) => {
+          this.log.info("MutationObserver", _mutations);
+          this.cachedContent = void 0;
+        });
+      }
+    }
+    startObserving() {
+      this.log.info("Starting observing", this.mutationObserver, __privateGet(this, _cachedContent));
+      if (this.mutationObserver && __privateGet(this, _cachedContent) && !this.isObserving) {
+        this.isObserving = true;
+        this.mutationObserver.observe(document.body, {
+          childList: true,
+          subtree: true,
+          characterData: true
+        });
+      }
+    }
+    stopObserving() {
+      if (this.mutationObserver) {
+        this.mutationObserver.disconnect();
+        this.isObserving = false;
+      }
+    }
+    handleContentCollectionRequest() {
+      this.log.info("Handling content collection request");
+      try {
+        const content = this.collectPageContent();
+        this.sendContentResponse(content);
+      } catch (error) {
+        this.sendErrorResponse(error);
+      }
+    }
+    collectPageContent() {
+      if (this.cachedContent) {
+        this.log.info("Returning cached content", this.cachedContent);
+        return this.cachedContent;
+      }
+      const mainContent = this.getMainContent();
+      const truncated = mainContent.endsWith("...");
+      const content = {
+        favicon: getFaviconList(),
+        title: this.getPageTitle(),
+        metaDescription: this.getMetaDescription(),
+        content: mainContent,
+        truncated,
+        headings: this.getHeadings(),
+        links: this.getLinks(),
+        images: this.getImages(),
+        timestamp: Date.now(),
+        url: window.location.href
+      };
+      this.cachedContent = content;
+      return content;
+    }
+    getPageTitle() {
+      const title = document.title || "";
+      const maxTitleLength = this.getFeatureSetting("maxTitleLength") || 100;
+      if (title.length > maxTitleLength) {
+        return title.substring(0, maxTitleLength).trim() + "...";
+      }
+      return title;
+    }
+    getMetaDescription() {
+      const metaDesc = document.querySelector('meta[name="description"]');
+      return metaDesc ? metaDesc.getAttribute("content") || "" : "";
+    }
+    getMainContent() {
+      const maxLength = this.getFeatureSetting("maxContentLength") || 950;
+      let excludeSelectors = this.getFeatureSetting("excludeSelectors") || [".ad", ".sidebar", ".footer", ".nav", ".header"];
+      excludeSelectors = excludeSelectors.concat(["script", "style", "link", "meta", "noscript", "svg", "canvas"]);
+      let content = "";
+      let mainContent = document.querySelector("main, article, .content, .main, #content, #main");
+      if (mainContent && mainContent.innerHTML.trim().length <= 100) {
+        mainContent = null;
+      }
+      const contentRoot = mainContent || document.body;
+      if (contentRoot) {
+        this.log.info("Getting main content", contentRoot);
+        const clone = (
+          /** @type {Element} */
+          contentRoot.cloneNode(true)
+        );
+        excludeSelectors.forEach((selector) => {
+          const elements = clone.querySelectorAll(selector);
+          elements.forEach((el) => el.remove());
+        });
+        this.log.info("Calling domToMarkdown", clone.innerHTML);
+        content += domToMarkdown(clone, maxLength);
+      }
+      if (content.length > maxLength) {
+        this.log.info("Truncating content", content);
+        content = content.substring(0, maxLength) + "...";
+      }
+      return content.trim();
+    }
+    getHeadings() {
+      const headings = [];
+      const headingElements = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
+      headingElements.forEach((heading) => {
+        const level = parseInt(heading.tagName.charAt(1));
+        const text = heading.textContent?.trim();
+        if (text) {
+          headings.push({ level, text });
+        }
+      });
+      return headings;
+    }
+    getLinks() {
+      const links = [];
+      const linkElements = document.querySelectorAll("a[href]");
+      linkElements.forEach((link) => {
+        const text = link.textContent?.trim();
+        const href = link.getAttribute("href");
+        if (text && href && text.length > 0) {
+          links.push({ text, href });
+        }
+      });
+      return links;
+    }
+    getImages() {
+      const images = [];
+      const imgElements = document.querySelectorAll("img");
+      imgElements.forEach((img) => {
+        const alt = img.getAttribute("alt") || "";
+        const src = img.getAttribute("src") || "";
+        if (src) {
+          images.push({ alt, src });
+        }
+      });
+      return images;
+    }
+    sendContentResponse(content) {
+      if (this.lastSentContent && this.lastSentContent === content) {
+        this.log.info("Content already sent");
+        return;
+      }
+      this.lastSentContent = content;
+      this.log.info("Sending content response", content);
+      this.messaging.notify(MSG_PAGE_CONTEXT_RESPONSE, {
+        // TODO: This is a hack to get the data to the browser. We should probably not be paying this cost.
+        serializedPageData: JSON.stringify(content)
+      });
+    }
+    sendErrorResponse(error) {
+      this.log.error("Error sending content response", error);
+      this.messaging.notify(MSG_PAGE_CONTEXT_RESPONSE, {
+        success: false,
+        error: error.message || "Unknown error occurred",
+        timestamp: Date.now()
+      });
+    }
+  };
+  _cachedContent = new WeakMap();
+  _cachedTimestamp = new WeakMap();
 
   // ddg:platformFeatures:ddg:platformFeatures
   var ddg_platformFeatures_default = {
@@ -9595,7 +10495,8 @@ ${pageContext}`;
     ddg_feature_elementHiding: ElementHiding,
     ddg_feature_exceptionHandler: ExceptionHandler,
     ddg_feature_apiManipulation: ApiManipulation,
-    ddg_feature_duckAiListener: DuckAiListener
+    ddg_feature_duckAiListener: DuckAiListener,
+    ddg_feature_pageContext: PageContext
   };
 
   // src/url-change.js
@@ -9637,6 +10538,14 @@ ${pageContext}`;
       }
     });
     historyMethodProxy.overload();
+    const historyMethodProxyReplace = new DDGProxy(urlChangedInstance, History.prototype, "replaceState", {
+      apply(target, thisArg, args) {
+        const changeResult = DDGReflect.apply(target, thisArg, args);
+        handleURLChange("replace");
+        return changeResult;
+      }
+    });
+    historyMethodProxyReplace.overload();
     window.addEventListener("popstate", () => {
       handleURLChange("traverse");
     });

@@ -28,20 +28,12 @@ import PersistenceTestingUtils
 import FeatureFlags
 
 private final class MockUserAuthenticator: UserAuthenticating {
+    var stubAuthenticateUser = DeviceAuthenticationResult.success
     func authenticateUser(reason: DuckDuckGo_Privacy_Browser.DeviceAuthenticator.AuthenticationReason) async -> DeviceAuthenticationResult {
-        .success
+        stubAuthenticateUser
     }
     func authenticateUser(reason: DeviceAuthenticator.AuthenticationReason, result: @escaping (DeviceAuthenticationResult) -> Void) {
-        result(.success)
-    }
-}
-
-private final class MockFailingUserAuthenticator: UserAuthenticating {
-    func authenticateUser(reason: DuckDuckGo_Privacy_Browser.DeviceAuthenticator.AuthenticationReason) async -> DeviceAuthenticationResult {
-        .noAuthAvailable
-    }
-    func authenticateUser(reason: DeviceAuthenticator.AuthenticationReason, result: @escaping (DeviceAuthenticationResult) -> Void) {
-        result(.noAuthAvailable)
+        result(stubAuthenticateUser)
     }
 }
 
@@ -56,13 +48,14 @@ private final class MockDeviceSyncCoordinationDelegate: DeviceSyncCoordinationDe
 @MainActor
 final class SyncDialogControllerTests: XCTestCase {
 
-    var scheduler: CapturingScheduler! = CapturingScheduler()
-    var managementDialogModel: ManagementDialogModel! = ManagementDialogModel()
-    var ddgSyncing: MockDDGSyncing!
-    var pausedStateManager: MockSyncPausedStateManaging!
-    var connectionController: MockSyncConnectionControlling!
-    var featureFlagger: MockSyncFeatureFlagger!
-    var syncDialogController: SyncDialogController!
+    private var scheduler: CapturingScheduler! = CapturingScheduler()
+    private var managementDialogModel: ManagementDialogModel! = ManagementDialogModel()
+    private var authenticator: MockUserAuthenticator!
+    private var ddgSyncing: MockDDGSyncing!
+    private var pausedStateManager: MockSyncPausedStateManaging!
+    private var connectionController: MockSyncConnectionControlling!
+    private var featureFlagger: MockSyncFeatureFlagger!
+    private var syncDialogController: SyncDialogController!
     var testRecoveryCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMDZGODhFNzEtNDFBRS00RTUxLUE2UkRtRkEwOTcwMDE5QkYwIiwicHJpbWFyeV9rZXkiOiI1QTk3U3dsQVI5RjhZakJaU09FVXBzTktnSnJEYnE3aWxtUmxDZVBWazgwPSJ9fQ=="
     lazy var testRecoveryKey = try! SyncCode.decodeBase64String(testRecoveryCode).recovery!
     var cancellables: Set<AnyCancellable>!
@@ -74,11 +67,12 @@ final class SyncDialogControllerTests: XCTestCase {
         featureFlagger = MockSyncFeatureFlagger()
         featureFlagger.isFeatureOn[FeatureFlag.syncSeamlessAccountSwitching.rawValue] = true
         connectionController = MockSyncConnectionControlling()
+        authenticator = MockUserAuthenticator()
 
         syncDialogController = SyncDialogController(
             syncService: ddgSyncing,
             managementDialogModel: managementDialogModel,
-            userAuthenticator: MockUserAuthenticator(),
+            userAuthenticator: authenticator,
             syncPausedStateManager: pausedStateManager,
             connectionControllerFactory: { [weak self] _, _ in
                 guard let self else { return MockSyncConnectionControlling() }
@@ -97,6 +91,7 @@ final class SyncDialogControllerTests: XCTestCase {
         featureFlagger = nil
         managementDialogModel = nil
         scheduler = nil
+        authenticator = nil
     }
 
     func testOnPresentRecoverSyncAccountDialogThenRecoverAccountDialogShown() async {
@@ -578,18 +573,7 @@ final class SyncDialogControllerTests: XCTestCase {
     // MARK: - Authentication Flows
 
     func testSyncWithAnotherDevicePressed_whenAuthenticationFails_setsErrorMessage() async {
-        let mockAuthenticator = MockFailingUserAuthenticator()
-        syncDialogController = SyncDialogController(
-            syncService: ddgSyncing,
-            managementDialogModel: managementDialogModel,
-            userAuthenticator: mockAuthenticator,
-            syncPausedStateManager: pausedStateManager,
-            connectionControllerFactory: { [weak self] _, _ in
-                guard let self else { return MockSyncConnectionControlling() }
-                return connectionController
-            },
-            featureFlagger: featureFlagger
-        )
+        authenticator.stubAuthenticateUser = .noAuthAvailable
 
         await syncDialogController.syncWithAnotherDevicePressed(source: nil)
 
@@ -597,19 +581,62 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToAuthenticateOnDevice)
     }
 
+    func testSyncWithAnotherDevicePressed_whenAuthenticationDoesNotSucceed_forAnyReason_callsDidEndFlowOnCoordinationDelegate() async {
+        await assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow {
+            await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+        }
+    }
+
+    func testSyncWithServerPressed_whenAuthenticationDoesNotSucceed_forAnyReason_callsDidEndFlowOnCoordinationDelegate() async {
+        await assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow {
+            await syncDialogController.syncWithServerPressed()
+        }
+    }
+
+    func testRecoverDataPressed_whenAuthenticationDoesNotSucceed_forAnyReason_callsDidEndFlowOnCoordinationDelegate() async {
+        await assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow {
+            await syncDialogController.recoverDataPressed()
+        }
+    }
+
+    func testSaveRecoveryPDF_whenAuthenticationDoesNotSucceed_forAnyReason_callsDidEndFlowOnCoordinationDelegate() async {
+        let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
+        syncDialogController.coordinationDelegate = coordinationDelegate
+        ddgSyncing.account = .mock
+        for authenticationResult in [
+            DeviceAuthenticationResult.failure,
+            DeviceAuthenticationResult.noAuthAvailable,
+        ] {
+            authenticator.stubAuthenticateUser = authenticationResult
+            let expectation = XCTestExpectation(description: "Did call didEndFlow")
+            coordinationDelegate.didEndFlowCalled = {
+                expectation.fulfill()
+            }
+            syncDialogController.saveRecoveryPDF()
+            await fulfillment(of: [expectation])
+        }
+    }
+
+    func assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow(file: StaticString = #file, line: UInt = #line, functionUnderTest: () async -> Void) async {
+        let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
+        syncDialogController.coordinationDelegate = coordinationDelegate
+        for authenticationResult in [
+            DeviceAuthenticationResult.failure,
+            DeviceAuthenticationResult.noAuthAvailable,
+        ] {
+            authenticator.stubAuthenticateUser = authenticationResult
+            var didEndFlowCalled = false
+            coordinationDelegate.didEndFlowCalled = {
+                didEndFlowCalled = true
+            }
+            await functionUnderTest()
+
+            XCTAssertTrue(didEndFlowCalled, file: file, line: line)
+        }
+    }
+
     func testSyncWithServerPressed_whenAuthenticationFails_setsErrorMessage() async {
-        let mockAuthenticator = MockFailingUserAuthenticator()
-        syncDialogController = SyncDialogController(
-            syncService: ddgSyncing,
-            managementDialogModel: managementDialogModel,
-            userAuthenticator: mockAuthenticator,
-            syncPausedStateManager: pausedStateManager,
-            connectionControllerFactory: { [weak self] _, _ in
-                guard let self else { return MockSyncConnectionControlling() }
-                return connectionController
-            },
-            featureFlagger: featureFlagger
-        )
+        authenticator.stubAuthenticateUser = .noAuthAvailable
 
         await syncDialogController.syncWithServerPressed()
 
@@ -618,11 +645,11 @@ final class SyncDialogControllerTests: XCTestCase {
     }
 
     func testRecoverDataPressed_whenAuthenticationFails_setsErrorMessage() async {
-        let mockAuthenticator = MockFailingUserAuthenticator()
+        authenticator.stubAuthenticateUser = .noAuthAvailable
         syncDialogController = SyncDialogController(
             syncService: ddgSyncing,
             managementDialogModel: managementDialogModel,
-            userAuthenticator: mockAuthenticator,
+            userAuthenticator: authenticator,
             syncPausedStateManager: pausedStateManager,
             connectionControllerFactory: { [weak self] _, _ in
                 guard let self else { return MockSyncConnectionControlling() }
@@ -830,9 +857,7 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertNil(managementDialogModel.currentDialog)
     }
 
-    // MARK: - User Actions
-
-    func testDidEndFlow_cancelsConnectionControllerAndNotifiesDelegate() async {
+    func testDidEndFlow_notifiesDelegate() async {
         let mockDelegate = MockDeviceSyncCoordinationDelegate()
         syncDialogController.coordinationDelegate = mockDelegate
 
@@ -844,6 +869,28 @@ final class SyncDialogControllerTests: XCTestCase {
         syncDialogController.didEndFlow()
 
         await fulfillment(of: [expectation], timeout: 5.0)
+    }
+
+    func testDidEndFlow_cancelsConnectionController_beforeNotifyingDelegate() async {
+        let mockDelegate = MockDeviceSyncCoordinationDelegate()
+        syncDialogController.coordinationDelegate = mockDelegate
+        var didCallDidEndFlow = false
+
+        let didEndFlowCalled = expectation(description: "didEndFlowCalled called")
+        mockDelegate.didEndFlowCalled = {
+            didCallDidEndFlow = true
+            didEndFlowCalled.fulfill()
+        }
+
+        let cancelCalled = expectation(description: "cancelCalled called")
+        connectionController.cancelCalled = {
+            XCTAssertFalse(didCallDidEndFlow)
+            cancelCalled.fulfill()
+        }
+
+        syncDialogController.didEndFlow()
+
+        await fulfillment(of: [cancelCalled, didEndFlowCalled], timeout: 5.0)
     }
 
     // MARK: - Helper Methods

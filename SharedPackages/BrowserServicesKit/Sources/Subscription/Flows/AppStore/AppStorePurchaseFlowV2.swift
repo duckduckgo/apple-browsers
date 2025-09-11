@@ -46,7 +46,7 @@ public enum AppStorePurchaseFlowError: DDGError {
         }
     }
 
-    public var errorDomain: String { "com.duckduckgo.subscription.AppStorePurchaseFlowError" }
+    public static var errorDomain: String { "com.duckduckgo.subscription.AppStorePurchaseFlowError" }
 
     public var errorCode: Int {
         switch self {
@@ -166,7 +166,7 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
         case .failure(let error):
             Logger.subscriptionAppStorePurchaseFlow.error("purchaseSubscription error: \(String(describing: error), privacy: .public)")
 
-            await subscriptionManager.signOut(notifyUI: false) // TBD see if true is needed
+            await subscriptionManager.signOut(notifyUI: false)
 
             switch error {
             case .purchaseCancelledByUser:

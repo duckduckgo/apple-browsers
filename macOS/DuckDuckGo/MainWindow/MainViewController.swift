@@ -39,6 +39,7 @@ final class MainViewController: NSViewController {
     let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     let aiChatSidebarPresenter: AIChatSidebarPresenting
     let aiChatSummarizer: AIChatSummarizer
+    let aiChatTranslator: AIChatTranslator
     let findInPageViewController: FindInPageViewController
     let fireViewController: FireViewController
     let bookmarksBarViewController: BookmarksBarViewController
@@ -103,7 +104,8 @@ final class MainViewController: NSViewController {
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
          pixelFiring: PixelFiring? = PixelKit.shared,
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider = NSApp.delegateTyped.visualizeFireSettingsDecider,
-         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter = NSApp.delegateTyped.vpnUpsellPopoverPresenter
+         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter = NSApp.delegateTyped.vpnUpsellPopoverPresenter,
+         sessionRestorePromptCoordinator: SessionRestorePromptCoordinating = NSApp.delegateTyped.sessionRestorePromptCoordinator
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -170,12 +172,20 @@ final class MainViewController: NSViewController {
         aiChatSidebarPresenter = AIChatSidebarPresenter(
             sidebarHost: browserTabViewController,
             sidebarProvider: aiChatSidebarProvider,
+            aiChatMenuConfig: aiChatMenuConfig,
             aiChatTabOpener: aiChatTabOpener,
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             pixelFiring: pixelFiring
         )
         aiChatSummarizer = AIChatSummarizer(
+            aiChatMenuConfig: aiChatMenuConfig,
+            aiChatSidebarPresenter: aiChatSidebarPresenter,
+            aiChatTabOpener: aiChatTabOpener,
+            pixelFiring: pixelFiring
+        )
+
+        aiChatTranslator = AIChatTranslator(
             aiChatMenuConfig: aiChatMenuConfig,
             aiChatSidebarPresenter: aiChatSidebarPresenter,
             aiChatTabOpener: aiChatTabOpener,
@@ -195,7 +205,8 @@ final class MainViewController: NSViewController {
                                                                          brokenSitePromptLimiter: brokenSitePromptLimiter,
                                                                          aiChatMenuConfig: aiChatMenuConfig,
                                                                          aiChatSidebarPresenter: aiChatSidebarPresenter,
-                                                                         vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter)
+                                                                         vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
+                                                                         sessionRestorePromptCoordinator: sessionRestorePromptCoordinator)
 
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)

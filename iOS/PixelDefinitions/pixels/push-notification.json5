@@ -15,4 +15,20 @@
             },
         ],
     },
+    'm_push-notification_user-notification-authorization-status': {
+        description: 'Fires daily at launch with users current notification center authorization status. Currently accepting authorized and denied as status value.',
+        owners: ['hanyutang-sandra'],
+        triggers: ['other'],
+        suffixes: ['form_factor', 'daily'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'status',
+                description: 'UNNotificationAuthorizationStatus string',
+                type: 'string',
+                enum: ['denied', 'authorized'],
+            },
+        ],
+    },
 }

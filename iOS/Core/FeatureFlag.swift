@@ -171,7 +171,10 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211127159784126?focus=true
     case subscriptionPurchaseWidePixelMeasurement
-    
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210860792084465?focus=true
+    case showAIChatAddressBarChoiceScreen
+
     /// https://app.asana.com/1/137249556945/project/1210947754188321/task/1210869716452616?focus=true
     case refreshButtonPosition
     
@@ -192,7 +195,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .daxEasterEggLogos,
              .subscriptionPurchaseWidePixelMeasurement,
-             .askAIChatSuggestion:
+             .askAIChatSuggestion,
+             .refreshButtonPosition:
             true
         default:
             false
@@ -243,6 +247,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .daxEasterEggLogos,
              .dbpEmailConfirmationDecoupling,
              .subscriptionPurchaseWidePixelMeasurement,
+             .showAIChatAddressBarChoiceScreen,
              .refreshButtonPosition,
              .serpSettingsFollowUpQuestions:
             return true
@@ -435,6 +440,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         case .refreshButtonPosition:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.refreshButtonPosition))
+        case .showAIChatAddressBarChoiceScreen:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
         case .serpSettingsFollowUpQuestions:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.serpSettingsFollowUpQuestions))
         }

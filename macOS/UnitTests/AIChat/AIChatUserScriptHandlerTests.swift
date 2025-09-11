@@ -217,6 +217,53 @@ struct AIChatUserScriptHandlerTests {
         #expect(windowControllersManager.openCalls.count == 0)
     }
 
+    @Test("openTranslationSourceLink calls windowControllersManager show when valid URL is passed with same tab target")
+    @MainActor
+    func testThatOpenTranslationSourceLinkCallsWindowControllersManagerShow() async throws {
+        let urlString = "https://example.com"
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab)
+        let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
+        pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatTranslationSourceLinkClicked, frequency: .dailyAndStandard)]
+
+        _ = await handler.openTranslationSourceLink(params: params, message: WKScriptMessage())
+
+        let showCall = try #require(windowControllersManager.showCalled)
+        #expect(showCall.url?.absoluteString == urlString)
+        #expect(showCall.source == .switchToOpenTab)
+        #expect(showCall.newTab == true)
+        #expect(showCall.selected == true)
+        #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+    }
+
+    @Test("openTranslationSourceLink calls windowControllersManager open when valid URL is passed with non-same-tab target", arguments: targets)
+    @MainActor
+    func testThatOpenTranslationSourceLinkCallsWindowControllersManagerOpen(_ target: AIChatUserScriptHandler.OpenLink.OpenTarget) async throws {
+        let urlString = "https://example.com"
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: target)
+        let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
+        pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatTranslationSourceLinkClicked, frequency: .dailyAndStandard)]
+
+        _ = await handler.openTranslationSourceLink(params: params, message: WKScriptMessage())
+
+        #expect(windowControllersManager.openCalls.count == 1)
+        let openCall = try #require(windowControllersManager.openCalls.first)
+        #expect(openCall.url.absoluteString == urlString)
+        #expect(openCall.source == .link)
+        #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+    }
+
+    @Test("openTranslationSourceLink doesn't call windowControllersManager when invalid URL is passed")
+    @MainActor
+    func testThatOpenTranslationSourceLinkDoesNotCallWindowControllersManagerWhenInvalidURLIsPassed() async throws {
+        let urlString = "invalid"
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab)
+        let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
+
+        _ = await handler.openTranslationSourceLink(params: params, message: WKScriptMessage())
+
+        #expect(windowControllersManager.openCalls.count == 0)
+    }
+
     @Test("submitAIChatNativePrompt forwards prompt to the publisher")
     func testThatSubmitAIChatNativePromptForwardsPromptToPublisher() async throws {
         struct EventNotReceivedError: Error {}

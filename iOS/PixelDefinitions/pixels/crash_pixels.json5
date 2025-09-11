@@ -117,4 +117,150 @@
         suffixes: ['platform', 'form_factor', 'first_daily_count'],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
+
+    // Enhanced bookmarks structure lost pixel with diagnostic parameters
+    m_d_bookmarks_structure_lost: {
+        description: 'Fires when bookmarks database loads but structure is missing/empty with detailed diagnostics.',
+        owners: ['jaceklyp', 'bwaresiak'],
+        triggers: ['exception'],
+        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'sync-enabled',
+                description: 'Whether sync is enabled',
+                type: 'boolean',
+            },
+            {
+                key: 'recent-bookmark-error-name',
+                description: 'Name of recent bookmark error case within 24 hours',
+                type: 'string',
+            },
+            {
+                key: 'recent-bookmark-error-domain',
+                description: 'Domain of recent bookmark error within 24 hours',
+                type: 'string',
+            },
+            {
+                key: 'recent-bookmark-error-code',
+                description: 'Code of recent bookmark error within 24 hours',
+                type: 'number',
+            },
+            {
+                key: 'launch-marker-present',
+                description: 'Whether app has successfully launched before (helps distinguish backup restore from corruption)',
+                type: 'boolean',
+            },
+        ],
+    },
+
+    // Crash correlation pixel
+    m_debug_bookmarks_structure_lost_after_crash: {
+        description: 'Fires when structure lost occurs after app crash to identify crash-related corruption.',
+        owners: ['jaceklyp', 'bwaresiak'],
+        triggers: ['exception'],
+        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        parameters: ['appVersion'],
+    },
+
+    // Sync vulnerability protection pixel
+    m_debug_bookmarks_sync_attempted_to_delete_root: {
+        description: 'Fires when sync attempts to delete root folders, indicating potential sync vulnerability.',
+        owners: ['jaceklyp', 'bwaresiak'],
+        triggers: ['exception'],
+        suffixes: ['platform', 'form_factor', 'daily_standard'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'root-uuid',
+                description: 'Name of the root folder that sync attempted to delete',
+                type: 'string',
+                enum: ['mobile_favorites_root', 'desktop_favorites_root', 'favorites_root', 'bookmarks_root'],
+            },
+        ],
+        expires: '2025-10-31',
+    },
+
+    // Specific database setup error pixels
+    m_debug_bookmarks_could_not_get_favorites_order: {
+        description: 'Fires when unable to get favorites order during database setup.',
+        owners: ['jaceklyp', 'bwaresiak'],
+        triggers: ['exception'],
+        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+    },
+
+    m_debug_bookmarks_could_not_prepare_database: {
+        description: 'Fires when database preparation fails during setup.',
+        owners: ['jaceklyp', 'bwaresiak'],
+        triggers: ['exception'],
+        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+    },
+
+    // Legacy storage error pixels
+    m_debug_bookmarks_no_db_scheme_found: {
+        description: 'Fires when no database scheme found in legacy bookmarks storage.',
+        owners: ['jaceklyp', 'bwaresiak'],
+        triggers: ['exception'],
+        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+    },
+
+    m_debug_bookmarks_unable_to_load_persistent_stores: {
+        description: 'Fires when unable to load persistent stores in legacy bookmarks storage.',
+        owners: ['jaceklyp', 'bwaresiak'],
+        triggers: ['exception'],
+        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+    },
+
+    m_debug_bookmarks_error_creating_top_level_bookmarks_folder: {
+        description: 'Fires when unable to create top-level bookmarks folder in legacy storage.',
+        owners: ['jaceklyp', 'bwaresiak'],
+        triggers: ['exception'],
+        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+    },
+
+    m_debug_bookmarks_error_creating_top_level_favorites_folder: {
+        description: 'Fires when unable to create top-level favorites folder in legacy storage.',
+        owners: ['jaceklyp', 'bwaresiak'],
+        triggers: ['exception'],
+        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+    },
+
+    m_debug_bookmarks_could_not_fix_bookmark_folder: {
+        description: 'Fires when unable to fix corrupted bookmark folder structure in legacy storage.',
+        owners: ['jaceklyp', 'bwaresiak'],
+        triggers: ['exception'],
+        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+    },
+
+    m_debug_bookmarks_could_not_fix_favorite_folder: {
+        description: 'Fires when unable to fix corrupted favorite folder structure in legacy storage.',
+        owners: ['jaceklyp', 'bwaresiak'],
+        triggers: ['exception'],
+        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+    },
+
+    // Migration error pixels
+    m_debug_bookmarks_could_not_prepare_db_structure: {
+        description: 'Fires when unable to prepare database structure during migration.',
+        owners: ['jaceklyp', 'bwaresiak'],
+        triggers: ['exception'],
+        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+    },
+
+    m_debug_bookmarks_could_not_write_to_db: {
+        description: 'Fires when unable to write to database during migration.',
+        owners: ['jaceklyp', 'bwaresiak'],
+        triggers: ['exception'],
+        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+    },
 }

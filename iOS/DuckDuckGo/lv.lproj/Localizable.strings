@@ -100,6 +100,9 @@
 /* Refresh action - button shown in alert */
 "action.title.refresh" = "Atsvaidzināt";
 
+/* Refresh page action */
+"action.title.refreshPage" = "Atkārtoti ielādēt lapu";
+
 /* Remove Favorite action */
 "action.title.remove.favorite" = "Noņemt izlasi";
 
@@ -2934,6 +2937,15 @@
 
 /* Explanation in Settings how the private search feature works */
 "settings.private.search.explanation" = "DuckDuckGo Private Search ir tava noklusējuma meklētājprogramma, tāpēc vari meklēt tīmeklī, netiekot izsekotam.";
+
+/* Settings screen option to set refresh button in the address bar */
+"settings.refreshButton.position.addressBar" = "Adreses josla";
+
+/* Settings screen option to set refresh button in the menu */
+"settings.refreshButton.position.menu" = "Izvēlne";
+
+/* Settings screen cell text for setting the refresh button position. */
+"settings.refreshButton.position.title" = "Pogas 'Atkārtoti ielādēt' vieta";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Meklēšanas iestatījumi";

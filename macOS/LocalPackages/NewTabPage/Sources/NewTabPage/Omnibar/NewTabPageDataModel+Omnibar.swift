@@ -30,6 +30,7 @@ public extension NewTabPageDataModel {
         let mode: OmnibarMode
         let enableAi: Bool
         let showAiSetting: Bool?
+        let showCustomizePopover: Bool?
     }
 
     // MARK: - omnibar_getSuggestions

@@ -45,7 +45,7 @@ protocol OmniBarDelegate: AnyObject {
     
     func onSettingsPressed()
 
-    func onSettingsLongPressed()
+    func onMenuLongPressed()
 
     func onClearPressed()
 
@@ -64,8 +64,6 @@ protocol OmniBarDelegate: AnyObject {
     func onForwardPressed()
     
     func onAccessoryPressed(accessoryType: OmniBarAccessoryType)
-
-    func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType)
 
     func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool)
 
@@ -115,10 +113,6 @@ extension OmniBarDelegate {
         
     }
 
-    func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
-
-    }
-
     func onBookmarksPressed() {
         
     }
@@ -127,7 +121,7 @@ extension OmniBarDelegate {
         
     }
 
-    func onSettingsLongPressed() {
+    func onMenuLongPressed() {
 
     }
 

@@ -100,6 +100,9 @@
 /* Refresh action - button shown in alert */
 "action.title.refresh" = "Ανανέωση";
 
+/* Refresh page action */
+"action.title.refreshPage" = "Επαναφόρτωση σελίδας";
+
 /* Remove Favorite action */
 "action.title.remove.favorite" = "Αφαίρεση αγαπημένου";
 
@@ -2934,6 +2937,15 @@
 
 /* Explanation in Settings how the private search feature works */
 "settings.private.search.explanation" = "Το DuckDuckGo Private Search αποτελεί την προεπιλεγμένη μηχανή αναζήτησης, ώστε να μπορείτε να πραγματοποιείτε αναζήτηση στο διαδίκτυο χωρίς να σας παρακολουθούν.";
+
+/* Settings screen option to set refresh button in the address bar */
+"settings.refreshButton.position.addressBar" = "Γραμμή διευθύνσεων";
+
+/* Settings screen option to set refresh button in the menu */
+"settings.refreshButton.position.menu" = "Μενού";
+
+/* Settings screen cell text for setting the refresh button position. */
+"settings.refreshButton.position.title" = "Θέση κουμπιού επαναφόρτωσης";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Ρυθμίσεις αναζήτησης";

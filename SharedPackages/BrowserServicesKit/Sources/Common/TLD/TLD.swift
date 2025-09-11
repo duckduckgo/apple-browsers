@@ -73,6 +73,42 @@ public class TLD {
         }
     }
 
+    /// Return just the eTLD (effective Top Level Domain) of given host.
+    ///
+    /// 'test.example.co.uk' -> 'co.uk'
+    /// 'example.co.uk' -> 'co.uk'
+    /// 'co.uk' -> 'co.uk'
+    /// 'example.com' -> 'com'
+    public func eTLD(_ host: String?) -> String? {
+        guard let host = host else { return nil }
+
+        // Strip port number if present
+        let hostWithoutPort = host.components(separatedBy: ":").first ?? host
+        let parts = [String](hostWithoutPort.components(separatedBy: ".").reversed())
+
+        var stack = ""
+        var lastKnownTLD = ""
+
+        for part in parts {
+            stack = !stack.isEmpty ? part + "." + stack : part
+
+            if tlds.contains(stack) {
+                lastKnownTLD = stack
+            } else if !lastKnownTLD.isEmpty {
+                break
+            }
+        }
+
+        // If host contains a known TLD, return it
+        return lastKnownTLD.isEmpty ? nil : lastKnownTLD
+    }
+
+    public func eTLD(forStringURL stringURL: String) -> String? {
+        guard let escapedStringURL = stringURL.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
+        guard let host = URL(string: escapedStringURL)?.host else { return nil }
+        return eTLD(host)
+    }
+
     /// Return eTLD+1 (entity top level domain + 1) strictly.
     ///
     /// 'test.example.co.uk' -> 'example.co.uk'

@@ -82,9 +82,6 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var onAccessoryPressed: (() -> Void)? { get set }
     var onDismissPressed: (() -> Void)? { get set }
 
-    var onSettingsLongPress: (() -> Void)? { get set }
-    var onAccessoryLongPress: (() -> Void)? { get set }
-
     // static function is needed to allow creation of DefaultOmniBarView from xib
     static func create() -> Self
     static var expectedHeight: CGFloat { get }

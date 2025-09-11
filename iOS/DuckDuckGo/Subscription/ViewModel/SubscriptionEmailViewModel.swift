@@ -23,10 +23,12 @@ import Combine
 import Core
 import Subscription
 import BrowserServicesKit
+import DataBrokerProtection_iOS
 
 final class SubscriptionEmailViewModel: ObservableObject {
     
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    weak var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     let userScript: SubscriptionPagesUserScript
     let subFeature: any SubscriptionPagesUseSubscriptionFeature
 
@@ -88,12 +90,14 @@ final class SubscriptionEmailViewModel: ObservableObject {
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          urlOpener: URLOpener = UIApplication.shared,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
         self.userScript = userScript
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
         self.urlOpener = urlOpener
         self.featureFlagger = featureFlagger
+        self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 

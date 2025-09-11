@@ -29,13 +29,21 @@ public class LegacyBookmarksStoreMigration {
     }
 
     public static func migrate(from legacyStorage: LegacyBookmarksCoreDataStorage?,
-                               to context: NSManagedObjectContext) {
+                               to context: NSManagedObjectContext) throws {
         if let legacyStorage = legacyStorage {
             // Perform migration from legacy store.
             let source = legacyStorage.getTemporaryPrivateContext()
+            var thrownError: Error?
             source.performAndWait {
-                LegacyBookmarksStoreMigration.migrate(source: source,
-                                                      destination: context)
+                do {
+                    try LegacyBookmarksStoreMigration.migrate(source: source,
+                                                              destination: context)
+                } catch {
+                    thrownError = error
+                }
+            }
+            if let thrownError = thrownError {
+                throw thrownError
             }
         } else {
             // Initialize structure if needed
@@ -43,16 +51,14 @@ public class LegacyBookmarksStoreMigration {
                 try BookmarkUtils.prepareLegacyFoldersStructure(in: context)
             } catch {
                 Pixel.fire(pixel: .debugBookmarksInitialStructureQueryFailed, error: error)
-                Thread.sleep(forTimeInterval: 1)
-                fatalError("Could not prepare Bookmarks DB structure")
+                throw BookmarksDatabaseError.couldNotPrepareBookmarksDBStructure(error)
             }
 
             if context.hasChanges {
                 do {
                     try context.save(onErrorFire: .bookmarksCouldNotPrepareDatabase)
                 } catch {
-                    Thread.sleep(forTimeInterval: 1)
-                    fatalError("Could not prepare Bookmarks DB structure")
+                    throw BookmarksDatabaseError.couldNotPrepareBookmarksDBStructure(error)
                 }
             }
         }
@@ -77,7 +83,7 @@ public class LegacyBookmarksStoreMigration {
 
     // swiftlint:disable cyclomatic_complexity
 
-    private static func migrate(source: NSManagedObjectContext, destination: NSManagedObjectContext) {
+    private static func migrate(source: NSManagedObjectContext, destination: NSManagedObjectContext) throws {
 
         // Do not migrate more than once
         guard BookmarkUtils.fetchRootFolder(destination) == nil else {
@@ -91,8 +97,8 @@ public class LegacyBookmarksStoreMigration {
               let newFavoritesRoot = BookmarkUtils.fetchFavoritesFolder(withUUID: FavoritesFolderID.unified.rawValue, in: destination),
               let newMobileFavoritesRoot = BookmarkUtils.fetchFavoritesFolder(withUUID: FavoritesFolderID.mobile.rawValue, in: destination) else {
             Pixel.fire(pixel: .bookmarksMigrationCouldNotPrepareDatabase)
-            Thread.sleep(forTimeInterval: 2)
-            fatalError("Could not write to Bookmarks DB")
+            let error = NSError(domain: "BookmarksMigration", code: -1, userInfo: [NSLocalizedDescriptionKey: "Could not prepare database structure for migration"])
+            throw BookmarksDatabaseError.couldNotWriteToBookmarksDB(error)
         }
 
         // Fetch all 'roots' in case we had some kind of inconsistency and duplicated objects
@@ -185,12 +191,24 @@ public class LegacyBookmarksStoreMigration {
         } catch {
             destination.reset()
 
-            try? BookmarkUtils.prepareLegacyFoldersStructure(in: destination)
+            do {
+                try BookmarkUtils.prepareLegacyFoldersStructure(in: destination)
+            } catch {
+                throw BookmarksDatabaseError.couldNotPrepareBookmarksDBStructure(error)
+            }
+            
             do {
                 try destination.save(onErrorFire: .bookmarksMigrationCouldNotPrepareDatabaseOnFailedMigration)
             } catch {
-                Thread.sleep(forTimeInterval: 2)
-                fatalError("Could not write to Bookmarks DB")
+                let nsError = error as NSError
+                let sanitizedError = NSError(domain: nsError.domain,
+                                             code: nsError.code,
+                                             userInfo: [
+                                                NSLocalizedDescriptionKey: nsError.localizedDescription,
+                                                NSLocalizedFailureReasonErrorKey: nsError.localizedFailureReason ?? "Migration save failed"
+                                             ]
+                )
+                throw BookmarksDatabaseError.couldNotWriteToBookmarksDB(sanitizedError)
             }
         }
     }

@@ -26,6 +26,7 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
     private var client: NewTabPageConfigurationClient!
     private var sectionsAvailabilityProvider: MockNewTabPageSectionsAvailabilityProvider!
     private var sectionsVisibilityProvider: MockNewTabPageSectionsVisibilityProvider!
+    private var omnibarConfigProvider: MockNewTabPageOmnibarConfigProvider!
     private var contextMenuPresenter: CapturingNewTabPageContextMenuPresenter!
     private var userScript: NewTabPageUserScript!
     private var messageHelper: MessageHelper<NewTabPageConfigurationClient.MessageName>!
@@ -35,11 +36,13 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
         try super.setUpWithError()
         sectionsVisibilityProvider = MockNewTabPageSectionsVisibilityProvider()
         sectionsAvailabilityProvider = MockNewTabPageSectionsAvailabilityProvider()
+        omnibarConfigProvider = MockNewTabPageOmnibarConfigProvider()
         contextMenuPresenter = CapturingNewTabPageContextMenuPresenter()
         eventMapper = CapturingNewTabPageConfigurationEventHandler()
         client = NewTabPageConfigurationClient(
             sectionsAvailabilityProvider: sectionsAvailabilityProvider,
             sectionsVisibilityProvider: sectionsVisibilityProvider,
+            omnibarConfigProvider: omnibarConfigProvider,
             customBackgroundProvider: CapturingNewTabPageCustomBackgroundProvider(),
             contextMenuPresenter: contextMenuPresenter,
             linkOpener: CapturingNewTabPageLinkOpener(),
@@ -54,30 +57,65 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
     // MARK: - contextMenu
 
     @MainActor
-    func testThatContextMenuShowsContextMenu() async throws {
+    func testShowContextMenu_ShowsAllItems_WhenAllFeaturesAreAvailable() async throws {
+        sectionsAvailabilityProvider.isOmnibarAvailable = true
+        sectionsVisibilityProvider.isOmnibarVisible = true
         sectionsVisibilityProvider.isFavoritesVisible = true
-        sectionsVisibilityProvider.isProtectionsReportVisible = false
+        sectionsVisibilityProvider.isProtectionsReportVisible = true
+        omnibarConfigProvider.isAIChatSettingVisible = true
+        omnibarConfigProvider.isAIChatShortcutEnabled = true
 
-        let parameters = NewTabPageDataModel.ContextMenuParams(visibilityMenuItems: [
-            .init(id: .favorites, title: "Favorites"),
-            .init(id: .protections, title: "Protection Report")
-        ])
-        try await messageHelper.handleMessageExpectingNilResponse(named: .contextMenu, parameters: parameters)
-
-        XCTAssertEqual(contextMenuPresenter.showContextMenuCalls.count, 1)
-        let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
-        XCTAssertEqual(menu.items.count, 2)
-        XCTAssertEqual(menu.items[0].title, "Favorites")
-        XCTAssertEqual(menu.items[0].state, .on)
-        XCTAssertEqual(menu.items[1].title, "Protection Report")
-        XCTAssertEqual(menu.items[1].state, .off)
-    }
-
-    func testWhenContextMenuParamsIsEmptyThenContextMenuDoesNotShow() async throws {
         let parameters = NewTabPageDataModel.ContextMenuParams(visibilityMenuItems: [])
         try await messageHelper.handleMessageExpectingNilResponse(named: .contextMenu, parameters: parameters)
 
-        XCTAssertEqual(contextMenuPresenter.showContextMenuCalls.count, 0)
+        let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
+        let itemTitles = menu.items.map(\.title)
+
+        XCTAssertTrue(itemTitles.contains(UserText.newTabPageContextMenuSearch))
+        XCTAssertTrue(itemTitles.contains(UserText.newTabPageContextMenuFavorites))
+        XCTAssertTrue(itemTitles.contains(UserText.newTabPageContextMenuProtectionsReport))
+        XCTAssertTrue(itemTitles.contains(UserText.newTabPageContextMenuShowDuckAI))
+        XCTAssertTrue(itemTitles.contains(UserText.newTabPageContextMenuOpenDuckAISettings))
+    }
+
+    @MainActor
+    func testShowContextMenu_HidesAIOptions_WhenAISettingNotVisible() async throws {
+        sectionsAvailabilityProvider.isOmnibarAvailable = true
+        sectionsVisibilityProvider.isOmnibarVisible = true
+        sectionsVisibilityProvider.isFavoritesVisible = true
+        sectionsVisibilityProvider.isProtectionsReportVisible = true
+        omnibarConfigProvider.isAIChatSettingVisible = false
+        omnibarConfigProvider.isAIChatShortcutEnabled = true
+
+        let parameters = NewTabPageDataModel.ContextMenuParams(visibilityMenuItems: [])
+        try await messageHelper.handleMessageExpectingNilResponse(named: .contextMenu, parameters: parameters)
+
+        let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
+        let itemTitles = menu.items.map(\.title)
+
+        XCTAssertFalse(itemTitles.contains(UserText.newTabPageContextMenuShowDuckAI))
+        XCTAssertFalse(itemTitles.contains(UserText.newTabPageContextMenuOpenDuckAISettings))
+    }
+
+    @MainActor
+    func testShowContextMenu_ShowsJustFavoritesAndProtections_WhenAllFlagsAreDisabledOrHidden() async throws {
+        sectionsAvailabilityProvider.isOmnibarAvailable = false
+        sectionsVisibilityProvider.isOmnibarVisible = false
+        sectionsVisibilityProvider.isFavoritesVisible = false
+        sectionsVisibilityProvider.isProtectionsReportVisible = false
+        omnibarConfigProvider.isAIChatSettingVisible = false
+        omnibarConfigProvider.isAIChatShortcutEnabled = false
+
+        let parameters = NewTabPageDataModel.ContextMenuParams(visibilityMenuItems: [])
+        try await messageHelper.handleMessageExpectingNilResponse(named: .contextMenu, parameters: parameters)
+
+        let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
+        let itemTitles = menu.items.map(\.title)
+        XCTAssertFalse(itemTitles.contains(UserText.newTabPageContextMenuSearch))
+        XCTAssertTrue(itemTitles.contains(UserText.newTabPageContextMenuFavorites))
+        XCTAssertTrue(itemTitles.contains(UserText.newTabPageContextMenuProtectionsReport))
+        XCTAssertFalse(itemTitles.contains(UserText.newTabPageContextMenuShowDuckAI))
+        XCTAssertFalse(itemTitles.contains(UserText.newTabPageContextMenuOpenDuckAISettings))
     }
 
     // MARK: - initialSetup

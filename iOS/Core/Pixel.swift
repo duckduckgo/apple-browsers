@@ -188,6 +188,9 @@ public struct PixelParameters {
 
     // UserScript
     public static let jsFile = "jsFile"
+
+    // New Address Bar Picker
+    public static let selection = "selection"
 }
 
 public struct PixelValues {

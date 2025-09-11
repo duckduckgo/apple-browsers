@@ -38,20 +38,25 @@ protocol AIChatUserScriptHandling {
     var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> { get }
 
     func getPageContext(params: Any, message: UserScriptMessage) -> Encodable?
-    var pageContextPublisher: AnyPublisher<AIChatPageContextData, Never> { get }
+    var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
+    var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
-    func submitPageContext(_ pageContext: AIChatPageContextData)
+    func submitPageContext(_ pageContext: AIChatPageContextData?)
+
+    func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
 }
 
 struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let messageHandling: AIChatMessageHandling
     public let aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never>
-    public let pageContextPublisher: AnyPublisher<AIChatPageContextData, Never>
+    public let pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never>
+    public let pageContextRequestedPublisher: AnyPublisher<Void, Never>
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
-    private let pageContextSubject = PassthroughSubject<AIChatPageContextData, Never>()
+    private let pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
+    private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     private let storage: AIChatPreferencesStorage
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter
@@ -71,6 +76,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.notificationCenter = notificationCenter
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
+        self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
     }
 
     enum AIChatKeys {
@@ -97,7 +103,15 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func getPageContext(params: Any, message: any UserScriptMessage) -> Encodable? {
-        messageHandling.getDataForMessageType(.pageContext)
+        guard let payload: GetPageContext = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+
+        let data = messageHandling.getDataForMessageType(.pageContext) as? PageContextPayload
+        if data?.serializedPageData == nil, payload.explicitConsent {
+            pageContextRequestedSubject.send()
+        }
+        return data
     }
 
     @MainActor
@@ -156,8 +170,22 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         aiChatNativePromptSubject.send(prompt)
     }
 
-    func submitPageContext(_ pageContext: AIChatPageContextData) {
+    func submitPageContext(_ pageContext: AIChatPageContextData?) {
         pageContextSubject.send(pageContext)
+    }
+
+    func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard let payload: TogglePageContextTelemetry = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        let pixel: PixelKitEvent = {
+            if payload.enabled {
+                return AIChatPixel.aiChatPageContextAdded(automaticEnabled: storage.shouldAutomaticallySendPageContext)
+            }
+            return AIChatPixel.aiChatPageContextRemoved(automaticEnabled: storage.shouldAutomaticallySendPageContext)
+        }()
+        pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
+        return nil
     }
 }
 
@@ -176,6 +204,13 @@ extension AIChatUserScriptHandler {
             case newTab = "new-tab"
             case newWindow = "new-window"
         }
+    }
 
+    struct GetPageContext: Codable, Equatable {
+        let explicitConsent: Bool
+    }
+
+    struct TogglePageContextTelemetry: Codable, Equatable {
+        let enabled: Bool
     }
 }

@@ -23,6 +23,7 @@ import DesignResourcesKit
 import DuckUI
 import Lottie
 import AIChat
+import Core
 
 struct NewAddressBarPickerContentView: View {
     let aiChatSettings: AIChatSettingsProvider
@@ -79,11 +80,14 @@ private struct ContentView: View {
 
     var headerView: some View {
         VStack(spacing: 0) {
-            Text(UserText.newAddressBarPickerTitle)
-                .textCase(.uppercase)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(Color(baseColor: .red50))
-                .padding(.bottom, 8)
+            HStack(spacing: 8) {
+                BadgeView(text: UserText.settingsItemNewBadge)
+                Text(UserText.newAddressBarPickerTitle)
+                    .textCase(.uppercase)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(Color(baseColor: .red50))
+            }
+            .padding(.bottom, 8)
 
             Text(UserText.newAddressBarPickerSubtitle)
                 .daxTitle1()
@@ -93,7 +97,7 @@ private struct ContentView: View {
 
             Text(UserText.newAddressBarPickerDescription)
                 .daxCaption()
-                .foregroundColor(.secondary)
+                .foregroundColor(Color(designSystemColor: .textSecondary))
                 .multilineTextAlignment(.center)
                 .padding(.bottom, 16)
         }
@@ -228,6 +232,7 @@ private struct CTAView: View {
             .padding(.bottom, 8)
 
             Button {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatNewAddressBarPickerNotNow)
                 onDismiss()
             } label: {
                 Text(UserText.newAddressBarPickerNotNow)
@@ -255,6 +260,9 @@ private struct CTAView: View {
         // selectedOption 1 = Search and AI (enable AI search input)
         let enableAISearch = (selectedOption == 1)
         aiChatSettings.enableAIChatSearchInputUserSettings(enable: enableAISearch)
+
+        let selectionValue = selectedOption == 0 ? "search_only" : "search_and_ai"
+        DailyPixel.fireDailyAndCount(pixel: .aiChatNewAddressBarPickerConfirmed, withAdditionalParameters: [PixelParameters.selection: selectionValue])
         onDismiss()
     }
 }

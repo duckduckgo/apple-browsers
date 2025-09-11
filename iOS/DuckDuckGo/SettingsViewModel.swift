@@ -138,7 +138,7 @@ final class SettingsViewModel: ObservableObject {
     }
     
     var isSERPSettingsFollowUpQuestionsEnabled: Bool {
-        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions)
+        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) && serpSettings.didMigrate
     }
 
     var shouldShowNoMicrophonePermissionAlert: Bool = false
@@ -1353,7 +1353,6 @@ extension SettingsViewModel {
         )
     }
     
-    #warning("Are we staying here with Bool or Bool?")
     var serpSettingsFollowUpQuestionsBinding: Binding<Bool> {
         Binding<Bool>(
             get: {

@@ -24,6 +24,8 @@ public protocol SERPSettingsProviding {
     /// - Returns: Nil, if value was not synchronized with SERP settings.
     var isAllowFollowUpQuestionsEnabled: Bool? { get }
     
+    var didMigrate: Bool { get }
+    
     /// Updates the user settings state for Allowing Duck.ai Follow-up Questions in Search Results
     func enableAllowFollowUpQuestions(enable: Bool)
     

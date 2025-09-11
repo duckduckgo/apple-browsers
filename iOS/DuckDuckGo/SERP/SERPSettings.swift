@@ -34,6 +34,14 @@ final class SERPSettings: SERPSettingsProviding {
         keyValueStore.object(forKey: .allowFollowUpQuestionsKey) as? Bool
     }
     
+    var didMigrate: Bool {
+        /// If value is there, migration is done. Otherwise, return false
+        if keyValueStore.object(forKey: .allowFollowUpQuestionsKey) != nil {
+            return true
+        }
+        return false
+    }
+    
     func enableAllowFollowUpQuestions(enable: Bool) {
         keyValueStore.set(enable, forKey: .allowFollowUpQuestionsKey)
 #warning("Finish implementation")

@@ -1,0 +1,33 @@
+// See https://app.asana.com/0/72649045549333/1208001118995887/f.
+{
+    m_mac_aichat_sidebar_opened: {
+        description: 'Fired when the AI Chat sidebar is opened',
+        owners: ['miasma13'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'source',
+                description: 'What triggered the sidebar to open',
+                type: 'string',
+                enum: ['address-bar-button', 'summarization', 'serp', 'context-menu', 'translation'],
+            },
+        ],
+    },
+    m_mac_aichat_translate_text: {
+        description: 'Fired when the AI Chat translation action was triggered',
+        owners: ['miasma13'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+    m_mac_aichat_translation_source_link_clicked: {
+        description: 'Fired when user clicks the website link on a translation prompt in Duck.ai tab or sidebar',
+        owners: ['miasma13'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+}

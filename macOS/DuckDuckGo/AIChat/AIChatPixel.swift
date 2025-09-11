@@ -96,6 +96,12 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User clicks the website link on a summarize prompt in Duck.ai tab or sidebar
     case aiChatSummarizeSourceLinkClicked
 
+    /// Event Trigger: User triggers translate action
+    case aiChatTranslateText
+
+    /// Event Trigger: User clicks the website link on a translation prompt in Duck.ai tab or sidebar
+    case aiChatTranslationSourceLinkClicked
+
     /// Event Trigger: User adds page context to the prompt using a button in the input field
     case aiChatPageContextAdded(automaticEnabled: Bool)
 
@@ -144,6 +150,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_summarize_text"
         case .aiChatSummarizeSourceLinkClicked:
             return "aichat_summarize_source_link_clicked"
+        case .aiChatTranslateText:
+            return "aichat_translate_text"
+        case .aiChatTranslationSourceLinkClicked:
+            return "aichat_translation_source_link_clicked"
         case .aiChatPageContextAdded:
             return "aichat_page_context_added"
         case .aiChatPageContextRemoved:
@@ -167,7 +177,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSettingsDisplayed,
                 .aiChatSidebarExpanded,
                 .aiChatSidebarSettingChanged,
-                .aiChatSummarizeSourceLinkClicked:
+                .aiChatSummarizeSourceLinkClicked,
+                .aiChatTranslateText,
+                .aiChatTranslationSourceLinkClicked:
             return nil
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
@@ -199,6 +211,7 @@ enum AIChatSidebarOpenSource: String, CaseIterable {
     case summarization = "summarization"
     case serp = "serp"
     case contextMenu = "context-menu"
+    case translation = "translation"
 }
 
 /// Source of AI Chat sidebar close action

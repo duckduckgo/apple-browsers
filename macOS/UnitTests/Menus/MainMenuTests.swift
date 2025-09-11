@@ -437,6 +437,7 @@ private class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplayAnyAIChatFeature = false
     var shouldOpenAIChatInSidebar = false
     var shouldDisplaySummarizationMenuItem = false
+    var shouldDisplayTranslationMenuItem = false
     var shouldAutomaticallySendPageContext = false
 
     var valuesChangedPublisher: PassthroughSubject<Void, Never> {

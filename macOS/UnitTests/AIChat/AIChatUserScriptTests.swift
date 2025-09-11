@@ -108,6 +108,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didRestoreChat = false
     var didRemoveChat = false
     var didOpenSummarizationSourceLink = false
+    var didOpenTranslationSourceLink = false
 
     var didSubmitAIChatNativePrompt = false
     var aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
@@ -179,6 +180,11 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func openSummarizationSourceLink(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
         didOpenSummarizationSourceLink = true
+        return nil
+    }
+
+    func openTranslationSourceLink(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        didOpenTranslationSourceLink = true
         return nil
     }
 

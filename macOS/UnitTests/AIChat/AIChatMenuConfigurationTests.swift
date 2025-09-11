@@ -225,6 +225,24 @@ class AIChatMenuConfigurationTests: XCTestCase {
 
         XCTAssertFalse(result, "Automatic Page Context should be disabled when storage is false and feature flag is enabled.")
     }
+
+    func testShouldDisplayTranslationMenuItemWhenFeatureFlagAndApplicationMenuShortcutAreEnabled() {
+        featureFlagger.featuresStub = [FeatureFlag.aiChatTextTranslation.rawValue: true]
+        mockStorage.showShortcutInApplicationMenu  = true
+
+        let result = configuration.shouldDisplayTranslationMenuItem
+
+        XCTAssertTrue(result, "Translation menu item should be displayed when both feature flag and application menu shortcut are enabled.")
+    }
+
+    func testShouldNotDisplayTranslationMenuItemWhenApplicationMenuShortcutIsDisabled() {
+        featureFlagger.featuresStub = [FeatureFlag.aiChatTextTranslation.rawValue: true]
+        mockStorage.showShortcutInApplicationMenu  = false
+
+        let result = configuration.shouldDisplayTranslationMenuItem
+
+        XCTAssertFalse(result, "Translation menu item should not be displayed when application menu shortcut is disabled.")
+    }
 }
 
 class MockAIChatPreferencesStorage: AIChatPreferencesStorage {

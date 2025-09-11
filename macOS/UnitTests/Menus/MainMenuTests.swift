@@ -430,7 +430,7 @@ private class DummyFeatureFlagger: FeatureFlagger {
     var allActiveExperiments: Experiments = [:]
 }
 
-private class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
+class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplayNewTabPageShortcut = false
     var shouldDisplayApplicationMenuShortcut = false
     var shouldDisplayAddressBarShortcut = false
@@ -439,6 +439,7 @@ private class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplaySummarizationMenuItem = false
     var shouldDisplayTranslationMenuItem = false
     var shouldAutomaticallySendPageContext = false
+    var shouldAutomaticallySendPageContextTelemetryValue: Bool?
 
     var valuesChangedPublisher: PassthroughSubject<Void, Never> {
         return PassthroughSubject<Void, Never>()

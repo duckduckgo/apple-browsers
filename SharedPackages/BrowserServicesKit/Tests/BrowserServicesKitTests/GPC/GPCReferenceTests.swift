@@ -130,7 +130,9 @@ final class GPCReferenceTests: XCTestCase {
         }
 
         let request = URLRequest(url: siteURL)
-        let webView = createWebViewForUserScripTests(gpcEnabled: test.gpcUserSettingOn, privacyConfig: privacyManager.privacyConfig)
+        guard let webView = try? createWebViewForUserScripTests(gpcEnabled: test.gpcUserSettingOn, privacyConfig: privacyManager.privacyConfig) else {
+            return XCTFail("Failed to create webview for test \(test.name)")
+        }
 
         WKWebsiteDataStore.default().removeData(ofTypes: [WKWebsiteDataTypeDiskCache,
                                                           WKWebsiteDataTypeMemoryCache,
@@ -167,16 +169,16 @@ final class GPCReferenceTests: XCTestCase {
         }
     }
 
-    private func createWebViewForUserScripTests(gpcEnabled: Bool, privacyConfig: PrivacyConfiguration) -> WKWebView {
+    private func createWebViewForUserScripTests(gpcEnabled: Bool, privacyConfig: PrivacyConfiguration) throws -> WKWebView {
 
         let properties = ContentScopeProperties(gpcEnabled: gpcEnabled,
                                                 sessionKey: UUID().uuidString,
                                                 messageSecret: UUID().uuidString,
                                                 featureToggles: ContentScopeFeatureToggles.allTogglesOn)
 
-        let contentScopeScript = ContentScopeUserScript(privacyManager,
-                                                        properties: properties,
-                                                        privacyConfigurationJSONGenerator: nil)
+        let contentScopeScript = try ContentScopeUserScript(privacyManager,
+                                                            properties: properties,
+                                                            privacyConfigurationJSONGenerator: nil)
 
         let configuration = WKWebViewConfiguration()
         configuration.setURLSchemeHandler(self.schemeHandler, forURLScheme: self.schemeHandler.scheme)

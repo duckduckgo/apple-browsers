@@ -501,7 +501,7 @@ final class FirePopoverViewModelTests: XCTestCase {
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
-            initialClearingOption: .allData,
+            clearingOption: .allData,
             tld: Application.appDelegate.tld,
             onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )

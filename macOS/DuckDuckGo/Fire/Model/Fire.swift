@@ -207,7 +207,9 @@ final class Fire {
 
             group.notify(queue: .main) {
                 self.dispatchGroup = nil
-                self.closeWindows(entity: entity)
+                if entity.shouldClose {
+                    self.closeWindows(entity: entity)
+                }
 
                 self.burningData = nil
 

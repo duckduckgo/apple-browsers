@@ -19,16 +19,18 @@
 
 import UIKit.UIApplication
 import Core
+import Persistence
 
 enum TerminationError: Error {
 
     case database(DatabaseError)
-    case bookmarksDatabase(Error)
+    case bookmarksDatabase(BookmarksDatabaseError)
     case historyDatabase(Error)
     case keyValueFileStore(AppKeyValueFileStoreService.Error)
     case tabsPersistence(TabsPersistenceError)
 
 }
+
 
 private enum TerminationReason {
 
@@ -89,10 +91,62 @@ struct Terminating: TerminatingHandling {
                 errorToReport = error
                 mode = error.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(debugMessage: "DB init failed: \(error.localizedDescription)")
             }
-        case .bookmarksDatabase(let error):
-            pixel = .bookmarksCouldNotLoadDatabase
-            errorToReport = error
-            mode = error.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(debugMessage: "Bookmarks DB init failed: \(error.localizedDescription)")
+        case .bookmarksDatabase(let bookmarkError):
+            var underlyingError: Error = bookmarkError
+            let debugMessage: String
+
+            switch bookmarkError {
+            // Database setup errors
+            case .couldNotGetFavoritesOrder(let error):
+                underlyingError = error
+                debugMessage = "Bookmarks DB init failed: could not get favorites order"
+                pixel = .debugBookmarksCouldNotGetFavoritesOrder
+            case .couldNotPrepareDatabase(let error):
+                underlyingError = error
+                debugMessage = "Bookmarks DB init failed: could not prepare database"
+                pixel = .debugBookmarksCouldNotPrepareDatabase
+                
+            // Legacy storage errors
+            case .noDBSchemeFound:
+                debugMessage = "Legacy Bookmarks DB init failed: no DB scheme found"
+                pixel = .debugBookmarksNoDBSchemeFound
+            case .unableToLoadPersistentStores(let error):
+                underlyingError = error
+                debugMessage = "Legacy Bookmarks DB init failed: unable to load persistent stores"
+                pixel = .debugBookmarksUnableToLoadPersistentStores
+            case .errorCreatingTopLevelBookmarksFolder:
+                debugMessage = "Legacy Bookmarks DB init failed: error creating top level bookmarks folder"
+                pixel = .debugBookmarksErrorCreatingTopLevelBookmarksFolder
+            case .errorCreatingTopLevelFavoritesFolder:
+                debugMessage = "Legacy Bookmarks DB init failed: error creating top level favorites folder"
+                pixel = .debugBookmarksErrorCreatingTopLevelFavoritesFolder
+            case .couldNotFixBookmarkFolder:
+                debugMessage = "Legacy Bookmarks DB init failed: could not fix bookmark folder"
+                pixel = .debugBookmarksCouldNotFixBookmarkFolder
+            case .couldNotFixFavoriteFolder:
+                debugMessage = "Legacy Bookmarks DB init failed: could not fix favorite folder"
+                pixel = .debugBookmarksCouldNotFixFavoriteFolder
+                
+            // Migration errors
+            case .couldNotPrepareBookmarksDBStructure(let error):
+                underlyingError = error
+                debugMessage = "Bookmarks migration failed: could not prepare DB structure"
+                pixel = .debugBookmarksCouldNotPrepareDBStructure
+            case .couldNotWriteToBookmarksDB(let error):
+                underlyingError = error
+                debugMessage = "Bookmarks migration failed: could not write to DB"
+                pixel = .debugBookmarksCouldNotWriteToDB
+                
+            // Generic
+            case .other(let error):
+                underlyingError = error
+                debugMessage = "Bookmarks DB init failed: \(bookmarkError)"
+                pixel = .bookmarksCouldNotLoadDatabase
+            }
+            
+            recordBookmarkDatabaseError(error: bookmarkError, underlyingError: underlyingError)
+            errorToReport = underlyingError
+            mode = underlyingError.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(debugMessage: debugMessage)
         case .historyDatabase(let error):
             pixel = .historyStoreLoadFailed
             errorToReport = error
@@ -136,6 +190,19 @@ struct Terminating: TerminatingHandling {
         let window = UIWindow.makeBlank()
         application.setWindow(window)
         window.rootViewController?.present(alertController, animated: true, completion: nil)
+    }
+
+    // MARK: - Error Tracking
+
+    private func recordBookmarkDatabaseError(error: BookmarksDatabaseError, underlyingError: Error) {
+        let errorInfo: [String: Any] = [
+            "timestamp": Date(),
+            "bookmarkError": error.name,
+            "domain": (underlyingError as NSError).domain,
+            "code": (underlyingError as NSError).code
+        ]
+
+        UserDefaults.app.set(errorInfo, forKey: "BookmarksValidator.lastBookmarkError")
     }
 
 }

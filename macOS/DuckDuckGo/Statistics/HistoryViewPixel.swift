@@ -32,7 +32,7 @@ import PixelKit
  * Anomaly Investigation:
  * - Unless otherwise specified, anomaly in all the pixels will be related to an increase/drop in app use.
  */
-enum HistoryViewPixel: PixelKitEventV2 {
+enum HistoryViewPixel: PixelKitEvent {
 
     // MARK: - Permanent Pixels
 
@@ -158,10 +158,6 @@ enum HistoryViewPixel: PixelKitEventV2 {
         case .multipleItemsDeleted(let batchKind, let burn):
             return [Parameters.filter: batchKind.rawValue, Parameters.type: burn ? "burn" : "delete"]
         }
-    }
-
-    var error: (any Error)? {
-        nil
     }
 
     enum Parameters {

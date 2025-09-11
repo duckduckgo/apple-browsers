@@ -33,7 +33,7 @@ struct OAuthCodesGenerator {
             }
         }
 
-        public var errorDomain: String { "com.duckduckgo.networking.OAuthCodesGenerator" }
+        public static var errorDomain: String { "com.duckduckgo.networking.OAuthCodesGenerator" }
 
         public var errorCode: Int {
             switch self {

@@ -133,10 +133,7 @@ extension AIChatMessageHandler {
     }
 
     private func getPageContext() -> Encodable? {
-        guard let data = pageContextHandler.consumeData() else {
-            return nil
-        }
-        return PageContextPayload(serializedPageData: data)
+        PageContextPayload(serializedPageData: pageContextHandler.consumeData())
     }
 
     private func setPageContext(_ data: AIChatPageContextData?) {

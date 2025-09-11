@@ -63,7 +63,6 @@ final class FireCoordinator {
                 historyCoordinating: Application.appDelegate.historyCoordinator,
                 fireproofDomains: Application.appDelegate.fireproofDomains,
                 faviconManagement: Application.appDelegate.faviconManager,
-                initialClearingOption: .allData,
                 tld: Application.appDelegate.tld,
                 onboardingContextualDialogsManager: Application.appDelegate.onboardingContextualDialogsManager
             )

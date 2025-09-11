@@ -90,17 +90,17 @@ final class AutofillUserScriptSourceProviderTests: XCTestCase {
     lazy var privacyConfig = AutofillTestHelper.preparePrivacyConfig(embeddedConfig: embeddedConfig)
     let properties = ContentScopeProperties(gpcEnabled: false, sessionKey: "1234", messageSecret: "1234", featureToggles: ContentScopeFeatureToggles.allTogglesOn)
 
-    func testWhenBuildWithLoadJSThenSourceStrIsBuilt() {
-        let autofillSourceProvider = DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfig,
-                                                                           properties: properties)
+    func testWhenBuildWithLoadJSThenSourceStrIsBuilt() throws {
+        let autofillSourceProvider = try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfig,
+                                                                               properties: properties)
             .withJSLoading()
             .build()
         XCTAssertFalse(autofillSourceProvider.source.isEmpty)
     }
 
-    func testWhenBuildRuntimeConfigurationThenConfigurationIsBuilt() {
-        let runtimeConfiguration = DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfig,
-                                                                         properties: properties)
+    func testWhenBuildRuntimeConfigurationThenConfigurationIsBuilt() throws {
+        let runtimeConfiguration = try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfig,
+                                                                             properties: properties)
             .build()
             .buildRuntimeConfigResponse()
 
@@ -109,8 +109,8 @@ final class AutofillUserScriptSourceProviderTests: XCTestCase {
     }
 
     func testWhenBuildRuntimeConfigurationThenContentScopeContainsRequiredAutofillKeys() throws {
-        let runtimeConfiguration = DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfig,
-                                                                         properties: properties)
+        let runtimeConfiguration = try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfig,
+                                                                             properties: properties)
             .build()
             .buildRuntimeConfigResponse()
 
@@ -125,8 +125,8 @@ final class AutofillUserScriptSourceProviderTests: XCTestCase {
     }
 
     func testWhenBuildRuntimeConfigurationThenContentScopeDoesNotContainUnnecessaryKeys() throws {
-        let runtimeConfiguration = DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfig,
-                                                                         properties: properties)
+        let runtimeConfiguration = try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfig,
+                                                                             properties: properties)
                                                                 .build()
                                                                 .buildRuntimeConfigResponse()
 

@@ -100,6 +100,9 @@
 /* Refresh action - button shown in alert */
 "action.title.refresh" = "Atnaujinti";
 
+/* Refresh page action */
+"action.title.refreshPage" = "Įkelti iš naujo puslapį";
+
 /* Remove Favorite action */
 "action.title.remove.favorite" = "Šalinti mėgstamą";
 
@@ -2934,6 +2937,15 @@
 
 /* Explanation in Settings how the private search feature works */
 "settings.private.search.explanation" = "„DuckDuckGo Private Search“ yra jūsų numatytoji paieškos sistema, todėl galite ieškoti žiniatinklyje nesekami.";
+
+/* Settings screen option to set refresh button in the address bar */
+"settings.refreshButton.position.addressBar" = "Adreso juosta";
+
+/* Settings screen option to set refresh button in the menu */
+"settings.refreshButton.position.menu" = "Meniu";
+
+/* Settings screen cell text for setting the refresh button position. */
+"settings.refreshButton.position.title" = "Perkrovimo mygtuko padėtis";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Paieškos nustatymai";

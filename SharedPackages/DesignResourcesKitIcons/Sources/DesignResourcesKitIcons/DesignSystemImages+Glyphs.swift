@@ -236,6 +236,7 @@ public extension DesignSystemImages {
             public static var trash: DesignSystemImage { .init(resource: .trash16) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize16) }
             public static var videoSolid: DesignSystemImage { .init(resource: .videoSolid16) }
+            public static var update: DesignSystemImage { .init(resource: .update16) }
             public static var viewGrid: DesignSystemImage { .init(resource: .viewGrid16) }
             public static var viewGridSolid: DesignSystemImage { .init(resource: .viewGridSolid16) }
             public static var viewList: DesignSystemImage { .init(resource: .viewList16) }
@@ -338,6 +339,7 @@ public extension DesignSystemImages {
             public static var bookmarksOpen: DesignSystemImage { .init(resource: .bookmarksOpen24) }
             public static var calendar: DesignSystemImage { .init(resource: .calendar24) }
             public static var card: DesignSystemImage { .init(resource: .card24) }
+            public static var checkAccent: DesignSystemImage { .init(resource: .checkAccent24) }
             public static var checkRecolorable: DesignSystemImage { .init(resource: .checkRecolorable24) }
             public static var checkCircle: DesignSystemImage { .init(resource: .checkCircle24) }
             public static var checkSolid: DesignSystemImage { .init(resource: .checkSolid24) }
@@ -437,6 +439,7 @@ public extension DesignSystemImages {
             public static var subtraction: DesignSystemImage { .init(resource: .subtraction24) }
             public static var support: DesignSystemImage { .init(resource: .support24) }
             public static var syncCloud: DesignSystemImage { .init(resource: .syncCloud24) }
+            public static var tabDesktop: DesignSystemImage { .init(resource: .tabDesktop24) }
             public static var tabMobile: DesignSystemImage { .init(resource: .tabMobile24) }
             public static var tabsMobile: DesignSystemImage { .init(resource: .tabsMobile24) }
             public static var tabMobileAlert: DesignSystemImage { .init(resource: .tabMobileAlert24) }
@@ -451,6 +454,7 @@ public extension DesignSystemImages {
             public static var videoSolid: DesignSystemImage { .init(resource: .videoSolid24) }
             public static var viewGrid: DesignSystemImage { .init(resource: .viewGrid24) }
             public static var window: DesignSystemImage { .init(resource: .window24) }
+            public static var windowsAndTabs: DesignSystemImage { .init(resource: .windowsAndTabs24) }
             public static var zoomIn: DesignSystemImage { .init(resource: .zoomIn24) }
        }
    }

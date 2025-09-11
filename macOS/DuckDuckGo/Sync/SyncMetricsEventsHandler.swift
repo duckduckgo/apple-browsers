@@ -30,6 +30,8 @@ public class SyncMetricsEventsHandler: EventMapping<MetricsEvent> {
                 PixelKit.fire(GeneralPixel.syncDuckAddressOverride)
             case .localTimestampResolutionTriggered(let feature):
                 PixelKit.fire(GeneralPixel.syncLocalTimestampResolutionTriggered(feature))
+            case .syncAttemptedToDeleteRoot(let rootID):
+                break
             }
         }
     }

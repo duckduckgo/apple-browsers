@@ -39,24 +39,25 @@ protocol SERPSettingsUserScriptDelegate: AnyObject {
 }
 
 public struct SERPUserSettings: Codable {
-    public let duckAI: Bool?
+    public let duckAI: Bool
+    public let allowFollowUpQuestion: Bool?
     
     public init(provider: SERPSettingsProviding) {
         #warning("if needs migration = true, send empty {}/nil/or flag -- to confirm")
-        self.duckAI = provider.isAllowFollowUpQuestionsEnabled
+        self.duckAI = provider.isDuckAIEnabled
+        self.allowFollowUpQuestion = provider.isAllowFollowUpQuestionsEnabled
     }
     
     private enum CodingKeys: String, CodingKey {
-        case duckAI = "kbg"
+        case duckAI = "duckai"
+        case allowFollowUpQuestion = "kbg"
     }
 }
 
 enum SERPSettingsConstants {
-
     static let returnParameterKey = "return"
     static let privateSearch = "privateSearch"
     static let aiFeatures = "aiFeatures"
-
 }
 
 // MARK: - AIChatUserScript Class
@@ -91,6 +92,8 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
     private static func buildMessageOriginRules() -> [HostnameMatchingRule] {
         var rules: [HostnameMatchingRule] = []
 
+        rules.append(.exact(hostname: "bhall.duck.co"))
+        
         if let ddgDomain = URL.ddg.host {
             rules.append(.exact(hostname: ddgDomain))
         }
@@ -123,7 +126,7 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
         }
     }
     
-    // step 1
+    // Step 1
     @MainActor
     func getNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
         SERPUserSettings(provider: serpSettingsProvider)
@@ -152,11 +155,11 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
         
         guard let jsonData = try? JSONSerialization.data(withJSONObject: parameters),
               let serpSettings = try? JSONDecoder().decode(SERPUserSettings.self, from: jsonData),
-              let duckAISetting = serpSettings.duckAI else {
+              let allowFollowUpQuestionsSetting = serpSettings.allowFollowUpQuestion else {
             return nil
         }
         
-        serpSettingsProvider.migrateAllowFollowUpQuestions(enable: duckAISetting)
+        serpSettingsProvider.migrateAllowFollowUpQuestions(enable: allowFollowUpQuestionsSetting)
         
         /// Return nil, as SERP does not need updated settings at this point.
         return nil

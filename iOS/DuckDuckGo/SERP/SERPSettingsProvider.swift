@@ -20,6 +20,9 @@
 import Foundation
 
 public protocol SERPSettingsProviding {
+    #warning("add docs")
+    var isDuckAIEnabled: Bool { get }
+    
     /// The user settings state for Allowing Duck.ai Follow-up Questions in Search Results
     /// - Returns: Nil, if value was not synchronized with SERP settings.
     var isAllowFollowUpQuestionsEnabled: Bool? { get }

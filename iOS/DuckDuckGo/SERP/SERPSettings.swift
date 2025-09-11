@@ -30,6 +30,11 @@ final class SERPSettings: SERPSettingsProviding {
         self.keyValueStore = keyValueStore
     }
     
+    var isDuckAIEnabled: Bool {
+        #warning("Finish implementation, keep it stored locally")
+        return true
+    }
+    
     var isAllowFollowUpQuestionsEnabled: Bool? {
         keyValueStore.object(forKey: .allowFollowUpQuestionsKey) as? Bool
     }

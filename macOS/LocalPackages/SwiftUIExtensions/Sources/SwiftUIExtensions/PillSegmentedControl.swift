@@ -22,9 +22,9 @@ import AppKit
 public struct PillSegment: Identifiable, Hashable {
     public let id: Int
     public let title: String
-    public let image: Image?
+    public let image: Image
 
-    public init(id: Int, title: String, image: Image? = nil) {
+    public init(id: Int, title: String, image: Image) {
         self.id = id
         self.title = title
         self.image = image
@@ -47,12 +47,9 @@ public struct PillSegmentedControl: View {
     @State private var hoverFadeOutOpacity: Double = 0
 
     // Appearance
-    let selectedBackground: Color
-    let unselectedBackground: Color
+    let containerBackground: Color
     let selectedForeground: Color
     let unselectedForeground: Color
-    let selectedIconForeground: Color
-    let selectedLabelForeground: Color
     let containerBorder: Color
     let selectedIconBackground: Color
     let unselectedIconBackground: Color
@@ -61,38 +58,35 @@ public struct PillSegmentedControl: View {
     let selectedSegmentShadowColor: Color
     let selectedSegmentShadowRadius: CGFloat
     let selectedSegmentShadowY: CGFloat
-    let hoverOverlayFill: Color
-    let pressedOverlayFill: Color
+    let selectedSegmentTopStroke: Color
+    let hoverSegmentBackground: Color
+    let pressedSegmentBackground: Color
+    let hoverOverlay: Color
 
     public init(
         selection: Binding<Int>,
         segments: [PillSegment],
-        selectedBackground: Color = Color(NSColor.controlAccentColor),
-        unselectedBackground: Color = Color.black.opacity(0.06),
-        selectedForeground: Color = .white,
-        unselectedForeground: Color = .primary,
-        selectedIconForeground: Color? = nil,
-        selectedLabelForeground: Color? = nil,
-        containerBorder: Color = Color.black.opacity(0.08),
-        selectedIconBackground: Color = Color.white.opacity(0.2),
-        unselectedIconBackground: Color = Color.black.opacity(0.04),
-        selectedSegmentFill: Color = Color.white,
-        selectedSegmentStroke: Color = Color.black.opacity(0.12),
-        selectedSegmentShadowColor: Color = Color.black.opacity(0.08),
+        containerBackground: Color,
+        containerBorder: Color,
+        selectedForeground: Color,
+        unselectedForeground: Color,
+        selectedIconBackground: Color,
+        unselectedIconBackground: Color = .clear,
+        selectedSegmentFill: Color,
+        selectedSegmentStroke: Color,
+        selectedSegmentShadowColor: Color,
         selectedSegmentShadowRadius: CGFloat = 6,
         selectedSegmentShadowY: CGFloat = 2,
-        hoverOverlayFill: Color = Color.black.opacity(0.06),
-        pressedOverlayFill: Color = Color.black.opacity(0.10)
+        selectedSegmentTopStroke: Color = .clear,
+        hoverSegmentBackground: Color,
+        pressedSegmentBackground: Color,
+        hoverOverlay: Color
     ) {
         _selection = selection
         self.segments = segments
-        self.selectedBackground = selectedBackground
-        self.unselectedBackground = unselectedBackground
+        self.containerBackground = containerBackground
         self.selectedForeground = selectedForeground
         self.unselectedForeground = unselectedForeground
-        // Fallbacks preserve prior behavior unless explicitly customized
-        self.selectedIconForeground = selectedIconForeground ?? selectedForeground
-        self.selectedLabelForeground = selectedLabelForeground ?? selectedForeground
         self.containerBorder = containerBorder
         self.selectedIconBackground = selectedIconBackground
         self.unselectedIconBackground = unselectedIconBackground
@@ -101,16 +95,16 @@ public struct PillSegmentedControl: View {
         self.selectedSegmentShadowColor = selectedSegmentShadowColor
         self.selectedSegmentShadowRadius = selectedSegmentShadowRadius
         self.selectedSegmentShadowY = selectedSegmentShadowY
-        self.hoverOverlayFill = hoverOverlayFill
-        self.pressedOverlayFill = pressedOverlayFill
+        self.selectedSegmentTopStroke = selectedSegmentTopStroke
+        self.hoverSegmentBackground = hoverSegmentBackground
+        self.pressedSegmentBackground = pressedSegmentBackground
+        self.hoverOverlay = hoverOverlay
     }
 
     public var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(unselectedBackground)
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(containerBorder, lineWidth: 1)
+                .fill(containerBackground)
 
             // Separators underlay (placed below selection and content)
             GeometryReader { proxy in
@@ -143,7 +137,7 @@ public struct PillSegmentedControl: View {
                 // Hover underlay: fixed per segment, no slide; fades out on mouse-out
                 if let hover = hoveredIndex, pressedUnderlayIndex == nil {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(hoverOverlayFill)
+                        .fill(hoverSegmentBackground)
                         .padding(2)
                         .frame(width: max(0, segmentWidth), height: geo.size.height)
                         .offset(x: CGFloat(hover) * segmentWidth)
@@ -152,7 +146,7 @@ public struct PillSegmentedControl: View {
 
                 if let fading = hoverFadeOutIndex {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(hoverOverlayFill)
+                        .fill(hoverSegmentBackground)
                         .padding(2)
                         .frame(width: max(0, segmentWidth), height: geo.size.height)
                         .offset(x: CGFloat(fading) * segmentWidth)
@@ -163,7 +157,7 @@ public struct PillSegmentedControl: View {
                 // Pressed underlay remains static at press index
                 if let idx = pressedUnderlayIndex {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(pressedOverlayFill)
+                        .fill(pressedSegmentBackground)
                         .padding(2)
                         .frame(width: max(0, segmentWidth), height: geo.size.height)
                         .offset(x: CGFloat(idx) * segmentWidth)
@@ -174,11 +168,23 @@ public struct PillSegmentedControl: View {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .fill(selectedSegmentFill)
                         .shadow(color: selectedSegmentShadowColor, radius: selectedSegmentShadowRadius, x: 0, y: selectedSegmentShadowY)
+                    // Top gradient stroke
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [selectedSegmentTopStroke, selectedSegmentTopStroke.opacity(0)]),
+                                startPoint: .top,
+                                endPoint: .center
+                            ),
+                            lineWidth: 1
+                        )
+                        .frame(height: 22) // drawing from top to the center (11px high)
+
                     // Traveling selection circle behind the icon
                     Circle()
                         .fill(selectedIconBackground)
                         .frame(width: 40, height: 40)
-                        .padding(.top, 6)
+                        .padding(.top, 11)
                         .offset(x: circleCenterOffset)
                         .opacity(selectionCircleOpacity)
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -216,12 +222,10 @@ public struct PillSegmentedControl: View {
                     PillSegmentItemView(
                         segment: segment,
                         isSelected: selection == segment.id,
-                        selectedIconBackground: selectedIconBackground,
-                        selectedIconForeground: selectedIconForeground,
+                        selectedForeground: selectedForeground,
                         unselectedForeground: unselectedForeground,
-                        selectedLabelForeground: selectedLabelForeground,
-                        hoverOverlayFill: hoverOverlayFill,
-                        pressedOverlayFill: pressedOverlayFill,
+                        hoverBackground: hoverSegmentBackground,
+                        hoverOverlay: hoverOverlay,
                         onTap: { selection = segment.id },
                         onPressChanged: { isPressed in
                             if isPressed {
@@ -254,6 +258,10 @@ public struct PillSegmentedControl: View {
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(containerBorder, lineWidth: 1)
+                .padding(1)
         }
     }
 }
@@ -275,12 +283,10 @@ private struct PressReportingButtonStyle: ButtonStyle {
 private struct PillSegmentItemView: View {
     let segment: PillSegment
     let isSelected: Bool
-    let selectedIconBackground: Color
-    let selectedIconForeground: Color
+    let selectedForeground: Color
     let unselectedForeground: Color
-    let selectedLabelForeground: Color
-    let hoverOverlayFill: Color
-    let pressedOverlayFill: Color
+    let hoverBackground: Color
+    let hoverOverlay: Color
     let onTap: () -> Void
     let onPressChanged: (Bool) -> Void
     let onHoverChanged: (Bool) -> Void
@@ -293,10 +299,16 @@ private struct PillSegmentItemView: View {
     var body: some View {
         Button(action: onTap) {
             ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(hoverBackground)
+                    .padding(2)
+                    .opacity((isHovering && !isSelected && !isPressed) ? 1 : 0)
+                    .animation(.easeOut(duration: 0.12), value: isHovering)
+
                 // Material-like gradient that follows pointer (appears for both selected and unselected)
                 GeometryReader { proxy in
                     RadialGradient(
-                        gradient: Gradient(colors: [hoverOverlayFill.opacity(0.9), hoverOverlayFill.opacity(0.0)]),
+                        gradient: Gradient(colors: [hoverOverlay.opacity(0.9), hoverOverlay.opacity(0.0)]),
                         center: pointerUnitPoint,
                         startRadius: 0,
                         endRadius: min(proxy.size.width, proxy.size.height) * 0.8
@@ -311,30 +323,20 @@ private struct PillSegmentItemView: View {
                 .mask(RoundedRectangle(cornerRadius: 10, style: .continuous).padding(2))
                 .allowsHitTesting(false)
 
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(hoverOverlayFill)
-                    .padding(2)
-                    .opacity((isHovering && !isSelected && !isPressed) ? 1 : 0)
-                    .animation(.easeOut(duration: 0.12), value: isHovering)
-
-                VStack(spacing: 16) {
-                    if let image = segment.image {
-                        ZStack {
-                            // Circle now travels within the global selection pill, so keep placeholder empty here
-                            image
-                                .resizable()
-                                .renderingMode(.template)
-                                .frame(width: 24, height: 24)
-                                .foregroundColor(isSelected ? selectedIconForeground : unselectedForeground)
-                        }
+                VStack(spacing: 5) {
+                    ZStack(alignment: .center) {
+                        segment.image
+                            .resizable()
+                            .renderingMode(.template)
+                            .frame(width: 24, height: 24)
+                            .foregroundColor(isSelected ? selectedForeground : unselectedForeground)
+                            .padding(8)
                     }
+
                     Text(segment.title)
                         .font(.system(size: 11))
-                        .foregroundColor(isSelected ? selectedIconForeground : unselectedForeground)
+                        .foregroundColor(isSelected ? selectedForeground : unselectedForeground)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.vertical, 6)
-                .contentShape(Rectangle())
             }
         }
         .buttonStyle(PressReportingButtonStyle { pressed in

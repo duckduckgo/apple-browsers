@@ -452,6 +452,14 @@ struct UserText {
     static let fireDialogSegmentWindow = NSLocalizedString("fire.dialog.segment.window", value: "Window", comment: "Segment label for Window scope")
     static let fireDialogSegmentEverything = NSLocalizedString("fire.dialog.segment.everything", value: "Everything", comment: "Segment label for Everything scope")
     static let fireDialogManageIndividualSitesLink = NSLocalizedString("fire.dialog.manage.individual.sites", value: "Delete individual sites and history.", comment: "Link row text to manage per-site deletions")
+
+    // MARK: - Fire dialog sites list sheet
+    static let fireDialogSitesOverlayTitle = NSLocalizedString("fire.dialog.sites.overlay.title",
+                                                              value: "Site Details",
+                                                              comment: "Header of in-dialog overlay listing domains affected by deletion")
+    static let fireDialogSitesOverlaySubtitle = NSLocalizedString("fire.dialog.sites.overlay.subtitle",
+                                                                 value: "These sites will be deleted.",
+                                                                 comment: "Subtitle above the list of domains in in-dialog overlay")
     static let fireproofCookiesAndSiteDataExplanation = NSLocalizedString("burn.fireproofing.explanation.message", value: "Fireproof site cookies and data won’t be deleted.", comment: "Explanation of what Fireproofing site cookies and data means.")
     static let fireproofSite = NSLocalizedString("options.menu.fireproof-site", value: "Fireproof This Site", comment: "Context menu item")
     static let removeFireproofing = NSLocalizedString("options.menu.remove-fireproofing", value: "Remove Fireproofing", comment: "Context menu item")

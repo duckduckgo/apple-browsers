@@ -24,6 +24,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x141415 = Color(0x141415)
     private static let x181818 = Color(0x181818)
     private static let x27282A = Color(0x27282A)
+    private static let x333333 = Color(0x333333)
     private static let x333538 = Color(0x333538)
     private static let x404145 = Color(0x404145)
     private static let xE0E0E0 = Color(0xE0E0E0)
@@ -37,6 +38,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x282828 = Color(0x282828)
     private static let x373737 = Color(0x373737)
     private static let x474747 = Color(0x474747)
+    private static let x4D4D4D = Color(0x4D4D4D)
 
     // URL bar
     private static let urlBar = DynamicColor(lightColor: .white, darkColor: x474747)
@@ -236,6 +238,35 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: surface.lightColor, darkColor: background.darkColor)
         case .duckPlayerPillBackground:
             return DynamicColor(lightColor: surface.lightColor, darkColor: .tint(0.12))
+
+        case .fireDialogBackground:
+            return DynamicColor(lightColor: .white, darkColor: DefaultColorPalette.x333333)
+        case .fireDialogPillBackground:
+            return DynamicColor(lightColor: .xF7F7F7, darkColor: .x1C1C1E)
+        case .fireDialogPillBorder:
+            return DynamicColor(lightColor: .gray25, darkColor: Color(0x5C5C5C))
+        case .fireDialogPillSelectedSegmentBackground:
+            return DynamicColor(lightColor: .white, darkColor: .gray85)
+        case .fireDialogPillSelectedSegmentBorder:
+            return DynamicColor(lightColor: .gray20, darkColor: DefaultColorPalette.x4D4D4D)
+        case .fireDialogPillSelectedSegmentShadow:
+            return DynamicColor(lightColor: .gray20.opacity(0.05), darkColor: .clear)
+        case .fireDialogPillSelectedSegmentTopStroke:
+            return DynamicColor(lightColor: .clear, darkColor: DefaultColorPalette.x333333)
+        case .fireDialogPillSegmentMouseOver:
+            return DynamicColor(lightColor: DefaultColorPalette.xE0E0E0, darkColor: DefaultColorPalette.x333333)
+        case .fireDialogPillSegmentMouseDown:
+            return DynamicColor(lightColor: .gray30, darkColor: DefaultColorPalette.x404145)
+        case .fireDialogPillHoverOverlay:
+            return DynamicColor(lightColor: .black.opacity(0.06), darkColor: .white.opacity(0.06))
+        case .fireDialogPillSelectedSegmentIconBackground:
+            return DynamicColor(lightColor: Color(designSystemColor: .accent).opacity(0.12), darkColor: Color(designSystemColor: .accent).opacity(0.2))
+        case .fireDialogToggleKnob:
+            return DynamicColor(lightColor: .white, darkColor: Color(0x121827))
+        case .fireDialogSectionBackground:
+            return DynamicColor(lightColor: Color(0xFCFCFC), darkColor: Color(0x393939))
+        case .fireDialogSectionBorder:
+            return DynamicColor(lightColor: .gray25, darkColor: Color(0x424242))
         }
     }
 }

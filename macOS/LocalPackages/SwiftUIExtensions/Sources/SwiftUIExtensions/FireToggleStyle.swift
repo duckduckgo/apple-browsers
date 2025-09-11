@@ -24,8 +24,8 @@ public struct FireToggleStyle: ToggleStyle {
     private let knobFill: Color
 
     public init(onFill: Color = Color(NSColor.controlAccentColor),
-                offFill: Color = Color.black.opacity(0.12),
-                knobFill: Color = .white) {
+                offFill: Color = Color(NSColor.disabledControlTextColor),
+                knobFill: Color) {
         self.onFill = onFill
         self.offFill = offFill
         self.knobFill = knobFill

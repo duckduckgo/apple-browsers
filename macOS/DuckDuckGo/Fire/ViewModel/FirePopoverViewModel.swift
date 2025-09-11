@@ -47,12 +47,15 @@ final class FirePopoverViewModel: ObservableObject {
         var favicon: NSImage?
     }
 
+    /// Remember last selected scope
+    static var lastSelectedClearingOption: ClearingOption = .currentTab
+
     init(fireViewModel: FireViewModel,
          tabCollectionViewModel: TabCollectionViewModel,
          historyCoordinating: HistoryCoordinating,
          fireproofDomains: FireproofDomains,
          faviconManagement: FaviconManagement,
-         initialClearingOption: ClearingOption = .allData,
+         clearingOption: ClearingOption? = nil,
          tld: TLD,
          onboardingContextualDialogsManager: ContextualOnboardingStateUpdater) {
 
@@ -61,17 +64,18 @@ final class FirePopoverViewModel: ObservableObject {
         self.historyCoordinating = historyCoordinating
         self.fireproofDomains = fireproofDomains
         self.faviconManagement = faviconManagement
-        self.clearingOption = initialClearingOption
+        self.clearingOption = clearingOption ?? FirePopoverViewModel.lastSelectedClearingOption
         self.tld = tld
         self.onboardingContextualDialogsManager = onboardingContextualDialogsManager
 
         // Initialize selectable/fireproofed lists so counts (e.g., cookiesSitesCountForCurrentScope) are available immediately
-        updateItems(for: initialClearingOption)
+        updateItems(for: self.clearingOption)
     }
 
     var clearingOption: ClearingOption {
         didSet {
             updateItems(for: clearingOption)
+            Self.lastSelectedClearingOption = clearingOption
         }
     }
 

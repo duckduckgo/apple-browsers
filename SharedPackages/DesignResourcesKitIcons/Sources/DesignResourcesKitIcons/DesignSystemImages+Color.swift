@@ -195,5 +195,8 @@ public extension DesignSystemImages {
             public static var vpn: DesignSystemImage { .init(resource: .vpnColor24) }
             public static var vpnGrayscale: DesignSystemImage { .init(resource: .vpnGrayscaleColor24) }
         }
+        public enum Size72 {
+            public static var fire: DesignSystemImage { .init(resource: .fireColor72) }
+        }
     }
 }

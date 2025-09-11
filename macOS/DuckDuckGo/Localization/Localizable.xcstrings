@@ -31814,28 +31814,16 @@
       "comment" : "Subtitle shown under the Tabs and windows row when scope is ‘Everything’. Means: all browser tabs and windows will be closed.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Close all tabs and windows."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fermer tous les onglets et fenêtres."
-          }
-        },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Alle Tabs und Fenster schließen."
           }
         },
-        "pl" : {
+        "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zamknij wszystkie karty i okna."
+            "state" : "new",
+            "value" : "Close all tabs and windows."
           }
         },
         "es" : {
@@ -31844,10 +31832,16 @@
             "value" : "Cierra todas las pestañas y ventanas."
           }
         },
-        "ru" : {
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Закрыть все вкладки и окна"
+            "value" : "Fermer tous les onglets et fenêtres."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi tutte le schede e le finestre."
           }
         },
         "nl" : {
@@ -31856,16 +31850,22 @@
             "value" : "Sluit alle tabbladen en vensters."
           }
         },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij wszystkie karty i okna."
+          }
+        },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fechar todos os separadores e janelas."
           }
         },
-        "it" : {
+        "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chiudi tutte le schede e le finestre."
+            "value" : "Закрыть все вкладки и окна"
           }
         }
       }
@@ -31874,28 +31874,16 @@
       "comment" : "Subtitle shown under the Tabs and windows row when scope is ‘Tab’. Means: the currently active tab will be closed.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Close this tab."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fermer cet onglet."
-          }
-        },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Diesen Tab schließen."
           }
         },
-        "pl" : {
+        "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zamknij tę kartę."
+            "state" : "new",
+            "value" : "Close this tab."
           }
         },
         "es" : {
@@ -31904,10 +31892,16 @@
             "value" : "Cierra esta pestaña."
           }
         },
-        "ru" : {
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Закрыть эту вкладку"
+            "value" : "Fermer cet onglet."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi questa scheda."
           }
         },
         "nl" : {
@@ -31916,16 +31910,22 @@
             "value" : "Sluit dit tabblad."
           }
         },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij tę kartę."
+          }
+        },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fechar este separador."
           }
         },
-        "it" : {
+        "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chiudi questa scheda."
+            "value" : "Закрыть эту вкладку"
           }
         }
       }
@@ -31934,28 +31934,16 @@
       "comment" : "Subtitle shown under the Tabs and windows row when scope is ‘Window’. Means: the current browser window (all tabs inside it) will be closed.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Close this window."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fermer cette fenêtre."
-          }
-        },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dieses Fenster schließen."
           }
         },
-        "pl" : {
+        "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zamknij to okno."
+            "state" : "new",
+            "value" : "Close this window."
           }
         },
         "es" : {
@@ -31964,10 +31952,16 @@
             "value" : "Cierra esta ventana."
           }
         },
-        "ru" : {
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Закрыть это окно"
+            "value" : "Fermer cette fenêtre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi questa finestra."
           }
         },
         "nl" : {
@@ -31976,16 +31970,22 @@
             "value" : "Sluit dit venster."
           }
         },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij to okno."
+          }
+        },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fechar esta janela."
           }
         },
-        "it" : {
+        "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chiudi questa finestra."
+            "value" : "Закрыть это окно"
           }
         }
       }
@@ -31994,28 +31994,16 @@
       "comment" : "Subtitle. Shows the number of sites whose cookies/site data will be deleted. Warns user that this may sign them out. %@ is a localized decimal number.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Delete from %@ sites. May sign you out of accounts."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Supprimer de %@ sites. Peut vous déconnecter des comptes."
-          }
-        },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Von %@ Websites löschen. Du wirst möglicherweise von Konten abgemeldet."
           }
         },
-        "pl" : {
+        "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usuń z %@ witryn. Może spowodować wylogowanie z kont."
+            "state" : "new",
+            "value" : "Delete from %@ sites. May sign you out of accounts."
           }
         },
         "es" : {
@@ -32024,10 +32012,16 @@
             "value" : "Elimina de %@ sitios. Puede que cierres sesión en tus cuentas."
           }
         },
-        "ru" : {
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Данные будут удалены с сайтов (%@). Операция может сопровождаться выходом из учетных записей."
+            "value" : "Supprimer de %@ sites. Peut vous déconnecter des comptes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina da %@ siti. Potrebbe disconnetterti dagli account."
           }
         },
         "nl" : {
@@ -32036,16 +32030,22 @@
             "value" : "Verwijder van %@ websites. Je kan worden uitgelogd bij accounts."
           }
         },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń z %@ witryn. Może spowodować wylogowanie z kont."
+          }
+        },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Eliminar de %@ sites. Podes terminar a tua sessão nas contas."
           }
         },
-        "it" : {
+        "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Elimina da %@ siti. Potrebbe disconnetterti dagli account."
+            "value" : "Данные будут удалены с сайтов (%@). Операция может сопровождаться выходом из учетных записей."
           }
         }
       }
@@ -32054,28 +32054,16 @@
       "comment" : "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Cookies and site data"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cookies et données du site"
-          }
-        },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cookies und Website-Daten"
           }
         },
-        "pl" : {
+        "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pliki cookie i dane witryny"
+            "state" : "new",
+            "value" : "Cookies and site data"
           }
         },
         "es" : {
@@ -32084,10 +32072,16 @@
             "value" : "Cookies y datos del sitio"
           }
         },
-        "ru" : {
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Куки-файлы и данные сайтов"
+            "value" : "Cookies et données du site"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookie e dati del sito"
           }
         },
         "nl" : {
@@ -32096,16 +32090,22 @@
             "value" : "Cookies en sitegegevens"
           }
         },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pliki cookie i dane witryny"
+          }
+        },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cookies e dados de sites"
           }
         },
-        "it" : {
+        "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cookie e dati del sito"
+            "value" : "Куки-файлы и данные сайтов"
           }
         }
       }
@@ -32474,28 +32474,16 @@
       "comment" : "Subtitle. Shows the exact number of browsing history items that will be deleted in this operation. %@ is a localized decimal number.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Delete %@ items."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Supprimer %@ éléments."
-          }
-        },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ Elemente löschen."
           }
         },
-        "pl" : {
+        "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usuń elementy (%@)."
+            "state" : "new",
+            "value" : "Delete %@ items."
           }
         },
         "es" : {
@@ -32504,10 +32492,16 @@
             "value" : "Elimina %@ elementos."
           }
         },
-        "ru" : {
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить записи (%@)"
+            "value" : "Supprimer %@ éléments."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina %@ elementi."
           }
         },
         "nl" : {
@@ -32516,16 +32510,22 @@
             "value" : "Verwijder %@ items."
           }
         },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń elementy (%@)."
+          }
+        },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Eliminar %@ itens."
           }
         },
-        "it" : {
+        "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Elimina %@ elementi."
+            "value" : "Удалить записи (%@)"
           }
         }
       }
@@ -32652,28 +32652,16 @@
       "comment" : "Link row text to manage per-site deletions",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Delete individual sites and history."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Supprimer les sites individuels et leur historique."
-          }
-        },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Einzelne Websites und Verlauf löschen."
           }
         },
-        "pl" : {
+        "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usuń poszczególne witryny i historię."
+            "state" : "new",
+            "value" : "Delete individual sites and history."
           }
         },
         "es" : {
@@ -32682,10 +32670,16 @@
             "value" : "Borra sitios e historial individuales."
           }
         },
-        "ru" : {
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить отдельные сайты и записи"
+            "value" : "Supprimer les sites individuels et leur historique."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina i singoli siti e la cronologia."
           }
         },
         "nl" : {
@@ -32694,16 +32688,22 @@
             "value" : "Verwijder afzonderlijke websites en geschiedenis."
           }
         },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń poszczególne witryny i historię."
+          }
+        },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Eliminar sites e histórico individuais."
           }
         },
-        "it" : {
+        "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Elimina i singoli siti e la cronologia."
+            "value" : "Удалить отдельные сайты и записи"
           }
         }
       }
@@ -32712,10 +32712,22 @@
       "comment" : "Segment label for Everything scope",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alles"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Everything"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo"
           }
         },
         "fr" : {
@@ -32724,7 +32736,13 @@
             "value" : "Tout"
           }
         },
-        "de" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutto"
+          }
+        },
+        "nl" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Alles"
@@ -32736,34 +32754,16 @@
             "value" : "Wszystko"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Todo"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Всё"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alles"
-          }
-        },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tudo"
           }
         },
-        "it" : {
+        "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tutto"
+            "value" : "Всё"
           }
         }
       }
@@ -32882,6 +32882,124 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Окно"
+          }
+        }
+      }
+    },
+    "fire.dialog.sites.overlay.subtitle" : {
+      "comment" : "Subtitle above the list of domains in in-dialog overlay",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Websites werden gelöscht."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These sites will be deleted."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estos sitios se eliminarán."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ces sites seront supprimés."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questi siti verranno eliminati."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze sites worden verwijderd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te witryny zostaną usunięte."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estes sites serão eliminados."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Данные сайтов будут удалены."
+          }
+        }
+      }
+    },
+    "fire.dialog.sites.overlay.title" : {
+      "comment" : "Header of in-dialog overlay listing domains affected by deletion",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Website-Details"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Site Details"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detalles de los sitios"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Détails des sites"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dettagli dei siti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sitedetails"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Szczegóły witryn"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detalhes dos sites"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сведения о сайтах"
           }
         }
       }
@@ -33010,28 +33128,16 @@
       "comment" : "Section title. Refers to the scope option that affects open tabs and/or browser windows; keep short and title-cased.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Tabs and windows"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Onglets et fenêtres"
-          }
-        },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tabs und Fenster"
           }
         },
-        "pl" : {
+        "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Karty i okna"
+            "state" : "new",
+            "value" : "Tabs and windows"
           }
         },
         "es" : {
@@ -33040,10 +33146,16 @@
             "value" : "Pestañas y ventanas"
           }
         },
-        "ru" : {
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Вкладки и окна"
+            "value" : "Onglets et fenêtres"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schede e finestre"
           }
         },
         "nl" : {
@@ -33052,16 +33164,22 @@
             "value" : "Tabbladen en vensters"
           }
         },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karty i okna"
+          }
+        },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Separadores e janelas"
           }
         },
-        "it" : {
+        "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Schede e finestre"
+            "value" : "Вкладки и окна"
           }
         }
       }

@@ -194,6 +194,8 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
     }
 
     public func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding) {
+        guard jobDependencies.featureFlagger.isEmailConfirmationDecouplingFeatureOn else { return }
+        
         do {
             let emailConfirmationDependencies = EmailConfirmationJobDependencies(from: jobDependencies)
             let emailJobs = try emailConfirmationJobProvider.createEmailConfirmationJobs(

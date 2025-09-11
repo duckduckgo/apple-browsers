@@ -172,6 +172,7 @@ final class MainViewController: NSViewController {
         aiChatSidebarPresenter = AIChatSidebarPresenter(
             sidebarHost: browserTabViewController,
             sidebarProvider: aiChatSidebarProvider,
+            aiChatMenuConfig: aiChatMenuConfig,
             aiChatTabOpener: aiChatTabOpener,
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,

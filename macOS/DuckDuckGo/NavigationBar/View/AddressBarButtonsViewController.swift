@@ -480,8 +480,9 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func toggleAIChatSidebar(for tab: Tab) {
         let isSidebarCurrentlyOpen = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
-
-        let pixel: AIChatPixel = isSidebarCurrentlyOpen ? .aiChatSidebarClosed(source: .addressBarButton) : .aiChatSidebarOpened(source: .addressBarButton)
+        let pixel: AIChatPixel = isSidebarCurrentlyOpen ?
+            .aiChatSidebarClosed(source: .addressBarButton) :
+            .aiChatSidebarOpened(source: .addressBarButton, shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue)
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
         if !isSidebarCurrentlyOpen {
             PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .sidebar), frequency: .dailyAndStandard)
@@ -783,7 +784,9 @@ final class AddressBarButtonsViewController: NSViewController {
         } else {
             if let tab = tabViewModel?.tab {
                 let isSidebarCurrentlyOpen = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
-                let pixel: AIChatPixel = isSidebarCurrentlyOpen ? .aiChatSidebarClosed(source: .contextMenu) : .aiChatSidebarOpened(source: .contextMenu)
+                let pixel: AIChatPixel = isSidebarCurrentlyOpen ?
+                    .aiChatSidebarClosed(source: .contextMenu) :
+                    .aiChatSidebarOpened(source: .contextMenu, shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue)
                 PixelKit.fire(pixel, frequency: .dailyAndStandard)
             }
 

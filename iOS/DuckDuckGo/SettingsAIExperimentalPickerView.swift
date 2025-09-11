@@ -30,7 +30,7 @@ struct SettingsAIExperimentalPickerView: View {
                 isSelected: !isDuckAISelected,
                 selectedImage: .searchExperimentalOn,
                 unselectedImage: .searchExperimentalOff,
-                title: UserText.settingsAiExperimentalPickerSearchOnly
+                title: UserText.settingsAIPickerSearchOnly
             ) {
                 isDuckAISelected = false
             }
@@ -39,7 +39,7 @@ struct SettingsAIExperimentalPickerView: View {
                 isSelected: isDuckAISelected,
                 selectedImage: .aiExperimentalOn,
                 unselectedImage: .aiExperimentalOff,
-                title: UserText.settingsAiExperimentalPickerSearchAndDuckAI
+                title: UserText.settingsAIPickerSearchAndDuckAI
             ) {
                 isDuckAISelected = true
             }

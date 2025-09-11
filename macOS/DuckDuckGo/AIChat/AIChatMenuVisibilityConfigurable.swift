@@ -54,10 +54,10 @@ protocol AIChatMenuVisibilityConfigurable {
     /// - Returns: `true` if AI Chat should open in the sidebar; otherwise, `false`.
     var shouldOpenAIChatInSidebar: Bool { get }
 
-    /// This property determines whether websites should send page context to the AI Chat sidebar.
+    /// This property determines whether websites should automatically send page context to the AI Chat sidebar.
     ///
     /// - Returns: `true` if AI Chat should open in the sidebar; otherwise, `false`.
-    var isPageContextEnabled: Bool { get }
+    var shouldAutomaticallySendPageContext: Bool { get }
 
     /// This property validates user settings to determine if the text summarization
     /// feature should be presented to the user.
@@ -119,8 +119,8 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
         shouldDisplayAnyAIChatFeature && storage.openAIChatInSidebar
     }
 
-    var isPageContextEnabled: Bool {
-        shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatPageContext) && storage.isPageContextEnabled
+    var shouldAutomaticallySendPageContext: Bool {
+        shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatPageContext) && storage.shouldAutomaticallySendPageContext
     }
 
     init(storage: AIChatPreferencesStorage, remoteSettings: AIChatRemoteSettingsProvider, featureFlagger: FeatureFlagger) {
@@ -138,7 +138,7 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
             storage.showShortcutInApplicationMenuPublisher.removeDuplicates(),
             storage.showShortcutInAddressBarPublisher.removeDuplicates(),
             storage.openAIChatInSidebarPublisher.removeDuplicates(),
-            storage.isPageContextEnabledPublisher.removeDuplicates()
+            storage.shouldAutomaticallySendPageContextPublisher.removeDuplicates()
         )
         .sink { [weak self] _ in
             self?.valuesChangedPublisher.send()

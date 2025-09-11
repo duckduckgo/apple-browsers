@@ -1,7 +1,7 @@
 //
-//  NSObject+performSelector.h
+//  NSObject+valueForIvar.m
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,12 +16,17 @@
 //  limitations under the License.
 //
 
-#import <Foundation/Foundation.h>
+#import "include/NSObject+valueForIvar.h"
+#import <objc/runtime.h>
 
-NS_ASSUME_NONNULL_BEGIN
+@implementation NSObject (valueForIvar)
 
-@interface NSObject (performSelector)
-- (id)performSelector:(SEL)selector withArguments:(NSArray *)arguments;
+- (void *)valueForIvar:(NSString *)name {
+    Ivar ivar = class_getInstanceVariable(object_getClass(self), [name UTF8String]);
+    if (ivar) {
+        return (__bridge void *)object_getIvar(self, ivar);
+    }
+    return nil;
+}
+
 @end
-
-NS_ASSUME_NONNULL_END

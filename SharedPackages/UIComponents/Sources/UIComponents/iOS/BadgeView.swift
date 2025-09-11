@@ -1,7 +1,7 @@
 //
-//  UpdateDialogHelper.swift
+//  BadgeView.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,22 +16,28 @@
 //  limitations under the License.
 //
 
-import Cocoa
-import Common
+#if os(iOS)
 
-extension NSWindowController {
+import SwiftUI
+import DesignResourcesKit
 
-    func hideUnnecessaryUpdateButtons() {
-        let buttonsToHide = ["_laterButton", "_skipButton", "_automaticallyInstallUpdatesButton"]
-        for button in buttonsToHide {
-            if let button = getButton(named: button) {
-                button.isHidden = true
-            }
-        }
+public struct BadgeView: View {
+    public let text: String
+
+    public init(text: String) {
+        self.text = text
     }
 
-    private func getButton(named buttonName: String) -> NSButton? {
-        return value(forIvar: buttonName) as? NSButton
+    public var body: some View {
+        Text(text.uppercased())
+            .font(.caption2)
+            .bold()
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(Color(designSystemColor: .alertYellow))
+            .foregroundColor(.black)
+            .cornerRadius(6)
     }
-
 }
+
+#endif

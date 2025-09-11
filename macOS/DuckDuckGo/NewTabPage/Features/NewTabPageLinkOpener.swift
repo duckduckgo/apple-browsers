@@ -68,6 +68,8 @@ struct NewTabPageLinkOpener: NewTabPageLinkOpening {
         switch target {
         case .settings:
             openAppearanceSettings()
+        case .duckAISettings:
+            openDuckAISettings()
         }
     }
 
@@ -76,4 +78,11 @@ struct NewTabPageLinkOpener: NewTabPageLinkOpening {
             Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .appearance)
         }
     }
+
+    private func openDuckAISettings() {
+        Task.detached { @MainActor in
+            Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .aiChat)
+        }
+    }
+
 }

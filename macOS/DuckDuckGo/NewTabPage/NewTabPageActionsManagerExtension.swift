@@ -160,6 +160,7 @@ extension NewTabPageActionsManager {
             NewTabPageConfigurationClient(
                 sectionsAvailabilityProvider: availabilityProvider,
                 sectionsVisibilityProvider: appearancePreferences,
+                omnibarConfigProvider: omnibarConfigProvider,
                 customBackgroundProvider: customizationProvider,
                 linkOpener: NewTabPageLinkOpener(),
                 eventMapper: NewTabPageConfigurationErrorHandler()

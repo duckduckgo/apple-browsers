@@ -221,6 +221,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Show AI Chat address bar choice screen
     case showAIChatAddressBarChoiceScreen
+
+    /// Adds context menu action for translating text selected on a website.
+    case textTranslation
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

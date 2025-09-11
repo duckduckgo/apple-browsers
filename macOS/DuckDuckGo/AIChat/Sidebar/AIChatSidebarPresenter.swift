@@ -62,6 +62,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
     private let sidebarHost: AIChatSidebarHosting
     private let sidebarProvider: AIChatSidebarProviding
+    private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatTabOpener: AIChatTabOpening
     private let featureFlagger: FeatureFlagger
     private let windowControllersManager: WindowControllersManagerProtocol
@@ -74,6 +75,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
     init(
         sidebarHost: AIChatSidebarHosting,
         sidebarProvider: AIChatSidebarProviding = AIChatSidebarProvider(),
+        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatTabOpener: AIChatTabOpening,
         featureFlagger: FeatureFlagger,
         windowControllersManager: WindowControllersManagerProtocol,
@@ -81,6 +83,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
     ) {
         self.sidebarHost = sidebarHost
         self.sidebarProvider = sidebarProvider
+        self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatTabOpener = aiChatTabOpener
         self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
@@ -198,7 +201,13 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
             let sidebarViewController = sidebarProvider.makeSidebar(for: currentTabID, burnerMode: sidebarHost.burnerMode).sidebarViewController
             sidebarViewController.aiChatPayload = payload
             updateSidebarConstraints(for: currentTabID, isShowingSidebar: true, withAnimation: true)
-            pixelFiring?.fire(AIChatPixel.aiChatSidebarOpened(source: .serp), frequency: .dailyAndStandard)
+            pixelFiring?.fire(
+                AIChatPixel.aiChatSidebarOpened(
+                    source: .serp,
+                    shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue
+                ),
+                frequency: .dailyAndStandard
+            )
         } else {
             // If sidebar is open then pass the payload to a new AIChat tab
             aiChatTabOpener.openNewAIChatTab(withPayload: payload)

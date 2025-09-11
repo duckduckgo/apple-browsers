@@ -204,12 +204,6 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onDismissPressed = { [weak self] in
             self?.onDismissPressed()
         }
-        barView.onSettingsLongPress = { [weak self] in
-            self?.onSettingsLongPress()
-        }
-        barView.onAccessoryLongPress = { [weak self] in
-            self?.onAccessoryLongPress()
-        }
     }
 
     private func configureEditingMenu() {
@@ -648,14 +642,6 @@ class OmniBarViewController: UIViewController, OmniBar {
         Pixel.fire(pixel: .aiChatLegacyOmnibarBackButtonPressed)
         omniDelegate?.onCancelPressed()
         refreshState(state.onEditingStoppedState)
-    }
-
-    private func onSettingsLongPress() {
-        omniDelegate?.onSettingsLongPressed()
-    }
-
-    private func onAccessoryLongPress() {
-        omniDelegate?.onAccessoryLongPressed(accessoryType: barView.accessoryType)
     }
 }
 

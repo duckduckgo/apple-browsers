@@ -495,9 +495,9 @@ private class MockFireproofDomains: FireproofDomains {
 
      // Provide simple preview icons from bundled assets (replace names if needed)
      let faviconMock = FaviconManagerMock()
-//     faviconMock.setImage(NSImage(systemSymbolName: "apple.logo", accessibilityDescription: nil)!, forHost: "apple.com")
-//     faviconMock.setImage(NSImage(named: NSImage.bonjourName)!, forHost: "cnn.com")
-//     faviconMock.setImage(NSImage(named: NSImage.networkName)!, forHost: "dropbox.com")
+     faviconMock.setImage(NSImage(systemSymbolName: "apple.logo", accessibilityDescription: nil)!, forHost: "apple.com")
+     faviconMock.setImage(NSImage(named: NSImage.bonjourName)!, forHost: "cnn.com")
+     faviconMock.setImage(NSImage(named: NSImage.networkName)!, forHost: "dropbox.com")
 
     let vm = FirePopoverViewModel(
         fireViewModel: FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider),

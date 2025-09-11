@@ -49,18 +49,20 @@ public final class ContentScopeProperties: Encodable {
     public let sessionKey: String
     public let messageSecret: String
     public let languageCode: String
-    public let platform = ContentScopePlatform()
+    public let platform: ContentScopePlatform
     public let features: [String: ContentScopeFeature]
     public var currentCohorts: [ContentScopeExperimentData]
 
     public init(gpcEnabled: Bool,
                 sessionKey: String,
                 messageSecret: String,
+                isInternalUser: Bool = false,
                 featureToggles: ContentScopeFeatureToggles,
                 currentCohorts: [ContentScopeExperimentData] = []) {
         self.globalPrivacyControlValue = gpcEnabled
         self.sessionKey = sessionKey
         self.messageSecret = messageSecret
+        self.platform = ContentScopePlatform(isInternal: isInternalUser)
         languageCode = Locale.current.languageCode ?? "en"
         features = [
             "autofill": ContentScopeFeature(featureToggles: featureToggles)
@@ -181,12 +183,19 @@ public struct ContentScopePlatform: Encodable {
     #else
     let name = "unknown"
     #endif
+
+    let `internal`: Bool
+
+    init(isInternal: Bool = false) {
+        self.internal = isInternal
+    }
 }
 
 public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessaging, UserScriptWithContentScope {
 
     public var broker: UserScriptMessageBroker
     public let isIsolated: Bool
+    public let allowedNonisolatedFeatures: [String]
     public var messageNames: [String] = []
     public weak var delegate: ContentScopeUserScriptDelegate?
 
@@ -198,12 +207,14 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
     public init(_ privacyConfigManager: PrivacyConfigurationManaging,
                 properties: ContentScopeProperties,
                 isIsolated: Bool = false,
+                allowedNonisolatedFeatures: [String] = [],
                 privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
     ) {
         self.isIsolated = isIsolated
+        self.allowedNonisolatedFeatures = allowedNonisolatedFeatures
         let contextName = self.isIsolated ? MessageName.contentScopeScriptsIsolated.rawValue : MessageName.contentScopeScripts.rawValue
 
-        broker = UserScriptMessageBroker(context: contextName)
+        broker = UserScriptMessageBroker(context: contextName, requiresRunInPageContentWorld: !isIsolated)
 
         messageNames = [contextName]
 
@@ -257,7 +268,7 @@ extension ContentScopeUserScript: WKScriptMessageHandlerWithReply {
                                       didReceive message: WKScriptMessage) async -> (Any?, String?) {
         propagateDebugFlag(message)
         // Don't propagate the message for ContentScopeScript non isolated context
-        if message.name == MessageName.contentScopeScripts.rawValue {
+        if message.name == MessageName.contentScopeScripts.rawValue && !isAllowedNonisolatedFeature(message) {
             return (nil, nil)
         }
         // Propagate the message for ContentScopeScriptIsolated and other context like "dbpui"
@@ -269,6 +280,16 @@ extension ContentScopeUserScript: WKScriptMessageHandlerWithReply {
             // forward uncaught errors to the client
             return (nil, error.localizedDescription)
         }
+    }
+
+    private func isAllowedNonisolatedFeature(_ message: WKScriptMessage) -> Bool {
+        guard !allowedNonisolatedFeatures.isEmpty else {
+            return false
+        }
+        guard let featureName = (message.messageBody as? [String: Any])?["featureName"] as? String else {
+            return false
+        }
+        return allowedNonisolatedFeatures.contains(featureName)
     }
 
     @MainActor

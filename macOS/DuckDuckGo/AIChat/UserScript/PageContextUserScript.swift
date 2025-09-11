@@ -25,17 +25,20 @@ import UserScript
 import WebKit
 
 struct PageContextPayload: Codable {
-    let serializedPageData: AIChatPageContextData
+    let serializedPageData: AIChatPageContextData?
 }
 
 final class PageContextUserScript: NSObject, Subfeature {
-    public let collectionResultPublisher: AnyPublisher<String, Never>
-    public let featureName: String = "pageContext"
+    public let collectionResultPublisher: AnyPublisher<AIChatPageContextData?, Never>
+    static public let featureName: String = "pageContext"
+    public var featureName: String {
+        Self.featureName
+    }
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
     let messageOriginPolicy: MessageOriginPolicy = .all
 
-    private let collectionResultSubject = PassthroughSubject<String, Never>()
+    private let collectionResultSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     private var cancellables: Set<AnyCancellable> = []
 
     public func with(broker: UserScriptMessageBroker) {
@@ -45,7 +48,6 @@ final class PageContextUserScript: NSObject, Subfeature {
     enum MessageName: String {
         case collect
         case collectionResult
-        case collectionError
     }
 
     override init() {
@@ -64,8 +66,6 @@ final class PageContextUserScript: NSObject, Subfeature {
         switch MessageName(rawValue: methodName) {
         case .collectionResult:
             return { [weak self] in await self?.collectionResult(params: $0, message: $1) }
-        case .collectionError:
-            return { [weak self] in await self?.collectionError(params: $0, message: $1) }
         default:
             return nil
         }
@@ -77,11 +77,6 @@ final class PageContextUserScript: NSObject, Subfeature {
             return nil
         }
         collectionResultSubject.send(payload.serializedPageData)
-        return nil
-    }
-
-    private func collectionError(params: Any, message: UserScriptMessage) async -> Encodable? {
-        Logger.aiChat.error("\(#function): \(String(reflecting: params))")
         return nil
     }
 }

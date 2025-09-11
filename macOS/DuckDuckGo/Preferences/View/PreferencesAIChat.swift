@@ -129,9 +129,9 @@ extension Preferences {
                             .padding(.leading, 19)
 
                             if model.shouldShowPageContextToggle {
-                                ToggleMenuItem("Send page context to the sidebar",
-                                               isOn: $model.isPageContextEnabled)
-                                .accessibilityIdentifier("Preferences.AIChat.isPageContextEnabledToggle")
+                                ToggleMenuItem("Automatically send page context to the sidebar",
+                                               isOn: $model.shouldAutomaticallySendPageContext)
+                                .accessibilityIdentifier("Preferences.AIChat.shouldAutomaticallySendPageContextToggle")
                                 .disabled(!model.showShortcutInAddressBar || !model.openAIChatInSidebar)
                                 .padding(.leading, 19)
                             }
@@ -225,9 +225,9 @@ extension Preferences {
                             }
 
                             if model.shouldShowPageContextToggle {
-                                ToggleMenuItem("Send page context to the sidebar",
-                                               isOn: $model.isPageContextEnabled)
-                                .accessibilityIdentifier("Preferences.AIChat.isPageContextEnabledToggle")
+                                ToggleMenuItem("Automatically send page context to the sidebar",
+                                               isOn: $model.shouldAutomaticallySendPageContext)
+                                .accessibilityIdentifier("Preferences.AIChat.shouldAutomaticallySendPageContextToggle")
                             }
                         }
                     }

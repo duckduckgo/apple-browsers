@@ -75,7 +75,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         broker?.push(method: AIChatUserScriptMessages.submitAIChatNativePrompt.rawValue, params: prompt, for: self, into: webView)
     }
 
-    private func submitPageContext(_ pageContextData: AIChatPageContextData) {
+    private func submitPageContext(_ pageContextData: AIChatPageContextData?) {
         guard let webView else {
             return
         }
@@ -109,6 +109,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.openTranslationSourceLink
         case .getPageContext:
             return handler.getPageContext
+        case .togglePageContextTelemetry:
+            return handler.togglePageContextTelemetry
         default:
             return nil
         }

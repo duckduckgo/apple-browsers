@@ -877,7 +877,6 @@
     constructor(config, messagingContext) {
       this.messagingContext = messagingContext;
       this.config = config;
-      this.config.sendInitialPing(messagingContext);
     }
     /**
      * @param {NotificationMessage} msg

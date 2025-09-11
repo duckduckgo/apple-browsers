@@ -1,0 +1,18 @@
+// Check For Updates in App Store builds pixels
+{
+    m_mac_app_store_check_for_update: {
+        description: 'Pixel',
+        owners: ['jotaemepereira'],
+        triggers: ['other'],
+        parameters: [
+            {
+                key: 'source',
+                type: 'string',
+                description: 'The source where the action happens',
+                enum: ['about', 'more_options', 'main_menu'],
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+}

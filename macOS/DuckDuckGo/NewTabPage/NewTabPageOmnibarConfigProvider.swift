@@ -86,6 +86,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let keyValueStore: ThrowingKeyValueStoring
     private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private let firePixel: (PixelKitEvent) -> Void
+    private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
 
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
@@ -150,7 +151,14 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
                 return (try? keyValueStore.object(forKey: Key.showCustomizePopover.rawValue) as? Bool) ?? true
             }
         }
-        set { try? keyValueStore.set(newValue, forKey: Key.showCustomizePopover.rawValue) }
+        set {
+            try? keyValueStore.set(newValue, forKey: Key.showCustomizePopover.rawValue)
+            showCustomizePopoverSubject.send(newValue)
+        }
+    }
+
+    var showCustomizePopoverPublisher: AnyPublisher<Bool, Never> {
+        showCustomizePopoverSubject.eraseToAnyPublisher()
     }
 
     var customizePopoverPresentationCount: Int {

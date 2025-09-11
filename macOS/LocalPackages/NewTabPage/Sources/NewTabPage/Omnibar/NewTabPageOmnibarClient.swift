@@ -45,13 +45,14 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         self.actionHandler = actionHandler
         super.init()
 
-        Publishers.Merge(
+        Publishers.Merge3(
             configProvider.isAIChatShortcutEnabledPublisher,
-            configProvider.isAIChatSettingVisiblePublisher
+            configProvider.isAIChatSettingVisiblePublisher,
+            configProvider.showCustomizePopoverPublisher
         )
         .sink { [weak self] _ in
             Task { @MainActor in
-                self?.notifyAIChatShortcutUpdated()
+                self?.notifyConfigUpdated()
             }
         }
         .store(in: &cancellables)
@@ -97,7 +98,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     }
 
     @MainActor
-    private func notifyAIChatShortcutUpdated() {
+    private func notifyConfigUpdated() {
         let config = NewTabPageDataModel.OmnibarConfig(
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,

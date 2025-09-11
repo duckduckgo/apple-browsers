@@ -45,7 +45,7 @@ protocol OmniBarDelegate: AnyObject {
     
     func onSettingsPressed()
 
-    func onSettingsLongPressed()
+    func onMenuLongPressed()
 
     func onClearPressed()
 
@@ -127,7 +127,7 @@ extension OmniBarDelegate {
         
     }
 
-    func onSettingsLongPressed() {
+    func onMenuLongPressed() {
 
     }
 

@@ -304,9 +304,9 @@ body {
   --ntp-icons-primary: rgba(255, 255, 255, 0.78);
   --ntp-icons-tertiary: rgba(255, 255, 255, 0.24);
   --ntp-tone-tint: rgba(249, 249, 249, 0.12);
-  --ntp-accent-primary: var(--color-blue-20);
-  --ntp-accent-secondary: var(--color-blue-30);
-  --ntp-accent-tertiary: var(--color-blue-40);
+  --ntp-accent-primary: var(--color-blue-30);
+  --ntp-accent-secondary: var(--color-blue-40);
+  --ntp-accent-tertiary: var(--color-blue-50);
   --ntp-accent-glow: rgba(114, 149, 246, 0.2);
   --ntp-accent-content-primary: var(--color-blue-80);
   --ntp-controls-fill-primary: rgba(249, 249, 249, 0.12);
@@ -1596,6 +1596,9 @@ body:not([data-platform-name]) .Button_button:active {
   margin-bottom: var(--sp-4);
   width: 164px;
 }
+.Omnibar_tabSwitcherContainer {
+  position: relative;
+}
 .Omnibar_spacer {
   align-self: stretch;
   height: calc(var(--sp-16) + 3px * 2);
@@ -1619,17 +1622,17 @@ body:not([data-background-kind=default]) .Omnibar_popup {
   backdrop-filter: blur(48px);
   background: var(--omnibar-translucent-background-color);
 }
-.Omnibar_root:focus-within .Omnibar_popup {
+.Omnibar_root:has(input:focus, textarea:focus) .Omnibar_popup {
   box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1), 0 20px 40px 0 rgba(0, 0, 0, 0.08);
 }
-.Omnibar_root:focus-within:has(input:placeholder-shown, textarea:placeholder-shown) .Omnibar_popup {
+.Omnibar_root:has(input:focus:placeholder-shown, textarea:focus:placeholder-shown) .Omnibar_popup {
   border-radius: 15px;
   border: 2px solid var(--ntp-accent-primary);
   box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1), 0 20px 40px 0 rgba(0, 0, 0, 0.08);
   margin: 0;
   outline: 2px solid var(--ntp-accent-glow);
 }
-.Omnibar_root:focus-within:has(input:placeholder-shown, textarea:placeholder-shown) .Omnibar_popup .Omnibar_field {
+.Omnibar_root:has(input:focus:placeholder-shown, textarea:focus:placeholder-shown) .Omnibar_popup .Omnibar_field {
   margin: 1px;
 }
 .Omnibar_root:has([role=listbox]) .Omnibar_popup {
@@ -1730,8 +1733,16 @@ body:not([data-background-kind=default]) .Omnibar_popup {
   border-top: 1px solid var(--ntp-surface-border-color);
   display: flex;
   flex-direction: column;
+  margin-top: -1px;
+}
+.SuggestionsList_main,
+.SuggestionsList_footer {
+  display: flex;
+  flex-direction: column;
   padding: calc(3px + var(--sp-1));
-  padding-top: calc(3px + var(--sp-1) - 1px);
+}
+.SuggestionsList_main + .SuggestionsList_footer {
+  border-top: 1px solid var(--ntp-surface-border-color);
 }
 .SuggestionsList_item {
   align-items: center;
@@ -1867,6 +1878,86 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   .TabSwitcher_blob {
     transition: none;
   }
+}
+
+/* pages/new-tab/app/components/Popover.module.css */
+.Popover_popover {
+  align-items: center;
+  display: flex;
+  filter: drop-shadow(0 0 calc(0.5px) rgba(0, 0, 0, 0.75)) drop-shadow(0 0 calc(1px) rgba(0, 0, 0, 0.25)) drop-shadow(0 calc(8px) calc(16px) rgba(0, 0, 0, 0.20));
+  flex-direction: row;
+  left: calc(100% + 7px);
+  outline: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 390px;
+  z-index: 1000;
+}
+.Popover_content {
+  background: var(--ntp-surface-tertiary);
+  border-radius: 16px;
+  flex: auto;
+  padding: var(--sp-4) var(--sp-11) var(--sp-4) var(--sp-5);
+  position: relative;
+}
+.Popover_closeButton {
+  background: none;
+  border-radius: 100%;
+  border: none;
+  color: var(--ntp-icons-primary);
+  cursor: pointer;
+  padding: 0;
+  position: absolute;
+  right: var(--sp-4);
+  top: var(--sp-4);
+}
+.Popover_closeButton:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+.Popover_closeButton:active {
+  background: rgba(0, 0, 0, 0.12);
+}
+.Popover_closeButton:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+.Popover_heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.Popover_badge {
+  background: var(--color-yellow-60);
+  border-radius: var(--border-radius-xs);
+  color: var(--color-black);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: var(--sp-4);
+  padding: 0 var(--sp-2);
+  text-transform: uppercase;
+  width: fit-content;
+}
+.Popover_title {
+  font-size: var(--title-3-em-font-size);
+  font-weight: var(--title-3-em-font-weight);
+  line-height: var(--title-3-em-line-height);
+}
+.Popover_description button {
+  background: none;
+  border: none;
+  color: var(--ntp-accent-primary);
+  cursor: pointer;
+  padding: 0;
+}
+.Popover_description button:hover {
+  color: var(--ntp-accent-secondary);
+}
+.Popover_description button:active {
+  color: var(--ntp-accent-tertiary);
+}
+.Popover_arrow {
+  color: var(--ntp-surface-tertiary);
+  margin-right: -1px;
 }
 
 /* pages/new-tab/app/protections/components/Protections.module.css */

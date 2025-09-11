@@ -40,7 +40,10 @@ extension AppDelegate {
 
     @MainActor
     @objc func checkForUpdates(_ sender: Any?) {
-#if SPARKLE
+#if APPSTORE
+        PixelKit.fire(CheckForUpdatesAppStorePixels.checkForUpdate(source: .mainMenu))
+        NSWorkspace.shared.open(.appStore)
+#elseif SPARKLE
         if let warning = SupportedOSChecker().supportWarning,
            case .unsupported = warning {
 

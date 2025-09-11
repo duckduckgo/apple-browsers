@@ -1357,16 +1357,15 @@ final class NavigationBarViewController: NSViewController {
         }
 
         DispatchQueue.main.async {
-
-            let action = {
-                self.showPasswordManagerPopover(selectedWebsiteAccount: account)
-            }
-            let popoverMessage = PopoverMessageViewController(message: UserText.passwordManagerAutosavePopoverText(domain: domain), image: .passwordManagement, buttonText: UserText.passwordManagerAutosaveButtonText, buttonAction: action, onDismiss: { [weak self] in
+            let popoverMessage = PopoverMessageViewController(message: UserText.passwordManagerAutosavePopoverText(domain: domain), image: .passwordManagement, buttonText: UserText.passwordManagerAutosaveButtonText) { [weak self] in
+                self?.showPasswordManagerPopover(selectedWebsiteAccount: account)
+            } onDismiss: { [weak self] in
                 guard let self else { return }
 
                 isAutoFillAutosaveMessageVisible = false
-                passwordManagementButton.isHidden = !LocalPinningManager.shared.isPinned(.autofill) || isInPopUpWindow
-            })
+                passwordManagementButton.isHidden = !popovers.isPasswordManagementPopoverShown
+                && (!LocalPinningManager.shared.isPinned(.autofill) || isInPopUpWindow)
+            }
             self.isAutoFillAutosaveMessageVisible = true
             self.passwordManagementButton.isHidden = false
             popoverMessage.show(onParent: self, relativeTo: self.passwordManagementButton)

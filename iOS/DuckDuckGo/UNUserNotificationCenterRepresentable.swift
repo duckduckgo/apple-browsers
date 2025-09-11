@@ -37,10 +37,27 @@ protocol UNUserNotificationCenterRepresentable: AnyObject {
     func removePendingNotificationRequests(withIdentifiers identifiers: [String])
 }
 
+// MARK: - UNUserNotificationCenter Extension
+
 extension UNUserNotificationCenter: UNUserNotificationCenterRepresentable {
     func authorizationStatus() async -> UNAuthorizationStatus {
         await withCheckedContinuation { cont in
             getNotificationSettings { cont.resume(returning: $0.authorizationStatus) }
+        }
+    }
+}
+
+// MARK: - UNAuthorizationStatus Extension
+
+extension UNAuthorizationStatus {
+    var stringValue: String {
+        switch self {
+        case .notDetermined: "notDetermined"
+        case .denied:        "denied"
+        case .authorized:    "authorized"
+        case .provisional:   "provisional"
+        case .ephemeral:     "ephemeral"
+        @unknown default:    "unknown"
         }
     }
 }

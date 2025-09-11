@@ -6,6 +6,9 @@
         suffixes: ['first_daily_count'],
         parameters: [
             'appVersion',
+            'pixelSource',
+            'errorDomain',
+            'errorCode',
             {
                 key: 'pixelName',
                 description: 'The name of the pixel that failed to save',
@@ -20,6 +23,9 @@
         suffixes: ['first_daily_count'],
         parameters: [
             'appVersion',
+            'pixelSource',
+            'errorDomain',
+            'errorCode',
             {
                 key: 'pixelName',
                 description: 'The name of the pixel that failed to update',
@@ -34,6 +40,9 @@
         suffixes: ['first_daily_count'],
         parameters: [
             'appVersion',
+            'pixelSource',
+            'errorDomain',
+            'errorCode',
             {
                 key: 'pixelName',
                 description: 'The name of the pixel that failed to load',
@@ -48,6 +57,9 @@
         suffixes: ['first_daily_count'],
         parameters: [
             'appVersion',
+            'pixelSource',
+            'errorDomain',
+            'errorCode',
             {
                 key: 'pixelName',
                 description: 'The name of the pixel that failed to complete',
@@ -62,6 +74,9 @@
         suffixes: ['first_daily_count'],
         parameters: [
             'appVersion',
+            'pixelSource',
+            'errorDomain',
+            'errorCode',
             {
                 key: 'pixelName',
                 description: 'The name of the pixel that failed to discard',

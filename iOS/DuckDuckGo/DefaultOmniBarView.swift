@@ -208,8 +208,6 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var onBookmarksPressed: (() -> Void)?
     var onAccessoryPressed: (() -> Void)?
     var onDismissPressed: (() -> Void)?
-    var onSettingsLongPress: (() -> Void)?
-    var onAccessoryLongPress: (() -> Void)?
 
     // MARK: - Properties
 

@@ -65,8 +65,6 @@ protocol OmniBarDelegate: AnyObject {
     
     func onAccessoryPressed(accessoryType: OmniBarAccessoryType)
 
-    func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType)
-
     func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool)
 
     // Returns whether field should select the text or not
@@ -113,10 +111,6 @@ extension OmniBarDelegate {
     
     func onMenuPressed() {
         
-    }
-
-    func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
-
     }
 
     func onBookmarksPressed() {

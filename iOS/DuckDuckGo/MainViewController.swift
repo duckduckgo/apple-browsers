@@ -2738,14 +2738,6 @@ extension MainViewController: OmniBarDelegate {
         featureDiscovery.setWasUsedBefore(.aiChat)
     }
 
-    func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
-        if featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild {
-            segueToDebugSettings()
-        } else {
-            onAccessoryPressed(accessoryType: accessoryType)
-        }
-    }
-
     func onVoiceSearchPressed() {
         handleVoiceSearchOpenRequest()
     }

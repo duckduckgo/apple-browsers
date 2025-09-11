@@ -23,6 +23,7 @@ import BrowserServicesKit
 import Common
 import os.log
 import DataBrokerProtectionCore
+import enum UserScript.UserScriptError
 
 protocol DBPUIScanOps: AnyObject {
     func updateCacheWithCurrentScans() async
@@ -65,11 +66,19 @@ public final class DBPUIViewModel {
         guard let dataManager = dataManager else { return nil }
 
         let configuration = WKWebViewConfiguration()
-        configuration.applyDBPUIConfiguration(privacyConfig: privacyConfig,
-                                              prefs: prefs,
-                                              delegate: dataManager.communicator,
-                                              webUISettings: webUISettings,
-                                              vpnBypassService: vpnBypassService)
+        do {
+            try configuration.applyDBPUIConfiguration(privacyConfig: privacyConfig,
+                                                      prefs: prefs,
+                                                      delegate: dataManager.communicator,
+                                                      webUISettings: webUISettings,
+                                                      vpnBypassService: vpnBypassService)
+        } catch {
+            if case let UserScriptError.failedToLoadJS(jsFile, error) = error {
+                pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            }
+            fatalError("Failed to apply DBPUI configuration: \(error)")
+        }
         dataManager.communicator.scanDelegate = self
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 

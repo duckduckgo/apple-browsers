@@ -182,7 +182,8 @@ extension TabExtensionsBuilder {
                                contentPublisher: args.contentPublisher,
                                isLoadedInSidebar: args.isTabLoadedInSidebar,
                                internalUserDecider: dependencies.featureFlagger.internalUserDecider,
-                               aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration)
+                               aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration,
+                               tld: dependencies.privacyFeatures.contentBlocking.tld)
         }
         add {
             HoveredLinkTabExtension(hoverUserScriptPublisher: userScripts.map(\.?.hoverUserScript))

@@ -211,7 +211,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                 isIsolated: Bool = false,
                 allowedNonisolatedFeatures: [String] = [],
                 privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
-    ) {
+    ) throws {
         self.isIsolated = isIsolated
         self.allowedNonisolatedFeatures = allowedNonisolatedFeatures
         let contextName = self.isIsolated ? MessageName.contentScopeScriptsIsolated.rawValue : MessageName.contentScopeScripts.rawValue
@@ -220,12 +220,12 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
 
         messageNames = [contextName]
 
-        source = ContentScopeUserScript.generateSource(
-                privacyConfigManager,
-                properties: properties,
-                isolated: isIsolated,
-                config: broker.messagingConfig(),
-                privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator
+        source = try ContentScopeUserScript.generateSource(
+            privacyConfigManager,
+            properties: properties,
+            isolated: isIsolated,
+            config: broker.messagingConfig(),
+            privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator
         )
     }
 
@@ -234,7 +234,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                                       isolated: Bool,
                                       config: WebkitMessagingConfig,
                                       privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
-    ) -> String {
+    ) throws -> String {
         let privacyConfigJsonData = privacyConfigurationJSONGenerator?.privacyConfiguration ?? privacyConfigurationManager.currentConfig
         guard let privacyConfigJson = String(data: privacyConfigJsonData, encoding: .utf8),
               let userUnprotectedDomains = try? JSONEncoder().encode(privacyConfigurationManager.privacyConfig.userUnprotectedDomains),
@@ -249,7 +249,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
 
         let jsInclude = isolated ? "contentScopeIsolated" : "contentScope"
 
-        return loadJS(jsInclude, from: ContentScopeScripts.Bundle, withReplacements: [
+        return try loadJS(jsInclude, from: ContentScopeScripts.Bundle, withReplacements: [
             "$CONTENT_SCOPE$": privacyConfigJson,
             "$USER_UNPROTECTED_DOMAINS$": userUnprotectedDomainsString,
             "$USER_PREFERENCES$": jsonPropertiesString,

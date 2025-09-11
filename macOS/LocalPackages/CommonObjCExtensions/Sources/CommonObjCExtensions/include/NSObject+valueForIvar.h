@@ -1,5 +1,5 @@
 //
-//  NewTabPageOmnibarConfigProviding.swift
+//  NSObject+valueForIvar.h
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,21 +16,12 @@
 //  limitations under the License.
 //
 
-import Combine
+#import <Foundation/Foundation.h>
 
-public protocol NewTabPageOmnibarConfigProviding: AnyObject {
+NS_ASSUME_NONNULL_BEGIN
 
-    @MainActor
-    var mode: NewTabPageDataModel.OmnibarMode { get set }
+@interface NSObject (valueForIvar)
+- (void * _Nullable)valueForIvar:(NSString *)name;
+@end
 
-    var isAIChatShortcutEnabled: Bool { get set }
-    var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> { get }
-
-    var isAIChatSettingVisible: Bool { get }
-    var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> { get }
-
-    var showCustomizePopover: Bool { get set }
-    var showCustomizePopoverPublisher: AnyPublisher<Bool, Never> { get }
-
-    var customizePopoverPresentationCount: Int { get set }
-}
+NS_ASSUME_NONNULL_END

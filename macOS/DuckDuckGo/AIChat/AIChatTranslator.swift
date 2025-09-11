@@ -1,5 +1,5 @@
 //
-//  AIChatSummarizer.swift
+//  AIChatTranslator.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,39 +16,39 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 import AIChat
 import BrowserServicesKit
-import Foundation
 import PixelKit
 
-/// This struct represents an object that's consumed by `AIChatSummarizing` protocol and used to perform text summarization.
-struct AIChatTextSummarizationRequest: Equatable {
-    /// The text to be summarized
+/// This struct represents an object that's consumed by `AIChatTranslating` protocol and used to perform text translation.
+struct AIChatTextTranslationRequest: Equatable {
+    /// The text to be translated
     let text: String
 
-    /// The URL of the website where the summarized text was selected
+    /// The URL of the website where the text for translation was selected
     let websiteURL: URL?
 
-    /// The title of the website where the summarized text was selected
+    /// The title of the website where the text for translation was selected
     let websiteTitle: String?
 
-    /// The source of the summarize action
-    let source: Source
+    /// The eTLD of the website's URL where the text for translation was selected
+    let websiteTLD: String?
 
-    enum Source: String {
-        case contextMenu = "context-menu", keyboardShortcut = "keyboard-shortcut"
-    }
+    /// Source language of the selected text based on element or document `lang` attribute
+    let sourceLanguage: String?
 }
 
-/// This protocol describes APIs for summarization in AI Chat.
+/// This protocol describes APIs for translation in AI Chat.
 @MainActor
-protocol AIChatSummarizing {
+protocol AIChatTranslating {
 
-    /// Handle text summarization.
-    func summarize(_ request: AIChatTextSummarizationRequest)
+    /// Handle text translation.
+    func translate(_ request: AIChatTextTranslationRequest)
 }
 
-final class AIChatSummarizer: AIChatSummarizing {
+final class AIChatTranslator: AIChatTranslating {
 
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
@@ -67,24 +67,29 @@ final class AIChatSummarizer: AIChatSummarizing {
         self.pixelFiring = pixelFiring
     }
 
-    /// This function performs text summarization for the provided `request`.
+    /// This function performs text translation for the provided `request`.
     ///
     /// Depending on AI Chat sidebar feature availability and on the sidebar settings,
-    /// summarization will happen either in a tab sidebar or in a new tab.
+    /// translation will happen either in a tab sidebar or in a new tab.
     @MainActor
-    func summarize(_ request: AIChatTextSummarizationRequest) {
-        guard aiChatMenuConfig.shouldDisplaySummarizationMenuItem else {
+    func translate(_ request: AIChatTextTranslationRequest) {
+        guard aiChatMenuConfig.shouldDisplayTranslationMenuItem else {
             return
         }
 
-        let prompt = AIChatNativePrompt.summaryPrompt(request.text, url: request.websiteURL, title: request.websiteTitle)
-        pixelFiring?.fire(AIChatPixel.aiChatSummarizeText(source: request.source), frequency: .dailyAndStandard)
+        let prompt = AIChatNativePrompt.translationPrompt(request.text,
+                                                          url: request.websiteURL,
+                                                          title: request.websiteTitle,
+                                                          sourceTLD: request.websiteTLD,
+                                                          sourceLanguage: request.sourceLanguage,
+                                                          targetLanguage: targetTranslationLanguage())
+        pixelFiring?.fire(AIChatPixel.aiChatTranslateText, frequency: .dailyAndStandard)
 
         if aiChatMenuConfig.shouldOpenAIChatInSidebar {
             if !aiChatSidebarPresenter.isSidebarOpenForCurrentTab() {
                 pixelFiring?.fire(
                     AIChatPixel.aiChatSidebarOpened(
-                        source: .summarization,
+                        source: .translation,
                         shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue
                     ),
                     frequency: .dailyAndStandard
@@ -96,4 +101,12 @@ final class AIChatSummarizer: AIChatSummarizing {
             aiChatTabOpener.openAIChatTab(nil, with: .newTab(selected: true))
         }
     }
+
+    /// Return target translation language as BCP 47 code
+    private func targetTranslationLanguage() -> String {
+        appPreferredLanguage() ?? systemLanguage()
+    }
+
+    private let appPreferredLanguage = { Locale.preferredLanguages.first }
+    private let systemLanguage = { Locale.current.identifier.replacingOccurrences(of: "_", with: "-") }
 }

@@ -61,6 +61,10 @@ final class SERPSettings: SERPSettingsProviding {
     func migrateAllowFollowUpQuestions(enable: Bool) {
         keyValueStore.set(enable, forKey: .allowFollowUpQuestionsKey)
     }
+    
+    private func triggerSettingsChangedNotification() {
+//        notificationCenter.post(name: .serpSettingsChanged, object: nil)
+    }
 }
 
 // MARK: - Keys for storage

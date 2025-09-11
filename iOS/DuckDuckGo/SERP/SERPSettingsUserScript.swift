@@ -43,9 +43,14 @@ public struct SERPUserSettings: Codable {
     public let allowFollowUpQuestion: Bool?
     
     public init(provider: SERPSettingsProviding) {
-        #warning("if needs migration = true, send empty {}/nil/or flag -- to confirm")
         self.duckAI = provider.isDuckAIEnabled
         self.allowFollowUpQuestion = provider.isAllowFollowUpQuestionsEnabled
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(duckAI, forKey: .duckAI)
+        try container.encodeIfPresent(allowFollowUpQuestion, forKey: .allowFollowUpQuestion)
     }
     
     private enum CodingKeys: String, CodingKey {
@@ -126,7 +131,7 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
         }
     }
     
-    // Step 1
+    // Step 1 ✅
     @MainActor
     func getNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
         SERPUserSettings(provider: serpSettingsProvider)
@@ -140,7 +145,7 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
         } else if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.aiFeatures {
             delegate?.serpSettingsUserScript(self, didRequestToOpenAIFeaturesSettingsWithSearchAssistSettingsHidden: false)
         }
-#warning("todo, finish implementation")
+#warning("todo, finish implementation, handle new blue button from SERP. Note: keep in mind Fernando's feature flag and cover both cases in code")
         /*else if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.aiFeatures {
             #warning("todo, handle Enable Duck.ai in AI Features Settings")
             delegate?.serpSettingsUserScript(self, didRequestToOpenAIFeaturesSettingsWithSearchAssistSettingsHidden: true)

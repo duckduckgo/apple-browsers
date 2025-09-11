@@ -880,7 +880,7 @@ extension SettingsViewModel {
                                                         value: SERPSettingsConstants.aiFeatures)
 //        urlOpener.open(url)
         #warning("temp")
-        urlOpener.open(URL(string: "https://bhall.duck.co")!)
+        urlOpener.open(URL(string: "https://bhall.duck.co/settings#aifeatures")!)
     }
 
     func openAIChat() {

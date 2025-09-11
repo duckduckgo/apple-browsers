@@ -522,11 +522,6 @@ enum GeneralPixel: PixelKitEvent {
     // Enhanced statistics
     case usageSegments
 
-    // Encryption key access
-    case encryptionKeystoreReadKeySucceeded
-    case encryptionKeystoreReadKeyFailed
-    case encryptionKeystoreWriteKeyFailed
-
     var name: String {
         switch self {
         case .crash(let appIdentifier):
@@ -1235,11 +1230,6 @@ enum GeneralPixel: PixelKitEvent {
 
             // Enhanced statistics
         case .usageSegments: return "retention_segments"
-
-            // Encryption key
-        case .encryptionKeystoreReadKeySucceeded: return "m_mac_encryption_keystore_read_key_succeeded"
-        case .encryptionKeystoreReadKeyFailed: return "m_mac_encryption_keystore_read_key_failed"
-        case .encryptionKeystoreWriteKeyFailed: return "m_mac_encryption_keystore_write_key_failed"
 
         }
     }

@@ -75,12 +75,12 @@ enum EncryptionKeyStoreError: DDGError {
         }
     }
 
-    var debugPixel: PixelKitEvent? {
+    var errorPixel: PixelKitEvent? {
         switch self {
         case .storageFailed:
-            return DebugEvent(GeneralPixel.encryptionKeystoreWriteKeyFailed, error: self)
+            return EncryptionKeyStorePixel.encryptionKeystoreWriteKeyFailed(error: self)
         case .readFailed:
-            return DebugEvent(GeneralPixel.encryptionKeystoreReadKeyFailed, error: self)
+            return EncryptionKeyStorePixel.encryptionKeystoreReadKeyFailed(error: self)
         default:
             return nil
         }
@@ -217,6 +217,37 @@ final class EncryptionKeyStore: EncryptionKeyStoring {
             return nil
         default:
             throw EncryptionKeyStoreError.readFailed(status)
+        }
+    }
+}
+
+enum EncryptionKeyStorePixel: PixelKitEvent {
+    case encryptionKeystoreReadKeySucceeded
+    case encryptionKeystoreWriteKeyFailed(error: Error)
+    case encryptionKeystoreReadKeyFailed(error: Error)
+
+    var name: String {
+        switch self {
+        case .encryptionKeystoreReadKeySucceeded:
+            return "encryption_keystore_read_key_succeeded"
+        case .encryptionKeystoreWriteKeyFailed:
+            return "encryption_keystore_write_key_failed"
+        case .encryptionKeystoreReadKeyFailed:
+            return "encryption_keystore_read_key_failed"
+        }
+    }
+
+    var parameters: [String: String]? {
+        nil
+    }
+
+    var error: Error? {
+        switch self {
+        case .encryptionKeystoreWriteKeyFailed(let error),
+                .encryptionKeystoreReadKeyFailed(let error):
+            return error
+        default:
+            return nil
         }
     }
 }

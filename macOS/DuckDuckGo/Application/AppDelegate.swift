@@ -302,12 +302,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         do {
             let encryptionKey = AppVersion.runType.requiresEnvironment ? try keyStore.readKey() : nil
             fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
-            PixelKit.fire(DebugEvent(GeneralPixel.encryptionKeystoreReadKeySucceeded), frequency: .dailyAndCount)
+            PixelKit.fire(EncryptionKeyStorePixel.encryptionKeystoreReadKeySucceeded, frequency: .dailyAndCount)
         } catch {
             Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
             fileStore = EncryptedFileStore()
-            if let pixelEvent = (error as? EncryptionKeyStoreError)?.debugPixel {
-                PixelKit.fire(pixelEvent, frequency: .dailyAndCount)
+            if let errorPixel = (error as? EncryptionKeyStoreError)?.errorPixel {
+                PixelKit.fire(errorPixel, frequency: .dailyAndCount)
             }
         }
 

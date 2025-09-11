@@ -36,7 +36,11 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
         $isAIChatSettingVisible.dropFirst().eraseToAnyPublisher()
     }
 
-    var showCustomizePopover: Bool = true
+    @Published  var showCustomizePopover: Bool = true
+
+    var showCustomizePopoverPublisher: AnyPublisher<Bool, Never> {
+        $showCustomizePopover.dropFirst().eraseToAnyPublisher()
+    }
 
     var customizePopoverPresentationCount: Int = 0
 }

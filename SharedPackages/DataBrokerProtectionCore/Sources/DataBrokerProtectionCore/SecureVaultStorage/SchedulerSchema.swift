@@ -285,6 +285,12 @@ extension OptOutDB: PersistableRecord, FetchableRecord {
     }
 }
 
+public struct OptOutIdentifier: Hashable {
+    let brokerId: Int64
+    let profileQueryId: Int64
+    let extractedProfileId: Int64
+}
+
 public struct OptOutHistoryEventDB: Codable {
     let brokerId: Int64
     let profileQueryId: Int64

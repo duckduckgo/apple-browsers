@@ -99,12 +99,20 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
         Logger.service.log("✉️ [EmailConfirmationDataService] Checking for email confirmation data...")
 
         let recordsAwaitingLink = try database.fetchOptOutEmailConfirmationsAwaitingLink()
-        Logger.service.log("✉️ [EmailConfirmationDataService] Found \(recordsAwaitingLink.count, privacy: .public) records awaiting email confirmation links")
+        let activeConfirmationIdentifiers = try database.fetchIdentifiersForActiveEmailConfirmations()
+
+        let filteredRecords = recordsAwaitingLink.filter { record in
+            activeConfirmationIdentifiers.contains(where: {
+                $0.brokerId == record.brokerId &&
+                $0.profileQueryId == record.profileQueryId &&
+                $0.extractedProfileId == record.extractedProfileId
+            })
+        }
 
         var itemsToDelete: [EmailDataRequestItemV1] = []
 
         // Chunk requests to respect API rate limits
-        for chunk in recordsAwaitingLink.chunks(ofCount: EmailServiceV1.Constants.maxBatchSize) {
+        for chunk in filteredRecords.chunks(ofCount: EmailServiceV1.Constants.maxBatchSize) {
             let records = Array(chunk)
             let response = try await emailServiceV1.fetchEmailData(items: records.toEmailDataRequestItems())
             Logger.service.log("✉️ [EmailConfirmationDataService] Email data API response: \(response.items.count, privacy: .public) items returned")

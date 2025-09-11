@@ -48,7 +48,7 @@ public enum WidePixelError: DDGError, LocalizedError {
         return description
     }
 
-    public var errorDomain: String { "com.duckduckgo.widePixel" }
+    public static var errorDomain: String { "com.duckduckgo.widePixel" }
 
     public var errorCode: Int {
         switch self {

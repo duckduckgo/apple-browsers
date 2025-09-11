@@ -680,6 +680,14 @@ class MainViewController: UIViewController {
     private func keyboardDidHide() {
         keyboardShowing = false
         didSendGestureDismissPixel = false
+
+        if #available(iOS 26, *) {
+            // Make sure the UI adjusts properly.
+            // Fix for a weird behavior on iOS 26, firing `keyboardWillChangeFrame` event
+            // with the same frame when keyboard is shown and hidden rapidly.
+            // https://app.asana.com/1/137249556945/project/414709148257752/task/1211140989378405
+            adjustUI(withKeyboardFrame: .zero)
+        }
     }
 
     private func setUpToolbarButtonsActions() {
@@ -690,6 +698,9 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarBookmarksButton.setCustomItemAction(on: self, action: #selector(onToolbarBookmarksPressed))
         viewCoordinator.menuToolbarButton.setCustomItemAction(on: self, action: #selector(onMenuPressed))
         viewCoordinator.toolbarFireBarButtonItem.setCustomItemAction(on: self, action: #selector(onFirePressed))
+
+        viewCoordinator.menuToolbarButton.customView?
+            .addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(onMenuLongPressed)))
     }
 
     private func registerForPageRefreshPatterns() {
@@ -829,6 +840,10 @@ class MainViewController: UIViewController {
         let animationCurveRaw = animationCurveRawNSN?.uintValue ?? UIView.AnimationOptions.curveEaseInOut.rawValue
         let animationCurve = UIView.AnimationOptions(rawValue: animationCurveRaw)
 
+        adjustUI(withKeyboardFrame: keyboardFrame, in: duration, animationCurve: animationCurve)
+    }
+
+    private func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
         var keyboardHeight = keyboardFrame.size.height
 
         let omniBarHeight = viewCoordinator.omniBar.barView.expectedHeight
@@ -879,7 +894,6 @@ class MainViewController: UIViewController {
                 self.currentTab?.borderView.layoutIfNeeded()
             }
         }
-
     }
 
     private func initTabButton() {
@@ -2595,7 +2609,7 @@ extension MainViewController: OmniBarDelegate {
         segueToSettings()
     }
 
-    func onSettingsLongPressed() {
+    @objc func onMenuLongPressed() {
         if featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild {
             segueToDebugSettings()
         } else {
@@ -2722,14 +2736,6 @@ extension MainViewController: OmniBarDelegate {
     private func fireAIChatUsagePixelAndSetFeatureUsed(_ pixel: Pixel.Event) {
         Pixel.fire(pixel: pixel, withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
         featureDiscovery.setWasUsedBefore(.aiChat)
-    }
-
-    func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
-        if featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild {
-            segueToDebugSettings()
-        } else {
-            onAccessoryPressed(accessoryType: accessoryType)
-        }
     }
 
     func onVoiceSearchPressed() {

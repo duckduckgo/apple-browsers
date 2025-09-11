@@ -24069,55 +24069,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Im Suchfeld auf der neuen Registerkarte anzeigen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Show in Search box on New Tab Page"
+            "value" : "Show in search box on New Tab Page"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Mostrar en el cuadro de búsqueda de nueva página de pestaña"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Afficher dans la boîte de recherche sur la page Nouvel onglet"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Mostra nella casella di ricerca nella pagina Nuova scheda"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Weergeven in het zoekvak op de nieuwe tabbladpagina"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Pokaż w polu wyszukiwania na stronie nowej karty"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Mostrar na caixa de pesquisa na página do novo separador"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Показать в поле поиска на странице новой вкладки"
           }
         }
@@ -49764,7 +49764,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Show Duck.ai in Search box"
+            "value" : "Show Duck.ai in Search Box"
           }
         },
         "es" : {

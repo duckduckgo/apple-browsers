@@ -148,6 +148,16 @@
                 enum: [1000, 5000, 10000, 30000, 60000, 300000, 600000],
             },
             {
+                key: 'app.native_apps_experiments',
+                description: 'Native apps experiments',
+                type: 'string',
+            },
+            {
+                key: 'app.atb_experiments',
+                description: 'ATB experiments',
+                type: 'string',
+            },
+            {
                 key: 'context.name',
                 type: 'string',
                 description: 'Context name for the flow',

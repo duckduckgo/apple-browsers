@@ -29,9 +29,16 @@ public protocol LoginFormDetectionDelegate: NSObjectProtocol {
 public class LoginFormDetectionUserScript: NSObject, UserScript {
 
     public lazy var source: String = {
-        return Self.loadJS("login-form-detection", from: Bundle.core, withReplacements: [
-            "$IS_DEBUG$": isDebugBuild ? "true" : "false"
-        ])
+        do {
+            return try Self.loadJS("login-form-detection", from: Bundle.core, withReplacements: [
+                "$IS_DEBUG$": isDebugBuild ? "true" : "false"
+            ])
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to load JS for LoginFormDetectionUserScript: \(error)")
+        }
     }()
 
     public var injectionTime: WKUserScriptInjectionTime = .atDocumentStart

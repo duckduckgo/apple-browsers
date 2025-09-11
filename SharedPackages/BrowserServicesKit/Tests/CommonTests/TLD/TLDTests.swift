@@ -124,4 +124,62 @@ final class TLDTests: XCTestCase {
         XCTAssertEqual(nil, tld.extractSecondLevelDomain(fromStringURL: "https://abcderfg"))
     }
 
+    // MARK: - eTLD Tests
+
+    func testWhenHostMultiPartTopLevelWithSubdomainThenETLDCorrect() {
+        XCTAssertEqual("co.uk", tld.eTLD("www.bbc.co.uk"))
+        XCTAssertEqual("co.uk", tld.eTLD("other.bbc.co.uk"))
+        XCTAssertEqual("co.uk", tld.eTLD("multi.part.bbc.co.uk"))
+    }
+
+    func testWhenHostDotComWithSubdomainThenETLDCorrect() {
+        XCTAssertEqual("com", tld.eTLD("www.example.com"))
+        XCTAssertEqual("com", tld.eTLD("other.example.com"))
+        XCTAssertEqual("com", tld.eTLD("multi.part.example.com"))
+    }
+
+    func testWhenHostIsTopLevelDotComThenETLDIsSame() {
+        XCTAssertEqual("com", tld.eTLD("example.com"))
+    }
+
+    func testWhenHostIsMalformedThenETLDIsFixed() {
+        XCTAssertEqual("com", tld.eTLD(".example.com"))
+    }
+
+    func testWhenHostIsTLDThenETLDIsFound() {
+        XCTAssertEqual("com", tld.eTLD("com"))
+        XCTAssertEqual("co.uk", tld.eTLD("co.uk"))
+    }
+
+    func testWhenHostIsMultiPartTLDThenETLDIsFound() {
+        XCTAssertEqual(nil, tld.eTLD("za"))
+        XCTAssertEqual("co.za", tld.eTLD("co.za"))
+    }
+
+    func testWhenHostIsIncorrectThenETLDIsNil() {
+        XCTAssertNil(tld.eTLD("abcdefgh"))
+    }
+
+    func testWhenHostIsNilThenETLDIsNil() {
+        XCTAssertNil(tld.eTLD(nil))
+    }
+
+    func testWhenHostIsExampleThenETLDIsFound() {
+        XCTAssertEqual("example", tld.eTLD("something.example"))
+        XCTAssertEqual("example", tld.eTLD("example"))
+    }
+
+    func testWhenHostHasComplexMultiPartTLDThenETLDCorrect() {
+        // Test cases with multi-part TLDs
+        XCTAssertEqual("edu.au", tld.eTLD("university.edu.au"))
+        XCTAssertEqual("gov.uk", tld.eTLD("department.gov.uk"))
+        XCTAssertEqual("ac.uk", tld.eTLD("subdomain.university.ac.uk"))
+    }
+
+    func testWhenHostHasPortThenETLDIgnoresPort() {
+        // The eTLD function should work with hosts that might have ports
+        XCTAssertEqual("com", tld.eTLD("example.com:8080"))
+        XCTAssertEqual("co.uk", tld.eTLD("bbc.co.uk:443"))
+    }
+
 }

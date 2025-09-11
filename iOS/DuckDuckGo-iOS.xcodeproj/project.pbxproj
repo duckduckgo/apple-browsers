@@ -1602,6 +1602,8 @@
 		CBF259C52D4ED37700AC63E4 /* ATBAndVariantConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF259C42D4ED37700AC63E4 /* ATBAndVariantConfiguration.swift */; };
 		CBF259C72D4ED93F00AC63E4 /* OnboardingConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF259C62D4ED93F00AC63E4 /* OnboardingConfiguration.swift */; };
 		CBFCB30E2B2CD47800253E9E /* ConfigurationURLDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBFCB30D2B2CD47800253E9E /* ConfigurationURLDebugViewController.swift */; };
+		CC3445752E6760D100019518 /* UserScriptErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC3445742E6760D100019518 /* UserScriptErrorTests.swift */; };
+		CCB36B112E5635F300DBFE3A /* UserScriptError+Pixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB36B102E5635EB00DBFE3A /* UserScriptError+Pixel.swift */; };
 		D60170BD2BA34CE8001911B5 /* Subscription.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60170BB2BA32DD6001911B5 /* Subscription.swift */; };
 		D6037E692C32F2E7009AAEC0 /* DuckPlayerSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6037E682C32F2E7009AAEC0 /* DuckPlayerSettings.swift */; };
 		D60B1F272B9DDE5A00AE4760 /* SubscriptionGoogleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60B1F262B9DDE5A00AE4760 /* SubscriptionGoogleView.swift */; };
@@ -3820,6 +3822,8 @@
 		CBF259C42D4ED37700AC63E4 /* ATBAndVariantConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ATBAndVariantConfiguration.swift; sourceTree = "<group>"; };
 		CBF259C62D4ED93F00AC63E4 /* OnboardingConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingConfiguration.swift; sourceTree = "<group>"; };
 		CBFCB30D2B2CD47800253E9E /* ConfigurationURLDebugViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationURLDebugViewController.swift; sourceTree = "<group>"; };
+		CC3445742E6760D100019518 /* UserScriptErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserScriptErrorTests.swift; sourceTree = "<group>"; };
+		CCB36B102E5635EB00DBFE3A /* UserScriptError+Pixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserScriptError+Pixel.swift"; sourceTree = "<group>"; };
 		D60170BB2BA32DD6001911B5 /* Subscription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Subscription.swift; sourceTree = "<group>"; };
 		D6037E682C32F2E7009AAEC0 /* DuckPlayerSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerSettings.swift; sourceTree = "<group>"; };
 		D60B1F262B9DDE5A00AE4760 /* SubscriptionGoogleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionGoogleView.swift; sourceTree = "<group>"; };
@@ -8376,6 +8380,7 @@
 				9FE08BD92C2A86D0001D5EBC /* URLOpener.swift */,
 				9FEA22312C3270BD006B03BF /* TimerInterface.swift */,
 				9F678B882C9BAA4800CA0E19 /* Debouncer.swift */,
+				CCB36B102E5635EB00DBFE3A /* UserScriptError+Pixel.swift */,
 			);
 			name = Utilities;
 			sourceTree = "<group>";
@@ -8532,6 +8537,7 @@
 				4BC21A2C272388BD00229F0E /* RunLoopExtensionTests.swift */,
 				9F16230A2CA0F0190093C4FC /* DebouncerTests.swift */,
 				6F395BB92CD2C84300B92FC3 /* BoolFileMarkerTests.swift */,
+				CC3445742E6760D100019518 /* UserScriptErrorTests.swift */,
 			);
 			name = Utilities;
 			sourceTree = "<group>";
@@ -10913,6 +10919,7 @@
 				98E563E72DE8B32D00E6E75F /* MockTabInteractionStateSource.swift in Sources */,
 				98E563E82DE8B32D00E6E75F /* MockUserAgent.swift in Sources */,
 				98E563E92DE8B32D00E6E75F /* MockVoiceSearchHelper.swift in Sources */,
+				CC3445752E6760D100019518 /* UserScriptErrorTests.swift in Sources */,
 				98E563EA2DE8B32D00E6E75F /* MockTextZoomCoordinator.swift in Sources */,
 				98E563EB2DE8B32D00E6E75F /* MockFeatureDiscovery.swift in Sources */,
 				98E563EC2DE8B32D00E6E75F /* MockWebsiteDataManager.swift in Sources */,
@@ -11455,6 +11462,7 @@
 				6F7FB8E32C660BF300867DA7 /* DailyPixelFiring.swift in Sources */,
 				9813F79822BA71AA00A80EDB /* StorageCache.swift in Sources */,
 				B603974929C19F6F00902A34 /* Assertions.swift in Sources */,
+				CCB36B112E5635F300DBFE3A /* UserScriptError+Pixel.swift in Sources */,
 				F1134EB51F40AEEA00B73467 /* StatisticsLoader.swift in Sources */,
 				CB2A7EF4285383B300885F67 /* AppLastCompiledRulesStore.swift in Sources */,
 				566B73762BECE53D00FF1959 /* SyncPausedStateManaging.swift in Sources */,
@@ -13296,7 +13304,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AutofillCredentialProvider/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = AutofillCredentialProvider;
+				INFOPLIST_KEY_CFBundleDisplayName = DuckDuckGo;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 DuckDuckGo. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -13333,7 +13341,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AutofillCredentialProvider/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = AutofillCredentialProvider;
+				INFOPLIST_KEY_CFBundleDisplayName = DuckDuckGo;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 DuckDuckGo. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -13370,7 +13378,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AutofillCredentialProvider/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = AutofillCredentialProvider;
+				INFOPLIST_KEY_CFBundleDisplayName = DuckDuckGo;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 DuckDuckGo. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -13408,7 +13416,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AutofillCredentialProvider/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = AutofillCredentialProvider;
+				INFOPLIST_KEY_CFBundleDisplayName = DuckDuckGo;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 DuckDuckGo. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (

@@ -46,14 +46,14 @@ public class DefaultAutofillSourceProvider: AutofillUserScriptSourceProvider {
         self.properties = properties
     }
 
-    public func loadJS(isDebug: Bool) {
+    public func loadJS(isDebug: Bool) throws {
         guard let replacements = buildReplacementsString() else {
             sourceStr = ""
             return
         }
-        sourceStr = AutofillUserScript.loadJS(isDebug ? "autofill-debug" : "autofill",
-                                              from: AutofillResources.bundle,
-                                              withReplacements: replacements)
+        sourceStr = try AutofillUserScript.loadJS(isDebug ? "autofill-debug" : "autofill",
+                                                  from: AutofillResources.bundle,
+                                                  withReplacements: replacements)
     }
 
     public func buildRuntimeConfigResponse() -> String? {
@@ -171,13 +171,13 @@ public class DefaultAutofillSourceProvider: AutofillUserScriptSourceProvider {
             self.isDebug = isDebug
         }
 
-        public func build() -> DefaultAutofillSourceProvider {
+        public func build() throws -> DefaultAutofillSourceProvider {
             let provider = DefaultAutofillSourceProvider(privacyConfigurationManager: privacyConfigurationManager,
                                                          properties: properties,
                                                          isDebug: isDebug)
 
             if shouldLoadJS {
-                provider.loadJS(isDebug: isDebug)
+                try provider.loadJS(isDebug: isDebug)
             }
 
             return provider

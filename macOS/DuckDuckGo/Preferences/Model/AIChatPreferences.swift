@@ -47,7 +47,7 @@ final class AIChatPreferences: ObservableObject {
         showShortcutInApplicationMenu = storage.showShortcutInApplicationMenu
         showShortcutInAddressBar = storage.showShortcutInAddressBar
         openAIChatInSidebar = storage.openAIChatInSidebar
-        isPageContextEnabled = storage.isPageContextEnabled
+        shouldAutomaticallySendPageContext = storage.shouldAutomaticallySendPageContext
 
         subscribeToShowInApplicationMenuSettingsChanges()
     }
@@ -128,8 +128,8 @@ final class AIChatPreferences: ObservableObject {
         didSet { storage.openAIChatInSidebar = openAIChatInSidebar }
     }
 
-    @Published var isPageContextEnabled: Bool {
-        didSet { storage.isPageContextEnabled = isPageContextEnabled }
+    @Published var shouldAutomaticallySendPageContext: Bool {
+        didSet { storage.shouldAutomaticallySendPageContext = shouldAutomaticallySendPageContext }
     }
 
     @MainActor func openLearnMoreLink() {

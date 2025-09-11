@@ -25,6 +25,7 @@ import Combine
 import os.log
 import FeatureFlags
 import PixelKit
+import enum UserScript.UserScriptError
 
 struct ExtractedAddress: Codable {
     let state: String
@@ -153,6 +154,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     private let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     private let captchaService: CaptchaService
     private let privacyConfigManager: PrivacyConfigurationManaging
+    private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels> = EventMapping { event, _, _, _ in
         print(event)
     }
@@ -227,6 +229,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
         let pixelKit = PixelKit.shared!
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
+        self.pixelHandler = sharedPixelsHandler
         let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler, privacyConfigManager: privacyConfigurationManager)
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
@@ -445,6 +448,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 }
                             }
                             group.leave()
+                        } catch let UserScriptError.failedToLoadJS(jsFile, error) {
+                            pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+                            try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
+                            fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
                         } catch {
                             self.error = error
                             group.leave()
@@ -499,6 +506,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     self.alert = AlertUI(title: "Success!", description: "We finished the opt out process for the selected profile.")
                 }
 
+            } catch let UserScriptError.failedToLoadJS(jsFile, error) {
+                pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+                try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
+                fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
             } catch {
                 showAlert(for: error)
             }

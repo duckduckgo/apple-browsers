@@ -20,18 +20,18 @@ import Foundation
 import Common
 
 protocol ContentScopePreferencesPersistor {
-    var debugModeEnabled: Bool { get set }
+    var debugStateEnabled: Bool { get set }
 }
 
 struct ContentScopePreferencesUserDefaultsPersistor: ContentScopePreferencesPersistor {
 
-    @UserDefaultsWrapper(key: .contentScopeDebugModeEnabled, defaultValue: false)
-    var debugModeEnabled: Bool
+    @UserDefaultsWrapper(key: .contentScopeDebugStateEnabled, defaultValue: false)
+    var debugStateEnabled: Bool
 
 }
 
 extension NSNotification.Name {
-    static let contentScopeDebugModeDidChange = NSNotification.Name("contentScopeDebugModeDidChange")
+    static let contentScopeDebugStateDidChange = NSNotification.Name("contentScopeDebugStateDidChange")
 }
 
 final class ContentScopePreferences: ObservableObject, PreferencesTabOpening {
@@ -39,15 +39,15 @@ final class ContentScopePreferences: ObservableObject, PreferencesTabOpening {
     static let shared = ContentScopePreferences()
 
     @Published
-    var isDebugModeEnabled: Bool {
+    var isDebugStateEnabled: Bool {
         didSet {
-            persistor.debugModeEnabled = isDebugModeEnabled
+            persistor.debugStateEnabled = isDebugStateEnabled
         }
     }
 
     init(persistor: ContentScopePreferencesPersistor = ContentScopePreferencesUserDefaultsPersistor()) {
         self.persistor = persistor
-        isDebugModeEnabled = persistor.debugModeEnabled
+        isDebugStateEnabled = persistor.debugStateEnabled
     }
 
     private var persistor: ContentScopePreferencesPersistor

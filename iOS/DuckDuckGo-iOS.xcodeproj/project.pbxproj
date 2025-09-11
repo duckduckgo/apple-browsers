@@ -548,6 +548,7 @@
 		7BBE25A12D71ECFD003131FA /* AutomationServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBE25A02D71ECFD003131FA /* AutomationServer.swift */; };
 		7BBE25A32D71EE72003131FA /* MainViewController+Automation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBE25A22D71EE72003131FA /* MainViewController+Automation.swift */; };
 		7BBE25A52D71EEEB003131FA /* TabViewController+Automation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBE25A42D71EEEB003131FA /* TabViewController+Automation.swift */; };
+		7BC16BAC2E72550A0016EE8E /* LoggingDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BC16BAB2E72550A0016EE8E /* LoggingDebugViewController.swift */; };
 		7BC26C9E2DFC0CA000E52480 /* VPN in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26C9D2DFC0CA000E52480 /* VPN */; };
 		7BC26CA02DFC0CAC00E52480 /* VPN in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26C9F2DFC0CAC00E52480 /* VPN */; };
 		7BC26CA22DFC0CB800E52480 /* VPN in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26CA12DFC0CB800E52480 /* VPN */; };
@@ -2484,6 +2485,7 @@
 		7BBE25A02D71ECFD003131FA /* AutomationServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationServer.swift; sourceTree = "<group>"; };
 		7BBE25A22D71EE72003131FA /* MainViewController+Automation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+Automation.swift"; sourceTree = "<group>"; };
 		7BBE25A42D71EEEB003131FA /* TabViewController+Automation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TabViewController+Automation.swift"; sourceTree = "<group>"; };
+		7BC16BAB2E72550A0016EE8E /* LoggingDebugViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggingDebugViewController.swift; sourceTree = "<group>"; };
 		7BC5711F2BDBB877003B0CCE /* VPNActivationDateStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNActivationDateStore.swift; sourceTree = "<group>"; };
 		7BDBAD0D2CBFB3F1000379B7 /* VPN.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = VPN.xcassets; sourceTree = "<group>"; };
 		7BF78E012CA2CC3E0026A1FC /* TipKitAppEventHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipKitAppEventHandling.swift; sourceTree = "<group>"; };
@@ -6201,6 +6203,7 @@
 				851624C62B96389D002D5CD7 /* HistoryDebugViewController.swift */,
 				858566FA252E55D6007501B8 /* ImageCacheDebugViewController.swift */,
 				F46FEC5627987A5F0061D9DF /* KeychainItemsDebugViewController.swift */,
+				7BC16BAB2E72550A0016EE8E /* LoggingDebugViewController.swift */,
 				EE72CA842A862D000043B5B3 /* NetworkProtectionDebugViewController.swift */,
 				4B74A1C02E49510400277779 /* NetworkProtectionLogViewerViewController.swift */,
 				4B74A1C22E49512500277779 /* NetworkProtectionLogManager.swift */,
@@ -10304,6 +10307,7 @@
 				D64648AD2B59936B0033090B /* SubscriptionEmailView.swift in Sources */,
 				85E803732E786B95008E87CA /* AIChatService.swift in Sources */,
 				F4147354283BF834004AA7A5 /* AutofillContentScopeFeatureToggles.swift in Sources */,
+				7BC16BAC2E72550A0016EE8E /* LoggingDebugViewController.swift in Sources */,
 				986DA94A24884B18004A7E39 /* WebViewTransition.swift in Sources */,
 				9F0949A72D389F1E0079291B /* MaliciousSiteProtectionAPI.swift in Sources */,
 				C17BDC692E16CDCB0082485E /* AutofillLoginImportState.swift in Sources */,

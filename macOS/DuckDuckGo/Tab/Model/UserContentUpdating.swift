@@ -138,6 +138,7 @@ final class UserContentUpdating {
                 .map { $0.0 } // drop gpcEnabled value: $0.1
                 .combineLatest(onNotificationWithInitial(.autofillUserSettingsDidChange), combine)
                 .combineLatest(onNotificationWithInitial(.autofillScriptDebugSettingsDidChange), combine)
+                .combineLatest(onNotificationWithInitial(.contentScopeDebugStateDidChange), combine)
                 .combineLatest($isDependenciesProviderInitialized.removeDuplicates())
                 .filter { (_, isInitialized) in isInitialized } // only proceed if provider was initialized
                 .sink { (value, _) in

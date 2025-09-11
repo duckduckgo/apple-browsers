@@ -125,14 +125,14 @@ class AIChatMenuConfigurationTests: XCTestCase {
         cancellable.cancel()
     }
 
-    func testIsPageContextEnabledPublisherValuesChangedPublisher() {
+    func testShouldAutomaticallySendPageContextPublisherValuesChangedPublisher() {
         let expectation = self.expectation(description: "Values changed publisher should emit a value.")
 
         let cancellable = configuration.valuesChangedPublisher.sink { value in
             expectation.fulfill()
         }
 
-        mockStorage.updateIsPageContextEnabledPublisher(to: true)
+        mockStorage.updateShouldAutomaticallySendPageContextPublisher(to: true)
 
         waitForExpectations(timeout: 1) { error in
             XCTAssertNil(error, "Values changed publisher did not emit a value in time.")
@@ -153,7 +153,7 @@ class AIChatMenuConfigurationTests: XCTestCase {
         mockStorage.showShortcutInAddressBar = true
         mockStorage.openAIChatInSidebar = true
         mockStorage.didDisplayAIChatAddressBarOnboarding = true
-        mockStorage.isPageContextEnabled = true
+        mockStorage.shouldAutomaticallySendPageContext = true
 
         mockStorage.reset()
 
@@ -162,7 +162,7 @@ class AIChatMenuConfigurationTests: XCTestCase {
         XCTAssertFalse(mockStorage.showShortcutInAddressBar, "Address bar shortcut should be reset to false.")
         XCTAssertFalse(mockStorage.openAIChatInSidebar, "Open AI Chat in sidebar should be reset to false.")
         XCTAssertFalse(mockStorage.didDisplayAIChatAddressBarOnboarding, "Address bar onboarding popover should be reset to false.")
-        XCTAssertFalse(mockStorage.isPageContextEnabled, "Page Context should be reset to false.")
+        XCTAssertFalse(mockStorage.shouldAutomaticallySendPageContext, "Page Context should be reset to false.")
     }
 
     func testShouldDisplayAddressBarShortcutWhenRemoteFlagAndStorageAreTrue() {
@@ -201,29 +201,29 @@ class AIChatMenuConfigurationTests: XCTestCase {
 
     func testIsPageContextPublisherPublisherWhenFeatureFlagAndStorageAreTrue() {
         featureFlagger.featuresStub = [FeatureFlag.aiChatPageContext.rawValue: true]
-        mockStorage.isPageContextEnabled = true
+        mockStorage.shouldAutomaticallySendPageContext = true
 
-        let result = configuration.isPageContextEnabled
+        let result = configuration.shouldAutomaticallySendPageContext
 
-        XCTAssertTrue(result, "Page Context should be enabled when storage is true.")
+        XCTAssertTrue(result, "Automatic Page Context should be enabled when storage is true.")
     }
 
     func testIsPageContextPublisherPublisherWhenFeatureFlagIsFalseAndStorageIsTrue() {
         featureFlagger.featuresStub = [:]
-        mockStorage.isPageContextEnabled = true
+        mockStorage.shouldAutomaticallySendPageContext = true
 
-        let result = configuration.isPageContextEnabled
+        let result = configuration.shouldAutomaticallySendPageContext
 
-        XCTAssertFalse(result, "Page Context should be disabled when storage is true and feature flag is disabled.")
+        XCTAssertFalse(result, "Automatic Page Context should be disabled when storage is true and feature flag is disabled.")
     }
 
     func testIsPageContextPublisherPublisherWhenFeatureFlagIsTrueAndStorageIsFalse() {
         featureFlagger.featuresStub = [FeatureFlag.aiChatPageContext.rawValue: true]
-        mockStorage.isPageContextEnabled = false
+        mockStorage.shouldAutomaticallySendPageContext = false
 
-        let result = configuration.isPageContextEnabled
+        let result = configuration.shouldAutomaticallySendPageContext
 
-        XCTAssertFalse(result, "Page Context should be disabled when storage is false and feature flag is enabled.")
+        XCTAssertFalse(result, "Automatic Page Context should be disabled when storage is false and feature flag is enabled.")
     }
 }
 
@@ -260,9 +260,9 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         }
     }
 
-    var isPageContextEnabled: Bool = false {
+    var shouldAutomaticallySendPageContext: Bool = false {
         didSet {
-            isPageContextEnabledSubject.send(isPageContextEnabled)
+            shouldAutomaticallySendPageContextSubject.send(shouldAutomaticallySendPageContext)
         }
     }
 
@@ -271,7 +271,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     private var showShortcutInApplicationMenuSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutInAddressBarSubject = PassthroughSubject<Bool, Never>()
     private var openAIChatInSidebarSubject = PassthroughSubject<Bool, Never>()
-    private var isPageContextEnabledSubject = PassthroughSubject<Bool, Never>()
+    private var shouldAutomaticallySendPageContextSubject = PassthroughSubject<Bool, Never>()
 
     var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> {
         isAIFeaturesEnabledSubject.eraseToAnyPublisher()
@@ -293,8 +293,8 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         openAIChatInSidebarSubject.eraseToAnyPublisher()
     }
 
-    var isPageContextEnabledPublisher: AnyPublisher<Bool, Never> {
-        isPageContextEnabledSubject.eraseToAnyPublisher()
+    var shouldAutomaticallySendPageContextPublisher: AnyPublisher<Bool, Never> {
+        shouldAutomaticallySendPageContextSubject.eraseToAnyPublisher()
     }
 
     func reset() {
@@ -304,7 +304,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         showShortcutInAddressBar = false
         didDisplayAIChatAddressBarOnboarding = false
         openAIChatInSidebar = false
-        isPageContextEnabled = false
+        shouldAutomaticallySendPageContext = false
     }
 
     func updateNewTabPageShortcutDisplay(to value: Bool) {
@@ -323,8 +323,8 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         openAIChatInSidebar = value
     }
 
-    func updateIsPageContextEnabledPublisher(to value: Bool) {
-        isPageContextEnabled = value
+    func updateShouldAutomaticallySendPageContextPublisher(to value: Bool) {
+        shouldAutomaticallySendPageContext = value
     }
 }
 

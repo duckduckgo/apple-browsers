@@ -79,11 +79,14 @@ private struct ContentView: View {
 
     var headerView: some View {
         VStack(spacing: 0) {
-            Text(UserText.newAddressBarPickerTitle)
-                .textCase(.uppercase)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(Color(baseColor: .red50))
-                .padding(.bottom, 8)
+            HStack(spacing: 8) {
+                BadgeView(text: UserText.settingsItemNewBadge)
+                Text(UserText.newAddressBarPickerTitle)
+                    .textCase(.uppercase)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(Color(baseColor: .red50))
+            }
+            .padding(.bottom, 8)
 
             Text(UserText.newAddressBarPickerSubtitle)
                 .daxTitle1()
@@ -93,7 +96,7 @@ private struct ContentView: View {
 
             Text(UserText.newAddressBarPickerDescription)
                 .daxCaption()
-                .foregroundColor(.secondary)
+                .foregroundColor(Color(designSystemColor: .textSecondary))
                 .multilineTextAlignment(.center)
                 .padding(.bottom, 16)
         }

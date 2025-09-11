@@ -18,7 +18,7 @@
 
 import Foundation
 
-public enum WidePixelEvent {
+public enum WidePixelFailureEvent {
     case saveFailed(pixelName: String, error: Error)
     case updateFailed(pixelName: String, error: Error)
     case loadFailed(pixelName: String, error: Error)

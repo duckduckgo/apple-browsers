@@ -1921,22 +1921,6 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
 .Popover_closeButton:focus-visible {
   box-shadow: var(--focus-ring);
 }
-.Popover_heading {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-}
-.Popover_badge {
-  background: var(--color-yellow-60);
-  border-radius: var(--border-radius-xs);
-  color: var(--color-black);
-  font-size: 11.5px;
-  font-weight: 600;
-  line-height: var(--sp-4);
-  padding: 0 var(--sp-2);
-  text-transform: uppercase;
-  width: fit-content;
-}
 .Popover_title {
   font-size: var(--title-3-em-font-size);
   font-weight: var(--title-3-em-font-weight);

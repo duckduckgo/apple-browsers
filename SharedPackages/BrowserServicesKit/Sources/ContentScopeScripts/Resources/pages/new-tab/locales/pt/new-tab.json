@@ -28,10 +28,6 @@
     "title" : "Personalizar página Novo separador",
     "note" : "Heading text describing that there's a list of toggles for customizing the page layout."
   },
-  "ntp_popover_close_button" : {
-    "title" : "Fechar",
-    "note" : "Button that closes the current popover."
-  },
   "updateNotification_updated_version" : {
     "title" : "Navegador atualizado para a versão {version}.",
     "note" : "Text to indicate which new version was updated. `{version}` will be formatted like `1.22.0`"
@@ -179,26 +175,6 @@
   "omnibar_visitSuffix" : {
     "title" : "Visitar {url}",
     "description" : "Text placed after suggestions that will open a webpage."
-  },
-  "omnibar_askDuckAiSuffix" : {
-    "title" : "Pergunta ao Duck.ai",
-    "description" : "Text placed after aiChat suggestions that will submit a chat query."
-  },
-  "omnibar_switchToTab" : {
-    "title" : "Mudar para separador",
-    "description" : "Badge text shown next to open tab suggestions."
-  },
-  "omnibar_customizePopoverTitle" : {
-    "title" : "Alterna entre pesquisa e chat com IA",
-    "description" : "Title for the popover that introduces the search/AI toggle feature."
-  },
-  "omnibar_customizePopoverBadge" : {
-    "title" : "Novo",
-    "description" : "Badge text for the popover that introduces the search/AI toggle feature."
-  },
-  "omnibar_customizePopoverDescription" : {
-    "title" : "De qualquer forma, as tuas informações permanecem privadas.<br />Não queres isto? <button>Personalizar</button>",
-    "description" : "Description message in the popover including privacy statement and customize option."
   },
   "nextSteps_sectionTitle" : {
     "title" : "Passos seguintes",

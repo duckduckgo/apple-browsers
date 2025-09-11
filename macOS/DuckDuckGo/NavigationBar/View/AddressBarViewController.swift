@@ -231,7 +231,6 @@ final class AddressBarViewController: NSViewController {
             activeBackgroundViewWithSuggestions.isHidden = true
             activeOuterBorderView.isHidden = true
             activeBackgroundView.isHidden = true
-            passiveTextField.isSelectable = true
 
             shadowView.isHidden = true
             inactiveAddressBarShadowView.removeFromSuperview()

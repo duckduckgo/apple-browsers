@@ -81,7 +81,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         guard !isAIChatSearchInputEnabled else { return false }
         Logger.addressBarPicker.info("✓ AIChat address bar is disabled")
 
-        guard !isAddressBarAtBottom else { return false }
+        guard !isAddressBarPositionBottom else { return false }
         Logger.addressBarPicker.info("✓ Address bar position is not bottom")
 
         guard !hasForceChoiceBeenShown else { return false }
@@ -118,7 +118,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         aiChatSettings.isAIChatSearchInputUserSettingsEnabled
     }
     
-    private var isAddressBarAtBottom: Bool {
+    private var isAddressBarPositionBottom: Bool {
         appSettings.currentAddressBarPosition.isBottom
     }
 

@@ -62,7 +62,7 @@ public final class ContentScopeProperties: Encodable {
         self.globalPrivacyControlValue = gpcEnabled
         self.sessionKey = sessionKey
         self.messageSecret = messageSecret
-        self.platform = ContentScopePlatform(isInternal: isInternalUser)
+        self.platform = ContentScopePlatform(isInternal: isInternalUser, version: AppVersion.shared.versionNumber)
         languageCode = Locale.current.languageCode ?? "en"
         features = [
             "autofill": ContentScopeFeature(featureToggles: featureToggles)
@@ -185,9 +185,11 @@ public struct ContentScopePlatform: Encodable {
     #endif
 
     let `internal`: Bool
+    let version: String
 
-    init(isInternal: Bool = false) {
+    init(isInternal: Bool = false, version: String = "") {
         self.internal = isInternal
+        self.version = version
     }
 }
 

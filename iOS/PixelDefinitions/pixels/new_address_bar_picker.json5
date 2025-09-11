@@ -19,8 +19,9 @@
             'pixelSource',
             {
                 key: 'selection',
-                description: 'Selected option index: 0 = Search Only, 1 = Search & Duck.ai',
-                type: 'integer',
+                description: 'Selected option',
+                type: 'string', 
+                enum: ['search_only', 'search_and_ai'],
             },
         ],
     },

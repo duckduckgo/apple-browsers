@@ -261,7 +261,7 @@ private struct CTAView: View {
         let enableAISearch = (selectedOption == 1)
         aiChatSettings.enableAIChatSearchInputUserSettings(enable: enableAISearch)
 
-        let selectionValue = "\(selectedOption)"
+        let selectionValue = selectedOption == 0 ? "search_only" : "search_and_ai"
         DailyPixel.fireDailyAndCount(pixel: .aiChatNewAddressBarPickerConfirmed, withAdditionalParameters: [PixelParameters.selection: selectionValue])
         onDismiss()
     }

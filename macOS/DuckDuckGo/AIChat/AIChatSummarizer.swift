@@ -82,7 +82,13 @@ final class AIChatSummarizer: AIChatSummarizing {
 
         if aiChatMenuConfig.shouldOpenAIChatInSidebar {
             if !aiChatSidebarPresenter.isSidebarOpenForCurrentTab() {
-                pixelFiring?.fire(AIChatPixel.aiChatSidebarOpened(source: .summarization), frequency: .dailyAndStandard)
+                pixelFiring?.fire(
+                    AIChatPixel.aiChatSidebarOpened(
+                        source: .summarization,
+                        shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue
+                    ),
+                    frequency: .dailyAndStandard
+                )
             }
             aiChatSidebarPresenter.presentSidebar(for: prompt)
         } else {

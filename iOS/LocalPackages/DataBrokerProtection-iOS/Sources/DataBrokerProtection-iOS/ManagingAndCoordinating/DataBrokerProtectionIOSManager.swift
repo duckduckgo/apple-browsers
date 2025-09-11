@@ -45,7 +45,7 @@ public class DBPIOSInterface {
      Where possible, avoid using this and prefer to use individual delegates
      This is only used for injecting through layers of the app that don't care about DBP
      */
-    public typealias PublicInterface = AppLifecycleEventsDelegate & DatabaseDelegate & DebuggingDelegate & RunPrerequisitesDelegate & DataBrokerProtectionViewControllerProvider & EmailConfirmationDataDelegate
+    public typealias PublicInterface = AppLifecycleEventsDelegate & DatabaseDelegate & DebuggingDelegate & RunPrerequisitesDelegate & DataBrokerProtectionViewControllerProvider
 
     public typealias DebuggingDelegate = DebugInformationDelegate & DebugCommandsDelegate
     public typealias DebugInformationDelegate = BackgroundTaskInformationDelegate & JobQueueInformationDelegate & RunPrerequisitesDelegate
@@ -97,10 +97,6 @@ public class DBPIOSInterface {
         func dataBrokerProtectionViewController() -> DataBrokerProtectionViewController
     }
 
-    public protocol EmailConfirmationDataDelegate: AnyObject {
-        func checkForEmailConfirmationData() async
-    }
-
     // MARK: - Private interface
 
     protocol BackgroundTaskHandlingDelegate: AnyObject {
@@ -111,6 +107,10 @@ public class DBPIOSInterface {
 
     protocol WeeklyPixelsDelegate: AnyObject {
         func tryToFireWeeklyPixels()
+    }
+
+    protocol OptOutEmailConfirmationHandlingDelegate: AnyObject {
+        func checkForEmailConfirmationData() async
     }
 }
 
@@ -398,8 +398,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
     }
 }
 
-extension DataBrokerProtectionIOSManager: DBPIOSInterface.EmailConfirmationDataDelegate {
-    public func checkForEmailConfirmationData() async {
+extension DataBrokerProtectionIOSManager: DBPIOSInterface.OptOutEmailConfirmationHandlingDelegate {
+    func checkForEmailConfirmationData() async {
         do {
             try await emailConfirmationDataService?.checkForEmailConfirmationData()
         } catch {

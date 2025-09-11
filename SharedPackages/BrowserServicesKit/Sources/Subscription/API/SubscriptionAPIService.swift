@@ -46,7 +46,7 @@ public enum APIServiceError: DDGError {
         }
     }
 
-    public var errorDomain: String { "com.duckduckgo.subscription.APIServiceError" }
+    public static var errorDomain: String { "com.duckduckgo.subscription.APIServiceError" }
 
     public var errorCode: Int {
         switch self {

@@ -23,7 +23,7 @@ import PixelKit
 /// > Related links:
 /// [Pixel Definition](https://app.asana.com/1/137249556945/project/1206329551987282/task/1210257532277820)
 /// [Pixel Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210341343812872)
-enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEventV2, Hashable {
+enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEvent, Hashable {
     private enum ParameterKey {
         static let contentType = "contentType"
         static let numberOfBannersShown = "numberOfBannersShown"
@@ -59,10 +59,6 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEventV2, Hashable {
     /// - Parameters:
     ///     - type: A hardcoded string with the following possible values (“set-as-default”, “add-to-dock”, “set-as-default-and-add-to-dock") representing the type of prompt.
     case bannerNeverAskAgainButtonClicked(type: DefaultBrowserAndDockPromptType)
-
-    var error: (any Error)? {
-        nil
-    }
 
     var name: String {
         switch self {
@@ -112,7 +108,7 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEventV2, Hashable {
 /// > Related links:
 /// [Pixel Definition](https://app.asana.com/1/137249556945/project/1206329551987282/task/1210257532277820)
 /// [Pixel Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210341343812872)
-enum DefaultBrowserAndDockPromptDebugPixelEvent: PixelKitEventV2 {
+enum DefaultBrowserAndDockPromptDebugPixelEvent: PixelKitEvent {
     /// Trigger Event: The popover seen date fails to save.
     case failedToSavePopoverSeenDate
     /// Trigger Event: The popover seen date fails to retrieve.
@@ -129,10 +125,6 @@ enum DefaultBrowserAndDockPromptDebugPixelEvent: PixelKitEventV2 {
     case failedToSaveBannerPermanentlyDismissedValue
     /// Trigger Event: The permanently dismissed flag fails to retrieve.
     case failedToRetrieveBannerPermanentlyDismissedValue
-
-    var error: (any Error)? {
-        nil
-    }
 
     var name: String {
         switch self {

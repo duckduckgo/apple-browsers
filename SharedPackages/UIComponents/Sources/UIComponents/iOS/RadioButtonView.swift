@@ -42,8 +42,8 @@ public struct RadioButtonConfiguration {
     public var unselectedBackgroundColor: Color
     public var selectedBorderColor: Color
     public var unselectedBorderColor: Color
-    public var selectedCheckboxColor: Color
-    public var unselectedCheckboxColor: Color
+    public var selectedCheckboxColor: Color?
+    public var unselectedCheckboxColor: Color?
     public var selectedCheckboxImage: Image
     public var unselectedCheckboxImage: Image
     public var borderWidth: CGFloat
@@ -63,9 +63,9 @@ public struct RadioButtonConfiguration {
         unselectedBackgroundColor: Color = .clear,
         selectedBorderColor: Color = .init(designSystemColor: .accent),
         unselectedBorderColor: Color = .init(designSystemColor: .lines),
-        selectedCheckboxColor: Color = .init(designSystemColor: .accent),
-        unselectedCheckboxColor: Color = .gray.opacity(0.6),
-        selectedCheckboxImage: Image = Image(uiImage: DesignSystemImages.Glyphs.Size24.checkRecolorable),
+        selectedCheckboxColor: Color? = nil,
+        unselectedCheckboxColor: Color? = .gray.opacity(0.6),
+        selectedCheckboxImage: Image = Image(uiImage: DesignSystemImages.Glyphs.Size24.checkAccent),
         unselectedCheckboxImage: Image = Image(uiImage: DesignSystemImages.Glyphs.Size24.shapeCircle),
         borderWidth: CGFloat = 1,
         cornerRadius: CGFloat = 12,
@@ -235,6 +235,14 @@ private struct RadioButtonRow: View {
         isSelected ? configuration.selectedBorderColor : configuration.unselectedBorderColor
     }
 
+    private var checkboxColor: Color? {
+        if isSelected {
+            return configuration.selectedCheckboxColor
+        } else {
+            return configuration.unselectedCheckboxColor
+        }
+    }
+
     @ViewBuilder
     private var verticalRowContent: some View {
         Text(item.text)
@@ -245,9 +253,8 @@ private struct RadioButtonRow: View {
 
         (isSelected ? configuration.selectedCheckboxImage : configuration.unselectedCheckboxImage)
             .resizable()
-            .renderingMode(.template)
+            .conditionalTemplateMode(checkboxColor)
             .font(.system(size: configuration.checkboxSize))
-            .foregroundColor(isSelected ? configuration.selectedCheckboxColor : configuration.unselectedCheckboxColor)
             .frame(width: configuration.checkboxSize, height: configuration.checkboxSize)
             .flexibleFrame(horizontal: false, vertical: false)
     }
@@ -258,9 +265,8 @@ private struct RadioButtonRow: View {
 
         (isSelected ? configuration.selectedCheckboxImage : configuration.unselectedCheckboxImage)
             .resizable()
-            .renderingMode(.template)
+            .conditionalTemplateMode(checkboxColor)
             .font(.system(size: configuration.checkboxSize))
-            .foregroundColor(isSelected ? configuration.selectedCheckboxColor : configuration.unselectedCheckboxColor)
             .frame(width: configuration.checkboxSize, height: configuration.checkboxSize)
             .flexibleFrame(horizontal: false, vertical: false)
 
@@ -284,6 +290,16 @@ private extension View {
             return AnyView(self.frame(maxWidth: .infinity))
         } else if vertical {
             return AnyView(self.frame(maxHeight: .infinity))
+        } else {
+            return AnyView(self)
+        }
+    }
+}
+
+private extension Image {
+    func conditionalTemplateMode(_ color: Color?) -> some View {
+        if let color = color {
+            return AnyView(self.renderingMode(.template).foregroundColor(color))
         } else {
             return AnyView(self)
         }

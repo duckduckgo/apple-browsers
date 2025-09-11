@@ -286,7 +286,7 @@ extension TransparentProxyController {
         case stopped
     }
 
-    public enum StartAttemptStep: PixelKitEventV2 {
+    public enum StartAttemptStep: PixelKitEvent {
         /// Abnormal attempt to start the proxy when it wasn't needed
         case prevented(_ error: Error)
 
@@ -319,15 +319,5 @@ extension TransparentProxyController {
             return nil
         }
 
-        public var error: Error? {
-            switch self {
-            case .begin,
-                    .success:
-                return nil
-            case .prevented(let error),
-                    .failure(let error):
-                return error
-            }
-        }
     }
 }

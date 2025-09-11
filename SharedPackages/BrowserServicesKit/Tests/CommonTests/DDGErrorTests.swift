@@ -28,7 +28,7 @@ final class DDGErrorTests: XCTestCase {
         case simpleError(code: Int, description: String)
         case errorWithUnderlying(code: Int, description: String)
 
-        var errorDomain: String { "TestErrorDomain" }
+        static var errorDomain: String { "TestErrorDomain" }
 
         var errorCode: Int {
             switch self {
@@ -67,7 +67,7 @@ final class DDGErrorTests: XCTestCase {
     func testDDGErrorBasicProperties() {
         let error = TestError.simpleError(code: 100, description: "Test error")
 
-        XCTAssertEqual(error.errorDomain, "TestErrorDomain")
+        XCTAssertEqual(TestError.errorDomain, "TestErrorDomain")
         XCTAssertEqual(error.errorCode, 100)
         XCTAssertEqual(error.description, "Test error")
         XCTAssertNil(error.underlyingError)

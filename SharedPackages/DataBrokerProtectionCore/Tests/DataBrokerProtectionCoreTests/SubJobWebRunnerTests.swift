@@ -30,7 +30,7 @@ final class DataBrokerJobTests: XCTestCase {
         sut.actionsHandler = mockActionsHandler
         let mockWebHandler = WebViewHandlerMock()
         mockWebHandler.errorStatusCodeToThrow = 404
-        await sut.initialize(handler: mockWebHandler, showWebView: false)
+        try await sut.initialize(handler: mockWebHandler, showWebView: false)
 
         // When
         await sut.loadURL(url: URL(string: "www.duckduckgo.com")!)
@@ -46,7 +46,7 @@ final class DataBrokerJobTests: XCTestCase {
         sut.actionsHandler = mockActionsHandler
         let mockWebHandler = WebViewHandlerMock()
         mockWebHandler.errorStatusCodeToThrow = 403
-        await sut.initialize(handler: mockWebHandler, showWebView: false)
+        try await sut.initialize(handler: mockWebHandler, showWebView: false)
 
         // When
         await sut.loadURL(url: URL(string: "www.duckduckgo.com")!)
@@ -62,7 +62,7 @@ final class DataBrokerJobTests: XCTestCase {
         sut.actionsHandler = mockActionsHandler
         let mockWebHandler = WebViewHandlerMock()
         mockWebHandler.errorStatusCodeToThrow = 404
-        await sut.initialize(handler: mockWebHandler, showWebView: false)
+        try await sut.initialize(handler: mockWebHandler, showWebView: false)
 
         // When
         await sut.loadURL(url: URL(string: "www.duckduckgo.com")!)

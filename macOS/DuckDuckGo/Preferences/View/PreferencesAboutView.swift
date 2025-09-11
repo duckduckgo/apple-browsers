@@ -137,6 +137,11 @@ extension Preferences {
                             model.copy(model.appVersionModel.versionLabel)
                         })
                     }))
+
+                Button(UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: "")) {
+                    model.checkForAppStoreUpdate()
+                }
+                .buttonStyle(UpdateButtonStyle(enabled: true))
 #elseif SPARKLE
                 HStack(spacing: 8) {
                     Text(UserText.duckDuckGo)
@@ -496,7 +501,6 @@ extension Preferences {
     }
 }
 
-#if SPARKLE
 struct UpdateButtonStyle: ButtonStyle {
 
     public let enabled: Bool
@@ -521,4 +525,3 @@ struct UpdateButtonStyle: ButtonStyle {
     }
 
 }
-#endif

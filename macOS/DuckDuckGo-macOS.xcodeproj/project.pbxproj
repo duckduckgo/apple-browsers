@@ -3290,6 +3290,8 @@
 		BB0036652E426EDD0016DDEF /* ReportProblemFormViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00365D2E426E9D0016DDEF /* ReportProblemFormViewModelTests.swift */; };
 		BB0036662E426EDD0016DDEF /* FeedbackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00365A2E426E9D0016DDEF /* FeedbackTests.swift */; };
 		BB0036672E426EDD0016DDEF /* RequestNewFeatureViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00365E2E426E9D0016DDEF /* RequestNewFeatureViewModelTests.swift */; };
+		BB01275C2E6F40A300263AD8 /* CheckForUpdatesAppStorePixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB01275B2E6F409E00263AD8 /* CheckForUpdatesAppStorePixels.swift */; };
+		BB01275D2E6F40A300263AD8 /* CheckForUpdatesAppStorePixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB01275B2E6F409E00263AD8 /* CheckForUpdatesAppStorePixels.swift */; };
 		BB0346F52CEB80B400D23E05 /* DownloadsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0346F42CEB80B400D23E05 /* DownloadsUITests.swift */; };
 		BB0DA4BF2DB12F8600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */; };
 		BB0DA4C02DB12F8600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */; };
@@ -5642,6 +5644,7 @@
 		BB00365A2E426E9D0016DDEF /* FeedbackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackTests.swift; sourceTree = "<group>"; };
 		BB00365D2E426E9D0016DDEF /* ReportProblemFormViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportProblemFormViewModelTests.swift; sourceTree = "<group>"; };
 		BB00365E2E426E9D0016DDEF /* RequestNewFeatureViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestNewFeatureViewModelTests.swift; sourceTree = "<group>"; };
+		BB01275B2E6F409E00263AD8 /* CheckForUpdatesAppStorePixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckForUpdatesAppStorePixels.swift; sourceTree = "<group>"; };
 		BB0346F42CEB80B400D23E05 /* DownloadsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsUITests.swift; sourceTree = "<group>"; };
 		BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyShieldAddressBarStyleProviding.swift; sourceTree = "<group>"; };
 		BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-green-hover.json"; sourceTree = "<group>"; };
@@ -6436,6 +6439,7 @@
 		1D72D5902BFF361700AEDE36 /* Updates */ = {
 			isa = PBXGroup;
 			children = (
+				BB01275B2E6F409E00263AD8 /* CheckForUpdatesAppStorePixels.swift */,
 				7BC641142DD1FBD600272A9D /* UpdatesDebugMenu.swift */,
 				1DA84D2E2C11989D0011C80F /* Update.swift */,
 				7BAB80C42E2A420400F59FF4 /* UpdateCheckActor.swift */,
@@ -13541,6 +13545,7 @@
 				B602E7D02A93A5FF00F12201 /* WKBackForwardListExtension.swift in Sources */,
 				3706FBFE293F65D500E42796 /* History.xcdatamodeld in Sources */,
 				B68D21C92ACBC96E002DA3C2 /* MockPrivacyConfiguration.swift in Sources */,
+				BB01275D2E6F40A300263AD8 /* CheckForUpdatesAppStorePixels.swift in Sources */,
 				3706FBFF293F65D500E42796 /* PermissionStore.swift in Sources */,
 				B6080BC62B21E78100B418EF /* DataImportErrorView.swift in Sources */,
 				3706FC01293F65D500E42796 /* ChromiumBookmarksReader.swift in Sources */,
@@ -15414,6 +15419,7 @@
 				9812D895276CEDA5004B6181 /* ContentBlockerRulesLists.swift in Sources */,
 				4B0511E2262CAA8600F6079C /* NSViewControllerExtension.swift in Sources */,
 				C16127EE2BDFB46400966BB9 /* DataImportShortcutsView.swift in Sources */,
+				BB01275C2E6F40A300263AD8 /* CheckForUpdatesAppStorePixels.swift in Sources */,
 				9FA173DF2B7A0EFE00EE4E6E /* BookmarkDialogButtonsView.swift in Sources */,
 				F44C130225C2DA0400426E3E /* NSAppearanceExtension.swift in Sources */,
 				4B3B8490297A0E1000A384BD /* EmailManagerExtension.swift in Sources */,

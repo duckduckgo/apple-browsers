@@ -104,7 +104,7 @@ struct AppShortcuts: AppShortcutsProvider {
                         "Start \(.applicationName) AI chat",
                         "Start \(.applicationName) Chat"
                     ],
-                    shortTitle: "AI Chat",
+                    shortTitle: "Duck.ai Chat",
                     systemImageName: "circle.fill"
         )
     }

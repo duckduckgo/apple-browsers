@@ -20,7 +20,7 @@
             {
                 key: 'selection',
                 description: 'Selected option',
-                type: 'string', 
+                type: 'string',
                 enum: ['search_only', 'search_and_ai'],
             },
         ],
@@ -33,5 +33,3 @@
         parameters: ['appVersion', 'pixelSource'],
     },
 }
-
-

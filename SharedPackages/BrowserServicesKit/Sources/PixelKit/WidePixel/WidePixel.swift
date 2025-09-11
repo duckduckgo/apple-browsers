@@ -59,16 +59,16 @@ public final class WidePixel: WidePixelManaging {
     private let storage: WidePixelStoring
     private let pixelKitProvider: () -> PixelKit?
     private let sampler: WidePixelSampling
-    private let eventMapping: EventMapping<WidePixelEvent>?
+    private let failureEventMapping: EventMapping<WidePixelFailureEvent>?
 
     public init(storage: WidePixelStoring = WidePixelUserDefaultsStorage(),
                 pixelKitProvider: @escaping () -> PixelKit? = { PixelKit.shared },
                 sampler: WidePixelSampling? = nil,
-                events: EventMapping<WidePixelEvent>? = nil) {
+                failureEventMapping: EventMapping<WidePixelFailureEvent>? = WidePixelFailureEvent.eventMapping) {
         self.pixelKitProvider = pixelKitProvider
         self.storage = storage
         self.sampler = sampler ?? DefaultWidePixelSampler(storage: self.storage)
-        self.eventMapping = events
+        self.failureEventMapping = failureEventMapping
     }
 
     // MARK: - Public API
@@ -140,7 +140,7 @@ public final class WidePixel: WidePixelManaging {
                 onComplete(true, nil)
             } else {
                 Self.logger.error("Failed to complete wide pixel flow \(T.pixelName, privacy: .public): \(error.localizedDescription, privacy: .public)")
-                report(.completeFailed(pixelName: T.pixelName, error: error), error: error, params: nil)
+                report(.completionFailed(pixelName: T.pixelName, error: error), error: error, params: nil)
                 storage.delete(data)
                 onComplete(false, PixelKitError.externalError(error))
             }
@@ -268,8 +268,8 @@ public final class WidePixel: WidePixelManaging {
         #endif
     }
 
-    private func report(_ event: WidePixelEvent, error: Error?, params: [String: String]?) {
-        eventMapping?.fire(event, error: error, parameters: params)
+    private func report(_ event: WidePixelFailureEvent, error: Error?, params: [String: String]?) {
+        failureEventMapping?.fire(event, error: error, parameters: params)
     }
 }
 

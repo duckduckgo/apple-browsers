@@ -48,7 +48,7 @@ public enum WidePixelError: DDGError, LocalizedError {
         return description
     }
 
-    public static var errorDomain: String { "com.duckduckgo.widePixel" }
+    public static var errorDomain: String { "WidePixelError" }
 
     public var errorCode: Int {
         switch self {
@@ -73,23 +73,6 @@ public enum WidePixelError: DDGError, LocalizedError {
             return nil
         case .serializationFailed(let error), .storageError(let error):
             return error
-        }
-    }
-
-    public var failureReason: String? {
-        switch self {
-        case .flowNotFound:
-            return "The specified wide pixel flow has not been started or has been completed/cleared"
-        case .typeMismatch:
-            return "The stored feature data type does not match the requested type"
-        case .serializationFailed:
-            return "Failed to encode or decode wide pixel data"
-        case .invalidFlowState:
-            return "The flow is in an invalid state for the requested operation"
-        case .storageError:
-            return "Failed to read from or write to UserDefaults storage"
-        case .invalidParameters:
-            return "The provided parameters are invalid or incomplete"
         }
     }
 

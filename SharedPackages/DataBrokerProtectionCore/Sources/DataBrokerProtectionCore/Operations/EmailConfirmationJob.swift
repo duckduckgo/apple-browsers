@@ -187,7 +187,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         if let webViewHandlerForTesting = self.webViewHandlerForTesting {
             webViewHandler = webViewHandlerForTesting
         } else if let webRunner = webRunner as? CCFCommunicationDelegate {
-            webViewHandler = await DataBrokerProtectionWebViewHandler(
+            webViewHandler = try await DataBrokerProtectionWebViewHandler(
                 privacyConfig: jobDependencies.privacyConfig,
                 prefs: jobDependencies.contentScopeProperties,
                 delegate: webRunner,

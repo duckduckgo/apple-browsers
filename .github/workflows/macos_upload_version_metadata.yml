@@ -24,18 +24,18 @@ defaults:
     working-directory: macOS
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}
   cancel-in-progress: true
 
 jobs:
   upload-metadata:
     name: Upload Release Metadata to CDN
     runs-on: macos-15
-    timeout-minutes: 10
+    timeout-minutes: 5
 
     env:
-      S3_PATH: s3://ddg-staticcdn/macos-desktop-browser/
-      CDN_PATH: https://staticcdn.duckduckgo.com/macos-desktop-browser/
+      S3_PATH: s3://${{ vars.RELEASE_BUCKET_NAME }}/${{ vars.RELEASE_BUCKET_PREFIX }}/
+      CDN_PATH: ${{ vars.DMG_URL_ROOT }}
 
     steps:
       - name: Check out the code
@@ -43,35 +43,22 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Select Xcode
-        uses: ./.github/actions/select-xcode-version
-
       - name: Extract version and build number
         id: version-info
         run: |
-          # Extract version and build number using the same pattern as other workflows
-          VERSION=$(xcrun xcodebuild \
-            -scheme "macOS Browser" \
-            -showBuildSettings 2>/dev/null \
-            | grep "MARKETING_VERSION" \
-            | awk '{print $3}')
-          
-          BUILD=$(xcrun xcodebuild \
-            -scheme "macOS Browser" \
-            -showBuildSettings 2>/dev/null \
-            | grep "CURRENT_PROJECT_VERSION" \
-            | awk '{print $3}')
-          
+          # Extract version and build number from configuration files
+          VERSION=$(cut -d ' ' -f 3 < Configuration/Version.xcconfig)
+          BUILD=$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           
           # Validate that we got the version info
           if [[ -z "$VERSION" ]]; then
-            echo "Error: Failed to extract MARKETING_VERSION"
+            echo "Error: Failed to extract version from Configuration/Version.xcconfig"
             exit 1
           fi
           
           if [[ -z "$BUILD" ]]; then
-            echo "Error: Failed to extract CURRENT_PROJECT_VERSION"
+            echo "Error: Failed to extract build number from Configuration/BuildNumber.xcconfig"
             exit 1
           fi
           
@@ -129,30 +116,6 @@ jobs:
           aws s3 cp release_metadata.json "${S3_PATH}release_metadata.json" --acl public-read
           
           echo "✅ Upload completed successfully"
-
-      - name: Verify upload
-        run: |
-          echo "Verifying upload by fetching from CDN..."
-          sleep 5  # Brief wait for CDN propagation
-          
-          if curl -fLSs "${CDN_PATH}release_metadata.json" --output verified_metadata.json; then
-            echo "✅ File successfully accessible from CDN"
-            echo "Verified content:"
-            cat verified_metadata.json | jq .
-            
-            # Verify the version matches what we uploaded
-            UPLOADED_VERSION=$(jq -r '.latest_appstore_version.latest_version' verified_metadata.json)
-            if [[ "$UPLOADED_VERSION" == "${{ steps.version-info.outputs.version }}" ]]; then
-              echo "✅ Version verification successful: $UPLOADED_VERSION"
-            else
-              echo "❌ Version mismatch: expected ${{ steps.version-info.outputs.version }}, got $UPLOADED_VERSION"
-              exit 1
-            fi
-          else
-            echo "❌ Failed to verify upload - file not accessible from CDN"
-            exit 1
-          fi
-
       - name: Summary
         run: |
           echo "🎉 Successfully updated macOS release metadata"

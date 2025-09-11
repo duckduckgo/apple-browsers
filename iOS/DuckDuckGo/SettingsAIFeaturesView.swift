@@ -127,7 +127,7 @@ struct SettingsAIFeaturesView: View {
                                          accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
                     }
                     
-                    if viewModel.isSERPSettingsFollowUpQuestionsEnabled {
+                    if viewModel.shouldShowSERPSettingsFollowUpQuestions {
                         Section("❗️Section 2") {
                             SettingsCellView(label: "❗️Allow Follow-up Questions",
                                              accessory: .toggle(isOn: viewModel.serpSettingsFollowUpQuestionsBinding))

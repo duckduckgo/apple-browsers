@@ -144,7 +144,7 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) ? "❗️Section 1" : ""
     }
     
-    var isSERPSettingsFollowUpQuestionsEnabled: Bool {
+    var shouldShowSERPSettingsFollowUpQuestions: Bool {
         featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) && serpSettings.didMigrate
     }
 

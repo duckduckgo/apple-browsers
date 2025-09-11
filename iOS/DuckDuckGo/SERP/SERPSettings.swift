@@ -23,52 +23,53 @@ import AIChat
 import Core
 import Persistence
 
+public extension NSNotification.Name {
+    static let serpSettingsChanged = Notification.Name("com.duckduckgo.serp.settings.changed")
+}
+
 final class SERPSettings: SERPSettingsProviding {
+
+    enum Constant {
+        static let allowFollowUpQuestionsKey = "serp.settings.allowFollowUpQuestions"
+    }
+
     private let keyValueStore: KeyValueStoring
-    
-    init(keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()) {
+    private let aiChatSettings: AIChatSettingsProvider
+    private let notificationCenter: NotificationCenter
+
+    init(keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
+         aiChatSettings: AIChatSettingsProvider,
+         notificationCenter: NotificationCenter = .default) {
         self.keyValueStore = keyValueStore
+        self.aiChatSettings = aiChatSettings
+        self.notificationCenter = notificationCenter
     }
     
     var isDuckAIEnabled: Bool {
-        #warning("Finish implementation, keep it stored locally")
-        return true
+        aiChatSettings.isAIChatEnabled
     }
-    
+
     var isAllowFollowUpQuestionsEnabled: Bool? {
-        keyValueStore.object(forKey: .allowFollowUpQuestionsKey) as? Bool
+        keyValueStore.object(forKey: Constant.allowFollowUpQuestionsKey) as? Bool
     }
-    
-    var didMigrate: Bool {
-        /// If value is there, migration is done. Otherwise, return false
-        if keyValueStore.object(forKey: .allowFollowUpQuestionsKey) != nil {
-            return true
-        }
-        return false
-    }
-    
+
     func enableAllowFollowUpQuestions(enable: Bool) {
-        keyValueStore.set(enable, forKey: .allowFollowUpQuestionsKey)
+        keyValueStore.set(enable, forKey: Constant.allowFollowUpQuestionsKey)
+        notificationCenter.post(name: .serpSettingsChanged, object: nil)
 #warning("Finish implementation")
-        // triggerSettingsChangedNotification()
         if enable {
             // Pixel?
         } else {
             // Pixel?
         }
     }
+
+    var didMigrate: Bool {
+        isAllowFollowUpQuestionsEnabled != nil // If value is set, migration is done
+    }
     
     func migrateAllowFollowUpQuestions(enable: Bool) {
-        keyValueStore.set(enable, forKey: .allowFollowUpQuestionsKey)
+        keyValueStore.set(enable, forKey: Constant.allowFollowUpQuestionsKey)
     }
-    
-    private func triggerSettingsChangedNotification() {
-//        notificationCenter.post(name: .serpSettingsChanged, object: nil)
-    }
-}
 
-// MARK: - Keys for storage
-
-private extension String {
-    static let allowFollowUpQuestionsKey = "serp.settings.allowFollowUpQuestions"
 }

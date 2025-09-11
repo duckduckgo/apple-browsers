@@ -38,7 +38,7 @@ protocol SERPSettingsUserScriptDelegate: AnyObject {
     func serpSettingsUserScript(_ userScript: SERPSettingsUserScript, didRequestToOpenAIFeaturesSettingsWithSearchAssistSettingsHidden searchAssistSettingsHidden: Bool)
 }
 
-public struct SERPUserSettings: Codable {
+public struct SERPSettingsSnapshot: Codable {
     public let duckAI: Bool
     public let allowFollowUpQuestion: Bool?
     
@@ -84,9 +84,18 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
 
     init(serpSettingsProvider: SERPSettingsProviding) {
         self.serpSettingsProvider = serpSettingsProvider
-        self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules())
+        messageOriginPolicy = .only(rules: Self.buildMessageOriginRules())
         super.init()
-        
+
+        registerForNotifications()
+    }
+
+    func registerForNotifications() {
+        NotificationCenter.default.addObserver(forName: .serpSettingsChanged,
+                                               object: nil,
+                                               queue: .main) { _ in
+            self.nativeSettingsDidChange()
+        }
         NotificationCenter.default.addObserver(forName: .aiChatSettingsChanged,
                                                object: nil,
                                                queue: .main) { _ in
@@ -96,13 +105,10 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
 
     private static func buildMessageOriginRules() -> [HostnameMatchingRule] {
         var rules: [HostnameMatchingRule] = []
-
-        rules.append(.exact(hostname: "bhall.duck.co"))
-        
+        rules.append(.exact(hostname: "bhall.duck.co")) // TODO: remove before merging
         if let ddgDomain = URL.ddg.host {
             rules.append(.exact(hostname: ddgDomain))
         }
-
         return rules
     }
 
@@ -125,8 +131,7 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
             return updateNativeSettings
         case .getNativeSettings:
             return getNativeSettings
-        case .nativeSettingsDidChange:
-            // This method is not called by SERP, return nil in this case.
+        case .nativeSettingsDidChange: // Never called by SERP — returning nil.
             return nil
         }
     }
@@ -134,7 +139,7 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
     // Step 1 ✅
     @MainActor
     func getNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
-        SERPUserSettings(provider: serpSettingsProvider)
+        SERPSettingsSnapshot(provider: serpSettingsProvider)
     }
 
     @MainActor
@@ -156,17 +161,15 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
     // step 2, called only during migration
     @MainActor
     private func updateNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
-        guard let parameters = params as? [String: String] else { return nil }
-        
+        guard let parameters = params as? [String: Any] else { return nil }
+
         guard let jsonData = try? JSONSerialization.data(withJSONObject: parameters),
-              let serpSettings = try? JSONDecoder().decode(SERPUserSettings.self, from: jsonData),
-              let allowFollowUpQuestionsSetting = serpSettings.allowFollowUpQuestion else {
+              let serpSettingsSnapshot = try? JSONDecoder().decode(SERPSettingsSnapshot.self, from: jsonData),
+              let allowFollowUpQuestionsSetting = serpSettingsSnapshot.allowFollowUpQuestion else {
             return nil
         }
         
         serpSettingsProvider.migrateAllowFollowUpQuestions(enable: allowFollowUpQuestionsSetting)
-        
-        /// Return nil, as SERP does not need updated settings at this point.
         return nil
     }
     
@@ -176,7 +179,7 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
             return
         }
         broker?.push(method: SERPSettingsUserScriptMessages.nativeSettingsDidChange.rawValue,
-                     params: SERPUserSettings(provider: serpSettingsProvider),
+                     params: SERPSettingsSnapshot(provider: serpSettingsProvider),
                      for: self,
                      into: webView)
     }

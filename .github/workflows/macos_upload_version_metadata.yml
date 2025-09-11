@@ -7,9 +7,6 @@ on:
         description: 'Mark this release as critical (for hotfixes)'
         type: boolean
         default: false
-  pull_request:
-    paths:
-      - '.github/workflows/macos_upload_version_metadata.yml'
   workflow_call:
     inputs:
       is_critical:

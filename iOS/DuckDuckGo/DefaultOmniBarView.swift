@@ -197,6 +197,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var onClearButtonPressed: (() -> Void)?
     var onPrivacyIconPressed: (() -> Void)?
     var onMenuButtonPressed: (() -> Void)?
+    var onMenuButtonLongPressed: (() -> Void)?
     var onTrackersViewPressed: (() -> Void)?
     var onSettingsButtonPressed: (() -> Void)?
     var onCancelPressed: (() -> Void)?
@@ -207,8 +208,6 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var onBookmarksPressed: (() -> Void)?
     var onAccessoryPressed: (() -> Void)?
     var onDismissPressed: (() -> Void)?
-    var onSettingsLongPress: (() -> Void)?
-    var onAccessoryLongPress: (() -> Void)?
 
     // MARK: - Properties
 
@@ -452,6 +451,8 @@ final class DefaultOmniBarView: UIView, OmniBarView {
 
         privacyInfoContainer.privacyIcon.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(privacyIconPressed)))
         searchAreaView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(searchAreaPressed)))
+
+        menuButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(menuButtonLongPress)))
     }
 
     private func updateShadows() {
@@ -580,6 +581,10 @@ final class DefaultOmniBarView: UIView, OmniBarView {
 
     @objc private func menuButtonTap() {
         onMenuButtonPressed?()
+    }
+
+    @objc private func menuButtonLongPress() {
+        onMenuButtonLongPressed?()
     }
 
     @objc private func dismissButtonTap() {

@@ -22,6 +22,7 @@ import Combine
 import Foundation
 import PixelKit
 import SecureStorage
+import enum UserScript.UserScriptError
 
 final class AutofillTabExtension: TabExtension {
 
@@ -212,12 +213,19 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
     }
 
     func secureVaultManager(_: SecureVaultManager, didRequestRuntimeConfigurationForDomain domain: String, completionHandler: @escaping (String?) -> Void) {
-        let runtimeConfiguration = DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
-                                                                         properties: buildContentScopePropertiesForDomain(domain))
-            .build()
-            .buildRuntimeConfigResponse()
+        do {
+            let runtimeConfiguration = try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                 properties: buildContentScopePropertiesForDomain(domain))
+                .build()
+                .buildRuntimeConfigResponse()
 
-        completionHandler(runtimeConfiguration)
+            completionHandler(runtimeConfiguration)
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to build DefaultAutofillSourceProvider: \(error.localizedDescription)")
+        }
     }
 
     private func buildContentScopePropertiesForDomain(_ domain: String) -> ContentScopeProperties {

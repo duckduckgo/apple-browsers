@@ -23,7 +23,14 @@ import UserScript
 
 public class NavigatorSharePatchUserScript: NSObject, UserScript {
     public var source: String {
-        return Self.loadJS("navigatorsharepatch", from: Bundle.core)
+        do {
+            return try Self.loadJS("navigatorsharepatch", from: Bundle.core)
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to load JS for NavigatorSharePatchUserScript: \(error)")
+        }
     }
 
     public var injectionTime: WKUserScriptInjectionTime = .atDocumentStart

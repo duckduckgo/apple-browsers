@@ -25,6 +25,7 @@ import Common
 import os.log
 import DataBrokerProtectionCore
 import Subscription
+import enum UserScript.UserScriptError
 
 public protocol DBPUIViewModelOpenFeedbackFormDelegate: AnyObject {
     func openSendFeedbackForm()
@@ -67,18 +68,26 @@ public final class DBPUIViewModel {
 
     @MainActor func setupCommunicationLayer() -> WKWebViewConfiguration {
         let configuration = WKWebViewConfiguration()
-        configuration.applyDBPUIConfiguration(privacyConfig: privacyConfigManager,
-                                              prefs: contentScopeProperties,
-                                              delegate: self,
-                                              webUISettings: webUISettings,
-                                              vpnBypassService: nil)
-        configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
+        do {
+            try configuration.applyDBPUIConfiguration(privacyConfig: privacyConfigManager,
+                                                      prefs: contentScopeProperties,
+                                                      delegate: self,
+                                                      webUISettings: webUISettings,
+                                                      vpnBypassService: nil)
+            configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 
-        if let dbpUIContentController = configuration.userContentController as? DBPUIUserContentController {
-            communicationLayer = dbpUIContentController.dbpUIUserScripts.dbpUICommunicationLayer
+            if let dbpUIContentController = configuration.userContentController as? DBPUIUserContentController {
+                communicationLayer = dbpUIContentController.dbpUIUserScripts.dbpUICommunicationLayer
+            }
+
+            return configuration
+        } catch {
+            if case let UserScriptError.failedToLoadJS(jsFile, error) = error {
+                pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            }
+            fatalError("Failed to apply DBPUI configuration: \(error)")
         }
-
-        return configuration
     }
 }
 

@@ -1,7 +1,7 @@
 //
-//  UpdateDialogHelper.swift
+//  UserScriptError+Pixel.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,22 +16,16 @@
 //  limitations under the License.
 //
 
-import Cocoa
-import Common
+import Foundation
+import enum UserScript.UserScriptError
+import PixelKit
 
-extension NSWindowController {
-
-    func hideUnnecessaryUpdateButtons() {
-        let buttonsToHide = ["_laterButton", "_skipButton", "_automaticallyInstallUpdatesButton"]
-        for button in buttonsToHide {
-            if let button = getButton(named: button) {
-                button.isHidden = true
-            }
+extension UserScriptError {
+    public func fireLoadJSFailedPixelIfNeeded(pixelFiring: PixelFiring? = PixelKit.shared) {
+        guard case let UserScriptError.failedToLoadJS(jsFile, error) = self else {
+            return
         }
+        pixelFiring?.fire(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, error: error), frequency: .dailyAndCount)
+        Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
     }
-
-    private func getButton(named buttonName: String) -> NSButton? {
-        return value(forIvar: buttonName) as? NSButton
-    }
-
 }

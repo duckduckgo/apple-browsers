@@ -187,11 +187,11 @@ public extension SubJobWebRunning {
 
     func initialize(handler: WebViewHandler?,
                     isFakeBroker: Bool = false,
-                    showWebView: Bool) async {
+                    showWebView: Bool) async throws {
         if let handler = handler { // This help us swapping up the WebViewHandler on tests
             self.webViewHandler = handler
         } else {
-            self.webViewHandler = await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig, prefs: prefs, delegate: self, isFakeBroker: isFakeBroker, executionConfig: executionConfig, shouldContinueActionHandler: shouldRunNextStep)
+            self.webViewHandler = try await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig, prefs: prefs, delegate: self, isFakeBroker: isFakeBroker, executionConfig: executionConfig, shouldContinueActionHandler: shouldRunNextStep)
         }
 
         await webViewHandler?.initializeWebView(showWebView: showWebView)

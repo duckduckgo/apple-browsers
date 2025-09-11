@@ -82,24 +82,28 @@ class TrackerAllowlistReferenceTests: XCTestCase {
                                                                       contentBlockingEnabled: true,
                                                                       exceptions: [])
 
-            let config = TestSchemeContentBlockerUserScriptConfig(privacyConfiguration: privacyConfig,
-                                                                  trackerData: trackerData,
-                                                                  ctlTrackerData: nil,
-                                                                  tld: self.tld)
+            do {
+                let config = try TestSchemeContentBlockerUserScriptConfig(privacyConfiguration: privacyConfig,
+                                                                          trackerData: trackerData,
+                                                                          ctlTrackerData: nil,
+                                                                          tld: self.tld)
 
-            let userScript = ContentBlockerRulesUserScript(configuration: config)
-            userScript.delegate = userScriptDelegate
+                let userScript = ContentBlockerRulesUserScript(configuration: config)
+                userScript.delegate = userScriptDelegate
 
-            for messageName in userScript.messageNames {
-                configuration.userContentController.add(userScript, name: messageName)
+                for messageName in userScript.messageNames {
+                    configuration.userContentController.add(userScript, name: messageName)
+                }
+
+                configuration.userContentController.addUserScript(WKUserScript(source: userScript.source,
+                                                                               injectionTime: .atDocumentStart,
+                                                                               forMainFrameOnly: false))
+                configuration.userContentController.add(rules)
+
+                completion(webView)
+            } catch {
+                XCTFail("Failed to initialize TestSchemeContentBlockerUserScriptConfig: \(error)")
             }
-
-            configuration.userContentController.addUserScript(WKUserScript(source: userScript.source,
-                                                                           injectionTime: .atDocumentStart,
-                                                                           forMainFrameOnly: false))
-            configuration.userContentController.add(rules)
-
-            completion(webView)
         }
     }
 

@@ -176,7 +176,7 @@ public struct SecureVaultModels {
 
     }
 
-    public struct CreditCard {
+    public struct CreditCard: Decodable {
 
         private enum Constants {
             static let creditCardsKey = "creditCards"

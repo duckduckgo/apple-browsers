@@ -107,7 +107,7 @@ public protocol AutofillSecureVault: SecureVault {
         hashedUsing salt: Data?
     ) throws -> Int64
 
-    // MARK: - Sync Support
+    // MARK: - Credentials Sync Support
 
     func inDatabaseTransaction(_ block: @escaping (Database) throws -> Void) throws
     func modifiedSyncableCredentials() throws -> [SecureVaultModels.SyncableCredentials]
@@ -119,13 +119,24 @@ public protocol AutofillSecureVault: SecureVault {
         encryptedUsing l2Key: Data,
         hashedUsing salt: Data?
     ) throws
-
     func encryptPassword(for credentials: SecureVaultModels.WebsiteCredentials,
                          key l2Key: Data?,
                          salt: Data?) throws -> SecureVaultModels.WebsiteCredentials
-
     func syncableCredentialsForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableCredentials]
     func syncableCredentialsForAccountId(_ accountId: Int64, in database: Database) throws -> SecureVaultModels.SyncableCredentials?
+
+    // MARK: - Credit Cards Sync Support
+
+    func modifiedSyncableCreditCards() throws -> [SecureVaultModels.SyncableCreditCard]
+    func creditCardTitlesForSyncableCreditCards(modifiedBefore date: Date) throws -> [String]
+    func deleteSyncableCreditCard(_ syncableCreditCard: SecureVaultModels.SyncableCreditCard, in database: Database) throws
+    func storeSyncableCreditCard(
+        _ syncableCreditCard: SecureVaultModels.SyncableCreditCard,
+        in database: Database,
+        encryptedUsing l2Key: Data
+    ) throws
+    func syncableCreditCardsForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableCreditCard]
+
 }
 
 public class DefaultAutofillSecureVault<T: AutofillDatabaseProvider>: AutofillSecureVault {
@@ -593,10 +604,32 @@ public class DefaultAutofillSecureVault<T: AutofillDatabaseProvider>: AutofillSe
         }
     }
 
+    public func storeSyncableCreditCard(
+        _ syncableCreditCard: SecureVaultModels.SyncableCreditCard,
+        in database: Database,
+        encryptedUsing l2Key: Data
+    ) throws {
+        guard var creditCard = syncableCreditCard.creditCard else {
+            assertionFailure("nil credit card passed to \(#function)")
+            return
+        }
+
+        creditCard.cardNumberData = try l2Encrypt(data: creditCard.cardNumberData, using: l2Key)
+
+        var syncableCreditCardToStore = syncableCreditCard
+        syncableCreditCardToStore.creditCard = creditCard
+
+        try providers.database.storeSyncableCreditCard(syncableCreditCardToStore, in: database)
+    }
+
     public func deleteCreditCardFor(cardId: Int64) throws {
         try executeThrowingDatabaseOperation {
             try self.providers.database.deleteCreditCardForCreditCardId(cardId)
         }
+    }
+
+    public func deleteSyncableCreditCard(_ syncableCreditCard: SecureVaultModels.SyncableCreditCard, in database: Database) throws {
+        try providers.database.deleteSyncableCreditCard(syncableCreditCard, in: database)
     }
 
     // MARK: - Sync Support
@@ -650,8 +683,97 @@ public class DefaultAutofillSecureVault<T: AutofillDatabaseProvider>: AutofillSe
         try self.providers.database.syncableCredentialsForSyncIds(syncIds, in: database)
     }
 
-    public func syncableCredentialsForAccountId(_ accountId: Int64, in database: Database) throws -> SecureVaultModels.SyncableCredentials? {
-        try self.providers.database.syncableCredentialsForAccountId(accountId, in: database)
+    public func modifiedSyncableCreditCards() throws -> [SecureVaultModels.SyncableCreditCard] {
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
+
+        do {
+            var syncableCreditCards = try providers.database.modifiedSyncableCreditCards()
+            let key = try getEncryptionKey()
+            for i in 0..<syncableCreditCards.count {
+                guard let cardNumberData = syncableCreditCards[i].creditCard?.cardNumberData else {
+                    continue
+                }
+                syncableCreditCards[i].creditCard?.cardNumberData = try decrypt(cardNumberData, using: key)
+            }
+
+            return syncableCreditCards
+        } catch {
+            let error = error as? SecureStorageError ?? SecureStorageError.databaseError(cause: error)
+            throw error
+        }
+    }
+
+    // TODO - Is title best here?
+    public func creditCardTitlesForSyncableCreditCards(modifiedBefore date: Date) throws -> [String] {
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
+
+        do {
+            let syncableCreditCards = try providers.database.modifiedSyncableCreditCards(before: date)
+            return syncableCreditCards.compactMap { $0.creditCard?.title }
+        } catch {
+            let error = error as? SecureStorageError ?? SecureStorageError.databaseError(cause: error)
+            throw error
+        }
+    }
+
+    public func syncableCreditCardsForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableCreditCard] {
+        try self.providers.database.syncableCreditCardsForSyncIds(syncIds, in: database)
+    }
+
+    public func modifiedSyncableIdentities() throws -> [SecureVaultModels.SyncableIdentity] {
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
+        do {
+            return try providers.database.modifiedSyncableIdentities()
+        } catch {
+            let error = error as? SecureStorageError ?? SecureStorageError.databaseError(cause: error)
+            throw error
+        }
+    }
+
+    public func identityTitlesForSyncableIdentities(modifiedBefore date: Date) throws -> [String] {
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
+        do {
+            let syncableIdentities = try providers.database.modifiedSyncableIdentities(before: date)
+            return syncableIdentities.compactMap { syncableIdentity in
+                guard let identity = syncableIdentity.identity else { return nil }
+
+                // Priority order: Title, First and last name, Street address, Email address
+                if !identity.title.isEmpty {
+                    return identity.title
+                }
+
+                let firstName = identity.firstName ?? ""
+                let lastName = identity.lastName ?? ""
+                if !firstName.isEmpty || !lastName.isEmpty {
+                    return "\(firstName) \(lastName)".trimmingCharacters(in: .whitespaces)
+                }
+
+                if let addressStreet = identity.addressStreet, !addressStreet.isEmpty {
+                    return addressStreet
+                }
+
+                if let emailAddress = identity.emailAddress, !emailAddress.isEmpty {
+                    return emailAddress
+                }
+
+                return identity.title
+            }
+        } catch {
+            let error = error as? SecureStorageError ?? SecureStorageError.databaseError(cause: error)
+            throw error
+        }
     }
 
     // MARK: - Private

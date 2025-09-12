@@ -300,6 +300,8 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case refactorOfSyncPreferences
     case newSyncEntryPoints
     case newDeviceSyncPrompt
+    case syncCreditCards
+    case syncIdentities
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {

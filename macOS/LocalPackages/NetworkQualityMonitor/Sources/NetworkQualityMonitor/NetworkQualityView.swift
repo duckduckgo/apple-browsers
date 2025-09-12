@@ -161,7 +161,7 @@ public struct NetworkQualityView: View {
                         actualValue: results.httpResponse.averageResponseTime,
                         metricType: .httpResponse,
                         icon: "speedometer",
-                        infoText: "60% WEIGHT - Most critical for browser experience.\n\nTests multiple CDN endpoints globally with warm-up phase and interleaved sampling. Takes MEDIAN of all site medians to reflect geographic reality.\n\nIncludes penalties for variance (up to 55 pts) and P95-P50 spread (up to 20 pts).\n\nExcellent: <150ms, Good: 150-250ms, Fair: 250-400ms"
+                        infoText: "60% WEIGHT - Most critical for browser experience.\n\nTests multiple CDN endpoints globally with warm-up phase and interleaved sampling. Takes MEDIAN of all site medians to reflect geographic reality.\n\nIncludes penalties for variance (up to 60 pts) and P95-P50 spread (up to 20 pts).\n\nExcellent: <50ms (instantaneous)\nGood: 50-100ms (production target)\nFair: 100-200ms (noticeable delay)"
                     )
 
                     MetricCard(
@@ -197,7 +197,7 @@ public struct NetworkQualityView: View {
                         actualValue: results.httpResponse.responseVariance,
                         metricType: .responseVariance,
                         icon: "waveform",
-                        infoText: "CRITICAL FOR SCORING - Can deduct up to 75 points!\n\nMeasures standard deviation of response times. High variance = jittery connection = poor user experience.\n\n<50ms: No penalty\n50-100ms: -10 pts\n100-200ms: -25 pts\n>200ms: -40 to -55 pts\n\nAlso tracks P95-P50 spread for spike detection."
+                        infoText: "CRITICAL FOR SCORING - Can deduct up to 80 points!\n\nMeasures standard deviation of response times. High variance = jittery connection = poor user experience.\n\n<20ms: No penalty\n20-40ms: -15 pts\n40-80ms: -30 pts\n>80ms: -45 to -60 pts\n\nP95-P50 spread adds up to -20 pts for spikes."
                     )
 
                     MetricCard(

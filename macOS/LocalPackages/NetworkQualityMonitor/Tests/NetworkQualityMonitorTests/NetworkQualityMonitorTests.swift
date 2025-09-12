@@ -210,6 +210,49 @@ final class NetworkQualityMonitorTests: XCTestCase {
         XCTAssertNotNil(median)
         XCTAssertEqual(median!, 500.5, accuracy: 0.001) // Average of 500 and 501
     }
+    
+    // MARK: - New Scoring Algorithm Tests
+    
+    func testHighVariancePenalty() {
+        // Test case based on real user data showing high variance should severely penalize score
+        let calculator = NetworkScoreCalculator()
+        
+        let httpResponse = HttpResponseResult(
+            averageResponseTime: 445,     // Poor latency
+            responseVariance: 713.6,      // Extremely high variance - should heavily penalize
+            failureRate: 0,
+            sampleCount: 15
+        )
+        
+        let bandwidth = BandwidthResult(
+            downloadSpeedMbps: 13.1,      // Fair download speed  
+            uploadSpeedMbps: 3.6          // Poor upload speed
+        )
+        
+        let dns = DNSResult(
+            averageResolutionTime: 28,    // Good DNS
+            failureRate: 0
+        )
+        
+        let bufferBloat = BufferBloatResult(
+            baselineLatency: 50,
+            loadedLatency: 80, 
+            increase: 30,
+            grade: "A"                    // Excellent buffer bloat
+        )
+        
+        let score = calculator.calculateOverallScore(
+            httpResponse: httpResponse,
+            bandwidth: bandwidth,
+            dns: dns,
+            bufferBloat: bufferBloat
+        )
+        
+        // With high variance (713ms), the overall score should be very low despite good DNS/buffer bloat
+        XCTAssertLessThan(score.overall, 40, "High variance should result in poor overall score")
+        XCTAssertLessThan(score.httpResponse, 10, "High variance should severely penalize HTTP response score") 
+        XCTAssertEqual(calculator.determineQuality(from: score.overall), .poor, "High variance should result in 'poor' quality rating")
+    }
 }
 
 // MARK: - Mock Tests

@@ -25,11 +25,11 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
     // MARK: - Constants
     
     private enum Constants {
-        // Score weights for overall calculation
-        static let httpResponseWeight = 0.35
-        static let bandwidthWeight = 0.35
-        static let dnsWeight = 0.15
-        static let bufferBloatWeight = 0.15
+        // Score weights for overall calculation (adjusted for real-world impact)
+        static let httpResponseWeight = 0.45  // Increased - latency/consistency most critical
+        static let bandwidthWeight = 0.35     // Maintained - still important
+        static let dnsWeight = 0.10           // Reduced - minimal real-world impact
+        static let bufferBloatWeight = 0.10   // Reduced - less critical than latency
         
         // Bandwidth sub-weights
         static let downloadWeight = 0.7
@@ -56,13 +56,19 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
         static let goodThreshold = 60.0
         static let fairThreshold = 40.0
         
-        // HTTP Response thresholds (ms)
-        static let httpResponseExcellent = 100.0
-        static let httpResponseVeryGood = 200.0
-        static let httpResponseGood = 300.0
-        static let httpResponseFair = 400.0
-        static let httpResponseBelowAverage = 500.0
-        static let httpResponsePoor = 600.0
+        // HTTP Response thresholds (ms) - more realistic/strict
+        static let httpResponseExcellent = 50.0   // Was 100ms
+        static let httpResponseVeryGood = 100.0   // Was 200ms  
+        static let httpResponseGood = 200.0       // Was 300ms
+        static let httpResponseFair = 300.0       // Was 400ms
+        static let httpResponseBelowAverage = 400.0 // Was 500ms
+        static let httpResponsePoor = 500.0       // Was 600ms
+        
+        // Response Variance penalty thresholds (ms)
+        static let varianceGoodThreshold = 50.0    // Under 50ms variance is acceptable
+        static let varianceFairThreshold = 100.0   // 50-100ms variance is noticeable
+        static let variancePoorThreshold = 200.0   // 100-200ms variance is problematic
+        static let varianceVeryPoorThreshold = 400.0 // Over 200ms variance is severely problematic
         
         // Download speed thresholds (Mbps)
         static let downloadExcellent = 100.0
@@ -95,7 +101,7 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
                               bufferBloat: BufferBloatResult) -> NetworkScore {
         
         // Calculate individual component scores (0-100 scale)
-        let httpResponseScore = calculateHttpResponseScore(httpResponse.averageResponseTime)
+        let httpResponseScore = calculateHttpResponseScore(httpResponse)
         let bandwidthScore = calculateBandwidthScore(bandwidth)
         let dnsScore = calculateDNSScore(dns.averageResolutionTime)
         let bufferBloatScore = calculateBufferBloatScore(bufferBloat.grade)
@@ -128,8 +134,24 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
     
     // MARK: - Private Score Calculations
     
-    private func calculateHttpResponseScore(_ responseTime: Double) -> Double {
-        // Score based on adjusted response time thresholds
+    private func calculateHttpResponseScore(_ httpResponse: HttpResponseResult) -> Double {
+        // Calculate base score from response time
+        let baseScore = calculateResponseTimeScore(httpResponse.averageResponseTime)
+        
+        // Calculate variance penalty
+        let variancePenalty = calculateVariancePenalty(httpResponse.responseVariance)
+        
+        // Calculate failure rate penalty
+        let failurePenalty = httpResponse.failureRate * 50.0 // Up to 50 point penalty for failures
+        
+        // Apply penalties - ensure minimum score of 0
+        let finalScore = max(0, baseScore - variancePenalty - failurePenalty)
+        
+        return finalScore
+    }
+    
+    private func calculateResponseTimeScore(_ responseTime: Double) -> Double {
+        // Base score from response time only
         switch responseTime {
         case ..<Constants.httpResponseExcellent: return Constants.excellent
         case Constants.httpResponseExcellent..<Constants.httpResponseVeryGood: return Constants.veryGood
@@ -138,6 +160,17 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
         case Constants.httpResponseFair..<Constants.httpResponseBelowAverage: return Constants.belowAverage
         case Constants.httpResponseBelowAverage..<Constants.httpResponsePoor: return Constants.poor
         default: return Constants.veryPoor
+        }
+    }
+    
+    private func calculateVariancePenalty(_ variance: Double) -> Double {
+        // High variance severely impacts user experience
+        switch variance {
+        case ..<Constants.varianceGoodThreshold: return 0      // No penalty for low variance
+        case Constants.varianceGoodThreshold..<Constants.varianceFairThreshold: return 10   // Minor penalty
+        case Constants.varianceFairThreshold..<Constants.variancePoorThreshold: return 25   // Moderate penalty
+        case Constants.variancePoorThreshold..<Constants.varianceVeryPoorThreshold: return 40  // Heavy penalty
+        default: return 60  // Severe penalty for very high variance (like 713ms)
         }
     }
     

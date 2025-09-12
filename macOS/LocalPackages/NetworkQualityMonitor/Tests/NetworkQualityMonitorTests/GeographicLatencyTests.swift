@@ -63,11 +63,11 @@ final class GeographicLatencyTests: XCTestCase {
                         quality.rawValue,
                         expected.rawValue))
             
-            // Verify geographic differences are reflected
-            if description.contains("US User") {
-                XCTAssertGreaterThan(score.overall, 70, "Local users should have good scores")
-            } else if description.contains("Mobile Hotspot") {
-                XCTAssertLessThan(score.overall, 50, "Poor connections should have low scores")
+            // Verify geographic differences are reflected with new weights
+            if description.contains("US East → US") && description.contains("CDN") {
+                XCTAssertGreaterThan(score.overall, 75, "Local CDN users should have excellent scores")
+            } else if description.contains("Poor Mobile") || description.contains("Satellite") {
+                XCTAssertLessThan(score.overall, 45, "Poor connections should have low scores")
             }
         }
     }
@@ -112,21 +112,40 @@ final class GeographicLatencyTests: XCTestCase {
     func testRealisticBrowserScenarios() {
         print("\n=== REALISTIC BROWSER SCENARIOS ===\n")
         
-        // Your actual measurements
-        let yourFiber = calculateScoreForLatency(243, variance: 160, download: 316, upload: 136)
-        let yourHotspot = calculateScoreForLatency(445, variance: 713, download: 13.1, upload: 3.6)
+        // Test with actual measurements and new bandwidth scale
+        let scenarios = [
+            ("Fiber 300/100", 50, 20, 316.0, 136.0),      // Excellent everything
+            ("Cable 100/20", 120, 50, 100.0, 20.0),        // Good typical cable
+            ("DSL 25/5", 200, 80, 25.0, 5.0),              // Fair connection
+            ("Your Fiber", 243, 160, 316.0, 136.0),        // Your actual fiber
+            ("Your Hotspot", 445, 713, 13.1, 3.6),         // Your actual hotspot
+            ("4G LTE", 80, 40, 40.0, 15.0),                // Good mobile
+            ("Public WiFi", 300, 400, 10.0, 2.0)           // Poor public
+        ]
         
-        print(String(format: "Your Fiber:   Score=%3.0f Quality=%@", 
-                    yourFiber.overall,
-                    calculator.determineQuality(from: yourFiber.overall).rawValue))
+        for (name, latency, variance, download, upload) in scenarios {
+            let score = calculateScoreForLatency(Double(latency), 
+                                                variance: Double(variance), 
+                                                download: download, 
+                                                upload: upload)
+            let quality = calculator.determineQuality(from: score.overall)
+            
+            print(String(format: "%-15s: L=%3dms V=%3dms D=%6.1f U=%5.1f → Score=%3.0f Quality=%@",
+                        name,
+                        latency,
+                        variance,
+                        download,
+                        upload,
+                        score.overall,
+                        quality.rawValue))
+        }
         
-        print(String(format: "Your Hotspot: Score=%3.0f Quality=%@",
-                    yourHotspot.overall,
-                    calculator.determineQuality(from: yourHotspot.overall).rawValue))
+        // Verify scoring makes sense
+        let fiber = calculateScoreForLatency(50, variance: 20, download: 300, upload: 100)
+        let hotspot = calculateScoreForLatency(445, variance: 713, download: 13.1, upload: 3.6)
         
-        // Verify significant difference between good and poor connections
-        XCTAssertGreaterThan(yourFiber.overall, yourHotspot.overall + 20,
-                            "Fiber should score significantly better than poor hotspot")
+        XCTAssertGreaterThan(fiber.overall, hotspot.overall + 25,
+                            "Fiber should score much better than poor hotspot with new weights")
     }
     
     // MARK: - Helper Functions

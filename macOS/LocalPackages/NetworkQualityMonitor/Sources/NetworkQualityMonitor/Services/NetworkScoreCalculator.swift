@@ -25,11 +25,12 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
     // MARK: - Constants
     
     private enum Constants {
-        // Score weights optimized for BROWSER PERFORMANCE testing decisions
-        static let httpResponseWeight = 0.50  // Critical - page load latency & consistency  
-        static let bandwidthWeight = 0.35     // Important - resource download speed
-        static let dnsWeight = 0.10           // Moderate - initial page load only (cached after)
-        static let bufferBloatWeight = 0.05   // Minor - less relevant for browsing vs real-time apps
+        // Score weights optimized for REAL BROWSER EXPERIENCE
+        // Based on analysis: latency dominates, bandwidth sufficient at 10+ Mbps
+        static let httpResponseWeight = 0.60  // CRITICAL - latency dominates browser experience
+        static let bandwidthWeight = 0.25     // MODERATE - diminishing returns above 15 Mbps
+        static let dnsWeight = 0.10           // LOW - only affects first visit (then cached)
+        static let bufferBloatWeight = 0.05   // MINIMAL - affects video calls more than browsing
         
         // Bandwidth sub-weights (optimized for browsing - download much more important)
         static let downloadWeight = 0.85    // Critical - page resources, images, JS, CSS
@@ -73,21 +74,29 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
         static let variancePoorThreshold = 200.0      // 100-200ms std dev: High variance
         static let varianceVeryPoorThreshold = 400.0  // >200ms std dev: Severe instability
         
-        // Download speed thresholds (Mbps)
-        static let downloadExcellent = 100.0
-        static let downloadVeryGood = 50.0
-        static let downloadGood = 25.0
-        static let downloadFair = 10.0
-        static let downloadBelowAverage = 5.0
-        static let downloadPoor = 2.0
+        // Download speed thresholds (Mbps) - Based on real browsing experience
+        // Excellent: Pages load instantly, 4K streaming, multiple users
+        // Good: Smooth browsing, HD streaming perfect
+        // Fair: Basic browsing fine, HD may buffer initially
+        // Poor: Pages slow, limited to SD streaming
+        static let downloadExcellent = 100.0  // >100 Mbps - instant page loads
+        static let downloadVeryGood = 50.0    // 50-100 Mbps - very smooth
+        static let downloadGood = 25.0        // 25-50 Mbps - target for households
+        static let downloadFair = 10.0        // 10-25 Mbps - basic browsing works
+        static let downloadBelowAverage = 5.0 // 5-10 Mbps - noticeable delays
+        static let downloadPoor = 2.0         // <5 Mbps - modern web feels sluggish
         
-        // Upload speed thresholds (Mbps)
-        static let uploadExcellent = 50.0
-        static let uploadVeryGood = 25.0
-        static let uploadGood = 10.0
-        static let uploadFair = 5.0
-        static let uploadBelowAverage = 2.0
-        static let uploadPoor = 1.0
+        // Upload speed thresholds (Mbps) - Based on video calls and sharing needs
+        // Excellent: HD video calls, streaming, quick sharing
+        // Good: Video calls work well, reasonable uploads
+        // Fair: Video calls may reduce quality, slower uploads
+        // Poor: Frequent quality drops, very slow uploads
+        static let uploadExcellent = 25.0     // >25 Mbps - HD video calls, can stream
+        static let uploadVeryGood = 15.0      // 15-25 Mbps - very good experience
+        static let uploadGood = 10.0          // 10-15 Mbps - adequate for most users
+        static let uploadFair = 5.0           // 5-10 Mbps - video calls may reduce quality
+        static let uploadBelowAverage = 2.5   // 2.5-5 Mbps - noticeable limitations
+        static let uploadPoor = 1.0           // <2.5 Mbps - struggle with video calls
         
         // DNS resolution thresholds (ms)
         static let dnsExcellent = 20.0
@@ -144,11 +153,25 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
         // Calculate variance penalty
         let variancePenalty = calculateVariancePenalty(httpResponse.responseVariance)
         
+        // Additional penalty based on P95-P50 spread (if available)
+        var p95Penalty = 0.0
+        if let spread = httpResponse.latencySpread {
+            // If P95 is much higher than P50, it indicates inconsistency
+            // Spread > 200ms is problematic, > 500ms is severe
+            switch spread {
+            case ..<100: p95Penalty = 0     // Consistent
+            case 100..<200: p95Penalty = 5  // Some spikes
+            case 200..<400: p95Penalty = 10 // Significant spikes
+            case 400..<600: p95Penalty = 15 // Major inconsistency
+            default: p95Penalty = 20        // Severe inconsistency
+            }
+        }
+        
         // Calculate failure rate penalty
         let failurePenalty = httpResponse.failureRate * 50.0 // Up to 50 point penalty for failures
         
-        // Apply penalties - ensure minimum score of 0
-        let finalScore = max(0, baseScore - variancePenalty - failurePenalty)
+        // Apply all penalties - ensure minimum score of 0
+        let finalScore = max(0, baseScore - variancePenalty - p95Penalty - failurePenalty)
         
         return finalScore
     }

@@ -19,6 +19,12 @@ public struct HttpResponseResult {  // Renamed from LatencyResult
     public let sampleCount: Int
     public let p50: Double?
     public let p95: Double?
+    
+    // Computed property for P95-P50 spread (indicates consistency)
+    public var latencySpread: Double? {
+        guard let p50 = p50, let p95 = p95 else { return nil }
+        return p95 - p50
+    }
 
     public init(averageResponseTime: Double, responseVariance: Double, failureRate: Double, sampleCount: Int, p50: Double? = nil, p95: Double? = nil) {
         self.averageResponseTime = averageResponseTime

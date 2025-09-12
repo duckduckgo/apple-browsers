@@ -237,14 +237,14 @@ public class SyncErrorHandler: EventMapping<SyncError>, ObservableObject {
     }
 
     private var syncCredentialsPausedMessage: String? {
-        guard let error = getErrorType(from: currentSyncBookmarksPausedError) else { return nil }
+        guard let error = getErrorType(from: currentSyncCredentialsPausedError) else { return nil }
         switch error {
         case .credentialsCountLimitExceeded, .credentialsRequestSizeLimitExceeded:
-            return UserText.bookmarksLimitExceededDescription
-        case .badRequestBookmarks:
+            return UserText.credentialsLimitExceededDescription
+        case .badRequestCredentials:
             return UserText.syncCredentialsBadRequestErrorDescription
         default:
-            assertionFailure("Sync Bookmarks Paused error should be one of those listes")
+            assertionFailure("Sync Credentials Paused error should be one of those listed")
             return nil
         }
     }

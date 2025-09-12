@@ -65,10 +65,10 @@ public struct TestConfiguration {
             // so users in Asia get Asian servers, Europeans get EU servers, etc.
         ],
         bandwidthTestURLs: [
-            URL(string: "https://speed.cloudflare.com/__down?bytes=26214400")!,  // 25MB (reduced from 50MB)
-            URL(string: "https://proof.ovh.net/files/10Mb.dat")!,                // 10MB (reduced from 50MB)
-            URL(string: "https://speed.hetzner.de/10MB.bin")!,                   // 10MB (reduced from 50MB)
-            // Faster testing: 25MB+10MB+10MB = 45MB total (was 150MB)
+            URL(string: "https://speed.cloudflare.com/__down?bytes=52428800")!,  // 50MB
+            URL(string: "https://proof.ovh.net/files/10Mb.dat")!,                // 10MB
+            URL(string: "https://speed.hetzner.de/100MB.bin")!,                  // 100MB - will use Range header
+            // Total potential: 160MB, but we'll take best result (~100MB actual)
         ],
         uploadTestURLs: [
             URL(string: "https://speed.cloudflare.com/__up")!,
@@ -82,11 +82,11 @@ public struct TestConfiguration {
         ],
         latencySamplesPerEndpoint: 15,  // Good for stable statistics
         bandwidthRunsPerServer: 1,      // One run per server
-        uploadChunkSize: 10_485_760,    // 10MB (reduced from 20MB)
-        uploadChunkCount: 2,            // 2 x 10MB = 20MB total (was 40MB)
+        uploadChunkSize: 31_457_280,    // 30MB per test URL
+        uploadChunkCount: 1,            // Single upload per URL (faster, matches download approach)
         latencyTestTimeout: 5,
-        bandwidthTestTimeout: 15,       // Reduced for smaller files
-        uploadTestTimeout: 15,          // Reduced for smaller uploads
+        bandwidthTestTimeout: 30,       // Increased for 100MB downloads
+        uploadTestTimeout: 20,          // Increased for 30MB uploads
         connectivityCheckURL: URL(string: "https://www.apple.com/library/test/success.html")!
     )
 

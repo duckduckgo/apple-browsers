@@ -80,11 +80,12 @@ public final class BandwidthTester: BandwidthTesting {
         var bestSpeed: Double = 0
         let testData = Data(count: configuration.uploadChunkSize)
 
+        // Match download approach: test each server once, take best result
+        // This is much faster than uploading multiple chunks sequentially
         for server in configuration.uploadTestURLs {
-            let speed = await measureUpload(
+            let speed = await measureSingleUpload(
                 to: server,
                 data: testData,
-                chunks: configuration.uploadChunkCount,
                 timeout: configuration.uploadTestTimeout
             )
 
@@ -168,6 +169,32 @@ public final class BandwidthTester: BandwidthTesting {
         return 0
     }
 
+    private func measureSingleUpload(to url: URL, data: Data, timeout: TimeInterval) async -> Double {
+        var request = URLRequest(url: url)
+        request.httpMethod = Constants.httpMethodPost
+        request.timeoutInterval = timeout
+        request.setValue(Constants.applicationOctetStream, forHTTPHeaderField: Constants.contentTypeHeader)
+
+        let startTime = CFAbsoluteTimeGetCurrent()
+
+        do {
+            let (_, response) = try await session.upload(for: request, from: data)
+            let endTime = CFAbsoluteTimeGetCurrent()
+
+            if let httpResponse = response as? HTTPURLResponse,
+               200...299 ~= httpResponse.statusCode {
+                let duration = endTime - startTime
+                let speedMbps = Double(data.count) * Constants.megabitsPerByte / duration
+                return speedMbps
+            }
+        } catch {
+            // Upload failed
+        }
+
+        return 0
+    }
+    
+    // Legacy method kept for compatibility if needed
     private func measureUpload(to url: URL, data: Data, chunks: Int, timeout: TimeInterval) async -> Double {
         var request = URLRequest(url: url)
         request.httpMethod = Constants.httpMethodPost

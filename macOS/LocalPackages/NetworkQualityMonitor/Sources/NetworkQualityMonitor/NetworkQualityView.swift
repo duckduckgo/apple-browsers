@@ -170,7 +170,7 @@ public struct NetworkQualityView: View {
                         actualValue: results.bandwidth.downloadSpeedMbps,
                         metricType: .bandwidth,
                         icon: "arrow.down.circle",
-                        infoText: "25% WEIGHT - Sufficient bandwidth matters more than excess.\n\nDownloads 50MB files from CDN servers. Quick 10MB test to select best servers, then full measurement.\n\nExcellent: >100 Mbps (instant loads)\nGood: 25-100 Mbps (smooth browsing)\nFair: 10-25 Mbps (basic browsing OK)"
+                        infoText: "25% WEIGHT - Sufficient bandwidth matters more than excess.\n\nDownloads 100MB total from multiple CDN servers. Quick 10MB test to find best server, then full measurement.\n\nExcellent: >100 Mbps (instant loads)\nGood: 25-100 Mbps (smooth browsing)\nFair: 10-25 Mbps (basic browsing OK)"
                     )
 
                     MetricCard(
@@ -179,7 +179,7 @@ public struct NetworkQualityView: View {
                         actualValue: results.bandwidth.uploadSpeedMbps,
                         metricType: .bandwidth,
                         icon: "arrow.up.circle",
-                        infoText: "Part of bandwidth score (15% sub-weight).\n\nUploads 20MB chunks (2x) to test servers. Less critical for browsing, mainly affects video calls and file sharing.\n\nGood: >10 Mbps (HD video calls)\nFair: 5-10 Mbps (may reduce quality)"
+                        infoText: "Part of bandwidth score (15% sub-weight).\n\nUploads 30MB to multiple test servers, takes best result. Optimized for speed - single upload per server.\n\nGood: >10 Mbps (HD video calls)\nFair: 5-10 Mbps (may reduce quality)"
                     )
 
                     MetricCard(
@@ -193,11 +193,15 @@ public struct NetworkQualityView: View {
 
                     MetricCard(
                         title: "Response Variance",
-                        value: String(format: "%.1f ms", results.httpResponse.responseVariance),
+                        value: {
+                            let cv = (results.httpResponse.responseVariance / results.httpResponse.averageResponseTime) * 100
+                            return String(format: "%.1f ms (%.1f%%)", results.httpResponse.responseVariance, cv)
+                        }(),
                         actualValue: results.httpResponse.responseVariance,
                         metricType: .responseVariance,
                         icon: "waveform",
-                        infoText: "CRITICAL FOR SCORING - Can deduct up to 80 points!\n\nMeasures standard deviation of response times. High variance = jittery connection = poor user experience.\n\n<20ms: No penalty\n20-40ms: -15 pts\n40-80ms: -30 pts\n>80ms: -45 to -60 pts\n\nP95-P50 spread adds up to -20 pts for spikes."
+                        infoText: "CRITICAL FOR TESTING - Can deduct up to 80 points!\n\nMeasures standard deviation of response times. Scoring uses Coefficient of Variation (variance as % of mean) to fairly compare different latency ranges.\n\nA 10ms variance on 50ms latency (20% CV) scores worse than 10ms variance on 200ms latency (5% CV).\n\nImpact on test iterations:\n• <10% CV: ~30 iterations\n• 20% CV: ~100 iterations\n• 40% CV: ~400 iterations\n• >60% CV: 1000+ iterations",
+                        averageResponseTime: results.httpResponse.averageResponseTime
                     )
 
                     MetricCard(
@@ -243,8 +247,19 @@ struct MetricCard: View {
     let metricType: MetricType
     let icon: String
     let infoText: String
+    let averageResponseTime: Double? // For CV calculation in variance
 
     @State private var showInfo = false
+
+    init(title: String, value: String, actualValue: Double, metricType: MetricType, icon: String, infoText: String, averageResponseTime: Double? = nil) {
+        self.title = title
+        self.value = value
+        self.actualValue = actualValue
+        self.metricType = metricType
+        self.icon = icon
+        self.infoText = infoText
+        self.averageResponseTime = averageResponseTime
+    }
 
     enum MetricType {
         case httpResponse      // Lower is better (ms)
@@ -362,12 +377,17 @@ struct MetricCard: View {
         case .dns:
             if actualValue < 20 { return "Excellent" } else if actualValue < 50 { return "Good" } else if actualValue < 100 { return "Fair" } else { return "Poor" }
         case .responseVariance:
-            // Tighter thresholds for modern connections
-            // Good connections should be consistent
-            if actualValue < 20 { return "Excellent" }      // <20ms: Excellent consistency
-            else if actualValue < 40 { return "Good" }      // 20-40ms: Acceptable
-            else if actualValue < 80 { return "Fair" }      // 40-80ms: High variance
-            else { return "Poor" }                          // >80ms: Terrible jitter
+            // Use CV-based thresholds when average response time is available
+            if let avgResponseTime = averageResponseTime, avgResponseTime > 0 {
+                let cv = (actualValue / avgResponseTime) * 100
+                if cv < 10 { return "Excellent" }      // <10% CV
+                else if cv < 20 { return "Good" }      // 10-20% CV
+                else if cv < 40 { return "Fair" }      // 20-40% CV
+                else { return "Poor" }                 // >40% CV
+            } else {
+                // Fallback to absolute thresholds if no average response time
+                if actualValue < 10 { return "Excellent" } else if actualValue < 20 { return "Good" } else if actualValue < 40 { return "Fair" } else { return "Poor" }
+            }
         case .bufferBloat:
             switch value {
             case "A": return "Excellent"

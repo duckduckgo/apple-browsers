@@ -1,14 +1,14 @@
 # NetworkQualityMonitor
 
-A network quality testing framework that provides pre-flight network connectivity and performance checks. This package helps ensure optimal browser performance by testing network conditions.
+A network quality testing framework optimized for real-world browser performance evaluation. This package provides accurate pre-flight connectivity checks to guide performance testing decisions.
 
 ## Overview
 
-NetworkQualityMonitor performs a suite of network tests to assess:
-- **HTTP Response Times** - Latency measurements across multiple endpoints
-- **Bandwidth** - Download and upload speed testing
-- **DNS Resolution** - Domain name resolution performance
-- **Buffer Bloat** - Network congestion under load
+NetworkQualityMonitor performs browser-centric network tests with realistic scoring:
+- **HTTP Response Times (60% weight)** - Latency and consistency measurements with variance penalties
+- **Bandwidth (25% weight)** - Download/upload speeds with browser-appropriate thresholds  
+- **DNS Resolution (10% weight)** - First-visit impact only (cached thereafter)
+- **Buffer Bloat (5% weight)** - Minimal impact on typical browsing
 
 ## Architecture
 
@@ -31,11 +31,11 @@ Main orchestrator that coordinates all test services and provides progress repor
 ### Test Services
 
 #### HttpResponseTester
-- Measures HTTP HEAD request latency across multiple endpoints
-- Takes 15 samples per endpoint by default
-- Calculates accurate median values (properly handles even/odd sample counts)
-- Calculates percentiles (P50, P95) and variance
-- Uses best-performing site with penalties for slower sites
+- **Smart Testing**: Warm-up phase discards first "cold" request to each endpoint
+- **Interleaved Sampling**: Avoids consecutive requests to same endpoint for unbiased results
+- **Dual Variance Tracking**: Standard deviation + P95-P50 spread for consistency assessment
+- **Geographic Reality**: Uses median of all sites to reflect actual cross-region latencies
+- **Percentile Analysis**: Tracks P50 (typical) and P95 (worst-case) latencies
 
 #### BandwidthTester  
 - Downloads test files to measure download speed
@@ -55,9 +55,12 @@ Main orchestrator that coordinates all test services and provides progress repor
 - Helps identify network congestion issues
 
 ### NetworkScoreCalculator
-- Combines individual test results into overall score (0-100)
-- Determines network quality rating: Excellent/Good/Fair/Poor
-- Weights different metrics appropriately
+- **Browser-Optimized Weights**: 60% latency, 25% bandwidth, 10% DNS, 5% buffer bloat
+- **Variance Penalties**: Up to 75 points deducted for inconsistent connections
+- **Realistic Thresholds**: 
+  - Latency: <150ms excellent, 150-250ms good, 250-400ms fair
+  - Download: 25+ Mbps good, 10-25 Mbps fair (browsing, not streaming)
+  - Upload: 10+ Mbps good, 5-10 Mbps fair (video calls)
 
 ## Usage
 
@@ -121,12 +124,26 @@ Default configuration includes:
 
 ## Network Quality Ratings
 
-| Score | Quality | Emoji | Description |
-|-------|---------|-------|-------------|
-| 80-100 | Excellent | 🟢 | Optimal performance |
-| 60-79 | Good | 🟡 | Good for most tasks |
-| 40-59 | Fair | 🟠 | May experience issues |
-| 0-39 | Poor | 🔴 | Significant issues likely |
+| Score | Quality | Emoji | Browser Experience |
+|-------|---------|-------|--------------------|
+| 80-100 | Excellent | 🟢 | Instant page loads, smooth experience |
+| 60-79 | Good | 🟡 | Normal browsing, HD streaming works |
+| 40-59 | Fair | 🟠 | Basic browsing OK, may see delays |
+| 0-39 | Poor | 🔴 | Sluggish experience, frequent issues |
+
+## Scoring Algorithm Details
+
+### Latency Scoring (60% of total)
+- **Base Score**: Response time thresholds
+- **Variance Penalty**: 0-55 points based on standard deviation
+- **P95 Penalty**: 0-20 points based on P95-P50 spread
+- **Failure Penalty**: Up to 50 points for request failures
+
+### Example Scores
+- **Fiber (50ms, low variance)**: ~85-95 (Excellent)
+- **Cable (120ms, moderate variance)**: ~70-80 (Good)
+- **DSL (200ms, higher variance)**: ~50-65 (Fair)
+- **Poor Mobile (400ms+, high variance)**: ~20-40 (Poor)
 
 ## Testing
 

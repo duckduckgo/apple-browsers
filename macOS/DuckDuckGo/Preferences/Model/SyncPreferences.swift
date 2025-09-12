@@ -106,6 +106,22 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         return syncPausedStateManager.syncCredentialsPausedMessageData?.action
     }
 
+    var syncCreditCardsPausedTitle: String? {
+        return syncPausedStateManager.syncCreditCardsPausedMessageData?.title
+    }
+
+    var syncCreditCardsPausedMessage: String? {
+        return syncPausedStateManager.syncCreditCardsPausedMessageData?.description
+    }
+
+    var syncCreditCardsPausedButtonTitle: String? {
+        return syncPausedStateManager.syncCreditCardsPausedMessageData?.buttonTitle
+    }
+
+    var syncCreditCardsPausedButtonAction: (() -> Void)? {
+        return syncPausedStateManager.syncCreditCardsPausedMessageData?.action
+    }
+
     struct Consts {
         static let syncPausedStateChanged = Notification.Name("com.duckduckgo.app.SyncPausedStateChanged")
     }
@@ -137,9 +153,11 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     @Published var isSyncPaused: Bool = false
     @Published var isSyncBookmarksPaused: Bool = false
     @Published var isSyncCredentialsPaused: Bool = false
+    @Published var isSyncCreditCardsPaused: Bool = false
 
     @Published var invalidBookmarksTitles: [String] = []
     @Published var invalidCredentialsTitles: [String] = []
+    @Published var invalidCreditCardsTitles: [String] = []
 
     private var shouldRequestSyncOnFavoritesOptionChange: Bool = true
 
@@ -169,6 +187,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     private let syncService: DDGSyncing
     private let syncBookmarksAdapter: SyncBookmarksAdapter
     private let syncCredentialsAdapter: SyncCredentialsAdapter
+    private let syncCreditCardsAdapter: SyncCreditCardsAdapter?
     private let appearancePreferences: AppearancePreferences
     private var cancellables = Set<AnyCancellable>()
 
@@ -178,6 +197,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         syncService: DDGSyncing,
         syncBookmarksAdapter: SyncBookmarksAdapter,
         syncCredentialsAdapter: SyncCredentialsAdapter,
+        syncCreditCardsAdapter: SyncCreditCardsAdapter?,
         appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
         syncPausedStateManager: any SyncPausedStateManaging,
@@ -187,6 +207,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         self.syncService = syncService
         self.syncBookmarksAdapter = syncBookmarksAdapter
         self.syncCredentialsAdapter = syncCredentialsAdapter
+        self.syncCreditCardsAdapter = syncCreditCardsAdapter
         self.appearancePreferences = appearancePreferences
         self.syncFeatureFlags = syncService.featureFlags
         self.syncPausedStateManager = syncPausedStateManager
@@ -208,6 +229,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         self.isSyncPaused = syncPausedStateManager.isSyncPaused
         self.isSyncBookmarksPaused = syncPausedStateManager.isSyncBookmarksPaused
         self.isSyncCredentialsPaused = syncPausedStateManager.isSyncCredentialsPaused
+        self.isSyncCreditCardsPaused = syncPausedStateManager.isSyncCreditCardsPaused
     }
 
     private func updateInvalidObjects() {
@@ -217,6 +239,13 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
 
         let invalidCredentialsObjects: [String] = (try? syncCredentialsAdapter.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []
         invalidCredentialsTitles = invalidCredentialsObjects.map({ $0.truncated(length: 15) })
+
+        if let syncCreditCardsAdapter = syncCreditCardsAdapter {
+            let invalidCreditCardsObjects: [String] = (try? syncCreditCardsAdapter.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []
+            invalidCreditCardsTitles = invalidCreditCardsObjects
+        } else {
+            invalidCreditCardsTitles = []
+        }
     }
 
     private func setUpObservables() {
@@ -263,6 +292,14 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
         let navigationViewController = parentWindowController.mainViewController.navigationBarViewController
         navigationViewController.showPasswordManagerPopover(selectedCategory: .allItems, source: .sync)
+    }
+
+    /// Presents the password manager interface for managing credit cards
+    @MainActor
+    func manageCreditCards() {
+        guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
+        let navigationViewController = parentWindowController.mainViewController.navigationBarViewController
+        navigationViewController.showPasswordManagerPopover(selectedCategory: .cards, source: .sync)
     }
 
     private func setUpSyncOptionsObservables(apperancePreferences: AppearancePreferences) {

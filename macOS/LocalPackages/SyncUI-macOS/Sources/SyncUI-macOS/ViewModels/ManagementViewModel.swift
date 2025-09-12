@@ -31,6 +31,7 @@ public protocol ManagementViewModel: ObservableObject {
     var isSyncPaused: Bool { get }
     var isSyncBookmarksPaused: Bool { get }
     var isSyncCredentialsPaused: Bool { get }
+    var isSyncCreditCardsPaused: Bool { get }
     var syncPausedTitle: String? { get }
     var syncPausedMessage: String? { get }
     var syncPausedButtonTitle: String? { get }
@@ -43,9 +44,14 @@ public protocol ManagementViewModel: ObservableObject {
     var syncCredentialsPausedMessage: String? { get }
     var syncCredentialsPausedButtonTitle: String? { get }
     var syncCredentialsPausedButtonAction: (() -> Void)? { get }
+    var syncCreditCardsPausedTitle: String? { get }
+    var syncCreditCardsPausedMessage: String? { get }
+    var syncCreditCardsPausedButtonTitle: String? { get }
+    var syncCreditCardsPausedButtonAction: (() -> Void)? { get }
 
     var invalidBookmarksTitles: [String] { get }
     var invalidCredentialsTitles: [String] { get }
+    var invalidCreditCardsTitles: [String] { get }
 
     var devices: [SyncDevice] { get }
     var isFaviconsFetchingEnabled: Bool { get set }
@@ -60,6 +66,7 @@ public protocol ManagementViewModel: ObservableObject {
 
     func manageBookmarks()
     func manageLogins()
+    func manageCreditCards()
 
     func syncWithAnotherDevicePressed() async
     func syncWithServerPressed() async

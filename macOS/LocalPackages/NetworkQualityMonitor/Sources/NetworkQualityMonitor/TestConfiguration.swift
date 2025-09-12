@@ -65,10 +65,10 @@ public struct TestConfiguration {
             // so users in Asia get Asian servers, Europeans get EU servers, etc.
         ],
         bandwidthTestURLs: [
-            URL(string: "https://speed.cloudflare.com/__down?bytes=104857600")!,  // 100MB
-            URL(string: "https://proof.ovh.net/files/100Mb.dat")!,
-            URL(string: "https://speed.hetzner.de/100MB.bin")!,
-            URL(string: "http://speedtest.tele2.net/100MB.zip")!
+            URL(string: "https://speed.cloudflare.com/__down?bytes=52428800")!,  // 50MB (reduced from 100MB)
+            URL(string: "https://proof.ovh.net/files/50Mb.dat")!,                // 50MB (reduced from 100MB)
+            URL(string: "https://speed.hetzner.de/50MB.bin")!,                   // 50MB (reduced from 100MB)
+            // 50MB gives ~4 seconds at 100 Mbps, ~16 seconds at 25 Mbps - good balance
         ],
         uploadTestURLs: [
             URL(string: "https://speed.cloudflare.com/__up")!,
@@ -80,13 +80,13 @@ public struct TestConfiguration {
             "amazon.com", "microsoft.com", "facebook.com", "netflix.com",
             "github.com", "stackoverflow.com", "wikipedia.org"
         ],
-        latencySamplesPerEndpoint: 15,  // Increased for more stable statistics
-        bandwidthRunsPerServer: 2,
-        uploadChunkSize: 52_428_800,  // 50MB
-        uploadChunkCount: 2,
+        latencySamplesPerEndpoint: 15,  // Good for stable statistics
+        bandwidthRunsPerServer: 1,      // Reduced from 2 - one run is enough with 50MB files
+        uploadChunkSize: 20_971_520,    // 20MB (reduced from 50MB)
+        uploadChunkCount: 2,            // 2 x 20MB = 40MB total (was 100MB)
         latencyTestTimeout: 5,
-        bandwidthTestTimeout: 30,
-        uploadTestTimeout: 45,
+        bandwidthTestTimeout: 20,       // Reasonable for 50MB files
+        uploadTestTimeout: 25,          // Reasonable for 40MB total upload
         connectivityCheckURL: URL(string: "https://www.apple.com/library/test/success.html")!
     )
 

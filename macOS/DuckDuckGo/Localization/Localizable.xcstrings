@@ -2616,6 +2616,42 @@
         }
       }
     },
+    "alert.sync-credit-cards-bad-data-error-description" : {
+      "comment" : "Description for alert shown when sync error occurs because of bad data",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some credit cards are formatted incorrectly or too long and were not synced."
+          }
+        }
+      }
+    },
+    "alert.sync-credit-cards-paused-description" : {
+      "comment" : "Description for alert shown when sync credit cards paused for too many items",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You've reached the maximum number of credit cards. Please delete some to resume sync."
+          }
+        }
+      }
+    },
+    "alert.sync-credit-cards-paused-title" : {
+      "comment" : "Title for alert shown when sync credit cards paused for too many items",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Credit Cards Sync is Paused"
+          }
+        }
+      }
+    },
     "alert.sync-error-action" : {
       "comment" : "Sync error alert action button title, takes the user to the sync settings page.",
       "extractionState" : "extracted_with_value",
@@ -69749,7 +69785,7 @@
     },
     "prefrences.sync.bookmarks-limit-exceeded-action" : {
       "comment" : "Button title for sync bookmarks limits exceeded warning to go to manage bookmarks",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -69929,7 +69965,7 @@
     },
     "prefrences.sync.credentials-limit-exceeded-action" : {
       "comment" : "Button title for sync credentials limits exceeded warning to go to manage passwords",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -70103,6 +70139,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Некоторые пароли не синхронизируются из-за неверного формата или превышения ограничений по длине."
+          }
+        }
+      }
+    },
+    "prefrences.sync.credit-cards-limit-exceeded-description" : {
+      "comment" : "Description for sync credit cards limits exceeded warning",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You've reached the maximum number of credit cards. Please delete some to resume sync."
+          }
+        }
+      }
+    },
+    "prefrences.sync.credit-cards.bad.request.description" : {
+      "comment" : "Description of incorrectly formatted data error when syncing.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some credit cards are formatted incorrectly or too long and were not synced."
           }
         }
       }

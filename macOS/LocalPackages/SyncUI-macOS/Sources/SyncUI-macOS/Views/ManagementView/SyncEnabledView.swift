@@ -35,11 +35,17 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
             if model.isSyncCredentialsPaused {
                 syncPaused(for: .credentials)
             }
+            if model.isSyncCreditCardsPaused {
+                syncPaused(for: .creditCards)
+            }
             if !model.invalidBookmarksTitles.isEmpty {
                 syncHasInvalidItems(for: .bookmarks)
             }
             if !model.invalidCredentialsTitles.isEmpty {
                 syncHasInvalidItems(for: .credentials)
+            }
+            if !model.invalidCreditCardsTitles.isEmpty {
+                syncHasInvalidItems(for: .creditCards)
             }
         }
 
@@ -112,6 +118,8 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 return model.syncBookmarksPausedTitle
             case .credentials:
                 return model.syncCredentialsPausedTitle
+            case .creditCards:
+                return model.syncCreditCardsPausedTitle
             }
         }
         var message: String? {
@@ -120,6 +128,8 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 return model.syncBookmarksPausedMessage
             case .credentials:
                 return model.syncCredentialsPausedMessage
+            case .creditCards:
+                return model.syncCreditCardsPausedMessage
             }
         }
         var buttonTitle: String? {
@@ -128,6 +138,8 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 return model.syncBookmarksPausedButtonTitle
             case .credentials:
                 return model.syncCredentialsPausedButtonTitle
+            case .creditCards:
+                return model.syncCreditCardsPausedButtonTitle
             }
         }
 
@@ -152,6 +164,8 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 return UserText.invalidBookmarksPresentTitle
             case .credentials:
                 return UserText.invalidCredentialsPresentTitle
+            case .creditCards:
+                return UserText.invalidCreditCardsPresentTitle
             }
         }
         var description: String {
@@ -165,6 +179,12 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 assert(!model.invalidCredentialsTitles.isEmpty)
                 let firstInvalidCredentialTitle = model.invalidCredentialsTitles.first ?? ""
                 return UserText.invalidCredentialsPresentDescription(firstInvalidCredentialTitle, numberOfInvalidItems: model.invalidCredentialsTitles.count)
+
+            case .creditCards:
+                assert(!model.invalidCreditCardsTitles.isEmpty)
+                let firstInvalidCreditCardTitle = model.invalidCreditCardsTitles.first ?? ""
+                return UserText.invalidCreditCardsPresentDescription(firstInvalidCreditCardTitle, numberOfInvalidItems: model.invalidCreditCardsTitles.count)
+
             }
         }
         var actionTitle: String {
@@ -173,6 +193,8 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 return UserText.bookmarksLimitExceededAction
             case .credentials:
                 return UserText.credentialsLimitExceededAction
+            case .creditCards:
+                return UserText.creditCardsLimitExceededAction
             }
         }
         SyncWarningMessage(title: title, message: description, buttonTitle: actionTitle) {
@@ -181,6 +203,8 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 model.manageBookmarks()
             case .credentials:
                 model.manageLogins()
+            case .creditCards:
+                model.manageCreditCards()
             }
         }
     }
@@ -201,5 +225,6 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
     enum LimitedItemType {
         case bookmarks
         case credentials
+        case creditCards
     }
 }

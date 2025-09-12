@@ -61,6 +61,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
     lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
 
+    private weak var contentConainerViewLeadingConstraint: NSLayoutConstraint?
+    private weak var contentConainerViewTrailingConstraint: NSLayoutConstraint?
+
     // MARK: - Manager Components
 
     private var swipeContainerManager: SwipeContainerManager?
@@ -126,6 +129,32 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     func setLogoYOffset(_ offset: CGFloat) {
         daxLogoManager.containerYCenterConstraint?.constant = offset
+    }
+
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+
+        adjustLayoutForViewSize(view.bounds.size)
+    }
+
+    private func adjustLayoutForViewSize(_ size: CGSize) {
+        
+        let isPhone = UIDevice.current.userInterfaceIdiom == .phone
+        let requiresCompactVerticalLayout = isPhone && size.width > size.height
+
+        let horizontalMargin: CGFloat = requiresCompactVerticalLayout ? Constants.horizontalMarginForCompactLayout : 0
+        self.contentConainerViewLeadingConstraint?.constant = horizontalMargin
+        self.contentConainerViewTrailingConstraint?.constant = -horizontalMargin
+
+        self.navigationActionBarManager?.navigationActionBarViewController?.isShowingGradient = requiresCompactVerticalLayout
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+
+        coordinator.animate { _ in
+            self.adjustLayoutForViewSize(size)
+            self.view.layoutIfNeeded()
+        }
     }
 
     // MARK: - Private Methods
@@ -343,5 +372,11 @@ extension OmniBarEditingStateViewController: NavigationActionBarManagerDelegate 
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             switchBarHandler.submitText(currentText)
         }
+    }
+}
+
+private extension OmniBarEditingStateViewController {
+    struct Constants {
+        static let horizontalMarginForCompactLayout: CGFloat = 64
     }
 }

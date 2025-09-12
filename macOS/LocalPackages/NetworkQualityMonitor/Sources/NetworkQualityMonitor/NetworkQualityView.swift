@@ -147,6 +147,7 @@ public struct NetworkQualityView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
+                    .help("Browser-optimized scoring:\n60% HTTP Response (latency)\n25% Bandwidth\n10% DNS\n5% Buffer Bloat")
                 }
                 .padding()
                 .background(Color.gray.opacity(0.1))
@@ -160,7 +161,7 @@ public struct NetworkQualityView: View {
                         actualValue: results.httpResponse.averageResponseTime,
                         metricType: .httpResponse,
                         icon: "speedometer",
-                        infoText: "Calculated by testing websites with HEAD requests.\n\n Takes the best-performing site's median (P50) as baseline, then adjusts based on how much worse other sites perform (P75 multiplier). \n\nThis gives a geography-adjusted score. \n\n This test renders more real-world results compared to basic ICMP based Latency tests."
+                        infoText: "60% WEIGHT - Most critical for browser experience.\n\nTests multiple CDN endpoints globally with warm-up phase and interleaved sampling. Takes MEDIAN of all site medians to reflect geographic reality.\n\nIncludes penalties for variance (up to 55 pts) and P95-P50 spread (up to 20 pts).\n\nExcellent: <150ms, Good: 150-250ms, Fair: 250-400ms"
                     )
 
                     MetricCard(
@@ -169,7 +170,7 @@ public struct NetworkQualityView: View {
                         actualValue: results.bandwidth.downloadSpeedMbps,
                         metricType: .bandwidth,
                         icon: "arrow.down.circle",
-                        infoText: "Downloads 100MB files from multiple CDN servers (Cloudflare, OVH, Hetzner, Tele2). Tests each server briefly to find the fastest, then performs sustained downloads. Takes the best result to show real-world achievable throughput."
+                        infoText: "25% WEIGHT - Sufficient bandwidth matters more than excess.\n\nDownloads 50MB files from CDN servers. Quick 10MB test to select best servers, then full measurement.\n\nExcellent: >100 Mbps (instant loads)\nGood: 25-100 Mbps (smooth browsing)\nFair: 10-25 Mbps (basic browsing OK)"
                     )
 
                     MetricCard(
@@ -178,7 +179,7 @@ public struct NetworkQualityView: View {
                         actualValue: results.bandwidth.uploadSpeedMbps,
                         metricType: .bandwidth,
                         icon: "arrow.up.circle",
-                        infoText: "Uploads 50MB chunks to multiple test servers (Cloudflare, httpbin, speedtest.net). Measures sustained upload throughput. Asymmetric speeds are normal for most connections."
+                        infoText: "Part of bandwidth score (15% sub-weight).\n\nUploads 20MB chunks (2x) to test servers. Less critical for browsing, mainly affects video calls and file sharing.\n\nGood: >10 Mbps (HD video calls)\nFair: 5-10 Mbps (may reduce quality)"
                     )
 
                     MetricCard(
@@ -187,7 +188,7 @@ public struct NetworkQualityView: View {
                         actualValue: results.dns.averageResolutionTime,
                         metricType: .dns,
                         icon: "globe",
-                        infoText: "Tests DNS resolution speed for popular domains (DuckDuckGo, Google, Amazon, etc.) using system's DNS resolver. Measures average resolution time. High values indicate slow DNS servers or network issues."
+                        infoText: "10% WEIGHT - Only affects first page visit (cached after).\n\nResolves popular domains using system DNS. Modern browsers cache DNS and use persistent DNS-over-HTTPS connections.\n\nMinimal impact on repeat visits."
                     )
 
                     MetricCard(
@@ -196,7 +197,7 @@ public struct NetworkQualityView: View {
                         actualValue: results.httpResponse.responseVariance,
                         metricType: .responseVariance,
                         icon: "waveform",
-                        infoText: "Measures response consistency using Coefficient of Variation (CV = StdDev/Mean) for each site. Takes P95 of all site CVs to capture worst-case. \n\nA CV of 10% means responses vary by ±10% from average. Values shown in ms (CV × adjusted response time). \n\nLow values = consistent = reliable performance tests. High values = more variable."
+                        infoText: "CRITICAL FOR SCORING - Can deduct up to 75 points!\n\nMeasures standard deviation of response times. High variance = jittery connection = poor user experience.\n\n<50ms: No penalty\n50-100ms: -10 pts\n100-200ms: -25 pts\n>200ms: -40 to -55 pts\n\nAlso tracks P95-P50 spread for spike detection."
                     )
 
                     MetricCard(
@@ -205,7 +206,7 @@ public struct NetworkQualityView: View {
                         actualValue: 0,  // Not used for grade-based metric
                         metricType: .bufferBloat,
                         icon: "waveform.path.ecg",
-                        infoText: "Measures latency increase when network is saturated. Runs HEAD requests during a large download to detect queuing delays. Grade based on absolute increase: A (<50ms), B (50-100ms), C (100-200ms), D (200-400ms), F (>400ms). Lower grades mean less buffer bloat impact on real-time apps."
+                        infoText: "5% WEIGHT - Minimal impact on browsing.\n\nMeasures latency increase under load. More relevant for video calls than web browsing.\n\nGrades: A (<50% increase), B (50-100%), C (100-200%), D (200-400%), F (>400%)\n\nMost browsing unaffected by buffer bloat."
                     )
                 }
 

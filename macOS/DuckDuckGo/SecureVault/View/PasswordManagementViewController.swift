@@ -248,9 +248,27 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     private func bindSyncDidFinish() -> AnyCancellable? {
-        NSApp.delegateTyped.syncDataProviders?.credentialsAdapter.syncDidCompletePublisher
+        guard let syncDataProviders = NSApp.delegateTyped.syncDataProviders else {
+            return nil
+        }
+
+        var syncPublishers: [AnyPublisher<Void, Never>] = []
+        syncPublishers.append(
+            syncDataProviders.credentialsAdapter.syncDidCompletePublisher
+                .eraseToAnyPublisher()
+        )
+
+        if let creditCardsAdapter = syncDataProviders.creditCardsAdapter {
+            syncPublishers.append(
+                creditCardsAdapter.syncDidCompletePublisher
+                    .eraseToAnyPublisher()
+            )
+        }
+
+        return Publishers.MergeMany(syncPublishers)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
+                Logger.sync.debug("Sync completed, refreshing data")
                 self?.refreshData()
             }
     }
@@ -687,6 +705,7 @@ final class PasswordManagementViewController: NSViewController {
                 syncModelsOnCreditCard(storedCard)
             }
             postChange()
+            requestSync()
 
         } catch {
             PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
@@ -772,6 +791,7 @@ final class PasswordManagementViewController: NSViewController {
             case .alertFirstButtonReturn:
                 do {
                     try self.secureVault?.deleteCreditCardFor(cardId: id)
+                    self.requestSync()
                     self.refreshData()
                 } catch {
                     PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))

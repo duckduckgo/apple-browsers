@@ -41,22 +41,28 @@ public struct TestConfiguration {
     /// Default configuration with standard test endpoints
     public static let standard = TestConfiguration(
         latencyTestURLs: [
-            // We use full URLs here as latency is calculating by using HEAD requests, which better resembles real world use.
-
-            // DuckDuckGo endpoints - most important for DDG browser
+            // IMPORTANT: Using globally distributed CDN endpoints that automatically
+            // route to the nearest edge server. This gives region-appropriate latency
+            // measurements regardless of user location (Asia, Europe, Americas, etc.)
+            
+            // DuckDuckGo - Critical for DDG browser experience
             URL(string: "https://duckduckgo.com/")!,
-            // Common user destinations
-            URL(string: "https://www.youtube.com/")!,
-            URL(string: "https://www.facebook.com/")!,
-            URL(string: "https://www.amazon.com/")!,
-            URL(string: "https://www.reddit.com/")!,
-            URL(string: "https://www.twitter.com/")!,
-            URL(string: "https://www.netflix.com/")!,
-            URL(string: "https://www.github.com/")!,
-
-            // CDNs and infrastructure
-            URL(string: "https://www.cloudflare.com/")!,
-            URL(string: "https://aws.amazon.com/")!
+            URL(string: "https://improving.duckduckgo.com/t/test")!,  // DDG tracking endpoint
+            
+            // Global CDN endpoints - these have edge servers worldwide
+            URL(string: "https://www.cloudflare.com/cdn-cgi/trace")!,  // CloudFlare (300+ locations)
+            URL(string: "https://www.fastly.com/")!,  // Fastly CDN (80+ POPs)
+            URL(string: "https://cloudfront.amazonaws.com/")!,  // AWS CloudFront (450+ POPs)
+            URL(string: "https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js")!,  // Google CDN
+            URL(string: "https://cdn.jsdelivr.net/npm/vue/dist/vue.js")!,  // jsDelivr CDN
+            
+            // Major platforms with global CDN presence
+            URL(string: "https://www.youtube.com/")!,  // Google's global CDN
+            URL(string: "https://www.facebook.com/")!,  // Meta's global CDN
+            URL(string: "https://api.github.com/")!,  // GitHub's API (Azure CDN)
+            
+            // Note: These CDNs automatically serve from the nearest geographic location,
+            // so users in Asia get Asian servers, Europeans get EU servers, etc.
         ],
         bandwidthTestURLs: [
             URL(string: "https://speed.cloudflare.com/__down?bytes=104857600")!,  // 100MB

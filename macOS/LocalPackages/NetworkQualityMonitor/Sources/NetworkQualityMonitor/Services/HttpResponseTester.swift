@@ -171,18 +171,20 @@ public final class HttpResponseTester: HttpResponseTesting {
 
     private func calculateAdjustedResponseTime(bestSiteStats: SiteStatistics,
                                               allSiteStats: [SiteStatistics]) -> Double {
-        // Start with best site's median as baseline
-        var adjustedTime = bestSiteStats.median
-
-        // Add penalty based on how much worse other sites are
-        for stats in allSiteStats {
-            if stats.median > bestSiteStats.median {
-                let p75 = stats.median * Constants.percentile75Multiplier
-                adjustedTime += (p75 - bestSiteStats.median) * Constants.penaltyMultiplier
-            }
-        }
-
-        return adjustedTime
+        // Calculate the MEDIAN of all site medians
+        // This properly reflects geographic latency reality:
+        // - User in US → US sites: ~30-50ms typical
+        // - User in Asia → US sites: ~150-200ms typical  
+        // - User in Australia → US sites: ~200-250ms typical
+        // - User in Europe → US sites: ~80-120ms typical
+        //
+        // Using median ensures we get the "typical" latency experience
+        // and naturally reflects geographic distance to servers
+        
+        let allMedians = allSiteStats.map { $0.median }
+        let overallMedian = NetworkTestConstants.median(of: allMedians) ?? bestSiteStats.median
+        
+        return overallMedian
     }
 
     private func percentile(_ sorted: [Double], _ p: Double) -> Double? {

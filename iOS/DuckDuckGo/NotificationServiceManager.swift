@@ -34,16 +34,11 @@ final class NotificationServiceManager: NSObject, NotificationServiceManaging {
         super.init()
     }
     
-    /// https://stackoverflow.com/questions/73750724/how-can-usernotificationcenter-didreceive-cause-a-crash-even-with-nothing-in
-    /// TL;DR: The async UNUserNotificationCenterDelegate methods (`willPresent`, `didReceive`) can be invoked off the main thread, leading to occasional crashes during app activation.
-    /// Marking this delegate @MainActor ensures they always run on the main thread. This appears to be an iOS bug.
-    @MainActor
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
         return .banner
     }
-    
-    @MainActor
+
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse) async {
         
@@ -54,7 +49,7 @@ final class NotificationServiceManager: NSObject, NotificationServiceManaging {
         case InactivityNotificationSchedulerService.Constants.notificationIdentifier:
             handleInactivityNotification(for: response)
         case let raw where NetworkProtectionNotificationIdentifier(rawValue: raw) != nil:
-            handleVPNNotification()
+            await handleVPNNotification()
         default:
             break
         }

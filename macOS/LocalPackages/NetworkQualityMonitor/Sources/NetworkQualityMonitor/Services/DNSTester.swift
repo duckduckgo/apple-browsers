@@ -1,0 +1,63 @@
+//
+//  DNSTester.swift
+//  NetworkQualityMonitor
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+
+/// Service responsible for DNS testing
+public final class DNSTester: DNSTesting {
+    
+    public func performTest(configuration: TestConfiguration,
+                    progressCallback: ((String) -> Void)? = nil) async throws -> DNSResult {
+        progressCallback?("Testing DNS resolution...")
+        
+        var resolutionTimes: [Double] = []
+        var failures = 0
+        let totalTests = configuration.dnsTestDomains.count
+        
+        for domain in configuration.dnsTestDomains {
+            let startTime = CFAbsoluteTimeGetCurrent()
+            
+            let host = CFHostCreateWithName(nil, domain as CFString).takeRetainedValue()
+            var error: CFStreamError = CFStreamError()
+            
+            if CFHostStartInfoResolution(host, .addresses, &error) {
+                let endTime = CFAbsoluteTimeGetCurrent()
+                let resolutionTime = (endTime - startTime) * 1000 // Convert to ms
+                resolutionTimes.append(resolutionTime)
+            } else {
+                failures += 1
+            }
+            
+            // Small delay between DNS queries
+            try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+        }
+        
+        guard !resolutionTimes.isEmpty else {
+            throw NetworkError.allTestsFailed
+        }
+        
+        let averageTime = resolutionTimes.reduce(0, +) / Double(resolutionTimes.count)
+        let failureRate = Double(failures) / Double(totalTests)
+        
+        return DNSResult(
+            averageResolutionTime: averageTime,
+            failureRate: failureRate
+        )
+    }
+}

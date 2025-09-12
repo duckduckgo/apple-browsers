@@ -43,17 +43,29 @@ public final class HttpResponseTester: HttpResponseTesting {
                     progressCallback: ((String) -> Void)? = nil) async throws -> HttpResponseResult {
         progressCallback?(Constants.progressMessage)
 
-        var allMeasurements: [EndpointMeasurement] = []
-
+        // WARM-UP PHASE: Perform one request to each endpoint
+        // This "primes" the connection by:
+        // - Resolving DNS (gets cached)
+        // - Establishing TCP connection (may be reused)
+        // - Completing TLS handshake (session may be resumed)
+        // - Warming up CDN edge caches
+        // These initial "cold" measurements are discarded
         for endpoint in configuration.latencyTestURLs {
-            let measurements = await measureEndpoint(endpoint,
-                                                    sampleCount: configuration.latencySamplesPerEndpoint,
-                                                    timeout: configuration.latencyTestTimeout)
-
-            if !measurements.isEmpty {
-                allMeasurements.append(EndpointMeasurement(endpoint: endpoint, measurements: measurements))
-            }
+            _ = await measureSingleRequest(to: endpoint, timeout: configuration.latencyTestTimeout)
+            // Small delay after warm-up
+            try? await Task.sleep(nanoseconds: Constants.measurementDelay)
         }
+
+        // MEASUREMENT PHASE: Perform interleaved measurements
+        // Endpoints are measured in rounds with shuffling to:
+        // - Avoid consecutive requests to the same endpoint
+        // - Distribute load evenly over time
+        // - Get more representative latency samples
+        let allMeasurements = await performInterleavedMeasurements(
+            endpoints: configuration.latencyTestURLs,
+            samplesPerEndpoint: configuration.latencySamplesPerEndpoint,
+            timeout: configuration.latencyTestTimeout
+        )
 
         guard !allMeasurements.isEmpty else {
             throw NetworkError.allTestsFailed
@@ -64,19 +76,40 @@ public final class HttpResponseTester: HttpResponseTesting {
 
     // MARK: - Private Methods
 
-    private func measureEndpoint(_ endpoint: URL, sampleCount: Int, timeout: TimeInterval) async -> [Double] {
-        var measurements: [Double] = []
-
-        for _ in 0..<sampleCount {
-            if let measurement = await measureSingleRequest(to: endpoint, timeout: timeout) {
-                measurements.append(measurement)
-            }
-
-            // Small delay between measurements
-            try? await Task.sleep(nanoseconds: Constants.measurementDelay)
+    private func performInterleavedMeasurements(endpoints: [URL], 
+                                               samplesPerEndpoint: Int,
+                                               timeout: TimeInterval) async -> [EndpointMeasurement] {
+        // Initialize storage for measurements
+        var measurementsByEndpoint: [URL: [Double]] = [:]
+        for endpoint in endpoints {
+            measurementsByEndpoint[endpoint] = []
         }
-
-        return measurements
+        
+        // Perform measurements in rounds, hitting each endpoint once per round
+        // This avoids consecutive requests to the same endpoint
+        for round in 0..<samplesPerEndpoint {
+            // Shuffle endpoints for each round to avoid patterns
+            let shuffledEndpoints = endpoints.shuffled()
+            
+            for endpoint in shuffledEndpoints {
+                if let measurement = await measureSingleRequest(to: endpoint, timeout: timeout) {
+                    measurementsByEndpoint[endpoint]?.append(measurement)
+                }
+                
+                // Small delay between different endpoints
+                try? await Task.sleep(nanoseconds: Constants.measurementDelay)
+            }
+        }
+        
+        // Convert to EndpointMeasurement array
+        var allMeasurements: [EndpointMeasurement] = []
+        for (endpoint, measurements) in measurementsByEndpoint {
+            if !measurements.isEmpty {
+                allMeasurements.append(EndpointMeasurement(endpoint: endpoint, measurements: measurements))
+            }
+        }
+        
+        return allMeasurements
     }
 
     private func measureSingleRequest(to url: URL, timeout: TimeInterval) async -> Double? {

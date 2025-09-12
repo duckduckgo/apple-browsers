@@ -158,6 +158,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         return SyncSettingsViewController(syncService: self.syncService,
                                           syncBookmarksAdapter: self.syncDataProviders.bookmarksAdapter,
                                           syncCredentialsAdapter: self.syncDataProviders.credentialsAdapter,
+                                          syncCreditCardsAdapter: self.syncDataProviders.creditCardsAdapter,
                                           appSettings: self.appSettings,
                                           syncPausedStateManager: self.syncPausedStateManager,
                                           source: source,

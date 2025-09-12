@@ -116,11 +116,17 @@ let hasConnectivity = await monitor.checkConnectivity()
 
 ## Test Configuration
 
-Default configuration includes:
+Default configuration optimized for speed and accuracy:
 - **Latency**: 15 samples per endpoint, 5s timeout
-- **Bandwidth**: 2 runs per server, 30s timeout  
-- **Upload**: 50MB chunks x 2, 45s timeout
+- **Bandwidth**: 50MB files, 1 run per server, 20s timeout
+- **Upload**: 20MB chunks x 2 (40MB total), 25s timeout
 - **DNS**: Multiple popular domains
+
+### Performance Optimizations
+- **Download**: 50MB files (reduced from 100MB) - provides 4-16 second measurement window
+- **Upload**: 40MB total (reduced from 100MB) - sufficient for accurate speed detection
+- **Total data**: ~190MB (down from 900MB) - much faster completion
+- **Timeouts**: Reduced by 40% while maintaining reliability
 
 ## Network Quality Ratings
 

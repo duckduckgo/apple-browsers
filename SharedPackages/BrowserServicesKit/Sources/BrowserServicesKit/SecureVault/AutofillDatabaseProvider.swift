@@ -128,6 +128,7 @@ public final class DefaultAutofillDatabaseProvider: GRDBSecureStorageDatabasePro
                 migrator.registerMigration("v11", migrate: Self.migrateV11(database:))
                 migrator.registerMigration("v12", migrate: Self.migrateV12(database:))
                 migrator.registerMigration("v13", migrate: Self.migrateV13(database:))
+                migrator.registerMigration("v14", migrate: Self.migrateV14(database:))
             }
         }
     }
@@ -1110,6 +1111,98 @@ extension DefaultAutofillDatabaseProvider {
     static func migrateV13(database: Database) throws {
         try database.alter(table: SecureVaultModels.WebsiteAccount.databaseTableName) {
             $0.add(column: SecureVaultModels.WebsiteAccount.Columns.lastUsed.name, .date)
+        }
+    }
+
+    static func migrateV14(database: Database) throws {
+        typealias CreditCard = SecureVaultModels.CreditCard
+        typealias SyncableCreditCardsRecord = SecureVaultModels.SyncableCreditCardsRecord
+
+        try database.create(table: SyncableCreditCardsRecord.databaseTableName) {
+            $0.autoIncrementedPrimaryKey(SyncableCreditCardsRecord.Columns.id.name)
+            $0.column(SyncableCreditCardsRecord.Columns.uuid.name, .text)
+            $0.column(SyncableCreditCardsRecord.Columns.lastModified.name, .date)
+            $0.column(SyncableCreditCardsRecord.Columns.objectId.name, .integer)
+            $0.foreignKey(
+                [SyncableCreditCardsRecord.Columns.objectId.name],
+                references: SecureVaultModels.CreditCard.databaseTableName,
+                onDelete: .setNull
+            )
+        }
+
+        try database.create(
+            index: [SyncableCreditCardsRecord.databaseTableName, SyncableCreditCardsRecord.Columns.uuid.name].joined(separator: "_"),
+            on: SyncableCreditCardsRecord.databaseTableName,
+            columns: [SyncableCreditCardsRecord.Columns.uuid.name],
+            ifNotExists: false
+        )
+
+        try database.create(
+            index: [SyncableCreditCardsRecord.databaseTableName, SyncableCreditCardsRecord.Columns.objectId.name].joined(separator: "_"),
+            on: SyncableCreditCardsRecord.databaseTableName,
+            columns: [SyncableCreditCardsRecord.Columns.objectId.name],
+            unique: true,
+            ifNotExists: false
+        )
+
+        let rows = try Row.fetchCursor(database, sql: "SELECT \(CreditCard.Columns.id) FROM \(CreditCard.databaseTableName)")
+
+        while let row = try rows.next() {
+            let creditCardId: Int64 = row[CreditCard.Columns.id]
+            try database.execute(sql: """
+                INSERT INTO
+                    \(SyncableCreditCardsRecord.databaseTableName)
+                (
+                    \(SyncableCreditCardsRecord.Columns.uuid.name),
+                    \(SyncableCreditCardsRecord.Columns.objectId.name)
+                )
+                VALUES (?, ?)
+            """, arguments: [UUID().uuidString, creditCardId])
+        }
+
+        typealias Identity = SecureVaultModels.Identity
+        typealias SyncableIdentitiesRecord = SecureVaultModels.SyncableIdentitiesRecord
+
+        try database.create(table: SyncableIdentitiesRecord.databaseTableName) {
+            $0.autoIncrementedPrimaryKey(SyncableIdentitiesRecord.Columns.id.name)
+            $0.column(SyncableIdentitiesRecord.Columns.uuid.name, .text)
+            $0.column(SyncableIdentitiesRecord.Columns.lastModified.name, .date)
+            $0.column(SyncableIdentitiesRecord.Columns.objectId.name, .integer)
+            $0.foreignKey(
+                [SyncableIdentitiesRecord.Columns.objectId.name],
+                references: SecureVaultModels.Identity.databaseTableName,
+                onDelete: .setNull
+            )
+        }
+
+        try database.create(
+            index: [SyncableIdentitiesRecord.databaseTableName, SyncableIdentitiesRecord.Columns.uuid.name].joined(separator: "_"),
+            on: SyncableIdentitiesRecord.databaseTableName,
+            columns: [SyncableIdentitiesRecord.Columns.uuid.name],
+            ifNotExists: false
+        )
+
+        try database.create(
+            index: [SyncableIdentitiesRecord.databaseTableName, SyncableIdentitiesRecord.Columns.objectId.name].joined(separator: "_"),
+            on: SyncableIdentitiesRecord.databaseTableName,
+            columns: [SyncableIdentitiesRecord.Columns.objectId.name],
+            unique: true,
+            ifNotExists: false
+        )
+
+        let rowsIdentities = try Row.fetchCursor(database, sql: "SELECT \(Identity.Columns.id) FROM \(Identity.databaseTableName)")
+
+        while let row = try rowsIdentities.next() {
+            let identityId: Int64 = row[Identity.Columns.id]
+            try database.execute(sql: """
+                INSERT INTO
+                    \(SyncableIdentitiesRecord.databaseTableName)
+                (
+                    \(SyncableIdentitiesRecord.Columns.uuid.name),
+                    \(SyncableIdentitiesRecord.Columns.objectId.name)
+                )
+                VALUES (?, ?)
+            """, arguments: [UUID().uuidString, identityId])
         }
     }
 

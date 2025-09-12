@@ -65,7 +65,7 @@ class AddressBarTests: XCTestCase {
     static let testHtml = "<html><head><title>Title</title></head><body>test</body></html>"
 
     @MainActor
-    override func setUp() async throws {
+    override func setUp() {
         TestRunHelper.allowAppSendUserEvents = true
 
         contentBlockingMock = ContentBlockingMock()
@@ -95,7 +95,7 @@ class AddressBarTests: XCTestCase {
     }
 
     @MainActor
-    override func tearDown() async throws {
+    override func tearDown() {
         TestRunHelper.allowAppSendUserEvents = false
 
         autoreleasepool {
@@ -852,7 +852,7 @@ class AddressBarTests: XCTestCase {
     @MainActor
     func testWhenActivatingWindowWithPinnedTabOpen_webViewBecomesFirstResponder() async throws {
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
-        Application.appDelegate.pinnedTabsManager.setUp(with: TabCollection(tabs: [tab]))
+        Application.appDelegate.pinnedTabsManager.setUp(movingTabsFrom: TabCollection(tabs: [tab]))
 
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]))
         let tabLoadedPromise = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
@@ -890,7 +890,7 @@ class AddressBarTests: XCTestCase {
     @MainActor
     func testWhenActivatingWindowWithPinnedTabWhenAddressBarIsActive_addressBarIsKeptActive() async throws {
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
-        Application.appDelegate.pinnedTabsManager.setUp(with: TabCollection(tabs: [tab]))
+        Application.appDelegate.pinnedTabsManager.setUp(movingTabsFrom: TabCollection(tabs: [tab]))
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]))
         let tabLoadedPromise = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         window = WindowsManager.openNewWindow(with: viewModel)!

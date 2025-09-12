@@ -26,7 +26,7 @@ import PrivacyDashboard
 import WebKit
 import DesignResourcesKitIcons
 
-final class TabViewModel {
+final class TabViewModel: NSObject {
 
     private(set) var tab: Tab
     private let appearancePreferences: AppearancePreferences
@@ -139,6 +139,8 @@ final class TabViewModel {
         self.featureFlagger = featureFlagger
         self.visualStyle = visualStyle
         zoomLevel = accessibilityPreferences.defaultPageZoom
+
+        super.init()
         subscribeToUrl()
         subscribeToCanGoBackForwardAndReload()
         subscribeToTitle()

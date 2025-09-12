@@ -818,9 +818,9 @@ public struct UserText {
     // MARK: Notifications
 
     public static let macWaitlistAvailableNotificationTitle = NSLocalizedString("mac-waitlist.available.notification.title", value: "DuckDuckGo for Mac is ready!", comment: "Title for the macOS waitlist notification")
-    /// https://app.asana.com/1/137249556945/project/38424471409662/task/1211092472261869
-    public static let inactivityNotificationTitle = NotLocalizedString("inactivity.notification.title", value: "Trackers are lurking!", comment: "Title for inactivity notification. Used on for en_US locale only.")
-    public static let inactivityNotificationBody = NotLocalizedString("inactivity.notification.body", value: "Over 85% of popular sites contain trackers. Search and browse with DuckDuckGo to help avoid them.", comment: "Body for inactivity notification. Used on for en_US locale only.")
+    /// https://app.asana.com/1/137249556945/project/38424471409662/task/1211224788080468
+    public static let inactivityNotificationTitle = NotLocalizedString("inactivity.notification.title", value: "Control your online experience", comment: "Title for inactivity notification. Used on for en_US locale only.")
+    public static let inactivityNotificationBody = NotLocalizedString("inactivity.notification.body", value: "Use DuckDuckGo to avoid the ads that track you around the web and reduce your online footprint.", comment: "Body for inactivity notification. Used on for en_US locale only.")
 
     // MARK: Settings Screen
 
@@ -1840,28 +1840,26 @@ public struct UserText {
 
     public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("search.input.field.placeholder.search.duckai", value: "Ask Duck.ai", comment: "Placeholder text for the search input field when searching Duck.ai")
 
-    // MARK: - AI Features Experimental Picker Footer
-    public static let settingsAiExperimentalPickerFooterDescription = NSLocalizedString(
-        "settings.ai.experimental.picker.footer",
-        value: "Try our experimental option to ask Duck.ai directly from the Address Bar.",
-        comment: "Footer under the AI experimental picker, descriptive sentence without link"
+    // MARK: - AI Features Picker Footer
+    public static let settingsAIPickerFooterDescription = NSLocalizedString(
+        "settings.ai.new.picker.footer",
+        value: "Try the new option to toggle between search and Duck.ai in the Address Bar.",
+        comment: "Footer under the AI picker, descriptive sentence without link"
     )
 
-    // MARK: - AI Experimental Picker
-    public static let settingsAiExperimentalPickerSearchOnly = NSLocalizedString("settings.ai.experimental.picker.search_only", value: "Search Only", comment: "Title for the 'Search Only' option in the AI experimental picker")
-    
+    // MARK: - AI Features Picker
+    public static let settingsAIPickerSearchOnly = NSLocalizedString("settings.ai.experimental.picker.search_only", value: "Search Only", comment: "Title for the 'Search Only' option in the AI experimental picker")
+
     // MARK: - New Address Bar Picker
-    public static let newAddressBarPickerTitle = NSLocalizedString("new.address.bar.picker.title", value: "Choose a new address bar", comment: "Title for the new address bar picker modal")
+    public static let newAddressBarPickerTitle = NSLocalizedString("new.address.bar.picker.title", value: "Address bar option", comment: "Title for the new address bar picker modal")
     public static let newAddressBarPickerSubtitle = NSLocalizedString("new.address.bar.picker.subtitle", value: "Toggle between search and AI chat", comment: "Subtitle for the new address bar picker modal")
     public static let newAddressBarPickerDescription = NSLocalizedString("new.address.bar.picker.description", value: "AI features are always optional.", comment: "Description text for the new address bar picker modal")
-    public static let newAddressBarPickerSearchOnly = NSLocalizedString("new.address.bar.picker.search.only", value: "Classic Search Only", comment: "Option for search only in the new address bar picker")
-    public static let newAddressBarPickerSearchAndAI = NSLocalizedString("new.address.bar.picker.search.and.ai", value: "New Search & Duck.ai", comment: "Option for search and AI in the new address bar picker")
+    public static let newAddressBarPickerSearchOnly = NSLocalizedString("new.address.bar.picker.search.only", value: "Search Only", comment: "Option for search only in the new address bar picker")
+    public static let newAddressBarPickerSearchAndAI = NSLocalizedString("new.address.bar.picker.search.and.ai", value: "Search & Duck.ai", comment: "Option for search and AI in the new address bar picker")
     public static let newAddressBarPickerConfirm = NSLocalizedString("new.address.bar.picker.confirm", value: "Confirm", comment: "Confirm button for the new address bar picker")
     public static let newAddressBarPickerNotNow = NSLocalizedString("new.address.bar.picker.not.now", value: "Not Now", comment: "Not now button for the new address bar picker")
     public static let newAddressBarPickerFooter = NSLocalizedString("new.address.bar.picker.footer", value: "Adjust in Settings > AI Features", comment: "Footer text for the new address bar picker")
-    public static let settingsAiExperimentalPickerDefault = NSLocalizedString("settings.ai.experimental.picker.default", value: "(Default)", comment: "Caption indicating the default option in the AI experimental picker")
-    public static let settingsAiExperimentalPickerSearchAndDuckAI = NSLocalizedString("settings.ai.experimental.picker.search_and_duckai", value: "Search & Duck.ai", comment: "Title for the 'Search & Duck.ai' option in the AI experimental picker")
-    public static let settingsAiExperimentalPickerExperimental = NSLocalizedString("settings.ai.experimental.picker.experimental", value: "(Experimental)", comment: "Caption indicating the experimental option in the AI experimental picker")
+    public static let settingsAIPickerSearchAndDuckAI = NSLocalizedString("settings.ai.experimental.picker.search_and_duckai", value: "Search & Duck.ai", comment: "Title for the 'Search & Duck.ai' option in the AI experimental picker")
 
     public enum MaliciousSiteProtectionSettings {
         public static let header = NSLocalizedString("malicious-site-protection.settings.header", value: "Site Safety Warnings", comment: "Header text for Malicious Site Protection settings")

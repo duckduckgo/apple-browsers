@@ -35,23 +35,29 @@ protocol AIChatUserScriptHandling {
     func restoreChat(params: Any, message: UserScriptMessage) -> Encodable?
     func removeChat(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func openSummarizationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func openTranslationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
     var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> { get }
 
     func getPageContext(params: Any, message: UserScriptMessage) -> Encodable?
-    var pageContextPublisher: AnyPublisher<AIChatPageContextData, Never> { get }
+    var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
+    var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
-    func submitPageContext(_ pageContext: AIChatPageContextData)
+    func submitPageContext(_ pageContext: AIChatPageContextData?)
+
+    func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
 }
 
 struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let messageHandling: AIChatMessageHandling
     public let aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never>
-    public let pageContextPublisher: AnyPublisher<AIChatPageContextData, Never>
+    public let pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never>
+    public let pageContextRequestedPublisher: AnyPublisher<Void, Never>
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
-    private let pageContextSubject = PassthroughSubject<AIChatPageContextData, Never>()
+    private let pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
+    private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     private let storage: AIChatPreferencesStorage
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter
@@ -71,6 +77,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.notificationCenter = notificationCenter
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
+        self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
     }
 
     enum AIChatKeys {
@@ -97,7 +104,15 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func getPageContext(params: Any, message: any UserScriptMessage) -> Encodable? {
-        messageHandling.getDataForMessageType(.pageContext)
+        guard let payload: GetPageContext = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+
+        let data = messageHandling.getDataForMessageType(.pageContext) as? PageContextPayload
+        if data?.serializedPageData == nil, payload.explicitConsent {
+            pageContextRequestedSubject.send()
+        }
+        return data
     }
 
     @MainActor
@@ -152,12 +167,42 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
+    @MainActor func openTranslationSourceLink(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        guard let openLinkParams: OpenLink = DecodableHelper.decode(from: params), let url = openLinkParams.url.url
+        else { return nil }
+
+        let isSidebar = message.messageWebView?.url?.hasAIChatSidebarPlacementParameter == true
+
+        switch openLinkParams.target {
+        case .sameTab where isSidebar == false: // for same tab outside of sidebar we force opening new tab to keep the AI chat tab
+            windowControllersManager.show(url: url, source: .switchToOpenTab, newTab: true, selected: true)
+        default:
+            windowControllersManager.open(url, source: .link, target: nil, event: NSApp.currentEvent)
+        }
+        pixelFiring?.fire(AIChatPixel.aiChatTranslationSourceLinkClicked, frequency: .dailyAndStandard)
+        return nil
+    }
+
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {
         aiChatNativePromptSubject.send(prompt)
     }
 
-    func submitPageContext(_ pageContext: AIChatPageContextData) {
+    func submitPageContext(_ pageContext: AIChatPageContextData?) {
         pageContextSubject.send(pageContext)
+    }
+
+    func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard let payload: TogglePageContextTelemetry = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        let pixel: PixelKitEvent = {
+            if payload.enabled {
+                return AIChatPixel.aiChatPageContextAdded(automaticEnabled: storage.shouldAutomaticallySendPageContext)
+            }
+            return AIChatPixel.aiChatPageContextRemoved(automaticEnabled: storage.shouldAutomaticallySendPageContext)
+        }()
+        pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
+        return nil
     }
 }
 
@@ -176,6 +221,13 @@ extension AIChatUserScriptHandler {
             case newTab = "new-tab"
             case newWindow = "new-window"
         }
+    }
 
+    struct GetPageContext: Codable, Equatable {
+        let explicitConsent: Bool
+    }
+
+    struct TogglePageContextTelemetry: Codable, Equatable {
+        let enabled: Bool
     }
 }

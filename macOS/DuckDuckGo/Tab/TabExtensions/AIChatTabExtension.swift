@@ -30,15 +30,21 @@ extension UserScripts: AIChatUserScriptProvider {}
 final class AIChatTabExtension {
 
     private var cancellables = Set<AnyCancellable>()
+    private var userScriptCancellables = Set<AnyCancellable>()
     private let isLoadedInSidebar: Bool
     private weak var webView: WKWebView?
 
-    private(set) weak var aiChatUserScript: AIChatUserScript?
+    private(set) weak var aiChatUserScript: AIChatUserScript? {
+        didSet {
+            subscribeToUserScript()
+        }
+    }
 
     init(scriptsPublisher: some Publisher<some AIChatUserScriptProvider, Never>,
          webViewPublisher: some Publisher<WKWebView, Never>,
          isLoadedInSidebar: Bool) {
         self.isLoadedInSidebar = isLoadedInSidebar
+        pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
 
         webViewPublisher.sink { [weak self] webView in
             self?.webView = webView
@@ -76,6 +82,22 @@ final class AIChatTabExtension {
         }.store(in: &cancellables)
     }
 
+    private func subscribeToUserScript() {
+        userScriptCancellables.removeAll()
+        guard let aiChatUserScript else {
+            return
+        }
+
+        aiChatUserScript.handler.pageContextRequestedPublisher
+            .sink { [weak self] _ in
+                self?.pageContextRequestedSubject.send()
+            }
+            .store(in: &userScriptCancellables)
+    }
+
+    private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
+    let pageContextRequestedPublisher: AnyPublisher<Void, Never>
+
     private var temporaryAIChatNativeHandoffData: AIChatPayload?
     func setAIChatNativeHandoffData(payload: AIChatPayload) {
         guard let aiChatUserScript else {
@@ -110,7 +132,7 @@ final class AIChatTabExtension {
     }
 
     private var temporaryPageContext: AIChatPageContextData?
-    func submitPageContext(_ pageContext: AIChatPageContextData) {
+    func submitPageContext(_ pageContext: AIChatPageContextData?) {
         // Page Context functionality is only for the sidebar.
         guard isLoadedInSidebar else {
             return
@@ -158,7 +180,9 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     func setAIChatNativeHandoffData(payload: AIChatPayload)
     func setAIChatRestorationData(data: AIChatRestorationData)
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
-    func submitPageContext(_ pageContext: AIChatPageContextData)
+    func submitPageContext(_ pageContext: AIChatPageContextData?)
+
+    var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
 }
 
 extension AIChatTabExtension: AIChatProtocol, TabExtension {

@@ -5,7 +5,7 @@
         description: 'Fires when the experimental omnibar with Duck.ai toggle is displayed to the user',
         owners: ['aataraxiaa'],
         triggers: ['other'],
-        suffixes: ['daily', 'platform', 'form_factor'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion', 'pixelSource'],
     },
     m_aichat_experimental_omnibar_prompt_submitted: {
@@ -88,7 +88,7 @@
         description: 'Fires when the legacy omnibar is displayed to the user (baseline comparison for experimental omnibar)',
         owners: ['aataraxiaa'],
         triggers: ['other'],
-        suffixes: ['daily', 'platform', 'form_factor'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion', 'pixelSource'],
     },
     m_aichat_legacy_omnibar_query_submitted: {

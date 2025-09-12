@@ -97,6 +97,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let numStalled = "num_stalled"
         public static let totalByBroker = "total_by_broker"
         public static let stalledByBroker = "stalled_by_broker"
+        public static let jsFile = "jsFile"
 
     }
 
@@ -189,6 +190,9 @@ public enum DataBrokerProtectionSharedPixels {
     case customDataBrokerStatsOptoutSubmit(dataBrokerName: String, optOutSubmitSuccessRate: Double)
     case customGlobalStatsOptoutSubmit(optOutSubmitSuccessRate: Double)
     case weeklyChildBrokerOrphanedOptOuts(dataBrokerName: String, childParentRecordDifference: Int, calculatedOrphanedRecords: Int)
+
+    // UserScript
+    case userScriptLoadJSFailed(jsFile: String, error: Error)
 }
 
 extension DataBrokerProtectionSharedPixels: PixelKitEvent {
@@ -279,6 +283,9 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .customDataBrokerStatsOptoutSubmit: return "dbp_databroker_custom_stats_optoutsubmit"
         case .customGlobalStatsOptoutSubmit: return "dbp_custom_stats_optoutsubmit"
         case .weeklyChildBrokerOrphanedOptOuts: return "dbp_weekly_child-broker_orphaned-optouts"
+
+            // UserScript
+        case .userScriptLoadJSFailed: return "debug_user_script_load_js_failed"
         }
     }
 
@@ -459,6 +466,8 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return [Consts.dataBrokerParamKey: dataBrokerName,
                     Consts.childParentRecordDifference: String(childParentRecordDifference),
                     Consts.calculatedOrphanedRecords: String(calculatedOrphanedRecords)]
+        case .userScriptLoadJSFailed(let jsFile, _):
+            return [Consts.jsFile: jsFile]
         }
     }
 }
@@ -500,7 +509,8 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .databaseError(let error, _),
                     .cocoaError(let error, _),
-                    .miscError(let error, _):
+                    .miscError(let error, _),
+                    .userScriptLoadJSFailed(_, let error):
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultInitError(let error),
                     .secureVaultError(let error),

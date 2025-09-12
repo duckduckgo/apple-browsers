@@ -236,7 +236,7 @@ struct Launching: LaunchingHandling {
             services: services,
             launchTaskManager: launchTaskManager,
             launchSourceManager: launchSourceManager,
-            aiChatSetttings: aiChatSettings
+            aiChatSettings: aiChatSettings
         )
     }
     

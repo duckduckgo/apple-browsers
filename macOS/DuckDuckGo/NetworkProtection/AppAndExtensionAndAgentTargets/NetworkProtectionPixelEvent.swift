@@ -21,7 +21,7 @@ import PixelKit
 import VPN
 import Configuration
 
-enum NetworkProtectionPixelEvent: PixelKitEventV2 {
+enum NetworkProtectionPixelEvent: PixelKitEvent {
     static let vpnErrorDomain = "com.duckduckgo.vpn.errorDomain"
 
     case networkProtectionActiveUser
@@ -457,83 +457,4 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
         }
     }
 
-    var error: (any Error)? {
-        switch self {
-        case .networkProtectionClientFailedToFetchLocations(let error),
-                .networkProtectionClientFailedToParseLocationsResponse(let error),
-                .networkProtectionClientFailedToFetchServerList(let error),
-                .networkProtectionClientFailedToFetchRegisteredServers(let error),
-                .networkProtectionClientFailedToFetchServerStatus(let error),
-                .networkProtectionClientFailedToParseServerStatusResponse(let error):
-            return error
-        case .networkProtectionControllerStartFailure(let error),
-                .networkProtectionTunnelStartFailure(let error),
-                .networkProtectionTunnelStopFailure(let error),
-                .networkProtectionTunnelUpdateFailure(let error),
-                .networkProtectionTunnelWakeFailure(let error),
-                .networkProtectionWireguardErrorCannotSetNetworkSettings(let error),
-                .networkProtectionWireguardErrorCannotStartWireguardBackend(let error),
-                .networkProtectionWireguardErrorCannotSetWireguardConfig(let error),
-                .networkProtectionRekeyFailure(let error),
-                .networkProtectionUnhandledError(_, _, let error),
-                .networkProtectionSystemExtensionActivationFailure(let error),
-                .networkProtectionServerMigrationFailure(let error),
-                .networkProtectionConfigurationErrorLoadingCachedConfig(let error),
-                .networkProtectionConfigurationFailedToParse(let error),
-                .networkProtectionVPNAccessRevoked(let error),
-                .networkProtectionUnmanagedSubscriptionError(let error):
-            return error
-        case .networkProtectionActiveUser,
-                .networkProtectionNewUser,
-                .networkProtectionControllerStartAttempt,
-                .networkProtectionControllerStartSuccess,
-                .networkProtectionControllerStartCancelled,
-                .networkProtectionTunnelStartAttempt,
-                .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
-                .networkProtectionTunnelStartSuccess,
-                .networkProtectionTunnelStopAttempt,
-                .networkProtectionTunnelStopSuccess,
-                .networkProtectionTunnelUpdateAttempt,
-                .networkProtectionTunnelUpdateSuccess,
-                .networkProtectionEnableAttemptConnecting,
-                .networkProtectionEnableAttemptSuccess,
-                .networkProtectionEnableAttemptFailure,
-                .networkProtectionConnectionTesterFailureDetected,
-                .networkProtectionConnectionTesterFailureRecovered,
-                .networkProtectionConnectionTesterExtendedFailureDetected,
-                .networkProtectionConnectionTesterExtendedFailureRecovered,
-                .networkProtectionTunnelFailureDetected,
-                .networkProtectionTunnelFailureRecovered,
-                .networkProtectionLatency,
-                .networkProtectionLatencyError,
-                .networkProtectionTunnelConfigurationNoServerRegistrationInfo,
-                .networkProtectionTunnelConfigurationCouldNotSelectClosestServer,
-                .networkProtectionTunnelConfigurationCouldNotGetPeerPublicKey,
-                .networkProtectionTunnelConfigurationCouldNotGetPeerHostName,
-                .networkProtectionTunnelConfigurationCouldNotGetInterfaceAddressRange,
-                .networkProtectionClientFailedToParseServerListResponse,
-                .networkProtectionClientFailedToEncodeRegisterKeyRequest,
-                .networkProtectionClientFailedToParseRegisteredServersResponse,
-                .networkProtectionClientInvalidAuthToken,
-                .networkProtectionKeychainErrorFailedToCastKeychainValueToData,
-                .networkProtectionKeychainReadError,
-                .networkProtectionKeychainWriteError,
-                .networkProtectionKeychainUpdateError,
-                .networkProtectionKeychainDeleteError,
-                .networkProtectionWireguardErrorCannotLocateTunnelFileDescriptor,
-                .networkProtectionWireguardErrorInvalidState,
-                .networkProtectionWireguardErrorFailedDNSResolution,
-                .networkProtectionNoAuthTokenFoundError,
-                .networkProtectionRekeyAttempt,
-                .networkProtectionRekeyCompleted,
-                .networkProtectionServerMigrationAttempt,
-                .networkProtectionServerMigrationSuccess,
-                .networkProtectionDNSUpdateCustom,
-                .networkProtectionDNSUpdateDefault,
-                .networkProtectionSystemExtensionActivationAttempt,
-                .networkProtectionSystemExtensionActivationSuccess,
-                .networkProtectionConfigurationInvalidPayload:
-            return nil
-        }
-    }
 }

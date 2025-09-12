@@ -107,7 +107,7 @@ extension StalledOperationCalculator {
         },
         isCompletionEvent: { event in
             switch event.type {
-            case .optOutRequested, .optOutConfirmed, .matchRemovedByUser, .error:
+            case .optOutRequested, .optOutSubmittedAndAwaitingEmailConfirmation, .optOutConfirmed, .matchRemovedByUser, .error:
                 return true
             default:
                 return false

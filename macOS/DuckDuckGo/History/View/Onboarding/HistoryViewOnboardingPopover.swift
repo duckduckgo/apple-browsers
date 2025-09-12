@@ -41,6 +41,13 @@ final class HistoryViewOnboardingPopover: NSPopover {
         fatalError("\(Self.self): Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        // Check that our content view controller deallocates
+        contentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     private func setupContentController() {
         contentViewController = HistoryViewOnboardingViewController(ctaCallback: ctaCallback)
     }

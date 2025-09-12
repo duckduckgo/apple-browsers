@@ -188,7 +188,7 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
 
 extension NetworkProtectionIPCTunnelController {
 
-    enum StartAttempt: PixelKitEventV2 {
+    enum StartAttempt: PixelKitEvent {
         case begin
         case success
         case failure(_ error: Error)
@@ -210,15 +210,6 @@ extension NetworkProtectionIPCTunnelController {
             return nil
         }
 
-        var error: Error? {
-            switch self {
-            case .begin,
-                    .success:
-                return nil
-            case .failure(let error):
-                return error
-            }
-        }
     }
 }
 
@@ -226,7 +217,7 @@ extension NetworkProtectionIPCTunnelController {
 
 extension NetworkProtectionIPCTunnelController {
 
-    enum StopAttempt: PixelKitEventV2 {
+    enum StopAttempt: PixelKitEvent {
         case begin
         case success
         case failure(_ error: Error)
@@ -248,14 +239,5 @@ extension NetworkProtectionIPCTunnelController {
             return nil
         }
 
-        var error: Error? {
-            switch self {
-            case .begin,
-                    .success:
-                return nil
-            case .failure(let error):
-                return error
-            }
-        }
     }
 }

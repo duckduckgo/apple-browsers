@@ -18,7 +18,7 @@
 
 import PixelKit
 
-enum AutoconsentPixel: PixelKitEventV2 {
+enum AutoconsentPixel: PixelKitEvent {
 
     case acInit
     case missedPopup
@@ -91,7 +91,4 @@ enum AutoconsentPixel: PixelKitEventV2 {
         }
     }
 
-    var error: (any Error)? {
-        nil
-    }
 }

@@ -1911,7 +1911,8 @@
         "aria-expanded": isOpen,
         "aria-controls": menuId,
         "data-kind": kind,
-        id: buttonId
+        id: buttonId,
+        "data-testid": "customizer-button"
       },
       /* @__PURE__ */ _(CustomizeIcon, null),
       /* @__PURE__ */ _("span", null, t4("ntp_customizer_button"))
@@ -4483,11 +4484,11 @@
               }
               var target = event.target;
               if (!(target instanceof HTMLElement)) {
-                return null;
+                return;
               }
               var entry = draggableRegistry.get(target);
               if (!entry) {
-                return null;
+                return;
               }
               var input = getInput(event);
               var feedback = {
@@ -4497,7 +4498,7 @@
               };
               if (entry.canDrag && !entry.canDrag(feedback)) {
                 event.preventDefault();
-                return null;
+                return;
               }
               if (entry.dragHandle) {
                 var over = getElementFromPointWithoutHoneypot({
@@ -4506,7 +4507,7 @@
                 });
                 if (!entry.dragHandle.contains(over)) {
                   event.preventDefault();
-                  return null;
+                  return;
                 }
               }
               var nativeData = (_entry$getInitialData = (_entry$getInitialData2 = entry.getInitialDataForExternal) === null || _entry$getInitialData2 === void 0 ? void 0 : _entry$getInitialData2.call(entry, feedback)) !== null && _entry$getInitialData !== void 0 ? _entry$getInitialData : null;
@@ -7606,6 +7607,17 @@
           });
         }
         /**
+         * @param {NonNullable<OmnibarConfig['showCustomizePopover']>} showCustomizePopover
+         */
+        setShowCustomizePopover(showCustomizePopover) {
+          this.configService.update((old) => {
+            return {
+              ...old,
+              showCustomizePopover
+            };
+          });
+        }
+        /**
          * Get suggestions for the given search term
          * @param {string} term
          * @returns {Promise<SuggestionsData>}
@@ -7678,6 +7690,12 @@
       },
       [service]
     );
+    const setShowCustomizePopover = q2(
+      (showCustomizePopover) => {
+        service.current?.setShowCustomizePopover(showCustomizePopover);
+      },
+      [service]
+    );
     const getSuggestions = q2(
       (term) => {
         if (!service.current) throw new Error("Service not available");
@@ -7717,6 +7735,7 @@
           state,
           setMode,
           setEnableAi,
+          setShowCustomizePopover,
           getSuggestions,
           onSuggestions,
           openSuggestion,
@@ -7763,6 +7782,10 @@
         },
         /** @type {(enableAi: NonNullable<OmnibarConfig['enableAi']>) => void} */
         setEnableAi: () => {
+          throw new Error("must implement");
+        },
+        /** @type {(showCustomizePopover: NonNullable<OmnibarConfig['showCustomizePopover']>) => void} */
+        setShowCustomizePopover: () => {
           throw new Error("must implement");
         },
         /** @type {(term: string) => Promise<SuggestionsData>} */
@@ -7931,6 +7954,7 @@
       Omnibar_default = {
         root: "Omnibar_root",
         logo: "Omnibar_logo",
+        tabSwitcherContainer: "Omnibar_tabSwitcherContainer",
         spacer: "Omnibar_spacer",
         popup: "Omnibar_popup",
         field: "Omnibar_field"
@@ -7993,6 +8017,8 @@
       }
       case "openTab":
         return { kind: "duckDuckGo" };
+      case "aiChat":
+        return { kind: "askDuckAi" };
     }
   }
   function getSuggestionTitle(suggestion, term) {
@@ -8024,6 +8050,8 @@
       case "internalPage":
       case "openTab":
         return suggestion.title;
+      case "aiChat":
+        return suggestion.chat;
     }
   }
   function getSuggestionCompletionString(suggestion, term) {
@@ -8039,6 +8067,8 @@
           return getSuggestionTitle(suggestion, term);
         }
       }
+      case "aiChat":
+        return getSuggestionTitle(suggestion, term);
       default:
         return getSuggestionTitle(suggestion, term);
     }
@@ -8058,6 +8088,8 @@
       }
       case "internalPage":
         return { kind: "duckDuckGo" };
+      case "aiChat":
+        return { kind: "askDuckAi" };
     }
   }
   function parseURL(string2) {
@@ -8210,6 +8242,13 @@
           ...suggestion,
           id: `suggestion-${index2}`
         }));
+        if (term2.trim().length > 0) {
+          suggestions.push({
+            kind: "aiChat",
+            chat: term2,
+            id: "suggestion-ai-chat"
+          });
+        }
         dispatch({
           type: "setSuggestions",
           term: term2,
@@ -8333,6 +8372,8 @@
         return "\xA0\u2013\xA0" + t4("omnibar_visitSuffix", { url: suffix.url });
       case "raw":
         return "\xA0\u2013\xA0" + suffix.text;
+      case "askDuckAi":
+        return "\xA0\u2013\xA0" + t4("omnibar_askDuckAiSuffix");
     }
   }
   function SuffixText({ suffix }) {
@@ -8369,7 +8410,7 @@
   });
 
   // pages/new-tab/app/omnibar/components/SearchForm.js
-  function SearchForm({ autoFocus, onOpenSuggestion, onSubmit }) {
+  function SearchForm({ autoFocus, onOpenSuggestion, onSubmit, onSubmitChat }) {
     const { t: t4 } = useTypedTranslationWith(
       /** @type {Strings} */
       {}
@@ -8441,7 +8482,11 @@
         case "Enter":
           event.preventDefault();
           if (selectedSuggestion) {
-            onOpenSuggestion({ suggestion: selectedSuggestion, target: eventToTarget2(event, platformName) });
+            if (selectedSuggestion.kind === "aiChat") {
+              onSubmitChat({ chat: selectedSuggestion.chat, target: eventToTarget2(event, platformName) });
+            } else {
+              onOpenSuggestion({ suggestion: selectedSuggestion, target: eventToTarget2(event, platformName) });
+            }
           } else {
             onSubmit({ term, target: eventToTarget2(event, platformName) });
           }
@@ -8543,6 +8588,8 @@
     "pages/new-tab/app/omnibar/components/SuggestionsList.module.css"() {
       SuggestionsList_default = {
         list: "SuggestionsList_list",
+        main: "SuggestionsList_main",
+        footer: "SuggestionsList_footer",
         item: "SuggestionsList_item",
         suffix: "SuggestionsList_suffix",
         badge: "SuggestionsList_badge",
@@ -8552,35 +8599,62 @@
   });
 
   // pages/new-tab/app/omnibar/components/SuggestionsList.js
-  function SuggestionsList({ onOpenSuggestion }) {
-    const platformName = usePlatformName();
-    const { term, suggestionsListId, suggestions, selectedSuggestion, setSelectedSuggestion, clearSelectedSuggestion } = useSearchFormContext();
+  function SuggestionsList({ onOpenSuggestion, onSubmitChat }) {
+    const { suggestionsListId, suggestions } = useSearchFormContext();
     if (suggestions.length === 0) return null;
-    return /* @__PURE__ */ _("div", { role: "listbox", id: suggestionsListId, class: SuggestionsList_default.list }, suggestions.map((suggestion) => {
-      const title = getSuggestionTitle(suggestion, term);
-      const suffix = getSuggestionSuffix(suggestion);
-      return /* @__PURE__ */ _(
-        "button",
-        {
-          key: suggestion.id,
-          role: "option",
-          id: suggestion.id,
-          class: SuggestionsList_default.item,
-          tabIndex: suggestion === selectedSuggestion ? 0 : -1,
-          "aria-selected": suggestion === selectedSuggestion,
-          onMouseOver: () => setSelectedSuggestion(suggestion),
-          onMouseLeave: () => clearSelectedSuggestion(),
-          onClick: (event) => {
-            event.preventDefault();
+    const mainSuggestions = suggestions.filter((suggestion) => suggestion.kind !== "aiChat");
+    const footerSuggestions = suggestions.filter((suggestion) => suggestion.kind === "aiChat");
+    return /* @__PURE__ */ _("div", { role: "listbox", id: suggestionsListId, class: SuggestionsList_default.list }, mainSuggestions.length > 0 && /* @__PURE__ */ _("div", { class: SuggestionsList_default.main }, mainSuggestions.map((suggestion) => /* @__PURE__ */ _(
+      SuggestionsListItem,
+      {
+        key: suggestion.id,
+        suggestion,
+        onOpenSuggestion,
+        onSubmitChat
+      }
+    ))), footerSuggestions.length > 0 && /* @__PURE__ */ _("div", { class: SuggestionsList_default.footer }, footerSuggestions.map((suggestion) => /* @__PURE__ */ _(
+      SuggestionsListItem,
+      {
+        key: suggestion.id,
+        suggestion,
+        onOpenSuggestion,
+        onSubmitChat
+      }
+    ))));
+  }
+  function SuggestionsListItem({ suggestion, onOpenSuggestion, onSubmitChat }) {
+    const { t: t4 } = useTypedTranslationWith(
+      /** @type {Strings} */
+      {}
+    );
+    const platformName = usePlatformName();
+    const { term, selectedSuggestion, setSelectedSuggestion, clearSelectedSuggestion } = useSearchFormContext();
+    const title = getSuggestionTitle(suggestion, term);
+    const suffix = getSuggestionSuffix(suggestion);
+    return /* @__PURE__ */ _(
+      "button",
+      {
+        role: "option",
+        id: suggestion.id,
+        class: SuggestionsList_default.item,
+        tabIndex: suggestion === selectedSuggestion ? 0 : -1,
+        "aria-selected": suggestion === selectedSuggestion,
+        onMouseOver: () => setSelectedSuggestion(suggestion),
+        onMouseLeave: () => clearSelectedSuggestion(),
+        onClick: (event) => {
+          event.preventDefault();
+          if (suggestion.kind === "aiChat") {
+            onSubmitChat({ chat: suggestion.chat, target: eventToTarget2(event, platformName) });
+          } else {
             onOpenSuggestion({ suggestion, target: eventToTarget2(event, platformName) });
           }
-        },
-        /* @__PURE__ */ _(SuggestionIcon, { suggestion }),
-        /* @__PURE__ */ _("span", { class: SuggestionsList_default.title }, startsWithIgnoreCase(title, term) ? /* @__PURE__ */ _(k, null, /* @__PURE__ */ _("b", null, title.slice(0, term.length)), title.slice(term.length)) : title),
-        suffix && /* @__PURE__ */ _("span", { class: SuggestionsList_default.suffix }, /* @__PURE__ */ _(SuffixText, { suffix })),
-        suggestion.kind === "openTab" && /* @__PURE__ */ _("span", { class: SuggestionsList_default.badge }, "Switch to Tab ", /* @__PURE__ */ _(ArrowRightIcon, null))
-      );
-    }));
+        }
+      },
+      /* @__PURE__ */ _(SuggestionIcon, { suggestion }),
+      /* @__PURE__ */ _("span", { class: SuggestionsList_default.title }, suggestion.kind === "aiChat" ? /* @__PURE__ */ _("b", null, title) : startsWithIgnoreCase(title, term) ? /* @__PURE__ */ _(k, null, /* @__PURE__ */ _("b", null, title.slice(0, term.length)), title.slice(term.length)) : title),
+      suffix && /* @__PURE__ */ _("span", { class: SuggestionsList_default.suffix }, /* @__PURE__ */ _(SuffixText, { suffix })),
+      suggestion.kind === "openTab" && /* @__PURE__ */ _("span", { class: SuggestionsList_default.badge }, t4("omnibar_switchToTab"), " ", /* @__PURE__ */ _(ArrowRightIcon, null))
+    );
   }
   function SuggestionIcon({ suggestion }) {
     switch (suggestion.kind) {
@@ -8596,6 +8670,8 @@
         return /* @__PURE__ */ _(TabDesktopIcon, null);
       case "internalPage":
         return /* @__PURE__ */ _(BrowserIcon, null);
+      case "aiChat":
+        return /* @__PURE__ */ _(AiChatIcon, null);
       default:
         throw new Error("Unknown suggestion kind");
     }
@@ -8611,6 +8687,7 @@
       init_SearchFormProvider();
       init_SuffixText();
       init_SuggestionsList();
+      init_types();
     }
   });
 
@@ -8943,8 +9020,193 @@
     }
   });
 
+  // pages/new-tab/app/components/Popover.module.css
+  var Popover_default;
+  var init_Popover = __esm({
+    "pages/new-tab/app/components/Popover.module.css"() {
+      Popover_default = {
+        popover: "Popover_popover",
+        content: "Popover_content",
+        closeButton: "Popover_closeButton",
+        heading: "Popover_heading",
+        badge: "Popover_badge",
+        title: "Popover_title",
+        description: "Popover_description",
+        arrow: "Popover_arrow"
+      };
+    }
+  });
+
+  // pages/new-tab/app/components/Popover.js
+  function Popover({ title, badge, onClose, children }) {
+    const { t: t4 } = useTypedTranslationWith(
+      /** @type {Strings} */
+      {}
+    );
+    const titleId = g2();
+    const descriptionId = g2();
+    const popoverRef = A2(
+      /** @type {HTMLDivElement|null} */
+      null
+    );
+    y2(() => {
+      popoverRef.current?.focus();
+      const handleEscapeKey = (event) => {
+        if (event.key === "Escape") {
+          onClose();
+        }
+      };
+      document.addEventListener("keydown", handleEscapeKey);
+      return () => document.removeEventListener("keydown", handleEscapeKey);
+    }, [onClose]);
+    return /* @__PURE__ */ _("div", { ref: popoverRef, class: Popover_default.popover, role: "dialog", "aria-labelledby": titleId, "aria-describedby": descriptionId, tabIndex: -1 }, /* @__PURE__ */ _("svg", { class: Popover_default.arrow, xmlns: "http://www.w3.org/2000/svg", width: "12", height: "30", viewBox: "0 0 12 30", fill: "none" }, /* @__PURE__ */ _(
+      "path",
+      {
+        d: "M9.20362 6.3927L0.510957 13.8636C-0.183621 14.4619 -0.16344 15.5367 0.531137 16.1351L9.20362 23.606C10.9677 25.1256 11.9819 27.3368 11.9819 29.6632L11.9819 30.0003L11.9819 -0.000488281V0.335449C11.9819 2.66185 10.9677 4.87302 9.20362 6.3927Z",
+        fill: "currentColor"
+      }
+    )), /* @__PURE__ */ _("div", { class: Popover_default.content }, /* @__PURE__ */ _("button", { class: Popover_default.closeButton, onClick: onClose, "aria-label": t4("ntp_popover_close_button") }, /* @__PURE__ */ _(Cross, null)), /* @__PURE__ */ _("h3", { id: titleId, class: Popover_default.heading }, badge && /* @__PURE__ */ _("span", { class: Popover_default.badge }, badge), /* @__PURE__ */ _("span", { class: Popover_default.title }, title)), /* @__PURE__ */ _("p", { id: descriptionId, class: Popover_default.description }, children)));
+  }
+  var init_Popover2 = __esm({
+    "pages/new-tab/app/components/Popover.js"() {
+      "use strict";
+      init_preact_module();
+      init_hooks_module();
+      init_types();
+      init_Icons2();
+      init_Popover();
+    }
+  });
+
+  // pages/new-tab/app/components/Drawer.js
+  function useDrawer(initial) {
+    const { isReducedMotion } = useEnv();
+    const asideRef = A2(
+      /** @type {HTMLDivElement|null} */
+      null
+    );
+    const buttonRef = A2(
+      /** @type {HTMLButtonElement|null} */
+      null
+    );
+    const buttonId = g2();
+    const drawerId = g2();
+    const visibility = useSignal(
+      /** @type {DrawerVisibility} */
+      "hidden"
+    );
+    const displayChildren = useSignal(false);
+    const animating = useSignal(false);
+    const hidden = useComputed(() => displayChildren.value === false);
+    _2(() => {
+      const controller = new AbortController();
+      const aside = asideRef.current;
+      if (!aside) return;
+      const update = (value2) => {
+        visibility.value = value2;
+        if (isReducedMotion) {
+          displayChildren.value = visibility.value === "visible";
+        }
+      };
+      const close = () => update("hidden");
+      const open = () => update("visible");
+      const toggle = () => {
+        const next = visibility.value === "hidden" ? "visible" : "hidden";
+        update(next);
+      };
+      window.addEventListener(CLOSE_DRAWER_EVENT, close, { signal: controller.signal });
+      window.addEventListener(TOGGLE_DRAWER_EVENT, toggle, { signal: controller.signal });
+      window.addEventListener(OPEN_DRAWER_EVENT, open, { signal: controller.signal });
+      aside?.addEventListener(
+        "transitionend",
+        (e4) => {
+          if (e4.target !== e4.currentTarget) return;
+          r3(() => {
+            displayChildren.value = visibility.value === "visible";
+            animating.value = false;
+            if (displayChildren.value === false) {
+              buttonRef.current?.focus?.();
+            }
+          });
+        },
+        { signal: controller.signal }
+      );
+      aside?.addEventListener(
+        "transitionstart",
+        (e4) => {
+          if (e4.target !== e4.currentTarget) return;
+          r3(() => {
+            animating.value = true;
+            displayChildren.value = true;
+          });
+        },
+        { signal: controller.signal }
+      );
+      return () => {
+        controller.abort();
+      };
+    }, [isReducedMotion, initial]);
+    const ntp = useMessaging();
+    y2(() => {
+      if (initial === "visible") {
+        _open();
+      }
+      return ntp.messaging.subscribe("customizer_autoOpen", () => {
+        _open();
+      });
+    }, [initial, ntp]);
+    return {
+      buttonRef,
+      visibility,
+      displayChildren,
+      buttonId,
+      drawerId,
+      hidden,
+      animating,
+      asideRef
+    };
+  }
+  function _toggle() {
+    window.dispatchEvent(new CustomEvent(TOGGLE_DRAWER_EVENT));
+  }
+  function _open() {
+    window.dispatchEvent(new CustomEvent(OPEN_DRAWER_EVENT));
+  }
+  function _close() {
+    window.dispatchEvent(new CustomEvent(CLOSE_DRAWER_EVENT));
+  }
+  function useDrawerEventListeners({ onOpen, onClose, onToggle }, deps = []) {
+    y2(() => {
+      const controller = new AbortController();
+      if (onOpen) window.addEventListener(OPEN_DRAWER_EVENT, onOpen, { signal: controller.signal });
+      if (onClose) window.addEventListener(CLOSE_DRAWER_EVENT, onClose, { signal: controller.signal });
+      if (onToggle) window.addEventListener(TOGGLE_DRAWER_EVENT, onToggle, { signal: controller.signal });
+      return () => controller.abort();
+    }, deps);
+  }
+  function useDrawerControls() {
+    return {
+      toggle: _toggle,
+      close: _close,
+      open: _open
+    };
+  }
+  var CLOSE_DRAWER_EVENT, TOGGLE_DRAWER_EVENT, OPEN_DRAWER_EVENT;
+  var init_Drawer = __esm({
+    "pages/new-tab/app/components/Drawer.js"() {
+      "use strict";
+      init_hooks_module();
+      init_signals_module();
+      init_EnvironmentProvider();
+      init_types();
+      CLOSE_DRAWER_EVENT = "close-drawer";
+      TOGGLE_DRAWER_EVENT = "toggle-drawer";
+      OPEN_DRAWER_EVENT = "open-drawer";
+    }
+  });
+
   // pages/new-tab/app/omnibar/components/Omnibar.js
-  function Omnibar({ mode, setMode, enableAi, tabId }) {
+  function Omnibar({ mode, setMode, enableAi, showCustomizePopover, tabId }) {
     const { t: t4 } = useTypedTranslationWith(
       /** @type {Strings} */
       {}
@@ -8952,11 +9214,22 @@
     const [query, setQuery] = useQueryWithLocalPersistence(tabId);
     const [resetKey, setResetKey] = d2(0);
     const [autoFocus, setAutoFocus] = d2(false);
-    const { openSuggestion, submitSearch, submitChat } = x2(OmnibarContext);
+    const { openSuggestion, submitSearch, submitChat, setShowCustomizePopover } = x2(OmnibarContext);
+    const { open: openCustomizer } = useDrawerControls();
+    useDrawerEventListeners(
+      {
+        onOpen: () => setShowCustomizePopover(false),
+        onToggle: () => setShowCustomizePopover(false)
+      },
+      [setShowCustomizePopover]
+    );
     const resetForm = () => {
       setQuery("");
       setResetKey((prev) => prev + 1);
     };
+    const handleCloseCustomizePopover = q2(() => {
+      setShowCustomizePopover(false);
+    }, [setShowCustomizePopover]);
     const handleOpenSuggestion = (params) => {
       openSuggestion(params);
       resetForm();
@@ -8973,7 +9246,33 @@
       setAutoFocus(true);
       setMode(nextMode);
     };
-    return /* @__PURE__ */ _("div", { key: resetKey, class: Omnibar_default.root, "data-mode": mode }, /* @__PURE__ */ _(LogoStacked, { class: Omnibar_default.logo, "aria-label": t4("omnibar_logoAlt") }), enableAi && /* @__PURE__ */ _(TabSwitcher, { mode, onChange: handleChangeMode }), /* @__PURE__ */ _(SearchFormProvider, { term: query, setTerm: setQuery }, /* @__PURE__ */ _("div", { class: Omnibar_default.spacer }, /* @__PURE__ */ _("div", { class: Omnibar_default.popup }, /* @__PURE__ */ _(ResizingContainer, { className: Omnibar_default.field }, mode === "search" ? /* @__PURE__ */ _(SearchForm, { autoFocus, onOpenSuggestion: handleOpenSuggestion, onSubmit: handleSubmitSearch }) : /* @__PURE__ */ _(AiChatForm, { chat: query, autoFocus, onChange: setQuery, onSubmit: handleSubmitChat })), mode === "search" && /* @__PURE__ */ _(SuggestionsList, { onOpenSuggestion: handleOpenSuggestion })))));
+    return /* @__PURE__ */ _("div", { key: resetKey, class: Omnibar_default.root, "data-mode": mode }, /* @__PURE__ */ _(LogoStacked, { class: Omnibar_default.logo, "aria-label": t4("omnibar_logoAlt") }), enableAi && /* @__PURE__ */ _("div", { class: Omnibar_default.tabSwitcherContainer }, /* @__PURE__ */ _(TabSwitcher, { mode, onChange: handleChangeMode }), showCustomizePopover && /* @__PURE__ */ _(
+      Popover,
+      {
+        title: t4("omnibar_customizePopoverTitle"),
+        badge: t4("omnibar_customizePopoverBadge"),
+        onClose: handleCloseCustomizePopover
+      },
+      /* @__PURE__ */ _(
+        Trans,
+        {
+          str: t4("omnibar_customizePopoverDescription"),
+          values: {
+            button: {
+              click: () => openCustomizer()
+            }
+          }
+        }
+      )
+    )), /* @__PURE__ */ _(SearchFormProvider, { term: query, setTerm: setQuery }, /* @__PURE__ */ _("div", { class: Omnibar_default.spacer }, /* @__PURE__ */ _("div", { class: Omnibar_default.popup }, /* @__PURE__ */ _(ResizingContainer, { className: Omnibar_default.field }, mode === "search" ? /* @__PURE__ */ _(
+      SearchForm,
+      {
+        autoFocus,
+        onOpenSuggestion: handleOpenSuggestion,
+        onSubmit: handleSubmitSearch,
+        onSubmitChat: handleSubmitChat
+      }
+    ) : /* @__PURE__ */ _(AiChatForm, { chat: query, autoFocus, onChange: setQuery, onSubmit: handleSubmitChat })), mode === "search" && /* @__PURE__ */ _(SuggestionsList, { onOpenSuggestion: handleOpenSuggestion, onSubmitChat: handleSubmitChat })))));
   }
   var init_Omnibar2 = __esm({
     "pages/new-tab/app/omnibar/components/Omnibar.js"() {
@@ -8991,6 +9290,9 @@
       init_SuggestionsList2();
       init_TabSwitcher2();
       init_PersistentOmnibarValuesProvider();
+      init_Popover2();
+      init_Drawer();
+      init_TranslationsProvider();
     }
   });
 
@@ -9004,10 +9306,19 @@
     return /* @__PURE__ */ _(k, null, state.config.showAiSetting && /* @__PURE__ */ _(AiSetting, { enableAi: state.config?.enableAi === true, setEnableAi, omnibarVisible: visible }), visible && /* @__PURE__ */ _(OmnibarReadyState, { config: state.config, key: current.value, tabId: current.value }));
   }
   function OmnibarReadyState({ config, tabId }) {
-    const { enableAi = true, showAiSetting = true, mode: defaultMode } = config;
+    const { enableAi = true, showAiSetting = true, showCustomizePopover = false, mode: defaultMode } = config;
     const { setMode } = x2(OmnibarContext);
     const modeForCurrentTab = useModeWithLocalPersistence(tabId, defaultMode);
-    return /* @__PURE__ */ _(Omnibar, { mode: modeForCurrentTab, setMode, enableAi: showAiSetting && enableAi, tabId });
+    return /* @__PURE__ */ _(
+      Omnibar,
+      {
+        mode: modeForCurrentTab,
+        setMode,
+        enableAi: showAiSetting && enableAi,
+        showCustomizePopover,
+        tabId
+      }
+    );
   }
   function AiSetting({ enableAi, setEnableAi, omnibarVisible }) {
     const { t: t4 } = useTypedTranslationWith(
@@ -28381,118 +28692,7 @@
   // pages/new-tab/app/components/App.js
   init_dropzone();
   init_CustomizerMenu();
-
-  // pages/new-tab/app/components/Drawer.js
-  init_hooks_module();
-  init_signals_module();
-  init_EnvironmentProvider();
-  init_types();
-  var CLOSE_DRAWER_EVENT = "close-drawer";
-  var TOGGLE_DRAWER_EVENT = "toggle-drawer";
-  var OPEN_DRAWER_EVENT = "open-drawer";
-  function useDrawer(initial) {
-    const { isReducedMotion } = useEnv();
-    const asideRef = A2(
-      /** @type {HTMLDivElement|null} */
-      null
-    );
-    const buttonRef = A2(
-      /** @type {HTMLButtonElement|null} */
-      null
-    );
-    const buttonId = g2();
-    const drawerId = g2();
-    const visibility = useSignal(
-      /** @type {DrawerVisibility} */
-      "hidden"
-    );
-    const displayChildren = useSignal(false);
-    const animating = useSignal(false);
-    const hidden = useComputed(() => displayChildren.value === false);
-    _2(() => {
-      const controller = new AbortController();
-      const aside = asideRef.current;
-      if (!aside) return;
-      const update = (value2) => {
-        visibility.value = value2;
-        if (isReducedMotion) {
-          displayChildren.value = visibility.value === "visible";
-        }
-      };
-      const close = () => update("hidden");
-      const open = () => update("visible");
-      const toggle = () => {
-        const next = visibility.value === "hidden" ? "visible" : "hidden";
-        update(next);
-      };
-      window.addEventListener(CLOSE_DRAWER_EVENT, close, { signal: controller.signal });
-      window.addEventListener(TOGGLE_DRAWER_EVENT, toggle, { signal: controller.signal });
-      window.addEventListener(OPEN_DRAWER_EVENT, open, { signal: controller.signal });
-      aside?.addEventListener(
-        "transitionend",
-        (e4) => {
-          if (e4.target !== e4.currentTarget) return;
-          r3(() => {
-            displayChildren.value = visibility.value === "visible";
-            animating.value = false;
-            if (displayChildren.value === false) {
-              buttonRef.current?.focus?.();
-            }
-          });
-        },
-        { signal: controller.signal }
-      );
-      aside?.addEventListener(
-        "transitionstart",
-        (e4) => {
-          if (e4.target !== e4.currentTarget) return;
-          r3(() => {
-            animating.value = true;
-            displayChildren.value = true;
-          });
-        },
-        { signal: controller.signal }
-      );
-      return () => {
-        controller.abort();
-      };
-    }, [isReducedMotion, initial]);
-    const ntp = useMessaging();
-    y2(() => {
-      if (initial === "visible") {
-        _open();
-      }
-      return ntp.messaging.subscribe("customizer_autoOpen", () => {
-        _open();
-      });
-    }, [initial, ntp]);
-    return {
-      buttonRef,
-      visibility,
-      displayChildren,
-      buttonId,
-      drawerId,
-      hidden,
-      animating,
-      asideRef
-    };
-  }
-  function _toggle() {
-    window.dispatchEvent(new CustomEvent(TOGGLE_DRAWER_EVENT));
-  }
-  function _open() {
-    window.dispatchEvent(new CustomEvent(OPEN_DRAWER_EVENT));
-  }
-  function _close() {
-    window.dispatchEvent(new CustomEvent(CLOSE_DRAWER_EVENT));
-  }
-  function useDrawerControls() {
-    return {
-      toggle: _toggle,
-      close: _close,
-      open: _open
-    };
-  }
+  init_Drawer();
 
   // pages/new-tab/app/customizer/components/CustomizerDrawer.js
   init_preact_module();
@@ -28538,6 +28738,9 @@
     col: "CustomizerDrawerInner_col",
     settingsLink: "CustomizerDrawerInner_settingsLink"
   };
+
+  // pages/new-tab/app/customizer/components/CustomizerDrawerInner.js
+  init_Drawer();
 
   // pages/new-tab/app/customizer/components/BackgroundSection.js
   init_preact_module();
@@ -29425,6 +29628,10 @@
       title: "Customize New Tab Page",
       note: "Heading text describing that there's a list of toggles for customizing the page layout."
     },
+    ntp_popover_close_button: {
+      title: "Close",
+      note: "Button that closes the current popover."
+    },
     updateNotification_updated_version: {
       title: "Browser Updated to version {version}.",
       note: "Text to indicate which new version was updated. `{version}` will be formatted like `1.22.0`"
@@ -29572,6 +29779,26 @@
     omnibar_visitSuffix: {
       title: "Visit {url}",
       description: "Text placed after suggestions that will open a webpage."
+    },
+    omnibar_askDuckAiSuffix: {
+      title: "Ask Duck.ai",
+      description: "Text placed after aiChat suggestions that will submit a chat query."
+    },
+    omnibar_switchToTab: {
+      title: "Switch to Tab",
+      description: "Badge text shown next to open tab suggestions."
+    },
+    omnibar_customizePopoverTitle: {
+      title: "Toggle between search and AI chat",
+      description: "Title for the popover that introduces the search/AI toggle feature."
+    },
+    omnibar_customizePopoverBadge: {
+      title: "New",
+      description: "Badge text for the popover that introduces the search/AI toggle feature."
+    },
+    omnibar_customizePopoverDescription: {
+      title: "Either way, your info stays private.<br />Don't want this? <button>Customize</button>",
+      description: "Description message in the popover including privacy statement and customize option."
     },
     nextSteps_sectionTitle: {
       title: "Next Steps",
@@ -31585,7 +31812,6 @@
     constructor(config, messagingContext) {
       this.messagingContext = messagingContext;
       this.config = config;
-      this.config.sendInitialPing(messagingContext);
     }
     /**
      * @param {NotificationMessage} msg

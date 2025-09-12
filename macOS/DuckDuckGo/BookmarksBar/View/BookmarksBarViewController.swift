@@ -201,6 +201,12 @@ final class BookmarksBarViewController: NSViewController {
         unsubscribeFromEvents()
     }
 
+    deinit {
+#if DEBUG
+        bookmarkMenuPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     private func subscribeToEvents() {
         guard cancellables.isEmpty else { return }
 

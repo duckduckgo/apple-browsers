@@ -29,6 +29,7 @@ import Combine
 import os.log
 import PixelKit
 import Core
+import enum UserScript.UserScriptError
 
 // MARK: - Main View Controller
 
@@ -356,6 +357,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     private let emailService: EmailService
     private let captchaService: CaptchaService
     private let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    private var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let executionConfig: BrokerJobExecutionConfig
     private let featureFlagger: DBPFeatureFlagging
 
@@ -402,7 +404,10 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         self.fakePixelHandler = EventMapping { event, _, _, _ in
             print("Debug Pixel: \(event)")
         }
-        
+        if let pixelKit = PixelKit.shared {
+            self.pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
+        }
+
         let appDependencies = AppDependencyProvider.shared
         self.featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
         let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
@@ -514,6 +519,10 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                             allResults.append(result)
                         }
                         
+                    } catch let UserScriptError.failedToLoadJS(jsFile, error) {
+                        pixelHandler?.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+                        try? await Task.sleep(interval: 1.0) // give time for the pixel to be sent
+                        fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
                     } catch {
                         print("Error scanning \(broker.name): \(error)")
                     }
@@ -640,6 +649,10 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                 
                 showAlert(title: "Success", message: "Opt-out process completed for \(result.extractedProfile.name ?? "profile").")
                 
+            } catch let UserScriptError.failedToLoadJS(jsFile, error) {
+                pixelHandler?.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+                try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
+                fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
             } catch {
                 showAlert(title: "Error", message: "Opt-out failed: \(error.localizedDescription)")
             }

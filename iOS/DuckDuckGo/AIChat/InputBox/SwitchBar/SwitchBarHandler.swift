@@ -47,6 +47,9 @@ protocol SwitchBarHandling: AnyObject {
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> { get }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { get }
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { get }
+    
+    // Provide toggle mode parameters. Used in pixels.
+    var modeParameters: [String: String] { get }
 
     // MARK: - Methods
     func updateCurrentText(_ text: String)
@@ -71,6 +74,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let storage: KeyValueStoring
     private let aiChatSettings: AIChatSettingsProvider
     private let funnelState: SwitchBarFunnelProviding
+    private var sessionStateMetrics: SessionStateMetricsProviding
 
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
@@ -84,6 +88,10 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     var isVoiceSearchEnabled: Bool {
         voiceSearchHelper.isVoiceSearchEnabled
+    }
+    
+    var modeParameters: [String: String] {
+        ["mode": currentToggleState.rawValue]
     }
 
     var currentTextPublisher: AnyPublisher<String, Never> {
@@ -119,18 +127,23 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
     private var backgroundObserver: NSObjectProtocol?
 
-    init(voiceSearchHelper: VoiceSearchHelperProtocol, storage: KeyValueStoring, aiChatSettings: AIChatSettingsProvider, funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard)) {
+    init(voiceSearchHelper: VoiceSearchHelperProtocol, storage: KeyValueStoring,
+         aiChatSettings: AIChatSettingsProvider,
+         funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
+         sessionStateMetrics: SessionStateMetricsProviding) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
         self.aiChatSettings = aiChatSettings
         self.funnelState = funnelState
+        self.sessionStateMetrics = sessionStateMetrics
         
         // Set up app lifecycle observers to reset session flags
         backgroundObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.didEnterBackgroundNotification,
             object: nil,
             queue: .main
-        ) { _ in
+        ) { [weak self] _ in
+            self?.sessionStateMetrics.finalizeSession()
             Self.resetSessionFlags()
         }
     }
@@ -149,7 +162,8 @@ final class SwitchBarHandler: SwitchBarHandling {
         // Process funnel step
         processSubmissionFunnelStep(mode: currentToggleState)
         
-        updateModeUsage(currentToggleState)
+        // Process session activity
+        processSessionActivity(mode: currentToggleState)
         textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
     }
 
@@ -161,7 +175,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         saveToggleState()
         
         if isStateChanging {
-            Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched)
+            fireModeSwitchedPixel(to: state)
         }
     }
 
@@ -197,6 +211,26 @@ final class SwitchBarHandler: SwitchBarHandling {
             funnelState.processStep(.promptSubmitted)
         }
     }
+    
+    private func processSessionActivity(mode: TextEntryMode) {
+        let previouslyUsedBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
+        
+        // Record activity for session metrics
+        switch mode {
+        case .search:
+            sessionStateMetrics.incrementActivity(.searchSubmitted)
+            Self.hasUsedSearchInSession = true
+        case .aiChat:
+            sessionStateMetrics.incrementActivity(.promptSubmitted)
+            Self.hasUsedAIChatInSession = true
+        }
+        
+        // Fire pixel only when user achieves both-mode usage for the first time in this session
+        let nowUsesBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
+        if nowUsesBothModes && !previouslyUsedBothModes {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarSessionBothModes)
+        }
+    }
 
     func saveToggleState() {
         storage.set(currentToggleState.rawValue, forKey: StorageKey.toggleState)
@@ -222,21 +256,15 @@ final class SwitchBarHandler: SwitchBarHandling {
         hasUsedAIChatInSession = false
     }
     
-    // MARK: - Mode Usage Detection  
-    private func updateModeUsage(_ mode: TextEntryMode) {
-        let previouslyUsedBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
-        
-        switch mode {
-        case .search:
-            Self.hasUsedSearchInSession = true
-        case .aiChat:
-            Self.hasUsedAIChatInSession = true
-        }
-        
-        // Fire pixel only when user achieves both-mode usage for the first time in this session
-        let nowUsesBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
-        if nowUsesBothModes && !previouslyUsedBothModes {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarSessionBothModes)
-        }
+    // MARK: - Pixels
+    
+    private func fireModeSwitchedPixel(to state: TextEntryMode) {
+        let direction = state == .search ? "to_search" : "to_duckai"
+        let hadText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let parameters = [
+            "direction": direction,
+            "had_text": String(hadText)
+        ]
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched, withAdditionalParameters: parameters)
     }
 }

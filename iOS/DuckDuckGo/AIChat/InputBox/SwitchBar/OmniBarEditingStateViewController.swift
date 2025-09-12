@@ -67,11 +67,14 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private var suggestionTrayManager: SuggestionTrayManager?
     private let daxLogoManager = DaxLogoManager()
     private var notificationCancellable: AnyCancellable?
+    private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
 
     // MARK: - Initialization
 
-    internal init(switchBarHandler: any SwitchBarHandling) {
+    internal init(switchBarHandler: any SwitchBarHandling,
+                  switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics()) {
         self.switchBarHandler = switchBarHandler
+        self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -109,7 +112,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         super.viewDidAppear(animated)
 
         DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
-        DailyPixel.fire(pixel: .aiChatExperimentalOmnibarShown)
+        DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarShown)
     }
 
     // MARK: - Public Methods
@@ -211,11 +214,11 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
                 switch submission.mode {
                 case .search:
-                    DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarQuerySubmitted)
+                    switchBarSubmissionMetrics.process(text, for: .search)
                     self.delegate?.onQuerySubmitted(text)
 
                 case .aiChat:
-                    DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarPromptSubmitted)
+                    switchBarSubmissionMetrics.process(text, for: .aiChat)
                     // If we (re)add the web rag button, then we need to add it to the array of tools Duck.ai should use
                     //  for this submission.
                     self.delegate?.onPromptSubmitted(text, tools: nil)
@@ -244,6 +247,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     // MARK: - Action Handlers
 
     @objc private func dismissButtonTapped(_ sender: UIButton) {
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarBackButtonPressed, withAdditionalParameters: switchBarHandler.modeParameters)
         switchBarVC.unfocusTextField()
         delegate?.onDismissRequested()
         dismissAnimated()
@@ -308,12 +312,14 @@ extension OmniBarEditingStateViewController: NavigationActionBarManagerDelegate 
     }
 
     func navigationActionBarManagerDidTapNewLine(_ manager: NavigationActionBarManager) {
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarFloatingReturnPressed)
         let currentText = switchBarHandler.currentText
         let newText = currentText + "\n"
         switchBarHandler.updateCurrentText(newText)
     }
 
     func navigationActionBarManagerDidTapSearch(_ manager: NavigationActionBarManager) {
+        Pixel.fire(pixel: .aiChatExperimentalOmnibarFloatingSubmitPressed, withAdditionalParameters: switchBarHandler.modeParameters)
         let currentText = switchBarHandler.currentText
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             switchBarHandler.submitText(currentText)

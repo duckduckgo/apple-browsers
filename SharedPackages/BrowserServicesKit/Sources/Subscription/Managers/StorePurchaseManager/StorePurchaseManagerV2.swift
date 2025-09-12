@@ -33,7 +33,7 @@ public enum StoreError: DDGError {
         }
     }
 
-    public var errorDomain: String { "com.duckduckgo.subscription.StoreError" }
+    public static var errorDomain: String { "com.duckduckgo.subscription.StoreError" }
 
     public var errorCode: Int {
         switch self {
@@ -71,7 +71,7 @@ public enum StorePurchaseManagerError: DDGError {
         }
     }
 
-    public var errorDomain: String { "com.duckduckgo.subscription.StorePurchaseManagerError" }
+    public static var errorDomain: String { "com.duckduckgo.subscription.StorePurchaseManagerError" }
 
     public var errorCode: Int {
         switch self {

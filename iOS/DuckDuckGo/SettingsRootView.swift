@@ -150,7 +150,8 @@ struct SettingsRootView: View {
                                                                  subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                                  privacyProDataReporter: viewModel.privacyProDataReporter,
                                                                  tld: AppDependencyProvider.shared.storageCache.tld,
-                                                                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider)
+                                                                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                                 dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider)
         } else {
             SubscriptionContainerViewFactory.makeSubscribeFlow(redirectURLComponents: redirectURLComponents,
                                                                navigationCoordinator: subscriptionNavigationCoordinator,
@@ -158,7 +159,8 @@ struct SettingsRootView: View {
                                                                subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                                privacyProDataReporter: viewModel.privacyProDataReporter,
                                                                tld: AppDependencyProvider.shared.storageCache.tld,
-                                                               internalUserDecider: AppDependencyProvider.shared.internalUserDecider)
+                                                               internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                               dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider)
         }
     }
 
@@ -169,6 +171,7 @@ struct SettingsRootView: View {
                                                              subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                              internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                              emailFlow: .restoreFlow,
+                                                             dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
                                                              onDisappear: {})
         } else {
             SubscriptionContainerViewFactory.makeEmailFlow(navigationCoordinator: subscriptionNavigationCoordinator,
@@ -176,6 +179,7 @@ struct SettingsRootView: View {
                                                            subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                            emailFlow: .restoreFlow,
+                                                           dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
                                                            onDisappear: {})
         }
     }
@@ -214,9 +218,8 @@ struct SettingsRootView: View {
     @ViewBuilder func navigationDestinationView(for target: SettingsViewModel.SettingsDeepLinkSection) -> some View {
         switch target {
         case .dbp:
-            if viewModel.isPIREnabled,
-               let dbpManager = DataBrokerProtectionIOSManager.shared {
-                DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: dbpManager)
+            if viewModel.isPIREnabled, let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {
+                DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
             } else {
                 SubscriptionPIRMoveToDesktopView()
             }

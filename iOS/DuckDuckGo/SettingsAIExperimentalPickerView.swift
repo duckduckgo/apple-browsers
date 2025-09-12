@@ -30,8 +30,7 @@ struct SettingsAIExperimentalPickerView: View {
                 isSelected: !isDuckAISelected,
                 selectedImage: .searchExperimentalOn,
                 unselectedImage: .searchExperimentalOff,
-                title: UserText.settingsAiExperimentalPickerSearchOnly,
-                subtitle: UserText.settingsAiExperimentalPickerDefault
+                title: UserText.settingsAIPickerSearchOnly
             ) {
                 isDuckAISelected = false
             }
@@ -40,8 +39,7 @@ struct SettingsAIExperimentalPickerView: View {
                 isSelected: isDuckAISelected,
                 selectedImage: .aiExperimentalOn,
                 unselectedImage: .aiExperimentalOff,
-                title: UserText.settingsAiExperimentalPickerSearchAndDuckAI,
-                subtitle: UserText.settingsAiExperimentalPickerExperimental
+                title: UserText.settingsAIPickerSearchAndDuckAI
             ) {
                 isDuckAISelected = true
             }
@@ -56,7 +54,6 @@ private struct PickerOptionView: View {
     let selectedImage: ImageResource
     let unselectedImage: ImageResource
     let title: String
-    let subtitle: String
     let action: () -> Void
 
     var body: some View {
@@ -66,10 +63,7 @@ private struct PickerOptionView: View {
                     .resizable()
                     .scaledToFit()
 
-                VStack(spacing: SettingsAIExperimentalPickerViewLayout.textStackSpacing) {
-                    Text(title)
-                    Text(subtitle)
-                }
+                Text(title)
                 .daxFootnoteRegular()
                 .foregroundColor(Color(designSystemColor: .textPrimary))
 

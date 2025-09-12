@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 
 // Inspired by https://swiftsenpai.com/swift/create-the-perfect-userdefaults-wrapper-using-property-wrapper/
@@ -235,16 +236,4 @@ public struct UserDefaultsWrapper<T> {
             }
         }
     }
-}
-
-private protocol AnyOptional {
-
-    var isNil: Bool { get }
-
-}
-
-extension Optional: AnyOptional {
-
-    var isNil: Bool { self == nil }
-
 }

@@ -112,6 +112,21 @@ final class PrivacyDashboardViewController: NSViewController {
         fatalError("\(Self.self): Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        if isViewLoaded {
+            // Check that our view deallocates
+            view.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+
+            // Check that webView deallocates
+            webView.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+
+        // Check that our controller deallocates
+        privacyDashboardController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     public func updateTabViewModel(_ tabViewModel: TabViewModel) {
         self.tabViewModel = tabViewModel
         privacyDashboardController.updatePrivacyInfo(tabViewModel.tab.privacyInfo)

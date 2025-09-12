@@ -234,6 +234,9 @@
 		31EEBCD92E2AAB4C00901255 /* NavigationActionBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31EEBCD82E2AAB4700901255 /* NavigationActionBarViewController.swift */; };
 		31EEBCDB2E2AABAD00901255 /* NavigationActionBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31EEBCDA2E2AABA900901255 /* NavigationActionBarView.swift */; };
 		31FD991B2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FD991A2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift */; };
+		365E900B2E566C2300BDB0E8 /* AIChatIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 365E900A2E566C2300BDB0E8 /* AIChatIntent.swift */; };
+		365E90132E5673DF00BDB0E8 /* SearchInAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 365E90122E5673DF00BDB0E8 /* SearchInAppIntent.swift */; };
+		369809BF2E5635E7007FE895 /* AppShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369809BE2E5635E1007FE895 /* AppShortcuts.swift */; };
 		369E69282E5F4B9600F98A8F /* InactivityNotificationSchedulerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369E69272E5F4B8500F98A8F /* InactivityNotificationSchedulerService.swift */; };
 		369E692A2E5F579B00F98A8F /* NotificationServiceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369E69292E5F579500F98A8F /* NotificationServiceManager.swift */; };
 		369E692D2E5F6EC200F98A8F /* InactivityNotificationSchedulerServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369E692C2E5F6EB500F98A8F /* InactivityNotificationSchedulerServiceTests.swift */; };
@@ -537,7 +540,6 @@
 		7B4DC5C22CB2AE4600EE5CC2 /* WidgetKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4DC5C12CB2AE4600EE5CC2 /* WidgetKind.swift */; };
 		7B4DC5C32CB2AF0700EE5CC2 /* WidgetKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4DC5C12CB2AE4600EE5CC2 /* WidgetKind.swift */; };
 		7B4DC5C42CB2B1D000EE5CC2 /* WidgetKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4DC5C12CB2AE4600EE5CC2 /* WidgetKind.swift */; };
-		7B4DC5E22CB2D87C00EE5CC2 /* VPNAutoShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4DC5E02CB2D87C00EE5CC2 /* VPNAutoShortcuts.swift */; };
 		7B4F87E72D0734090010B18F /* ControlCenterWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4F87E62D0734060010B18F /* ControlCenterWidget.swift */; };
 		7B4F87EA2D0738F90010B18F /* SiriEducationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4F87E92D0738F40010B18F /* SiriEducationView.swift */; };
 		7B4F87EC2D07396A0010B18F /* SiriEducation.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7B4F87EB2D07396A0010B18F /* SiriEducation.xcassets */; };
@@ -2200,6 +2202,9 @@
 		31EEBCD82E2AAB4700901255 /* NavigationActionBarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationActionBarViewController.swift; sourceTree = "<group>"; };
 		31EEBCDA2E2AABA900901255 /* NavigationActionBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationActionBarView.swift; sourceTree = "<group>"; };
 		31FD991A2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentalAIChatManager.swift; sourceTree = "<group>"; };
+		365E900A2E566C2300BDB0E8 /* AIChatIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatIntent.swift; sourceTree = "<group>"; };
+		365E90122E5673DF00BDB0E8 /* SearchInAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchInAppIntent.swift; sourceTree = "<group>"; };
+		369809BE2E5635E1007FE895 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
 		369E69272E5F4B8500F98A8F /* InactivityNotificationSchedulerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InactivityNotificationSchedulerService.swift; sourceTree = "<group>"; };
 		369E69292E5F579500F98A8F /* NotificationServiceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceManager.swift; sourceTree = "<group>"; };
 		369E692C2E5F6EB500F98A8F /* InactivityNotificationSchedulerServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InactivityNotificationSchedulerServiceTests.swift; sourceTree = "<group>"; };
@@ -2442,7 +2447,6 @@
 		7B1C892B2CF714AA0008224E /* VPNTipsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNTipsModel.swift; sourceTree = "<group>"; };
 		7B4DC5BF2CB2A4A500EE5CC2 /* VPNControlStatusValueProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNControlStatusValueProvider.swift; sourceTree = "<group>"; };
 		7B4DC5C12CB2AE4600EE5CC2 /* WidgetKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetKind.swift; sourceTree = "<group>"; };
-		7B4DC5E02CB2D87C00EE5CC2 /* VPNAutoShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNAutoShortcuts.swift; sourceTree = "<group>"; };
 		7B4F87E62D0734060010B18F /* ControlCenterWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlCenterWidget.swift; sourceTree = "<group>"; };
 		7B4F87E92D0738F40010B18F /* SiriEducationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiriEducationView.swift; sourceTree = "<group>"; };
 		7B4F87EB2D07396A0010B18F /* SiriEducation.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = SiriEducation.xcassets; sourceTree = "<group>"; };
@@ -4951,6 +4955,15 @@
 			path = LocalPackages;
 			sourceTree = "<group>";
 		};
+		365E90092E566C0A00BDB0E8 /* AppIntents */ = {
+			isa = PBXGroup;
+			children = (
+				365E90122E5673DF00BDB0E8 /* SearchInAppIntent.swift */,
+				365E900A2E566C2300BDB0E8 /* AIChatIntent.swift */,
+			);
+			path = AppIntents;
+			sourceTree = "<group>";
+		};
 		362E3EBA2E7184AB00E4C762 /* AIChat */ = {
 			isa = PBXGroup;
 			children = (
@@ -5209,7 +5222,6 @@
 			isa = PBXGroup;
 			children = (
 				7B1681042D10BC7B005EAE24 /* VPNShortcutIntents.swift */,
-				7B4DC5E02CB2D87C00EE5CC2 /* VPNAutoShortcuts.swift */,
 			);
 			name = Intents;
 			sourceTree = "<group>";
@@ -5825,6 +5837,8 @@
 		84E341941E2F7EFB00BDBA6F /* DuckDuckGo */ = {
 			isa = PBXGroup;
 			children = (
+				365E90092E566C0A00BDB0E8 /* AppIntents */,
+				369809BE2E5635E1007FE895 /* AppShortcuts.swift */,
 				F1970B592DF1F356008F18BC /* AdAttribution */,
 				311C79E22CF790270021196A /* AIChat */,
 				AA4D6A8023DE4973007E8790 /* AppIcon */,
@@ -10027,6 +10041,7 @@
 				CB3C78892D06D3A700A7E4ED /* Foreground.swift in Sources */,
 				CB3C788A2D06D3A700A7E4ED /* Background.swift in Sources */,
 				C1AD33342DBAD1DD003B80A4 /* SaveCreditCardViewController.swift in Sources */,
+				365E900B2E566C2300BDB0E8 /* AIChatIntent.swift in Sources */,
 				C1AD33352DBAD1DD003B80A4 /* SaveCreditCardViewModel.swift in Sources */,
 				C1AD33362DBAD1DD003B80A4 /* SaveCreditCardView.swift in Sources */,
 				65D091242D47DF2100226164 /* DuckPlayerViewModel.swift in Sources */,
@@ -10140,7 +10155,6 @@
 				98C785E92E687D490077819E /* InternalUserCommands.swift in Sources */,
 				65BD16392D8DA439000795DE /* DuckPlayerDebugSettingsView.swift in Sources */,
 				F4D9C4FA25117A0F00814B71 /* HomeMessageStorage.swift in Sources */,
-				7B4DC5E22CB2D87C00EE5CC2 /* VPNAutoShortcuts.swift in Sources */,
 				6F5041C92CC11A5100989E48 /* NewTabPageView.swift in Sources */,
 				D69FBF762B28BE3600B505F1 /* SettingsSubscriptionView.swift in Sources */,
 				D664C7CC2B289AA200CBFA76 /* SubscriptionPagesUserScript.swift in Sources */,
@@ -10156,6 +10170,7 @@
 				C1AD332E2DBAD1BD003B80A4 /* CreditCardRow.swift in Sources */,
 				9FEBDE1E2E0BEE6800175B8B /* DefaultBrowserPromptActivityKeyValueFilesStore.swift in Sources */,
 				C1AD332F2DBAD1BD003B80A4 /* CreditCardRowViewModel.swift in Sources */,
+				369809BF2E5635E7007FE895 /* AppShortcuts.swift in Sources */,
 				1EEF123F2850A68A003DDE57 /* PrivacyInfoContainerView.swift in Sources */,
 				C17A8E5D2E26C7D900CAE1B9 /* ImportPasswordsPromptView.swift in Sources */,
 				C17A8E5E2E26C7D900CAE1B9 /* ImportPasswordsPromptViewController.swift in Sources */,
@@ -10568,6 +10583,7 @@
 				981CA7EA2617797500E119D5 /* MainViewController+AddFavoriteFlow.swift in Sources */,
 				CBF259BD2D4E56E900AC63E4 /* ReportingService.swift in Sources */,
 				C13830FE2DCD3FFC00A29B3C /* CreditCardInputAccessoryView.swift in Sources */,
+				365E90132E5673DF00BDB0E8 /* SearchInAppIntent.swift in Sources */,
 				373608902ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift in Sources */,
 				9872D205247DCAC100CEF398 /* TabPreviewsSource.swift in Sources */,
 				4B0F3F502B9BFF2100392892 /* NetworkProtectionFAQView.swift in Sources */,

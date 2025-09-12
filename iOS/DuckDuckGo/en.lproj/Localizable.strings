@@ -2663,7 +2663,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.ai.experimental.picker.search_only" = "Search Only";
 
 /* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Try our new option to ask Duck.ai directly from the Address Bar.";
+"settings.ai.new.picker.footer" = "Try the new option to toggle between search and Duck.ai in the Address Bar.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Manage Duck.ai Shortcuts";

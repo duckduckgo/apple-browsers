@@ -189,7 +189,7 @@ final class TabSnapshotExtension {
     // MARK: - Snapshots rendered from regular views
 
     @MainActor
-    func renderSnapshot(from view: NSView) async {
+    func renderSnapshot(from view: @escaping () -> NSView?) async {
         guard let snapshot = await viewSnapshotRenderer.renderSnapshot(view: view) else {
             clearSnapshot()
             return
@@ -290,7 +290,7 @@ protocol TabSnapshotExtensionProtocol: AnyObject, NavigationResponder {
 
     func setIdentifier(_ identifier: UUID)
     func renderWebViewSnapshot() async
-    func renderSnapshot(from view: NSView) async
+    func renderSnapshot(from view: @escaping () -> NSView?) async
 
 }
 

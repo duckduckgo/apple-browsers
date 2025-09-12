@@ -9028,6 +9028,8 @@
         popover: "Popover_popover",
         content: "Popover_content",
         closeButton: "Popover_closeButton",
+        heading: "Popover_heading",
+        badge: "Popover_badge",
         title: "Popover_title",
         description: "Popover_description",
         arrow: "Popover_arrow"
@@ -9036,7 +9038,7 @@
   });
 
   // pages/new-tab/app/components/Popover.js
-  function Popover({ title, onClose, children }) {
+  function Popover({ title, badge, onClose, children }) {
     const { t: t4 } = useTypedTranslationWith(
       /** @type {Strings} */
       {}
@@ -9063,7 +9065,7 @@
         d: "M9.20362 6.3927L0.510957 13.8636C-0.183621 14.4619 -0.16344 15.5367 0.531137 16.1351L9.20362 23.606C10.9677 25.1256 11.9819 27.3368 11.9819 29.6632L11.9819 30.0003L11.9819 -0.000488281V0.335449C11.9819 2.66185 10.9677 4.87302 9.20362 6.3927Z",
         fill: "currentColor"
       }
-    )), /* @__PURE__ */ _("div", { class: Popover_default.content }, /* @__PURE__ */ _("button", { class: Popover_default.closeButton, onClick: onClose, "aria-label": t4("ntp_popover_close_button") }, /* @__PURE__ */ _(Cross, null)), /* @__PURE__ */ _("h3", { id: titleId, class: Popover_default.title }, title), /* @__PURE__ */ _("p", { id: descriptionId, class: Popover_default.description }, children)));
+    )), /* @__PURE__ */ _("div", { class: Popover_default.content }, /* @__PURE__ */ _("button", { class: Popover_default.closeButton, onClick: onClose, "aria-label": t4("ntp_popover_close_button") }, /* @__PURE__ */ _(Cross, null)), /* @__PURE__ */ _("h3", { id: titleId, class: Popover_default.heading }, badge && /* @__PURE__ */ _("span", { class: Popover_default.badge }, badge), /* @__PURE__ */ _("span", { class: Popover_default.title }, title)), /* @__PURE__ */ _("p", { id: descriptionId, class: Popover_default.description }, children)));
   }
   var init_Popover2 = __esm({
     "pages/new-tab/app/components/Popover.js"() {
@@ -9244,17 +9246,25 @@
       setAutoFocus(true);
       setMode(nextMode);
     };
-    return /* @__PURE__ */ _("div", { key: resetKey, class: Omnibar_default.root, "data-mode": mode }, /* @__PURE__ */ _(LogoStacked, { class: Omnibar_default.logo, "aria-label": t4("omnibar_logoAlt") }), enableAi && /* @__PURE__ */ _("div", { class: Omnibar_default.tabSwitcherContainer }, /* @__PURE__ */ _(TabSwitcher, { mode, onChange: handleChangeMode }), showCustomizePopover && /* @__PURE__ */ _(Popover, { title: t4("omnibar_customizePopoverTitle"), onClose: handleCloseCustomizePopover }, /* @__PURE__ */ _(
-      Trans,
+    return /* @__PURE__ */ _("div", { key: resetKey, class: Omnibar_default.root, "data-mode": mode }, /* @__PURE__ */ _(LogoStacked, { class: Omnibar_default.logo, "aria-label": t4("omnibar_logoAlt") }), enableAi && /* @__PURE__ */ _("div", { class: Omnibar_default.tabSwitcherContainer }, /* @__PURE__ */ _(TabSwitcher, { mode, onChange: handleChangeMode }), showCustomizePopover && /* @__PURE__ */ _(
+      Popover,
       {
-        str: t4("omnibar_customizePopoverDescription"),
-        values: {
-          button: {
-            click: () => openCustomizer()
+        title: t4("omnibar_customizePopoverTitle"),
+        badge: t4("omnibar_customizePopoverBadge"),
+        onClose: handleCloseCustomizePopover
+      },
+      /* @__PURE__ */ _(
+        Trans,
+        {
+          str: t4("omnibar_customizePopoverDescription"),
+          values: {
+            button: {
+              click: () => openCustomizer()
+            }
           }
         }
-      }
-    ))), /* @__PURE__ */ _(SearchFormProvider, { term: query, setTerm: setQuery }, /* @__PURE__ */ _("div", { class: Omnibar_default.spacer }, /* @__PURE__ */ _("div", { class: Omnibar_default.popup }, /* @__PURE__ */ _(ResizingContainer, { className: Omnibar_default.field }, mode === "search" ? /* @__PURE__ */ _(
+      )
+    )), /* @__PURE__ */ _(SearchFormProvider, { term: query, setTerm: setQuery }, /* @__PURE__ */ _("div", { class: Omnibar_default.spacer }, /* @__PURE__ */ _("div", { class: Omnibar_default.popup }, /* @__PURE__ */ _(ResizingContainer, { className: Omnibar_default.field }, mode === "search" ? /* @__PURE__ */ _(
       SearchForm,
       {
         autoFocus,
@@ -29779,8 +29789,12 @@
       description: "Badge text shown next to open tab suggestions."
     },
     omnibar_customizePopoverTitle: {
-      title: "New! Toggle between search and AI chat",
+      title: "Toggle between search and AI chat",
       description: "Title for the popover that introduces the search/AI toggle feature."
+    },
+    omnibar_customizePopoverBadge: {
+      title: "New",
+      description: "Badge text for the popover that introduces the search/AI toggle feature."
     },
     omnibar_customizePopoverDescription: {
       title: "Either way, your info stays private.<br />Don't want this? <button>Customize</button>",

@@ -37,6 +37,15 @@ final class BookmarkManagementSplitViewController: NSSplitViewController {
         fatalError("\(type(of: self)): Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        if isViewLoaded {
+            sidebarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            detailViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+#endif
+    }
+
     override func loadView() {
         title = UserText.bookmarks
 

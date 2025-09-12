@@ -71,7 +71,7 @@ struct LogExporter {
         if configuration.includePersonalInformationRemoval {
             filters.append(
                 LogFilter(
-                    predicate: NSPredicate(format: "(subsystem == %@) AND (process == %@ || process == %@)", "PIR", "DuckDuckGo", "DuckDuckGo Personal Information Removal"),
+                    predicate: NSPredicate(format: "subsystem == %@ AND process CONTAINS[c] %@", "PIR", "DuckDuckGo"),
                     destinationFileName: "personal_information_removal.log"
                 ))
         }

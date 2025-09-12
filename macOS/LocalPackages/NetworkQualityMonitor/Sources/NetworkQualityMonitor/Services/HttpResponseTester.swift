@@ -172,13 +172,19 @@ public final class HttpResponseTester: HttpResponseTesting {
     private func calculateAdjustedResponseTime(bestSiteStats: SiteStatistics,
                                               allSiteStats: [SiteStatistics]) -> Double {
         // Calculate the MEDIAN of all site medians
-        // This properly reflects geographic latency reality:
-        // - Same region (US→US, EU→EU): 10-30ms typical
-        // - Cross-continent (US East→West): 60-80ms typical
-        // - Transatlantic (US→EU): 80-150ms typical
-        // - Transpacific (US→Asia): 120-200ms typical  
-        // - Extreme distance (EU→Australia): 250-300ms typical
-        // - Satellite connections: 500-700ms typical
+        // This properly reflects real-world latency expectations:
+        // 
+        // EXCELLENT (<150ms): Well-optimized services with good CDN coverage
+        // GOOD (150-250ms): Normal, expected performance for most services
+        // FAIR (250-400ms): Acceptable but could be optimized
+        // POOR (>400ms): Needs investigation, users will perceive as slow
+        //
+        // Geographic reality examples:
+        // - Local CDN edge: 10-50ms
+        // - Same continent: 50-150ms  
+        // - Cross-ocean: 150-300ms
+        // - Opposite side of world: 250-400ms
+        // - Satellite/poor mobile: 400-700ms
         //
         // Using median ensures we get the "typical" latency experience
         // and naturally reflects geographic distance to servers

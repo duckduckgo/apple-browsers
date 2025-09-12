@@ -56,20 +56,22 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
         static let goodThreshold = 60.0
         static let fairThreshold = 40.0
         
-        // HTTP Response thresholds (ms) - more realistic/strict
-        static let httpResponseExcellent = 50.0   // Was 100ms
-        static let httpResponseVeryGood = 100.0   // Was 200ms  
-        static let httpResponseGood = 200.0       // Was 300ms
-        static let httpResponseFair = 300.0       // Was 400ms
-        static let httpResponseBelowAverage = 400.0 // Was 500ms
-        static let httpResponsePoor = 500.0       // Was 600ms
+        // HTTP Response thresholds (ms) - realistic for global services
+        // Based on real-world browser performance expectations
+        static let httpResponseExcellent = 150.0      // <150ms: Excellent (CDN-optimized)
+        static let httpResponseVeryGood = 200.0       // 150-200ms: Very good
+        static let httpResponseGood = 250.0           // 200-250ms: Good (normal production)
+        static let httpResponseFair = 325.0           // 250-325ms: Fair (acceptable)
+        static let httpResponseBelowAverage = 400.0   // 325-400ms: Below average
+        static let httpResponsePoor = 500.0           // >400ms: Poor (needs investigation)
         
         // Response Variance penalty thresholds (standard deviation in ms)
-        // Now using proper standard deviation instead of made-up metric
-        static let varianceGoodThreshold = 20.0    // Under 20ms std dev is excellent
-        static let varianceFairThreshold = 50.0    // 20-50ms std dev is acceptable  
-        static let variancePoorThreshold = 100.0   // 50-100ms std dev is problematic
-        static let varianceVeryPoorThreshold = 200.0 // Over 100ms std dev is severely problematic
+        // Scaled appropriately for the new latency thresholds
+        // Variance should be proportional to expected latency ranges
+        static let varianceGoodThreshold = 50.0       // <50ms std dev: Excellent consistency
+        static let varianceFairThreshold = 100.0      // 50-100ms std dev: Acceptable variance
+        static let variancePoorThreshold = 200.0      // 100-200ms std dev: High variance
+        static let varianceVeryPoorThreshold = 400.0  // >200ms std dev: Severe instability
         
         // Download speed thresholds (Mbps)
         static let downloadExcellent = 100.0
@@ -165,13 +167,14 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
     }
     
     private func calculateVariancePenalty(_ variance: Double) -> Double {
-        // Variance is now standard deviation in ms - much more reasonable values
+        // Variance penalty scaled for new latency thresholds
+        // More lenient since we expect higher absolute variance with higher latencies
         switch variance {
-        case ..<Constants.varianceGoodThreshold: return 0      // <20ms std dev: No penalty
-        case Constants.varianceGoodThreshold..<Constants.varianceFairThreshold: return 15   // 20-50ms: Minor penalty
-        case Constants.varianceFairThreshold..<Constants.variancePoorThreshold: return 30   // 50-100ms: Moderate penalty
-        case Constants.variancePoorThreshold..<Constants.varianceVeryPoorThreshold: return 45  // 100-200ms: Heavy penalty
-        default: return 60  // >200ms std dev: Severe penalty
+        case ..<Constants.varianceGoodThreshold: return 0      // <50ms std dev: No penalty
+        case Constants.varianceGoodThreshold..<Constants.varianceFairThreshold: return 10   // 50-100ms: Minor penalty
+        case Constants.varianceFairThreshold..<Constants.variancePoorThreshold: return 25   // 100-200ms: Moderate penalty
+        case Constants.variancePoorThreshold..<Constants.varianceVeryPoorThreshold: return 40  // 200-400ms: Heavy penalty
+        default: return 55  // >400ms std dev: Severe penalty
         }
     }
     

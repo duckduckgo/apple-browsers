@@ -35,10 +35,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     private let showWebView: Bool
     private(set) weak var errorDelegate: EmailConfirmationErrorDelegate? // Internal read-only to enable mocking
     private let jobDependencies: EmailConfirmationJobDependencyProviding
-    private let waitTimeBeforeRetry: TimeInterval
-
-    private let webRunnerForTesting: BrokerProfileOptOutSubJobWebProtocol?
-    private let webViewHandlerForTesting: WebViewHandler?
 
     private let webRunnerForTesting: BrokerProfileOptOutSubJobWebProtocol?
     private let webViewHandlerForTesting: WebViewHandler?

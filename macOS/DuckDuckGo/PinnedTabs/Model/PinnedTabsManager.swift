@@ -92,6 +92,7 @@ final class PinnedTabsManager {
         for tab in collection.tabs {
             tabCollection.append(tab: tab)
         }
+        collection.clearAfterMerge()
     }
 
     init(tabCollection: TabCollection = .init()) {

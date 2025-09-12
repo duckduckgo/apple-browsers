@@ -65,7 +65,7 @@ class AddressBarTests: XCTestCase {
     static let testHtml = "<html><head><title>Title</title></head><body>test</body></html>"
 
     @MainActor
-    override func setUp() async throws {
+    override func setUp() {
         TestRunHelper.allowAppSendUserEvents = true
 
         contentBlockingMock = ContentBlockingMock()
@@ -95,7 +95,7 @@ class AddressBarTests: XCTestCase {
     }
 
     @MainActor
-    override func tearDown() async throws {
+    override func tearDown() {
         TestRunHelper.allowAppSendUserEvents = false
 
         autoreleasepool {

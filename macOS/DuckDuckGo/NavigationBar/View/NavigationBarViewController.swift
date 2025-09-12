@@ -467,30 +467,28 @@ final class NavigationBarViewController: NSViewController {
      * > `force` parameter is only used by `HistoryDebugMenu`.
      */
     func presentHistoryViewOnboardingIfNeeded(force: Bool = false) {
-        Task { @MainActor in
-            let onboardingDecider = HistoryViewOnboardingDecider()
-            guard force || onboardingDecider.shouldPresentOnboarding,
-                  !tabCollectionViewModel.isBurner,
-                  view.window?.isKeyWindow == true
-            else {
-                return
-            }
+        let onboardingDecider = HistoryViewOnboardingDecider()
+        guard force || onboardingDecider.shouldPresentOnboarding,
+              !tabCollectionViewModel.isBurner,
+              view.window?.isKeyWindow == true
+        else {
+            return
+        }
 
-            // If we're on history tab, we don't show the onboarding and mark it as shown,
-            // assuming that the user is onboarded
-            guard tabCollectionViewModel.selectedTabViewModel?.tab.content != .history else {
-                onboardingDecider.skipPresentingOnboarding()
-                return
-            }
+        // If we're on history tab, we don't show the onboarding and mark it as shown,
+        // assuming that the user is onboarded
+        guard tabCollectionViewModel.selectedTabViewModel?.tab.content != .history else {
+            onboardingDecider.skipPresentingOnboarding()
+            return
+        }
 
-            popovers.showHistoryViewOnboardingPopover(from: optionsButton, withDelegate: self) { [weak self] showHistory in
-                guard let self else { return }
+        popovers.showHistoryViewOnboardingPopover(from: optionsButton, withDelegate: self) { [weak self] showHistory in
+            guard let self else { return }
 
-                popovers.closeHistoryViewOnboardingViewPopover()
+            popovers.closeHistoryViewOnboardingViewPopover()
 
-                if showHistory {
-                    tabCollectionViewModel.insertOrAppendNewTab(.history, selected: true)
-                }
+            if showHistory {
+                tabCollectionViewModel.insertOrAppendNewTab(.history, selected: true)
             }
         }
     }

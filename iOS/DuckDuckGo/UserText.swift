@@ -1843,7 +1843,7 @@ public struct UserText {
     // MARK: - AI Features Picker Footer
     public static let settingsAIPickerFooterDescription = NSLocalizedString(
         "settings.ai.new.picker.footer",
-        value: "Try our new option to ask Duck.ai directly from the Address Bar.",
+        value: "Try the new option to toggle between search and Duck.ai in the Address Bar.",
         comment: "Footer under the AI picker, descriptive sentence without link"
     )
 

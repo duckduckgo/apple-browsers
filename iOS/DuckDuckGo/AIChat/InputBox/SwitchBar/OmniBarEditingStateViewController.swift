@@ -53,6 +53,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     var automaticallySelectsTextOnAppear = false
 
     // MARK: - Core Components
+    private lazy var contentConainerView = UIView()
 
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
@@ -130,7 +131,24 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     // MARK: - Private Methods
 
     private func setupView() {
+        setUpContentContainer()
+
         view.backgroundColor = UIColor(designSystemColor: .background)
+    }
+
+    private func setUpContentContainer() {
+        view.addSubview(contentConainerView)
+        contentConainerView.translatesAutoresizingMaskIntoConstraints = false
+
+        contentConainerViewLeadingConstraint = contentConainerView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor)
+        contentConainerViewLeadingConstraint?.isActive = true
+        contentConainerViewTrailingConstraint = contentConainerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
+        contentConainerViewTrailingConstraint?.isActive = true
+
+        NSLayoutConstraint.activate([
+            contentConainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            contentConainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
     }
 
     private func installComponents() {
@@ -140,19 +158,19 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         installDaxLogoView()
         installNavigationActionBar()
 
-        view.bringSubviewToFront(switchBarVC.view)
+        contentConainerView.bringSubviewToFront(switchBarVC.view)
     }
 
     private func installSwitchBarVC() {
         addChild(switchBarVC)
-        view.addSubview(switchBarVC.view)
+        contentConainerView.addSubview(switchBarVC.view)
         switchBarVC.view.translatesAutoresizingMaskIntoConstraints = false
         switchBarVC.view.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
         NSLayoutConstraint.activate([
-            switchBarVC.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
-            switchBarVC.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            switchBarVC.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
+            switchBarVC.view.topAnchor.constraint(equalTo: contentConainerView.safeAreaLayoutGuide.topAnchor, constant: 8),
+            switchBarVC.view.leadingAnchor.constraint(equalTo: contentConainerView.safeAreaLayoutGuide.leadingAnchor),
+            switchBarVC.view.trailingAnchor.constraint(equalTo: contentConainerView.safeAreaLayoutGuide.trailingAnchor)
         ])
 
         switchBarVC.didMove(toParent: self)
@@ -161,7 +179,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func installSwipeContainer() {
         let manager = SwipeContainerManager(switchBarHandler: switchBarHandler)
-        manager.installInViewController(self, belowView: switchBarVC.view)
+        manager.installInViewController(self, asSubviewOf: contentConainerView, belowView: switchBarVC.view)
         manager.delegate = self
         swipeContainerManager = manager
     }
@@ -179,13 +197,14 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func installDaxLogoView() {
         if let view = switchBarVC.segmentedPickerView {
-            daxLogoManager.installInViewController(self, belowView: view)
+            daxLogoManager.installInViewController(self, asSubviewOf: contentConainerView, belowView: view)
         }
     }
 
     private func installNavigationActionBar() {
         let manager = NavigationActionBarManager(switchBarHandler: switchBarHandler)
         manager.delegate = self
+        // Note this is not installed in contentContainerView - this is floating over content.
         manager.installInViewController(self)
         navigationActionBarManager = manager
     }

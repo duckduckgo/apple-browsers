@@ -47,6 +47,7 @@ final class SwitchBarRetentionMetricsTests: XCTestCase {
 
     // MARK: - First Check Tests
 
+    // swiftlint:disable force_cast
     func testCheckDailyRetention_FirstCheck_DoesNotFirePixel() throws {
         // Given
         mockAIChatSettings.isAIChatSearchInputUserSettingsEnabled = true
@@ -193,5 +194,5 @@ final class SwitchBarRetentionMetricsTests: XCTestCase {
         let updatedTimestamp = mockStorage.object(forKey: "SwitchBarRetentionMetrics.lastCheckTimestamp") as! Double
         XCTAssertGreaterThan(updatedTimestamp, currentTime - 1) // Within 1 second
     }
-
+    // swiftlint:enable force_cast
 }

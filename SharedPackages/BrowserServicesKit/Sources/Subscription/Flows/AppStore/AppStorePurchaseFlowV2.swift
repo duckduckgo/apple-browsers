@@ -46,7 +46,7 @@ public enum AppStorePurchaseFlowError: DDGError {
         }
     }
 
-    public var errorDomain: String { "com.duckduckgo.subscription.AppStorePurchaseFlowError" }
+    public static var errorDomain: String { "com.duckduckgo.subscription.AppStorePurchaseFlowError" }
 
     public var errorCode: Int {
         switch self {

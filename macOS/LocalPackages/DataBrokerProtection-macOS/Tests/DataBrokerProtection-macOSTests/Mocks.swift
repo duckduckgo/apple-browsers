@@ -112,7 +112,7 @@ final class MockUserNotificationService: DataBrokerProtectionUserNotificationSer
 }
 
 final class MockDataBrokerProtectionBackgroundActivityScheduler: DataBrokerProtectionBackgroundActivityScheduler {
-
+    var dataSource: (any DataBrokerProtection_macOS.DataBrokerProtectionBackgroundActivitySchedulerDataSource)?
     var delegate: DataBrokerProtectionBackgroundActivitySchedulerDelegate?
     var lastTriggerTimestamp: Date?
 
@@ -122,8 +122,8 @@ final class MockDataBrokerProtectionBackgroundActivityScheduler: DataBrokerProte
         startSchedulerCompletion?()
     }
 
-    func triggerDelegateCall() {
-        delegate?.dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(self, completion: nil)
+    func triggerDelegateCall() async {
+        await delegate?.dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(self)
     }
 }
 
@@ -171,7 +171,6 @@ final class MockDataBrokerProtectionDataManager: DataBrokerProtectionDataManagin
 }
 
 final class MockIPCServer: DataBrokerProtectionIPCServer {
-
     var serverDelegate: DataBrokerProtectionAppToAgentInterface?
 
     init(machServiceName: String) {
@@ -184,11 +183,15 @@ final class MockIPCServer: DataBrokerProtectionIPCServer {
     }
 
     func profileSaved(xpcMessageReceivedCompletion: @escaping (Error?) -> Void) {
-        serverDelegate?.profileSaved()
+        Task {
+            await serverDelegate?.profileSaved()
+        }
     }
 
     func appLaunched(xpcMessageReceivedCompletion: @escaping (Error?) -> Void) {
-        serverDelegate?.appLaunched()
+        Task {
+            await serverDelegate?.appLaunched()
+        }
     }
 
     func openBrowser(domain: String) {
@@ -208,7 +211,9 @@ final class MockIPCServer: DataBrokerProtectionIPCServer {
     }
 
     func getDebugMetadata(completion: @escaping (DBPBackgroundAgentMetadata?) -> Void) {
-        serverDelegate?.profileSaved()
+        Task {
+            await serverDelegate?.profileSaved()
+        }
     }
 }
 

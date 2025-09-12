@@ -62,7 +62,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     @MainActor
     func testSetConfigUpdatesModeAndSettings() async throws {
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: false, showAiSetting: true)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: false, showAiSetting: true, showCustomizePopover: true)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
         XCTAssertEqual(configProvider.mode, .ai)
         XCTAssertEqual(configProvider.isAIChatShortcutEnabled, false)

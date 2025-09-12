@@ -1754,7 +1754,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
         self.database = MockDatabase()
         self.contentScopeProperties = ContentScopeProperties.mock
         self.privacyConfig = PrivacyConfigurationManagingMock()
-        self.executionConfig = BrokerJobExecutionConfig()
+        self.executionConfig = BrokerJobExecutionConfig(intervalBetweenSameBrokerJobs: 0)
         self.notificationCenter = .default
         self.pixelHandler = MockPixelHandler()
         self.eventsHandler = MockOperationEventsHandler()
@@ -2105,7 +2105,8 @@ public final class MockActionsHandler: ActionsHandler {
     public var didCallNextAction = false
 
     public init() {
-        super.init(step: Step(type: .scan, actions: []))
+        let step = Step(type: .scan, actions: [])
+        super.init(stepType: step.type, actions: step.actions)
     }
 
     public override func nextAction() -> (any Action)? {

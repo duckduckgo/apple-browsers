@@ -41,7 +41,7 @@ public enum OAuthServiceError: DDGError {
         }
     }
 
-    public var errorDomain: String { "com.duckduckgo.networking.OAuthServiceError" }
+    public static var errorDomain: String { "com.duckduckgo.networking.OAuthServiceError" }
 
     public var errorCode: Int {
         switch self {

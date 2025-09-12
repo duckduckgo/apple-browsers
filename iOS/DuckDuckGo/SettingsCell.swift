@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import UIComponents
 
 struct SettingsCellComponents {
     static var chevron: some View {
@@ -191,20 +192,6 @@ struct SettingsCellView: View, Identifiable {
                 }
             }.padding(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
         }.contentShape(Rectangle())
-    }
-
-    struct BadgeView: View {
-        let text: String
-        var body: some View {
-            Text(text.uppercased())
-                .font(.caption2)
-                .bold()
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color(designSystemColor: .alertYellow))
-                .foregroundColor(.black)
-                .cornerRadius(6)
-        }
     }
 
     @ViewBuilder

@@ -23,6 +23,7 @@ import Combine
 import Core
 import Subscription
 import BrowserServicesKit
+import DataBrokerProtection_iOS
 
 final class SubscriptionFlowViewModel: ObservableObject {
     
@@ -30,6 +31,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     let subFeature: any SubscriptionPagesUseSubscriptionFeature
     var webViewModel: AsyncHeadlessWebViewViewModel
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    weak var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     let purchaseURL: URL
 
     private let urlOpener: URLOpener
@@ -76,13 +78,15 @@ final class SubscriptionFlowViewModel: ObservableObject {
          subscriptionManager: SubscriptionAuthV1toV2Bridge,
          selectedFeature: SettingsViewModel.SettingsDeepLinkSection? = nil,
          urlOpener: URLOpener = UIApplication.shared,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
         self.purchaseURL = purchaseURL
         self.userScript = userScript
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
         self.urlOpener = urlOpener
         self.featureFlagger = featureFlagger
+        self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 

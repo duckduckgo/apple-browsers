@@ -369,7 +369,6 @@ final class NavigationBarViewController: NSViewController {
 
     override func viewDidLoad() {
         setupAccessibility()
-        setupNavigationButtons()
 
         view.wantsLayer = true
         view.layer?.masksToBounds = false
@@ -379,6 +378,7 @@ final class NavigationBarViewController: NSViewController {
         setupBackgroundViewsAndColors()
         menuButtons.spacing = visualStyle.navigationToolbarButtonsSpacing
 
+        setupNavigationButtons()
         setupOverflowMenu()
         setupNetworkProtectionButton()
 
@@ -386,7 +386,6 @@ final class NavigationBarViewController: NSViewController {
         listenToPasswordManagerNotifications()
         listenToMessageNotifications()
         listenToFeedbackFormNotifications()
-        subscribeToDownloads()
 
         updateDownloadsButton(source: .default)
         updatePasswordManagementButton()
@@ -414,7 +413,7 @@ final class NavigationBarViewController: NSViewController {
                 addressBarStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -72),
             ])
 
-        } else /* if !isInPopUpWindow */ {
+        } else /* !isInPopUpWindow */ {
             updateHomeButton()
             addContextMenu()
 
@@ -438,6 +437,12 @@ final class NavigationBarViewController: NSViewController {
                 await WebExtensionNavigationBarUpdater(webExtensionManager: webExtensionManager, container: self?.menuButtons).runUpdateLoop()
             }
         }
+    }
+
+    override func viewWillAppear() {
+        // should be called when the view is about to appear,
+        // otherwise the progress indicator gets misplaced
+        subscribeToDownloads()
     }
 
     override func viewDidAppear() {
@@ -1384,16 +1389,15 @@ final class NavigationBarViewController: NSViewController {
         }
 
         DispatchQueue.main.async {
-
-            let action = {
-                self.showPasswordManagerPopover(selectedWebsiteAccount: account)
-            }
-            let popoverMessage = PopoverMessageViewController(message: UserText.passwordManagerAutosavePopoverText(domain: domain), image: .passwordManagement, buttonText: UserText.passwordManagerAutosaveButtonText, buttonAction: action, onDismiss: { [weak self] in
+            let popoverMessage = PopoverMessageViewController(message: UserText.passwordManagerAutosavePopoverText(domain: domain), image: .passwordManagement, buttonText: UserText.passwordManagerAutosaveButtonText) { [weak self] in
+                self?.showPasswordManagerPopover(selectedWebsiteAccount: account)
+            } onDismiss: { [weak self] in
                 guard let self else { return }
 
                 isAutoFillAutosaveMessageVisible = false
-                passwordManagementButton.isHidden = !LocalPinningManager.shared.isPinned(.autofill) || isInPopUpWindow
-            })
+                passwordManagementButton.isHidden = !popovers.isPasswordManagementPopoverShown
+                && (!LocalPinningManager.shared.isPinned(.autofill) || isInPopUpWindow)
+            }
             self.isAutoFillAutosaveMessageVisible = true
             self.passwordManagementButton.isHidden = false
             popoverMessage.show(onParent: self, relativeTo: self.passwordManagementButton)

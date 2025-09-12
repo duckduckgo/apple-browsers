@@ -1,7 +1,7 @@
 //
-//  UpdateDialogHelper.swift
+//  PixelFiring.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,22 +16,22 @@
 //  limitations under the License.
 //
 
-import Cocoa
-import Common
+/// Protocol to support mocking pixel firing.
+public protocol PixelFiring {
+    func fire(_ event: PixelKitEvent)
 
-extension NSWindowController {
+    func fire(_ event: PixelKitEvent,
+              frequency: PixelKit.Frequency)
+}
 
-    func hideUnnecessaryUpdateButtons() {
-        let buttonsToHide = ["_laterButton", "_skipButton", "_automaticallyInstallUpdatesButton"]
-        for button in buttonsToHide {
-            if let button = getButton(named: button) {
-                button.isHidden = true
-            }
-        }
+extension PixelKit: PixelFiring {
+
+    public func fire(_ event: PixelKitEvent) {
+        fire(event, frequency: .standard)
     }
 
-    private func getButton(named buttonName: String) -> NSButton? {
-        return value(forIvar: buttonName) as? NSButton
+    public func fire(_ event: PixelKitEvent,
+                     frequency: PixelKit.Frequency) {
+        fire(event, frequency: frequency, onComplete: { _, _ in })
     }
-
 }

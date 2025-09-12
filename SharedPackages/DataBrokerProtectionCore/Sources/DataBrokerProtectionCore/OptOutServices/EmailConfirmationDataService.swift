@@ -86,6 +86,8 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
     }
 
     public func checkForEmailConfirmationData() async throws {
+        guard featureFlagger.isEmailConfirmationDecouplingFeatureOn else { return }
+
         let recordsAwaitingLink = try database.fetchOptOutEmailConfirmationsAwaitingLink()
 
         var itemsToDelete: [EmailDataRequestItemV1] = []

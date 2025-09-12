@@ -39,6 +39,7 @@ final class MainViewController: NSViewController {
     let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     let aiChatSidebarPresenter: AIChatSidebarPresenting
     let aiChatSummarizer: AIChatSummarizer
+    let aiChatTranslator: AIChatTranslator
     let findInPageViewController: FindInPageViewController
     let fireViewController: FireViewController
     let bookmarksBarViewController: BookmarksBarViewController
@@ -171,12 +172,20 @@ final class MainViewController: NSViewController {
         aiChatSidebarPresenter = AIChatSidebarPresenter(
             sidebarHost: browserTabViewController,
             sidebarProvider: aiChatSidebarProvider,
+            aiChatMenuConfig: aiChatMenuConfig,
             aiChatTabOpener: aiChatTabOpener,
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             pixelFiring: pixelFiring
         )
         aiChatSummarizer = AIChatSummarizer(
+            aiChatMenuConfig: aiChatMenuConfig,
+            aiChatSidebarPresenter: aiChatSidebarPresenter,
+            aiChatTabOpener: aiChatTabOpener,
+            pixelFiring: pixelFiring
+        )
+
+        aiChatTranslator = AIChatTranslator(
             aiChatMenuConfig: aiChatMenuConfig,
             aiChatSidebarPresenter: aiChatSidebarPresenter,
             aiChatTabOpener: aiChatTabOpener,

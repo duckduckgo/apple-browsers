@@ -56,6 +56,13 @@ final class BookmarksBarMenuPopover: NSPopover {
         fatalError("BookmarksBarMenuPopover: Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        // Check that our content view controller deallocates
+        contentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     // swiftlint:disable:next force_cast
     var viewController: BookmarksBarMenuViewController { contentViewController as! BookmarksBarMenuViewController }
 

@@ -208,7 +208,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
 
     public func appDidBecomeActive() {
         tryToFireWeeklyPixels()
-
+        
         Task {
             await checkForEmailConfirmationData()
         }

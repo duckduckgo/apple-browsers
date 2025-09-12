@@ -1,0 +1,19 @@
+// App Intent related pixel definitions
+{
+    'm_app-intent_intent-performed': {
+        description: 'Fires when an App Intent successfully executes, regardless of where it was invoked from (App Shortcut, Siri, Spotlight, Shortcuts app).',
+        owners: ['hanyutang-sandra'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'type',
+                description: 'Type of the app intent performed: search for general search intents, duckai for AI chat intents.',
+                type: 'string',
+                enum: ['search', 'duckai'],
+            },
+        ],
+    },
+}

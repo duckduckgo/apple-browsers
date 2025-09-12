@@ -1656,6 +1656,22 @@ public final class MockEmailConfirmationJobProvider: EmailConfirmationJobProvidi
     }
 }
 
+public final class MockEmailConfirmationJobProvider: EmailConfirmationJobProviding {
+    public var shouldThrowError = false
+    public var jobsToReturn: [EmailConfirmationJob] = []
+
+    public init() {}
+
+    public func createEmailConfirmationJobs(showWebView: Bool,
+                                            errorDelegate: EmailConfirmationErrorDelegate,
+                                            jobDependencies: EmailConfirmationJobDependencyProviding) throws -> [EmailConfirmationJob] {
+        if shouldThrowError {
+            throw NSError(domain: "test", code: 1, userInfo: nil)
+        }
+        return jobsToReturn
+    }
+}
+
 public final class MockBrokerProfileJobQueue: BrokerProfileJobQueue {
     public var maxConcurrentOperationCount = 1
 

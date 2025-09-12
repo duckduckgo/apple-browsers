@@ -1586,12 +1586,6 @@ body:not([data-platform-name]) .Button_button:active {
   gap: 10px;
   padding-bottom: var(--sp-15);
 }
-[data-theme=light] .Omnibar_root {
-  --omnibar-translucent-background-color: rgba(255, 255, 255, 0.54);
-}
-[data-theme=dark] .Omnibar_root {
-  --omnibar-translucent-background-color: rgba(0, 0, 0, 0.3);
-}
 .Omnibar_logo {
   margin-bottom: var(--sp-4);
   width: 164px;
@@ -1617,10 +1611,24 @@ body:not([data-platform-name]) .Button_button:active {
   margin: 3px;
   outline: 1px solid var(--ntp-controls-raised-backdrop);
 }
-body:not([data-background-kind=default]) .Omnibar_popup {
+[data-background-kind=color] [data-theme=light] .Omnibar_popup,
+[data-background-kind=gradient] [data-theme=light] .Omnibar_popup,
+[data-background-kind=userImage] [data-theme=light] .Omnibar_popup {
   -webkit-backdrop-filter: blur(48px);
   backdrop-filter: blur(48px);
-  background: var(--omnibar-translucent-background-color);
+  background: rgba(255, 255, 255, 0.54);
+}
+[data-background-kind=color] [data-theme=dark] .Omnibar_popup,
+[data-background-kind=gradient] [data-theme=dark] .Omnibar_popup {
+  -webkit-backdrop-filter: blur(48px);
+  backdrop-filter: blur(48px);
+  background: rgba(255, 255, 255, 0.12);
+  outline: 1px solid rgba(0, 0, 0, 0.12);
+}
+[data-background-kind=userImage] [data-theme=dark] .Omnibar_popup {
+  -webkit-backdrop-filter: blur(48px);
+  backdrop-filter: blur(48px);
+  background: rgba(0, 0, 0, 0.3);
 }
 .Omnibar_root:has(input:focus, textarea:focus) .Omnibar_popup {
   box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1), 0 20px 40px 0 rgba(0, 0, 0, 0.08);
@@ -1921,6 +1929,22 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
 .Popover_closeButton:focus-visible {
   box-shadow: var(--focus-ring);
 }
+.Popover_heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.Popover_badge {
+  background: var(--color-yellow-60);
+  border-radius: var(--border-radius-xs);
+  color: var(--color-black);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: var(--sp-4);
+  padding: 0 var(--sp-2);
+  text-transform: uppercase;
+  width: fit-content;
+}
 .Popover_title {
   font-size: var(--title-3-em-font-size);
   font-weight: var(--title-3-em-font-weight);
@@ -1932,6 +1956,7 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   color: var(--ntp-accent-primary);
   cursor: pointer;
   padding: 0;
+  transform: translateZ(0);
 }
 .Popover_description button:hover {
   color: var(--ntp-accent-secondary);

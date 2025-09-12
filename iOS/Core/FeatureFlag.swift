@@ -184,6 +184,9 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211245201777978?focus=true
     case serpSettingsFollowUpQuestions
+
+    ///  https://app.asana.com/1/137249556945/project/72649045549333/task/1207055705580443?focus=true
+    case syncCreditCards
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -201,7 +204,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionPurchaseWidePixelMeasurement,
              .askAIChatSuggestion,
              .refreshButtonPosition,
-             .newDeviceSyncPrompt:
+             .newDeviceSyncPrompt,
+             .syncCreditCards:
             true
         default:
             false
@@ -255,7 +259,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .showAIChatAddressBarChoiceScreen,
              .refreshButtonPosition,
              .newDeviceSyncPrompt,
-             .serpSettingsFollowUpQuestions:
+             .serpSettingsFollowUpQuestions,
+             .syncCreditCards:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -452,6 +457,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .serpSettingsFollowUpQuestions:
             return .remoteReleasable(.subfeature(AIChatSubfeature.serpSettingsFollowUpQuestions))
+        case .syncCreditCards:
+            return .remoteReleasable(.subfeature(SyncSubfeature.syncCreditCards))
         }
     }
 }

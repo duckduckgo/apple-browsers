@@ -71,7 +71,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
     @Published var updateState = UpdateState.upToDate
 
-    var updateController: UpdateControllerProtocol? {
+    var updateController: SparkleUpdateController? {
         return Application.appDelegate.updateController
     }
 
@@ -171,7 +171,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 #if SPARKLE
     func checkForUpdate(userInitiated: Bool) {
         if userInitiated {
-            updateController?.checkForUpdateSkippingRollout()
+            updateController?.checkForUpdate()
         } else {
             updateController?.checkForUpdateRespectingRollout()
         }

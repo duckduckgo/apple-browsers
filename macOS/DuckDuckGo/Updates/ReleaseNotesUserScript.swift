@@ -26,7 +26,7 @@ import Common
 
 final class ReleaseNotesUserScript: NSObject, Subfeature {
 
-    lazy var updateController: UpdateControllerProtocol = Application.appDelegate.updateController
+    lazy var updateController: SparkleUpdateController = Application.appDelegate.updateController
     var messageOriginPolicy: MessageOriginPolicy = .only(rules: [.exact(hostname: "release-notes")])
     let featureName: String = "release-notes"
     weak var broker: UserScriptMessageBroker?
@@ -117,7 +117,7 @@ extension ReleaseNotesUserScript {
     @MainActor
     private func retryUpdate(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         DispatchQueue.main.async { [weak self] in
-            self?.updateController.checkForUpdateSkippingRollout()
+            self?.updateController.checkForUpdate()
         }
         return nil
     }

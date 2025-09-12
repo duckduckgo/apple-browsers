@@ -253,7 +253,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var didFinishLaunching = false
 
 #if SPARKLE
-    var updateController: UpdateController!
+    var updateController: SparkleUpdateController!
     var dockCustomization: DockCustomization?
 #endif
 
@@ -830,7 +830,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 #if SPARKLE
         if AppVersion.runType != .uiTests {
-            updateController = UpdateController(internalUserDecider: internalUserDecider)
+            updateController = SparkleUpdateController(internalUserDecider: internalUserDecider)
             stateRestorationManager.subscribeToAutomaticAppRelaunching(using: updateController.willRelaunchAppPublisher)
         }
 #endif

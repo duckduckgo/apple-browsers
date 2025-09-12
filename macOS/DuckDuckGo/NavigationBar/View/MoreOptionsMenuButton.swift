@@ -23,7 +23,7 @@ import Common
 final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
 
 #if SPARKLE
-    private var updateController: UpdateControllerProtocol?
+    private var updateController: SparkleUpdateController?
     private var dockCustomization: DockCustomization?
 #endif
 

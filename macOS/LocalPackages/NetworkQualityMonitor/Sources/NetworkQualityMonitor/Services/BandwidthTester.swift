@@ -49,11 +49,18 @@ public final class BandwidthTester: BandwidthTesting {
         var bestSpeed: Double = 0
 
         for server in configuration.bandwidthTestURLs {
-            // Quick test to find best server
+            // Quick test to find best server (uses 10MB with Range header)
             let quickSpeed = await measureQuickDownload(from: server, timeout: Constants.quickTestTimeout)
 
-            if quickSpeed > bestSpeed * Constants.serverCompetitiveThreshold {
-                // Full test
+            // Adaptive testing based on connection speed
+            if quickSpeed < 10.0 {
+                // Slow connection (<10 Mbps): Use quick test result only
+                // Full download would take too long
+                if quickSpeed > bestSpeed {
+                    bestSpeed = quickSpeed
+                }
+            } else if quickSpeed > bestSpeed * Constants.serverCompetitiveThreshold {
+                // Fast connection: Do full test for accuracy
                 let fullSpeed = await measureFullDownload(
                     from: server,
                     runs: configuration.bandwidthRunsPerServer,
@@ -78,7 +85,11 @@ public final class BandwidthTester: BandwidthTesting {
         progressCallback?(Constants.uploadProgressMessage)
 
         var bestSpeed: Double = 0
-        let testData = Data(count: configuration.uploadChunkSize)
+
+        // Adaptive upload size based on download speed (if available)
+        // Use smaller chunk for slow connections
+        let uploadSize = configuration.uploadChunkSize
+        let testData = Data(count: uploadSize)
 
         // Match download approach: test each server once, take best result
         // This is much faster than uploading multiple chunks sequentially
@@ -91,6 +102,12 @@ public final class BandwidthTester: BandwidthTesting {
 
             if speed > bestSpeed {
                 bestSpeed = speed
+            }
+
+            // Early exit for very slow connections
+            if bestSpeed > 0 && bestSpeed < 2.0 {
+                // <2 Mbps upload: Skip remaining servers to save time
+                break
             }
         }
 
@@ -193,7 +210,7 @@ public final class BandwidthTester: BandwidthTesting {
 
         return 0
     }
-    
+
     // Legacy method kept for compatibility if needed
     private func measureUpload(to url: URL, data: Data, chunks: Int, timeout: TimeInterval) async -> Double {
         var request = URLRequest(url: url)

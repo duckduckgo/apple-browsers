@@ -170,7 +170,7 @@ public struct NetworkQualityView: View {
                         actualValue: results.bandwidth.downloadSpeedMbps,
                         metricType: .bandwidth,
                         icon: "arrow.down.circle",
-                        infoText: "25% WEIGHT - Sufficient bandwidth matters more than excess.\n\nDownloads 100MB total from multiple CDN servers. Quick 10MB test to find best server, then full measurement.\n\nExcellent: >100 Mbps (instant loads)\nGood: 25-100 Mbps (smooth browsing)\nFair: 10-25 Mbps (basic browsing OK)"
+                        infoText: "25% WEIGHT - Sufficient bandwidth matters more than excess.\n\nAdaptive testing: Quick 10MB test first. Slow connections (<10 Mbps) stop there. Fast connections test up to 25MB for accuracy.\n\nExcellent: >100 Mbps (instant loads)\nGood: 25-100 Mbps (smooth browsing)\nFair: 10-25 Mbps (basic browsing OK)"
                     )
 
                     MetricCard(
@@ -179,7 +179,7 @@ public struct NetworkQualityView: View {
                         actualValue: results.bandwidth.uploadSpeedMbps,
                         metricType: .bandwidth,
                         icon: "arrow.up.circle",
-                        infoText: "Part of bandwidth score (15% sub-weight).\n\nUploads 30MB to multiple test servers, takes best result. Optimized for speed - single upload per server.\n\nGood: >10 Mbps (HD video calls)\nFair: 5-10 Mbps (may reduce quality)"
+                        infoText: "Part of bandwidth score (15% sub-weight).\n\nUploads 5MB to test servers. Early exit for slow connections (<2 Mbps) to save time.\n\nGood: >10 Mbps (HD video calls)\nFair: 5-10 Mbps (may reduce quality)"
                     )
 
                     MetricCard(

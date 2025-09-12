@@ -37,6 +37,14 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     private let actionHandler: NewTabPageOmnibarActionsHandling
     private var cancellables = Set<AnyCancellable>()
 
+    private var showCustomizePopover: Bool {
+        guard AppVersion.runType != .uiTests else {
+            return false
+        }
+
+        return configProvider.showCustomizePopover
+    }
+
     public init(configProvider: NewTabPageOmnibarConfigProviding,
                 suggestionsProvider: NewTabPageOmnibarSuggestionsProviding,
                 actionHandler: NewTabPageOmnibarActionsHandling) {
@@ -80,7 +88,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,
             showAiSetting: configProvider.isAIChatSettingVisible,
-            showCustomizePopover: configProvider.showCustomizePopover
+            showCustomizePopover: showCustomizePopover
         )
     }
 
@@ -103,7 +111,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,
             showAiSetting: configProvider.isAIChatSettingVisible,
-            showCustomizePopover: configProvider.showCustomizePopover
+            showCustomizePopover: showCustomizePopover
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }

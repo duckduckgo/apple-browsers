@@ -1395,6 +1395,9 @@ extension Pixel {
         // MARK: - Push Notifications
         case inactiveUserProvisionalPushNotificationTapped
         case userNotificationAuthorizationStatusDaily
+        
+        // MARK: - App Intent
+        case appIntentPerformed
     }
 
 }
@@ -2716,6 +2719,9 @@ extension Pixel.Event {
         // MARK: Push Notification
         case .inactiveUserProvisionalPushNotificationTapped: return "m_push-notification_local-provisional_inactive-user-tap"
         case .userNotificationAuthorizationStatusDaily: return "m_push-notification_user-notification-authorization-status"
+            
+        // MARK: App Intent
+        case .appIntentPerformed: return "m_app-intent_intent-performed"
         }
     }
 }

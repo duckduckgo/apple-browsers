@@ -3176,10 +3176,19 @@ extension MainViewController: TabSwitcherDelegate {
         }
     }
 
+    private func deferNTPAppearance() {
+        newTabPageViewController?.view.alpha = 0.0
+        UIView.animate(withDuration: 0.2, delay: 0.2, options: [.curveEaseInOut, .beginFromCurrentState]) {
+            self.newTabPageViewController?.view.alpha = 1.0
+        }
+    }
+
     func tabSwitcherDidRequestNewTab(tabSwitcher: TabSwitcherViewController) {
         newTab()
         if newTabPageViewController?.isShowingLogo == true, !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             animateLogoAppearance()
+        } else if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            deferNTPAppearance()
         }
         themeColorManager.updateThemeColor()
     }
@@ -3722,6 +3731,10 @@ extension MainViewController: MainViewEditingStateTransitioning {
 
     private var isDaxLogoVisible: Bool {
         newTabPageViewController?.isShowingLogo == true
+    }
+
+    var newTabView: UIView? {
+        newTabPageViewController?.view
     }
 
     func hide(with barYOffset: CGFloat, contentYOffset: CGFloat) {

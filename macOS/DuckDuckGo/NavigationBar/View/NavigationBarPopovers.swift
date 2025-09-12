@@ -109,6 +109,21 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         self.isBurner = isBurner
     }
 
+    deinit {
+#if DEBUG
+        bookmarkListPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        saveCredentialsPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        saveIdentityPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        savePaymentMethodPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        downloadsPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        autofillOnboardingPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        historyViewOnboardingPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        privacyDashboardPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        bookmarkPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        zoomPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     var passwordManagementDomain: String? {
         didSet {
             autofillPopoverPresenter.passwordDomain = passwordManagementDomain

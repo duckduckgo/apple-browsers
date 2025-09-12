@@ -26,10 +26,10 @@ extension NSObject {
         fileprivate var callback: (() -> Void)?
 
         public init(_ callback: (() -> Void)? = nil) {
-            dispatchPrecondition(condition: .onQueue(.main))
             self.callback = callback
         }
 
+        @MainActor
         public func disarm() {
             dispatchPrecondition(condition: .onQueue(.main))
             callback = nil
@@ -75,9 +75,9 @@ extension NSObject {
             assertionFailure("\(object) has not been deallocated. Ensure there‘s no retain cycle added.")
         }
         public static let interrupt = DeallocationCheckAction { object in
-        #if DEBUG
+#if DEBUG
             breakByRaisingSigInt("\(object) has not been deallocated. Ensure there‘s no retain cycle added.")
-        #endif
+#endif
         }
         public static let log = DeallocationCheckAction { object in
             Logger.general.error("\(object) has not been deallocated. Ensure there‘s no retain cycle added.")
@@ -111,9 +111,25 @@ extension NSObject {
         ensureObjectDeallocated(after: timeout, do: .assert)
     }
 
-    public func setValue(_ value: Any?, forIvar name: String) {
-        guard let ivar = class_getInstanceVariable(object_getClass(self), name) else { return }
-        return object_setIvar(self, ivar, value)
-    }
-
 }
+#if DEBUG
+/// Check if an instance _lazy_ variable was initialized or not.
+/// Uses `Mirror(reflecting object)` and lazy var storage seek is used.
+/// `DEBUG`-only
+public func isLazyVar(named name: StaticString, initializedIn object: Any, failure: (String) -> Void = { fatalError($0) }) -> Bool {
+    let children = Mirror(reflecting: object).children
+    guard let child = children.first(where: { $0.label == "$__lazy_storage_$_\(name)" }) else {
+        failure("Lazy var named \(name) not found in \(object)")
+        return false
+    }
+    guard let value = child.value as? AnyOptional else {
+        failure("Unexpected non-optional value of a lazy var `\(child.label!)`: \(child.value)")
+        return false
+    }
+    return value.isNil == false
+}
+#else
+public func isLazyVar(named name: StaticString, initializedIn object: Any, failure: (String) -> Void = { fatalError($0) }) -> Bool {
+    return false
+}
+#endif

@@ -258,6 +258,23 @@ final class AddressBarButtonsViewController: NSViewController {
         super.init(coder: coder)
     }
 
+    deinit {
+#if DEBUG
+        if isLazyVar(named: "buttonsBadgeAnimator", initializedIn: self) {
+            buttonsBadgeAnimator.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+        permissionAuthorizationPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        popupBlockedPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        notificationAnimationView?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        trackerAnimationView1?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        trackerAnimationView2?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        trackerAnimationView3?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        shieldAnimationView?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        shieldDotAnimationView?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        animationWrapperView?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     // MARK: - View Lifecycle
 
     override func viewDidLoad() {

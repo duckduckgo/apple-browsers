@@ -346,6 +346,24 @@ final class MainViewController: NSViewController {
         viewEventsCancellables.removeAll()
     }
 
+    deinit {
+#if DEBUG
+
+        // Check that TabCollectionViewModel deallocates
+        tabCollectionViewModel.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+
+        if isViewLoaded {
+            view.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+        tabBarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        navigationBarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        browserTabViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        findInPageViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        fireViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        bookmarksBarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     func windowWillMiniaturize() {
         tabBarViewController.hideTabPreview()
     }
@@ -441,10 +459,13 @@ final class MainViewController: NSViewController {
             subscribeToTabContent(of: tabViewModel)
         }
 
-        selectedTabViewModelForHistoryViewOnboardingCancellable = tabCollectionViewModel.$selectedTabViewModel.dropFirst().sink { [weak self] _ in
-            guard let self else { return }
-            navigationBarViewController.presentHistoryViewOnboardingIfNeeded()
-        }
+        selectedTabViewModelForHistoryViewOnboardingCancellable = tabCollectionViewModel.$selectedTabViewModel
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                navigationBarViewController.presentHistoryViewOnboardingIfNeeded()
+            }
     }
 
     private func subscribeToTitleChange(of selectedTabViewModel: TabViewModel?) {

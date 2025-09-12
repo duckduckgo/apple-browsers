@@ -132,6 +132,13 @@ final class DefaultBrowserAndDockPromptPopover: NSPopover {
         fatalError("DefaultBrowserAndDockPromptPopover: Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        // Check that our content view controller deallocates
+        contentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     @objc override func adjustFrame(_ frame: NSRect) -> NSRect {
         guard let positioningView, let mainWindow, let screenFrame = mainWindow.screen?.visibleFrame else { return frame }
         let offset: CGPoint = .zero

@@ -224,6 +224,12 @@ final class AddressBarViewController: NSViewController {
         activeBackgroundViewWithSuggestions.backgroundColor = visualStyle.colorsProvider.suggestionsBackgroundColor
     }
 
+    deinit {
+#if DEBUG
+        addressBarButtonsViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     override func viewWillAppear() {
         if isInPopUpWindow {
             addressBarTextField.isHidden = true
@@ -264,7 +270,8 @@ final class AddressBarViewController: NSViewController {
 
     private func subscribeToAppearanceChanges() {
         guard let window = view.window else {
-            assertionFailure("AddressBarViewController.subscribeToAppearanceChanges: view.window is nil")
+            assert([.unitTests, .integrationTests].contains(AppVersion.runType),
+                   "AddressBarViewController.subscribeToAppearanceChanges: view.window is nil")
             return
         }
         NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification, object: window)
@@ -451,7 +458,8 @@ final class AddressBarViewController: NSViewController {
 
     private func subscribeToFirstResponder() {
         guard let window = view.window else {
-            assertionFailure("AddressBarViewController.subscribeToFirstResponder: view.window is nil")
+            assert([.unitTests, .integrationTests].contains(AppVersion.runType),
+                   "AddressBarViewController.subscribeToFirstResponder: view.window is nil")
             return
         }
         NotificationCenter.default.publisher(for: MainWindow.firstResponderDidChangeNotification, object: window)

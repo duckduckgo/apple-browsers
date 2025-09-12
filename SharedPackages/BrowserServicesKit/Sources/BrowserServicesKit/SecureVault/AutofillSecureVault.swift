@@ -671,7 +671,15 @@ public class DefaultAutofillSecureVault<T: AutofillDatabaseProvider>: AutofillSe
 
         do {
             let syncableCredentials = try providers.database.modifiedSyncableCredentials(before: date)
-            return syncableCredentials.map { $0.account?.title ?? "" }
+            return syncableCredentials.map { credential in
+                if let title = credential.account?.title, !title.isEmpty {
+                    return title
+                } else if let domain = credential.account?.domain, !domain.isEmpty {
+                    return domain
+                } else {
+                    return ""
+                }
+            }
         } catch {
             let error = error as? SecureStorageError ?? SecureStorageError.databaseError(cause: error)
             throw error
@@ -710,7 +718,6 @@ public class DefaultAutofillSecureVault<T: AutofillDatabaseProvider>: AutofillSe
         }
     }
 
-    // TODO - Is title best here?
     public func creditCardTitlesForSyncableCreditCards(modifiedBefore date: Date) throws -> [String] {
         lock.lock()
         defer {
@@ -719,7 +726,10 @@ public class DefaultAutofillSecureVault<T: AutofillDatabaseProvider>: AutofillSe
 
         do {
             let syncableCreditCards = try providers.database.modifiedSyncableCreditCards(before: date)
-            return syncableCreditCards.compactMap { $0.creditCard?.title }
+            return syncableCreditCards.compactMap { creditCard in
+                guard let card = creditCard.creditCard else { return nil }
+                return "**** \(card.cardSuffix)"
+            }
         } catch {
             let error = error as? SecureStorageError ?? SecureStorageError.databaseError(cause: error)
             throw error

@@ -22,20 +22,20 @@ import WebKit
 @MainActor
 final class WebExtensionNavigationBarUpdater {
 
-    private let container: NSStackView
+    private let getContainer: @MainActor () -> NSStackView?
     private var buttons = Set<MouseOverButton>()
     private let webExtensionManager: WebExtensionManaging
 
-    init(container: NSStackView, webExtensionManager: WebExtensionManaging) {
-        self.container = container
+    init(webExtensionManager: WebExtensionManaging, container getContainer: @escaping @autoclosure @MainActor () -> NSStackView?) {
+        self.getContainer = getContainer
         self.webExtensionManager = webExtensionManager
     }
 
     /// Starts updating in the background.
     ///
     func startUpdating() async {
-        Task { [weak self] in
-            await self?.runUpdateLoop()
+        Task {
+            await runUpdateLoop()
         }
     }
 
@@ -45,23 +45,27 @@ final class WebExtensionNavigationBarUpdater {
     ///
     func runUpdateLoop() async {
         // We run this once initially to make sure we're up to date
-        updateLoadedExtensions()
+        if let container = getContainer() {
+            updateLoadedExtensions(in: container)
+        } else {
+            return
+        }
 
         for await _ in webExtensionManager.extensionUpdates {
-            updateLoadedExtensions()
+            guard let container = getContainer() else { return }
+            updateLoadedExtensions(in: container)
         }
     }
 
-    private func updateLoadedExtensions() {
+    private func updateLoadedExtensions(in container: NSStackView) {
         let loadedExtensions = webExtensionManager.loadedExtensions
         removeButtons(forExtensionsRemovedFrom: loadedExtensions)
-        addButtons(forExtensionsAddedTo: loadedExtensions)
+        addButtons(to: container, forExtensionsAddedTo: loadedExtensions)
 
         container.needsDisplay = true
     }
 
     private func removeButtons(forExtensionsRemovedFrom loadedExtensions: Set<WKWebExtensionContext>) {
-
         for button in buttons {
             guard let identifier = button.identifier?.rawValue,
                   !loadedExtensions.contains(where: { $0.uniqueIdentifier == identifier }) else {
@@ -74,7 +78,7 @@ final class WebExtensionNavigationBarUpdater {
         }
     }
 
-    private func addButtons(forExtensionsAddedTo loadedExtensions: Set<WKWebExtensionContext>) {
+    private func addButtons(to container: NSStackView, forExtensionsAddedTo loadedExtensions: Set<WKWebExtensionContext>) {
         let buttonIdentifiers = buttons.compactMap {
             $0.identifier?.rawValue
         }

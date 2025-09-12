@@ -25,8 +25,8 @@ public enum DataBrokerProtectionAppToAgentInterfaceError: Error {
 }
 
 public protocol DataBrokerProtectionAgentAppEvents {
-    func profileSaved()
-    func appLaunched()
+    func profileSaved() async
+    func appLaunched() async
 }
 
 public protocol DataBrokerProtectionAgentDebugCommands {

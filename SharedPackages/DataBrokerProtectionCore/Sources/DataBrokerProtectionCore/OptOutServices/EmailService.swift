@@ -38,6 +38,11 @@ public enum EmailError: Error, Equatable, Codable {
 public struct EmailData: Decodable {
     let pattern: String?
     let emailAddress: String
+
+    public init(pattern: String?, emailAddress: String) {
+        self.pattern = pattern
+        self.emailAddress = emailAddress
+    }
 }
 
 public protocol EmailServiceProtocol {

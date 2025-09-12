@@ -1,7 +1,7 @@
 //
-//  DuckPlayerOnboardingModalManager.swift
+//  AnyOptional.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 //  limitations under the License.
 //
 
-import AppKit
+public protocol AnyOptional {
 
-final class DuckPlayerOnboardingModalManager: TabModalManageable {
-    var modal: TabModal?
+    var isNil: Bool { get }
 
-    var viewController: NSViewController {
-        DuckPlayerOnboardingViewController { [weak self] in
-            self?.close(animated: true, completion: nil)
-        }
-    }
+}
+
+extension Optional: AnyOptional {
+
+    public var isNil: Bool { self == nil }
+
 }

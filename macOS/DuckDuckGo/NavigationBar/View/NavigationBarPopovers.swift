@@ -43,7 +43,10 @@ protocol NetPPopoverManager: AnyObject {
 
 extension PopoverPresenter {
     func show(_ popover: NSPopover, positionedBelow view: NSView) {
-        view.isHidden = false
+        if !view.isVisible {
+            view.isHidden = false
+            view.superview?.layoutSubtreeIfNeeded()
+        }
         popover.show(positionedBelow: view.bounds.insetFromLineOfDeath(flipped: view.isFlipped), in: view)
     }
 }
@@ -104,6 +107,21 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         self.autofillPopoverPresenter = autofillPopoverPresenter
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
         self.isBurner = isBurner
+    }
+
+    deinit {
+#if DEBUG
+        bookmarkListPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        saveCredentialsPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        saveIdentityPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        savePaymentMethodPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        downloadsPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        autofillOnboardingPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        historyViewOnboardingPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        privacyDashboardPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        bookmarkPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        zoomPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
     }
 
     var passwordManagementDomain: String? {

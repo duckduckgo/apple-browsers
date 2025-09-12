@@ -167,12 +167,16 @@ extension DefaultDataBrokerProtectionIPCServer: XPCServerInterface {
 
     func profileSaved(xpcMessageReceivedCompletion: @escaping (Error?) -> Void) {
         xpcMessageReceivedCompletion(nil)
-        serverDelegate?.profileSaved()
+        Task {
+            await serverDelegate?.profileSaved()
+        }
     }
 
     func appLaunched(xpcMessageReceivedCompletion: @escaping (Error?) -> Void) {
         xpcMessageReceivedCompletion(nil)
-        serverDelegate?.appLaunched()
+        Task {
+            await serverDelegate?.appLaunched()
+        }
     }
 
     // MARK: - DataBrokerProtectionAgentDebugCommands

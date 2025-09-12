@@ -72,25 +72,34 @@ final class DBPEndToEndTests: XCTestCase {
     }
 
     /*
-     Tests the entire PIR process, broken down into 9 steps.
+     Tests the entire PIR process with both removed and non-removed brokers, broken down into 9 steps.
      Kicks the process off by simulating a save profile message from the FE
      From there it performs a series of various introspections to check each step
      E.g. checking correct pixels are fired, checking operation statuses and events in the DB etc.
+     Additionally verifies that removed brokers are filtered out at each stage
+
+     ⚠️  IMPORTANT: This test has EXPLICIT expectations for exactly 2 brokers:
+         - 1 non-removed broker: "DDG Fake Broker" (fakebroker.com.json)
+         - 1 removed broker: "DDG Fake Removed Broker" (fakeremovedbroker.com.json)
+         
+         If you add/remove fake brokers, you MUST update the count assertions throughout
+         this test to reflect the new expected numbers. This is intentional to ensure
+         changes don't go unnoticed and removed broker filtering is properly verified.
 
      It checks more than just the headline (e.g. step 1 checks we save a profile but
      also checks the broker profile queries are created correctly and that the login item
      is running). This is mostly to make them easy to debug if they fail.
 
      The steps:
-     1/ We save a profile
-     2/ We scan brokers
-     3/ We find and save extracted profiles
-     4/ We create opt out jobs
-     5/ We run those opt out jobs
+     1/ We save a profile and verify removed brokers are loaded but filtered
+     2/ We scan brokers (only non-removed ones)
+     3/ We find and save extracted profiles (only from non-removed brokers)
+     4/ We create opt out jobs (only for non-removed brokers)
+     5/ We run those opt out jobs (only for non-removed brokers)
      6/ The BE service receives the email
      7/ The app polls the backend service for the link
      8/ We visit the confirmation link
-     9/ We confirm the opt out through a scan
+     9/ We confirm the opt out through a scan (only for non-removed brokers)
 
      Checking steps 6-8 are currently commented out since the fake broker doesn't
      support sending emails at the moment
@@ -144,15 +153,36 @@ final class DBPEndToEndTests: XCTestCase {
             }
         })
 
-        // Also check that we made the broker profile queries correctly
-        let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
-        let initialBrokers = queries.compactMap { $0.dataBroker }
-        assertCondition(withExpectationDescription: "Correctly read and saved 1 broker after profile save",
-                        condition: { initialBrokers.count == 1 })
-        assertCondition(withExpectationDescription: "Saved correct broker after profile save",
-                        condition: { initialBrokers.first?.name == "DDG Fake Broker" })
-        assertCondition(withExpectationDescription: "Created 1 BrokerProfileQuery correctly after profile save",
-                        condition: { queries.count == 1 })
+        // Also check that we made the broker profile queries correctly and that removed brokers are filtered
+        let allQueries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+        let filteredQueries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true)
+        let allBrokers = allQueries.compactMap { $0.dataBroker }
+        let nonRemovedBrokers = allBrokers.filter { $0.removedAt == nil }
+        let removedBrokers = allBrokers.filter { $0.removedAt != nil }
+
+        // EXPLICIT BROKER COUNT EXPECTATIONS - UPDATE THESE WHEN ADDING NEW BROKERS
+        assertCondition(withExpectationDescription: "Should load exactly 2 total brokers (1 non-removed + 1 removed)",
+                        condition: { allBrokers.count == 2 })
+        assertCondition(withExpectationDescription: "Should have exactly 1 non-removed broker",
+                        condition: { nonRemovedBrokers.count == 1 })
+        assertCondition(withExpectationDescription: "Should have exactly 1 removed broker",
+                        condition: { removedBrokers.count == 1 })
+
+        // EXPLICIT BROKER NAME EXPECTATIONS - UPDATE THESE WHEN ADDING NEW BROKERS
+        assertCondition(withExpectationDescription: "Non-removed broker should be the DDG Fake Broker",
+                        condition: { nonRemovedBrokers.first?.name == "DDG Fake Broker" })
+        assertCondition(withExpectationDescription: "Removed broker should be DDG Fake Removed Broker",
+                        condition: { removedBrokers.first?.name == "DDG Fake Removed Broker" })
+
+        // FILTERING BEHAVIOR VERIFICATION
+        assertCondition(withExpectationDescription: "Filtered queries should only contain non-removed brokers",
+                        condition: { filteredQueries.allSatisfy { $0.dataBroker.removedAt == nil } })
+        assertCondition(withExpectationDescription: "Filtered queries should contain exactly 1 broker (non-removed only)",
+                        condition: { filteredQueries.count == 1 })
+        assertCondition(withExpectationDescription: "Unfiltered queries should contain exactly 2 brokers (non-removed + removed)",
+                        condition: { allQueries.count == 2 })
+
+        print("Successfully detected 1 non-removed broker and 1 removed broker with proper filtering")
 
         // At this stage the login item should be running
         assertCondition(withExpectationDescription: "Login item enabled after profile save",
@@ -184,7 +214,14 @@ final class DBPEndToEndTests: XCTestCase {
         assertCondition(withExpectationDescription: "Last operation broker URL is not nil",
                         condition: { metaData.lastStartedSchedulerOperationBrokerUrl != nil })
 
-        print("Stage 2 passed: We scan brokers")
+        // Verify only non-removed broker is being scanned (should be "fakebroker.com", not "fakeremovedbroker.com")
+        let nonRemovedBrokerUrl = "fakebroker.com"
+        assertCondition(withExpectationDescription: "Scheduler should only process the non-removed broker (fakebroker.com)",
+                        condition: { metaData.lastStartedSchedulerOperationBrokerUrl?.contains(nonRemovedBrokerUrl) == true })
+        assertCondition(withExpectationDescription: "Scheduler should NOT process the removed broker (fakeremovedbroker.com)",
+                        condition: { !(metaData.lastStartedSchedulerOperationBrokerUrl?.contains("fakeremovedbroker.com") == true) })
+
+        print("Stage 2 passed: We scan brokers (only non-removed ones)")
 
         /*
         3/ We find and save extracted profiles
@@ -195,14 +232,25 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 60,
                                whenCondition: {
             autoreleasepool {
-                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) // Only check non-removed brokers
                 let brokerIDs = queries.compactMap { $0.dataBroker.id }
                 let extractedProfiles = brokerIDs.flatMap { try! database.fetchExtractedProfiles(for: $0) }
                 return extractedProfiles.count > 0
             }
         })
 
-        print("Stage 3 passed: We find and save extracted profiles")
+        // Verify extracted profiles are only from non-removed brokers
+        let removedBrokerIDs = removedBrokers.compactMap { $0.id }
+        assertCondition(withExpectationDescription: "Should have exactly 1 removed broker ID to check",
+                        condition: { removedBrokerIDs.count == 1 })
+
+        for removedBrokerID in removedBrokerIDs {
+            let extractedProfilesFromRemoved = try! database.fetchExtractedProfiles(for: removedBrokerID)
+            assertCondition(withExpectationDescription: "Removed broker (DDG Fake Removed Broker) should not have extracted profiles",
+                            condition: { extractedProfilesFromRemoved.isEmpty })
+        }
+
+        print("Stage 3 passed: We find and save extracted profiles (only from non-removed brokers)")
 
         /*
          4/ We create opt out jobs
@@ -213,13 +261,24 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 10,
                                whenCondition: {
             autoreleasepool {
-                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) // Only check non-removed brokers
                 let optOutJobs = queries.flatMap { $0.optOutJobData }
                 return optOutJobs.count > 0
             }
         })
 
-        print("Stage 4 passed: We create opt out jobs")
+        // Verify opt-out jobs are only created for non-removed brokers
+        let allQueriesWithJobs = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+        var removedBrokerQueries = allQueriesWithJobs.filter { $0.dataBroker.removedAt != nil }
+        assertCondition(withExpectationDescription: "Should have exactly 1 removed broker query to check",
+                        condition: { removedBrokerQueries.count == 1 })
+
+        for removedQuery in removedBrokerQueries {
+            assertCondition(withExpectationDescription: "Removed broker (DDG Fake Removed Broker) should not have opt-out jobs",
+                            condition: { removedQuery.optOutJobData.isEmpty })
+        }
+
+        print("Stage 4 passed: We create opt out jobs (only for non-removed brokers)")
 
         /*
          5/ We run those opt out jobs
@@ -231,24 +290,24 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 300,
                                whenCondition: {
             autoreleasepool {
-                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) // Only check non-removed brokers
                 let optOutJobs = queries.flatMap { $0.optOutJobData }
                 return optOutJobs.first?.lastRunDate != nil
             }
         })
-        print("Stage 5.1 passed: We start running the opt out jobs")
+        print("Stage 5.1 passed: We start running the opt out jobs (only for non-removed brokers)")
 
         let optOutRequestedExpectation = expectation(description: "Opt out requested")
         await awaitFulfillment(of: optOutRequestedExpectation,
                                withTimeout: 300,
                                whenCondition: {
-            let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+            let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) // Only check non-removed brokers
             let optOutJobs = queries.flatMap { $0.optOutJobData }
             let events = optOutJobs.flatMap { $0.historyEvents }
             let optOutsRequested = events.filter { $0.type == .optOutRequested }
             return optOutsRequested.count > 0
         })
-        print("Stage 5 passed: We finish running the opt out jobs")
+        print("Stage 5 passed: We finish running the opt out jobs (only for non-removed brokers)")
 
         /*
         6/ The BE service receives the email
@@ -297,14 +356,28 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 600,
                                whenCondition: {
             autoreleasepool {
-                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) // Only check non-removed brokers
                 let optOutJobs = queries.flatMap { $0.optOutJobData }
                 let events = optOutJobs.flatMap { $0.historyEvents }
                 let optOutsConfirmed = events.filter { $0.type == .optOutConfirmed }
                 return optOutsConfirmed.count > 0
             }
         })
-        print("Stage 9 passed: We confirm the opt out through a scan")
+
+        // Final verification: ensure removed brokers have no confirmed opt-outs
+        let allQueriesWithEvents = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+        removedBrokerQueries = allQueriesWithEvents.filter { $0.dataBroker.removedAt != nil }
+        assertCondition(withExpectationDescription: "Should have exactly 1 removed broker query for final verification",
+                        condition: { removedBrokerQueries.count == 1 })
+
+        for removedQuery in removedBrokerQueries {
+            let events = removedQuery.optOutJobData.flatMap { $0.historyEvents }
+            let confirmedEvents = events.filter { $0.type == .optOutConfirmed }
+            assertCondition(withExpectationDescription: "Removed broker (DDG Fake Removed Broker) should not have confirmed opt-outs",
+                            condition: { confirmedEvents.isEmpty })
+        }
+
+        print("Stage 9 passed: We confirm the opt out through a scan (only for non-removed brokers)")
     }
 }
 

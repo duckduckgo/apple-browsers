@@ -35,9 +35,10 @@ enum UserText {
     // Sync Set Up View
     // Begin Sync card
     static let beginSyncTitle = NSLocalizedString("preferences.begin-sync.card-title", bundle: Bundle.module, value: "Begin Syncing", comment: "Begin Syncing card title in sync settings")
-    static let beginSyncDescription = NSLocalizedString("preferences.begin-sync.card-description", bundle: Bundle.module, value: "Securely sync bookmarks and passwords between your devices.", comment: "Begin Syncing card description in sync settings")
+    static let beginSyncDescription = NSLocalizedString("preferences.begin-sync.card-description", bundle: Bundle.module, value: "Securely sync bookmarks and autofill data between your devices.", comment: "Begin Syncing card description in sync settings")
     static let beginSyncButton = NSLocalizedString("preferences.begin-sync.card-button", bundle: Bundle.module, value: "Sync With Another Device", comment: "Button text on the Begin Syncing card in sync settings")
-    static let beginSyncFooter = NSLocalizedString("preferences.begin-sync.card-footer", bundle: Bundle.module, value: "Your data is end-to-end encrypted, and DuckDuckGo does not have access to the encryption key.", comment: "Footer / caption on the Begin Syncing card in sync settings")
+    static let beginSyncFooter = NSLocalizedString("preferences.begin-sync.card-footer", bundle: Bundle.module, value: "Your data is end-to-end encrypted. Nobody but you can see your data, not even us. Support for certain data types depends on the platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)", comment: "Footer / caption on the Begin Syncing card in sync settings")
+    static let syncFooter = NSLocalizedString("preferences.sync.card-footer", bundle: Bundle.module, value: "Support for certain data types depends on the platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)", comment: "Footer / caption on the Sync card in sync settings")
 
     // Options
     static let otherOptionsSectionTitle = NSLocalizedString("preferences.other-options.section-title", bundle: Bundle.module, value: "Other Options", comment: "Sync settings. Other Options section title")
@@ -46,7 +47,7 @@ enum UserText {
 
     // Preparing to sync dialog
     static let preparingToSyncDialogTitle = NSLocalizedString("preferences.preparing-to-sync.dialog-title", bundle: Bundle.module, value: "Preparing To Sync", comment: "Preparing to sync dialog title during sync set up")
-    static let preparingToSyncDialogSubTitle = NSLocalizedString("preferences.preparing-to-sync.dialog-subtitle", bundle: Bundle.module, value: "We're setting up the connection to synchronize your bookmarks and saved logins with the other device.", comment: "Preparing to sync dialog subtitle during sync set up")
+    static let preparingToSyncDialogSubTitle = NSLocalizedString("preferences.preparing-to-sync.dialog-subtitle", bundle: Bundle.module, value: "We're setting up the connection to synchronize your bookmarks and autofill data with the other device.", comment: "Preparing to sync dialog subtitle during sync set up")
     static let preparingToSyncDialogAction = NSLocalizedString("preferences.preparing-to-sync.dialog-action", bundle: Bundle.module, value: "Connecting…", comment: "Sync preparing to sync dialog action")
 
     // Enter recovery code dialog
@@ -122,7 +123,7 @@ enum UserText {
 
     // Sync with server dialog
     static let syncWithServerTitle = NSLocalizedString("preferences.sync.sync-with-server-title", bundle: Bundle.module, value: "Sync and Back Up This Device", comment: "Sync with server dialog title")
-    static let syncWithServerSubtitle1 = NSLocalizedString("preferences.sync.sync-with-server-subtitle1", bundle: Bundle.module, value: "This creates an encrypted backup of your bookmarks and passwords on DuckDuckGo’s secure server, which can be synced with your other devices.", comment: "Sync with server dialog first subtitle")
+    static let syncWithServerSubtitle1 = NSLocalizedString("preferences.sync.sync-with-server-subtitle1", bundle: Bundle.module, value: "This creates an encrypted backup of your bookmarks and autofill data on DuckDuckGo’s secure server, which can be synced with your other devices.", comment: "Sync with server dialog first subtitle")
     static let syncWithServerSubtitle2 = NSLocalizedString("preferences.sync.sync-with-server-subtitle2", bundle: Bundle.module, value: "The encryption key is only stored on your device, DuckDuckGo cannot access it.", comment: "Sync with server dialog second subtitle")
     static let syncWithServerButton = NSLocalizedString("preferences.sync.sync-with-server-button", bundle: Bundle.module, value: "Turn On Sync & Backup", comment: "Sync with server dialog button")
 
@@ -186,7 +187,7 @@ enum UserText {
         let message = NSLocalizedString(
             "prefrences.sync.invalid-credentials-present-description-many",
             bundle: Bundle.module,
-            value: "Some passwords (n) can't sync because some of their fields exceed the character limit.",
+            value: "Some passwords (%d) can't sync because some of their fields exceed the character limit.",
             comment: "Alert message for multiple invalid logins being filtered out of synced data"
         )
         return String(format: message, numberOfInvalidItems)

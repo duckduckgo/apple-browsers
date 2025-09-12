@@ -118,24 +118,26 @@ public final class HttpResponseTester: HttpResponseTesting {
             allSiteStats: siteStatistics
         )
 
-        // Calculate variance (CV at P95)
-        let variances = siteStatistics.map { $0.coefficientOfVariation }
-        let sortedVariances = variances.sorted()
-        let p95Index = Int(Double(sortedVariances.count - 1) * 0.95)
-        let p95Variance = sortedVariances[p95Index]
-
-        // Convert CV to milliseconds for display
-        let responseVariance = p95Variance * adjustedResponseTime
+        // Calculate percentiles from all measurements
+        let allSortedMeasurements = allMeasurements.flatMap { $0.measurements }.sorted()
+        let p50 = percentile(allSortedMeasurements, Constants.percentile50)
+        let p95 = percentile(allSortedMeasurements, Constants.percentile95)
+        
+        // Calculate variance for EACH site, then take the median of those variances
+        // This gives us a representative measure of how consistent each site is
+        let siteVariances = allMeasurements.map { endpoint in
+            calculateVarianceForSite(endpoint.measurements)
+        }
+        
+        // Use median of site variances (not affected by outliers)
+        // Convert to standard deviation for more intuitive understanding
+        let medianVariance = NetworkTestConstants.median(of: siteVariances) ?? 0
+        let responseVariance = sqrt(medianVariance) // Standard deviation in ms
 
         // Calculate failure rate
         let totalAttempts = allMeasurements.reduce(0) { $0 + $1.measurements.count }
         let expectedAttempts = allMeasurements.count * (allMeasurements.first?.measurements.count ?? 0)
         let failureRate = Double(expectedAttempts - totalAttempts) / Double(expectedAttempts)
-
-        // Calculate percentiles from all measurements
-        let allSortedMeasurements = allMeasurements.flatMap { $0.measurements }.sorted()
-        let p50 = percentile(allSortedMeasurements, Constants.percentile50)
-        let p95 = percentile(allSortedMeasurements, Constants.percentile95)
 
         return HttpResponseResult(
             averageResponseTime: adjustedResponseTime,
@@ -187,6 +189,16 @@ public final class HttpResponseTester: HttpResponseTesting {
         guard !sorted.isEmpty else { return nil }
         let index = Int(Double(sorted.count - 1) * p)
         return sorted[index]
+    }
+    
+    private func calculateVarianceForSite(_ measurements: [Double]) -> Double {
+        guard measurements.count > 1 else { return 0 }
+        
+        let mean = measurements.reduce(0, +) / Double(measurements.count)
+        let squaredDifferences = measurements.map { pow($0 - mean, 2) }
+        let variance = squaredDifferences.reduce(0, +) / Double(measurements.count)
+        
+        return variance
     }
 }
 

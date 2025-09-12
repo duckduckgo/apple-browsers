@@ -64,11 +64,12 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
         static let httpResponseBelowAverage = 400.0 // Was 500ms
         static let httpResponsePoor = 500.0       // Was 600ms
         
-        // Response Variance penalty thresholds (ms)
-        static let varianceGoodThreshold = 50.0    // Under 50ms variance is acceptable
-        static let varianceFairThreshold = 100.0   // 50-100ms variance is noticeable
-        static let variancePoorThreshold = 200.0   // 100-200ms variance is problematic
-        static let varianceVeryPoorThreshold = 400.0 // Over 200ms variance is severely problematic
+        // Response Variance penalty thresholds (standard deviation in ms)
+        // Now using proper standard deviation instead of made-up metric
+        static let varianceGoodThreshold = 20.0    // Under 20ms std dev is excellent
+        static let varianceFairThreshold = 50.0    // 20-50ms std dev is acceptable  
+        static let variancePoorThreshold = 100.0   // 50-100ms std dev is problematic
+        static let varianceVeryPoorThreshold = 200.0 // Over 100ms std dev is severely problematic
         
         // Download speed thresholds (Mbps)
         static let downloadExcellent = 100.0
@@ -164,13 +165,13 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
     }
     
     private func calculateVariancePenalty(_ variance: Double) -> Double {
-        // High variance severely impacts user experience
+        // Variance is now standard deviation in ms - much more reasonable values
         switch variance {
-        case ..<Constants.varianceGoodThreshold: return 0      // No penalty for low variance
-        case Constants.varianceGoodThreshold..<Constants.varianceFairThreshold: return 10   // Minor penalty
-        case Constants.varianceFairThreshold..<Constants.variancePoorThreshold: return 25   // Moderate penalty
-        case Constants.variancePoorThreshold..<Constants.varianceVeryPoorThreshold: return 40  // Heavy penalty
-        default: return 60  // Severe penalty for very high variance (like 713ms)
+        case ..<Constants.varianceGoodThreshold: return 0      // <20ms std dev: No penalty
+        case Constants.varianceGoodThreshold..<Constants.varianceFairThreshold: return 15   // 20-50ms: Minor penalty
+        case Constants.varianceFairThreshold..<Constants.variancePoorThreshold: return 30   // 50-100ms: Moderate penalty
+        case Constants.variancePoorThreshold..<Constants.varianceVeryPoorThreshold: return 45  // 100-200ms: Heavy penalty
+        default: return 60  // >200ms std dev: Severe penalty
         }
     }
     

@@ -24,9 +24,9 @@ public class ActionsHandler {
     public let stepType: StepType
     private var actions: [Action]
 
-    public init(step: Step) {
-        self.stepType = step.type
-        self.actions = step.actions
+    public init(stepType: StepType, actions: [Action]) {
+        self.stepType = stepType
+        self.actions = actions
     }
 
     public func currentAction() -> Action? {
@@ -62,6 +62,53 @@ public class ActionsHandler {
         } else {
             self.actions.append(contentsOf: actions)
         }
+    }
+
+    // MARK: - Factory Methods
+
+    /// Creates an ActionsHandler for scan steps - always uses all actions
+    public static func forScan(_ step: Step) -> ActionsHandler {
+        guard step.type == .scan else {
+            assertionFailure("Expected scan step but got \(step.type)")
+            return ActionsHandler(stepType: step.type, actions: step.actions)
+        }
+        return ActionsHandler(stepType: .scan, actions: step.actions)
+    }
+
+    /// Creates an ActionsHandler for opt-out steps - may halt at email confirmation
+    public static func forOptOut(_ step: Step, haltsAtEmailConfirmation: Bool) -> ActionsHandler {
+        guard step.type == .optOut else {
+            assertionFailure("Expected optOut step but got \(step.type)")
+            return ActionsHandler(stepType: step.type, actions: step.actions)
+        }
+
+        let actions: [Action]
+        if haltsAtEmailConfirmation,
+           let emailConfirmIndex = step.actions.firstIndex(where: { $0 is EmailConfirmationAction }) {
+            actions = Array(step.actions.prefix(emailConfirmIndex))
+        } else {
+            actions = step.actions
+        }
+
+        return ActionsHandler(stepType: .optOut, actions: actions)
+    }
+
+    /// Creates an ActionsHandler for email confirmation continuation - starts after email confirmation action
+    public static func forEmailConfirmationContinuation(_ step: Step) -> ActionsHandler {
+        guard step.type == .optOut else {
+            assertionFailure("Expected optOut step but got \(step.type)")
+            return ActionsHandler(stepType: step.type, actions: step.actions)
+        }
+
+        guard let emailConfirmIndex = step.actions.firstIndex(where: { $0 is EmailConfirmationAction }) else {
+            assertionFailure("Opt-out has no emailConfirmation step")
+            return ActionsHandler(stepType: step.type, actions: step.actions)
+        }
+
+        let afterIndex = step.actions.index(after: emailConfirmIndex)
+        let actions = Array(step.actions.suffix(from: afterIndex))
+
+        return ActionsHandler(stepType: .optOut, actions: actions)
     }
 
 }

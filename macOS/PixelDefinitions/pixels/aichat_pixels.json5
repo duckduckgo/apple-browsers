@@ -14,6 +14,12 @@
                 type: 'string',
                 enum: ['address-bar-button', 'summarization', 'serp', 'context-menu', 'translation'],
             },
+            {
+                key: 'automaticPageContext',
+                description: 'Whether the automatic page context collection is enabled in AI Features settings',
+                type: 'string',
+                enum: ['true', 'false'],
+            },
         ],
     },
     m_mac_aichat_translate_text: {

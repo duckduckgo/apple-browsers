@@ -107,6 +107,10 @@ public class DBPIOSInterface {
     protocol WeeklyPixelsDelegate: AnyObject {
         func tryToFireWeeklyPixels()
     }
+
+    protocol OptOutEmailConfirmationHandlingDelegate: AnyObject {
+        func checkForEmailConfirmationData() async
+    }
 }
 
 public final class DataBrokerProtectionIOSManager {
@@ -124,6 +128,7 @@ public final class DataBrokerProtectionIOSManager {
     private let database: DataBrokerProtectionRepository
     private var queueManager: BrokerProfileJobQueueManaging
     private let jobDependencies: BrokerProfileJobDependencyProviding
+    private let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let iOSPixelsHandler: EventMapping<IOSPixels>
@@ -156,6 +161,7 @@ public final class DataBrokerProtectionIOSManager {
 
     init(queueManager: BrokerProfileJobQueueManaging,
          jobDependencies: BrokerProfileJobDependencyProviding,
+         emailConfirmationDataService: EmailConfirmationDataServiceProvider,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          iOSPixelsHandler: EventMapping<IOSPixels>,
@@ -171,6 +177,7 @@ public final class DataBrokerProtectionIOSManager {
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
+        self.emailConfirmationDataService = emailConfirmationDataService
         self.authenticationManager = authenticationManager
         self.sharedPixelsHandler = sharedPixelsHandler
         self.iOSPixelsHandler = iOSPixelsHandler
@@ -200,6 +207,10 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
 
     public func appDidBecomeActive() {
         tryToFireWeeklyPixels()
+
+        Task {
+            await checkForEmailConfirmationData()
+        }
     }
 }
 
@@ -238,6 +249,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
 
         do {
             try await database.save(profile)
+            await checkForEmailConfirmationData()
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
                 DispatchQueue.main.async {
                     backgroundAssertion.release()
@@ -380,6 +392,16 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
     }
 }
 
+extension DataBrokerProtectionIOSManager: DBPIOSInterface.OptOutEmailConfirmationHandlingDelegate {
+    func checkForEmailConfirmationData() async {
+        do {
+            try await emailConfirmationDataService.checkForEmailConfirmationData()
+        } catch {
+            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
+        }
+    }
+}
+
 // MARK: - Private protocol implementations
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.WeeklyPixelsDelegate {
@@ -487,6 +509,9 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
                 task.setTaskCompleted(success: false)
                 return
             }
+
+            await checkForEmailConfirmationData()
+
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
                 Logger.dataBrokerProtection.log("All operations completed in background task")
                 let timeTaken = Date.now.timeIntervalSince(startDate)

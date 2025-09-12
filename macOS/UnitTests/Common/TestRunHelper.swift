@@ -341,12 +341,12 @@ extension NSView {
              || (view.className.hasPrefix("WK") && !(view is WKWebView))
              || view.className.contains("NSTextView")) {
 
-                if let observer = view.value(forIvar: "_antialiasThresholdChangedNotificationObserver") {
-                    NotificationCenter.default.removeObserver(observer)
-                }
-
-                TestRunHelper.shared.registerView(view)
+            if let observer = view.value(forIvar: "_antialiasThresholdChangedNotificationObserver").map({ Unmanaged<AnyObject>.fromOpaque($0) })?.takeUnretainedValue() {
+                NotificationCenter.default.removeObserver(observer)
             }
+
+            TestRunHelper.shared.registerView(view)
+        }
 
         return view
     }

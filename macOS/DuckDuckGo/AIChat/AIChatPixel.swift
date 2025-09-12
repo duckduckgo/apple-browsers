@@ -76,7 +76,7 @@ enum AIChatPixel: PixelKitEvent {
     // MARK: - Sidebar
 
     /// Event Trigger: User opens a tab sidebar
-    case aiChatSidebarOpened(source: AIChatSidebarOpenSource)
+    case aiChatSidebarOpened(source: AIChatSidebarOpenSource, shouldAutomaticallySendPageContext: Bool?)
 
     /// Event Trigger: User closes a tab sidebar
     case aiChatSidebarClosed(source: AIChatSidebarCloseSource)
@@ -183,8 +183,12 @@ enum AIChatPixel: PixelKitEvent {
             return nil
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
-        case .aiChatSidebarOpened(let source):
-            return ["source": source.rawValue]
+        case .aiChatSidebarOpened(let source, let shouldAutomaticallySendPageContext):
+            var params = ["source": source.rawValue]
+            if let shouldAutomaticallySendPageContext {
+                params["automaticPageContext"] = String(shouldAutomaticallySendPageContext)
+            }
+            return params
         case .aiChatSidebarClosed(let source):
             return ["source": source.rawValue]
         case .aiChatSummarizeText(let source):

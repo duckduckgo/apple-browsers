@@ -24,6 +24,7 @@ import Common
 import PixelKit
 import SecureStorage
 import WebKit
+import enum UserScript.UserScriptError
 
 @MainActor
 public final class ContentOverlayViewController: NSViewController, EmailManagerRequestDelegate {
@@ -410,12 +411,19 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
                                                 messageSecret: topAutofillUserScript?.messageSecret ?? "",
                                                 featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfigurationManager.privacyConfig))
 
-        let runtimeConfiguration = DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
-                                                                         properties: properties)
-            .build()
-            .buildRuntimeConfigResponse()
+        do {
+            let runtimeConfiguration = try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                 properties: properties)
+                .build()
+                .buildRuntimeConfigResponse()
 
-        completionHandler(runtimeConfiguration)
+            completionHandler(runtimeConfiguration)
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to load JS for DefaultAutofillSourceProvider: \(error.localizedDescription)")
+        }
     }
 }
 

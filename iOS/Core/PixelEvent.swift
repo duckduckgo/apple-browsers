@@ -955,6 +955,15 @@ extension Pixel {
         case siteNotWorkingShown
         case siteNotWorkingWebsiteIsBroken
 
+        /**
+         * Event Trigger: BrowserServicesKit.UserScript.loadJS fails to load the contents of a JS file.
+         *
+         * Anomaly Investigation:
+         * - App crashes after this pixel is fired.
+         * - Useful for investigating the underlying error causing the failure.
+         */
+        case userScriptLoadJSFailed
+
         // MARK: - Default Browser
 
         // Set As Default Browser Debug Pixels
@@ -2700,7 +2709,10 @@ extension Pixel.Event {
         case .systemSettingsPiPTutorialFailedToLoadVideo: return "m_picture-in-picture-tutorial_failed-to-load-video"
 
         case .appDidTerminateWithUnhandledError: return "m_app-did-terminate-with-unhandled-error"
-            
+
+        // MARK: UserScript
+        case .userScriptLoadJSFailed: return "m_debug_user_script_load_js_failed"
+
         // MARK: Push Notification
         case .inactiveUserProvisionalPushNotificationTapped: return "m_push-notification_local-provisional_inactive-user-tap"
         case .userNotificationAuthorizationStatusDaily: return "m_push-notification_user-notification-authorization-status"

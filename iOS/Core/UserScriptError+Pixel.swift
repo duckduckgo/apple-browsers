@@ -1,5 +1,6 @@
 //
-//  NewTabPageOmnibarConfigProviding.swift
+//  UserScriptError+Pixel.swift
+//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,21 +17,15 @@
 //  limitations under the License.
 //
 
-import Combine
+import enum UserScript.UserScriptError
 
-public protocol NewTabPageOmnibarConfigProviding: AnyObject {
-
-    @MainActor
-    var mode: NewTabPageDataModel.OmnibarMode { get set }
-
-    var isAIChatShortcutEnabled: Bool { get set }
-    var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> { get }
-
-    var isAIChatSettingVisible: Bool { get }
-    var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> { get }
-
-    var showCustomizePopover: Bool { get set }
-    var showCustomizePopoverPublisher: AnyPublisher<Bool, Never> { get }
-
-    var customizePopoverPresentationCount: Int { get set }
+extension UserScriptError {
+    public func fireLoadJSFailedPixelIfNeeded(pixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
+        guard case let UserScriptError.failedToLoadJS(jsFile, error) = self else {
+            return
+        }
+        let params = [PixelParameters.jsFile: jsFile]
+        pixelFiring.fireDailyAndCount(.userScriptLoadJSFailed, error: error, withAdditionalParameters: params)
+        Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+    }
 }

@@ -299,14 +299,19 @@ extension WKWebView {
     }
 
     func loadAlternateHTML(_ html: String, baseURL: URL, forUnreachableURL failingURL: URL) {
-        guard responds(to: Selector.loadAlternateHTMLString) else {
+        guard responds(to: Selector.loadAlternateHTMLString),
+              let method = class_getInstanceMethod(object_getClass(self), Selector.loadAlternateHTMLString) else {
             if #available(macOS 12.0, *) {
                 Logger.navigation.error("WKWebView._loadAlternateHTMLString not available")
                 loadSimulatedRequest(URLRequest(url: failingURL), responseHTML: html)
             }
             return
         }
-        self.perform(Selector.loadAlternateHTMLString, withArguments: [html, baseURL, failingURL])
+
+        let imp = method_getImplementation(method)
+        typealias LoadAlternateHTMLStringType = @convention(c) (WKWebView, ObjectiveC.Selector, NSString, NSURL, NSURL) -> Void
+        let loadAlternateHTMLString = unsafeBitCast(imp, to: LoadAlternateHTMLStringType.self)
+        loadAlternateHTMLString(self, Selector.loadAlternateHTMLString, html as NSString, baseURL as NSURL, failingURL as NSURL)
     }
 
     func setDocumentHtml(_ html: String) {

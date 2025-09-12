@@ -39,9 +39,9 @@ final class FireproofDomainsViewController: NSViewController {
 
     // MARK: - UI
     private let buttonsStackView = NSStackView()
-    private lazy var removeDomainButton = MouseOverButton(title: UserText.remove, target: self, action: #selector(removeSelectedDomain(_:)))
-    private lazy var removeAllDomainsButton = MouseOverButton(title: UserText.fireproofRemoveAllButton, target: self, action: #selector(removeAllDomains(_:)))
-    private lazy var doneButton = MouseOverButton(title: UserText.done, target: self, action: #selector(doneButtonClicked(_:)))
+    private lazy var removeDomainButton = NSButton(title: UserText.remove, target: self, action: #selector(removeSelectedDomain(_:)))
+    private lazy var removeAllDomainsButton = NSButton(title: UserText.fireproofRemoveAllButton, target: self, action: #selector(removeAllDomains(_:)))
+    private lazy var doneButton = NSButton(title: UserText.done, target: self, action: #selector(doneButtonClicked(_:)))
     private lazy var fireproofSitesLabel = NSTextField(labelWithString: UserText.fireproofSites)
     private let searchBar = NSSearchField()
     private let scrollView = NSScrollView()
@@ -180,17 +180,9 @@ final class FireproofDomainsViewController: NSViewController {
     }
 
     // MARK: - UI setup
-    private func configureToolbarButton(_ button: MouseOverButton) {
+    private func configureToolbarButton(_ button: NSButton) {
         button.bezelStyle = .rounded
-        button.cornerRadius = 4
-        button.imageHugsTitle = true
         button.setContentHuggingPriority(.defaultHigh, for: .vertical)
-        button.alignment = .center
-        button.font = .systemFont(ofSize: 13)
-        button.imagePosition = .imageLeading
-        button.imageScaling = .scaleNone
-        button.lineBreakMode = .byTruncatingTail
-        button.cell?.wraps = false
         button.heightAnchor.constraint(equalToConstant: 24).isActive = true
         button.widthAnchor.constraint(greaterThanOrEqualToConstant: 24).isActive = true
     }

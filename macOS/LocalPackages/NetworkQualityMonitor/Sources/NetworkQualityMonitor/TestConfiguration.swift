@@ -41,9 +41,9 @@ public struct TestConfiguration {
     /// Default configuration with standard test endpoints
     public static let standard = TestConfiguration(
         latencyTestURLs: [
-            // IMPORTANT: Using globally distributed CDN endpoints that automatically
-            // route to the nearest edge server. This gives region-appropriate latency
-            // measurements regardless of user location (Asia, Europe, Americas, etc.)
+            // IMPORTANT: Using mix of CDN endpoints and specific regional servers
+            // to get realistic geographic latency distribution. CDNs will show best-case
+            // (nearest edge), while specific regions show real-world cross-region latency
             
             // DuckDuckGo - Critical for DDG browser experience
             URL(string: "https://duckduckgo.com/")!,

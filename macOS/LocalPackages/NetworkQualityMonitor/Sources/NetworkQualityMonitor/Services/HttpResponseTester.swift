@@ -173,10 +173,12 @@ public final class HttpResponseTester: HttpResponseTesting {
                                               allSiteStats: [SiteStatistics]) -> Double {
         // Calculate the MEDIAN of all site medians
         // This properly reflects geographic latency reality:
-        // - User in US → US sites: ~30-50ms typical
-        // - User in Asia → US sites: ~150-200ms typical  
-        // - User in Australia → US sites: ~200-250ms typical
-        // - User in Europe → US sites: ~80-120ms typical
+        // - Same region (US→US, EU→EU): 10-30ms typical
+        // - Cross-continent (US East→West): 60-80ms typical
+        // - Transatlantic (US→EU): 80-150ms typical
+        // - Transpacific (US→Asia): 120-200ms typical  
+        // - Extreme distance (EU→Australia): 250-300ms typical
+        // - Satellite connections: 500-700ms typical
         //
         // Using median ensures we get the "typical" latency experience
         // and naturally reflects geographic distance to servers

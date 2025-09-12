@@ -20,7 +20,7 @@ public struct HttpResponseResult {  // Renamed from LatencyResult
     public let p50: Double?
     public let p95: Double?
 
-    init(averageResponseTime: Double, responseVariance: Double, failureRate: Double, sampleCount: Int, p50: Double? = nil, p95: Double? = nil) {
+    public init(averageResponseTime: Double, responseVariance: Double, failureRate: Double, sampleCount: Int, p50: Double? = nil, p95: Double? = nil) {
         self.averageResponseTime = averageResponseTime
         self.responseVariance = responseVariance
         self.failureRate = failureRate
@@ -33,11 +33,21 @@ public struct HttpResponseResult {  // Renamed from LatencyResult
 public struct BandwidthResult {
     public let downloadSpeedMbps: Double
     public let uploadSpeedMbps: Double
+    
+    public init(downloadSpeedMbps: Double, uploadSpeedMbps: Double) {
+        self.downloadSpeedMbps = downloadSpeedMbps
+        self.uploadSpeedMbps = uploadSpeedMbps
+    }
 }
 
 public struct DNSResult {
     public let averageResolutionTime: Double
     public let failureRate: Double
+    
+    public init(averageResolutionTime: Double, failureRate: Double) {
+        self.averageResolutionTime = averageResolutionTime
+        self.failureRate = failureRate
+    }
 }
 
 public struct BufferBloatResult {
@@ -45,6 +55,13 @@ public struct BufferBloatResult {
     public let loadedLatency: Double
     public let increase: Double
     public let grade: String
+    
+    public init(baselineLatency: Double, loadedLatency: Double, increase: Double, grade: String) {
+        self.baselineLatency = baselineLatency
+        self.loadedLatency = loadedLatency
+        self.increase = increase
+        self.grade = grade
+    }
 }
 
 public struct NetworkScore {
@@ -54,7 +71,7 @@ public struct NetworkScore {
     public let dns: Double
     public let bufferBloat: Double?
 
-    init(overall: Double, httpResponse: Double, bandwidth: Double, dns: Double, bufferBloat: Double? = nil) {
+    public init(overall: Double, httpResponse: Double, bandwidth: Double, dns: Double, bufferBloat: Double? = nil) {
         self.overall = overall
         self.httpResponse = httpResponse
         self.bandwidth = bandwidth

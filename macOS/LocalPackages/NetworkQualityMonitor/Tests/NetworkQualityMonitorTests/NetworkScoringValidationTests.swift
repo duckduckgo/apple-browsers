@@ -29,7 +29,11 @@ final class NetworkScoringValidationTests: XCTestCase {
     // MARK: - Comprehensive Test Scenarios (50+)
     
     func testAllNetworkScenarios() {
-        let scenarios: [NetworkScenario] = [
+        // Split into smaller array to avoid stack overflow
+        var scenarios: [NetworkScenario] = []
+        
+        // Add scenarios in groups
+        scenarios.append(contentsOf: [
             // FIBER CONNECTIONS (Excellent - like your example)
             NetworkScenario(name: "Fiber - Perfect", httpResponse: 15, variance: 5, download: 500, upload: 200, dns: 10, bufferBloatGrade: "A", expectedQuality: .excellent, description: "Premium fiber connection"),
             NetworkScenario(name: "Fiber - Your Example", httpResponse: 243, variance: 160, download: 316, upload: 136, dns: 25, bufferBloatGrade: "B", expectedQuality: .excellent, description: "Your actual fiber connection"),
@@ -110,7 +114,7 @@ final class NetworkScoringValidationTests: XCTestCase {
             NetworkScenario(name: "VPN - Corporate", httpResponse: 150, variance: 50, download: 80, upload: 40, dns: 50, bufferBloatGrade: "B", expectedQuality: .good, description: "Corporate VPN"),
             NetworkScenario(name: "VPN - Consumer", httpResponse: 200, variance: 100, download: 40, upload: 20, dns: 80, bufferBloatGrade: "C", expectedQuality: .fair, description: "Consumer VPN service"),
             NetworkScenario(name: "VPN - Free Tier", httpResponse: 400, variance: 300, download: 10, upload: 5, dns: 150, bufferBloatGrade: "D", expectedQuality: .poor, description: "Free VPN service")
-        ]
+        ])
         
         print("\n=== NETWORK SCORING VALIDATION (50+ Scenarios) ===\n")
         
@@ -146,7 +150,7 @@ final class NetworkScoringValidationTests: XCTestCase {
             
             // Show detailed breakdown for mismatches
             if !correct {
-                print("  → HTTP: \(score.httpResponse), BW: \(score.bandwidth), DNS: \(score.dns), BB: \(score.bufferBloat)")
+                print("  → HTTP: \(score.httpResponse), BW: \(score.bandwidth), DNS: \(score.dns), BB: \(score.bufferBloat ?? 0)")
                 print("  → Response: \(scenario.httpResponse)ms (var: \(scenario.variance)ms), DL: \(scenario.download)Mbps, UL: \(scenario.upload)Mbps")
             }
         }
@@ -172,6 +176,7 @@ final class NetworkScoringValidationTests: XCTestCase {
             responseVariance: scenario.variance,
             failureRate: 0,
             sampleCount: 15
+            // p50 and p95 are optional and not used in scoring
         )
         
         let bandwidth = BandwidthResult(

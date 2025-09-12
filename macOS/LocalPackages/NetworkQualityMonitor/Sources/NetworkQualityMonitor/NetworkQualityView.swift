@@ -160,7 +160,7 @@ public struct NetworkQualityView: View {
                         actualValue: results.httpResponse.averageResponseTime,
                         metricType: .httpResponse,
                         icon: "speedometer",
-                        infoText: "Calculated by testing websites with 10 HEAD requests each. Takes the best-performing site's median (P50) as baseline, then adjusts based on how much worse other sites perform (P75 multiplier). This gives a geography-adjusted score - a user in Asia won't be necesarily penalized for high latency to US servers. \n\n This test renders more real-world results compared to basic ICMP based Latency tests."
+                        infoText: "Calculated by testing websites with HEAD requests.\n\n Takes the best-performing site's median (P50) as baseline, then adjusts based on how much worse other sites perform (P75 multiplier). \n\nThis gives a geography-adjusted score. \n\n This test renders more real-world results compared to basic ICMP based Latency tests."
                     )
 
                     MetricCard(
@@ -169,7 +169,7 @@ public struct NetworkQualityView: View {
                         actualValue: results.bandwidth.downloadSpeedMbps,
                         metricType: .bandwidth,
                         icon: "arrow.down.circle",
-                        infoText: "Downloads 100MB files from multiple CDN servers (Cloudflare, OVH, Hetzner, Tele2). Tests each server briefly to find the fastest, then performs sustained downloads. Takes the best result to show your maximum achievable throughput."
+                        infoText: "Downloads 100MB files from multiple CDN servers (Cloudflare, OVH, Hetzner, Tele2). Tests each server briefly to find the fastest, then performs sustained downloads. Takes the best result to show real-world achievable throughput."
                     )
 
                     MetricCard(
@@ -178,7 +178,7 @@ public struct NetworkQualityView: View {
                         actualValue: results.bandwidth.uploadSpeedMbps,
                         metricType: .bandwidth,
                         icon: "arrow.up.circle",
-                        infoText: "Uploads 50MB chunks to multiple test servers (Cloudflare, httpbin, speedtest.net). Measures sustained upload throughput. Critical for video calls and cloud backups. Asymmetric speeds are normal for most connections."
+                        infoText: "Uploads 50MB chunks to multiple test servers (Cloudflare, httpbin, speedtest.net). Measures sustained upload throughput. Asymmetric speeds are normal for most connections."
                     )
 
                     MetricCard(
@@ -196,7 +196,7 @@ public struct NetworkQualityView: View {
                         actualValue: results.httpResponse.responseVariance,
                         metricType: .responseVariance,
                         icon: "waveform",
-                        infoText: "Measures response consistency using Coefficient of Variation (CV = StdDev/Mean) for each site. Takes P95 of all site CVs to capture worst-case. A CV of 10% means responses vary by ±10% from average. Values shown in ms (CV × adjusted response time). \n\nLow values = consistent = reliable performance tests. High values = variable = need more test iterations."
+                        infoText: "Measures response consistency using Coefficient of Variation (CV = StdDev/Mean) for each site. Takes P95 of all site CVs to capture worst-case. \n\nA CV of 10% means responses vary by ±10% from average. Values shown in ms (CV × adjusted response time). \n\nLow values = consistent = reliable performance tests. High values = more variable."
                     )
 
                     MetricCard(

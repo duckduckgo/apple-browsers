@@ -32,7 +32,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     var syncCredentialsPausedTitle: String? {
         UserText.syncLimitExceededTitle
     }
-    
+
+    var syncCreditCardsPausedTitle: String? {
+        UserText.syncLimitExceededTitle
+    }
+
     var syncPausedTitle: String? {
         guard let error = getErrorType(from: syncPausedStateManager.currentSyncAllPausedError) else { return nil }
         switch error {
@@ -71,7 +75,20 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             return nil
         }
     }
-    
+
+    var syncCreditCardsPausedDescription: String? {
+        guard let error = getErrorType(from: syncPausedStateManager.currentSyncCreditCardsPausedError) else { return nil }
+        switch error {
+        case .creditCardsCountLimitExceeded, .creditCardsRequestSizeLimitExceeded:
+            return UserText.creditCardsLimitExceededDescription
+        case .badRequestCreditCards:
+            return UserText.badRequestErrorDescription
+        default:
+            assertionFailure("Sync Credit Cards Paused error should be one of those listed")
+            return nil
+        }
+    }
+
     var syncPausedDescription: String? {
         guard let error = getErrorType(from: syncPausedStateManager.currentSyncAllPausedError) else { return nil }
         switch error {
@@ -91,6 +108,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     
     var syncCredentialsPausedButtonTitle: String? {
         UserText.bookmarksLimitExceededAction
+    }
+
+    var syncCreditCardsPausedButtonTitle: String? {
+        UserText.creditCardsLimitExceededAction
     }
 
     func authenticateUser() async throws {

@@ -178,6 +178,15 @@
 /* Title for alert shown when sync credentials paused for too many items */
 "alert.sync-credentials-paused-title" = "Password Sync is Paused";
 
+/* Description for alert shown when sync error occurs because of bad credit cards data */
+"alert.sync-credit-cards-bad-data-error-description" = "Some credit cards are formatted incorrectly or too long and were not synced.";
+
+/* Description for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-description" = "You've reached the maximum number of credit cards. Please delete some credit cards to resume sync.";
+
+/* Title for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-title" = "Credit Card Sync is Paused";
+
 /* Title for sync error alert */
 "alert.sync-error" = "Sync & Backup Error";
 
@@ -2532,6 +2541,12 @@ https://duckduckgo.com/mac";
 
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "You've reached the maximum number of passwords. Please delete some to resume sync.";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Manage Credit Cards…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.creditCards-limit-exceeded-description" = "You've reached the maximum number of credit cards. Please delete some to resume sync.";
 
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Sync encountered an error. Try disabling sync on this device and then reconnect using another device or your recovery code.";

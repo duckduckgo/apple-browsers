@@ -44,12 +44,15 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
 
     var syncBookmarksPausedTitle: String? { get }
     var syncCredentialsPausedTitle: String? { get }
+    var syncCreditCardsPausedTitle: String? { get }
     var syncPausedTitle: String? { get }
     var syncBookmarksPausedDescription: String? { get }
     var syncCredentialsPausedDescription: String? { get }
+    var syncCreditCardsPausedDescription: String? { get }
     var syncPausedDescription: String? { get }
     var syncBookmarksPausedButtonTitle: String? { get }
     var syncCredentialsPausedButtonTitle: String? { get }
+    var syncCreditCardsPausedButtonTitle: String? { get }
 }
 
 public class SyncSettingsViewModel: ObservableObject {
@@ -111,8 +114,10 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isSyncPaused = false
     @Published public var isSyncBookmarksPaused = false
     @Published public var isSyncCredentialsPaused = false
+    @Published public var isSyncCreditCardsPaused = false
     @Published public var invalidBookmarksTitles: [String] = []
     @Published public var invalidCredentialsTitles: [String] = []
+    @Published public var invalidCreditCardsTitles: [String] = []
 
     @Published var isBusy = false
     @Published var recoveryCode = ""
@@ -279,6 +284,9 @@ public class SyncSettingsViewModel: ObservableObject {
     public var syncCredentialsPausedTitle: String? {
         delegate?.syncCredentialsPausedTitle
     }
+    public var syncCreditCardsPausedTitle: String? {
+        delegate?.syncCreditCardsPausedTitle
+    }
     public var syncPausedTitle: String? {
         delegate?.syncPausedTitle
     }
@@ -288,6 +296,9 @@ public class SyncSettingsViewModel: ObservableObject {
     public var syncCredentialsPausedDescription: String? {
         delegate?.syncCredentialsPausedDescription
     }
+    public var syncCreditCardsPausedDescription: String? {
+        delegate?.syncCreditCardsPausedDescription
+    }
     public var syncPausedDescription: String? {
         delegate?.syncPausedDescription
     }
@@ -296,6 +307,9 @@ public class SyncSettingsViewModel: ObservableObject {
     }
     public var syncCredentialsPausedButtonTitle: String? {
         delegate?.syncCredentialsPausedButtonTitle
+    }
+    public var syncCreditCardsPausedButtonTitle: String? {
+        delegate?.syncCreditCardsPausedButtonTitle
     }
 
 }

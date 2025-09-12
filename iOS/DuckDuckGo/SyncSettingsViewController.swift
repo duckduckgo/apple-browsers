@@ -250,6 +250,9 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
         let invalidCredentialsObjects: [String] = (try? syncCredentialsAdapter.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []
         viewModel.invalidCredentialsTitles = invalidCredentialsObjects.map({ $0.truncated(length: 15) })
+
+        let invalidCreditCardObjects: [String] = (try? syncCreditCardsAdapter?.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []
+        viewModel.invalidCreditCardsTitles = invalidCreditCardObjects
     }
 
 

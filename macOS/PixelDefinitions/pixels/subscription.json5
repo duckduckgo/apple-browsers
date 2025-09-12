@@ -159,12 +159,7 @@
             },
             {
                 key: 'app.native_apps_experiments',
-                description: 'Native apps experiments',
-                type: 'string',
-            },
-            {
-                key: 'app.atb_experiments',
-                description: 'ATB experiments',
+                description: 'The list of enrolled Native Apps experiments in a comma-separated string, e.g. experiment1.cohortX,experiment2.cohortY',
                 type: 'string',
             },
             {

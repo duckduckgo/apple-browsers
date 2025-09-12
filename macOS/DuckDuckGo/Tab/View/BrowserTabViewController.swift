@@ -1105,8 +1105,8 @@ final class BrowserTabViewController: NSViewController {
             return
         }
 
-        Task { @MainActor [weak self, weak viewForRendering] in
-            guard let tabSnapshots = self?.tabViewModel?.tab.tabSnapshots else { return }
+        Task { @MainActor [weak tabViewModel, weak viewForRendering] in
+            guard let tabSnapshots = tabViewModel?.tab.tabSnapshots else { return }
             await tabSnapshots.renderSnapshot { [weak viewForRendering] in viewForRendering }
         }
     }

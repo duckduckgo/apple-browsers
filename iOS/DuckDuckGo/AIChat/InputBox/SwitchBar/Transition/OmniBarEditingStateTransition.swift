@@ -94,7 +94,7 @@ final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTra
 
         transitionContext.containerView.addSubview(toVC.view)
 
-        let switchBarTextViewMinY = toVC.switchBarVC.textEntryViewController.view.frame.height
+        let switchBarTextViewMinY = toVC.switchBarVC.textEntryViewController.view.frame.minY
         let offsets = calculateOffsets(switchBarTextViewMinY: switchBarTextViewMinY, bottomSafeAreaInset: fromVC.view.safeAreaInsets.bottom)
 
         if !transitionContext.isAnimated {

@@ -22,9 +22,16 @@ import Foundation
 /// Service responsible for DNS testing
 public final class DNSTester: DNSTesting {
     
+    // MARK: - Constants
+    
+    private enum Constants {
+        static let progressMessage = "Testing DNS resolution..."
+        static let measurementDelay: UInt64 = 50_000_000  // 50ms between DNS queries
+    }
+    
     public func performTest(configuration: TestConfiguration,
                     progressCallback: ((String) -> Void)? = nil) async throws -> DNSResult {
-        progressCallback?("Testing DNS resolution...")
+        progressCallback?(Constants.progressMessage)
         
         var resolutionTimes: [Double] = []
         var failures = 0
@@ -45,7 +52,7 @@ public final class DNSTester: DNSTesting {
             }
             
             // Small delay between DNS queries
-            try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+            try? await Task.sleep(nanoseconds: Constants.measurementDelay)
         }
         
         guard !resolutionTimes.isEmpty else {

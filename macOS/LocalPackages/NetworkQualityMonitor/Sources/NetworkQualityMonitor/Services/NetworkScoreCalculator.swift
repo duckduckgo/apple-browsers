@@ -22,6 +22,73 @@ import Foundation
 /// Service responsible for calculating network quality scores
 public final class NetworkScoreCalculator: NetworkScoreCalculating {
     
+    // MARK: - Constants
+    
+    private enum Constants {
+        // Score weights for overall calculation
+        static let httpResponseWeight = 0.35
+        static let bandwidthWeight = 0.35
+        static let dnsWeight = 0.15
+        static let bufferBloatWeight = 0.15
+        
+        // Bandwidth sub-weights
+        static let downloadWeight = 0.7
+        static let uploadWeight = 0.3
+        
+        // Score values
+        static let excellent = 100.0
+        static let veryGood = 85.0
+        static let good = 70.0
+        static let fair = 55.0
+        static let belowAverage = 40.0
+        static let poor = 25.0
+        static let veryPoor = 10.0
+        
+        // Buffer bloat specific scores
+        static let bufferBloatGradeA = 90.0
+        static let bufferBloatGradeB = 70.0
+        static let bufferBloatGradeC = 50.0
+        static let bufferBloatGradeD = 30.0
+        static let bufferBloatGradeF = 10.0
+        
+        // Quality thresholds
+        static let excellentThreshold = 80.0
+        static let goodThreshold = 60.0
+        static let fairThreshold = 40.0
+        
+        // HTTP Response thresholds (ms)
+        static let httpResponseExcellent = 100.0
+        static let httpResponseVeryGood = 200.0
+        static let httpResponseGood = 300.0
+        static let httpResponseFair = 400.0
+        static let httpResponseBelowAverage = 500.0
+        static let httpResponsePoor = 600.0
+        
+        // Download speed thresholds (Mbps)
+        static let downloadExcellent = 100.0
+        static let downloadVeryGood = 50.0
+        static let downloadGood = 25.0
+        static let downloadFair = 10.0
+        static let downloadBelowAverage = 5.0
+        static let downloadPoor = 2.0
+        
+        // Upload speed thresholds (Mbps)
+        static let uploadExcellent = 50.0
+        static let uploadVeryGood = 25.0
+        static let uploadGood = 10.0
+        static let uploadFair = 5.0
+        static let uploadBelowAverage = 2.0
+        static let uploadPoor = 1.0
+        
+        // DNS resolution thresholds (ms)
+        static let dnsExcellent = 20.0
+        static let dnsVeryGood = 50.0
+        static let dnsGood = 100.0
+        static let dnsFair = 150.0
+        static let dnsBelowAverage = 200.0
+        static let dnsPoor = 300.0
+    }
+    
     public func calculateOverallScore(httpResponse: HttpResponseResult,
                               bandwidth: BandwidthResult,
                               dns: DNSResult,
@@ -52,9 +119,9 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
     
     public func determineQuality(from score: Double) -> NetworkQuality {
         switch score {
-        case 80...: return .excellent
-        case 60..<80: return .good
-        case 40..<60: return .fair
+        case Constants.excellentThreshold...: return .excellent
+        case Constants.goodThreshold..<Constants.excellentThreshold: return .good
+        case Constants.fairThreshold..<Constants.goodThreshold: return .fair
         default: return .poor
         }
     }
@@ -64,13 +131,13 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
     private func calculateHttpResponseScore(_ responseTime: Double) -> Double {
         // Score based on adjusted response time thresholds
         switch responseTime {
-        case ..<100: return 100    // Excellent
-        case 100..<200: return 85  // Very Good
-        case 200..<300: return 70  // Good
-        case 300..<400: return 55  // Fair
-        case 400..<500: return 40  // Below Average
-        case 500..<600: return 25  // Poor
-        default: return 10          // Very Poor
+        case ..<Constants.httpResponseExcellent: return Constants.excellent
+        case Constants.httpResponseExcellent..<Constants.httpResponseVeryGood: return Constants.veryGood
+        case Constants.httpResponseVeryGood..<Constants.httpResponseGood: return Constants.good
+        case Constants.httpResponseGood..<Constants.httpResponseFair: return Constants.fair
+        case Constants.httpResponseFair..<Constants.httpResponseBelowAverage: return Constants.belowAverage
+        case Constants.httpResponseBelowAverage..<Constants.httpResponsePoor: return Constants.poor
+        default: return Constants.veryPoor
         }
     }
     
@@ -80,52 +147,52 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
         let uploadScore = scoreUploadSpeed(bandwidth.uploadSpeedMbps)
         
         // Weight download more heavily (70/30 split)
-        return downloadScore * 0.7 + uploadScore * 0.3
+        return downloadScore * Constants.downloadWeight + uploadScore * Constants.uploadWeight
     }
     
     private func scoreDownloadSpeed(_ speedMbps: Double) -> Double {
         switch speedMbps {
-        case 100...: return 100    // Excellent (100+ Mbps)
-        case 50..<100: return 85   // Very Good
-        case 25..<50: return 70    // Good
-        case 10..<25: return 55    // Fair
-        case 5..<10: return 40     // Below Average
-        case 2..<5: return 25      // Poor
-        default: return 10         // Very Poor
+        case Constants.downloadExcellent...: return Constants.excellent
+        case Constants.downloadVeryGood..<Constants.downloadExcellent: return Constants.veryGood
+        case Constants.downloadGood..<Constants.downloadVeryGood: return Constants.good
+        case Constants.downloadFair..<Constants.downloadGood: return Constants.fair
+        case Constants.downloadBelowAverage..<Constants.downloadFair: return Constants.belowAverage
+        case Constants.downloadPoor..<Constants.downloadBelowAverage: return Constants.poor
+        default: return Constants.veryPoor
         }
     }
     
     private func scoreUploadSpeed(_ speedMbps: Double) -> Double {
         switch speedMbps {
-        case 50...: return 100     // Excellent (50+ Mbps)
-        case 25..<50: return 85    // Very Good
-        case 10..<25: return 70    // Good
-        case 5..<10: return 55     // Fair
-        case 2..<5: return 40      // Below Average
-        case 1..<2: return 25      // Poor
-        default: return 10         // Very Poor
+        case Constants.uploadExcellent...: return Constants.excellent
+        case Constants.uploadVeryGood..<Constants.uploadExcellent: return Constants.veryGood
+        case Constants.uploadGood..<Constants.uploadVeryGood: return Constants.good
+        case Constants.uploadFair..<Constants.uploadGood: return Constants.fair
+        case Constants.uploadBelowAverage..<Constants.uploadFair: return Constants.belowAverage
+        case Constants.uploadPoor..<Constants.uploadBelowAverage: return Constants.poor
+        default: return Constants.veryPoor
         }
     }
     
     private func calculateDNSScore(_ resolutionTime: Double) -> Double {
         switch resolutionTime {
-        case ..<20: return 100     // Excellent
-        case 20..<50: return 85    // Very Good
-        case 50..<100: return 70   // Good
-        case 100..<150: return 55  // Fair
-        case 150..<200: return 40  // Below Average
-        case 200..<300: return 25  // Poor
-        default: return 10         // Very Poor
+        case ..<Constants.dnsExcellent: return Constants.excellent
+        case Constants.dnsExcellent..<Constants.dnsVeryGood: return Constants.veryGood
+        case Constants.dnsVeryGood..<Constants.dnsGood: return Constants.good
+        case Constants.dnsGood..<Constants.dnsFair: return Constants.fair
+        case Constants.dnsFair..<Constants.dnsBelowAverage: return Constants.belowAverage
+        case Constants.dnsBelowAverage..<Constants.dnsPoor: return Constants.poor
+        default: return Constants.veryPoor
         }
     }
     
     private func calculateBufferBloatScore(_ grade: String) -> Double {
         switch grade {
-        case "A": return 90  // Excellent
-        case "B": return 70  // Good
-        case "C": return 50  // Fair
-        case "D": return 30  // Poor
-        default: return 10   // Very Poor (F)
+        case "A": return Constants.bufferBloatGradeA
+        case "B": return Constants.bufferBloatGradeB
+        case "C": return Constants.bufferBloatGradeC
+        case "D": return Constants.bufferBloatGradeD
+        default: return Constants.bufferBloatGradeF
         }
     }
     
@@ -134,25 +201,9 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
                                        dnsScore: Double,
                                        bufferBloatScore: Double) -> Double {
         // Weights optimized for browser performance testing
-        let weights = ScoreWeights(
-            httpResponse: 0.35,  // Most important for browser experience
-            bandwidth: 0.35,     // Important for content loading
-            dns: 0.15,          // Important for initial connections
-            bufferBloat: 0.15   // Affects real-time performance
-        )
-        
-        return httpResponseScore * weights.httpResponse +
-               bandwidthScore * weights.bandwidth +
-               dnsScore * weights.dns +
-               bufferBloatScore * weights.bufferBloat
+        return httpResponseScore * Constants.httpResponseWeight +
+               bandwidthScore * Constants.bandwidthWeight +
+               dnsScore * Constants.dnsWeight +
+               bufferBloatScore * Constants.bufferBloatWeight
     }
-}
-
-// MARK: - Supporting Types
-
-private struct ScoreWeights {
-    let httpResponse: Double
-    let bandwidth: Double
-    let dns: Double
-    let bufferBloat: Double
 }

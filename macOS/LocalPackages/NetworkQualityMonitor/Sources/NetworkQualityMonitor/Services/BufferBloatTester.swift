@@ -21,6 +21,22 @@ import Foundation
 
 /// Service responsible for buffer bloat testing
 public final class BufferBloatTester: BufferBloatTesting {
+    
+    // MARK: - Constants
+    
+    private enum Constants {
+        static let progressMessage = "Testing buffer bloat..."
+        static let baselineSampleCount = 10
+        static let loadedSampleCount = 15
+        static let sampleDelay: UInt64 = 100_000_000  // 100ms between samples
+        static let downloadStartDelay: UInt64 = 500_000_000  // 500ms to let download start
+        
+        // Buffer bloat grades based on latency increase (ms)
+        static let gradeAThreshold = 50.0
+        static let gradeBThreshold = 100.0
+        static let gradeCThreshold = 200.0
+        static let gradeDThreshold = 400.0
+    }
     private let session: NetworkSession
     private let latencyMeasurer: LatencyMeasuring
     
@@ -37,7 +53,7 @@ public final class BufferBloatTester: BufferBloatTesting {
     
     public func performTest(configuration: TestConfiguration,
                     progressCallback: ((String) -> Void)? = nil) async throws -> BufferBloatResult {
-        progressCallback?("Testing buffer bloat...")
+        progressCallback?(Constants.progressMessage)
         
         // Measure baseline latency
         let baselineLatency = try await measureBaselineLatency(configuration: configuration)
@@ -46,7 +62,7 @@ public final class BufferBloatTester: BufferBloatTesting {
         let downloadTask = createDownloadTask(configuration: configuration)
         
         // Wait for download to start
-        try? await Task.sleep(nanoseconds: 500_000_000) // 500ms
+        try? await Task.sleep(nanoseconds: Constants.downloadStartDelay)
         
         // Measure latency under load
         let loadedLatency = try await measureLoadedLatency(configuration: configuration)
@@ -71,12 +87,12 @@ public final class BufferBloatTester: BufferBloatTesting {
     private func measureBaselineLatency(configuration: TestConfiguration) async throws -> Double {
         var measurements: [Double] = []
         
-        // Take 10 baseline measurements for stability
-        for _ in 0..<10 {
+        // Take baseline measurements for stability
+        for _ in 0..<Constants.baselineSampleCount {
             if let latency = try? await latencyMeasurer.measureSingle(configuration: configuration) {
                 measurements.append(latency)
             }
-            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms between samples
+            try? await Task.sleep(nanoseconds: Constants.sampleDelay)
         }
         
         guard !measurements.isEmpty else {
@@ -91,12 +107,12 @@ public final class BufferBloatTester: BufferBloatTesting {
     private func measureLoadedLatency(configuration: TestConfiguration) async throws -> Double {
         var measurements: [Double] = []
         
-        // Take 15 measurements under load
-        for _ in 0..<15 {
+        // Take measurements under load
+        for _ in 0..<Constants.loadedSampleCount {
             if let latency = try? await latencyMeasurer.measureSingle(configuration: configuration) {
                 measurements.append(latency)
             }
-            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms between samples
+            try? await Task.sleep(nanoseconds: Constants.sampleDelay)
         }
         
         guard !measurements.isEmpty else {
@@ -120,10 +136,10 @@ public final class BufferBloatTester: BufferBloatTesting {
     private func gradeBufferBloat(increase: Double) -> String {
         // Grade based on absolute latency increase in milliseconds
         switch increase {
-        case ..<50: return "A"      // Excellent - minimal buffer bloat
-        case 50..<100: return "B"   // Good - some buffer bloat
-        case 100..<200: return "C"  // Fair - moderate buffer bloat
-        case 200..<400: return "D"  // Poor - significant buffer bloat
+        case ..<Constants.gradeAThreshold: return "A"      // Excellent - minimal buffer bloat
+        case Constants.gradeAThreshold..<Constants.gradeBThreshold: return "B"   // Good - some buffer bloat
+        case Constants.gradeBThreshold..<Constants.gradeCThreshold: return "C"  // Fair - moderate buffer bloat
+        case Constants.gradeCThreshold..<Constants.gradeDThreshold: return "D"  // Poor - significant buffer bloat
         default: return "F"         // Very Poor - severe buffer bloat
         }
     }

@@ -19,8 +19,23 @@
 
 import Foundation
 
-/// Service responsible for bandwidth testing
 public final class BandwidthTester: BandwidthTesting {
+    
+    // MARK: - Constants
+    
+    private enum Constants {
+        static let downloadProgressMessage = "Testing download speed..."
+        static let uploadProgressMessage = "Testing upload speed..."
+        static let httpMethodGet = "GET"
+        static let httpMethodPost = "POST"
+        static let rangeHeader = "Range"
+        static let contentTypeHeader = "Content-Type"
+        static let rangeBytes10MB = "bytes=0-10485760"
+        static let applicationOctetStream = "application/octet-stream"
+        static let quickTestTimeout: TimeInterval = 5
+        static let serverCompetitiveThreshold = 0.8  // 80% of best speed
+        static let megabitsPerByte = 8.0 / 1_000_000
+    }
     private let session: NetworkSession
     
     public init(session: NetworkSession = URLSession.shared) {
@@ -29,15 +44,15 @@ public final class BandwidthTester: BandwidthTesting {
     
     public func performDownloadTest(configuration: TestConfiguration,
                             progressCallback: ((String) -> Void)? = nil) async throws -> Double {
-        progressCallback?("Testing download speed...")
+        progressCallback?(Constants.downloadProgressMessage)
         
         var bestSpeed: Double = 0
         
         for server in configuration.bandwidthTestURLs {
             // Quick test to find best server
-            let quickSpeed = await measureQuickDownload(from: server, timeout: 5)
+            let quickSpeed = await measureQuickDownload(from: server, timeout: Constants.quickTestTimeout)
             
-            if quickSpeed > bestSpeed * 0.8 { // If this server is competitive
+            if quickSpeed > bestSpeed * Constants.serverCompetitiveThreshold {
                 // Full test
                 let fullSpeed = await measureFullDownload(
                     from: server,
@@ -60,7 +75,7 @@ public final class BandwidthTester: BandwidthTesting {
     
     public func performUploadTest(configuration: TestConfiguration,
                           progressCallback: ((String) -> Void)? = nil) async throws -> Double {
-        progressCallback?("Testing upload speed...")
+        progressCallback?(Constants.uploadProgressMessage)
         
         var bestSpeed: Double = 0
         let testData = Data(count: configuration.uploadChunkSize)
@@ -91,8 +106,8 @@ public final class BandwidthTester: BandwidthTesting {
         var request = URLRequest(url: url)
         request.timeoutInterval = timeout
         request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
-        request.httpMethod = "GET"
-        request.setValue("bytes=0-10485760", forHTTPHeaderField: "Range") // First 10MB
+        request.httpMethod = Constants.httpMethodGet
+        request.setValue(Constants.rangeBytes10MB, forHTTPHeaderField: Constants.rangeHeader)
         
         let startTime = CFAbsoluteTimeGetCurrent()
         
@@ -103,7 +118,7 @@ public final class BandwidthTester: BandwidthTesting {
             if let httpResponse = response as? HTTPURLResponse,
                200...299 ~= httpResponse.statusCode || httpResponse.statusCode == 206 {
                 let duration = endTime - startTime
-                let speedMbps = (Double(data.count) * 8) / (duration * 1_000_000)
+                let speedMbps = Double(data.count) * Constants.megabitsPerByte / duration
                 return speedMbps
             }
         } catch {
@@ -143,7 +158,7 @@ public final class BandwidthTester: BandwidthTesting {
             if let httpResponse = response as? HTTPURLResponse,
                200...299 ~= httpResponse.statusCode {
                 let duration = endTime - startTime
-                let speedMbps = (Double(data.count) * 8) / (duration * 1_000_000)
+                let speedMbps = Double(data.count) * Constants.megabitsPerByte / duration
                 return speedMbps
             }
         } catch {
@@ -155,9 +170,9 @@ public final class BandwidthTester: BandwidthTesting {
     
     private func measureUpload(to url: URL, data: Data, chunks: Int, timeout: TimeInterval) async -> Double {
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        request.httpMethod = Constants.httpMethodPost
         request.timeoutInterval = timeout
-        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+        request.setValue(Constants.applicationOctetStream, forHTTPHeaderField: Constants.contentTypeHeader)
         
         var totalBytes = 0
         var totalDuration: TimeInterval = 0
@@ -181,7 +196,7 @@ public final class BandwidthTester: BandwidthTesting {
         
         guard totalDuration > 0 else { return 0 }
         
-        let speedMbps = (Double(totalBytes) * 8) / (totalDuration * 1_000_000)
+        let speedMbps = Double(totalBytes) * Constants.megabitsPerByte / totalDuration
         return speedMbps
     }
 }

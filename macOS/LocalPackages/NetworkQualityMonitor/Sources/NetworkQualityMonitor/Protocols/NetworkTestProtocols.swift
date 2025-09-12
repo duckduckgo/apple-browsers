@@ -21,7 +21,6 @@ import Foundation
 
 // MARK: - Core Protocol
 
-/// Main protocol for network quality monitoring
 public protocol NetworkQualityMonitoring {
     func runTest() async throws -> NetworkTestResults
     func checkConnectivity() async -> Bool
@@ -29,13 +28,11 @@ public protocol NetworkQualityMonitoring {
 
 // MARK: - Test Component Protocols
 
-/// Protocol for HTTP response testing
 public protocol HttpResponseTesting {
     func performTest(configuration: TestConfiguration, 
                      progressCallback: ((String) -> Void)?) async throws -> HttpResponseResult
 }
 
-/// Protocol for bandwidth testing
 public protocol BandwidthTesting {
     func performDownloadTest(configuration: TestConfiguration,
                             progressCallback: ((String) -> Void)?) async throws -> Double
@@ -43,13 +40,11 @@ public protocol BandwidthTesting {
                           progressCallback: ((String) -> Void)?) async throws -> Double
 }
 
-/// Protocol for DNS testing
 public protocol DNSTesting {
     func performTest(configuration: TestConfiguration,
                     progressCallback: ((String) -> Void)?) async throws -> DNSResult
 }
 
-/// Protocol for buffer bloat testing
 public protocol BufferBloatTesting {
     func performTest(configuration: TestConfiguration,
                     progressCallback: ((String) -> Void)?) async throws -> BufferBloatResult
@@ -57,7 +52,6 @@ public protocol BufferBloatTesting {
 
 // MARK: - Scoring Protocol
 
-/// Protocol for score calculation
 public protocol NetworkScoreCalculating {
     func calculateOverallScore(httpResponse: HttpResponseResult,
                               bandwidth: BandwidthResult,
@@ -69,14 +63,12 @@ public protocol NetworkScoreCalculating {
 
 // MARK: - Progress Reporting
 
-/// Protocol for progress reporting
 public protocol NetworkTestProgressReporting: AnyObject {
     var progressCallback: ((Double, String) -> Void)? { get set }
 }
 
 // MARK: - Network Session Protocol
 
-/// Protocol for network operations (mockable for testing)
 public protocol NetworkSession {
     func data(from url: URL) async throws -> (Data, URLResponse)
     func data(for request: URLRequest) async throws -> (Data, URLResponse)
@@ -84,5 +76,4 @@ public protocol NetworkSession {
 }
 
 // Extension to make URLSession conform to our protocol
-extension URLSession: NetworkSession {
-}
+extension URLSession: NetworkSession {}

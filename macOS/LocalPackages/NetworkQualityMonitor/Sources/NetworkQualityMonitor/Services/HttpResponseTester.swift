@@ -21,6 +21,18 @@ import Foundation
 
 /// Service responsible for HTTP response testing
 public final class HttpResponseTester: HttpResponseTesting {
+    
+    // MARK: - Constants
+    
+    private enum Constants {
+        static let progressMessage = "Testing HTTP response times..."
+        static let httpMethodHead = "HEAD"
+        static let measurementDelay: UInt64 = 50_000_000  // 50ms
+        static let percentile50 = 0.5
+        static let percentile95 = 0.95
+        static let percentile75Multiplier = 1.25
+        static let penaltyMultiplier = 0.1
+    }
     private let session: NetworkSession
     
     public init(session: NetworkSession = URLSession.shared) {
@@ -29,7 +41,7 @@ public final class HttpResponseTester: HttpResponseTesting {
     
     public func performTest(configuration: TestConfiguration,
                     progressCallback: ((String) -> Void)? = nil) async throws -> HttpResponseResult {
-        progressCallback?("Testing HTTP response times...")
+        progressCallback?(Constants.progressMessage)
         
         var allMeasurements: [EndpointMeasurement] = []
         
@@ -61,7 +73,7 @@ public final class HttpResponseTester: HttpResponseTesting {
             }
             
             // Small delay between measurements
-            try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+            try? await Task.sleep(nanoseconds: Constants.measurementDelay)
         }
         
         return measurements
@@ -69,7 +81,7 @@ public final class HttpResponseTester: HttpResponseTesting {
     
     private func measureSingleRequest(to url: URL, timeout: TimeInterval) async -> Double? {
         var request = URLRequest(url: url)
-        request.httpMethod = "HEAD"
+        request.httpMethod = Constants.httpMethodHead
         request.timeoutInterval = timeout
         request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         
@@ -81,7 +93,7 @@ public final class HttpResponseTester: HttpResponseTesting {
             
             if let httpResponse = response as? HTTPURLResponse,
                200...299 ~= httpResponse.statusCode {
-                return (endTime - startTime) * 1000 // Convert to milliseconds
+                return (endTime - startTime) * 1000  // Convert to milliseconds
             }
         } catch {
             // Request failed, skip this measurement
@@ -122,8 +134,8 @@ public final class HttpResponseTester: HttpResponseTesting {
         
         // Calculate percentiles from all measurements
         let allSortedMeasurements = allMeasurements.flatMap { $0.measurements }.sorted()
-        let p50 = percentile(allSortedMeasurements, 0.5)
-        let p95 = percentile(allSortedMeasurements, 0.95)
+        let p50 = percentile(allSortedMeasurements, Constants.percentile50)
+        let p95 = percentile(allSortedMeasurements, Constants.percentile95)
         
         return HttpResponseResult(
             averageResponseTime: adjustedResponseTime,
@@ -164,8 +176,8 @@ public final class HttpResponseTester: HttpResponseTesting {
         // Add penalty based on how much worse other sites are
         for stats in allSiteStats {
             if stats.median > bestSiteStats.median {
-                let p75 = stats.median * 1.25 // Approximate P75
-                adjustedTime += (p75 - bestSiteStats.median) * 0.1
+                let p75 = stats.median * Constants.percentile75Multiplier
+                adjustedTime += (p75 - bestSiteStats.median) * Constants.penaltyMultiplier
             }
         }
         

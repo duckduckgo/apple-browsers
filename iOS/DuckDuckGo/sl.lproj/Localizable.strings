@@ -2290,6 +2290,30 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Bližnjice";
 
+/* Confirm button for the new address bar picker */
+"new.address.bar.picker.confirm" = "Potrdi";
+
+/* Description text for the new address bar picker modal */
+"new.address.bar.picker.description" = "Funkcije umetne inteligence so vedno izbirne.";
+
+/* Footer text for the new address bar picker */
+"new.address.bar.picker.footer" = "Prilagodite v nastavitvah > Funkcije UI";
+
+/* Not now button for the new address bar picker */
+"new.address.bar.picker.not.now" = "Ne zdaj";
+
+/* Option for search and AI in the new address bar picker */
+"new.address.bar.picker.search.and.ai" = "Iskanje in Duck.ai";
+
+/* Option for search only in the new address bar picker */
+"new.address.bar.picker.search.only" = "Samo iskanje";
+
+/* Subtitle for the new address bar picker modal */
+"new.address.bar.picker.subtitle" = "Preklapljanje med iskanjem in klepetom UI";
+
+/* Title for the new address bar picker modal */
+"new.address.bar.picker.title" = "Možnost naslovne vrstice";
+
 /* No comment provided by engineer. */
 "No results found" = "Ni rezultatov";
 
@@ -2733,15 +2757,6 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Prikaži polni naslov spletnega mesta";
-
-/* Caption indicating the default option in the AI experimental picker */
-"settings.ai.experimental.picker.default" = "(privzeto)";
-
-/* Caption indicating the experimental option in the AI experimental picker */
-"settings.ai.experimental.picker.experimental" = "(Poskusno)";
-
-/* Footer under the AI experimental picker, descriptive sentence without link */
-"settings.ai.experimental.picker.footer" = "Preizkusite našo eksperimentalno možnost, da vprašate Duck.ai neposredno iz naslovne vrstice.";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Iskanje in Duck.ai";

@@ -1559,7 +1559,7 @@
 "Enrolled: %@" = "Inscritos: %@";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Píldora de entrada";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Iniciar sesión";
@@ -2290,6 +2290,30 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Accesos directos";
 
+/* Confirm button for the new address bar picker */
+"new.address.bar.picker.confirm" = "Confirmar";
+
+/* Description text for the new address bar picker modal */
+"new.address.bar.picker.description" = "Las funciones de IA son siempre opcionales.";
+
+/* Footer text for the new address bar picker */
+"new.address.bar.picker.footer" = "Ajusta en Configuración > Funciones de IA";
+
+/* Not now button for the new address bar picker */
+"new.address.bar.picker.not.now" = "Ahora no";
+
+/* Option for search and AI in the new address bar picker */
+"new.address.bar.picker.search.and.ai" = "Búsqueda y Duck.ai";
+
+/* Option for search only in the new address bar picker */
+"new.address.bar.picker.search.only" = "Solo buscar";
+
+/* Subtitle for the new address bar picker modal */
+"new.address.bar.picker.subtitle" = "Alterna entre la búsqueda y el chat de IA";
+
+/* Title for the new address bar picker modal */
+"new.address.bar.picker.title" = "Opción de la barra de direcciones";
+
 /* No comment provided by engineer. */
 "No results found" = "No se han encontrado resultados";
 
@@ -2733,15 +2757,6 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Mostrar dirección completa del sitio";
-
-/* Caption indicating the default option in the AI experimental picker */
-"settings.ai.experimental.picker.default" = "(Predeterminado)";
-
-/* Caption indicating the experimental option in the AI experimental picker */
-"settings.ai.experimental.picker.experimental" = "(Experimental)";
-
-/* Footer under the AI experimental picker, descriptive sentence without link */
-"settings.ai.experimental.picker.footer" = "Prueba nuestra opción experimental para preguntar a Duck.ai directamente desde la barra de direcciones.";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Búsqueda y Duck.ai";

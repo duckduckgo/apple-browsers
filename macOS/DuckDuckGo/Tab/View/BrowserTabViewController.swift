@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import DataBrokerProtection_macOS
 import FeatureFlags
 import Freemium
 import HistoryView
@@ -31,7 +32,6 @@ import Subscription
 import SwiftUI
 import UserScript
 import WebKit
-import DataBrokerProtection_macOS
 
 protocol BrowserTabViewControllerDelegate: AnyObject {
     func highlightFireButton()
@@ -106,12 +106,16 @@ final class BrowserTabViewController: NSViewController {
     private let onboardingPixelReporter: OnboardingPixelReporting
 
     private(set) var transientTabContentViewController: NSViewController?
-    private lazy var duckPlayerOnboardingModalManager: DuckPlayerOnboardingModalManager = {
-        let modal = DuckPlayerOnboardingModalManager()
-        return modal
-    }()
 
     public weak var aiChatSidebarHostingDelegate: AIChatSidebarHostingDelegate?
+
+    private var isInPopUpWindow: Bool {
+        guard let mainViewController = parent as? MainViewController else {
+            assert(view.window == nil, "BrowserTabViewController is not a child of MainViewController")
+            return false
+        }
+        return mainViewController.isInPopUpWindow
+    }
 
     required init?(coder: NSCoder) {
         fatalError("BrowserTabViewController: Bad initializer")
@@ -216,6 +220,37 @@ final class BrowserTabViewController: NSViewController {
         super.viewWillDisappear()
 
         cancellables.removeAll()
+    }
+
+    deinit {
+#if DEBUG
+        if isLazyVar(named: "browserTabView", initializedIn: self) {
+            browserTabView.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+        if isLazyVar(named: "hoverLabel", initializedIn: self) {
+            hoverLabel.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+        if isLazyVar(named: "hoverLabelContainer", initializedIn: self) {
+            hoverLabelContainer.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+        if isLazyVar(named: "sidebarContainer", initializedIn: self) {
+            sidebarContainer.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+        transientTabContentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        preferencesViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        bookmarksViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        burnerHomePageViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        dataBrokerProtectionHomeViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        contentOverlayPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+
+        webViewContainer?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        webViewSnapshot?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        containerStackView.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+
+        tabCollectionViewModel.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        _newTabPageWebViewModel?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+
+#endif
     }
 
     override func viewDidAppear() {
@@ -879,7 +914,7 @@ final class BrowserTabViewController: NSViewController {
         }
 
         // shouldn't open New Tabs in PopUp window
-        if view.window?.isPopUpWindow ?? true {
+        if isInPopUpWindow {
             // Prefer Tab's Parent
             Application.appDelegate.windowControllersManager.showTab(with: content)
             return nil
@@ -1070,8 +1105,9 @@ final class BrowserTabViewController: NSViewController {
             return
         }
 
-        Task {
-            await tabViewModel.tab.tabSnapshots?.renderSnapshot(from: viewForRendering)
+        Task { @MainActor [weak tabViewModel, weak viewForRendering] in
+            guard let tabSnapshots = tabViewModel?.tab.tabSnapshots else { return }
+            await tabSnapshots.renderSnapshot { [weak viewForRendering] in viewForRendering }
         }
     }
 
@@ -1220,9 +1256,8 @@ extension BrowserTabViewController: ContentOverlayUserScriptDelegate {
 extension BrowserTabViewController: TabDelegate {
 
     func tabWillStartNavigation(_ tab: Tab, isUserInitiated: Bool) {
-        if isUserInitiated,
+        if isUserInitiated, isInPopUpWindow,
            let window = self.view.window,
-           window.isPopUpWindow == true,
            window.isKeyWindow == false {
 
             window.makeKeyAndOrderFront(nil)

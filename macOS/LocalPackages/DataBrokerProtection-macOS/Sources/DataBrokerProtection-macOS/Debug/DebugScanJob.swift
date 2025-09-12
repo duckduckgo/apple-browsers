@@ -133,7 +133,7 @@ final class DebugScanJob: SubJobWebRunning {
                     if let actionsHandler = actionsHandler {
                         self.actionsHandler = actionsHandler
                     } else {
-                        self.actionsHandler = ActionsHandler(step: scanStep)
+                        self.actionsHandler = ActionsHandler.forScan(scanStep)
                     }
                     if self.shouldRunNextStep() {
                         await executeNextStep()

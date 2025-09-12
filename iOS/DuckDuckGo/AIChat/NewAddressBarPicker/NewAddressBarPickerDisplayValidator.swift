@@ -78,15 +78,15 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         guard isFeatureFlagEnabled else { return false }
         Logger.addressBarPicker.info("✓ Feature flag is enabled")
         
-        guard !isDuckAIAddressBarDisabled else { return false }
-        Logger.addressBarPicker.info("✓ DuckAI address bar is enabled")
-        
-        guard !isNewToggleExperimentEnabled else { return false }
-        Logger.addressBarPicker.info("✓ New toggle experiment is not enabled")
-        
+        guard !isAIChatSearchInputEnabled else { return false }
+        Logger.addressBarPicker.info("✓ AIChat address bar is disabled")
+
+        guard !isAddressBarPositionBottom else { return false }
+        Logger.addressBarPicker.info("✓ Address bar position is not bottom")
+
         guard !hasForceChoiceBeenShown else { return false }
         Logger.addressBarPicker.info("✓ Force choice has not been shown yet")
-        
+
         guard !isLaunchedFromExternalSource else { return false }
         Logger.addressBarPicker.info("✓ App was not launched from external source")
 
@@ -114,12 +114,12 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     
     // MARK: - Exclusion Criteria Variables
     
-    private var isDuckAIAddressBarDisabled: Bool {
-        !aiChatSettings.isAIChatAddressBarUserSettingsEnabled
+    private var isAIChatSearchInputEnabled: Bool {
+        aiChatSettings.isAIChatSearchInputUserSettingsEnabled
     }
     
-    private var isNewToggleExperimentEnabled: Bool {
-        experimentalAIChatManager.isExperimentalAIChatSettingsEnabled
+    private var isAddressBarPositionBottom: Bool {
+        appSettings.currentAddressBarPosition.isBottom
     }
 
     private var hasForceChoiceBeenShown: Bool {

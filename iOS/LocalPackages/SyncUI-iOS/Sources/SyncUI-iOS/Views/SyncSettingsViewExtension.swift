@@ -302,7 +302,7 @@ extension SyncSettingsView {
                 case .credentials:
                     model.manageLogins()
                 case .creditCards:
-                    model.manageLogins()
+                    model.manageCreditCards()
                 }
             }
         }
@@ -370,7 +370,7 @@ extension SyncSettingsView {
             case .credentials:
                 model.manageLogins()
             case .creditCards:
-                model.manageLogins()
+                model.manageCreditCards()
             }
         }
     }

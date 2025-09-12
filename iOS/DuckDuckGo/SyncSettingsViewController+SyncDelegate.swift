@@ -56,7 +56,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         case .bookmarksCountLimitExceeded, .bookmarksRequestSizeLimitExceeded:
             return UserText.bookmarksLimitExceededDescription
         case .badRequestBookmarks:
-            return UserText.badRequestErrorDescription
+            return UserText.badRequestErrorDescriptionBookmarks
         default:
             assertionFailure("Sync Bookmarks Paused error should be one of those listed")
             return nil
@@ -69,7 +69,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         case .credentialsCountLimitExceeded, .credentialsRequestSizeLimitExceeded:
             return UserText.credentialsLimitExceededDescription
         case .badRequestBookmarks:
-            return UserText.badRequestErrorDescription
+            return UserText.badRequestErrorDescriptionPasswords
         default:
             assertionFailure("Sync Bookmarks Paused error should be one of those listed")
             return nil
@@ -82,7 +82,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         case .creditCardsCountLimitExceeded, .creditCardsRequestSizeLimitExceeded:
             return UserText.creditCardsLimitExceededDescription
         case .badRequestCreditCards:
-            return UserText.badRequestErrorDescription
+            return UserText.badRequestErrorDescriptionCreditCards
         default:
             assertionFailure("Sync Credit Cards Paused error should be one of those listed")
             return nil
@@ -135,6 +135,13 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         guard let mainVC = view.window?.rootViewController as? MainViewController else { return }
         dismiss(animated: true)
         mainVC.launchAutofillLogins(source: .sync)
+    }
+
+    func launchAutofillCreditCardsViewController() {
+        guard let mainVC = view.window?.rootViewController as? MainViewController else { return }
+        dismiss(animated: true) {
+            mainVC.segueToSettingsAutofillWith(account: nil, card: nil, showCardManagement: true, source: .sync)
+        }
     }
 
     func launchBookmarksViewController() {

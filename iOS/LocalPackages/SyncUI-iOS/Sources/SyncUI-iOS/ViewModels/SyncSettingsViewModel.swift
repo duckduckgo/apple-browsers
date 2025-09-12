@@ -38,6 +38,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func updateOptions()
     func launchBookmarksViewController()
     func launchAutofillViewController()
+    func launchAutofillCreditCardsViewController()
     func showOtherPlatformLinks()
     func fireOtherPlatformLinksPixel(event: SyncSettingsViewModel.PlatformLinksPixelEvent, with source: SyncSettingsViewModel.PlatformLinksPixelSource)
     func shareLink(for url: URL, with message: String, from rect: CGRect)
@@ -256,6 +257,10 @@ public class SyncSettingsViewModel: ObservableObject {
 
     public func manageLogins() {
         delegate?.launchAutofillViewController()
+    }
+
+    public func manageCreditCards() {
+        delegate?.launchAutofillCreditCardsViewController()
     }
 
     public func shareLinkPressed(for url: URL, with message: String, from rect: CGRect) {

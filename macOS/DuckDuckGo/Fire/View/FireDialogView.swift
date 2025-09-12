@@ -73,23 +73,24 @@ struct FireDialogView: ModalView {
     }
 
     var body: some View {
-        VStack {
+        VStack(spacing: 16) {
             ZStack {
-                VStack {
+                VStack(spacing: 16) {
                     headerView
+                        .padding(.top, 10) // presenter sheet crops the padding 🤷‍♂️
                     segmentedControlView
                     sectionsView
                     if featureFlagger.isFeatureOn(.fireDialogIndividualSitesLink) {
                         individualSitesLink
                     }
-                    Spacer()
                 }
                 .padding(.horizontal, 16)
 
                 // Sites Overlay
                 if isShowingSitesOverlay {
-                    // Scrim fades independently
+                    // Scrim fades independently and stays above content
                     Color.black.opacity(0.35)
+                        .zIndex(9)
 
                     // Sliding sheet anchored above footer
                     VStack(spacing: 0) {
@@ -101,15 +102,18 @@ struct FireDialogView: ModalView {
                         Color(singleUseColor: .fireDialogSectionBorder)
                             .frame(height: 1)
                     }
+                    .zIndex(10)
                     .transition(.move(edge: .bottom))
                 }
             }
-            .animation(.easeOut(duration: 0.15), value: isShowingSitesOverlay)
+            .animation(.easeOut(duration: NSAnimationContext.current.duration),
+                       value: isShowingSitesOverlay)
 
             footerView
-                .padding(.horizontal, 16)
+                .zIndex(11)
+                .padding(.bottom, 10) // presenter sheet crops the padding 🤷‍♂️
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: Constants.viewSize.width, maxHeight: .infinity)
         .background(Color(singleUseColor: .fireDialogBackground))
     }
 
@@ -204,6 +208,18 @@ struct FireDialogView: ModalView {
     private func presentManageFireproof() {
         // Use the app's preferences presenter to begin a sheet on the parent window (stacks above the Fire sheet)
         Application.appDelegate.dataClearingPreferences.presentManageFireproofSitesDialog()
+    }
+
+    private func presentIndividualSites() {
+        // Close the dialog and open History->Sites management
+        if let window = NSApp.mainWindow {
+            window.endSheet(window.attachedSheet ?? window)
+        }
+        Application.appDelegate.windowControllersManager
+            .lastKeyMainWindowController?
+            .mainViewController
+            .browserTabViewController
+            .openNewTab(with: .history)
     }
 
     // MARK: - Sites overlay
@@ -320,12 +336,13 @@ struct FireDialogView: ModalView {
                 Spacer()
                 if let infoAction {
                     Button(action: infoAction) {
-                        Image(nsImage: DesignSystemImages.Glyphs.Size16.info)
+                        Image(nsImage: DesignSystemImages.Glyphs.Size12.info)
+                            .padding(4)
                     }
                     .buttonStyle(.plain)
                     .disabled(!infoEnabled)
                     .opacity(infoEnabled ? 1.0 : 0.4)
-                    .padding(.trailing, 6)
+                    .padding(.trailing, 4)
                 }
                 Toggle(isOn: isOn)
                     .toggleStyle(FireToggleStyle(onFill: Color(designSystemColor: .accent), knobFill: Color(singleUseColor: .fireDialogToggleKnob)))
@@ -360,7 +377,7 @@ struct FireDialogView: ModalView {
                 Spacer(minLength: 4)
 
                 Button(UserText.fireDialogFireproofSitesManage) { presentManageFireproof() }
-                    .buttonStyle(StandardButtonStyle(topPadding: 2, bottomPadding: 2, horizontalPadding: 11))
+                    .buttonStyle(StandardButtonStyle(fontSize: 11, topPadding: 3, bottomPadding: 3, horizontalPadding: 12))
                     .fixedSize(horizontal: true, vertical: true)
                     .frame(alignment: .trailing)
             }
@@ -374,20 +391,16 @@ struct FireDialogView: ModalView {
 
     private var individualSitesLink: some View {
         HStack(spacing: 8) {
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.globeBlocked.tinted(with: NSColor(designSystemColor: .textLink)))
-            Button(UserText.fireDialogManageIndividualSitesLink) {
-                // Close the dialog and open History->Sites management
-                if let window = NSApp.mainWindow {
-                    window.endSheet(window.attachedSheet ?? window)
-                }
-                Application.appDelegate.windowControllersManager
-                    .lastKeyMainWindowController?
-                    .mainViewController
-                    .browserTabViewController
-                    .openNewTab(with: .history)
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.globeBlocked
+                .tinted(with: NSColor(designSystemColor: .textLink)))
+            TextButton(UserText.fireDialogManageIndividualSitesLink, fontSize: 11) {
+                    presentIndividualSites()
             }
-            .buttonStyle(.link)
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight.resized(to: NSSize(width: 12, height: 12)).tinted(with: NSColor(designSystemColor: .textLink)))
+
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight
+                .resized(to: NSSize(width: 12, height: 12))
+                .tinted(with: NSColor(designSystemColor: .textLink)))
+
         }
     }
 
@@ -400,7 +413,7 @@ struct FireDialogView: ModalView {
                 Text(UserText.cancel)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 28)
+                    .frame(height: 32)
                     .background(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
                             .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
@@ -418,13 +431,15 @@ struct FireDialogView: ModalView {
                 Text(UserText.delete)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 28)
+                    .frame(height: 32)
             }
             .buttonStyle(DestructiveActionButtonStyle(enabled: isDeleteEnabled, topPadding: 0, bottomPadding: 0))
             .disabled(!isDeleteEnabled)
             .keyboardShortcut(.defaultAction)
         }
-        .padding(.vertical, 16)
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 16)
         .background(Color(singleUseColor: .fireDialogBackground))
     }
 
@@ -469,7 +484,7 @@ private class MockFireproofDomains: FireproofDomains {
 }
 
  @available(macOS 14.0, *)
- #Preview("Sites Overlay", traits: FireDialogView.Constants.viewSize.fixedLayout) {
+#Preview("Sites Overlay", traits: FireDialogView.Constants.viewSize.fixedLayout) {
     let tld = TLD()
     // Seed history with example domains
     let history = Application.appDelegate.historyCoordinator
@@ -479,20 +494,20 @@ private class MockFireproofDomains: FireproofDomains {
     _ = history.addVisit(of: URL(string: "https://gamma.com/")!, at: Date())
     _ = history.addVisit(of: URL(string: "https://cnn.com/")!, at: Date())
     _ = history.addVisit(of: URL(string: "https://dropbox.com/")!, at: Date())
-     _ = history.addVisit(of: URL(string: "https://my-test-long-long-long-domain-name-that-is-not-fireproofed.com")!, at: Date())
+    _ = history.addVisit(of: URL(string: "https://my-test-long-long-long-domain-name-that-is-not-fireproofed.com")!, at: Date())
     _ = history.addVisit(of: URL(string: "https://y-the-very-long-domain-name-for-preview-testing-is-in-the-end.com")!, at: Date())
 
     // Fireproof a couple of sites for contrast
-     let fireproofDomains = MockFireproofDomains(domains: [
+    let fireproofDomains = MockFireproofDomains(domains: [
         "apple.com",
         "y-the-very-long-domain-name-for-preview-testing-is-in-the-end.com"
-     ])
+    ])
 
-     // Provide simple preview icons from bundled assets (replace names if needed)
-     let faviconMock = FaviconManagerMock()
-     faviconMock.setImage(NSImage(systemSymbolName: "apple.logo", accessibilityDescription: nil)!, forHost: "apple.com")
-     faviconMock.setImage(NSImage(named: NSImage.bonjourName)!, forHost: "cnn.com")
-     faviconMock.setImage(NSImage(named: NSImage.networkName)!, forHost: "dropbox.com")
+    // Provide simple preview icons from bundled assets (replace names if needed)
+    let faviconMock = FaviconManagerMock()
+    faviconMock.setImage(NSImage(systemSymbolName: "apple.logo", accessibilityDescription: nil)!, forHost: "apple.com")
+    faviconMock.setImage(NSImage(named: NSImage.bonjourName)!, forHost: "cnn.com")
+    faviconMock.setImage(NSImage(named: NSImage.networkName)!, forHost: "dropbox.com")
 
     let vm = FirePopoverViewModel(
         fireViewModel: FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider),
@@ -510,5 +525,5 @@ private class MockFireproofDomains: FireproofDomains {
             MacOSBrowserConfigSubfeature.fireDialogIndividualSitesLink.rawValue: true
         ]))
     }
- }
+}
 #endif

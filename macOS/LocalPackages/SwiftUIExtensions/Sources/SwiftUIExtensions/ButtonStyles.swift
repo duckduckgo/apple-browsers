@@ -20,11 +20,13 @@ import Foundation
 import SwiftUI
 
 public struct StandardButtonStyle: ButtonStyle {
+    public let fontSize: CGFloat
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
     public let horizontalPadding: CGFloat
 
-    public init(topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, horizontalPadding: CGFloat = 7.5) {
+    public init(fontSize: CGFloat = 13, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, horizontalPadding: CGFloat = 7.5) {
+        self.fontSize = fontSize
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
         self.horizontalPadding = horizontalPadding
@@ -36,7 +38,7 @@ public struct StandardButtonStyle: ButtonStyle {
         let labelColor = Color(.pwmButtonLabel)
 
         configuration.label
-            .font(.system(size: 13))
+            .font(.system(size: fontSize))
             .padding(.top, topPadding)
             .padding(.bottom, bottomPadding)
             .padding(.horizontal, horizontalPadding)

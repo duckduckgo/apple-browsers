@@ -65,10 +65,10 @@ public struct TestConfiguration {
             // so users in Asia get Asian servers, Europeans get EU servers, etc.
         ],
         bandwidthTestURLs: [
-            URL(string: "https://speed.cloudflare.com/__down?bytes=52428800")!,  // 50MB (reduced from 100MB)
-            URL(string: "https://proof.ovh.net/files/50Mb.dat")!,                // 50MB (reduced from 100MB)
-            URL(string: "https://speed.hetzner.de/50MB.bin")!,                   // 50MB (reduced from 100MB)
-            // 50MB gives ~4 seconds at 100 Mbps, ~16 seconds at 25 Mbps - good balance
+            URL(string: "https://speed.cloudflare.com/__down?bytes=26214400")!,  // 25MB (reduced from 50MB)
+            URL(string: "https://proof.ovh.net/files/10Mb.dat")!,                // 10MB (reduced from 50MB)
+            URL(string: "https://speed.hetzner.de/10MB.bin")!,                   // 10MB (reduced from 50MB)
+            // Faster testing: 25MB+10MB+10MB = 45MB total (was 150MB)
         ],
         uploadTestURLs: [
             URL(string: "https://speed.cloudflare.com/__up")!,
@@ -81,12 +81,12 @@ public struct TestConfiguration {
             "github.com", "stackoverflow.com", "wikipedia.org"
         ],
         latencySamplesPerEndpoint: 15,  // Good for stable statistics
-        bandwidthRunsPerServer: 1,      // Reduced from 2 - one run is enough with 50MB files
-        uploadChunkSize: 20_971_520,    // 20MB (reduced from 50MB)
-        uploadChunkCount: 2,            // 2 x 20MB = 40MB total (was 100MB)
+        bandwidthRunsPerServer: 1,      // One run per server
+        uploadChunkSize: 10_485_760,    // 10MB (reduced from 20MB)
+        uploadChunkCount: 2,            // 2 x 10MB = 20MB total (was 40MB)
         latencyTestTimeout: 5,
-        bandwidthTestTimeout: 20,       // Reasonable for 50MB files
-        uploadTestTimeout: 25,          // Reasonable for 40MB total upload
+        bandwidthTestTimeout: 15,       // Reduced for smaller files
+        uploadTestTimeout: 15,          // Reduced for smaller uploads
         connectivityCheckURL: URL(string: "https://www.apple.com/library/test/success.html")!
     )
 

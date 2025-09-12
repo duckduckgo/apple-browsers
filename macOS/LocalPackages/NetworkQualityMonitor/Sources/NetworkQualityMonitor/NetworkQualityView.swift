@@ -352,19 +352,22 @@ struct MetricCard: View {
     private var qualityLabel: String {
         switch metricType {
         case .httpResponse:
-            // Relative performance scale (adjusted for user's geographic location)
-            if actualValue < 150 { return "Excellent" } else if actualValue < 300 { return "Good" } else if actualValue < 500 { return "Fair" } else { return "Poor" }
+            // Based on user perception of delays
+            if actualValue < 50 { return "Excellent" }      // <50ms: Instantaneous
+            else if actualValue < 100 { return "Good" }     // 50-100ms: Production target
+            else if actualValue < 200 { return "Fair" }     // 100-200ms: Noticeable
+            else { return "Poor" }                          // >200ms: Frustrating
         case .bandwidth:
             if actualValue >= 100 { return "Excellent" } else if actualValue >= 50 { return "Good" } else if actualValue >= 25 { return "Fair" } else { return "Poor" }
         case .dns:
             if actualValue < 20 { return "Excellent" } else if actualValue < 50 { return "Good" } else if actualValue < 100 { return "Fair" } else { return "Poor" }
         case .responseVariance:
-            // Based on coefficient of variation (CV) for HTTP requests
-            // More lenient than network jitter since we're testing different sites
-            if actualValue < 50 { return "Excellent" }    // CV < ~25% - very consistent
-            else if actualValue < 100 { return "Good" }    // CV < ~50% - normal for HTTP
-            else if actualValue < 150 { return "Fair" }    // CV < ~75% - manageable
-            else { return "Poor" }                         // CV > ~75% - high variance
+            // Tighter thresholds for modern connections
+            // Good connections should be consistent
+            if actualValue < 20 { return "Excellent" }      // <20ms: Excellent consistency
+            else if actualValue < 40 { return "Good" }      // 20-40ms: Acceptable
+            else if actualValue < 80 { return "Fair" }      // 40-80ms: High variance
+            else { return "Poor" }                          // >80ms: Terrible jitter
         case .bufferBloat:
             switch value {
             case "A": return "Excellent"

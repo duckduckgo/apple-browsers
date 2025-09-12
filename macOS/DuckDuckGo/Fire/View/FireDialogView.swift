@@ -398,9 +398,9 @@ struct FireDialogView: ModalView {
             }
 
             Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight
+                .resized(to: NSSize(width: 12, height: 12))
                 .tinted(with: NSColor(designSystemColor: .textLink)))
-                .resizable()
-                .frame(width: 12, height: 12)
+
         }
     }
 

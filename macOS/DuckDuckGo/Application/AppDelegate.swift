@@ -864,6 +864,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         Task {
+            try? await LatestReleaseChecker().getLatestReleaseAvailable(for: .macOSAppStore)
+        }
+
+        Task {
             await subscriptionManagerV1?.loadInitialData()
             await subscriptionManagerV2?.loadInitialData()
 

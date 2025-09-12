@@ -37,9 +37,9 @@ struct NSObjectExtensionTests {
         var privateIvarValue: String {
             privateIvar
         }
-        
+
         var onDeinitCalled: (() -> Void)?
-        
+
         deinit {
             if let callback = onDeinitCalled {
                 // Dispatch async to ensure we can verify state after deinit

@@ -20,9 +20,9 @@
 import Foundation
 
 public final class BandwidthTester: BandwidthTesting {
-    
+
     // MARK: - Constants
-    
+
     private enum Constants {
         static let downloadProgressMessage = "Testing download speed..."
         static let uploadProgressMessage = "Testing upload speed..."
@@ -37,21 +37,21 @@ public final class BandwidthTester: BandwidthTesting {
         static let megabitsPerByte = 8.0 / 1_000_000
     }
     private let session: NetworkSession
-    
+
     public init(session: NetworkSession = URLSession.shared) {
         self.session = session
     }
-    
+
     public func performDownloadTest(configuration: TestConfiguration,
                             progressCallback: ((String) -> Void)? = nil) async throws -> Double {
         progressCallback?(Constants.downloadProgressMessage)
-        
+
         var bestSpeed: Double = 0
-        
+
         for server in configuration.bandwidthTestURLs {
             // Quick test to find best server
             let quickSpeed = await measureQuickDownload(from: server, timeout: Constants.quickTestTimeout)
-            
+
             if quickSpeed > bestSpeed * Constants.serverCompetitiveThreshold {
                 // Full test
                 let fullSpeed = await measureFullDownload(
@@ -59,27 +59,27 @@ public final class BandwidthTester: BandwidthTesting {
                     runs: configuration.bandwidthRunsPerServer,
                     timeout: configuration.bandwidthTestTimeout
                 )
-                
+
                 if fullSpeed > bestSpeed {
                     bestSpeed = fullSpeed
                 }
             }
         }
-        
+
         guard bestSpeed > 0 else {
             throw NetworkError.allTestsFailed
         }
-        
+
         return bestSpeed
     }
-    
+
     public func performUploadTest(configuration: TestConfiguration,
                           progressCallback: ((String) -> Void)? = nil) async throws -> Double {
         progressCallback?(Constants.uploadProgressMessage)
-        
+
         var bestSpeed: Double = 0
         let testData = Data(count: configuration.uploadChunkSize)
-        
+
         for server in configuration.uploadTestURLs {
             let speed = await measureUpload(
                 to: server,
@@ -87,34 +87,34 @@ public final class BandwidthTester: BandwidthTesting {
                 chunks: configuration.uploadChunkCount,
                 timeout: configuration.uploadTestTimeout
             )
-            
+
             if speed > bestSpeed {
                 bestSpeed = speed
             }
         }
-        
+
         guard bestSpeed > 0 else {
             throw NetworkError.allTestsFailed
         }
-        
+
         return bestSpeed
     }
-    
+
     // MARK: - Private Methods
-    
+
     private func measureQuickDownload(from url: URL, timeout: TimeInterval) async -> Double {
         var request = URLRequest(url: url)
         request.timeoutInterval = timeout
         request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         request.httpMethod = Constants.httpMethodGet
         request.setValue(Constants.rangeBytes10MB, forHTTPHeaderField: Constants.rangeHeader)
-        
+
         let startTime = CFAbsoluteTimeGetCurrent()
-        
+
         do {
-            let (data, response) = try await session.data(from: url)
+            let (data, response) = try await session.data(for: request)
             let endTime = CFAbsoluteTimeGetCurrent()
-            
+
             if let httpResponse = response as? HTTPURLResponse,
                200...299 ~= httpResponse.statusCode || httpResponse.statusCode == 206 {
                 let duration = endTime - startTime
@@ -124,37 +124,37 @@ public final class BandwidthTester: BandwidthTesting {
         } catch {
             // Download failed
         }
-        
+
         return 0
     }
-    
+
     private func measureFullDownload(from url: URL, runs: Int, timeout: TimeInterval) async -> Double {
         var speeds: [Double] = []
-        
+
         for _ in 0..<runs {
             let speed = await measureSingleDownload(from: url, timeout: timeout)
             if speed > 0 {
                 speeds.append(speed)
             }
         }
-        
+
         guard !speeds.isEmpty else { return 0 }
-        
+
         // Return the best speed
         return speeds.max() ?? 0
     }
-    
+
     private func measureSingleDownload(from url: URL, timeout: TimeInterval) async -> Double {
         var request = URLRequest(url: url)
         request.timeoutInterval = timeout
         request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
-        
+
         let startTime = CFAbsoluteTimeGetCurrent()
-        
+
         do {
-            let (data, response) = try await session.data(from: url)
+            let (data, response) = try await session.data(for: request)
             let endTime = CFAbsoluteTimeGetCurrent()
-            
+
             if let httpResponse = response as? HTTPURLResponse,
                200...299 ~= httpResponse.statusCode {
                 let duration = endTime - startTime
@@ -164,26 +164,26 @@ public final class BandwidthTester: BandwidthTesting {
         } catch {
             // Download failed
         }
-        
+
         return 0
     }
-    
+
     private func measureUpload(to url: URL, data: Data, chunks: Int, timeout: TimeInterval) async -> Double {
         var request = URLRequest(url: url)
         request.httpMethod = Constants.httpMethodPost
         request.timeoutInterval = timeout
         request.setValue(Constants.applicationOctetStream, forHTTPHeaderField: Constants.contentTypeHeader)
-        
+
         var totalBytes = 0
         var totalDuration: TimeInterval = 0
-        
+
         for _ in 0..<chunks {
             let startTime = CFAbsoluteTimeGetCurrent()
-            
+
             do {
                 let (_, response) = try await session.upload(for: request, from: data)
                 let endTime = CFAbsoluteTimeGetCurrent()
-                
+
                 if let httpResponse = response as? HTTPURLResponse,
                    200...299 ~= httpResponse.statusCode {
                     totalBytes += data.count
@@ -193,9 +193,9 @@ public final class BandwidthTester: BandwidthTesting {
                 // Upload failed, continue with other chunks
             }
         }
-        
+
         guard totalDuration > 0 else { return 0 }
-        
+
         let speedMbps = Double(totalBytes) * Constants.megabitsPerByte / totalDuration
         return speedMbps
     }

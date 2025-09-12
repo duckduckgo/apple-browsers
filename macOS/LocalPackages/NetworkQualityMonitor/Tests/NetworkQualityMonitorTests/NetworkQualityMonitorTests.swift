@@ -159,6 +159,57 @@ final class NetworkQualityMonitorTests: XCTestCase {
         XCTAssertEqual(NetworkError.allTestsFailed.localizedDescription, "All network tests failed - check your connection")
         XCTAssertEqual(NetworkError.insufficientData.localizedDescription, "Insufficient data collected for accurate measurement")
     }
+    
+    // MARK: - Statistical Function Tests
+    
+    func testMedianCalculationWithOddCount() {
+        let measurements = [1.0, 3.0, 2.0, 5.0, 4.0] // Sorted: [1,2,3,4,5]
+        let median = NetworkTestConstants.median(of: measurements)
+        XCTAssertNotNil(median)
+        XCTAssertEqual(median!, 3.0, accuracy: 0.001) // Middle value
+    }
+    
+    func testMedianCalculationWithEvenCount() {
+        let measurements = [1.0, 4.0, 2.0, 3.0] // Sorted: [1,2,3,4]
+        let median = NetworkTestConstants.median(of: measurements)
+        XCTAssertNotNil(median)
+        XCTAssertEqual(median!, 2.5, accuracy: 0.001) // Average of middle two values (2+3)/2 = 2.5
+    }
+    
+    func testMedianCalculationWithSingleValue() {
+        let measurements = [42.0]
+        let median = NetworkTestConstants.median(of: measurements)
+        XCTAssertNotNil(median)
+        XCTAssertEqual(median!, 42.0, accuracy: 0.001)
+    }
+    
+    func testMedianCalculationWithTwoValues() {
+        let measurements = [10.0, 20.0]
+        let median = NetworkTestConstants.median(of: measurements)
+        XCTAssertNotNil(median)
+        XCTAssertEqual(median!, 15.0, accuracy: 0.001) // (10+20)/2 = 15
+    }
+    
+    func testMedianCalculationWithEmptyArray() {
+        let measurements: [Double] = []
+        let median = NetworkTestConstants.median(of: measurements)
+        XCTAssertNil(median)
+    }
+    
+    func testMedianCalculationWithDuplicateValues() {
+        let measurements = [5.0, 5.0, 5.0, 5.0] // All same values
+        let median = NetworkTestConstants.median(of: measurements)
+        XCTAssertNotNil(median)
+        XCTAssertEqual(median!, 5.0, accuracy: 0.001)
+    }
+    
+    func testMedianCalculationWithLargeDataset() {
+        // Test with larger dataset to ensure performance
+        let measurements = Array(1...1000).map { Double($0) } // 1.0 to 1000.0
+        let median = NetworkTestConstants.median(of: measurements)
+        XCTAssertNotNil(median)
+        XCTAssertEqual(median!, 500.5, accuracy: 0.001) // Average of 500 and 501
+    }
 }
 
 // MARK: - Mock Tests

@@ -39,8 +39,8 @@ public final class NetworkQualityMonitor: NetworkQualityMonitoring, NetworkTestP
     // MARK: - Initialization
     
     /// Initialize with default dependencies
-    public convenience init(configuration: TestConfiguration = .standard) {
-        let session: NetworkSession = URLSession.shared
+    public convenience init(configuration: TestConfiguration = .standard, 
+                           session: NetworkSession = URLSession.shared) {
         
         self.init(
             configuration: configuration,
@@ -200,12 +200,13 @@ public final class NetworkQualityMonitor: NetworkQualityMonitoring, NetworkTestP
 public enum NetworkQualityMonitorFactory {
     
     /// Create a standard monitor
-    public static func createStandard() -> NetworkQualityMonitoring {
-        NetworkQualityMonitor(configuration: .standard)
+    public static func createStandard(session: NetworkSession = URLSession.shared) -> NetworkQualityMonitoring {
+        NetworkQualityMonitor(configuration: .standard, session: session)
     }
     
     /// Create a monitor with custom configuration
-    public static func create(with configuration: TestConfiguration) -> NetworkQualityMonitoring {
-        NetworkQualityMonitor(configuration: configuration)
+    public static func create(with configuration: TestConfiguration,
+                            session: NetworkSession = URLSession.shared) -> NetworkQualityMonitoring {
+        NetworkQualityMonitor(configuration: configuration, session: session)
     }
 }

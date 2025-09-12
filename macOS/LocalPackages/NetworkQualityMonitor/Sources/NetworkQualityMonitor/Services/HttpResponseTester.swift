@@ -21,9 +21,9 @@ import Foundation
 
 /// Service responsible for HTTP response testing
 public final class HttpResponseTester: HttpResponseTesting {
-    
+
     // MARK: - Constants
-    
+
     private enum Constants {
         static let progressMessage = "Testing HTTP response times..."
         static let httpMethodHead = "HEAD"
@@ -34,63 +34,63 @@ public final class HttpResponseTester: HttpResponseTesting {
         static let penaltyMultiplier = 0.1
     }
     private let session: NetworkSession
-    
+
     public init(session: NetworkSession = URLSession.shared) {
         self.session = session
     }
-    
+
     public func performTest(configuration: TestConfiguration,
                     progressCallback: ((String) -> Void)? = nil) async throws -> HttpResponseResult {
         progressCallback?(Constants.progressMessage)
-        
+
         var allMeasurements: [EndpointMeasurement] = []
-        
+
         for endpoint in configuration.latencyTestURLs {
             let measurements = await measureEndpoint(endpoint,
                                                     sampleCount: configuration.latencySamplesPerEndpoint,
                                                     timeout: configuration.latencyTestTimeout)
-            
+
             if !measurements.isEmpty {
                 allMeasurements.append(EndpointMeasurement(endpoint: endpoint, measurements: measurements))
             }
         }
-        
+
         guard !allMeasurements.isEmpty else {
             throw NetworkError.allTestsFailed
         }
-        
+
         return calculateResults(from: allMeasurements)
     }
-    
+
     // MARK: - Private Methods
-    
+
     private func measureEndpoint(_ endpoint: URL, sampleCount: Int, timeout: TimeInterval) async -> [Double] {
         var measurements: [Double] = []
-        
+
         for _ in 0..<sampleCount {
             if let measurement = await measureSingleRequest(to: endpoint, timeout: timeout) {
                 measurements.append(measurement)
             }
-            
+
             // Small delay between measurements
             try? await Task.sleep(nanoseconds: Constants.measurementDelay)
         }
-        
+
         return measurements
     }
-    
+
     private func measureSingleRequest(to url: URL, timeout: TimeInterval) async -> Double? {
         var request = URLRequest(url: url)
         request.httpMethod = Constants.httpMethodHead
         request.timeoutInterval = timeout
         request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
-        
+
         let startTime = CFAbsoluteTimeGetCurrent()
-        
+
         do {
             let (_, response) = try await session.data(for: request)
             let endTime = CFAbsoluteTimeGetCurrent()
-            
+
             if let httpResponse = response as? HTTPURLResponse,
                200...299 ~= httpResponse.statusCode {
                 return (endTime - startTime) * 1000  // Convert to milliseconds
@@ -98,45 +98,45 @@ public final class HttpResponseTester: HttpResponseTesting {
         } catch {
             // Request failed, skip this measurement
         }
-        
+
         return nil
     }
-    
+
     private func calculateResults(from allMeasurements: [EndpointMeasurement]) -> HttpResponseResult {
         // Calculate per-site statistics
         let siteStatistics = allMeasurements.map { endpoint in
             calculateSiteStatistics(endpoint.measurements)
         }
-        
+
         // Find the best performing site (lowest median)
         let bestSiteIndex = siteStatistics.enumerated().min(by: { $0.element.median < $1.element.median })?.offset ?? 0
         let bestSiteStats = siteStatistics[bestSiteIndex]
-        
+
         // Calculate adjusted response time
         let adjustedResponseTime = calculateAdjustedResponseTime(
             bestSiteStats: bestSiteStats,
             allSiteStats: siteStatistics
         )
-        
+
         // Calculate variance (CV at P95)
         let variances = siteStatistics.map { $0.coefficientOfVariation }
         let sortedVariances = variances.sorted()
         let p95Index = Int(Double(sortedVariances.count - 1) * 0.95)
         let p95Variance = sortedVariances[p95Index]
-        
+
         // Convert CV to milliseconds for display
         let responseVariance = p95Variance * adjustedResponseTime
-        
+
         // Calculate failure rate
         let totalAttempts = allMeasurements.reduce(0) { $0 + $1.measurements.count }
         let expectedAttempts = allMeasurements.count * (allMeasurements.first?.measurements.count ?? 0)
         let failureRate = Double(expectedAttempts - totalAttempts) / Double(expectedAttempts)
-        
+
         // Calculate percentiles from all measurements
         let allSortedMeasurements = allMeasurements.flatMap { $0.measurements }.sorted()
         let p50 = percentile(allSortedMeasurements, Constants.percentile50)
         let p95 = percentile(allSortedMeasurements, Constants.percentile95)
-        
+
         return HttpResponseResult(
             averageResponseTime: adjustedResponseTime,
             responseVariance: responseVariance,
@@ -146,20 +146,19 @@ public final class HttpResponseTester: HttpResponseTesting {
             p95: p95
         )
     }
-    
+
     private func calculateSiteStatistics(_ measurements: [Double]) -> SiteStatistics {
-        let sorted = measurements.sorted()
-        let median = sorted[sorted.count / 2]
+        let median = NetworkTestConstants.median(of: measurements) ?? 0
         let mean = measurements.reduce(0, +) / Double(measurements.count)
-        
+
         // Calculate standard deviation
         let squaredDiffs = measurements.map { pow($0 - mean, 2) }
         let variance = squaredDiffs.reduce(0, +) / Double(squaredDiffs.count)
         let stdDev = sqrt(variance)
-        
+
         // Coefficient of Variation
         let cv = mean > 0 ? stdDev / mean : 0
-        
+
         return SiteStatistics(
             median: median,
             mean: mean,
@@ -167,12 +166,12 @@ public final class HttpResponseTester: HttpResponseTesting {
             coefficientOfVariation: cv
         )
     }
-    
+
     private func calculateAdjustedResponseTime(bestSiteStats: SiteStatistics,
                                               allSiteStats: [SiteStatistics]) -> Double {
         // Start with best site's median as baseline
         var adjustedTime = bestSiteStats.median
-        
+
         // Add penalty based on how much worse other sites are
         for stats in allSiteStats {
             if stats.median > bestSiteStats.median {
@@ -180,10 +179,10 @@ public final class HttpResponseTester: HttpResponseTesting {
                 adjustedTime += (p75 - bestSiteStats.median) * Constants.penaltyMultiplier
             }
         }
-        
+
         return adjustedTime
     }
-    
+
     private func percentile(_ sorted: [Double], _ p: Double) -> Double? {
         guard !sorted.isEmpty else { return nil }
         let index = Int(Double(sorted.count - 1) * p)

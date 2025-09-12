@@ -21,16 +21,16 @@ import Foundation
 
 /// Service responsible for buffer bloat testing
 public final class BufferBloatTester: BufferBloatTesting {
-    
+
     // MARK: - Constants
-    
+
     private enum Constants {
         static let progressMessage = "Testing buffer bloat..."
         static let baselineSampleCount = 10
         static let loadedSampleCount = 15
         static let sampleDelay: UInt64 = 100_000_000  // 100ms between samples
         static let downloadStartDelay: UInt64 = 500_000_000  // 500ms to let download start
-        
+
         // Buffer bloat grades based on latency increase (ms)
         static let gradeAThreshold = 50.0
         static let gradeBThreshold = 100.0
@@ -39,41 +39,41 @@ public final class BufferBloatTester: BufferBloatTesting {
     }
     private let session: NetworkSession
     private let latencyMeasurer: LatencyMeasuring
-    
+
     public init(session: NetworkSession = URLSession.shared) {
         self.session = session
         self.latencyMeasurer = DefaultLatencyMeasurer(session: session)
     }
-    
+
     init(session: NetworkSession = URLSession.shared,
          latencyMeasurer: LatencyMeasuring) {
         self.session = session
         self.latencyMeasurer = latencyMeasurer
     }
-    
+
     public func performTest(configuration: TestConfiguration,
                     progressCallback: ((String) -> Void)? = nil) async throws -> BufferBloatResult {
         progressCallback?(Constants.progressMessage)
-        
+
         // Measure baseline latency
         let baselineLatency = try await measureBaselineLatency(configuration: configuration)
-        
+
         // Start download task to create network load
         let downloadTask = createDownloadTask(configuration: configuration)
-        
+
         // Wait for download to start
         try? await Task.sleep(nanoseconds: Constants.downloadStartDelay)
-        
+
         // Measure latency under load
         let loadedLatency = try await measureLoadedLatency(configuration: configuration)
-        
+
         // Cancel download
         downloadTask.cancel()
-        
+
         // Calculate increase and grade
         let increase = loadedLatency - baselineLatency
         let grade = gradeBufferBloat(increase: increase)
-        
+
         return BufferBloatResult(
             baselineLatency: baselineLatency,
             loadedLatency: loadedLatency,
@@ -81,12 +81,12 @@ public final class BufferBloatTester: BufferBloatTesting {
             grade: grade
         )
     }
-    
+
     // MARK: - Private Methods
-    
+
     private func measureBaselineLatency(configuration: TestConfiguration) async throws -> Double {
         var measurements: [Double] = []
-        
+
         // Take baseline measurements for stability
         for _ in 0..<Constants.baselineSampleCount {
             if let latency = try? await latencyMeasurer.measureSingle(configuration: configuration) {
@@ -94,19 +94,18 @@ public final class BufferBloatTester: BufferBloatTesting {
             }
             try? await Task.sleep(nanoseconds: Constants.sampleDelay)
         }
-        
+
         guard !measurements.isEmpty else {
             throw NetworkError.insufficientData
         }
-        
+
         // Use median for stability
-        let sorted = measurements.sorted()
-        return sorted[sorted.count / 2]
+        return NetworkTestConstants.median(of: measurements) ?? 0
     }
-    
+
     private func measureLoadedLatency(configuration: TestConfiguration) async throws -> Double {
         var measurements: [Double] = []
-        
+
         // Take measurements under load
         for _ in 0..<Constants.loadedSampleCount {
             if let latency = try? await latencyMeasurer.measureSingle(configuration: configuration) {
@@ -114,25 +113,27 @@ public final class BufferBloatTester: BufferBloatTesting {
             }
             try? await Task.sleep(nanoseconds: Constants.sampleDelay)
         }
-        
+
         guard !measurements.isEmpty else {
             throw NetworkError.insufficientData
         }
-        
+
         // Use median for stability
-        let sorted = measurements.sorted()
-        return sorted[sorted.count / 2]
+        return NetworkTestConstants.median(of: measurements) ?? 0
     }
-    
+
     private func createDownloadTask(configuration: TestConfiguration) -> Task<Void, Never> {
         Task {
             // Download from first available bandwidth test URL
             if let url = configuration.bandwidthTestURLs.first {
-                _ = try? await session.data(from: url)
+                var request = URLRequest(url: url)
+                request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+                request.timeoutInterval = 30 // Reasonable timeout for background download
+                _ = try? await session.data(for: request)
             }
         }
     }
-    
+
     private func gradeBufferBloat(increase: Double) -> String {
         // Grade based on absolute latency increase in milliseconds
         switch increase {
@@ -155,25 +156,25 @@ protocol LatencyMeasuring {
 
 private final class DefaultLatencyMeasurer: LatencyMeasuring {
     private let session: NetworkSession
-    
+
     init(session: NetworkSession) {
         self.session = session
     }
-    
+
     func measureSingle(configuration: TestConfiguration) async throws -> Double {
         guard let endpoint = configuration.latencyTestURLs.randomElement() else {
             throw NetworkError.insufficientData
         }
-        
+
         var request = URLRequest(url: endpoint)
         request.httpMethod = "HEAD"
         request.timeoutInterval = configuration.latencyTestTimeout
         request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
-        
+
         let startTime = CFAbsoluteTimeGetCurrent()
-        let (_, _) = try await session.data(from: endpoint)
+        let (_, _) = try await session.data(for: request)
         let endTime = CFAbsoluteTimeGetCurrent()
-        
+
         return (endTime - startTime) * 1000 // Convert to milliseconds
     }
 }

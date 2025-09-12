@@ -34,8 +34,11 @@ public enum SERPSettingsUserScriptMessages: String, CaseIterable {
 
 protocol SERPSettingsUserScriptDelegate: AnyObject {
 
-    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript)
-    func serpSettingsUserScript(_ userScript: SERPSettingsUserScript, didRequestToOpenAIFeaturesSettingsWithSearchAssistSettingsHidden searchAssistSettingsHidden: Bool)
+    func serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(_ userScript: SERPSettingsUserScript)
+    func serpSettingsUserScriptDidRequestToCloseTabAndOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript)
+
+    func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript)
+
 }
 
 public struct SERPSettingsSnapshot: Codable {
@@ -61,6 +64,7 @@ public struct SERPSettingsSnapshot: Codable {
 
 enum SERPSettingsConstants {
     static let returnParameterKey = "return"
+    static let screenParameterKey = "screen"
     static let privateSearch = "privateSearch"
     static let aiFeatures = "aiFeatures"
 }
@@ -146,15 +150,12 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
     private func openNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
         guard let parameters = params as? [String: String] else { return nil }
         if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.privateSearch {
-            delegate?.serpSettingsUserScriptDidRequestToOpenPrivacySettings(self)
+            delegate?.serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(self)
         } else if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.aiFeatures {
-            delegate?.serpSettingsUserScript(self, didRequestToOpenAIFeaturesSettingsWithSearchAssistSettingsHidden: false)
+            delegate?.serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(self)
+        } else if parameters[SERPSettingsConstants.screenParameterKey] == SERPSettingsConstants.aiFeatures {
+            delegate?.serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(self)
         }
-#warning("todo, finish implementation, handle new blue button from SERP. Note: keep in mind Fernando's feature flag and cover both cases in code")
-        /*else if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.aiFeatures {
-            #warning("todo, handle Enable Duck.ai in AI Features Settings")
-            delegate?.serpSettingsUserScript(self, didRequestToOpenAIFeaturesSettingsWithSearchAssistSettingsHidden: true)
-        }*/
         return nil
     }
     

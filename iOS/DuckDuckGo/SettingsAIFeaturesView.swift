@@ -136,17 +136,23 @@ struct SettingsAIFeaturesView: View {
                 }
             }
 
-            Section {
-                SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
-                                 subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
-                                 image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist),
-                                 action: { viewModel.openAssistSettings() },
-                                 webLinkIndicator: true,
-                                 isButton: true)
+            if !viewModel.openedFromSERPSettingsButton {
+                Section {
+                    SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
+                                     subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
+                                     image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist),
+                                     action: { viewModel.openAssistSettings() },
+                                     webLinkIndicator: true,
+                                     isButton: true)
+                }
             }
         }.applySettingsListModifiers(title: UserText.settingsAiFeatures,
                                      displayMode: .inline,
                                      viewModel: viewModel)
+        .navigationBarItems(trailing: viewModel.openedFromSERPSettingsButton ?
+            AnyView(Button(UserText.navigationTitleDone) {
+                viewModel.onRequestDismissSettings?()
+            }.foregroundColor(Color(designSystemColor: .textPrimary))) : AnyView(EmptyView()))
 
 
         .onAppear {

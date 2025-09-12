@@ -3838,8 +3838,9 @@ extension TabViewController {
 }
 
 extension TabViewController: SERPSettingsUserScriptDelegate {
+    
 
-    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
+    func serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
         guard let mainVC = parent as? MainViewController else { return }
         mainVC.segueToSettingsPrivateSearch {
             mainVC.closeTab(self.tabModel)
@@ -3847,12 +3848,17 @@ extension TabViewController: SERPSettingsUserScriptDelegate {
         }
     }
     
-    func serpSettingsUserScript(_ userScript: SERPSettingsUserScript, didRequestToOpenAIFeaturesSettingsWithSearchAssistSettingsHidden searchAssistSettingsHidden: Bool) {
+    func serpSettingsUserScriptDidRequestToCloseTabAndOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
         guard let mainVC = parent as? MainViewController else { return }
-        mainVC.segueToSettingsAIChat(shouldShowSearchAssistSettings: !searchAssistSettingsHidden) {
+        mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: false) { // false because we're reopening previously closed settings
             mainVC.closeTab(self.tabModel)
             mainVC.showBars()
         }
+    }
+
+    func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
+        guard let mainVC = parent as? MainViewController else { return }
+        mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: true)
     }
 
 }

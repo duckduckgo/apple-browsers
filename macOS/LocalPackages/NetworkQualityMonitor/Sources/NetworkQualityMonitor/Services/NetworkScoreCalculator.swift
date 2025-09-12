@@ -25,15 +25,15 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
     // MARK: - Constants
     
     private enum Constants {
-        // Score weights for overall calculation (adjusted for real-world impact)
-        static let httpResponseWeight = 0.45  // Increased - latency/consistency most critical
-        static let bandwidthWeight = 0.35     // Maintained - still important
-        static let dnsWeight = 0.10           // Reduced - minimal real-world impact
-        static let bufferBloatWeight = 0.10   // Reduced - less critical than latency
+        // Score weights optimized for BROWSER PERFORMANCE testing decisions
+        static let httpResponseWeight = 0.50  // Critical - page load latency & consistency  
+        static let bandwidthWeight = 0.35     // Important - resource download speed
+        static let dnsWeight = 0.10           // Moderate - initial page load only (cached after)
+        static let bufferBloatWeight = 0.05   // Minor - less relevant for browsing vs real-time apps
         
-        // Bandwidth sub-weights
-        static let downloadWeight = 0.7
-        static let uploadWeight = 0.3
+        // Bandwidth sub-weights (optimized for browsing - download much more important)
+        static let downloadWeight = 0.85    // Critical - page resources, images, JS, CSS
+        static let uploadWeight = 0.15      // Minor - only forms, file uploads
         
         // Score values
         static let excellent = 100.0
@@ -233,7 +233,11 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
                                        bandwidthScore: Double,
                                        dnsScore: Double,
                                        bufferBloatScore: Double) -> Double {
-        // Weights optimized for browser performance testing
+        // Weights optimized for browser performance testing decisions:
+        // - HTTP Response (50%): Page load latency & consistency most critical
+        // - Bandwidth (35%): Resource download speed for images, JS, CSS  
+        // - DNS (10%): Initial page load (cached after first request)
+        // - Buffer Bloat (5%): Less relevant for typical web browsing
         return httpResponseScore * Constants.httpResponseWeight +
                bandwidthScore * Constants.bandwidthWeight +
                dnsScore * Constants.dnsWeight +

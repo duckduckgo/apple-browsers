@@ -32,6 +32,7 @@ public protocol SyncPausedStateManaging: ObservableObject {
     var currentSyncAllPausedError: String? { get }
     var currentSyncBookmarksPausedError: String? { get }
     var currentSyncCredentialsPausedError: String? { get }
+    var currentSyncCreditCardsPausedError: String? { get }
 
 
     func syncDidTurnOff()

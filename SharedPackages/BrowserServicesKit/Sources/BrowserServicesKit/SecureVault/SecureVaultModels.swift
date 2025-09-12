@@ -337,7 +337,7 @@ public struct SecureVaultModels {
 
     }
 
-    public struct Identity {
+    public struct Identity: Decodable {
 
         private static let mediumPersonNameComponentsFormatter: PersonNameComponentsFormatter = {
             let nameFormatter = PersonNameComponentsFormatter()

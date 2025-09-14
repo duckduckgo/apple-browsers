@@ -1,9 +1,9 @@
 {
-    wide_pixel_save_failed: {
+    m_wide_pixel_save_failed: {
         description: 'Fires when saving wide pixel data fails',
         owners: ['samsymons'],
         triggers: ['other'],
-        suffixes: ['first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: [
             'appVersion',
             'pixelSource',
@@ -16,11 +16,11 @@
             },
         ],
     },
-    wide_pixel_update_failed: {
+    m_wide_pixel_update_failed: {
         description: 'Fires when updating wide pixel data fails',
         owners: ['samsymons'],
         triggers: ['other'],
-        suffixes: ['first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: [
             'appVersion',
             'pixelSource',
@@ -33,11 +33,11 @@
             },
         ],
     },
-    wide_pixel_load_failed: {
+    m_wide_pixel_load_failed: {
         description: 'Fires when loading wide pixel data fails',
         owners: ['samsymons'],
         triggers: ['other'],
-        suffixes: ['first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: [
             'appVersion',
             'pixelSource',
@@ -50,11 +50,11 @@
             },
         ],
     },
-    wide_pixel_completion_failed: {
+    m_wide_pixel_completion_failed: {
         description: 'Fires when completing wide pixel processing fails',
         owners: ['samsymons'],
         triggers: ['other'],
-        suffixes: ['first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: [
             'appVersion',
             'pixelSource',
@@ -67,11 +67,11 @@
             },
         ],
     },
-    wide_pixel_discard_failed: {
+    m_wide_pixel_discard_failed: {
         description: 'Fires when discarding wide pixel data fails',
         owners: ['samsymons'],
         triggers: ['other'],
-        suffixes: ['first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: [
             'appVersion',
             'pixelSource',

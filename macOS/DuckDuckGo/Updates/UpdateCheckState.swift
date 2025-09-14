@@ -17,7 +17,10 @@
 //
 
 import Foundation
-import Sparkle
+
+protocol UpdaterAvailabilityChecking {
+    var canCheckForUpdates: Bool { get }
+}
 
 /// Actor responsible for managing update check state and rate limiting.
 ///
@@ -39,9 +42,9 @@ actor UpdateCheckState {
     ///     Defaults to `UpdateCheckState.defaultMinimumCheckInterval`.
     /// - Returns: `true` if Sparkle allows checks and enough time has passed since the last check, `false` otherwise.
     ///
-    func canStartNewCheck(updater: SPUUpdater?, minimumInterval: TimeInterval = UpdateCheckState.defaultMinimumCheckInterval) -> Bool {
-        // Check if Sparkle allows checking for updates
-        if let updater = updater, !updater.canCheckForUpdates {
+    func canStartNewCheck(updater: UpdaterAvailabilityChecking, minimumInterval: TimeInterval = UpdateCheckState.defaultMinimumCheckInterval) -> Bool {
+
+        if !updater.canCheckForUpdates {
             return false
         }
 

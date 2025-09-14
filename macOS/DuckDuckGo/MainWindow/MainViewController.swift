@@ -504,6 +504,7 @@ final class MainViewController: NSViewController {
 
     private func subscribeToAppearanceChanges() {
         appearanceChangedCancellable = NSApp.publisher(for: \.effectiveAppearance)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.tabCollectionViewModel.newTabPageTabPreloader?.reloadTab(force: true)
             }

@@ -263,6 +263,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .refactorOfSyncPreferences,
                 .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,
+                .dbpRemoteBrokerDelivery,
                 .subscriptionPurchaseWidePixelMeasurement,
                 .syncFeatureLevel3:
             return true
@@ -273,7 +274,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .dbpRemoteBrokerDelivery,
                 .scheduledSetDefaultBrowserAndAddToDockPrompts:
             return false
         }

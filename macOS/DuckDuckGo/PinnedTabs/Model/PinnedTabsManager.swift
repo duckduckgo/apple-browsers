@@ -87,11 +87,12 @@ final class PinnedTabsManager {
         Set(tabCollection.tabs.compactMap { $0.url?.host })
     }
 
-    func setUp(with collection: TabCollection) {
+    func setUp(movingTabsFrom collection: TabCollection) {
         tabCollection.removeAll()
         for tab in collection.tabs {
             tabCollection.append(tab: tab)
         }
+        collection.clearAfterMerge()
     }
 
     init(tabCollection: TabCollection = .init()) {

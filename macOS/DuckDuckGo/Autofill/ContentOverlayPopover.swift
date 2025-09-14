@@ -22,7 +22,7 @@ import WebKit
 import BrowserServicesKit
 
 @MainActor
-public final class ContentOverlayPopover {
+public final class ContentOverlayPopover: NSObject {
 
     public var zoomFactor: CGFloat?
     public weak var currentTabView: NSView?
@@ -66,6 +66,16 @@ public final class ContentOverlayPopover {
 
     public required init?(coder: NSCoder) {
         fatalError("ContentOverlayPopover: Bad initializer")
+    }
+
+    deinit {
+#if DEBUG
+        // Check that window controller deallocates
+        windowController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+
+        // Check that view controller deallocates
+        viewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
     }
 }
 

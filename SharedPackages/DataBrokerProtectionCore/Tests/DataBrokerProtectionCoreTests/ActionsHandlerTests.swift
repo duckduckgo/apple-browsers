@@ -273,7 +273,7 @@ final class ActionsHandlerTests: XCTestCase {
         XCTAssertNil(sut.nextAction())
     }
 
-    func testWhenEmailConfirmationContinuation_thenStartsAfterEmailConfirmationAction() throws {
+    func testWhenEmailConfirmationContinuation_thenReplacesEmailActionWithNavigateAndContinues() throws {
         let action1 = createTestAction(id: "navigate1")
         let action2 = createTestAction(id: "navigate2")
         let emailAction = EmailConfirmationAction(id: "email", actionType: .emailConfirmation, pollingTime: 1, dataSource: nil)
@@ -281,8 +281,13 @@ final class ActionsHandlerTests: XCTestCase {
         let action4 = createTestAction(id: "navigate4")
 
         let step = Step(type: .optOut, actions: [action1, action2, emailAction, action3, action4])
-        let sut = try ActionsHandler.forEmailConfirmationContinuation(step)
+        let confirmationURL = URL(string: "https://example.com/confirm")!
+        let sut = ActionsHandler.forEmailConfirmationContinuation(step, confirmationURL: confirmationURL)
 
+        let firstAction = sut.nextAction()
+        XCTAssertEqual(firstAction?.id, "email")
+        XCTAssertTrue(firstAction is NavigateAction)
+        XCTAssertEqual((firstAction as? NavigateAction)?.url, confirmationURL.absoluteString)
         XCTAssertEqual(sut.nextAction()?.id, "navigate3")
         XCTAssertEqual(sut.nextAction()?.id, "navigate4")
         XCTAssertNil(sut.nextAction())

@@ -659,7 +659,7 @@ extension OmniBarViewController: UITextFieldDelegate {
     }
 
     @objc func textFieldDidBeginEditing(_ textField: UITextField) {
-        DailyPixel.fire(pixel: .aiChatLegacyOmnibarShown)
+        DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarShown)
         
         DispatchQueue.main.async {
             let highlightText = self.omniDelegate?.onTextFieldDidBeginEditing(self.barView) ?? true

@@ -217,6 +217,13 @@ final class VPNUpsellPopover: NSPopover {
         fatalError("VPNUpsellPopover: Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        // Check that our content view controller deallocates
+        contentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     override func keyDown(with event: NSEvent) {
         if Int(event.keyCode) == kVK_Escape {
             performClose(nil)

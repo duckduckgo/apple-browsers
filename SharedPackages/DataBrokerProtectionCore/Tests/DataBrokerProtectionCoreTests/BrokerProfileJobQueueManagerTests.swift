@@ -27,6 +27,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
 
     private var mockQueue: MockBrokerProfileJobQueue!
     private var mockOperationsCreator: MockDataBrokerOperationsCreator!
+    private var mockEmailConfirmationJobProvider: MockEmailConfirmationJobProvider!
     private var mockDatabase: MockDatabase!
     private var mockPixelHandler: MockPixelHandler!
     private var mockMismatchCalculator: MockMismatchCalculator!
@@ -40,6 +41,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
     override func setUpWithError() throws {
         mockQueue = MockBrokerProfileJobQueue()
         mockOperationsCreator = MockDataBrokerOperationsCreator()
+        mockEmailConfirmationJobProvider = MockEmailConfirmationJobProvider()
         mockDatabase = MockDatabase()
         mockPixelHandler = MockPixelHandler()
         mockMismatchCalculator = MockMismatchCalculator(database: mockDatabase, pixelHandler: mockPixelHandler)
@@ -55,7 +57,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
                                                         pixelHandler: mockPixelHandler,
                                                         eventsHandler: mockEventsHandler,
                                                         dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
-                                                        emailService: EmailServiceMock(),
+                                                        emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                                         captchaService: CaptchaServiceMock(),
                                                         featureFlagger: MockDBPFeatureFlagger())
     }
@@ -64,6 +66,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
                                            jobProvider: mockOperationsCreator,
+                                           emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
                                            mismatchCalculator: mockMismatchCalculator,
                                            pixelHandler: mockPixelHandler)
 
@@ -81,6 +84,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
                                            jobProvider: mockOperationsCreator,
+                                           emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
                                            mismatchCalculator: mockMismatchCalculator,
                                            pixelHandler: mockPixelHandler)
 
@@ -98,6 +102,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
                                            jobProvider: mockOperationsCreator,
+                                           emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
                                            mismatchCalculator: mockMismatchCalculator,
                                            pixelHandler: mockPixelHandler)
 
@@ -115,6 +120,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
                                            jobProvider: mockOperationsCreator,
+                                           emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
                                            mismatchCalculator: mockMismatchCalculator,
                                            pixelHandler: mockPixelHandler)
         let mockOperation = MockBrokerProfileJob(id: 1, jobType: .manualScan, errorDelegate: sut)
@@ -147,6 +153,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
                                            jobProvider: mockOperationsCreator,
+                                           emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
                                            mismatchCalculator: mockMismatchCalculator,
                                            pixelHandler: mockPixelHandler)
         let mockOperation = MockBrokerProfileJob(id: 1, jobType: .all, errorDelegate: sut)
@@ -179,6 +186,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
                                            jobProvider: mockOperationsCreator,
+                                           emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
                                            mismatchCalculator: mockMismatchCalculator,
                                            pixelHandler: mockPixelHandler)
         let mockOperation = MockBrokerProfileJob(id: 1, jobType: .scheduledScan, errorDelegate: sut)
@@ -211,6 +219,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
                                            jobProvider: mockOperationsCreator,
+                                           emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
                                            mismatchCalculator: mockMismatchCalculator,
                                            pixelHandler: mockPixelHandler)
         let mockOperationsWithError = (1...2).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut, shouldError: true) }
@@ -253,6 +262,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
                                            jobProvider: mockOperationsCreator,
+                                           emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
                                            mismatchCalculator: mockMismatchCalculator,
                                            pixelHandler: mockPixelHandler)
         let mockOperationsWithError = (1...2).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut, shouldError: true) }
@@ -295,6 +305,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
                                            jobProvider: mockOperationsCreator,
+                                           emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
                                            mismatchCalculator: mockMismatchCalculator,
                                            pixelHandler: mockPixelHandler)
         var mockOperationsWithError = (1...2).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut, shouldError: true) }
@@ -339,6 +350,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
                                            jobProvider: mockOperationsCreator,
+                                           emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
                                            mismatchCalculator: mockMismatchCalculator,
                                            pixelHandler: mockPixelHandler)
         var mockOperations = (1...5).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut) }
@@ -388,6 +400,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
                                            jobProvider: mockOperationsCreator,
+                                           emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
                                            mismatchCalculator: mockMismatchCalculator,
                                            pixelHandler: mockPixelHandler)
         var mockOperations = (1...5).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut) }
@@ -436,6 +449,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         mockOperationsCreator.shouldError = true
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
                                            jobProvider: mockOperationsCreator,
+                                           emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
                                            mismatchCalculator: mockMismatchCalculator,
                                            pixelHandler: mockPixelHandler)
         let expectation = expectation(description: "Expected completion to be called")
@@ -457,6 +471,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
                                            jobProvider: mockOperationsCreator,
+                                           emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
                                            mismatchCalculator: mockMismatchCalculator,
                                            pixelHandler: mockPixelHandler)
         let expectedConcurrentOperations = BrokerJobExecutionConfig().concurrentJobsFor(.optOut)

@@ -76,8 +76,8 @@ final class MainViewController: NSViewController {
         && (!(view.window?.isFullScreen ?? false) || NSApp.delegateTyped.appearancePreferences.showTabsAndBookmarksBarOnFullScreen)
     }
 
-    private var isInPopUpWindow: Bool {
-        view.window?.isPopUpWindow == true
+    var isInPopUpWindow: Bool {
+        tabCollectionViewModel.isPopup
     }
 
     required init?(coder: NSCoder) {
@@ -253,7 +253,7 @@ final class MainViewController: NSViewController {
         if isInPopUpWindow {
             tabBarViewController.view.isHidden = true
             mainView.tabBarContainerView.isHidden = true
-            mainView.isTabBarShown = false
+            mainView.setTabBarShown(false, animated: false)
             resizeNavigationBar(isHomePage: false, animated: false)
 
             updateBookmarksBarViewVisibility(visible: false)
@@ -344,6 +344,24 @@ final class MainViewController: NSViewController {
 
     func windowWillClose() {
         viewEventsCancellables.removeAll()
+    }
+
+    deinit {
+#if DEBUG
+
+        // Check that TabCollectionViewModel deallocates
+        tabCollectionViewModel.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+
+        if isViewLoaded {
+            view.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+        tabBarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        navigationBarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        browserTabViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        findInPageViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        fireViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        bookmarksBarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
     }
 
     func windowWillMiniaturize() {
@@ -441,10 +459,13 @@ final class MainViewController: NSViewController {
             subscribeToTabContent(of: tabViewModel)
         }
 
-        selectedTabViewModelForHistoryViewOnboardingCancellable = tabCollectionViewModel.$selectedTabViewModel.dropFirst().sink { [weak self] _ in
-            guard let self else { return }
-            navigationBarViewController.presentHistoryViewOnboardingIfNeeded()
-        }
+        selectedTabViewModelForHistoryViewOnboardingCancellable = tabCollectionViewModel.$selectedTabViewModel
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                navigationBarViewController.presentHistoryViewOnboardingIfNeeded()
+            }
     }
 
     private func subscribeToTitleChange(of selectedTabViewModel: TabViewModel?) {
@@ -840,7 +861,7 @@ extension MainViewController: BrowserTabViewControllerDelegate {
                 .contains { mainWindowController -> Bool in
                     mainWindowController.mainViewController !== self
                     && mainWindowController.mainViewController.isBurner == false
-                    && mainWindowController.window?.isPopUpWindow == false
+                    && !mainWindowController.mainViewController.isInPopUpWindow
                 }
         }()
 

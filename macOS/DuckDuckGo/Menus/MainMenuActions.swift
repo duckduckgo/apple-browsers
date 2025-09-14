@@ -976,7 +976,7 @@ extension MainViewController {
 
     @objc func toggleDownloads(_ sender: Any) {
         var navigationBarViewController = self.navigationBarViewController
-        if view.window?.isPopUpWindow == true {
+        if isInPopUpWindow {
             if let vc = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.navigationBarViewController {
                 navigationBarViewController = vc
             } else {
@@ -1038,8 +1038,8 @@ extension MainViewController {
     }
 
     @objc func home(_ sender: Any?) {
-        guard view.window?.isPopUpWindow == false,
-            let (tab, _) = getActiveTabAndIndex(), tab === tabCollectionViewModel.selectedTab else {
+        guard !isInPopUpWindow,
+              let (tab, _) = getActiveTabAndIndex(), tab === tabCollectionViewModel.selectedTab else {
 
             browserTabViewController.openNewTab(with: .newtab)
             return
@@ -1273,6 +1273,10 @@ extension MainViewController {
 
         tabCollectionViewModel.append(tabs: otherTabs, andSelect: false)
         tabCollectionViewModel.tabCollection.localHistoryOfRemovedTabs += otherLocalHistoryOfRemovedTabs
+
+        // Tabs from `otherTabCollectionViewModels` were moved to `tabCollectionViewModel`
+        // clear the collection models so they are empty at `deinit` and no deinit checks assert.
+        otherTabCollectionViewModels.forEach { $0.clearAfterMerge() }
     }
 
     // MARK: - Printing

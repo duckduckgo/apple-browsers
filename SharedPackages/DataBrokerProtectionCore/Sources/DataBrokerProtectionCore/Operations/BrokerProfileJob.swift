@@ -123,6 +123,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         } else {
             filteredAndSortedJobData = jobsData
                 .excludingUserRemoved()
+                .excludingOptOutsWithEmailConfirmationBeingHalted()
         }
 
         return filteredAndSortedJobData
@@ -244,5 +245,11 @@ private extension Array where Element == BrokerJobData {
 
     func excludingUserRemoved() -> [BrokerJobData] {
         filter { !$0.isRemovedByUser }
+    }
+
+    func excludingOptOutsWithEmailConfirmationBeingHalted() -> [BrokerJobData] {
+        filter { jobData in
+            jobData.historyEvents.max(by: { $0.date < $1.date })?.type != .optOutSubmittedAndAwaitingEmailConfirmation
+        }
     }
 }

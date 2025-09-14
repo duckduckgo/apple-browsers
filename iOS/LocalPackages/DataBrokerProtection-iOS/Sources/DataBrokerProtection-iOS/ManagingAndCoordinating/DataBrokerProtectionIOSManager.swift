@@ -68,6 +68,7 @@ public class DBPIOSInterface {
         func runScheduledJobs(type: JobType,
                               errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                               completionHandler: (() -> Void)?)
+        func runEmailConfirmationJobs() async throws
         func fireWeeklyPixels()
     }
 
@@ -107,6 +108,10 @@ public class DBPIOSInterface {
     protocol WeeklyPixelsDelegate: AnyObject {
         func tryToFireWeeklyPixels()
     }
+
+    protocol OptOutEmailConfirmationHandlingDelegate: AnyObject {
+        func checkForEmailConfirmationData() async
+    }
 }
 
 public final class DataBrokerProtectionIOSManager {
@@ -124,6 +129,7 @@ public final class DataBrokerProtectionIOSManager {
     private let database: DataBrokerProtectionRepository
     private var queueManager: BrokerProfileJobQueueManaging
     private let jobDependencies: BrokerProfileJobDependencyProviding
+    public var emailConfirmationDataService: EmailConfirmationDataServiceProvider?
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let iOSPixelsHandler: EventMapping<IOSPixels>
@@ -156,6 +162,7 @@ public final class DataBrokerProtectionIOSManager {
 
     init(queueManager: BrokerProfileJobQueueManaging,
          jobDependencies: BrokerProfileJobDependencyProviding,
+         emailConfirmationDataService: EmailConfirmationDataServiceProvider,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          iOSPixelsHandler: EventMapping<IOSPixels>,
@@ -171,6 +178,7 @@ public final class DataBrokerProtectionIOSManager {
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
+        self.emailConfirmationDataService = emailConfirmationDataService
         self.authenticationManager = authenticationManager
         self.sharedPixelsHandler = sharedPixelsHandler
         self.iOSPixelsHandler = iOSPixelsHandler
@@ -200,6 +208,10 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
 
     public func appDidBecomeActive() {
         tryToFireWeeklyPixels()
+        
+        Task {
+            await checkForEmailConfirmationData()
+        }
     }
 }
 
@@ -213,11 +225,11 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
     public func getUserProfile() throws -> DataBrokerProtectionCore.DataBrokerProtectionProfile? {
         try database.fetchProfile()
     }
-    
+
     public func getAllDataBrokers() throws -> [DataBrokerProtectionCore.DataBroker] {
         try database.fetchAllDataBrokers()
     }
-    
+
     public func getAllBrokerProfileQueryData() throws -> [DataBrokerProtectionCore.BrokerProfileQueryData] {
         try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
     }
@@ -238,6 +250,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
 
         do {
             try await database.save(profile)
+            await checkForEmailConfirmationData()
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
                 DispatchQueue.main.async {
                     backgroundAssertion.release()
@@ -250,12 +263,12 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
             throw error
         }
     }
-    
+
     public func deleteAllUserProfileData() throws {
         try database.deleteProfileData()
         DataBrokerProtectionSettings(defaults: .dbp).resetBrokerDeliveryData()
     }
-    
+
     public func matchRemovedByUser(with id: Int64) throws {
         try database.matchRemovedByUser(id)
     }
@@ -327,6 +340,11 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         }
     }
 
+    public func runEmailConfirmationJobs() async throws {
+        try await emailConfirmationDataService?.checkForEmailConfirmationData()
+        queueManager.addEmailConfirmationJobs(showWebView: true, jobDependencies: jobDependencies)
+    }
+
     public func fireWeeklyPixels() {
         let eventPixels = DataBrokerProtectionEventPixels(
             database: jobDependencies.database,
@@ -377,6 +395,16 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
                                                   webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
                                                   openURLHandler: quickLinkOpenURLHandler,
                                                   feedbackViewCreator: feedbackViewCreator)
+    }
+}
+
+extension DataBrokerProtectionIOSManager: DBPIOSInterface.OptOutEmailConfirmationHandlingDelegate {
+    func checkForEmailConfirmationData() async {
+        do {
+            try await emailConfirmationDataService?.checkForEmailConfirmationData()
+        } catch {
+            Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
+        }
     }
 }
 
@@ -487,6 +515,9 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
                 task.setTaskCompleted(success: false)
                 return
             }
+
+            await checkForEmailConfirmationData()
+
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
                 Logger.dataBrokerProtection.log("All operations completed in background task")
                 let timeTaken = Date.now.timeIntervalSince(startDate)

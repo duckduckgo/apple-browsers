@@ -1,0 +1,36 @@
+// See https://app.asana.com/1/137249556945/project/1209825025475019/task/1211054087327709
+{
+    m_mac_debug_user_script_load_js_failed: {
+        description: 'Fired when BrowserServicesKit fails to load the contents of a Javascript file, to help investigate the cause of the failure.',
+        owners: ['rachelmcr'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            'errorCode',
+            'errorDomain',
+            'underlyingErrorCode',
+            'underlyingErrorDomain',
+            {
+                key: 'jsFile',
+                description: 'Name of the JS file that failed to load.',
+                type: 'string',
+                enum: [
+                    'autoconsent-bundle',
+                    'autofill',
+                    'autofill-debug',
+                    'contentblockerrules',
+                    'contentScope',
+                    'contentScopeIsolated',
+                    'findinpage',
+                    'fullscreenvideo',
+                    'internal-feedback-autofiller',
+                    'login-form-detection',
+                    'navigatorsharepatch',
+                    'surrogates',
+                ],
+            },
+        ],
+    },
+}

@@ -22,9 +22,11 @@ import XCTest
 
 final class CurrentPackTests: XCTestCase {
     var currentPack: CurrentPack!
+    private var commitChangesStream: AsyncStream<PrivacyStatsPack>!
 
     override func setUp() async throws {
         currentPack = CurrentPack(pack: .init(timestamp: Date.currentPrivacyStatsPackTimestamp), commitDebounce: 10_000_000)
+        makeCommitChangesStream()
     }
 
     func testThatRecordBlockedTrackerUpdatesThePack() async {
@@ -34,26 +36,24 @@ final class CurrentPackTests: XCTestCase {
     }
 
     func testThatRecordBlockedTrackerTriggersCommitChangesEvent() async throws {
-        let packs = try await waitForCommitChangesEvents(for: 100_000_000) {
-            await currentPack.recordBlockedTracker("A")
-        }
+        await currentPack.recordBlockedTracker("A")
+        let pack = try await getCommittedChangesValue()
 
         let companyA = await currentPack.pack.trackers["A"]
         XCTAssertEqual(companyA, 1)
-        XCTAssertEqual(packs.first?.trackers["A"], 1)
+        XCTAssertEqual(pack.trackers["A"], 1)
     }
 
     func testThatMultipleCallsToRecordBlockedTrackerOnlyTriggerOneCommitChangesEvent() async throws {
-        let packs = try await waitForCommitChangesEvents(for: 1000_000_000) {
-            await currentPack.recordBlockedTracker("A")
-            await currentPack.recordBlockedTracker("A")
-            await currentPack.recordBlockedTracker("A")
-            await currentPack.recordBlockedTracker("A")
-            await currentPack.recordBlockedTracker("A")
-        }
+        await currentPack.recordBlockedTracker("A")
+        await currentPack.recordBlockedTracker("A")
+        await currentPack.recordBlockedTracker("A")
+        await currentPack.recordBlockedTracker("A")
+        await currentPack.recordBlockedTracker("A")
 
-        XCTAssertEqual(packs.count, 1)
-        XCTAssertEqual(packs.first?.trackers["A"], 5)
+        let pack = try await getCommittedChangesValue()
+
+        XCTAssertEqual(pack.trackers["A"], 5)
     }
 
     func testThatRecordBlockedTrackerCalledConcurrentlyForTheSameCompanyStoresAllCalls() async {
@@ -75,10 +75,10 @@ final class CurrentPackTests: XCTestCase {
             trackers: ["A": 100, "B": 50, "C": 400]
         )
         currentPack = CurrentPack(pack: pack, commitDebounce: 10_000_000)
+        makeCommitChangesStream()
 
-        let packs = try await waitForCommitChangesEvents(for: 100_000_000) {
-            await currentPack.recordBlockedTracker("A")
-        }
+        await currentPack.recordBlockedTracker("A")
+        let packs = try await getCommittedChangesValues(2)
 
         XCTAssertEqual(packs.count, 2)
         let oldPack = try XCTUnwrap(packs.first)
@@ -103,19 +103,42 @@ final class CurrentPackTests: XCTestCase {
 
     // MARK: - Helpers
 
-    /**
-     * Sets up Combine subscription, then calls the provided block and then waits
-     * for the specific time before cancelling the subscription.
-     * Returns an array of values passed in the published events.
-     */
-    func waitForCommitChangesEvents(for nanoseconds: UInt64, _ block: () async -> Void) async throws -> [PrivacyStatsPack] {
-        var packs: [PrivacyStatsPack] = []
-        let cancellable = currentPack.commitChangesPublisher.sink { packs.append($0) }
+    private struct CommitChangesNotReceivedError: Error {}
 
-        await block()
+    /// Creates an async stream that emits updates to `currentPack.commitChangesPublisher`
+    private func makeCommitChangesStream() {
+        commitChangesStream = AsyncStream { continuation in
+            let cancellable = currentPack.commitChangesPublisher
+                .sink { value in
+                    continuation.yield(value)
+                }
 
-        try await Task.sleep(nanoseconds: nanoseconds)
-        cancellable.cancel()
-        return packs
+            continuation.onTermination = { _ in
+                cancellable.cancel()
+            }
+        }
+    }
+    /// Awaits first event emitted by the commitChanges AsyncStream.
+    private func getCommittedChangesValue() async throws -> PrivacyStatsPack {
+        let values = try await getCommittedChangesValues(1)
+        guard let value = values.first else {
+            throw CommitChangesNotReceivedError()
+        }
+        return value
+    }
+
+    /// Awaits first `count` events emitted by the commitChanges AsyncStream.
+    private func getCommittedChangesValues(_ count: Int) async throws -> [PrivacyStatsPack] {
+        var iterator = commitChangesStream.makeAsyncIterator()
+        var values: [PrivacyStatsPack] = []
+
+        for _ in 0..<count {
+            guard let value = await iterator.next() else {
+                throw CommitChangesNotReceivedError()
+            }
+            values.append(value)
+        }
+
+        return values
     }
 }

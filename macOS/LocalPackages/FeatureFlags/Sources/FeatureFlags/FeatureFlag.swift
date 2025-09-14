@@ -114,6 +114,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1210012162616039?focus=true
     case aiChatTextSummarization
 
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210820085909882?focus=true
+    case aiChatTextTranslation
+
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210921598044116?focus=true
     case aiChatPageContext
 
@@ -241,6 +244,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatGlobalSwitch,
 				.aiChatSidebar,
                 .aiChatTextSummarization,
+                .aiChatTextTranslation,
                 .aiChatPageContext,
                 .shortHistoryMenu,
                 .subscriptionRebranding,
@@ -259,6 +263,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .refactorOfSyncPreferences,
                 .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,
+                .dbpRemoteBrokerDelivery,
                 .subscriptionPurchaseWidePixelMeasurement,
                 .syncFeatureLevel3:
             return true
@@ -269,7 +274,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .dbpRemoteBrokerDelivery,
                 .scheduledSetDefaultBrowserAndAddToDockPrompts:
             return false
         }
@@ -353,6 +357,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatTextSummarization:
             return .remoteReleasable(.subfeature(AIChatSubfeature.textSummarization))
+        case .aiChatTextTranslation:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.textTranslation))
         case .aiChatPageContext:
             return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
         case .osSupportForceUnsupportedMessage:

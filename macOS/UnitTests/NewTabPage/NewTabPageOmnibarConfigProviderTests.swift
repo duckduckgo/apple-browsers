@@ -191,4 +191,25 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
         XCTAssertEqual(events, [true, false, true])
     }
+
+    @MainActor
+    func testCustomizePopoverPresentationCount() throws {
+        let store = try makeStore()
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())
+
+        // Default count should be 0
+        XCTAssertEqual(provider.customizePopoverPresentationCount, 0)
+
+        // Set count to 3 and check
+        provider.customizePopoverPresentationCount = 3
+        XCTAssertEqual(provider.customizePopoverPresentationCount, 3)
+
+        // Recreate provider and check if value is persisted
+        let newProvider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())
+        XCTAssertEqual(newProvider.customizePopoverPresentationCount, 3)
+
+        // Set count beyond threshold and verify showCustomizePopover becomes false
+        newProvider.customizePopoverPresentationCount = 6
+        XCTAssertFalse(newProvider.showCustomizePopover)
+    }
 }

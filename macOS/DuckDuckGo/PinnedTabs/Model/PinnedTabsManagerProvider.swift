@@ -142,7 +142,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
         var isActiveWindow: Bool = forceActive ?? (windowControllerManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel === tabCollectionViewModel)
 
         if isFirstWindow, !shouldMigrate, let cachedTabs = closedWindowPinnedTabCache {
-            newPinnedTabsManager.setUp(with: cachedTabs)
+            newPinnedTabsManager.setUp(movingTabsFrom: cachedTabs)
             closedWindowPinnedTabCache = nil
         }
 

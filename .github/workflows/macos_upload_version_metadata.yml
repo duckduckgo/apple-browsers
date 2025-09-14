@@ -1,0 +1,141 @@
+name: macOS - Upload Version Metadata
+
+on:
+  workflow_dispatch:
+    inputs:
+      is_critical:
+        description: 'Mark this release as critical (for hotfixes)'
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      is_critical:
+        description: 'Mark this release as critical'
+        type: boolean
+        default: false
+    secrets:
+      AWS_ACCESS_KEY_ID_RELEASE_S3:
+        required: true
+      AWS_SECRET_ACCESS_KEY_RELEASE_S3:
+        required: true
+
+defaults:
+  run:
+    working-directory: macOS
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  upload-metadata:
+    name: Upload Release Metadata to CDN
+    runs-on: macos-15
+    timeout-minutes: 5
+
+    env:
+      S3_PATH: s3://${{ vars.RELEASE_BUCKET_NAME }}/${{ vars.RELEASE_BUCKET_PREFIX }}/
+      CDN_PATH: ${{ vars.DMG_URL_ROOT }}
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Extract version and build number
+        id: version-info
+        run: |
+          # Extract version and build number from configuration files
+          VERSION=$(cut -d ' ' -f 3 < Configuration/Version.xcconfig)
+          BUILD=$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
+          # Validate that we got the version info
+          if [[ -z "$VERSION" ]]; then
+            echo "Error: Failed to extract version from Configuration/Version.xcconfig"
+            exit 1
+          fi
+          
+          if [[ -z "$BUILD" ]]; then
+            echo "Error: Failed to extract build number from Configuration/BuildNumber.xcconfig"
+            exit 1
+          fi
+          
+          echo "Extracted version: $VERSION"
+          echo "Extracted build: $BUILD"
+          echo "Generated timestamp: $TIMESTAMP"
+          
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "build=${BUILD}" >> $GITHUB_OUTPUT
+          echo "timestamp=${TIMESTAMP}" >> $GITHUB_OUTPUT
+
+      - name: Download existing metadata (if exists)
+        continue-on-error: true
+        run: |
+          echo "Checking for existing metadata at ${CDN_PATH}release_metadata.json"
+          if curl -fLSs "${CDN_PATH}release_metadata.json" --output existing_metadata.json; then
+            echo "✅ Found existing metadata file"
+            echo "Current content:"
+            cat existing_metadata.json | jq .
+          else
+            echo "❌ No existing metadata found, will create new file"
+            echo "{}" > existing_metadata.json
+          fi
+
+      - name: Generate updated metadata JSON
+        run: |
+          echo "Generating updated metadata JSON..."
+          jq --arg version "${{ steps.version-info.outputs.version }}" \
+             --arg build "${{ steps.version-info.outputs.build }}" \
+             --arg timestamp "${{ steps.version-info.outputs.timestamp }}" \
+             --argjson critical "${{ inputs.is_critical || false }}" \
+             '.latest_appstore_version = {
+               "latest_version": $version,
+               "build_number": $build,
+               "release_date": $timestamp,
+               "is_critical": $critical
+             }' existing_metadata.json > release_metadata.json
+          
+          echo "Generated metadata:"
+          cat release_metadata.json | jq .
+          
+          # Validate JSON structure
+          if ! jq -e '.latest_appstore_version.latest_version' release_metadata.json > /dev/null; then
+            echo "Error: Generated JSON is missing required latest_version field"
+            exit 1
+          fi
+
+      - name: Upload metadata to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
+          AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+        run: |
+          echo "Uploading release_metadata.json to S3..."
+          aws s3 cp release_metadata.json "${S3_PATH}release_metadata.json" --acl public-read
+          
+          echo "✅ Upload completed successfully"
+      - name: Summary
+        run: |
+          echo "🎉 Successfully updated macOS release metadata"
+          echo "Version: ${{ steps.version-info.outputs.version }}"
+          echo "Build: ${{ steps.version-info.outputs.build }}"
+          echo "Release Date: ${{ steps.version-info.outputs.timestamp }}"
+          echo "Is Critical: ${{ inputs.is_critical || false }}"
+          echo "📍 Available at: ${CDN_PATH}release_metadata.json"
+          
+          # Add to GitHub Step Summary
+          {
+            echo "## 📱 macOS Version Metadata Updated"
+            echo ""
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| **Version** | \`${{ steps.version-info.outputs.version }}\` |"
+            echo "| **Build Number** | \`${{ steps.version-info.outputs.build }}\` |"
+            echo "| **Release Date** | \`${{ steps.version-info.outputs.timestamp }}\` |"
+            echo "| **Is Critical** | \`${{ inputs.is_critical || false }}\` |"
+            echo "| **CDN URL** | [release_metadata.json](${CDN_PATH}release_metadata.json) |"
+            echo ""
+            echo "✅ Metadata successfully uploaded to CDN"
+          } >> $GITHUB_STEP_SUMMARY

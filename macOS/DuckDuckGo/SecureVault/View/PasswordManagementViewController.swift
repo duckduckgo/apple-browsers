@@ -287,6 +287,8 @@ final class PasswordManagementViewController: NSViewController {
             listView.frame = listContainer.bounds
             listContainer.addSubview(listView)
         }
+
+        refetchAndPromptForAuthentication(text: "", selectItemMatchingDomain: domain, clearWhenNoMatches: true)
     }
 
     override func viewDidAppear() {
@@ -295,10 +297,6 @@ final class PasswordManagementViewController: NSViewController {
         if !isDirty {
             itemModel?.clearSecureVaultModel()
         }
-
-        refetchWithText("", selectItemMatchingDomain: domain, clearWhenNoMatches: true)
-
-        promptForAuthenticationIfNecessary()
     }
 
     override func viewDidDisappear() {
@@ -306,12 +304,25 @@ final class PasswordManagementViewController: NSViewController {
         listView?.removeFromSuperview()
     }
 
-    private func promptForAuthenticationIfNecessary() {
+    private func refetchAndPromptForAuthentication(text: String, selectItemMatchingDomain: String?, clearWhenNoMatches: Bool) {
+        refetchWithText("", selectItemMatchingDomain: domain, clearWhenNoMatches: true) { [weak self] items in
+            self?.promptForAuthenticationIfNecessary(items: items)
+        }
+    }
+
+    private func promptForAuthenticationIfNecessary(items: [SecureVaultItem]) {
         guard AppVersion.runType != .uiTests else {
             toggleLockScreen(hidden: true)
             return
         }
+        guard !items.isEmpty else {
+            toggleLockScreen(hidden: true)
+            return
+        }
+        promptForAuthentication()
+    }
 
+    private func promptForAuthentication() {
         let authenticator = DeviceAuthenticator.shared
         toggleLockScreen(hidden: !authenticator.requiresAuthentication)
 
@@ -373,12 +384,12 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     @IBAction func deviceAuthenticationRequested(_ sender: NSButton) {
-        promptForAuthenticationIfNecessary()
+        promptForAuthentication()
     }
 
     @IBAction func toggleLock(_ sender: Any) {
         if DeviceAuthenticator.shared.requiresAuthentication {
-            promptForAuthenticationIfNecessary()
+            promptForAuthentication()
         } else {
             DeviceAuthenticator.shared.lock()
         }
@@ -387,7 +398,7 @@ final class PasswordManagementViewController: NSViewController {
     private func refetchWithText(_ text: String,
                                  selectItemMatchingDomain: String? = nil,
                                  clearWhenNoMatches: Bool = false,
-                                 completion: (() -> Void)? = nil) {
+                                 completion: (([SecureVaultItem]) -> Void)? = nil) {
         let category = SecureVaultSorting.Category.allItems
         fetchSecureVaultItems(category: category) { [weak self] items in
             self?.listModel?.update(items: items)
@@ -407,7 +418,7 @@ final class PasswordManagementViewController: NSViewController {
                 }
             }
 
-            completion?()
+            completion?(items)
         }
     }
 
@@ -592,7 +603,7 @@ final class PasswordManagementViewController: NSViewController {
 
             itemModel?.cancel()
             if isNew {
-                refetchWithText(searchField.stringValue) { [weak self] in
+                refetchWithText(searchField.stringValue) { [weak self] _ in
                     self?.syncModelsOnCredentials(savedCredentials, select: true)
                 }
                 NotificationCenter.default.post(name: .autofillSaveEvent, object: nil, userInfo: nil)
@@ -625,7 +636,7 @@ final class PasswordManagementViewController: NSViewController {
 
             itemModel?.cancel()
             if isNew {
-                refetchWithText(searchField.stringValue) { [weak self] in
+                refetchWithText(searchField.stringValue) { [weak self] _ in
                     self?.syncModelsOnIdentity(storedIdentity, select: true)
                 }
             } else {
@@ -647,7 +658,7 @@ final class PasswordManagementViewController: NSViewController {
 
             itemModel?.cancel()
             if isNew {
-                refetchWithText(searchField.stringValue) { [weak self] in
+                refetchWithText(searchField.stringValue) { [weak self] _ in
                     self?.syncModelsOnNote(storedNote, select: true)
                 }
             } else {
@@ -669,7 +680,7 @@ final class PasswordManagementViewController: NSViewController {
 
             itemModel?.cancel()
             if isNew {
-                refetchWithText(searchField.stringValue) { [weak self] in
+                refetchWithText(searchField.stringValue) { [weak self] _ in
                     self?.syncModelsOnCreditCard(storedCard, select: true)
                 }
             } else {
@@ -775,7 +786,7 @@ final class PasswordManagementViewController: NSViewController {
 
     private func refreshData(completion: (() -> Void)? = nil) {
         self.itemModel?.clearSecureVaultModel()
-        self.refetchWithText(self.searchField.stringValue) {
+        self.refetchWithText(self.searchField.stringValue) { _ in
             completion?()
         }
         self.postChange()

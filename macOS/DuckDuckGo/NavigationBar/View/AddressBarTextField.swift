@@ -89,6 +89,20 @@ final class AddressBarTextField: NSTextField {
         registerForDraggedTypes([.string, .URL, .fileURL])
     }
 
+    deinit {
+#if DEBUG
+        // Check that suggestion window deallocates
+        if let suggestionWindow = suggestionWindowController?.window {
+            suggestionWindow.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+
+        // Check that suggestion view controller deallocates
+        if isLazyVar(named: "suggestionViewController", initializedIn: self) {
+            suggestionViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+#endif
+    }
+
     override func mouseDown(with event: NSEvent) {
         super.mouseDown(with: event)
         currentEditor()?.selectAll(self)

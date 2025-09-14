@@ -95,7 +95,13 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
-        await windowControllersManager.mainWindowController?.mainViewController.closeTab(nil)
+        let isSidebar = await message.messageWebView?.url?.hasAIChatSidebarPlacementParameter == true
+
+        if isSidebar {
+            await windowControllersManager.mainWindowController?.mainViewController.aiChatSidebarPresenter.collapseSidebar(withAnimation: true)
+        } else {
+            await windowControllersManager.mainWindowController?.mainViewController.closeTab(nil)
+        }
         return nil
     }
 

@@ -31,7 +31,15 @@ public enum WidePixelFailureEvent {
     case discardFailed(pixelName: String, error: Error)
 }
 
-extension WidePixelFailureEvent: PixelKitEvent {
+extension WidePixelFailureEvent: PixelKitEvent, PixelKitEventWithCustomPrefix {
+    public var namePrefix: String {
+#if os(macOS)
+        return "m_mac_"
+#elseif os(iOS)
+        return "m_"
+#endif
+    }
+
     public var name: String {
         switch self {
         case .saveFailed: return "wide_pixel_save_failed"

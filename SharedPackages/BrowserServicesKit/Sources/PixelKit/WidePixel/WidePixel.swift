@@ -230,7 +230,27 @@ public final class WidePixel: WidePixelManaging {
 
         pixelKit.fire(
             widePixelEvent,
-            frequency: .dailyAndStandard,
+            frequency: .daily,
+            withHeaders: nil,
+            withAdditionalParameters: nil,
+            allowedQueryReservedCharacters: nil,
+            includeAppVersionParameter: true,
+            includePixelSourceParameter: false,
+            onComplete: { success, error in
+                if success {
+                    Self.logger.info("Daily wide pixel pixel fired successfully: \(finalPixelName, privacy: .public)")
+                } else {
+                    Self.logger.error("Daily wide pixel failed to fire: \(finalPixelName, privacy: .public), error: \(String(describing: error), privacy: .public)")
+                }
+
+                // Avoid calling the completion handler, instead call it for the standard event only - otherwise
+                // we can't wrap this in a continuation easily
+            }
+        )
+
+        pixelKit.fire(
+            widePixelEvent,
+            frequency: .standard,
             withHeaders: nil,
             withAdditionalParameters: nil,
             allowedQueryReservedCharacters: nil,

@@ -30,7 +30,7 @@ public final class DNSTester: DNSTesting {
     }
 
     public func performTest(configuration: TestConfiguration,
-                    progressCallback: ((String) -> Void)? = nil) async throws -> DNSResult {
+                            progressCallback: ((String) -> Void)? = nil) async throws -> DNSResult {
         progressCallback?(Constants.progressMessage)
 
         var resolutionTimes: [Double] = []

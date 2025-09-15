@@ -26,7 +26,12 @@ public struct HttpResponseResult {  // Renamed from LatencyResult
         return p95 - p50
     }
 
-    public init(averageResponseTime: Double, responseVariance: Double, failureRate: Double, sampleCount: Int, p50: Double? = nil, p95: Double? = nil) {
+    public init(averageResponseTime: Double,
+                responseVariance: Double,
+                failureRate: Double,
+                sampleCount: Int,
+                p50: Double? = nil,
+                p95: Double? = nil) {
         self.averageResponseTime = averageResponseTime
         self.responseVariance = responseVariance
         self.failureRate = failureRate

@@ -12,5 +12,14 @@
     "sweetpad.build.allowProvisioningUpdates": false,
     "sweetpad.build.xcbeautifyEnabled": true,
     "sweetpad.xcodebuildserver.autogenerate": true,
-    "lldb.library": "/Applications/Xcode.app/Contents/SharedFrameworks/LLDB.framework/Versions/A/LLDB"
+    "lldb.library": "/Applications/Xcode.app/Contents/SharedFrameworks/LLDB.framework/Versions/A/LLDB",
+    "workbench.colorCustomizations": {
+        "editorIndentGuide.background1": "#1e232a",
+        "editorIndentGuide.activeBackground1": "#272c32",
+        "editor.background": "#14181D",
+        "titleBar.activeBackground": "#4A4F9E",
+        "titleBar.inactiveBackground": "#171c6b",
+        "titleBar.activeForeground": "#FFFFFF",
+        "titleBar.inactiveForeground": "#FFFFFF"
+    }
 }

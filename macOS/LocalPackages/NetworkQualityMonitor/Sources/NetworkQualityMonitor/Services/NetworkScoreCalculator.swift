@@ -107,9 +107,9 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
     }
 
     public func calculateOverallScore(httpResponse: HttpResponseResult,
-                              bandwidth: BandwidthResult,
-                              dns: DNSResult,
-                              bufferBloat: BufferBloatResult) -> NetworkScore {
+                                       bandwidth: BandwidthResult,
+                                       dns: DNSResult,
+                                       bufferBloat: BufferBloatResult) -> NetworkScore {
 
         // Calculate individual component scores (0-100 scale)
         let httpResponseScore = calculateHttpResponseScore(httpResponse)
@@ -195,7 +195,7 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
         case ..<Constants.varianceGoodThreshold: return 0      // <20ms std dev: No penalty
         case Constants.varianceGoodThreshold..<Constants.varianceFairThreshold: return 15   // 20-40ms: Minor penalty
         case Constants.varianceFairThreshold..<Constants.variancePoorThreshold: return 30   // 40-80ms: Moderate penalty
-        case Constants.variancePoorThreshold..<Constants.varianceVeryPoorThreshold: return 45  // 80-150ms: Heavy penalty
+        case Constants.variancePoorThreshold..<Constants.varianceVeryPoorThreshold: return 45 // 80-150ms: Heavy
         default: return 60  // >150ms std dev: Severe penalty
         }
     }
@@ -256,9 +256,9 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
     }
 
     private func calculateWeightedScore(httpResponseScore: Double,
-                                       bandwidthScore: Double,
-                                       dnsScore: Double,
-                                       bufferBloatScore: Double) -> Double {
+                                         bandwidthScore: Double,
+                                         dnsScore: Double,
+                                         bufferBloatScore: Double) -> Double {
         // Weights optimized for browser performance testing decisions:
         // - HTTP Response (50%): Page load latency & consistency most critical
         // - Bandwidth (35%): Resource download speed for images, JS, CSS  

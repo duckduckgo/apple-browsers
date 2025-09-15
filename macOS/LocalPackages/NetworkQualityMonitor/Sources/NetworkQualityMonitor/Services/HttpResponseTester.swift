@@ -40,7 +40,7 @@ public final class HttpResponseTester: HttpResponseTesting {
     }
 
     public func performTest(configuration: TestConfiguration,
-                    progressCallback: ((String) -> Void)? = nil) async throws -> HttpResponseResult {
+                            progressCallback: ((String) -> Void)? = nil) async throws -> HttpResponseResult {
         progressCallback?(Constants.progressMessage)
 
         // WARM-UP PHASE: Perform one request to each endpoint
@@ -77,8 +77,8 @@ public final class HttpResponseTester: HttpResponseTesting {
     // MARK: - Private Methods
 
     private func performInterleavedMeasurements(endpoints: [URL],
-                                               samplesPerEndpoint: Int,
-                                               timeout: TimeInterval) async -> [EndpointMeasurement] {
+                                                 samplesPerEndpoint: Int,
+                                                 timeout: TimeInterval) async -> [EndpointMeasurement] {
         // Initialize storage for measurements
         var measurementsByEndpoint: [URL: [Double]] = [:]
         for endpoint in endpoints {
@@ -103,10 +103,8 @@ public final class HttpResponseTester: HttpResponseTesting {
 
         // Convert to EndpointMeasurement array
         var allMeasurements: [EndpointMeasurement] = []
-        for (endpoint, measurements) in measurementsByEndpoint {
-            if !measurements.isEmpty {
-                allMeasurements.append(EndpointMeasurement(endpoint: endpoint, measurements: measurements))
-            }
+        for (endpoint, measurements) in measurementsByEndpoint where !measurements.isEmpty {
+            allMeasurements.append(EndpointMeasurement(endpoint: endpoint, measurements: measurements))
         }
 
         return allMeasurements
@@ -192,18 +190,18 @@ public final class HttpResponseTester: HttpResponseTesting {
         let stdDev = sqrt(variance)
 
         // Coefficient of Variation
-        let cv = mean > 0 ? stdDev / mean : 0
+        let coefficientOfVariation = mean > 0 ? stdDev / mean : 0
 
         return SiteStatistics(
             median: median,
             mean: mean,
             standardDeviation: stdDev,
-            coefficientOfVariation: cv
+            coefficientOfVariation: coefficientOfVariation
         )
     }
 
     private func calculateAdjustedResponseTime(bestSiteStats: SiteStatistics,
-                                              allSiteStats: [SiteStatistics]) -> Double {
+                                                allSiteStats: [SiteStatistics]) -> Double {
         // Calculate the MEDIAN of all site medians
         // This properly reflects real-world latency expectations:
         // 
@@ -228,9 +226,9 @@ public final class HttpResponseTester: HttpResponseTesting {
         return overallMedian
     }
 
-    private func percentile(_ sorted: [Double], _ p: Double) -> Double? {
+    private func percentile(_ sorted: [Double], _ percentileValue: Double) -> Double? {
         guard !sorted.isEmpty else { return nil }
-        let index = Int(Double(sorted.count - 1) * p)
+        let index = Int(Double(sorted.count - 1) * percentileValue)
         return sorted[index]
     }
 

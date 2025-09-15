@@ -52,7 +52,7 @@ public final class BufferBloatTester: BufferBloatTesting {
     }
 
     public func performTest(configuration: TestConfiguration,
-                    progressCallback: ((String) -> Void)? = nil) async throws -> BufferBloatResult {
+                            progressCallback: ((String) -> Void)? = nil) async throws -> BufferBloatResult {
         progressCallback?(Constants.progressMessage)
 
         // Measure baseline latency

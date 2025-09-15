@@ -211,36 +211,4 @@ public final class BandwidthTester: BandwidthTesting {
         return 0
     }
 
-    // Legacy method kept for compatibility if needed
-    private func measureUpload(to url: URL, data: Data, chunks: Int, timeout: TimeInterval) async -> Double {
-        var request = URLRequest(url: url)
-        request.httpMethod = Constants.httpMethodPost
-        request.timeoutInterval = timeout
-        request.setValue(Constants.applicationOctetStream, forHTTPHeaderField: Constants.contentTypeHeader)
-
-        var totalBytes = 0
-        var totalDuration: TimeInterval = 0
-
-        for _ in 0..<chunks {
-            let startTime = CFAbsoluteTimeGetCurrent()
-
-            do {
-                let (_, response) = try await session.upload(for: request, from: data)
-                let endTime = CFAbsoluteTimeGetCurrent()
-
-                if let httpResponse = response as? HTTPURLResponse,
-                   200...299 ~= httpResponse.statusCode {
-                    totalBytes += data.count
-                    totalDuration += (endTime - startTime)
-                }
-            } catch {
-                // Upload failed, continue with other chunks
-            }
-        }
-
-        guard totalDuration > 0 else { return 0 }
-
-        let speedMbps = Double(totalBytes) * Constants.megabitsPerByte / totalDuration
-        return speedMbps
-    }
 }

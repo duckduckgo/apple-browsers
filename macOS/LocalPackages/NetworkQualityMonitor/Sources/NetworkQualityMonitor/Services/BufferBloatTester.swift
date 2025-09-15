@@ -84,11 +84,11 @@ public final class BufferBloatTester: BufferBloatTesting {
 
     // MARK: - Private Methods
 
-    private func measureBaselineLatency(configuration: TestConfiguration) async throws -> Double {
+    private func measureLatency(sampleCount: Int, configuration: TestConfiguration) async throws -> Double {
         var measurements: [Double] = []
 
-        // Take baseline measurements for stability
-        for _ in 0..<Constants.baselineSampleCount {
+        // Take measurements
+        for _ in 0..<sampleCount {
             if let latency = try? await latencyMeasurer.measureSingle(configuration: configuration) {
                 measurements.append(latency)
             }
@@ -103,23 +103,12 @@ public final class BufferBloatTester: BufferBloatTesting {
         return NetworkTestConstants.median(of: measurements) ?? 0
     }
 
+    private func measureBaselineLatency(configuration: TestConfiguration) async throws -> Double {
+        return try await measureLatency(sampleCount: Constants.baselineSampleCount, configuration: configuration)
+    }
+
     private func measureLoadedLatency(configuration: TestConfiguration) async throws -> Double {
-        var measurements: [Double] = []
-
-        // Take measurements under load
-        for _ in 0..<Constants.loadedSampleCount {
-            if let latency = try? await latencyMeasurer.measureSingle(configuration: configuration) {
-                measurements.append(latency)
-            }
-            try? await Task.sleep(nanoseconds: Constants.sampleDelay)
-        }
-
-        guard !measurements.isEmpty else {
-            throw NetworkError.insufficientData
-        }
-
-        // Use median for stability
-        return NetworkTestConstants.median(of: measurements) ?? 0
+        return try await measureLatency(sampleCount: Constants.loadedSampleCount, configuration: configuration)
     }
 
     private func createDownloadTask(configuration: TestConfiguration) -> Task<Void, Never> {

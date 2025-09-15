@@ -38,15 +38,20 @@ public final class DNSTester: DNSTesting {
         let totalTests = configuration.dnsTestDomains.count
 
         for domain in configuration.dnsTestDomains {
-            let startTime = CFAbsoluteTimeGetCurrent()
+            // Run DNS resolution with user-initiated priority to avoid priority inversion
+            let result = await Task(priority: .userInitiated) {
+                let startTime = CFAbsoluteTimeGetCurrent()
+                let host = CFHostCreateWithName(nil, domain as CFString).takeRetainedValue()
 
-            let host = CFHostCreateWithName(nil, domain as CFString).takeRetainedValue()
-            var error: CFStreamError = CFStreamError()
-
-            if CFHostStartInfoResolution(host, .addresses, &error) {
+                let resolved = CFHostStartInfoResolution(host, .addresses, nil)
                 let endTime = CFAbsoluteTimeGetCurrent()
                 let resolutionTime = (endTime - startTime) * 1000 // Convert to ms
-                resolutionTimes.append(resolutionTime)
+
+                return (resolved: resolved, time: resolutionTime)
+            }.value
+
+            if result.resolved {
+                resolutionTimes.append(result.time)
             } else {
                 failures += 1
             }
@@ -59,11 +64,11 @@ public final class DNSTester: DNSTesting {
             throw NetworkError.allTestsFailed
         }
 
-        let averageTime = resolutionTimes.reduce(0, +) / Double(resolutionTimes.count)
+        let medianTime = NetworkTestConstants.median(of: resolutionTimes) ?? 0
         let failureRate = Double(failures) / Double(totalTests)
 
         return DNSResult(
-            averageResolutionTime: averageTime,
+            averageResolutionTime: medianTime,
             failureRate: failureRate
         )
     }

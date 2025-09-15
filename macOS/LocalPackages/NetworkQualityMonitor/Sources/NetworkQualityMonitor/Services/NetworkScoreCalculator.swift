@@ -205,7 +205,7 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
         let downloadScore = scoreDownloadSpeed(bandwidth.downloadSpeedMbps)
         let uploadScore = scoreUploadSpeed(bandwidth.uploadSpeedMbps)
 
-        // Weight download more heavily (70/30 split)
+        // Weight download more heavily (85/15 split)
         return downloadScore * Constants.downloadWeight + uploadScore * Constants.uploadWeight
     }
 

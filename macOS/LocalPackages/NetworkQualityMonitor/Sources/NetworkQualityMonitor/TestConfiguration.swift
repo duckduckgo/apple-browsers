@@ -66,7 +66,7 @@ public struct TestConfiguration {
         ],
         bandwidthTestURLs: [
             URL(string: "https://speed.cloudflare.com/__down?bytes=26214400")!,  // 25MB
-            URL(string: "https://proof.ovh.net/files/10Mb.dat")!,                // 10MB  
+            URL(string: "https://proof.ovh.net/files/10Mb.dat")!,                // 10MB
             URL(string: "https://speed.hetzner.de/10MB.bin")!                   // 10MB
             // Total: ~25MB for fast connections, less for slow (adaptive)
         ],
@@ -116,5 +116,117 @@ public struct TestConfiguration {
         self.bandwidthTestTimeout = bandwidthTestTimeout
         self.uploadTestTimeout = uploadTestTimeout
         self.connectivityCheckURL = connectivityCheckURL
+    }
+}
+
+// MARK: - Modular Configuration Types
+
+/// Configuration specific to HTTP response testing
+public struct HttpResponseConfig {
+    public let testURLs: [URL]
+    public let samplesPerEndpoint: Int
+    public let timeout: TimeInterval
+
+    public init(testURLs: [URL], samplesPerEndpoint: Int, timeout: TimeInterval) {
+        self.testURLs = testURLs
+        self.samplesPerEndpoint = samplesPerEndpoint
+        self.timeout = timeout
+    }
+}
+
+/// Configuration specific to bandwidth testing
+public struct BandwidthConfig {
+    public let downloadURLs: [URL]
+    public let uploadURLs: [URL]
+    public let runsPerServer: Int
+    public let uploadChunkSize: Int
+    public let uploadChunkCount: Int
+    public let downloadTimeout: TimeInterval
+    public let uploadTimeout: TimeInterval
+
+    public init(
+        downloadURLs: [URL],
+        uploadURLs: [URL],
+        runsPerServer: Int,
+        uploadChunkSize: Int,
+        uploadChunkCount: Int,
+        downloadTimeout: TimeInterval,
+        uploadTimeout: TimeInterval
+    ) {
+        self.downloadURLs = downloadURLs
+        self.uploadURLs = uploadURLs
+        self.runsPerServer = runsPerServer
+        self.uploadChunkSize = uploadChunkSize
+        self.uploadChunkCount = uploadChunkCount
+        self.downloadTimeout = downloadTimeout
+        self.uploadTimeout = uploadTimeout
+    }
+}
+
+/// Configuration specific to DNS testing
+public struct DNSConfig {
+    public let testDomains: [String]
+
+    public init(testDomains: [String]) {
+        self.testDomains = testDomains
+    }
+}
+
+/// Configuration specific to buffer bloat testing
+public struct BufferBloatConfig {
+    public let downloadURL: URL?
+
+    public init(downloadURL: URL?) {
+        self.downloadURL = downloadURL
+    }
+}
+
+/// Configuration specific to connectivity checking
+public struct ConnectivityConfig {
+    public let checkURL: URL
+
+    public init(checkURL: URL) {
+        self.checkURL = checkURL
+    }
+}
+
+// MARK: - Configuration Extraction Methods
+
+public extension TestConfiguration {
+    /// Extract HTTP response testing configuration
+    func httpResponseConfig() -> HttpResponseConfig {
+        HttpResponseConfig(
+            testURLs: latencyTestURLs,
+            samplesPerEndpoint: latencySamplesPerEndpoint,
+            timeout: latencyTestTimeout
+        )
+    }
+
+    /// Extract bandwidth testing configuration
+    func bandwidthConfig() -> BandwidthConfig {
+        BandwidthConfig(
+            downloadURLs: bandwidthTestURLs,
+            uploadURLs: uploadTestURLs,
+            runsPerServer: bandwidthRunsPerServer,
+            uploadChunkSize: uploadChunkSize,
+            uploadChunkCount: uploadChunkCount,
+            downloadTimeout: bandwidthTestTimeout,
+            uploadTimeout: uploadTestTimeout
+        )
+    }
+
+    /// Extract DNS testing configuration
+    func dnsConfig() -> DNSConfig {
+        DNSConfig(testDomains: dnsTestDomains)
+    }
+
+    /// Extract buffer bloat testing configuration
+    func bufferBloatConfig() -> BufferBloatConfig {
+        BufferBloatConfig(downloadURL: bandwidthTestURLs.first)
+    }
+
+    /// Extract connectivity checking configuration
+    func connectivityConfig() -> ConnectivityConfig {
+        ConnectivityConfig(checkURL: connectivityCheckURL)
     }
 }

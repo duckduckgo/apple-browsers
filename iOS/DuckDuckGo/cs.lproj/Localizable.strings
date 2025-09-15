@@ -2290,6 +2290,30 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Zkratky";
 
+/* Confirm button for the new address bar picker */
+"new.address.bar.picker.confirm" = "Potvrdit";
+
+/* Description text for the new address bar picker modal */
+"new.address.bar.picker.description" = "Funkce AI jsou vždycky volitelné.";
+
+/* Footer text for the new address bar picker */
+"new.address.bar.picker.footer" = "Úpravy provedeš v Nastavení > Funkce AI";
+
+/* Not now button for the new address bar picker */
+"new.address.bar.picker.not.now" = "Teď ne";
+
+/* Option for search and AI in the new address bar picker */
+"new.address.bar.picker.search.and.ai" = "Vyhledávání a Duck.ai";
+
+/* Option for search only in the new address bar picker */
+"new.address.bar.picker.search.only" = "Jen vyhledávání";
+
+/* Subtitle for the new address bar picker modal */
+"new.address.bar.picker.subtitle" = "Přepínat mezi vyhledáváním a AI chatem";
+
+/* Title for the new address bar picker modal */
+"new.address.bar.picker.title" = "Možnost adresního řádku";
+
 /* No comment provided by engineer. */
 "No results found" = "Nebyly nalezeny žádné výsledky";
 
@@ -2733,15 +2757,6 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Zobrazovat celou adresu webu";
-
-/* Caption indicating the default option in the AI experimental picker */
-"settings.ai.experimental.picker.default" = "(Výchozí)";
-
-/* Caption indicating the experimental option in the AI experimental picker */
-"settings.ai.experimental.picker.experimental" = "(Experimentální)";
-
-/* Footer under the AI experimental picker, descriptive sentence without link */
-"settings.ai.experimental.picker.footer" = "Vyzkoušej naši experimentální možnost zeptat se Duck.ai přímo z adresního řádku.";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Vyhledávání a Duck.ai";

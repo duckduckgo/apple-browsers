@@ -49,9 +49,11 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
 
     public func load<T: WidePixelData>(globalID: String) throws -> T {
         let key = storageKey(T.self, globalID: globalID)
+
         guard let data = defaults.data(forKey: key) else {
-            throw WidePixelError.flowNotFound(pixelName: "\(T.pixelName) with global ID \(globalID)")
+            throw WidePixelError.flowNotFound(pixelName: T.pixelName)
         }
+
         do {
             return try JSONDecoder().decode(T.self, from: data)
         } catch {
@@ -61,7 +63,7 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
 
     public func update<T: WidePixelData>(_ data: T) throws {
         guard defaults.data(forKey: storageKey(T.self, globalID: data.globalData.id)) != nil else {
-            throw WidePixelError.flowNotFound(pixelName: "\(T.pixelName) with global ID \(data.globalData.id)")
+            throw WidePixelError.flowNotFound(pixelName: T.pixelName)
         }
 
         try save(data)

@@ -63,6 +63,11 @@ public struct NetworkProtectionStatusView: View {
                     .transition(.slide)
             }
 
+            if let environmentWarningViewModel = model.environmentWarningViewModel {
+                Spacer()
+                WarningView(model: environmentWarningViewModel)
+            }
+
             Spacer()
 
             TunnelControllerView(model: model.tunnelControllerViewModel)

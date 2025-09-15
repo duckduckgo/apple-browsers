@@ -21,6 +21,8 @@ import Common
 import os.log
 
 public struct DataBrokerScheduleConfig: Codable, Sendable {
+    public static let `default` = DataBrokerScheduleConfig(retryError: 48, confirmOptOutScan: 72, maintenanceScan: 120, maxAttempts: -1)
+
     let retryError: Int
     let confirmOptOutScan: Int
     let maintenanceScan: Int
@@ -30,6 +32,14 @@ public struct DataBrokerScheduleConfig: Codable, Sendable {
     // This value should be less than `confirmOptOutScan` to ensure the next attempt occurs before
     // the confirmation scan.
     var hoursUntilNextOptOutAttempt: Int {
+        maintenanceScan
+    }
+
+    // Used for opt-outs with email confirmation step following the decoupling changes
+    // We should allow sufficient time for email confirmation to complete while ensuring
+    // the opt-out can be retried if the email confirmation process fails
+    // https://app.asana.com/1/137249556945/project/481882893211075/task/1211046211583710?focus=true
+    var hoursUntilNextAttemptForOptOutWithEmailConfirmation: Int {
         maintenanceScan
     }
 }
@@ -201,7 +211,7 @@ public struct DataBroker: Codable, Sendable {
         do {
             schedulingConfig = try container.decode(DataBrokerScheduleConfig.self, forKey: .schedulingConfig)
         } catch {
-            schedulingConfig = .init(retryError: 48, confirmOptOutScan: 72, maintenanceScan: 120, maxAttempts: -1)
+            schedulingConfig = .default
         }
         parent = try? container.decode(String.self, forKey: .parent)
 
@@ -286,4 +296,10 @@ extension DataBroker {
     var isRemoved: Bool {
         return removedAt != nil
     }
+
+    public func requiresEmailConfirmationDuringOptOut() -> Bool {
+        guard let optOutStep = optOutStep() else { return false }
+        return optOutStep.actions.contains { $0 is EmailConfirmationAction }
+    }
+
 }

@@ -54,9 +54,6 @@ final class SubscriptionRestoreViewModel: ObservableObject {
     @Published private(set) var state = State()
 
     private let featureFlagger: FeatureFlagger
-    var isRebrandingOn: Bool {
-        featureFlagger.isFeatureOn(.subscriptionRebranding)
-    }
 
     init(userScript: SubscriptionPagesUserScript,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,

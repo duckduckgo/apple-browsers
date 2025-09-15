@@ -43,7 +43,12 @@ final class NavigationActionBarView: UIView {
     var isShowingGradient: Bool = true {
         didSet {
             backgroundGradientView.isHidden = !isShowingGradient
+            solidView.isHidden = !isShowingGradient
         }
+    }
+
+    var buttonsWidth: CGFloat {
+        rightStackView.bounds.width
     }
 
     private let viewModel: NavigationActionBarViewModel

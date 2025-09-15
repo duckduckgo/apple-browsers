@@ -148,7 +148,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         self.contentConainerViewTrailingConstraint?.constant = -horizontalMargin
         self.updateDaxVisibility()
 
-        self.navigationActionBarManager?.navigationActionBarViewController?.isShowingGradient = requiresCompactVerticalLayout
+        self.navigationActionBarManager?.navigationActionBarViewController?.isShowingGradient = !requiresCompactVerticalLayout
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {

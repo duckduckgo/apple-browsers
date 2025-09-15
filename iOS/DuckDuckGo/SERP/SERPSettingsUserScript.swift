@@ -141,7 +141,6 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
         }
     }
     
-    // Step 1 ✅
     @MainActor
     func getNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
         SERPSettingsSnapshot(provider: serpSettingsProvider)
@@ -160,7 +159,6 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
         return nil
     }
     
-    // step 2, called only during migration
     @MainActor
     private func updateNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
         guard let parameters = params as? [String: Any] else { return nil }
@@ -175,7 +173,6 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
         return nil
     }
     
-    // step 3, handling user-interaction
     private func nativeSettingsDidChange() {
         guard let webView else {
             return

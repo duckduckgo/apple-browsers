@@ -56,11 +56,10 @@ final class SERPSettings: SERPSettingsProviding {
     func enableAllowFollowUpQuestions(enable: Bool) {
         keyValueStore.set(enable, forKey: Constant.allowFollowUpQuestionsKey)
         notificationCenter.post(name: .serpSettingsChanged, object: nil)
-#warning("Finish implementation")
         if enable {
-            // Pixel?
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsSERPFollowupTurnedOn)
         } else {
-            // Pixel?
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsSERPFollowupTurnedOff)
         }
     }
 

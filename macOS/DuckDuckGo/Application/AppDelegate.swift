@@ -864,6 +864,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         Task {
+            AppStoreUpdateController().checkForUpdate()
+        }
+
+        Task {
             await subscriptionManagerV1?.loadInitialData()
             await subscriptionManagerV2?.loadInitialData()
 

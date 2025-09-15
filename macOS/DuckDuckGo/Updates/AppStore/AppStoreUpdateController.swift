@@ -31,6 +31,30 @@ final class AppStoreUpdateController: NSObject, UpdateController {
     var lastUpdateCheckDate: Date?
 
     func checkForUpdate() {
-        
+        Task { @UpdateCheckActor in
+            do {
+                let releaseMetadata = try await LatestReleaseChecker().getLatestReleaseAvailable(for: .macOSAppStore)
+                let applicationUpdateState = ApplicationUpdateDetector.isApplicationUpdated(
+                    currentVersion: releaseMetadata.latestVersion,
+                    currentBuild: releaseMetadata.buildNumber,
+                    previousVersion: getCurrentAppVersion(),
+                    previousBuild: getCurrentAppBuild()
+                )
+
+                if applicationUpdateState == .downgraded {
+                    print("This is not the latest")
+                }
+            } catch {
+                print(error)
+            }
+        }
+    }
+
+    private func getCurrentAppVersion() -> String? {
+        return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    }
+
+    private func getCurrentAppBuild() -> String? {
+        return Bundle.main.infoDictionary?["CFBundleVersion"] as? String
     }
 }

@@ -183,6 +183,8 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1210716480546568?focus=true
     case adjustNewSearchForLandscape
+
+    case newDeviceSyncPrompt
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -199,7 +201,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .daxEasterEggLogos,
              .subscriptionPurchaseWidePixelMeasurement,
              .askAIChatSuggestion,
-             .refreshButtonPosition:
+             .refreshButtonPosition,
+             .newDeviceSyncPrompt:
             true
         default:
             false
@@ -254,7 +257,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .showAIChatAddressBarChoiceScreen,
              .refreshButtonPosition,
              .aiSearchAnimatedDaxLogo,
-             .adjustNewSearchForLandscape:
+             .adjustNewSearchForLandscape,
+             .newDeviceSyncPrompt:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -449,6 +453,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiSearchAnimatedDaxLogo,
              .adjustNewSearchForLandscape:
             return .internalOnly()
+        case .newDeviceSyncPrompt:
+            return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
         }
     }
 }

@@ -287,6 +287,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncSetupBarcodeIsUrlBased
     case refactorOfSyncPreferences
     case newSyncEntryPoints
+    case newDeviceSyncPrompt
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {

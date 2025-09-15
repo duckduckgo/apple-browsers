@@ -43,15 +43,23 @@ public struct AppStarts: Codable {
         }
 
         let days = daysBetween(from: installationDate, to: lastAppStart)
+        
+        // Handle negative time intervals (invalid dates)
+        guard days >= 0 else {
+            return .none
+        }
+        
         let weeks = days / 7
-
+        
         guard weeks > 0 else {
             return .none
         }
-
+        
+        // If we have more than 3 weeks, switch to months
+        // Months are calculated as weeks/4 (every 4 weeks = 1 month)
         if weeks > 3 {
-            let months = monthsBetween(from: installationDate, to: lastAppStart)
-            return .months(months+1)
+            let months = weeks / 4
+            return .months(months)
         } else {
             return .weeks(weeks)
         }
@@ -59,12 +67,7 @@ public struct AppStarts: Codable {
     
     private func daysBetween(from startDate: Date, to endDate: Date) -> Int {
         let timeInterval = endDate.timeIntervalSince(startDate)
-        return Int(timeInterval / .days(1))
-    }
-    
-    private func monthsBetween(from startDate: Date, to endDate: Date) -> Int {
-        let calendar = Calendar.current
-        let components = calendar.dateComponents([.month], from: startDate, to: endDate)
-        return components.month ?? 0
+        let secondsPerDay: TimeInterval = 24 * 60 * 60
+        return Int(timeInterval / secondsPerDay)
     }
 }

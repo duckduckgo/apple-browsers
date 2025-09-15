@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "12E90E46-AB20-4A85-953C-7B0E69919179",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AttributionTests",
+        "name" : "AttributionTests"
+      }
+    }
+  ],
+  "version" : 1
+}

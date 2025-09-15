@@ -22,15 +22,18 @@ class AttributionDataStorage: AttributionDataStoring {
         self.userDefaults = userDefaults
     }
 
-    enum StorageKey: String {
+    enum StorageKey: String, CaseIterable {
         /// Array of app start timestamps
         case startTimeStamps
+        case search7Days
     }
 
     // MARK: - Utilities
 
     public func removeAll() {
-        userDefaults.dictionaryRepresentation().keys.forEach { userDefaults.removeObject(forKey: $0) }
+        for key in StorageKey.allCases {
+            userDefaults.removeObject(forKey: key.rawValue)
+        }
     }
 
     // MARK: - Coding
@@ -53,5 +56,10 @@ class AttributionDataStorage: AttributionDataStoring {
     var appStarts: AppStarts? {
         set { encode(newValue, to: userDefaults, key: .startTimeStamps) }
         get { return decode(from: userDefaults, key: .startTimeStamps) }
+    }
+
+    var search7Days: RollingSevenDaysBool? {
+        set { encode(newValue, to: userDefaults, key: .search7Days) }
+        get { return decode(from: userDefaults, key: .search7Days) }
     }
 }

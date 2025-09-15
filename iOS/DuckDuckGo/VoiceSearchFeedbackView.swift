@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKitIcons
+import UIComponents
 
 struct VoiceSearchFeedbackView: View {
     @ObservedObject var speechModel: VoiceSearchFeedbackViewModel
@@ -78,17 +79,12 @@ extension VoiceSearchFeedbackView {
                 innerCircle
                 micImage
             }
-            .padding(.bottom, voiceCircleVerticalPadding)
-            .padding(.top, voiceCircleVerticalPadding)
+            .padding(.vertical, voiceCircleVerticalPadding)
 
             if speechModel.shouldDisplayAIChatOption {
-                Picker("", selection: $speechModel.searchTarget) {
-                    Text(UserText.voiceSearchToggleSearch).tag(VoiceSearchTarget.SERP)
-                    Text(UserText.voiceSearchToggleAIChat).tag(VoiceSearchTarget.AIChat)
-                }
-                .pickerStyle(SegmentedPickerStyle())
-                .frame(width: 220)
-                .padding(.bottom, 20)
+                VoiceSearchTargetPicker(target: $speechModel.searchTarget)
+                    .frame(width: pickerWidth)
+                    .padding(.bottom, 20)
             }
 
             Text(UserText.voiceSearchFooterOld)
@@ -108,7 +104,6 @@ extension VoiceSearchFeedbackView {
                 Text(UserText.voiceSearchCancelButton)
                     .foregroundColor(Colors.cancelButton)
             }
-            .alignmentGuide(.leading) { d in d[.leading] }
             Spacer()
         }
         .padding(.horizontal)
@@ -147,10 +142,63 @@ extension VoiceSearchFeedbackView {
     }
 }
 
+// MARK: - Custom Picker Wrapper
+
+private struct VoiceSearchTargetPicker: View {
+    @Binding var target: VoiceSearchTarget
+    @StateObject private var pickerViewModel: ImageSegmentedPickerViewModel
+
+    private static let pickerItems: [ImageSegmentedPickerItem] = [
+        ImageSegmentedPickerItem(
+            text: UserText.searchInputToggleSearchButtonTitle,
+            selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearchGradientColor),
+            unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearch)
+        ),
+        ImageSegmentedPickerItem(
+            text: UserText.searchInputToggleAIChatButtonTitle,
+            selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChatGradientColor),
+            unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChat)
+        )
+    ]
+
+    init(target: Binding<VoiceSearchTarget>) {
+        self._target = target
+        let isInitialSerp = target.wrappedValue == .SERP
+        let initialSelection = isInitialSerp ? Self.pickerItems[0] : Self.pickerItems[1]
+        _pickerViewModel = StateObject(wrappedValue: ImageSegmentedPickerViewModel(
+            items: Self.pickerItems,
+            selectedItem: initialSelection,
+            configuration: ImageSegmentedPickerConfiguration(),
+            scrollProgress: isInitialSerp ? 0 : 1,
+            isScrollProgressDriven: false
+        ))
+    }
+
+    var body: some View {
+        ImageSegmentedPickerView(viewModel: pickerViewModel)
+            .onChange(of: pickerViewModel.selectedItem) { newItem in
+                target = (newItem == Self.pickerItems[0]) ? .SERP : .AIChat
+            }
+            .onChange(of: target) { newTarget in
+                animateToTarget(newTarget)
+            }
+    }
+
+    private func animateToTarget(_ newTarget: VoiceSearchTarget) {
+        let progress: CGFloat = newTarget == .SERP ? 0 : 1
+        pickerViewModel.updateScrollProgress(progress)
+        let expected = newTarget == .SERP ? Self.pickerItems[0] : Self.pickerItems[1]
+        if pickerViewModel.selectedItem != expected {
+            pickerViewModel.selectItem(expected)
+        }
+    }
+}
+
 // MARK: - Constants
 
 extension VoiceSearchFeedbackView {
     private var footerWidth: CGFloat { 285 }
+    private var pickerWidth: CGFloat { 216 }
     private var voiceCircleVerticalPadding: CGFloat { sizeClass == .regular ? 60 : 43 }
     private var footerTextPadding: CGFloat { sizeClass == .regular ? 43 : 8 }
     private var micSize: CGSize { CGSize(width: 32, height: 32) }

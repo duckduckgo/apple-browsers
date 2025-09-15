@@ -31,6 +31,6 @@ final class AppStoreUpdateController: NSObject, UpdateController {
     var lastUpdateCheckDate: Date?
 
     func checkForUpdate() {
-
+        
     }
 }

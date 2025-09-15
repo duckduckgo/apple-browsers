@@ -1,5 +1,5 @@
 //
-//  UpdateMenuItemFactory.swift
+//  SparkleUpdateMenuItemFactory.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@
 
 import Cocoa
 
-final class UpdateMenuItemFactory {
+final class SparkleUpdateMenuItemFactory {
 
     static func menuItem(for update: Update) -> NSMenuItem {
         let item = NSMenuItem(title: UserText.updateAvailableMenuItem)

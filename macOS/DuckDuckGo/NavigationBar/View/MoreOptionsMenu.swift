@@ -477,9 +477,9 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         let menuItem: NSMenuItem = {
             if featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp) {
-                return UpdateMenuItemFactory.menuItem(for: updateController)
+                return SparkleUpdateMenuItemFactory.menuItem(for: updateController)
             } else {
-                return UpdateMenuItemFactory.menuItem(for: update)
+                return SparkleUpdateMenuItemFactory.menuItem(for: update)
             }
         }()
 

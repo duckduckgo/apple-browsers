@@ -78,7 +78,7 @@ final class TestResultTests: XCTestCase {
         )
 
         // Then
-        XCTAssertEqual(result.duration, 2.5, accuracy: 0.01)
+        XCTAssertEqual(result.duration ?? 0, 2.5, accuracy: 0.01)
     }
 
     func testDurationIsNilForIncompleteTest() {
@@ -219,8 +219,6 @@ final class TestResultTests: XCTestCase {
     func testHandlesVariousErrors() {
         // Given
         let timeoutError = TestError.timeout(duration: 30.0)
-        let networkError = TestError.networkError(message: "Connection refused")
-        let invalidURLError = TestError.invalidURL
 
         let timeoutResult = TestResult(
             url: URL(string: "https://example.com")!,

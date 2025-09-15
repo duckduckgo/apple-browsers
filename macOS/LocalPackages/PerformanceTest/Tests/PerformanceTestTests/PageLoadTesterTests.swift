@@ -9,6 +9,7 @@ import XCTest
 import WebKit
 @testable import PerformanceTest
 
+@MainActor
 final class PageLoadTesterTests: XCTestCase {
 
     var mockWebView: MockWebView!

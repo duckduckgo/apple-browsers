@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "PerformanceTest",
     platforms: [
-        .macOS(.v12)
+        .macOS("11.4") // Match NetworkQualityMonitor requirement
     ],
     products: [
         .library(
@@ -20,7 +20,8 @@ let package = Package(
     targets: [
         .target(
             name: "PerformanceTest",
-            dependencies: ["NetworkQualityMonitor"]),
+            dependencies: ["NetworkQualityMonitor"],
+            resources: [.process("Resources/Assets.xcassets")]),
         .testTarget(
             name: "PerformanceTestTests",
             dependencies: ["PerformanceTest"]),

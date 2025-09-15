@@ -117,46 +117,46 @@ extension AppStartsTests {
     }
 }
 
-// MARK: - Retention Logic Tests
+// MARK: - Time Period Logic Tests
 
 extension AppStartsTests {
     
-    func testRetentionTiming_installWeek() {
+    func testTimePeriodLogic_installWeek() {
         let installDate = testDate
         let appStartDate = Calendar.current.date(byAdding: .day, value: 3, to: installDate)!
         let appStarts = AppStarts(timestamps: [installDate, appStartDate])
         XCTAssertEqual(appStarts.timePastFromInstallation(), .none)
     }
     
-    func testRetentionTiming_week1_shouldTriggerWeeklyPixel() {
+    func testTimePeriodLogic_week1() {
         let installDate = testDate
         let week1Date = Calendar.current.date(byAdding: .day, value: 7, to: installDate)!
         let appStarts = AppStarts(timestamps: [installDate, week1Date])
         XCTAssertEqual(appStarts.timePastFromInstallation(), .weeks(1))
     }
     
-    func testRetentionTiming_week2_shouldTriggerWeeklyPixel() {
+    func testTimePeriodLogic_week2() {
         let installDate = testDate
         let week2Date = Calendar.current.date(byAdding: .day, value: 14, to: installDate)!
         let appStarts = AppStarts(timestamps: [installDate, week2Date])
         XCTAssertEqual(appStarts.timePastFromInstallation(), .weeks(2))
     }
     
-    func testRetentionTiming_week3_shouldTriggerWeeklyPixel() {
+    func testTimePeriodLogic_week3() {
         let installDate = testDate
         let week3Date = Calendar.current.date(byAdding: .day, value: 21, to: installDate)!
         let appStarts = AppStarts(timestamps: [installDate, week3Date])
         XCTAssertEqual(appStarts.timePastFromInstallation(), .weeks(3))
     }
     
-    func testRetentionTiming_week4_shouldTriggerMonthlyPixelMonth1() {
+    func testTimePeriodLogic_week4_returnsMonth1() {
         let installDate = testDate
         let week4Date = Calendar.current.date(byAdding: .day, value: 28, to: installDate)!
         let appStarts = AppStarts(timestamps: [installDate, week4Date])
         XCTAssertEqual(appStarts.timePastFromInstallation(), .months(1))
     }
     
-    func testRetentionTiming_week5to7() {
+    func testTimePeriodLogic_week5to7_returnsMonth2() {
         let installDate = testDate
         
         let week5Date = Calendar.current.date(byAdding: .day, value: 35, to: installDate)!
@@ -172,14 +172,14 @@ extension AppStartsTests {
         XCTAssertEqual(appStarts7.timePastFromInstallation(), .months(2))
     }
     
-    func testRetentionTiming_week8_shouldTriggerMonthlyPixelMonth2() {
+    func testTimePeriodLogic_week8_returnsMonth2() {
         let installDate = testDate
         let week8Date = Calendar.current.date(byAdding: .day, value: 56, to: installDate)!
         let appStarts = AppStarts(timestamps: [installDate, week8Date])
         XCTAssertEqual(appStarts.timePastFromInstallation(), .months(2))
     }
     
-    func testRetentionTiming_week20_shouldTriggerMonthlyPixelMonth5() {
+    func testTimePeriodLogic_week20_returnsMonth5() {
         let installDate = testDate
         let week20Date = Calendar.current.date(byAdding: .day, value: 140, to: installDate)!
         let appStarts = AppStarts(timestamps: [installDate, week20Date])

@@ -451,6 +451,11 @@
                 description: 'The ID of the opt out attempt',
                 type: 'string',
             },
+            {
+                key: 'action_id',
+                description: 'The ID of the action, to disambiguate between multiple actions in the same opt out attempt',
+                type: 'string',
+            },
         ],
     },
     'm_ios_dbp_service_email-confirmation_max-retries-exceeded': {
@@ -482,6 +487,11 @@
                 description: 'The ID of the opt out attempt',
                 type: 'string',
             },
+            {
+                key: 'action_id',
+                description: 'The ID of the action, to disambiguate between multiple actions in the same opt out attempt',
+                type: 'string',
+            },
         ],
     },
     'm_ios_dbp_service_email-confirmation_job-success': {
@@ -506,11 +516,6 @@
             {
                 key: 'broker_version',
                 description: 'The version of the broker JSON file',
-                type: 'string',
-            },
-            {
-                key: 'attempt_id',
-                description: 'The ID of the opt out attempt',
                 type: 'string',
             },
         ],

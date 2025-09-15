@@ -31,6 +31,8 @@ public enum Stage: String {
     case submit
     case emailReceive = "email-receive"
     case emailConfirm = "email-confirm"
+    case emailConfirmHalted = "email-confirm-halted"
+    case emailConfirmDecoupled = "email-confirm-decoupled"
     case validate
     case other
     case fillForm = "fill-form"

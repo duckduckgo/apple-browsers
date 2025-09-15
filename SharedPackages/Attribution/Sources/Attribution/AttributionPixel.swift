@@ -20,15 +20,15 @@ import Foundation
 import PixelKit
 
 enum AttributionPixel: PixelKitEvent {
-    case userRetentionWeek(defaultBrowser: Bool, count: Int)
-    case userRetentionMonth(defaultBrowser: Bool, count: Int)
-    case userActivePastWeek(days: Int)
-    case userAverageSearchesPastWeekFirstMonth(count: Int)
-    case userAverageSearchesPastWeek(count: Int)
-    case userAverageAdClicksPastWeek(count: Int)
-    case userAverageDuckAiUsagePastWeek(count: Int)
-    case userSubscribed(length: Int)
-    case userSyncedDevice(devices: Int)
+    case userRetentionWeek(origin: String?, installDate: String?, defaultBrowser: Bool, count: Int)
+    case userRetentionMonth(origin: String?, installDate: String?, defaultBrowser: Bool, count: Int)
+    case userActivePastWeek(origin: String?, installDate: String?, days: Int)
+    case userAverageSearchesPastWeekFirstMonth(origin: String?, installDate: String?, count: Int)
+    case userAverageSearchesPastWeek(origin: String?, installDate: String?, count: Int)
+    case userAverageAdClicksPastWeek(origin: String?, installDate: String?, count: Int)
+    case userAverageDuckAiUsagePastWeek(origin: String?, installDate: String?, count: Int)
+    case userSubscribed(origin: String?, installDate: String?, length: Int)
+    case userSyncedDevice(origin: String?, installDate: String?, devices: Int)
 
     var name: String {
         switch self {
@@ -59,24 +59,27 @@ enum AttributionPixel: PixelKitEvent {
         static let days = "days"
         static let length = "length"
         static let numberOfDevices = "number_of_devices"
+        static let origin = "origin"
     }
 
     var parameters: [String : String]? {
         switch self {
-        case .userRetentionWeek(defaultBrowser: let defaultBrowser, count: let count),
-                .userRetentionMonth(defaultBrowser: let defaultBrowser, count: let count):
-            return [ConstantKeys.defaultBrowser: defaultBrowser.payloadString,
+        case .userRetentionWeek(origin: let origin, installDate: let installDate, defaultBrowser: let defaultBrowser, count: let count),
+                .userRetentionMonth(origin: let origin, installDate: let installDate, defaultBrowser: let defaultBrowser, count: let count):
+            // which key for install date?
+            return [ConstantKeys.origin: origin,
+                    ConstantKeys.defaultBrowser: defaultBrowser.payloadString,
                     ConstantKeys.count: count.payloadString]
-        case .userActivePastWeek(days: let days):
+        case .userActivePastWeek(origin: let origin, installDate: let installDate, days: let days):
             return [ConstantKeys.days: days.payloadString]
-        case .userAverageSearchesPastWeekFirstMonth(count: let count),
-                .userAverageSearchesPastWeek(count: let count),
-                .userAverageAdClicksPastWeek(count: let count),
-                .userAverageDuckAiUsagePastWeek(count: let count):
+        case .userAverageSearchesPastWeekFirstMonth(origin: let origin, installDate: let installDate, count: let count),
+                .userAverageSearchesPastWeek(origin: let origin, installDate: let installDate, count: let count),
+                .userAverageAdClicksPastWeek(origin: let origin, installDate: let installDate, count: let count),
+                .userAverageDuckAiUsagePastWeek(origin: let origin, installDate: let installDate, count: let count):
             return [ConstantKeys.count: count.payloadString]
-        case .userSubscribed(length: let length):
+        case .userSubscribed(origin: let origin, installDate: let installDate, length: let length):
             return [ConstantKeys.length: length.payloadString]
-        case .userSyncedDevice(devices: let devices):
+        case .userSyncedDevice(origin: let origin, installDate: let installDate, devices: let devices):
             return [ConstantKeys.numberOfDevices: devices.payloadString]
         }
     }

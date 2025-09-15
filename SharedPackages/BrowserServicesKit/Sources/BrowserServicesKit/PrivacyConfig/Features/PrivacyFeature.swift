@@ -83,6 +83,7 @@ public enum PrivacyFeature: String {
     case htmlNewTabPage
     case daxEasterEggLogos
     case openFireWindowByDefault
+    case attribution
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -411,4 +412,10 @@ public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .experimentalTheming }
 
     case visualUpdates // Rollout
+}
+
+public enum AttributionSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .attribution }
+
+    case global
 }

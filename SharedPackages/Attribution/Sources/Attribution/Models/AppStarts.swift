@@ -1,5 +1,5 @@
 //
-//  AttributionNotifications.swift
+//  AppStarts.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,26 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
-#if os(iOS)
-import UIKit
-#elseif os(macOS)
-import AppKit
-#endif
+import  Foundation
 
+struct AppStarts {
+    var timestamps: [Date]
 
-extension AttributionManager {
     
-    func registerNotifications() {
-#if os(iOS)
-        NotificationCenter.default
-            .publisher(for: UIApplication.didEnterBackgroundNotification)
-            .sink { [weak self] _ in
-//                self?.appDidEnterBackground()
-            }
-            .store(in: &cancellables)
-#elseif os(macOS)
-
-#endif
-    }
 }

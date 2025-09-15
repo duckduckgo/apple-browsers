@@ -20,30 +20,43 @@
 import Foundation
 import PixelKit
 import Combine
+import BrowserServicesKit
 
+/// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053?focus=true
 public final class AttributionManager {
 
-    let pixelKit: PixelKit
-    let userDefaults: UserDefaults
-    let originProvider: (any AttributionOriginProvider)?
+    private let pixelKit: PixelKit
+    private let userDefaults: UserDefaults
+    private let originProvider: (any AttributionOriginProvider)?
+    private let featureFlagger: FeatureFlagger
     private var cancellables = Set<AnyCancellable>()
 
-    init(pixelKit: PixelKit, userDefaults: UserDefaults, originProvider: (any AttributionOriginProvider)?) {
+    var isEnabled: Bool {
+        featureFlagger.isFeatureOn(for: AttributionFeatureFlags.attributionEnabled)
+    }
+
+    public init(pixelKit: PixelKit, userDefaults: UserDefaults, featureFlagger: FeatureFlagger, originProvider: (any AttributionOriginProvider)?) {
         self.pixelKit = pixelKit
         self.userDefaults = userDefaults
         self.originProvider = originProvider
+        self.featureFlagger = featureFlagger
 
         registerNotifications()
     }
 
-    func registerNotifications() {
+    // MARK: - Data storage
 
-//        NotificationCenter.default
-//            .publisher(for: UIApplication.didEnterBackgroundNotification)
-//            .sink { [weak self] _ in
-//                self?.appDidEnterBackground()
-//            }
-//            .store(in: &cancellables)
+    struct StorageKey {
+        /// Array of app start timestamps
+        var firstStart = "startTimeStamps"
 
+    }
+
+    // MARK: - Triggers
+
+    func appDidStart() {
+        guard isEnabled else { return }
+
+        
     }
 }

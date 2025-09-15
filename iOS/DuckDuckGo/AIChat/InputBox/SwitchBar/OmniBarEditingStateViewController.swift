@@ -194,14 +194,15 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func installSwitchBarVC() {
         addChild(switchBarVC)
-        contentConainerView.addSubview(switchBarVC.view)
+        let container = contentConainerView
+        container.addSubview(switchBarVC.view)
         switchBarVC.view.translatesAutoresizingMaskIntoConstraints = false
         switchBarVC.view.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
         NSLayoutConstraint.activate([
-            switchBarVC.view.topAnchor.constraint(equalTo: contentConainerView.safeAreaLayoutGuide.topAnchor, constant: 8),
-            switchBarVC.view.leadingAnchor.constraint(equalTo: contentConainerView.safeAreaLayoutGuide.leadingAnchor),
-            switchBarVC.view.trailingAnchor.constraint(equalTo: contentConainerView.safeAreaLayoutGuide.trailingAnchor)
+            switchBarVC.view.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 8),
+            switchBarVC.view.leadingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.leadingAnchor),
+            switchBarVC.view.trailingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.trailingAnchor)
         ])
 
         switchBarVC.didMove(toParent: self)
@@ -379,6 +380,7 @@ extension OmniBarEditingStateViewController: NavigationActionBarManagerDelegate 
 
 private extension OmniBarEditingStateViewController {
     struct Constants {
-        static let horizontalMarginForCompactLayout: CGFloat = 64
+        // Adjusts for two buttons in the action bar
+        static let horizontalMarginForCompactLayout: CGFloat = 108
     }
 }

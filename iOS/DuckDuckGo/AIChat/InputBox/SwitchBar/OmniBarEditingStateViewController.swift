@@ -61,6 +61,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
     lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
 
+    private var requiresCompactVerticalLayout: Bool = false
     private weak var contentConainerViewLeadingConstraint: NSLayoutConstraint?
     private weak var contentConainerViewTrailingConstraint: NSLayoutConstraint?
 
@@ -140,11 +141,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private func adjustLayoutForViewSize(_ size: CGSize) {
         
         let isPhone = UIDevice.current.userInterfaceIdiom == .phone
-        let requiresCompactVerticalLayout = isPhone && size.width > size.height
+        requiresCompactVerticalLayout = isPhone && size.width > size.height
 
         let horizontalMargin: CGFloat = requiresCompactVerticalLayout ? Constants.horizontalMarginForCompactLayout : 0
         self.contentConainerViewLeadingConstraint?.constant = horizontalMargin
         self.contentConainerViewTrailingConstraint?.constant = -horizontalMargin
+        self.updateDaxVisibility()
 
         self.navigationActionBarManager?.navigationActionBarViewController?.isShowingGradient = requiresCompactVerticalLayout
     }
@@ -310,8 +312,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let shouldDisplaySuggestionTray = suggestionTrayManager?.shouldDisplaySuggestionTray == true
         let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
 
-        let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay
-        let isAIDaxVisible = !shouldDisplaySuggestionTray
+        let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !requiresCompactVerticalLayout
+        let isAIDaxVisible = !shouldDisplaySuggestionTray && !requiresCompactVerticalLayout
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
     }

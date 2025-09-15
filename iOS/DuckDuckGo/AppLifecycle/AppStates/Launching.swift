@@ -189,7 +189,8 @@ struct Launching: LaunchingHandling {
                                defaultBrowserPromptService: defaultBrowserPromptService,
                                systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
                                inactivityNotificationSchedulerService: inactivityNotificationSchedulerService,
-                               widePixelService: widePixelService
+                               widePixelService: widePixelService,
+                               aiChatService: AIChatService(aiChatSettings: aiChatSettings)
         )
 
         // Register background tasks that run after app is ready

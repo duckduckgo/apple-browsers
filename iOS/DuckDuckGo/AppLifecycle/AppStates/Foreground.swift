@@ -118,6 +118,7 @@ struct Foreground: ForegroundHandling {
         )
 
         services.vpnService.resume()
+        services.aiChatService.resume()
         services.configurationService.resume()
         services.reportingService.resume()
         services.subscriptionService.resume()

@@ -145,7 +145,11 @@ final class SettingsViewModel: ObservableObject {
     }
     
     var firstSectionTitle: String {
-        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) ? "❗️Section 1" : ""
+        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) ? UserText.aiChatSettingsBrowserShortcutsSectionTitle : ""
+    }
+    
+    var secondSectionTitle: String {
+        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) ? UserText.aiChatSettingsAllowFollowUpQuestionsSectionTitle : ""
     }
     
     var shouldShowSERPSettingsFollowUpQuestions: Bool {

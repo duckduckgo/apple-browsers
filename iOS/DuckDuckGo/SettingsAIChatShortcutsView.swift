@@ -43,8 +43,9 @@ struct SettingsAIChatShortcutsView: View {
             }
             
             if viewModel.shouldShowSERPSettingsFollowUpQuestions {
-                Section("❗️Section 2") {
-                    SettingsCellView(label: "❗️Allow Follow-up Questions",
+                Section(header: Text(UserText.aiChatSettingsAllowFollowUpQuestionsSectionTitle),
+                        footer: Text(UserText.aiChatSettingsAllowFollowUpQuestionsDescription)) {
+                    SettingsCellView(label: UserText.aiChatSettingsAllowFollowUpQuestionsToggle,
                                      accessory: .toggle(isOn: viewModel.serpSettingsFollowUpQuestionsBinding))
                 }
             }

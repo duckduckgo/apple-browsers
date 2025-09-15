@@ -110,8 +110,7 @@ struct SettingsAIFeaturesView: View {
                     }
                     .listRowBackground(Color(designSystemColor: .surface))
                 } else {
-                    #warning("Update text here")
-                    Section(header: Text(UserText.settingsAiChatShortcuts)) {
+                    Section(header: Text(UserText.aiChatSettingsBrowserShortcutsSectionTitle)) {
                         SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
                                          accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
 
@@ -128,8 +127,9 @@ struct SettingsAIFeaturesView: View {
                     }
                     
                     if viewModel.shouldShowSERPSettingsFollowUpQuestions {
-                        Section("❗️Section 2") {
-                            SettingsCellView(label: "❗️Allow Follow-up Questions",
+                        Section(header: Text(UserText.aiChatSettingsAllowFollowUpQuestionsSectionTitle),
+                                footer: Text(UserText.aiChatSettingsAllowFollowUpQuestionsDescription)) {
+                            SettingsCellView(label: UserText.aiChatSettingsAllowFollowUpQuestionsToggle,
                                              accessory: .toggle(isOn: viewModel.serpSettingsFollowUpQuestionsBinding))
                         }
                     }

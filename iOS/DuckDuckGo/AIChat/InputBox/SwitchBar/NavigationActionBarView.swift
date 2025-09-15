@@ -47,10 +47,6 @@ final class NavigationActionBarView: UIView {
         }
     }
 
-    var buttonsWidth: CGFloat {
-        rightStackView.bounds.width
-    }
-
     private let viewModel: NavigationActionBarViewModel
     private var cancellables = Set<AnyCancellable>()
 

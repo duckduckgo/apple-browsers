@@ -143,7 +143,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     private func requiresHorizontallyCompactLayout(for size: CGSize) -> Bool {
-        let size = size ?? view.bounds.size
         let isPhone = UIDevice.current.userInterfaceIdiom == .phone
         return adjustsLayoutInLandscape && isPhone && size.width > size.height
     }

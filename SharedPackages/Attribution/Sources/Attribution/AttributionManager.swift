@@ -27,7 +27,7 @@ import os.log
 public final class AttributionManager {
 
     private let pixelKit: PixelKit
-    private let dataStorage: AttributionDataStoring
+    private var dataStorage: AttributionDataStoring
     private let originProvider: (any AttributionOriginProvider)?
     private let featureFlagger: FeatureFlagger
     var cancellables = Set<AnyCancellable>()
@@ -38,7 +38,9 @@ public final class AttributionManager {
         self.originProvider = originProvider
         self.featureFlagger = featureFlagger
 
-        registerNotifications()
+        if isEnabled {
+            registerNotifications()
+        }
     }
 
     // MARK: -
@@ -63,11 +65,33 @@ public final class AttributionManager {
         return true // TODO: implement
     }
 
+    var isLessThanSixMonths: Bool {
+        return true
+    }
+
     // MARK: - Triggers
 
     func appDidStart() {
         guard isEnabled else { return }
 
+        guard isLessThanSixMonths else {
+            dataStorage.removeAll()
+            return
+        }
+
+        calculateRetention()
+    }
+
+    func userDidSearch() {
+        guard isEnabled else { return }
+
+        
+    }
+
+    // Calculations
+
+    /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1211326699062077?focus=true
+    func calculateRetention() {
         var appStarts = dataStorage.appStarts ?? AppStarts()
         appStarts.append(timestamp: Date())
 
@@ -84,6 +108,13 @@ public final class AttributionManager {
             let bucketedMonth = month // TODO: implement
             pixelKit.fire(AttributionPixel.userRetentionMonth(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucketedMonth), frequency: .daily)
         }
+
+        dataStorage.appStarts = appStarts
+    }
+
+    /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1211326699062078?focus=true
+    func calculateActiveSearchDays() {
+
     }
 }
 

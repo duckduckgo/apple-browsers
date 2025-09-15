@@ -9,7 +9,9 @@ import Foundation
 
 public protocol AttributionDataStoring {
 
-    var appStarts: AppStarts? { get }
+    var appStarts: AppStarts? { get set }
+
+    func removeAll()
 }
 
 class AttributionDataStorage: AttributionDataStoring {
@@ -24,6 +26,14 @@ class AttributionDataStorage: AttributionDataStoring {
         /// Array of app start timestamps
         case startTimeStamps
     }
+
+    // MARK: - Utilities
+
+    public func removeAll() {
+        userDefaults.dictionaryRepresentation().keys.forEach { userDefaults.removeObject(forKey: $0) }
+    }
+
+    // MARK: - Coding
 
     func encode(_ object: Codable, to userDefaults: UserDefaults, key: StorageKey) {
         guard let data = try? JSONEncoder().encode(object) else { return }

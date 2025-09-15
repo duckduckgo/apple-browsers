@@ -35,12 +35,13 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     var privacyConfig: PrivacyConfigurationManaging { get }
     var prefs: ContentScopeProperties { get }
     var context: SubJobContextProviding { get }
-    var emailService: EmailServiceProtocol { get }
+    var emailConfirmationDataService: EmailConfirmationDataServiceProvider { get }
     var captchaService: CaptchaServiceProtocol { get }
     var cookieHandler: CookieHandler { get }
     var stageCalculator: StageDurationCalculator { get }
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
     var executionConfig: BrokerJobExecutionConfig { get }
+    var featureFlagger: DBPFeatureFlagging { get }
 
     var webViewHandler: WebViewHandler? { get set }
     var actionsHandler: ActionsHandler? { get }
@@ -129,7 +130,13 @@ public extension SubJobWebRunning {
         if action.needsEmail {
             do {
                 stageCalculator.setStage(.emailGenerate)
-                let emailData = try await emailService.getEmail(dataBrokerURL: context.dataBroker.url, attemptId: stageCalculator.attemptId)
+                let emailData = try await emailConfirmationDataService.getEmailAndOptionallySaveToDatabase(
+                    dataBrokerId: context.dataBroker.id,
+                    dataBrokerURL: context.dataBroker.url,
+                    profileQueryId: context.profileQuery.id,
+                    extractedProfileId: extractedProfile?.id,
+                    attemptId: stageCalculator.attemptId
+                )
                 extractedProfile?.email = emailData.emailAddress
                 stageCalculator.setEmailPattern(emailData.pattern)
                 stageCalculator.fireOptOutEmailGenerate()
@@ -151,7 +158,7 @@ public extension SubJobWebRunning {
     private func runEmailConfirmationAction(action: EmailConfirmationAction) async throws {
         if let email = extractedProfile?.email {
             stageCalculator.setStage(.emailReceive)
-            let url =  try await emailService.getConfirmationLink(
+            let url =  try await emailConfirmationDataService.getConfirmationLink(
                 from: email,
                 numberOfRetries: 10, // Move to constant
                 pollingInterval: action.pollingTime,

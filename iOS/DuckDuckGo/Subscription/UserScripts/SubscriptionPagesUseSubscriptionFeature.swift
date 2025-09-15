@@ -601,7 +601,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
          privacyProDataReporter: PrivacyProDataReporting? = nil,
          subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
          internalUserDecider: InternalUserDecider,
-         widePixel: WidePixelManaging = WidePixel()) {
+         widePixel: WidePixelManaging) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -835,7 +835,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
                 purchasePlatform: .appStore,
                 subscriptionIdentifier: subscriptionSelection.id,
                 freeTrialEligible: freeTrialEligible,
-                experimentIDs: [experiment].compactMap(\.self),
                 contextData: WidePixelContextData(name: subscriptionAttributionOrigin),
                 appData: WidePixelAppData(internalUser: internalUserDecider.isInternalUser)
             )

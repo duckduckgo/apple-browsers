@@ -37,6 +37,7 @@ final class EmailConfirmationDataServiceTests: XCTestCase {
     func testCheckForEmailConfirmationDataWith50Items() async throws {
         let records = createOptOutEmailConfirmationRecords(count: 50)
         mockDatabase.recordsAwaitingLink = records
+        mockDatabase.activeConfirmationIdentifiers = records.optOutIdentifiers
         mockEmailServiceV1.responses = [createEmailDataResponse(for: records)]
 
         try await sut.checkForEmailConfirmationData()
@@ -49,6 +50,7 @@ final class EmailConfirmationDataServiceTests: XCTestCase {
     func testCheckForEmailConfirmationDataWith100Items() async throws {
         let records = createOptOutEmailConfirmationRecords(count: 100)
         mockDatabase.recordsAwaitingLink = records
+        mockDatabase.activeConfirmationIdentifiers = records.optOutIdentifiers
         mockEmailServiceV1.responses = [createEmailDataResponse(for: records)]
 
         try await sut.checkForEmailConfirmationData()
@@ -61,6 +63,7 @@ final class EmailConfirmationDataServiceTests: XCTestCase {
     func testCheckForEmailConfirmationDataWith150Items() async throws {
         let records = createOptOutEmailConfirmationRecords(count: 150)
         mockDatabase.recordsAwaitingLink = records
+        mockDatabase.activeConfirmationIdentifiers = records.optOutIdentifiers
         let chunk1 = Array(records.prefix(100))
         let chunk2 = Array(records.suffix(50))
         mockEmailServiceV1.responses = [
@@ -80,6 +83,7 @@ final class EmailConfirmationDataServiceTests: XCTestCase {
     func testCheckForEmailConfirmationDataWith250Items() async throws {
         let records = createOptOutEmailConfirmationRecords(count: 250)
         mockDatabase.recordsAwaitingLink = records
+        mockDatabase.activeConfirmationIdentifiers = records.optOutIdentifiers
         let chunk1 = Array(records[0..<100])
         let chunk2 = Array(records[100..<200])
         let chunk3 = Array(records[200..<250])
@@ -102,6 +106,7 @@ final class EmailConfirmationDataServiceTests: XCTestCase {
     func testCheckForEmailConfirmationDataOnlyDeletesReadyAndErrorItems() async throws {
         let records = createOptOutEmailConfirmationRecords(count: 120)
         mockDatabase.recordsAwaitingLink = records
+        mockDatabase.activeConfirmationIdentifiers = records.optOutIdentifiers
         let chunk1 = Array(records[0..<100])
         let chunk2 = Array(records[100..<120])
 
@@ -132,6 +137,38 @@ final class EmailConfirmationDataServiceTests: XCTestCase {
         let expectedEmails = Set(chunk1Items.map { $0.email } + chunk2Items.map { $0.email })
 
         XCTAssertEqual(deletedEmails, expectedEmails)
+    }
+
+    func testCheckForEmailConfirmationData_FiltersBasedOnActiveConfirmations() async throws {
+        let records = createOptOutEmailConfirmationRecords(count: 5)
+        mockDatabase.recordsAwaitingLink = records
+
+        let activeIdentifiers = Set([
+            OptOutIdentifier(brokerId: 1, profileQueryId: 1, extractedProfileId: 1),
+            OptOutIdentifier(brokerId: 3, profileQueryId: 3, extractedProfileId: 3),
+            OptOutIdentifier(brokerId: 5, profileQueryId: 5, extractedProfileId: 5)
+        ])
+        mockDatabase.activeConfirmationIdentifiers = activeIdentifiers
+
+        let expectedRecords = [records[0], records[2], records[4]]
+        mockEmailServiceV1.responses = [createEmailDataResponse(for: expectedRecords)]
+
+        try await sut.checkForEmailConfirmationData()
+
+        let requestedItems = Set(mockEmailServiceV1.fetchCallItems[0].map { $0.email })
+        let expectedItems = Set(expectedRecords.map { $0.generatedEmail })
+        XCTAssertEqual(requestedItems, expectedItems)
+    }
+
+    func testCheckForEmailConfirmationData_EmptyActiveConfirmations() async throws {
+        let records = createOptOutEmailConfirmationRecords(count: 3)
+        mockDatabase.recordsAwaitingLink = records
+        mockDatabase.activeConfirmationIdentifiers = Set<OptOutIdentifier>()
+
+        try await sut.checkForEmailConfirmationData()
+
+        XCTAssertEqual(mockEmailServiceV1.fetchCallCount, 0)
+        XCTAssertEqual(mockEmailServiceV1.deleteCallItems.count, 0)
     }
 
     private func createOptOutEmailConfirmationRecords(count: Int) -> [OptOutEmailConfirmationJobData] {
@@ -247,5 +284,11 @@ class MockEmailService: EmailServiceProtocol {
                              attemptId: UUID,
                              shouldRunNextStep: @escaping () -> Bool) async throws -> URL {
         URL(string: "https://example.com/confirm")!
+    }
+}
+
+extension [OptOutEmailConfirmationJobData] {
+    var optOutIdentifiers: Set<OptOutIdentifier> {
+        Set(self.map { .init(brokerId: $0.brokerId, profileQueryId: $0.profileQueryId, extractedProfileId: $0.extractedProfileId) })
     }
 }

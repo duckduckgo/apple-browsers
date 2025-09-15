@@ -67,6 +67,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockQueueManager = MockBrokerProfileJobQueueManager(
             jobQueue: MockBrokerProfileJobQueue(),
             jobProvider: MockDataBrokerOperationsCreator(),
+            emailConfirmationJobProvider: MockEmailConfirmationJobProvider(),
             mismatchCalculator: mockMismatchCalculator,
             pixelHandler: mockSharedPixelsHandler)
 
@@ -731,10 +732,10 @@ final class MockEmailConfirmationDataService: EmailConfirmationDataServiceProvid
         URL(string: "https://example.com")!
     }
 
-    func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64,
+    func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64?,
                                              dataBrokerURL: String,
-                                             profileQueryId: Int64,
-                                             extractedProfileId: Int64,
+                                             profileQueryId: Int64?,
+                                             extractedProfileId: Int64?,
                                              attemptId: UUID) async throws -> EmailData {
         EmailData(pattern: "", emailAddress: "hello@example.com")
     }

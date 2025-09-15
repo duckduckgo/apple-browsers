@@ -21,6 +21,7 @@ import BrowserServicesKit
 
 public enum FeatureFlagCategory: String, CaseIterable, Comparable {
     case duckAI = "Duck.ai"
+    case dbp = "Personal Information Removal"
     case osSupportWarnings = "OS Support Warnings"
     case other = "Other"
     case sync = "Sync"
@@ -67,6 +68,9 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .networkProtectionAppStoreSysexMessage,
                 .vpnToolbarUpsell:
             return .vpn
+        case .dbpEmailConfirmationDecoupling,
+                .dbpRemoteBrokerDelivery:
+            return .dbp
         default:
             return .other
         }

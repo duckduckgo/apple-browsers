@@ -57,7 +57,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
             privacyProDataReporter: nil,
             subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
-            internalUserDecider: mockInternalUserDecider)
+            internalUserDecider: mockInternalUserDecider,
+            widePixel: mockWidePixel)
     }
     
     override func tearDown() {

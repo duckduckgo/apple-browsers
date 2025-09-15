@@ -1079,7 +1079,7 @@
 "crash.report.dialog.title" = "Envoyer automatiquement des rapports de plantage ?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Nombre actuel de rejets : %@";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "CONTENU DE CELLULE PERSONNALISÉ";
@@ -1559,7 +1559,7 @@
 "Enrolled: %@" = "Inscriptions : %@";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Pilule d'entrée";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Se connecter";
@@ -2290,6 +2290,30 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Raccourcis";
 
+/* Confirm button for the new address bar picker */
+"new.address.bar.picker.confirm" = "Confirmer";
+
+/* Description text for the new address bar picker modal */
+"new.address.bar.picker.description" = "Les fonctionnalités d'IA sont toujours facultatives.";
+
+/* Footer text for the new address bar picker */
+"new.address.bar.picker.footer" = "Ajuster dans Réglages > Fonctionnalités d'IA";
+
+/* Not now button for the new address bar picker */
+"new.address.bar.picker.not.now" = "Pas maintenant";
+
+/* Option for search and AI in the new address bar picker */
+"new.address.bar.picker.search.and.ai" = "Recherche et Duck.ai";
+
+/* Option for search only in the new address bar picker */
+"new.address.bar.picker.search.only" = "Recherche uniquement";
+
+/* Subtitle for the new address bar picker modal */
+"new.address.bar.picker.subtitle" = "Basculer entre la recherche et le chat IA";
+
+/* Title for the new address bar picker modal */
+"new.address.bar.picker.title" = "Option de la barre d'adresse";
+
 /* No comment provided by engineer. */
 "No results found" = "Aucun résultat trouvé";
 
@@ -2657,7 +2681,7 @@
 "Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Réinitialiser l'état modal d'amorçage";
 
 /* No comment provided by engineer. */
 "Results" = "Résultats";
@@ -2733,15 +2757,6 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Afficher l'adresse complète du site";
-
-/* Caption indicating the default option in the AI experimental picker */
-"settings.ai.experimental.picker.default" = "(Par défaut)";
-
-/* Caption indicating the experimental option in the AI experimental picker */
-"settings.ai.experimental.picker.experimental" = "(Expérimental)";
-
-/* Footer under the AI experimental picker, descriptive sentence without link */
-"settings.ai.experimental.picker.footer" = "Essayez notre option expérimentale pour interroger Duck.ai directement à partir de la barre d'adresse";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Recherche et Duck.ai";

@@ -23,6 +23,7 @@ struct LogExporterConfiguration {
     let timeInterval: Int
     let includeAllDDG: Bool
     let includeNetworkProtection: Bool
+    let includePersonalInformationRemoval: Bool
     let includeSparkle: Bool
 }
 
@@ -32,6 +33,7 @@ struct LogExporterView: View {
     @State private var timeIntervalString: String = "\(Self.defaultInterval)"
     @State private var includeAllDDG = true
     @State private var includeNetworkProtection = true
+    @State private var includePersonalInformationRemoval = true
     @State private var includeSparkle = true
 
     let onComplete: (_ result: LogExporterConfiguration) -> Void
@@ -53,6 +55,7 @@ struct LogExporterView: View {
                     .font(.headline)
                 Toggle(UserText.duckDuckGo, isOn: $includeAllDDG)
                 Toggle(UserText.networkProtection, isOn: $includeNetworkProtection)
+                Toggle(UserText.personalInformationRemoval, isOn: $includePersonalInformationRemoval)
                 Toggle(UserText.update, isOn: $includeSparkle)
             }
 
@@ -66,6 +69,7 @@ struct LogExporterView: View {
                         timeInterval: Int(timeIntervalString) ?? Self.defaultInterval,
                         includeAllDDG: includeAllDDG,
                         includeNetworkProtection: includeNetworkProtection,
+                        includePersonalInformationRemoval: includePersonalInformationRemoval,
                         includeSparkle: includeSparkle
                     ))
                 }
@@ -75,15 +79,16 @@ struct LogExporterView: View {
                         timeInterval: Int(timeIntervalString) ?? Self.defaultInterval,
                         includeAllDDG: includeAllDDG,
                         includeNetworkProtection: includeNetworkProtection,
+                        includePersonalInformationRemoval: includePersonalInformationRemoval,
                         includeSparkle: includeSparkle
                     ))
                 }
-                .disabled(timeIntervalString.isEmpty || (includeAllDDG || includeNetworkProtection || includeSparkle) == false)
+                .disabled(timeIntervalString.isEmpty || (includeAllDDG || includeNetworkProtection || includePersonalInformationRemoval || includeSparkle) == false)
                 .keyboardShortcut(.defaultAction)
 
             }
         }
         .padding(20)
-        .frame(minWidth: 250, maxWidth: 250, minHeight: 250, maxHeight: 250)
+        .frame(minWidth: 300, maxWidth: 300, minHeight: 280, maxHeight: 280)
     }
 }

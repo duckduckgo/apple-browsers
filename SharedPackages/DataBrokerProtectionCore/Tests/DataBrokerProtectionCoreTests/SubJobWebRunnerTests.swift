@@ -78,7 +78,7 @@ private extension DataBrokerJobTests {
         BrokerProfileScanSubJobWebRunner(privacyConfig: PrivacyConfigurationManagingMock(),
                                          prefs: .mock,
                                          context: BrokerProfileQueryData.mock(with: [Step(type: .scan, actions: [])]),
-                                         emailService: EmailServiceMock(),
+                                         emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                          captchaService: CaptchaServiceMock(),
                                          featureFlagger: MockDBPFeatureFlagger(),
                                          stageDurationCalculator: MockStageDurationCalculator(),
@@ -91,12 +91,13 @@ private extension DataBrokerJobTests {
         BrokerProfileOptOutSubJobWebRunner(privacyConfig: PrivacyConfigurationManagingMock(),
                                            prefs: .mock,
                                            context: BrokerProfileQueryData.mock(with: [Step(type: .optOut, actions: [])]),
-                                           emailService: EmailServiceMock(),
+                                           emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                            captchaService: CaptchaServiceMock(),
                                            featureFlagger: MockDBPFeatureFlagger(),
                                            stageCalculator: MockStageDurationCalculator(),
                                            pixelHandler: MockPixelHandler(),
                                            executionConfig: BrokerJobExecutionConfig(),
+                                           actionsHandlerMode: .optOut,
                                            shouldRunNextStep: { true })
     }
 

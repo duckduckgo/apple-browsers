@@ -88,7 +88,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
                 featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
                 aiChatURL: URL,
-                widePixel: WidePixelManaging = WidePixel()) {
+                widePixel: WidePixelManaging) {
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
         self.subscriptionSuccessPixelHandler = subscriptionSuccessPixelHandler

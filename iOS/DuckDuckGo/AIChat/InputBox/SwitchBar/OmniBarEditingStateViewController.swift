@@ -51,6 +51,11 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
     var automaticallySelectsTextOnAppear = false
+    var adjustsLayoutInLandscape = false {
+        didSet {
+            adjustLayoutForViewSize(view.bounds.size)
+        }
+    }
 
     // MARK: - Core Components
     private lazy var contentConainerView = UIView()
@@ -61,7 +66,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
     lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
 
-    private var requiresCompactVerticalLayout: Bool = false
     private weak var contentConainerViewLeadingConstraint: NSLayoutConstraint?
     private weak var contentConainerViewTrailingConstraint: NSLayoutConstraint?
 
@@ -138,17 +142,22 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         adjustLayoutForViewSize(view.bounds.size)
     }
 
-    private func adjustLayoutForViewSize(_ size: CGSize) {
-        
+    private func requiresHorizontallyCompactLayout(for size: CGSize) -> Bool {
+        let size = size ?? view.bounds.size
         let isPhone = UIDevice.current.userInterfaceIdiom == .phone
-        requiresCompactVerticalLayout = isPhone && size.width > size.height
+        return adjustsLayoutInLandscape && isPhone && size.width > size.height
+    }
 
-        let horizontalMargin: CGFloat = requiresCompactVerticalLayout ? Constants.horizontalMarginForCompactLayout : 0
+    private func adjustLayoutForViewSize(_ size: CGSize) {
+
+        let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: size)
+
+        let horizontalMargin: CGFloat = isHorizontallyCompactLayoutEnabled ? Constants.horizontalMarginForCompactLayout : 0
         self.contentConainerViewLeadingConstraint?.constant = horizontalMargin
         self.contentConainerViewTrailingConstraint?.constant = -horizontalMargin
         self.updateDaxVisibility()
 
-        self.navigationActionBarManager?.navigationActionBarViewController?.isShowingGradient = !requiresCompactVerticalLayout
+        self.navigationActionBarManager?.navigationActionBarViewController?.isShowingGradient = !isHorizontallyCompactLayoutEnabled
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -312,9 +321,10 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         let shouldDisplaySuggestionTray = suggestionTrayManager?.shouldDisplaySuggestionTray == true
         let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
+        let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
 
-        let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !requiresCompactVerticalLayout
-        let isAIDaxVisible = !shouldDisplaySuggestionTray && !requiresCompactVerticalLayout
+        let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
+        let isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
     }

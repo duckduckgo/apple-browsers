@@ -21,35 +21,46 @@ import Foundation
 import PixelKit
 import Combine
 import BrowserServicesKit
+import os.log
 
 /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053?focus=true
 public final class AttributionManager {
 
     private let pixelKit: PixelKit
-    private let userDefaults: UserDefaults
+    private let dataStorage: AttributionDataStoring
     private let originProvider: (any AttributionOriginProvider)?
     private let featureFlagger: FeatureFlagger
-    private var cancellables = Set<AnyCancellable>()
+    var cancellables = Set<AnyCancellable>()
 
-    var isEnabled: Bool {
-        featureFlagger.isFeatureOn(for: AttributionFeatureFlags.attributionEnabled)
-    }
-
-    public init(pixelKit: PixelKit, userDefaults: UserDefaults, featureFlagger: FeatureFlagger, originProvider: (any AttributionOriginProvider)?) {
+    public init(pixelKit: PixelKit, dataStoring: AttributionDataStoring, featureFlagger: FeatureFlagger, originProvider: (any AttributionOriginProvider)?) {
         self.pixelKit = pixelKit
-        self.userDefaults = userDefaults
+        self.dataStorage = dataStoring
         self.originProvider = originProvider
         self.featureFlagger = featureFlagger
 
         registerNotifications()
     }
 
-    // MARK: - Data storage
+    // MARK: -
 
-    struct StorageKey {
-        /// Array of app start timestamps
-        var firstStart = "startTimeStamps"
+    var isEnabled: Bool {
+        featureFlagger.isFeatureOn(for: AttributionFeatureFlags.attributionEnabled)
+    }
 
+    lazy var originOrInstall: (origin: String?, installDate: String?) = {
+        if let origin = originProvider?.origin {
+            return (origin, nil)
+        } else {
+            guard var installDate = dataStorage.appStarts?.timestamps.first else {
+                assertionFailure("Missing install date")
+                return (nil, nil)
+            }
+            return (nil, installDate.ISO8601Format())
+        }
+    }()
+
+    var isDefaultBrowser: Bool {
+        return true // TODO: implement
     }
 
     // MARK: - Triggers
@@ -57,6 +68,29 @@ public final class AttributionManager {
     func appDidStart() {
         guard isEnabled else { return }
 
-        
+        var appStarts = dataStorage.appStarts ?? AppStarts()
+        appStarts.append(timestamp: Date())
+
+        switch appStarts.timePastFromInstallation() {
+        case .none:
+            Logger.attribution.debug("Less than a week from installation")
+            return
+        case .weeks(let week):
+            Logger.attribution.debug("\(week) week(s) from installation")
+            let bucketedWeek = week // TODO: implement
+            pixelKit.fire(AttributionPixel.userRetentionWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucketedWeek), frequency: .daily)
+        case .months(let month):
+            Logger.attribution.debug("\(month) month(s) from installation")
+            let bucketedMonth = month // TODO: implement
+            pixelKit.fire(AttributionPixel.userRetentionMonth(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucketedMonth), frequency: .daily)
+        }
+    }
+}
+
+private extension Date {
+
+    func ISO8601Format() -> String {
+        let formatter = ISO8601DateFormatter()
+        return formatter.string(from: self)
     }
 }

@@ -60,27 +60,47 @@ enum AttributionPixel: PixelKitEvent {
         static let length = "length"
         static let numberOfDevices = "number_of_devices"
         static let origin = "origin"
+        static let installDate = "install_date"
     }
 
     var parameters: [String : String]? {
         switch self {
-        case .userRetentionWeek(origin: let origin, installDate: let installDate, defaultBrowser: let defaultBrowser, count: let count),
+        case .userRetentionWeek(origin: let origin,
+                                installDate: let installDate,
+                                defaultBrowser: let defaultBrowser,
+                                count: let count),
                 .userRetentionMonth(origin: let origin, installDate: let installDate, defaultBrowser: let defaultBrowser, count: let count):
-            // which key for install date?
-            return [ConstantKeys.origin: origin,
-                    ConstantKeys.defaultBrowser: defaultBrowser.payloadString,
-                    ConstantKeys.count: count.payloadString]
+            var result = [ConstantKeys.defaultBrowser: defaultBrowser.payloadString,
+                         ConstantKeys.count: count.payloadString]
+            addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
+            return result
         case .userActivePastWeek(origin: let origin, installDate: let installDate, days: let days):
-            return [ConstantKeys.days: days.payloadString]
+            var result = [ConstantKeys.days: days.payloadString]
+            addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
+            return result
         case .userAverageSearchesPastWeekFirstMonth(origin: let origin, installDate: let installDate, count: let count),
                 .userAverageSearchesPastWeek(origin: let origin, installDate: let installDate, count: let count),
                 .userAverageAdClicksPastWeek(origin: let origin, installDate: let installDate, count: let count),
                 .userAverageDuckAiUsagePastWeek(origin: let origin, installDate: let installDate, count: let count):
-            return [ConstantKeys.count: count.payloadString]
+            var result = [ConstantKeys.count: count.payloadString]
+            addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
+            return result
         case .userSubscribed(origin: let origin, installDate: let installDate, length: let length):
-            return [ConstantKeys.length: length.payloadString]
+            var result = [ConstantKeys.length: length.payloadString]
+            addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
+            return result
         case .userSyncedDevice(origin: let origin, installDate: let installDate, devices: let devices):
-            return [ConstantKeys.numberOfDevices: devices.payloadString]
+            var result = [ConstantKeys.numberOfDevices: devices.payloadString]
+            addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
+            return result
+        }
+    }
+
+    func addBaseParamFor(dictionary: inout [String: String], origin: String?, installDate: String?) {
+        if let origin {
+            dictionary[ConstantKeys.origin] = origin
+        } else if let installDate {
+            dictionary[ConstantKeys.installDate] = installDate
         }
     }
 }

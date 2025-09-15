@@ -18,8 +18,53 @@
 
 import  Foundation
 
-struct AppStarts {
+public struct AppStarts: Codable {
     var timestamps: [Date]
 
+    public init(timestamps: [Date] = []) {
+        self.timestamps = timestamps
+    }
+
+    mutating func append(timestamp: Date) {
+        timestamps.append(timestamp)
+    }
+
+    enum TimePast: Equatable {
+        case none
+        case weeks(Int)
+        case months(Int)
+    }
+
+    func timePastFromInstallation() -> TimePast {
+        guard timestamps.count > 1,
+              let installationDate = timestamps.first,
+              let lastAppStart = timestamps.last else {
+            return .none
+        }
+
+        let days = daysBetween(from: installationDate, to: lastAppStart)
+        let weeks = days / 7
+
+        guard weeks > 0 else {
+            return .none
+        }
+
+        if weeks > 3 {
+            let months = monthsBetween(from: installationDate, to: lastAppStart)
+            return .months(months+1)
+        } else {
+            return .weeks(weeks)
+        }
+    }
     
+    private func daysBetween(from startDate: Date, to endDate: Date) -> Int {
+        let timeInterval = endDate.timeIntervalSince(startDate)
+        return Int(timeInterval / .days(1))
+    }
+    
+    private func monthsBetween(from startDate: Date, to endDate: Date) -> Int {
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.month], from: startDate, to: endDate)
+        return components.month ?? 0
+    }
 }

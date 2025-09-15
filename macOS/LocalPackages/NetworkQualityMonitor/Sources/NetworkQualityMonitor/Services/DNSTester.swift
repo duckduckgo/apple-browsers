@@ -38,7 +38,7 @@ public final class DNSTester: DNSTesting {
         let totalTests = configuration.dnsTestDomains.count
 
         for domain in configuration.dnsTestDomains {
-            // Run DNS resolution with user-initiated priority to avoid priority inversion
+            // Use user-initiated priority to avoid priority inversion
             let result = await Task(priority: .userInitiated) {
                 let startTime = CFAbsoluteTimeGetCurrent()
                 let host = CFHostCreateWithName(nil, domain as CFString).takeRetainedValue()

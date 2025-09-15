@@ -119,9 +119,8 @@ public struct TestConfiguration {
     }
 }
 
-// MARK: - Modular Configuration Types
+// MARK: - Focused Configuration Types
 
-/// Configuration specific to HTTP response testing
 public struct HttpResponseConfig {
     public let testURLs: [URL]
     public let samplesPerEndpoint: Int
@@ -134,7 +133,6 @@ public struct HttpResponseConfig {
     }
 }
 
-/// Configuration specific to bandwidth testing
 public struct BandwidthConfig {
     public let downloadURLs: [URL]
     public let uploadURLs: [URL]
@@ -163,7 +161,6 @@ public struct BandwidthConfig {
     }
 }
 
-/// Configuration specific to DNS testing
 public struct DNSConfig {
     public let testDomains: [String]
 
@@ -172,7 +169,6 @@ public struct DNSConfig {
     }
 }
 
-/// Configuration specific to buffer bloat testing
 public struct BufferBloatConfig {
     public let downloadURL: URL?
 
@@ -181,7 +177,6 @@ public struct BufferBloatConfig {
     }
 }
 
-/// Configuration specific to connectivity checking
 public struct ConnectivityConfig {
     public let checkURL: URL
 
@@ -193,7 +188,6 @@ public struct ConnectivityConfig {
 // MARK: - Configuration Extraction Methods
 
 public extension TestConfiguration {
-    /// Extract HTTP response testing configuration
     func httpResponseConfig() -> HttpResponseConfig {
         HttpResponseConfig(
             testURLs: latencyTestURLs,
@@ -202,7 +196,6 @@ public extension TestConfiguration {
         )
     }
 
-    /// Extract bandwidth testing configuration
     func bandwidthConfig() -> BandwidthConfig {
         BandwidthConfig(
             downloadURLs: bandwidthTestURLs,
@@ -215,17 +208,14 @@ public extension TestConfiguration {
         )
     }
 
-    /// Extract DNS testing configuration
     func dnsConfig() -> DNSConfig {
         DNSConfig(testDomains: dnsTestDomains)
     }
 
-    /// Extract buffer bloat testing configuration
     func bufferBloatConfig() -> BufferBloatConfig {
         BufferBloatConfig(downloadURL: bandwidthTestURLs.first)
     }
 
-    /// Extract connectivity checking configuration
     func connectivityConfig() -> ConnectivityConfig {
         ConnectivityConfig(checkURL: connectivityCheckURL)
     }

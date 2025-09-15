@@ -764,6 +764,8 @@
 		85E242172AB1B54D000F3E28 /* ReturnUserMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85E242162AB1B54D000F3E28 /* ReturnUserMeasurement.swift */; };
 		85E4FD112DBA75DF002CA888 /* FeatureDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85E4FD102DBA75DC002CA888 /* FeatureDiscovery.swift */; };
 		85E58C2C28FDA94F006A801A /* FavoritesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85E58C2B28FDA94F006A801A /* FavoritesViewController.swift */; };
+		85E8036F2E785BD8008E87CA /* ApplicationShortcutItems.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85E8036E2E785BD8008E87CA /* ApplicationShortcutItems.xcassets */; };
+		85E803712E786598008E87CA /* VPNApplicationShortcutItemManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85E803702E78658E008E87CA /* VPNApplicationShortcutItemManagerTests.swift */; };
 		85EE7F55224667DD000FE757 /* WebContainer.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 85EE7F54224667DD000FE757 /* WebContainer.storyboard */; };
 		85EE7F572246685B000FE757 /* WebContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85EE7F562246685B000FE757 /* WebContainerViewController.swift */; };
 		85EE7F59224673C5000FE757 /* WebContainerNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85EE7F58224673C5000FE757 /* WebContainerNavigationController.swift */; };
@@ -2676,6 +2678,8 @@
 		85E242162AB1B54D000F3E28 /* ReturnUserMeasurement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReturnUserMeasurement.swift; sourceTree = "<group>"; };
 		85E4FD102DBA75DC002CA888 /* FeatureDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureDiscovery.swift; sourceTree = "<group>"; };
 		85E58C2B28FDA94F006A801A /* FavoritesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesViewController.swift; sourceTree = "<group>"; };
+		85E8036E2E785BD8008E87CA /* ApplicationShortcutItems.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = ApplicationShortcutItems.xcassets; sourceTree = "<group>"; };
+		85E803702E78658E008E87CA /* VPNApplicationShortcutItemManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNApplicationShortcutItemManagerTests.swift; sourceTree = "<group>"; };
 		85EE7F54224667DD000FE757 /* WebContainer.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = WebContainer.storyboard; sourceTree = "<group>"; };
 		85EE7F562246685B000FE757 /* WebContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebContainerViewController.swift; sourceTree = "<group>"; };
 		85EE7F58224673C5000FE757 /* WebContainerNavigationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebContainerNavigationController.swift; sourceTree = "<group>"; };
@@ -4955,15 +4959,6 @@
 			path = LocalPackages;
 			sourceTree = "<group>";
 		};
-		365E90092E566C0A00BDB0E8 /* AppIntents */ = {
-			isa = PBXGroup;
-			children = (
-				365E90122E5673DF00BDB0E8 /* SearchInAppIntent.swift */,
-				365E900A2E566C2300BDB0E8 /* AIChatIntent.swift */,
-			);
-			path = AppIntents;
-			sourceTree = "<group>";
-		};
 		362E3EBA2E7184AB00E4C762 /* AIChat */ = {
 			isa = PBXGroup;
 			children = (
@@ -5153,9 +5148,19 @@
 			path = Application;
 			sourceTree = "<group>";
 		};
+		365E90092E566C0A00BDB0E8 /* AppIntents */ = {
+			isa = PBXGroup;
+			children = (
+				365E90122E5673DF00BDB0E8 /* SearchInAppIntent.swift */,
+				365E900A2E566C2300BDB0E8 /* AIChatIntent.swift */,
+			);
+			path = AppIntents;
+			sourceTree = "<group>";
+		};
 		369E692B2E5F6E9F00F98A8F /* AppServices */ = {
 			isa = PBXGroup;
 			children = (
+				85E803702E78658E008E87CA /* VPNApplicationShortcutItemManagerTests.swift */,
 				369E692C2E5F6EB500F98A8F /* InactivityNotificationSchedulerServiceTests.swift */,
 				CB3B4D552D649DC8006DAD63 /* AutoClearServiceTests.swift */,
 				CB3B4D532D648C44006DAD63 /* AuthenticationServiceTests.swift */,
@@ -5929,6 +5934,7 @@
 				98788E9C2521DA1E00D55218 /* Localizable.stringsdict */,
 				85DFEDF624CB1CAB00973FE7 /* ShareSheet.xcassets */,
 				85C29709247EB7AA0063A335 /* Text.xcassets */,
+				85E8036E2E785BD8008E87CA /* ApplicationShortcutItems.xcassets */,
 			);
 			name = UserInterfaceResources;
 			sourceTree = "<group>";
@@ -9582,6 +9588,7 @@
 				1DDF402B2BA05A65006850D9 /* Settings.xcassets in Resources */,
 				984147A824F0259000362052 /* Onboarding.storyboard in Resources */,
 				984147AE24F0261A00362052 /* Feedback.storyboard in Resources */,
+				85E8036F2E785BD8008E87CA /* ApplicationShortcutItems.xcassets in Resources */,
 				984147B724F0268D00362052 /* PrivacyDashboard.storyboard in Resources */,
 				9FC555D12E2F4AFC00763BEC /* default-browser-tutorial.mp4 in Resources */,
 				F176699F1E40BC86003D3222 /* Settings.storyboard in Resources */,
@@ -11033,6 +11040,7 @@
 				564DE45A2C450BE600D23241 /* DaxDialogsNewTabTests.swift in Sources */,
 				8521FDE6238D414B00A44CC3 /* FileStoreTests.swift in Sources */,
 				F14E491F1E391CE900DC037C /* URLExtensionTests.swift in Sources */,
+				85E803712E786598008E87CA /* VPNApplicationShortcutItemManagerTests.swift in Sources */,
 				9FBC76672CFE33B5008B21E7 /* MaliciousSiteProtectionNavigationHandlerTests.swift in Sources */,
 				9F23B8062C2BE22700950875 /* OnboardingIntroViewModelTests.swift in Sources */,
 				85D2187424BF25CD004373D2 /* FaviconsTests.swift in Sources */,

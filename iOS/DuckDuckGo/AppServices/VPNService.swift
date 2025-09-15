@@ -45,7 +45,7 @@ final class VPNService: NSObject {
         self.subscriptionManager = subscriptionManager
         self.application = application
         self.notificationServiceManager = notificationServiceManager
-        
+
         notificationCenter.delegate = notificationServiceManager
         
         super.init()
@@ -118,21 +118,48 @@ final class VPNService: NSObject {
 
     @MainActor
     private func refreshVPNShortcuts() async {
+        let shortcutManaging = VPNApplicationShortcutItemManager(application: application)
+
         guard await vpnFeatureVisibility.shouldShowVPNShortcut(),
               let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
               canShowVPNInUI
         else {
-            application.shortcutItems = nil
+            shortcutManaging.update(showShortcut: false)
             return
         }
 
-        application.shortcutItems = [
-            UIApplicationShortcutItem(type: ShortcutKey.openVPNSettings,
-                                      localizedTitle: UserText.netPOpenVPNQuickAction,
-                                      localizedSubtitle: nil,
-                                      icon: UIApplicationShortcutIcon(templateImageName: "VPN-16"),
-                                      userInfo: nil)
-        ]
+        shortcutManaging.update(showShortcut: true)
+    }
+
+}
+
+struct VPNApplicationShortcutItemManager {
+
+    let application: UIApplication
+
+    /// Leaving this non-private so it can be tested more easily since the UIApplication can't be mocked well
+    func items(existingItems: [UIApplicationShortcutItem], showShortcut: Bool) -> [UIApplicationShortcutItem] {
+
+        // Remove it from the current list
+        var items = existingItems.filter { $0.type != ShortcutKey.openVPNSettings }
+
+        // If needed, add it to the list
+        if showShortcut {
+            items += [
+                UIApplicationShortcutItem(type: ShortcutKey.openVPNSettings,
+                                          localizedTitle: UserText.netPOpenVPNQuickAction,
+                                          localizedSubtitle: nil,
+                                          icon: UIApplicationShortcutIcon(templateImageName: "ApplicationShortcutItemVPN"),
+                                          userInfo: nil)
+            ]
+        }
+
+        return items
+    }
+
+    func update(showShortcut: Bool) {
+        let app = UIApplication.shared
+        app.shortcutItems = items(existingItems: app.shortcutItems ?? [], showShortcut: showShortcut)
     }
 
 }

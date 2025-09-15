@@ -201,7 +201,7 @@ public enum DataBrokerProtectionSharedPixels {
 
     // UserScript
     case userScriptLoadJSFailed(jsFile: String, error: Error)
-    
+
     // Email confirmation decoupling
     case serviceEmailConfirmationLinkClientReceived(dataBrokerURL: String, brokerVersion: String, linkAgeMs: Double)
     case serviceEmailConfirmationLinkBackendStatusError(dataBrokerURL: String, brokerVersion: String, status: String, errorCode: String?)
@@ -304,7 +304,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
 
             // UserScript
         case .userScriptLoadJSFailed: return "debug_user_script_load_js_failed"
-            
+
             // Email confirmation decoupling
         case .serviceEmailConfirmationLinkClientReceived: return "dbp_service_email-confirmation-link_client-received"
         case .serviceEmailConfirmationLinkBackendStatusError: return "dbp_service_email-confirmation-link_backend-status_error"

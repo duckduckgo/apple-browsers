@@ -230,7 +230,7 @@
             },
             {
                 key: 'link_age_ms',
-                description: 'Time from when the link is received on BE till it's retrieved on the client (in milliseconds)',
+                description: "Time from when the link is received on BE till it's retrieved on the client (in milliseconds)",
                 type: 'number',
             },
         ],

@@ -20,7 +20,7 @@
 import Foundation
 
 public protocol SERPSettingsProviding {
-    #warning("add docs")
+    /// Determines if Duck.AI is enabled.
     var isDuckAIEnabled: Bool { get }
     
     /// The user settings state for Allowing Duck.ai Follow-up Questions in Search Results
@@ -32,6 +32,6 @@ public protocol SERPSettingsProviding {
     /// Updates the user settings state for Allowing Duck.ai Follow-up Questions in Search Results
     func enableAllowFollowUpQuestions(enable: Bool)
     
-    #warning("add documentation")
+    /// Based on the value from SERP, marks whether the AllowFollowUpQuestions setting was migrated.
     func migrateAllowFollowUpQuestions(enable: Bool)
 }

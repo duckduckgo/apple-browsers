@@ -896,7 +896,7 @@ extension SettingsViewModel {
         let url = URL.assistSettings.appendingParameter(name: SERPSettingsConstants.returnParameterKey,
                                                         value: SERPSettingsConstants.aiFeatures)
 //        urlOpener.open(url)
-        #warning("temp")
+#warning("TODO: remove before merging")
         urlOpener.open(URL(string: "https://bhall.duck.co/settings#aifeatures")!)
     }
 

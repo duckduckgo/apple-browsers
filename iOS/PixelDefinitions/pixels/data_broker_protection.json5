@@ -210,7 +210,7 @@
             },
         ],
     },
-      'm_ios_dbp_service_email-confirmation-link_client-received': {
+    'm_ios_dbp_service_email-confirmation-link_client-received': {
         description: 'Fired when the client persists a confirmation link provided by the backend',
         owners: ['quanganhdo'],
         triggers: ['other'],
@@ -495,5 +495,5 @@
                 type: 'string',
             },
         ],
-    }
+    },
 }

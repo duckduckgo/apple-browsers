@@ -41,15 +41,18 @@ final class CreditCardPromptViewModel {
     }
     
     let cards: [CreditCardRowViewModel]
-    
-    init(creditCards: [SecureVaultModels.CreditCard]) {
+    private let usageProvider: AutofillUsageProvider
+
+    init(creditCards: [SecureVaultModels.CreditCard], usageProvider: AutofillUsageProvider = AutofillUsageStore()) {
         self.cards = creditCards.sorted(by: { $0.created > $1.created }).asCardRowViewModels
+        self.usageProvider = usageProvider
         Pixel.fire(pixel: .autofillCardsFillCardManualInlineDisplayed)
     }
     
     func selected(card: CreditCardRowViewModel) {
         delegate?.creditCardPromptViewModel(self, didSelectCreditCard: card.creditCard)
-        Pixel.fire(pixel: .autofillCardsFillCardManualInlineConfirmed)
+        let parameters = usageProvider.formattedFillDate.flatMap { [PixelParameters.lastUsed: $0] } ?? [:]
+        Pixel.fire(pixel: .autofillCardsFillCardManualInlineConfirmed, withAdditionalParameters: parameters)
     }
     
     func cancelButtonPressed() {

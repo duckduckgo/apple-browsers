@@ -23,4 +23,5 @@ class MockMessageNavigationDelegate: MessageNavigationDelegate {
     func segueToSettingsAIChat(completion: (() -> Void)?) {}
     func segueToSettings() {}
     func segueToFeedback() {}
+    func segueToSettingsSync() {}
 }

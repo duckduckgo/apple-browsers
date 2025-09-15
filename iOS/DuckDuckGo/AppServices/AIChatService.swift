@@ -24,12 +24,8 @@ import AIChat
 final class AIChatService: NSObject {
 
     private let aiChatSettings: AIChatSettingsProvider
-    private let application: UIApplication
-    init(aiChatSettings: AIChatSettingsProvider,
-         application: UIApplication = UIApplication.shared) {
-
+    init(aiChatSettings: AIChatSettingsProvider) {
         self.aiChatSettings = aiChatSettings
-        self.application = application
         super.init()
     }
 
@@ -37,54 +33,22 @@ final class AIChatService: NSObject {
 
     @MainActor
     func resume() {
-        Task {
-            await refreshShortcuts()
-        }
+        // No-op
     }
 
     // MARK: - Suspend
 
     func suspend() {
-        Task { @MainActor in
-            await refreshShortcuts()
-        }
+        // No-op
     }
 
-    @MainActor
-    private func refreshShortcuts() async {
-        let shortcutManaging = AIChatApplicationShortcutItemManager(application: application)
-        shortcutManaging.update(showShortcut: aiChatSettings.isAIChatEnabled)
-    }
-
-}
-
-struct AIChatApplicationShortcutItemManager {
-
-    let application: UIApplication
-
-    /// Leaving this non-private so it can be tested more easily since the UIApplication can't be mocked well
-    func items(existingItems: [UIApplicationShortcutItem], showShortcut: Bool) -> [UIApplicationShortcutItem] {
-
-        // Remove it from the current list
-        var items = existingItems.filter { $0.type != ShortcutKey.aiChat }
-
-        // If needed, add it to the list
-        if showShortcut {
-            items += [
-                UIApplicationShortcutItem(type: ShortcutKey.aiChat,
-                                          localizedTitle: UserText.duckAiFeatureName,
-                                          localizedSubtitle: nil,
-                                          icon: UIApplicationShortcutIcon(templateImageName: "ApplicationShortcutItemAIChat"),
-                                          userInfo: nil)
-            ]
-        }
-
-        return items
-    }
-
-    func update(showShortcut: Bool) {
-        let app = UIApplication.shared
-        app.shortcutItems = items(existingItems: app.shortcutItems ?? [], showShortcut: showShortcut)
+    func shortcutItem() -> UIApplicationShortcutItem? {
+        aiChatSettings.isAIChatEnabled ?
+            UIApplicationShortcutItem(type: ShortcutKey.aiChat,
+                                      localizedTitle: UserText.duckAiFeatureName,
+                                      localizedSubtitle: nil,
+                                      icon: UIApplicationShortcutIcon(templateImageName: "ApplicationShortcutItemAIChat"),
+                                      userInfo: nil) : nil
     }
 
 }

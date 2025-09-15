@@ -115,7 +115,7 @@
     },
     "subscription.add.subscription.modal.title.deprecated" : {
       "comment" : "Title of a view for adding subscription to the device",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -475,7 +475,7 @@
     },
     "subscription.add.via.email.description.deprecated" : {
       "comment" : "Description of option for adding subscription using email address",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1855,7 +1855,7 @@
     },
     "subscription.dialog.remove.description.deprecated" : {
       "comment" : "Remove subscription from device dialog subtitle description",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2875,7 +2875,7 @@
     },
     "subscription.preferences.purchase.button.deprecated" : {
       "comment" : "Button to open a page where user can learn more and purchase the subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2995,7 +2995,7 @@
     },
     "subscription.preferences.purchase.free-trial.button.deprecated" : {
       "comment" : "Button to open a page where user can learn more and try a free trial subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4021,7 +4021,7 @@
     },
     "subscription.preferences.subscription.activate.with.email.caption.deprecated" : {
       "comment" : "Caption for the subscription preferences activate section when email is added to subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4741,7 +4741,7 @@
     },
     "subscription.preferences.subscription.add.to.device.no.email.app.store.caption.deprecated" : {
       "comment" : "Caption for the subscription preferences section for activating subscription on other devices while email is not yet added to subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4861,7 +4861,7 @@
     },
     "subscription.preferences.subscription.add.to.device.no.email.stripe.caption.deprecated" : {
       "comment" : "Caption for the subscription preferences section for activating subscription on other devices while email is not yet added to subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4981,7 +4981,7 @@
     },
     "subscription.preferences.subscription.add.to.device.title.deprecated" : {
       "comment" : "Title for the subscription preferences section for adding subscription to other devices",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5101,7 +5101,7 @@
     },
     "subscription.preferences.subscription.expired.caption.deprecated" : {
       "comment" : "Caption for the subscription preferences pane when the subscription has expired. The parameter is date of expiry.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

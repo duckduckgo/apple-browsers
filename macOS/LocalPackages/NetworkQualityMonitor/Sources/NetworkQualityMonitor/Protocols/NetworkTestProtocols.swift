@@ -29,7 +29,7 @@ public protocol NetworkQualityMonitoring {
 // MARK: - Test Component Protocols
 
 public protocol HttpResponseTesting {
-    func performTest(configuration: TestConfiguration, 
+    func performTest(configuration: TestConfiguration,
                      progressCallback: ((String) -> Void)?) async throws -> HttpResponseResult
 }
 
@@ -57,7 +57,7 @@ public protocol NetworkScoreCalculating {
                               bandwidth: BandwidthResult,
                               dns: DNSResult,
                               bufferBloat: BufferBloatResult) -> NetworkScore
-    
+
     func determineQuality(from score: Double) -> NetworkQuality
 }
 

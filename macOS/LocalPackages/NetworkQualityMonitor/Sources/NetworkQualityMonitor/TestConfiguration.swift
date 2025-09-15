@@ -59,7 +59,7 @@ public struct TestConfiguration {
             // Major platforms with global CDN presence
             URL(string: "https://www.youtube.com/")!,  // Google's global CDN
             URL(string: "https://www.facebook.com/")!,  // Meta's global CDN
-            URL(string: "https://api.github.com/")!,  // GitHub's API (Azure CDN)
+            URL(string: "https://api.github.com/")!  // GitHub's API (Azure CDN)
 
             // Note: These CDNs automatically serve from the nearest geographic location,
             // so users in Asia get Asian servers, Europeans get EU servers, etc.
@@ -67,7 +67,7 @@ public struct TestConfiguration {
         bandwidthTestURLs: [
             URL(string: "https://speed.cloudflare.com/__down?bytes=26214400")!,  // 25MB
             URL(string: "https://proof.ovh.net/files/10Mb.dat")!,                // 10MB  
-            URL(string: "https://speed.hetzner.de/10MB.bin")!,                   // 10MB
+            URL(string: "https://speed.hetzner.de/10MB.bin")!                   // 10MB
             // Total: ~25MB for fast connections, less for slow (adaptive)
         ],
         uploadTestURLs: [

@@ -19,7 +19,7 @@ public struct HttpResponseResult {  // Renamed from LatencyResult
     public let sampleCount: Int
     public let p50: Double?
     public let p95: Double?
-    
+
     // Computed property for P95-P50 spread (indicates consistency)
     public var latencySpread: Double? {
         guard let p50 = p50, let p95 = p95 else { return nil }
@@ -39,7 +39,7 @@ public struct HttpResponseResult {  // Renamed from LatencyResult
 public struct BandwidthResult {
     public let downloadSpeedMbps: Double
     public let uploadSpeedMbps: Double
-    
+
     public init(downloadSpeedMbps: Double, uploadSpeedMbps: Double) {
         self.downloadSpeedMbps = downloadSpeedMbps
         self.uploadSpeedMbps = uploadSpeedMbps
@@ -49,7 +49,7 @@ public struct BandwidthResult {
 public struct DNSResult {
     public let averageResolutionTime: Double
     public let failureRate: Double
-    
+
     public init(averageResolutionTime: Double, failureRate: Double) {
         self.averageResolutionTime = averageResolutionTime
         self.failureRate = failureRate
@@ -61,7 +61,7 @@ public struct BufferBloatResult {
     public let loadedLatency: Double
     public let increase: Double
     public let grade: String
-    
+
     public init(baselineLatency: Double, loadedLatency: Double, increase: Double, grade: String) {
         self.baselineLatency = baselineLatency
         self.loadedLatency = loadedLatency

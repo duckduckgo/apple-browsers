@@ -76,7 +76,7 @@ public final class HttpResponseTester: HttpResponseTesting {
 
     // MARK: - Private Methods
 
-    private func performInterleavedMeasurements(endpoints: [URL], 
+    private func performInterleavedMeasurements(endpoints: [URL],
                                                samplesPerEndpoint: Int,
                                                timeout: TimeInterval) async -> [EndpointMeasurement] {
         // Initialize storage for measurements
@@ -84,23 +84,23 @@ public final class HttpResponseTester: HttpResponseTesting {
         for endpoint in endpoints {
             measurementsByEndpoint[endpoint] = []
         }
-        
+
         // Perform measurements in rounds, hitting each endpoint once per round
         // This avoids consecutive requests to the same endpoint
         for round in 0..<samplesPerEndpoint {
             // Shuffle endpoints for each round to avoid patterns
             let shuffledEndpoints = endpoints.shuffled()
-            
+
             for endpoint in shuffledEndpoints {
                 if let measurement = await measureSingleRequest(to: endpoint, timeout: timeout) {
                     measurementsByEndpoint[endpoint]?.append(measurement)
                 }
-                
+
                 // Small delay between different endpoints
                 try? await Task.sleep(nanoseconds: Constants.measurementDelay)
             }
         }
-        
+
         // Convert to EndpointMeasurement array
         var allMeasurements: [EndpointMeasurement] = []
         for (endpoint, measurements) in measurementsByEndpoint {
@@ -108,7 +108,7 @@ public final class HttpResponseTester: HttpResponseTesting {
                 allMeasurements.append(EndpointMeasurement(endpoint: endpoint, measurements: measurements))
             }
         }
-        
+
         return allMeasurements
     }
 
@@ -155,13 +155,13 @@ public final class HttpResponseTester: HttpResponseTesting {
         let allSortedMeasurements = allMeasurements.flatMap { $0.measurements }.sorted()
         let p50 = percentile(allSortedMeasurements, Constants.percentile50)
         let p95 = percentile(allSortedMeasurements, Constants.percentile95)
-        
+
         // Calculate variance for EACH site, then take the median of those variances
         // This gives us a representative measure of how consistent each site is
         let siteVariances = allMeasurements.map { endpoint in
             calculateVarianceForSite(endpoint.measurements)
         }
-        
+
         // Use median of site variances (not affected by outliers)
         // Convert to standard deviation for more intuitive understanding
         let medianVariance = NetworkTestConstants.median(of: siteVariances) ?? 0
@@ -221,10 +221,10 @@ public final class HttpResponseTester: HttpResponseTesting {
         //
         // Using median ensures we get the "typical" latency experience
         // and naturally reflects geographic distance to servers
-        
+
         let allMedians = allSiteStats.map { $0.median }
         let overallMedian = NetworkTestConstants.median(of: allMedians) ?? bestSiteStats.median
-        
+
         return overallMedian
     }
 
@@ -233,14 +233,14 @@ public final class HttpResponseTester: HttpResponseTesting {
         let index = Int(Double(sorted.count - 1) * p)
         return sorted[index]
     }
-    
+
     private func calculateVarianceForSite(_ measurements: [Double]) -> Double {
         guard measurements.count > 1 else { return 0 }
-        
+
         let mean = measurements.reduce(0, +) / Double(measurements.count)
         let squaredDifferences = measurements.map { pow($0 - mean, 2) }
         let variance = squaredDifferences.reduce(0, +) / Double(measurements.count)
-        
+
         return variance
     }
 }

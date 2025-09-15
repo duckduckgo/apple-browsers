@@ -21,28 +21,28 @@ import Foundation
 
 /// Service responsible for DNS testing
 public final class DNSTester: DNSTesting {
-    
+
     // MARK: - Constants
-    
+
     private enum Constants {
         static let progressMessage = "Testing DNS resolution..."
         static let measurementDelay: UInt64 = 50_000_000  // 50ms between DNS queries
     }
-    
+
     public func performTest(configuration: TestConfiguration,
                     progressCallback: ((String) -> Void)? = nil) async throws -> DNSResult {
         progressCallback?(Constants.progressMessage)
-        
+
         var resolutionTimes: [Double] = []
         var failures = 0
         let totalTests = configuration.dnsTestDomains.count
-        
+
         for domain in configuration.dnsTestDomains {
             let startTime = CFAbsoluteTimeGetCurrent()
-            
+
             let host = CFHostCreateWithName(nil, domain as CFString).takeRetainedValue()
             var error: CFStreamError = CFStreamError()
-            
+
             if CFHostStartInfoResolution(host, .addresses, &error) {
                 let endTime = CFAbsoluteTimeGetCurrent()
                 let resolutionTime = (endTime - startTime) * 1000 // Convert to ms
@@ -50,18 +50,18 @@ public final class DNSTester: DNSTesting {
             } else {
                 failures += 1
             }
-            
+
             // Small delay between DNS queries
             try? await Task.sleep(nanoseconds: Constants.measurementDelay)
         }
-        
+
         guard !resolutionTimes.isEmpty else {
             throw NetworkError.allTestsFailed
         }
-        
+
         let averageTime = resolutionTimes.reduce(0, +) / Double(resolutionTimes.count)
         let failureRate = Double(failures) / Double(totalTests)
-        
+
         return DNSResult(
             averageResolutionTime: averageTime,
             failureRate: failureRate

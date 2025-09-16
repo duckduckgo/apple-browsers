@@ -1,6 +1,5 @@
 //
 //  TestConfiguration.swift
-//  NetworkQualityMonitor
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -206,7 +205,7 @@ public struct ConnectivityConfig {
 // MARK: - Configuration Extraction Methods
 
 public extension TestConfiguration {
-   
+
     func httpResponseConfig() -> HttpResponseConfig {
         HttpResponseConfig(
             testURLs: latencyTestURLs,

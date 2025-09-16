@@ -1,6 +1,5 @@
 //
 //  NetworkScoreCalculator.swift
-//  NetworkQualityMonitor
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -108,9 +107,9 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
     }
 
     public func calculateOverallScore(httpResponse: HttpResponseResult,
-                                       bandwidth: BandwidthResult,
-                                       dns: DNSResult,
-                                       bufferBloat: BufferBloatResult) -> NetworkScore {
+                                      bandwidth: BandwidthResult,
+                                      dns: DNSResult,
+                                      bufferBloat: BufferBloatResult) -> NetworkScore {
 
         // Calculate individual component scores (0-100 scale)
         let httpResponseScore = calculateHttpResponseScore(httpResponse)

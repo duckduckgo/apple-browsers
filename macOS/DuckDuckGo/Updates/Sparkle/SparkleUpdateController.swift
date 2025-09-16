@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+#if SPARKLE
+
 import Foundation
 import Common
 import Combine
@@ -27,21 +29,14 @@ import PixelKit
 import SwiftUI
 import os.log
 
-#if SPARKLE
-
 protocol SparkleUpdateControllerProtocol: UpdateController {
     // Sparkle-specific state
-    var updateProgress: UpdateCycleProgress { get }
-    var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { get }
-
-    var areAutomaticUpdatesEnabled: Bool { get set }
     var isAtRestartCheckpoint: Bool { get }
     var shouldForceUpdateCheck: Bool { get }
 
     // Sparkle-specific methods
     func checkForUpdateRespectingRollout()
     func runUpdateFromMenuItem()
-    func runUpdate()
 }
 
 final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
@@ -332,6 +327,12 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
         }
     }
 
+    func openUpdatesPage() {
+        DispatchQueue.main.async {
+            Application.appDelegate.windowControllersManager.showTab(with: .releaseNotes)
+        }
+    }
+
     @UpdateCheckActor
     private func performUpdateCheckSkippingRollout() async {
         // User-initiated checks skip rate limiting but still respect Sparkle availability
@@ -430,33 +431,6 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
         self.updater = updater
 
         return updater
-    }
-
-    private func showUpdateNotificationIfNeeded() {
-        guard let latestUpdate, hasPendingUpdate, shouldShowUpdateNotification else { return }
-
-        let action = areAutomaticUpdatesEnabled ? UserText.autoUpdateAction : UserText.manualUpdateAction
-
-        switch latestUpdate.type {
-        case .critical:
-            notificationPresenter.showUpdateNotification(
-                icon: NSImage.criticalUpdateNotificationInfo,
-                text: "\(UserText.criticalUpdateNotification) \(action)",
-                presentMultiline: true
-            )
-        case .regular:
-            notificationPresenter.showUpdateNotification(
-                icon: NSImage.updateNotificationInfo,
-                text: "\(UserText.updateAvailableNotification) \(action)",
-                presentMultiline: true
-            )
-        }
-
-        lastUpdateNotificationShownDate = Date()
-    }
-
-    @objc func openUpdatesPage() {
-        notificationPresenter.openUpdatesPage()
     }
 
     @objc func runUpdateFromMenuItem() {

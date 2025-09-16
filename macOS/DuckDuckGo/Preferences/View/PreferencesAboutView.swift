@@ -31,15 +31,17 @@ extension Preferences {
         @ObservedObject var model: AboutPreferences
         @State private var areAutomaticUpdatesEnabled: Bool = true
 
-#if SPARKLE
         var autoUpdatesEnabled: Bool {
+#if SPARKLE
 #if DEBUG
             return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
 #else
             return true
 #endif
-        }
+#else
+            return false
 #endif
+        }
 
         var body: some View {
             PreferencePane {
@@ -53,16 +55,14 @@ extension Preferences {
 
                     AboutContentSection(model: model)
 
-#if SPARKLE
+                    #if SPARKLE
                     UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
-#endif
+                    #endif
                 }
             }.task {
-#if SPARKLE
                 if autoUpdatesEnabled && model.mustCheckForUpdatesBeforeUserCanTakeAction {
                     model.checkForUpdate(userInitiated: false)
                 }
-#endif
             }
             .onChange(of: model.featureFlagOverrideToggle) { _ in
                 // Intentional no-op
@@ -100,49 +100,13 @@ extension Preferences {
                 }
                 .padding(.top, 4)
             }
-#if SPARKLE
             .onAppear {
                 model.subscribeToUpdateInfoIfNeeded()
             }
-#endif
         }
 
         private var rightColumnContent: some View {
             Group {
-#if APPSTORE
-                HStack(spacing: 8) {
-                    Text(UserText.duckDuckGoForMacAppStore)
-                        .font(.companyName)
-                    if model.appVersionModel.shouldDisplayPrereleaseLabel {
-                        Text(model.appVersionModel.prereleaseLabel)
-                            .font(.caption2)
-                            .fontWeight(.bold)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 4)
-                            .background(
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color.betaLabelBackground)
-                            )
-                            .foregroundColor(Color.betaLabelForeground)
-                    }
-                }
-
-                Text(UserText.duckduckgoTagline).font(.privacySimplified)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .multilineTextAlignment(.leading)
-
-                Text(model.appVersionModel.versionLabel)
-                    .contextMenu(ContextMenu(menuItems: {
-                        Button(UserText.copy, action: {
-                            model.copy(model.appVersionModel.versionLabel)
-                        })
-                    }))
-
-                Button(UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: "")) {
-                    model.checkForAppStoreUpdate()
-                }
-                .buttonStyle(UpdateButtonStyle(enabled: true))
-#elseif SPARKLE
                 HStack(spacing: 8) {
                     Text(UserText.duckDuckGo)
                         .font(.companyName)
@@ -174,7 +138,6 @@ extension Preferences {
                 .padding(.bottom, 4)
 
                 updateButton
-#endif
             }
         }
 
@@ -210,14 +173,12 @@ extension Preferences {
 #endif
         }
 
-#if SPARKLE
         private var hasPendingUpdate: Bool {
             model.updateController?.hasPendingUpdate == true
         }
         private var hasCriticalUpdate: Bool {
             model.updateController?.latestUpdate?.type == .critical
         }
-#endif
 
         @ViewBuilder
         private var versionText: some View {
@@ -228,7 +189,6 @@ extension Preferences {
                             model.copy(model.appVersionModel.versionLabel)
                         })
                     }))
-#if SPARKLE
                 switch model.updateState {
                 case .upToDate:
                     Text(" — " + UserText.upToDate)
@@ -243,11 +203,9 @@ extension Preferences {
                         text(for: progress)
                     }
                 }
-#endif
             }
         }
 
-#if SPARKLE
         private var formatter: NumberFormatter {
             let formatter = NumberFormatter()
             formatter.numberStyle = .percent
@@ -359,7 +317,6 @@ extension Preferences {
                     .disabled(!configuration.enabled)
             }
         }
-#endif
     }
 
 #if SPARKLE

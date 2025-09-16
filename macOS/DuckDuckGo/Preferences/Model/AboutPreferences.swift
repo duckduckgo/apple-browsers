@@ -60,9 +60,12 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
             .store(in: &cancellables)
     }
 
-#if SPARKLE
     var useLegacyAutoRestartLogic: Bool {
+        #if SPARKLE
         !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
+        #else
+        false
+        #endif
     }
 
     var mustCheckForUpdatesBeforeUserCanTakeAction: Bool {
@@ -71,7 +74,11 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
     @Published var updateState = UpdateState.upToDate
 
-    var updateController: SparkleUpdateController? {
+    func runUpdate() {
+        updateController?.runUpdate()
+    }
+
+    var updateController: UpdateController? {
         return Application.appDelegate.updateController
     }
 
@@ -95,10 +102,6 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         updateController?.hasPendingUpdate == true
     }
 
-    private var isAtRestartCheckpoint: Bool {
-        updateController?.isAtRestartCheckpoint ?? false
-    }
-
     struct UpdateButtonConfiguration {
         let title: String
         let action: () -> Void
@@ -115,12 +118,15 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
                 },
                 enabled: true)
         case .updateCycle(let progress):
+            #if SPARKLE
             if isAtRestartCheckpoint {
                 return UpdateButtonConfiguration(
                     title: UserText.restartToUpdate,
                     action: runUpdate,
                     enabled: true)
-            } else if hasPendingUpdate {
+            }
+            #endif
+            if hasPendingUpdate {
                 return UpdateButtonConfiguration(
                     title: UserText.runUpdate,
                     action: runUpdate,
@@ -143,6 +149,31 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         }
     }
 
+    func subscribeToUpdateInfoIfNeeded() {
+        guard let updateController, !subscribed else { return }
+
+        cancellable = updateController.latestUpdatePublisher
+            .combineLatest(updateController.updateProgressPublisher)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshUpdateState()
+            }
+
+        subscribed = true
+
+        refreshUpdateState()
+    }
+
+    private func refreshUpdateState() {
+        guard let updateController else { return }
+        updateState = UpdateState(from: updateController.latestUpdate, progress: updateController.updateProgress)
+    }
+
+#if SPARKLE
+    private var isAtRestartCheckpoint: Bool {
+        guard let updateController = updateController as? SparkleUpdateController else { return false }
+        return updateController.isAtRestartCheckpoint
+    }
 #endif
 
     private var cancellable: AnyCancellable?
@@ -168,38 +199,14 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         NSWorkspace.shared.open(.appStore)
     }
 
-#if SPARKLE
     func checkForUpdate(userInitiated: Bool) {
         if userInitiated {
             updateController?.checkForUpdate()
         } else {
-            updateController?.checkForUpdateRespectingRollout()
+            #if SPARKLE
+            guard let updateController = updateController as? SparkleUpdateController else { return }
+            updateController.checkForUpdateRespectingRollout()
+            #endif
         }
     }
-
-    func runUpdate() {
-        updateController?.runUpdate()
-    }
-
-    func subscribeToUpdateInfoIfNeeded() {
-        guard let updateController, !subscribed else { return }
-
-        cancellable = updateController.latestUpdatePublisher
-            .combineLatest(updateController.updateProgressPublisher)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.refreshUpdateState()
-            }
-
-        subscribed = true
-
-        refreshUpdateState()
-    }
-
-    private func refreshUpdateState() {
-        guard let updateController else { return }
-        updateState = UpdateState(from: updateController.latestUpdate, progress: updateController.updateProgress)
-    }
-#endif
-
 }

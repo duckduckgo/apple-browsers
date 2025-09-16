@@ -96,7 +96,7 @@ final class ReleaseNotesTabExtension: NavigationResponder {
         guard AppVersion.runType != .uiTests else {
             return
         }
-        let updateController = Application.appDelegate.updateController!
+        guard let updateController = Application.appDelegate.updateController as? SparkleUpdateController else { return }
         Publishers.CombineLatest(updateController.updateProgressPublisher, updateController.latestUpdatePublisher)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in

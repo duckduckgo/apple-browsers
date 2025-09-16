@@ -1,5 +1,5 @@
 //
-//  SparkleUpdaterAvailabilityChecker.swift
+//  AppStoreUpdateMenuItemFactory.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -15,21 +15,15 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-#if SPARKLE
-import Foundation
-import Sparkle
+import Cocoa
 
-final class SparkleUpdaterAvailabilityChecker: UpdaterAvailabilityChecking {
-    var updater: SPUUpdater?
+final class AppStoreUpdateMenuItemFactory {
 
-    /// When the update is not available (equal to nil) we will return true so the Updater can
-    /// check for the last try instead.
-    var canCheckForUpdates: Bool {
-        return updater?.canCheckForUpdates ?? true
-    }
-
-    init(updater: SPUUpdater? = nil) {
-        self.updater = updater
+    static func menuItem(for update: Update) -> NSMenuItem {
+        let item = NSMenuItem(title: UserText.updateAvailableMenuItem)
+        item.target = Application.appDelegate.updateController
+        item.action = #selector(AppStoreUpdateController.openUpdatesPage)
+        item.image = NSImage.updateMenuItemIcon
+        return item
     }
 }
-#endif

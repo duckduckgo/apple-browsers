@@ -17,15 +17,8 @@
 //
 
 import Foundation
-import Common
 import Combine
-import Sparkle
-import BrowserServicesKit
-import Persistence
-import SwiftUIExtensions
-import PixelKit
-import SwiftUI
-import os.log
+import AppKit
 
 protocol UpdateController: AnyObject {
 
@@ -40,7 +33,46 @@ protocol UpdateController: AnyObject {
     var notificationDotPublisher: AnyPublisher<Bool, Never> { get }
 
     var lastUpdateCheckDate: Date? { get }
+    var lastUpdateNotificationShownDate: Date { get set }
 
-    // User-initiated update check - works for both
+    var updateProgress: UpdateCycleProgress { get }
+    var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { get }
+
+    var areAutomaticUpdatesEnabled: Bool { get set }
+
+    var notificationPresenter: UpdateNotificationPresenter { get }
+
+    func runUpdate()
     func checkForUpdate()
+    func openUpdatesPage()
+}
+
+extension UpdateController {
+
+    private var shouldShowUpdateNotification: Bool {
+        Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)
+    }
+
+    func showUpdateNotificationIfNeeded() {
+        guard let latestUpdate, hasPendingUpdate, shouldShowUpdateNotification else { return }
+
+        let action = areAutomaticUpdatesEnabled ? UserText.autoUpdateAction : UserText.manualUpdateAction
+
+        switch latestUpdate.type {
+        case .critical:
+            notificationPresenter.showUpdateNotification(
+                icon: NSImage.criticalUpdateNotificationInfo,
+                text: "\(UserText.criticalUpdateNotification) \(action)",
+                presentMultiline: true
+            )
+        case .regular:
+            notificationPresenter.showUpdateNotification(
+                icon: NSImage.updateNotificationInfo,
+                text: "\(UserText.updateAvailableNotification) \(action)",
+                presentMultiline: true
+            )
+        }
+
+        lastUpdateNotificationShownDate = Date()
+    }
 }

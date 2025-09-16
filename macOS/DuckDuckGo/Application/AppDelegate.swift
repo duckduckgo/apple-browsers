@@ -252,8 +252,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var didFinishLaunching = false
 
+    var updateController: UpdateController!
 #if SPARKLE
-    var updateController: SparkleUpdateController!
     var dockCustomization: DockCustomization?
 #endif
 
@@ -827,10 +827,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                              keyValueStore: keyValueStore,
                                                              sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
                                                              pixelFiring: PixelKit.shared)
-
+#if APPSTORE
+        if AppVersion.runType != .uiTests {
+            updateController = AppStoreUpdateController()
+        }
+#endif
 #if SPARKLE
         if AppVersion.runType != .uiTests {
             updateController = SparkleUpdateController(internalUserDecider: internalUserDecider)
+
+            guard let updateController = updateController as? SparkleUpdateController else { return }
             stateRestorationManager.subscribeToAutomaticAppRelaunching(using: updateController.willRelaunchAppPublisher)
         }
 #endif
@@ -861,10 +867,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard AppVersion.runType.requiresEnvironment else { return }
         defer {
             didFinishLaunching = true
-        }
-
-        Task {
-            AppStoreUpdateController().checkForUpdate()
         }
 
         Task {
@@ -1348,10 +1350,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func subscribeToUpdateControllerChanges() {
 #if SPARKLE
         guard AppVersion.runType != .uiTests else { return }
+        guard let updateController = updateController as? SparkleUpdateController else { return}
 
         updateProgressCancellable = updateController.updateProgressPublisher
             .sink { [weak self] progress in
-                self?.updateController.checkNewApplicationVersionIfNeeded(updateProgress: progress)
+                guard let updateController = self?.updateController as? SparkleUpdateController else { return }
+                updateController.checkNewApplicationVersionIfNeeded(updateProgress: progress)
             }
 #endif
     }

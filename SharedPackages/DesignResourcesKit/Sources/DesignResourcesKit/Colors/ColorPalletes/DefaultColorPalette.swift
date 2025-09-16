@@ -244,7 +244,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .fireDialogPillBackground:
             return DynamicColor(lightColor: .xF7F7F7, darkColor: .x1C1C1E)
         case .fireDialogPillBorder:
-            return DynamicColor(lightColor: .gray25, darkColor: Color(0x5C5C5C))
+            return DynamicColor(lightColor: Color(0xE8E8E8), darkColor: Color(0x5C5C5C))
         case .fireDialogPillSelectedSegmentBackground:
             return DynamicColor(lightColor: .white, darkColor: .gray85)
         case .fireDialogPillSelectedSegmentBorder:
@@ -266,7 +266,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .fireDialogSectionBackground:
             return DynamicColor(lightColor: Color(0xFCFCFC), darkColor: Color(0x393939))
         case .fireDialogSectionBorder:
-            return DynamicColor(lightColor: .gray25, darkColor: Color(0x424242))
+            return DynamicColor(lightColor: Color(0xEDEDED), darkColor: Color(0x424242))
         }
     }
 }

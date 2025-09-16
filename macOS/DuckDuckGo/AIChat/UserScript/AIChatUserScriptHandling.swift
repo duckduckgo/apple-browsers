@@ -23,6 +23,7 @@ import Common
 import Foundation
 import PixelKit
 import UserScript
+import OSLog
 
 protocol AIChatMetricReportingHandling {
     func didReportMetric(_ metric: AIChatMetric, completion: (() -> Void)?)
@@ -214,7 +215,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
                 let metric = try decoder.decode(AIChatMetric.self, from: jsonData)
                 didReportMetric(metric, completion: nil)
             } catch {
-                print("Failed to decode JSON: \(error)")
+                Logger.aiChat.debug("Failed to decode metric JSON in AIChatUserScript: \(error)")
             }
         }
         return nil

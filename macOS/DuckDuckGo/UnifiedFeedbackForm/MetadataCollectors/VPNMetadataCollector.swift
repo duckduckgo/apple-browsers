@@ -25,7 +25,6 @@ import NetworkProtectionIPC
 import NetworkProtectionUI
 import Subscription
 import VPN
-import VPNAppState
 
 struct VPNMetadata: Encodable {
 
@@ -129,11 +128,9 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
     private let defaults: UserDefaults
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let settings: VPNSettings
-    private let vpnAppState: VPNAppState
 
     init(defaults: UserDefaults = .netP,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-         vpnAppState: VPNAppState = .init(defaults: .netP)) {
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
 
         let ipcClient = VPNControllerXPCClient.shared
         ipcClient.register { _ in }
@@ -153,7 +150,6 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
         )
 
         self.settings = VPNSettings(defaults: defaults)
-        self.vpnAppState = vpnAppState
         updateSettings()
     }
 

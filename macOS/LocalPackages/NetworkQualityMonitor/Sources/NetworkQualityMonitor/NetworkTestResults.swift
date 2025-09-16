@@ -1,3 +1,22 @@
+//
+//  NetworkTestResults.swift
+//  NetworkQualityMonitor
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
 import Foundation
 
 // MARK: - Result Types
@@ -14,7 +33,7 @@ public struct NetworkTestResults {
 
 public struct HttpResponseResult {  // Renamed from LatencyResult
     public let averageResponseTime: Double  // Renamed from averageRTT
-    public let responseVariance: Double     // Renamed from jitter
+    public let responseVariance: Double     // Standard deviation in ms (not variance)
     public let failureRate: Double          // Renamed from packetLoss
     public let sampleCount: Int
     public let p50: Double?

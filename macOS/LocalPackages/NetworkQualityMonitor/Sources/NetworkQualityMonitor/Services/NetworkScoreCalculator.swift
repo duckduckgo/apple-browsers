@@ -66,12 +66,13 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
         static let httpResponseBelowAverage = 200.0   // 150-200ms: Definitely noticeable
         static let httpResponsePoor = 300.0           // >200ms: Users frustrated
 
-        // Response Variance penalty thresholds (standard deviation in ms)
-        // Scaled for tighter latency expectations - variance matters more at lower latencies
-        static let varianceGoodThreshold = 20.0       // <20ms std dev: Excellent consistency
-        static let varianceFairThreshold = 40.0       // 20-40ms std dev: Acceptable for good connections
-        static let variancePoorThreshold = 80.0       // 40-80ms std dev: High variance, noticeable jitter
-        static let varianceVeryPoorThreshold = 150.0  // >80ms std dev: Severe instability
+        // Coefficient of Variation (CV) thresholds for consistency scoring
+        // CV = stdDev / mean - normalizes variance relative to baseline latency
+        static let cvExcellentThreshold = 0.1    // <10% CV: Excellent consistency
+        static let cvGoodThreshold = 0.2         // 10-20% CV: Good consistency
+        static let cvFairThreshold = 0.35        // 20-35% CV: Acceptable consistency
+        static let cvPoorThreshold = 0.5         // 35-50% CV: Poor consistency
+        static let cvVeryPoorThreshold = 0.75    // 50-75% CV: Very poor consistency
 
         // Download speed thresholds (Mbps) - Based on real browsing experience
         // Excellent: Pages load instantly, 4K streaming, multiple users
@@ -149,8 +150,14 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
         // Calculate base score from response time
         let baseScore = calculateResponseTimeScore(httpResponse.averageResponseTime)
 
-        // Calculate variance penalty
-        let variancePenalty = calculateVariancePenalty(httpResponse.responseVariance)
+        // Calculate Coefficient of Variation (CV) = stdDev / mean
+        // This normalizes variance relative to the baseline latency
+        let coefficientOfVariation = httpResponse.averageResponseTime > 0
+            ? httpResponse.responseVariance / httpResponse.averageResponseTime
+            : 0
+
+        // Calculate variance penalty based on CV
+        let variancePenalty = calculateCVPenalty(coefficientOfVariation)
 
         // Additional penalty based on P95-P50 spread (if available)
         var p95Penalty = 0.0
@@ -188,15 +195,16 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
         }
     }
 
-    private func calculateVariancePenalty(_ variance: Double) -> Double {
-        // Variance penalties aligned with tighter latency scale
-        // Stricter because good connections should be consistent
-        switch variance {
-        case ..<Constants.varianceGoodThreshold: return 0      // <20ms std dev: No penalty
-        case Constants.varianceGoodThreshold..<Constants.varianceFairThreshold: return 15   // 20-40ms: Minor penalty
-        case Constants.varianceFairThreshold..<Constants.variancePoorThreshold: return 30   // 40-80ms: Moderate penalty
-        case Constants.variancePoorThreshold..<Constants.varianceVeryPoorThreshold: return 45 // 80-150ms: Heavy
-        default: return 60  // >150ms std dev: Severe penalty
+    private func calculateCVPenalty(_ cv: Double) -> Double {
+        // Penalties based on Coefficient of Variation
+        // This fairly compares consistency across different latency ranges
+        switch cv {
+        case ..<Constants.cvExcellentThreshold: return 0       // <10% CV: No penalty
+        case Constants.cvExcellentThreshold..<Constants.cvGoodThreshold: return 10  // 10-20% CV: Minor penalty
+        case Constants.cvGoodThreshold..<Constants.cvFairThreshold: return 25       // 20-35% CV: Moderate penalty
+        case Constants.cvFairThreshold..<Constants.cvPoorThreshold: return 40       // 35-50% CV: Significant penalty
+        case Constants.cvPoorThreshold..<Constants.cvVeryPoorThreshold: return 55   // 50-75% CV: Heavy penalty
+        default: return 70  // >75% CV: Severe penalty
         }
     }
 

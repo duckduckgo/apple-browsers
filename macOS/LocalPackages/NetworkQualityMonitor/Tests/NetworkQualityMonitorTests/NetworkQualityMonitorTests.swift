@@ -185,6 +185,61 @@ final class NetworkQualityMonitorTests: XCTestCase {
         XCTAssertEqual(median!, 500.5, accuracy: 0.001) // Average of 500 and 501
     }
 
+    // MARK: - Variance Calculation Tests
+
+    func testHttpResponseVarianceCalculation() {
+        // Test that the scoring system uses standard deviation with CV-based penalties
+        let calculator = NetworkScoreCalculator()
+
+        // Create dummy results for other metrics
+        let bandwidth = BandwidthResult(downloadSpeedMbps: 50, uploadSpeedMbps: 10)
+        let dns = DNSResult(averageResolutionTime: 20, failureRate: 0)
+        let bufferBloat = BufferBloatResult(baselineLatency: 50, loadedLatency: 60, increase: 10, grade: "A")
+
+        // Test with low standard deviation (10ms on 100ms mean = 10% CV)
+        let httpResponseLowVariance = HttpResponseResult(
+            averageResponseTime: 100,
+            responseVariance: 10,  // 10ms std dev (median of per-site std devs)
+            failureRate: 0,
+            sampleCount: 15,
+            p50: 95,
+            p95: 105
+        )
+
+        // Test with high standard deviation (100ms on 100ms mean = 100% CV)
+        let httpResponseHighVariance = HttpResponseResult(
+            averageResponseTime: 100,
+            responseVariance: 100,  // 100ms std dev (median of per-site std devs)
+            failureRate: 0,
+            sampleCount: 15,
+            p50: 50,
+            p95: 150
+        )
+
+        let scoreLow = calculator.calculateOverallScore(
+            httpResponse: httpResponseLowVariance,
+            bandwidth: bandwidth,
+            dns: dns,
+            bufferBloat: bufferBloat
+        )
+
+        let scoreHigh = calculator.calculateOverallScore(
+            httpResponse: httpResponseHighVariance,
+            bandwidth: bandwidth,
+            dns: dns,
+            bufferBloat: bufferBloat
+        )
+
+        // High variance should result in much lower overall score
+        XCTAssertGreaterThan(scoreLow.httpResponse, scoreHigh.httpResponse,
+                            "Low variance should result in higher HTTP response score")
+
+        // The HTTP response score difference should be significant
+        let scoreDifference = scoreLow.httpResponse - scoreHigh.httpResponse
+        XCTAssertGreaterThan(scoreDifference, 30,
+                            "Variance difference should cause substantial score difference")
+    }
+
     // MARK: - New Scoring Algorithm Tests
 
     func testHighVariancePenalty() {
@@ -192,8 +247,8 @@ final class NetworkQualityMonitorTests: XCTestCase {
         let calculator = NetworkScoreCalculator()
 
         let httpResponse = HttpResponseResult(
-            averageResponseTime: 445,     // Poor latency
-            responseVariance: 713.6,      // Extremely high variance - should heavily penalize
+            averageResponseTime: 445,     // Poor latency (median of site medians)
+            responseVariance: 713.6,       // Extremely high std dev (median of per-site std devs) - CV = 160%
             failureRate: 0,
             sampleCount: 15
         )
@@ -222,9 +277,9 @@ final class NetworkQualityMonitorTests: XCTestCase {
             bufferBloat: bufferBloat
         )
 
-        // With high variance (713ms), the overall score should be very low despite good DNS/buffer bloat
-        XCTAssertLessThan(score.overall, 40, "High variance should result in poor overall score")
-        XCTAssertLessThan(score.httpResponse, 10, "High variance should severely penalize HTTP response score")
+        // With high std dev (713.6ms), the overall score should be very low despite good DNS/buffer bloat
+        XCTAssertLessThan(score.overall, 40, "High std dev should result in poor overall score")
+        XCTAssertLessThan(score.httpResponse, 10, "High std dev should severely penalize HTTP response score")
         XCTAssertEqual(calculator.determineQuality(from: score.overall), .poor, "High variance should result in 'poor' quality rating")
     }
 }

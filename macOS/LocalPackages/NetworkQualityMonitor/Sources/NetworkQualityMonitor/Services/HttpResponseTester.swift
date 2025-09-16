@@ -154,10 +154,11 @@ public final class HttpResponseTester: HttpResponseTesting {
         let p50 = percentile(allSortedMeasurements, Constants.percentile50)
         let p95 = percentile(allSortedMeasurements, Constants.percentile95)
 
-        // Calculate overall response variance using all measurements
-        // This gives a meaningful standard deviation across all response times
-        let allResponseTimes = allMeasurements.flatMap { $0.measurements }
-        let responseVariance = calculateStandardDeviation(allResponseTimes)
+        // Calculate the median of per-site standard deviations
+        // This represents the typical consistency within endpoints
+        // rather than variance across different geographic locations
+        let siteStdDevs = siteStatistics.map { $0.standardDeviation }
+        let responseVariance = NetworkTestConstants.median(of: siteStdDevs) ?? 0
 
         // Calculate failure rate based on expected vs actual measurements
         // Expected: number of endpoints × configured samples per endpoint
@@ -227,14 +228,18 @@ public final class HttpResponseTester: HttpResponseTesting {
         return sorted[index]
     }
 
-    private func calculateStandardDeviation(_ measurements: [Double]) -> Double {
+    private func calculateVariance(_ measurements: [Double]) -> Double {
         guard measurements.count > 1 else { return 0 }
 
         let mean = measurements.reduce(0, +) / Double(measurements.count)
         let squaredDifferences = measurements.map { pow($0 - mean, 2) }
         let variance = squaredDifferences.reduce(0, +) / Double(measurements.count - 1)
 
-        return sqrt(variance)
+        return variance
+    }
+
+    private func calculateStandardDeviation(_ measurements: [Double]) -> Double {
+        return sqrt(calculateVariance(measurements))
     }
 
     private func calculateVarianceForSite(_ measurements: [Double]) -> Double {

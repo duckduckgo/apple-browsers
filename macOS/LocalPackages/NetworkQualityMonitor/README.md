@@ -39,17 +39,22 @@ NetworkQualityMonitor
 2. **Sampling**: 15 requests per endpoint with interleaved ordering to avoid bias
 3. **Statistical Analysis**:
    - Calculates median response time for each site
-   - Identifies best-performing site (lowest median)
-   - Computes overall standard deviation across all measurements
+   - Uses median of all site medians for overall response time
+   - Calculates standard deviation for each site's measurements
+   - Uses median of all site standard deviations for consistency metric
 
 #### Scoring Algorithm
 ```swift
 // Base score from response time
 baseScore = scoreResponseTime(adjustedResponseTime)
 
-// Apply variance penalty
-variancePenalty = min(responseVariance / 1000, 0.9)
-finalScore = baseScore * (1 - variancePenalty)
+// Calculate Coefficient of Variation (CV) = stdDev / mean
+// Normalizes variance relative to baseline latency for fair comparison
+coefficientOfVariation = stdDev / averageResponseTime
+
+// Apply CV-based penalty (fairer than raw standard deviation)
+// <10% CV: no penalty, 10-20%: -10pts, 20-35%: -25pts, >75%: -70pts
+finalScore = baseScore - cvPenalty - p95Penalty - failurePenalty
 ```
 
 #### Response Time Thresholds
@@ -58,9 +63,12 @@ finalScore = baseScore * (1 - variancePenalty)
 - **Fair (60 points)**: 100-200ms
 - **Poor (30 points)**: > 200ms
 
-#### Statistical Corrections
+#### Statistical Metrics
 - **Failure Rate**: `(expected_attempts - successful_attempts) / expected_attempts`
-- **Standard Deviation**: Calculated across all response times for consistency measurement
+- **Standard Deviation**: Median of per-site standard deviations (typical consistency within endpoints)
+- **Coefficient of Variation (CV)**: `stdDev / mean` - Normalizes variance for fair comparison
+  - 10ms stdDev on 50ms mean = 20% CV (moderate penalty)
+  - 10ms stdDev on 200ms mean = 5% CV (no penalty)
 - **Percentiles**: Tracks P50 (median) and P95 (worst-case) for comprehensive analysis
 
 ### Bandwidth Score (35% weight)
@@ -285,11 +293,16 @@ func calculateStandardDeviation(_ measurements: [Double]) -> Double {
 }
 ```
 
-### High Variance Penalty
-Applied when network consistency is poor:
-- Variance < 100ms: Minimal penalty
-- Variance 100-500ms: Moderate penalty (up to 50% reduction)
-- Variance > 500ms: Severe penalty (up to 90% reduction)
+### Coefficient of Variation (CV) Penalty
+Applied based on relative consistency (stdDev/mean):
+- CV < 10%: No penalty (excellent consistency)
+- CV 10-20%: 10 point penalty (good consistency)
+- CV 20-35%: 25 point penalty (acceptable consistency)
+- CV 35-50%: 40 point penalty (poor consistency)
+- CV 50-75%: 55 point penalty (very poor consistency)
+- CV > 75%: 70 point penalty (severe instability)
+
+This approach fairly compares different latency ranges - a 10ms variance on 50ms latency (20% CV) is penalized more than 10ms variance on 200ms latency (5% CV).
 
 ## Performance Optimizations
 

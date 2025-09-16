@@ -1,0 +1,78 @@
+//
+//  AnimatedDaxLogoView.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import UIKit
+import Lottie
+
+final class AnimatedDaxLogoView: UIView, DaxLogoViewSwitching {
+    private(set) lazy var logoAnimation = LottieAnimationView(name: "duckduckgo-ai-transition.json")
+
+    init() {
+        super.init(frame: .zero)
+
+        setUpSubviews()
+    }
+
+    func updateProgress(_ progress: CGFloat) {
+        logoAnimation.currentProgress = progress
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setUpSubviews() {
+        logoAnimation.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(logoAnimation)
+
+        NSLayoutConstraint.activate([
+            logoAnimation.leadingAnchor.constraint(equalTo: leadingAnchor),
+            logoAnimation.trailingAnchor.constraint(equalTo: trailingAnchor),
+            logoAnimation.topAnchor.constraint(equalTo: topAnchor),
+            logoAnimation.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            logoAnimation.heightAnchor.constraint(lessThanOrEqualToConstant: Metrics.maxLogoSize),
+            logoAnimation.heightAnchor.constraint(equalToConstant: Metrics.maxLogoSize).withPriority(.defaultHigh)
+        ])
+
+    }
+
+    private func updateAnimationForCurrentTraitCollection() {
+        let progress = logoAnimation.currentProgress
+        if traitCollection.userInterfaceStyle == .dark {
+            logoAnimation.animation = LottieAnimation.named("duckduckgo-ai-transition-dark.json")
+        } else {
+            logoAnimation.animation = LottieAnimation.named("duckduckgo-ai-transition.json")
+        }
+        logoAnimation.currentProgress = progress
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            updateAnimationForCurrentTraitCollection()
+        }
+    }
+
+    private struct Metrics {
+        static let maxLogoSize: CGFloat = 162
+    }
+}

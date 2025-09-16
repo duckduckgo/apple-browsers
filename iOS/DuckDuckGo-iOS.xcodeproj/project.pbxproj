@@ -451,6 +451,9 @@
 		6F23316B2DD4E2C4004D102D /* TabSwitcherAnimatedButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F2331692DD4E2C4004D102D /* TabSwitcherAnimatedButton.swift */; };
 		6F23316C2DD4E2C4004D102D /* TabSwitcherButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F23316A2DD4E2C4004D102D /* TabSwitcherButton.swift */; };
 		6F23316E2DD52E1B004D102D /* TabSwitcherStaticButtonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F23316D2DD52E1B004D102D /* TabSwitcherStaticButtonTests.swift */; };
+		6F33F3942E786888002E95B1 /* duckduckgo-ai-transition.json in Resources */ = {isa = PBXBuildFile; fileRef = 6F33F3912E786888002E95B1 /* duckduckgo-ai-transition.json */; };
+		6F33F3962E7969B1002E95B1 /* duckduckgo-ai-transition-dark.json in Resources */ = {isa = PBXBuildFile; fileRef = 6F33F3952E7969B1002E95B1 /* duckduckgo-ai-transition-dark.json */; };
+		6F33F3982E797C65002E95B1 /* AnimatedDaxLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F33F3972E797C65002E95B1 /* AnimatedDaxLogoView.swift */; };
 		6F3529FF2CDCEDFF00A59170 /* OmniBarLoadingStateBearerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F3529FE2CDCEDF700A59170 /* OmniBarLoadingStateBearerTests.swift */; };
 		6F3537A42C4AC140009F8717 /* NewTabPageDaxLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F3537A32C4AC140009F8717 /* NewTabPageDaxLogoView.swift */; };
 		6F395BBB2CD2C87D00B92FC3 /* BoolFileMarkerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F395BB92CD2C84300B92FC3 /* BoolFileMarkerTests.swift */; };
@@ -2368,6 +2371,9 @@
 		6F2331692DD4E2C4004D102D /* TabSwitcherAnimatedButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherAnimatedButton.swift; sourceTree = "<group>"; };
 		6F23316A2DD4E2C4004D102D /* TabSwitcherButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherButton.swift; sourceTree = "<group>"; };
 		6F23316D2DD52E1B004D102D /* TabSwitcherStaticButtonTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherStaticButtonTests.swift; sourceTree = "<group>"; };
+		6F33F3912E786888002E95B1 /* duckduckgo-ai-transition.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "duckduckgo-ai-transition.json"; sourceTree = "<group>"; };
+		6F33F3952E7969B1002E95B1 /* duckduckgo-ai-transition-dark.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "duckduckgo-ai-transition-dark.json"; sourceTree = "<group>"; };
+		6F33F3972E797C65002E95B1 /* AnimatedDaxLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedDaxLogoView.swift; sourceTree = "<group>"; };
 		6F3529FE2CDCEDF700A59170 /* OmniBarLoadingStateBearerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniBarLoadingStateBearerTests.swift; sourceTree = "<group>"; };
 		6F3537A32C4AC140009F8717 /* NewTabPageDaxLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageDaxLogoView.swift; sourceTree = "<group>"; };
 		6F395BB92CD2C84300B92FC3 /* BoolFileMarkerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoolFileMarkerTests.swift; sourceTree = "<group>"; };
@@ -4960,15 +4966,6 @@
 			path = LocalPackages;
 			sourceTree = "<group>";
 		};
-		365E90092E566C0A00BDB0E8 /* AppIntents */ = {
-			isa = PBXGroup;
-			children = (
-				365E90122E5673DF00BDB0E8 /* SearchInAppIntent.swift */,
-				365E900A2E566C2300BDB0E8 /* AIChatIntent.swift */,
-			);
-			path = AppIntents;
-			sourceTree = "<group>";
-		};
 		362E3EBA2E7184AB00E4C762 /* AIChat */ = {
 			isa = PBXGroup;
 			children = (
@@ -5156,6 +5153,15 @@
 				36F2CA5A2E60588F00C7039D /* MockUNUserNotificationCenter.swift */,
 			);
 			path = Application;
+			sourceTree = "<group>";
+		};
+		365E90092E566C0A00BDB0E8 /* AppIntents */ = {
+			isa = PBXGroup;
+			children = (
+				365E90122E5673DF00BDB0E8 /* SearchInAppIntent.swift */,
+				365E900A2E566C2300BDB0E8 /* AIChatIntent.swift */,
+			);
+			path = AppIntents;
 			sourceTree = "<group>";
 		};
 		369E692B2E5F6E9F00F98A8F /* AppServices */ = {
@@ -5501,6 +5507,9 @@
 		6F33F3902E786875002E95B1 /* DaxLogo */ = {
 			isa = PBXGroup;
 			children = (
+				6F33F3952E7969B1002E95B1 /* duckduckgo-ai-transition-dark.json */,
+				6F33F3912E786888002E95B1 /* duckduckgo-ai-transition.json */,
+				6F33F3972E797C65002E95B1 /* AnimatedDaxLogoView.swift */,
 				31B5E8C42E1E64D400EECC1E /* DaxLogoManager.swift */,
 			);
 			path = DaxLogo;
@@ -9586,6 +9595,7 @@
 				84E341A01E2F7EFB00BDBA6F /* LaunchScreen.storyboard in Resources */,
 				98D16973250CE707009513CC /* PrivacyInfoContainer.xib in Resources */,
 				F4F7F10C25813FE200045D62 /* 03_Airstream_divided_by_four.json in Resources */,
+				6F33F3962E7969B1002E95B1 /* duckduckgo-ai-transition-dark.json in Resources */,
 				C15516062D47D2EF001B94E9 /* burst-blob-passwords.json in Resources */,
 				984147B424F0264B00362052 /* Authentication.storyboard in Resources */,
 				98D98A9B25ED954100D8E3DF /* BrowsingMenuButton.xib in Resources */,
@@ -9637,6 +9647,7 @@
 				1EEF124C2850A93F003DDE57 /* Trackers.xcassets in Resources */,
 				4B37E0502B928CA6009E81CA /* vpn-light-mode.json in Resources */,
 				310C24E22E6B6ACB00D5A372 /* toggle-ios-light.json in Resources */,
+				6F33F3942E786888002E95B1 /* duckduckgo-ai-transition.json in Resources */,
 				9830A06325ED0DB900DB64DE /* BrowsingMenu.xcassets in Resources */,
 				98EF177D21837E35006750C1 /* new_tab_dark.json in Resources */,
 				7B059F1E2D03A7E400371ED0 /* WidgetsShared.xcassets in Resources */,
@@ -10311,6 +10322,7 @@
 				1EEF12502851016B003DDE57 /* PrivacyIconAndTrackersAnimator.swift in Sources */,
 				31CB4251273AF50700FA0F3F /* SpeechRecognizerProtocol.swift in Sources */,
 				319A37172829C8AD0079FBCE /* UITableViewExtension.swift in Sources */,
+				6F33F3982E797C65002E95B1 /* AnimatedDaxLogoView.swift in Sources */,
 				7B1681062D10BC96005EAE24 /* VPNShortcutIntents.swift in Sources */,
 				85EE7F59224673C5000FE757 /* WebContainerNavigationController.swift in Sources */,
 				D68A21462B7EC16200BB372E /* SubscriptionExternalLinkViewModel.swift in Sources */,

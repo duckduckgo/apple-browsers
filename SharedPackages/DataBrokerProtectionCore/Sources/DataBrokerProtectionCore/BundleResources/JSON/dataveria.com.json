@@ -1,8 +1,7 @@
 {
   "name": "Dataveria",
   "url": "dataveria.com",
-  "version": "0.5.0",
-  "parent": "verecor.com",
+  "version": "0.6.0",
   "addedDatetime": 1677736800000,
   "optOutUrl": "https://dataveria.com/ng/control/privacy",
   "steps": [
@@ -31,23 +30,27 @@
           "noResultsSelector": "//div[contains(@class, 'page-404')]//h1[contains(text(), 'Sorry')]",
           "profile": {
             "name": {
-              "selector": ".//div[@class='col-sm-24 col-md-19 col-text']"
+              "selector": ".//h2[@class='search-item__title-age']",
+              "beforeText": ","
             },
             "alternativeNamesList": {
-              "selector": ".//div[@class='col-sm-24 col-md-16 name']//li",
+              "selector": ".//div[@class='search-item__known-col']/dd[@class='search-item__known-info']",
               "findElements": true
             },
             "age": {
-              "selector": ".age"
+              "selector": ".//h2[@class='search-item__title-age']"
+            },
+            "addressCityState": {
+              "selector": ".//div[@class='search-item__title-loc']",
+              "afterText": "Addresses:"
             },
             "addressCityStateList": {
-              "selector": ".//span[@itemprop='address']",
+              "selector": ".//dt[@class='search-item__info-title' and contains(text(), 'Used to Live')]/following-sibling::div[@class='search-item__info-col']/dd",
               "findElements": true
             },
             "relativesList": {
-              "selector": ".//li[@itemprop='relatedTo']",
-              "findElements": true,
-              "beforeText": ","
+              "selector": ".//dt[@class='search-item__info-title' and contains(text(), 'Relatives')]/following-sibling::div[@class='search-item__info-col']/dd",
+              "findElements": true
             },
             "profileUrl": {
               "selector": "a",
@@ -60,8 +63,92 @@
     },
     {
       "stepType": "optOut",
-      "optOutType": "parentSiteOptOut",
-      "actions": []
+      "optOutType": "formOptOut",
+      "actions": [
+        {
+          "actionType": "navigate",
+          "url": "https://dataveria.com/opt-out/privacy",
+          "id": "b7ff47f7-7466-4399-a144-606378d596dd"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//h1[contains(text(), 'Opt Out')]",
+              "parent": ".container"
+            }
+          ],
+          "id": "98988ee9-b838-4fa3-b1f2-b4f35e77be25"
+        },
+        {
+          "actionType": "fillForm",
+          "selector": ".ahm",
+          "elements": [
+            {
+              "type": "fullName",
+              "selector": "#user_name"
+            },
+            {
+              "type": "email",
+              "selector": "#user_email"
+            },
+            {
+              "type": "profileUrl",
+              "selector": "#url"
+            }
+          ],
+          "id": "3406cb92-f8f3-47c8-865f-dd1dc2962f46"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//input[@name='cf-turnstile-response' and @value and @value != '']",
+              "parent": "//form[@id='form-contact']"
+            }
+          ],
+          "id": "43fa7095-e26c-4360-8b1c-21a9c59fdaf8"
+        },
+        {
+          "actionType": "click",
+          "elements": [
+            {
+              "type": "button",
+              "selector": ".//button[@type='submit']"
+            }
+          ],
+          "id": "502343a6-a543-4751-9a4f-4503d1531008"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "text",
+              "selector": "body",
+              "expect": "Your removal request has been received"
+            }
+          ],
+          "id": "efdfc904-12aa-4af5-a316-efbed99e4c93"
+        },
+        {
+          "actionType": "emailConfirmation",
+          "pollingTime": 30,
+          "id": "d2c74394-fb1d-4428-b7b0-4155de0c65ea"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "text",
+              "selector": "body",
+              "expect": "Your information control request has been confirmed."
+            }
+          ],
+          "id": "241d30c4-eba8-49d9-bd57-ab35ac2ce8cc"
+        }
+      ]
     }
   ],
   "schedulingConfig": {

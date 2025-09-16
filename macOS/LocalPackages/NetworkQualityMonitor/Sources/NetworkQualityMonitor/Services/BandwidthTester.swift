@@ -1,6 +1,5 @@
 //
 //  BandwidthTester.swift
-//  NetworkQualityMonitor
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -43,7 +42,7 @@ public final class BandwidthTester: BandwidthTesting {
     }
 
     public func performDownloadTest(configuration: TestConfiguration,
-                                     progressCallback: ((String) -> Void)? = nil) async throws -> Double {
+                                    progressCallback: ((String) -> Void)? = nil) async throws -> Double {
         progressCallback?(Constants.downloadProgressMessage)
 
         var bestSpeed: Double = 0
@@ -81,7 +80,7 @@ public final class BandwidthTester: BandwidthTesting {
     }
 
     public func performUploadTest(configuration: TestConfiguration,
-                                   progressCallback: ((String) -> Void)? = nil) async throws -> Double {
+                                  progressCallback: ((String) -> Void)? = nil) async throws -> Double {
         progressCallback?(Constants.uploadProgressMessage)
 
         var bestSpeed: Double = 0

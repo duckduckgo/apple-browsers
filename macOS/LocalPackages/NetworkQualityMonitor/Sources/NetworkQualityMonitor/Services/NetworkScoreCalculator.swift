@@ -263,9 +263,9 @@ public final class NetworkScoreCalculator: NetworkScoreCalculating {
     }
 
     private func calculateWeightedScore(httpResponseScore: Double,
-                                         bandwidthScore: Double,
-                                         dnsScore: Double,
-                                         bufferBloatScore: Double) -> Double {
+                                        bandwidthScore: Double,
+                                        dnsScore: Double,
+                                        bufferBloatScore: Double) -> Double {
         // Weights optimized for browser performance testing decisions:
         // - HTTP Response (50%): Page load latency & consistency most critical
         // - Bandwidth (35%): Resource download speed for images, JS, CSS  

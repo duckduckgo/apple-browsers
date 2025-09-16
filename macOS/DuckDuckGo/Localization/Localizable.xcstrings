@@ -70299,6 +70299,7 @@
       }
     },
     "Privacy Pro" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

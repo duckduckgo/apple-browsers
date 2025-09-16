@@ -126,7 +126,7 @@ extension VoiceSearchFeedbackView {
             .resizable()
             .renderingMode(.template)
             .frame(width: micSize.width, height: micSize.height)
-            .foregroundColor(.white)
+            .foregroundColor(Color(designSystemColor: .accentContentPrimary))
     }
 
     private var outerCircle: some View {
@@ -209,13 +209,13 @@ extension VoiceSearchFeedbackView {
     }
 
     private struct Colors {
-        static let innerCircle = Color(baseColor: .blue50)
-        static let outerCircle = Color(baseColor: .blue30).opacity(0.2)
+        static let innerCircle = Color(designSystemColor: .accent)
+        static let outerCircle = Color(designSystemColor: .accentGlowSecondary)
 
         static let innerAIChatCircle = Color(baseColor: .purple30)
         static let outerAIChatCircle = Color(baseColor: .purple30).opacity(0.2)
 
-        static let footerText = Color(baseColor: .gray60)
+        static let footerText = Color(designSystemColor: .textSecondary)
         static let cancelButton = Color(designSystemColor: .textSecondary)
         static let speechFeedback = Color(designSystemColor: .textPrimary)
     }

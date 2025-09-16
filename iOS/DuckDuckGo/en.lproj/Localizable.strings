@@ -3355,6 +3355,18 @@ Take back control of your personal information with the browser designed for dat
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sync & Back Up Your Passwords";
 
+/* Button title to skip */
+"sync.recovery.prompt.continue.button" = "Skip";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "Passwords saved in DuckDuckGo don’t transfer with iCloud because they’re encrypted on device. Turn on Sync & Backup on another device where your passwords are saved — like your computer or old phone or use the recovery code.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Restore from Another Device";
+
+/* Title for the sync recovery prompt */
+"sync.recovery.prompt.title" = "Restore your DuckDuckGo passwords from another device.";
+
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Remove";
 

@@ -1192,6 +1192,12 @@ public struct UserText {
     public static let syncPromoConfirmAction = NSLocalizedString("sync.promo.confirm.action", value: "Set Up Sync", comment: "Title for a button in the Sync Promotion banner to set up Sync")
     public static let syncPromoDismissAction = NSLocalizedString("sync.promo.dismiss.action", value: "No Thanks", comment: "Title for a button in the Sync Promotion banner to dismiss Sync promotion banner")
 
+    // MARK: Sync Recovery Prompt
+    public static let syncRecoveryPromptTitle = NSLocalizedString("sync.recovery.prompt.title", value: "Restore your DuckDuckGo passwords from another device.", comment: "Title for the sync recovery prompt")
+    public static let syncRecoveryPromptMessage = NSLocalizedString("sync.recovery.prompt.message", value: "Passwords saved in DuckDuckGo don’t transfer with iCloud because they’re encrypted on device. Turn on Sync & Backup on another device where your passwords are saved — like your computer or old phone or use the recovery code.", comment: "Message for the sync recovery prompt")
+    public static let syncRecoveryPromptSyncButton = NSLocalizedString("sync.recovery.prompt.sync.button", value: "Restore from Another Device", comment: "Button title to sync with another device")
+    public static let syncRecoveryPromptContinueButton = NSLocalizedString("sync.recovery.prompt.continue.button", value: "Skip", comment: "Button title to skip")
+
     // Mark: Import Promotion
     public static let importPasswordsPromoTitle =  NSLocalizedString("import.passwords.promo.title", value: "Import your passwords to DuckDuckGo", comment: "Title for the Import Passwords Promotion banner")
     public static let importPasswordsPromoMessage =  NSLocalizedString("import.passwords.promo.message", value: "Quickly and securely transfer your passwords from another browser.", comment: "Message body for the Import Passwords Promotion banner")

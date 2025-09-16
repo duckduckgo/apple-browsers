@@ -21,7 +21,7 @@ import UIKit
 import Lottie
 
 final class AnimatedDaxLogoView: UIView, DaxLogoViewSwitching {
-    private(set) lazy var logoAnimation = LottieAnimationView(name: "duckduckgo-ai-transition.json")
+    private(set) lazy var logoAnimation = LottieAnimationView(name: Constant.daxLogoAnimationName)
 
     init() {
         super.init(frame: .zero)

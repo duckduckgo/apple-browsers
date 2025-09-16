@@ -136,7 +136,6 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var isUpdatedAIFeaturesSettingsEnabled: Bool {
-//        return false
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
     

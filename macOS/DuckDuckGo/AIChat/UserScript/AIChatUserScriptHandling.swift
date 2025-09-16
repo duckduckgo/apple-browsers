@@ -24,6 +24,10 @@ import Foundation
 import PixelKit
 import UserScript
 
+protocol AIChatMetricReportingHandling {
+    func didReportMetric(_ metric: AIChatMetric)
+}
+
 protocol AIChatUserScriptHandling {
     @MainActor func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -43,6 +47,8 @@ protocol AIChatUserScriptHandling {
     var messageHandling: AIChatMessageHandling { get }
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitPageContext(_ pageContext: AIChatPageContextData)
+
+    func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 struct AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -159,6 +165,22 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     func submitPageContext(_ pageContext: AIChatPageContextData) {
         pageContextSubject.send(pageContext)
     }
+
+    func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let paramsDict = params as? [String: Any],
+           let jsonData = try? JSONSerialization.data(withJSONObject: paramsDict, options: []) {
+
+            let decoder = JSONDecoder()
+            do {
+                let metric = try decoder.decode(AIChatMetric.self, from: jsonData)
+                didReportMetric(metric)
+            } catch {
+                print("Failed to decode JSON: \(error)")
+            }
+        }
+        return nil
+    }
+
 }
 
 extension NSNotification.Name {
@@ -177,5 +199,11 @@ extension AIChatUserScriptHandler {
             case newWindow = "new-window"
         }
 
+    }
+}
+
+extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
+    func didReportMetric(_ metric: AIChatMetric) {
+        //TODO
     }
 }

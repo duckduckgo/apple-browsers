@@ -24,9 +24,7 @@ final class MockStatisticsStore: StatisticsStore {
     var hasCurrentOrDeprecatedInstallStatistics: Bool = false
     var installDate: Date?
     var atb: String?
-    var searchRetentionAtb: String?
     var appRetentionAtb: String?
-    var duckAIRetentionAtb: String?
 
     var variant: String?
     var lastAppRetentionRequestDate: Date?
@@ -35,5 +33,20 @@ final class MockStatisticsStore: StatisticsStore {
 
     var autoLockEnabled: Bool = true
     var autoLockThreshold: String? = AutofillAutoLockThreshold.fifteenMinutes.rawValue
+
+    var searchRetentionRefreshed = false
+    var duckAIRetentionRefreshed = false
+
+    var searchRetentionAtb: String? {
+        didSet {
+            searchRetentionRefreshed = true
+        }
+    }
+
+    var duckAIRetentionAtb: String? {
+        didSet {
+            duckAIRetentionRefreshed = true
+        }
+    }
 
 }

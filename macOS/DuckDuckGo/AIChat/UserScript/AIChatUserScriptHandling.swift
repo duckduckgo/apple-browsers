@@ -25,7 +25,7 @@ import PixelKit
 import UserScript
 
 protocol AIChatMetricReportingHandling {
-    func didReportMetric(_ metric: AIChatMetric)
+    func didReportMetric(_ metric: AIChatMetric, completion: (() -> Void)?)
 }
 
 protocol AIChatUserScriptHandling {
@@ -212,7 +212,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
             let decoder = JSONDecoder()
             do {
                 let metric = try decoder.decode(AIChatMetric.self, from: jsonData)
-                didReportMetric(metric)
+                didReportMetric(metric, completion: nil)
             } catch {
                 print("Failed to decode JSON: \(error)")
             }
@@ -264,20 +264,22 @@ extension AIChatUserScriptHandler {
 
 extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
 
-    func didReportMetric(_ metric: AIChatMetric) {
+    func didReportMetric(_ metric: AIChatMetric, completion: (() -> Void)? = nil) {
         switch metric.metricName {
         case .userDidSubmitFirstPrompt, .userDidSubmitPrompt:
             DispatchQueue.main.async { [self] in
-                refreshAtbs()
+                refreshAtbs(completion: completion)
             }
         default:
+            completion?()
             return
         }
     }
 
-    private func refreshAtbs() {
-        statisticsLoader?.refreshSearchRetentionAtb()
-        statisticsLoader?.refreshDuckAIRetentionAtb()
+    private func refreshAtbs(completion: (() -> Void)? = nil) {
+        statisticsLoader?.refreshRetentionAtbOnDuckAiPromptSubmition {
+            completion?()
+        }
     }
 
 }

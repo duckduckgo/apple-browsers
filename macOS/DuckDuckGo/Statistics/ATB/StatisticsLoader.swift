@@ -92,8 +92,21 @@ final class StatisticsLoader {
         load {
             dispatchPrecondition(condition: .onQueue(.main))
 
-            self.refreshSearchRetentionAtb()
-            self.refreshDuckAIRetentionAtb()
+            let group = DispatchGroup()
+            group.enter()
+            group.enter()
+
+            self.refreshSearchRetentionAtb {
+                group.leave()
+            }
+
+            self.refreshDuckAIRetentionAtb {
+                group.leave()
+            }
+
+            group.notify(queue: .main) {
+                completion()
+            }
         }
     }
 

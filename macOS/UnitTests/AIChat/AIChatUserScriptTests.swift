@@ -116,6 +116,8 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didSubmitPageContext = false
     var pageContextSubject = PassthroughSubject<AIChatPageContextData, Never>()
 
+    var didReportMetric = false
+
     var messageHandling: any DuckDuckGo_Privacy_Browser.AIChatMessageHandling
 
     init(messageHandling: any AIChatMessageHandling = MockAIChatMessageHandling()) {
@@ -191,6 +193,11 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func submitPageContext(_ pageContext: AIChatPageContextData) {
         didSubmitPageContext = true
+    }
+
+    func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didReportMetric = true
+        return nil
     }
 
 }

@@ -59,6 +59,7 @@ struct AIChatUserScriptHandlerTests {
     private var notificationCenter = NotificationCenter()
     private var pixelFiring = PixelKitMock()
     private var handler: AIChatUserScriptHandler
+    private var statisticsLoader = StatisticsLoader(statisticsStore: MockStatisticsStore())
 
     @MainActor
     init() {
@@ -69,6 +70,7 @@ struct AIChatUserScriptHandlerTests {
             messageHandling: messageHandler,
             windowControllersManager: windowControllersManager,
             pixelFiring: pixelFiring,
+            statisticsLoader: statisticsLoader,
             notificationCenter: notificationCenter
         )
     }

@@ -256,7 +256,7 @@ class StatisticsLoaderTests: XCTestCase {
         loadSuccessfulUpdateAtbStub()
 
         let expect = expectation(description: "Search retention ATB requested")
-        testee.refreshRetentionAtb(isSearch: true, isDuckAI: false) {
+        testee.refreshRetentionAtbOnNavigation(isSearch: true, isDuckAI: false) {
             XCTAssertEqual(self.mockStatisticsStore.atb, "v20-1")
             XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "v77-5")
             XCTAssertTrue(self.fireSearchExperimentPixelsCalled)
@@ -274,7 +274,7 @@ class StatisticsLoaderTests: XCTestCase {
         loadSuccessfulUpdateAtbStub()
 
         let expect = expectation(description: "App retention ATB requested")
-        testee.refreshRetentionAtb(isSearch: false, isDuckAI: false) {
+        testee.refreshRetentionAtbOnNavigation(isSearch: false, isDuckAI: false) {
             XCTAssertEqual(self.mockStatisticsStore.atb, "v20-1")
             XCTAssertEqual(self.mockStatisticsStore.appRetentionAtb, "v77-5")
             XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "searchRetentionAtb")
@@ -295,7 +295,7 @@ class StatisticsLoaderTests: XCTestCase {
         loadSuccessfulUpdateAtbStub()
 
         let expect = expectation(description: "App retention ATB not requested")
-        testee.refreshRetentionAtb(isSearch: false, isDuckAI: false) {
+        testee.refreshRetentionAtbOnNavigation(isSearch: false, isDuckAI: false) {
             XCTAssertEqual(self.mockStatisticsStore.atb, "atb")
             XCTAssertEqual(self.mockStatisticsStore.appRetentionAtb, "appRetentionAtb")
             XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "searchRetentionAtb")
@@ -312,7 +312,7 @@ class StatisticsLoaderTests: XCTestCase {
         loadSuccessfulUpdateAtbStub()
 
         let expect = expectation(description: "App retention ATB requested")
-        testee.refreshRetentionAtb(isSearch: false, isDuckAI: false) {
+        testee.refreshRetentionAtbOnNavigation(isSearch: false, isDuckAI: false) {
             XCTAssertEqual(self.mockStatisticsStore.atb, "v20-1")
             XCTAssertEqual(self.mockStatisticsStore.appRetentionAtb, "v77-5")
             XCTAssertNil(self.mockStatisticsStore.searchRetentionAtb)

@@ -4857,10 +4857,10 @@
 		31B5E8C32E1D564000EECC1E /* FlowManagers */ = {
 			isa = PBXGroup;
 			children = (
+				6F33F3902E786875002E95B1 /* DaxLogo */,
 				31B5E8BB2E1D54BB00EECC1E /* NavigationActionBarManager.swift */,
 				31B5E8BC2E1D54BB00EECC1E /* SuggestionTrayManager.swift */,
 				31B5E8BD2E1D54BB00EECC1E /* SwipeContainerManager.swift */,
-				31B5E8C42E1E64D400EECC1E /* DaxLogoManager.swift */,
 			);
 			path = FlowManagers;
 			sourceTree = "<group>";
@@ -5496,6 +5496,14 @@
 				85374D3621AC417200FF5A1E /* Renderers */,
 			);
 			name = FavoritesSearchOverlay;
+			sourceTree = "<group>";
+		};
+		6F33F3902E786875002E95B1 /* DaxLogo */ = {
+			isa = PBXGroup;
+			children = (
+				31B5E8C42E1E64D400EECC1E /* DaxLogoManager.swift */,
+			);
+			path = DaxLogo;
 			sourceTree = "<group>";
 		};
 		6F505C022DD2158100E1A1DA /* ToolbarButtons */ = {

@@ -57,16 +57,16 @@ final class StatisticsLoader {
         self.fireAppRetentionExperimentPixels = fireAppRetentionExperimentPixels
     }
 
-    func refreshRetentionAtb(isSearch: Bool,
-                             isDuckAI: Bool,
-                             completion: @escaping Completion = {})
+    func refreshRetentionAtbOnNavigation(isSearch: Bool,
+                                         isDuckAI: Bool,
+                                         completion: @escaping Completion = {})
     {
         load {
             dispatchPrecondition(condition: .onQueue(.main))
 
-            if isSearch {
+            if isSearch && !isDuckAI {
                 self.refreshSearchRetentionAtb {
-                    self.refreshRetentionAtb(isSearch: false, isDuckAI: false) {
+                    self.refreshRetentionAtbOnNavigation(isSearch: false, isDuckAI: false) {
                         completion()
                     }
                 }
@@ -77,16 +77,23 @@ final class StatisticsLoader {
                     self.fireDailyOsVersionCounterPixel()
                 }
                 self.fireDockPixel()
-                if isDuckAI {
-                    self.refreshDuckAIRetentionAtb()
-                }
-            } else if !self.statisticsStore.isAppRetentionFiredToday {
+            }
+            if !self.statisticsStore.isAppRetentionFiredToday {
                 self.refreshAppRetentionAtb(completion: completion)
                 self.fireAppRetentionExperimentPixels()
             } else {
                 self.fireAppRetentionExperimentPixels()
                 completion()
             }
+        }
+    }
+
+    func refreshRetentionAtbOnDuckAiPromptSubmition(completion: @escaping Completion = {}) {
+        load {
+            dispatchPrecondition(condition: .onQueue(.main))
+
+            self.refreshSearchRetentionAtb()
+            self.refreshDuckAIRetentionAtb()
         }
     }
 

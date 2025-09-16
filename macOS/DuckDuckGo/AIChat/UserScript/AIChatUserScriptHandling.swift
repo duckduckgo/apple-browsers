@@ -62,18 +62,21 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring?
+    private let statisticsLoader: StatisticsLoader?
 
     init(
         storage: AIChatPreferencesStorage,
         messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
         windowControllersManager: WindowControllersManagerProtocol,
         pixelFiring: PixelFiring?,
+        statisticsLoader: StatisticsLoader?,
         notificationCenter: NotificationCenter = .default
     ) {
         self.storage = storage
         self.messageHandling = messageHandling
         self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
+        self.statisticsLoader = statisticsLoader
         self.notificationCenter = notificationCenter
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
@@ -203,7 +206,21 @@ extension AIChatUserScriptHandler {
 }
 
 extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
+
     func didReportMetric(_ metric: AIChatMetric) {
-        //TODO
+        switch metric.metricName {
+        case .userDidSubmitFirstPrompt, .userDidSubmitPrompt:
+            DispatchQueue.main.async { [self] in
+                refreshAtbs()
+            }
+        default:
+            return
+        }
     }
+
+    private func refreshAtbs() {
+        statisticsLoader?.refreshSearchRetentionAtb()
+        statisticsLoader?.refreshDuckAIRetentionAtb()
+    }
+
 }

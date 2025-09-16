@@ -1503,6 +1503,8 @@
 		C1CDA31E2AFBF811006D1476 /* AutofillNeverPromptWebsitesManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CDA31D2AFBF811006D1476 /* AutofillNeverPromptWebsitesManagerTests.swift */; };
 		C1D21E2D293A5965006E5A05 /* AutofillLoginSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D21E2C293A5965006E5A05 /* AutofillLoginSession.swift */; };
 		C1D21E2F293A599C006E5A05 /* AutofillLoginSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D21E2E293A599C006E5A05 /* AutofillLoginSessionTests.swift */; };
+		C1D6C1DB2E74282700F29155 /* SwitchBarRetentionMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D6C1DA2E74282700F29155 /* SwitchBarRetentionMetrics.swift */; };
+		C1D6C1DD2E74285A00F29155 /* SwitchBarRetentionMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D6C1DC2E74285A00F29155 /* SwitchBarRetentionMetricsTests.swift */; };
 		C1D7F3F42D5F6D7B0029B213 /* BookmarksEmptyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D7F3F32D5F6D7B0029B213 /* BookmarksEmptyView.swift */; };
 		C1E0D8692DD496A700D5DF25 /* SubscriptionFreeTrialsHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E0D8682DD496A700D5DF25 /* SubscriptionFreeTrialsHelperTests.swift */; };
 		C1E2C2252D9ED1B60011C66C /* AutofillCreditCardListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E2C2242D9ED1B60011C66C /* AutofillCreditCardListViewModelTests.swift */; };
@@ -3697,6 +3699,8 @@
 		C1CDA31D2AFBF811006D1476 /* AutofillNeverPromptWebsitesManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillNeverPromptWebsitesManagerTests.swift; sourceTree = "<group>"; };
 		C1D21E2C293A5965006E5A05 /* AutofillLoginSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginSession.swift; sourceTree = "<group>"; };
 		C1D21E2E293A599C006E5A05 /* AutofillLoginSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginSessionTests.swift; sourceTree = "<group>"; };
+		C1D6C1DA2E74282700F29155 /* SwitchBarRetentionMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchBarRetentionMetrics.swift; sourceTree = "<group>"; };
+		C1D6C1DC2E74285A00F29155 /* SwitchBarRetentionMetricsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchBarRetentionMetricsTests.swift; sourceTree = "<group>"; };
 		C1D7F3F32D5F6D7B0029B213 /* BookmarksEmptyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksEmptyView.swift; sourceTree = "<group>"; };
 		C1DCF3502D0862330055F8B0 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C1DCF3512D0862330055F8B0 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -4771,6 +4775,7 @@
 				317DD5542E0D5DD300CCC28C /* SwitchBarHandlerTests.swift */,
 				C1AAECBE2E69A1CC0016B82E /* SessionStateMetricsTests.swift */,
 				C13C60DB2E6D7B0F00ED2211 /* SwitchBarSubmissionMetricsTests.swift */,
+				C1D6C1DC2E74285A00F29155 /* SwitchBarRetentionMetricsTests.swift */,
 			);
 			path = SwitchBar;
 			sourceTree = "<group>";
@@ -5543,6 +5548,7 @@
 				315E14A82DF77BCD00419C8A /* SwitchBarViewController.swift */,
 				C1AAECBC2E699F740016B82E /* SessionStateMetrics.swift */,
 				C13C60D92E6D7AE100ED2211 /* SwitchBarSubmissionMetrics.swift */,
+				C1D6C1DA2E74282700F29155 /* SwitchBarRetentionMetrics.swift */,
 			);
 			path = SwitchBar;
 			sourceTree = "<group>";
@@ -10739,6 +10745,7 @@
 				31550CD72E0D89EA006FA55B /* NavigationActionBarViewModel.swift in Sources */,
 				1E8AD1D727C2E24E00ABA377 /* DownloadsListRowViewModel.swift in Sources */,
 				9FEA222E2C324ECD006B03BF /* ViewVisibility.swift in Sources */,
+				C1D6C1DB2E74282700F29155 /* SwitchBarRetentionMetrics.swift in Sources */,
 				BD10B8AA2C7629740033115D /* Logger+Subscription.swift in Sources */,
 				D6E0C1892B7A2E0D00D5E1E9 /* DesktopDownloadViewModel.swift in Sources */,
 				31CE145C2D5505520027F11D /* OmnibarDependencyProvider.swift in Sources */,
@@ -10925,6 +10932,7 @@
 				F189AED71F18F6DE001EBAE1 /* TabTests.swift in Sources */,
 				C163DC962DC92FDC0026852D /* OnboardingPrivacyProPromotionHelpingTests.swift in Sources */,
 				9F5E5AB22C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift in Sources */,
+				C1D6C1DD2E74285A00F29155 /* SwitchBarRetentionMetricsTests.swift in Sources */,
 				98E563E22DE8B32D00E6E75F /* MockMessageNavigationDelegate.swift in Sources */,
 				98E563E32DE8B32D00E6E75F /* MockStatisticsStore.swift in Sources */,
 				98E563E42DE8B32D00E6E75F /* MockTabPreviewsSource.swift in Sources */,

@@ -23,6 +23,7 @@ struct AppDependencies {
     let services: AppServices
     let launchTaskManager: LaunchTaskManager
     let launchSourceManager: LaunchSourceManaging
+    let aiChatSettings: AIChatSettings
 
 }
 

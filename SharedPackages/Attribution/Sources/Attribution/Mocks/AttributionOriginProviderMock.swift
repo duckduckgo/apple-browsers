@@ -1,5 +1,5 @@
 //
-//  AttributionTests.swift
+//  AttributionOriginProviderMock.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -15,11 +15,13 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-//
 
-import XCTest
-@testable import Attribution
+import Foundation
 
-final class AttributionTests: XCTestCase {
+final class AttributionOriginProviderMock: AttributionOriginProvider {
+    let origin: String?
 
+    init(origin: String? = nil) {
+        self.origin = origin
+    }
 }

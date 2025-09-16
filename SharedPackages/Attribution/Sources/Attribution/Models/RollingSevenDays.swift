@@ -69,7 +69,7 @@ import Foundation
 ///
 /// The `allValues` property returns only the non-nil values, while `count` returns
 /// the number of non-nil slots.
-struct RollingSevenDays<T: Codable & Equatable>: Codable {
+public struct RollingSevenDays<T: Codable & Equatable>: Codable {
     private var values: [InternalValue]
     private enum InternalValue: Codable, Equatable, CustomDebugStringConvertible {
         case nilValue
@@ -86,14 +86,14 @@ struct RollingSevenDays<T: Codable & Equatable>: Codable {
     }
 
     /// Creates a new `RollingSevenDays` instance with all 7 slots initially empty.
-    init() {
+    public init() {
         self.values = Array(repeating: InternalValue.nilValue, count: 7)
     }
     
     /// Appends a new value to the rolling structure.
     ///
     /// This method removes the oldest value (at index 0) and adds the new value at the end (index 6).
-    /// The rolling behavior ensures that the structure always maintains exactly 7 slots.
+    /// The rolling behaviour ensures that the structure always maintains exactly 7 slots.
     ///
     /// - Parameter value: The value to append to the rolling structure.
     ///
@@ -104,7 +104,7 @@ struct RollingSevenDays<T: Codable & Equatable>: Codable {
     /// rolling.append("Tuesday")
     /// // rolling[5] == "Monday", rolling[6] == "Tuesday"
     /// ```
-    mutating func append(_ value: T) {
+    public mutating func append(_ value: T) {
         values.removeFirst()
         values.append(InternalValue.value(value))
     }
@@ -125,7 +125,7 @@ struct RollingSevenDays<T: Codable & Equatable>: Codable {
     /// print(rolling[0]) // nil (empty slot)
     /// print(rolling[10]) // nil (invalid index)
     /// ```
-    subscript(index: Int) -> T? {
+    public subscript(index: Int) -> T? {
         get {
             guard index >= 0 && index < 7 else { return nil }
             switch values[index] {
@@ -149,7 +149,7 @@ struct RollingSevenDays<T: Codable & Equatable>: Codable {
     /// rolling.append("B")
     /// print(rolling.allValues) // ["A", "B"]
     /// ```
-    var allValues: [T] {
+    public var allValues: [T] {
         return values.compactMap { value in
             switch value {
             case .nilValue:
@@ -174,7 +174,7 @@ struct RollingSevenDays<T: Codable & Equatable>: Codable {
     /// rolling.append(2)
     /// print(rolling.count) // 2
     /// ```
-    var count: Int {
+    public var count: Int {
         return values.count(where: { $0 != .nilValue })
     }
 }
@@ -182,27 +182,7 @@ struct RollingSevenDays<T: Codable & Equatable>: Codable {
 // MARK: - Convenience Type Aliases
 
 /// A rolling data structure specifically for storing Boolean values.
-///
-/// This is a convenience typealias for `RollingSevenDays<Bool>`, commonly used for
-/// tracking daily boolean states like "user was active" or "feature was used".
-///
-/// ## Example:
-/// ```swift
-/// var dailyActivity = RollingSevenDaysBool()
-/// dailyActivity.append(true)  // User was active today
-/// dailyActivity.append(false) // User was not active today
-/// ```
-typealias RollingSevenDaysBool = RollingSevenDays<Bool>
+public typealias RollingSevenDaysBool = RollingSevenDays<Bool>
 
 /// A rolling data structure specifically for storing integer values.
-///
-/// This is a convenience typealias for `RollingSevenDays<Int>`, commonly used for
-/// tracking daily counts like "number of searches" or "number of clicks".
-///
-/// ## Example:
-/// ```swift
-/// var dailySearches = RollingSevenDaysInt()
-/// dailySearches.append(5)  // User made 5 searches today
-/// dailySearches.append(12) // User made 12 searches today
-/// ```
-typealias RollingSevenDaysInt = RollingSevenDays<Int>
+public typealias RollingSevenDaysInt = RollingSevenDays<Int>

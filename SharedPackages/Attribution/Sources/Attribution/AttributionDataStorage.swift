@@ -1,15 +1,32 @@
 //
 //  AttributionDataStorage.swift
-//  Attribution
 //
-//  Created by Federico Cappelli on 15/09/2025.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 //
 
 import Foundation
 
 public protocol AttributionDataStoring {
 
-    var appStarts: AppStarts? { get set }
+    var installDate: Date? { get set }
+    var lastRetentionThreshold: TimePast? { get set }
+
+    // Tresholds
+//    var retentionLastValue: Int { get set }
+//    var lastSearch7DaysValue: Int? { get set }
+//    var search7Days: RollingSevenDaysBool? { get set }
 
     func removeAll()
 }
@@ -23,9 +40,14 @@ class AttributionDataStorage: AttributionDataStoring {
     }
 
     enum StorageKey: String, CaseIterable {
-        /// Array of app start timestamps
-        case startTimeStamps
-        case search7Days
+
+        case installDate
+
+        // retention
+        case lastRetentionThreshold
+
+        // Searches
+
     }
 
     // MARK: - Utilities
@@ -51,15 +73,22 @@ class AttributionDataStorage: AttributionDataStoring {
         return object
     }
 
-    // MARK: - Direct access
+    // MARK: - Retention
 
-    var appStarts: AppStarts? {
-        set { encode(newValue, to: userDefaults, key: .startTimeStamps) }
-        get { return decode(from: userDefaults, key: .startTimeStamps) }
+    var installDate: Date? {
+        set { encode(newValue, to: userDefaults, key: .installDate) }
+        get { return decode(from: userDefaults, key: .installDate) }
     }
 
-    var search7Days: RollingSevenDaysBool? {
-        set { encode(newValue, to: userDefaults, key: .search7Days) }
-        get { return decode(from: userDefaults, key: .search7Days) }
+    var lastRetentionThreshold: TimePast? {
+        set { encode(newValue, to: userDefaults, key: .lastRetentionThreshold) }
+        get { return decode(from: userDefaults, key: .lastRetentionThreshold)}
     }
+
+    // MARK: - Searches
+
+//    var search7Days: RollingSevenDaysBool? {
+//        set { encode(newValue, to: userDefaults, key: .search7Days) }
+//        get { return decode(from: userDefaults, key: .search7Days) }
+//    }
 }

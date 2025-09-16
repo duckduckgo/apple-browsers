@@ -27,15 +27,24 @@ import AppKit
 extension AttributionManager {
     
     func registerNotifications() {
+
+        // App start
 #if os(iOS)
         NotificationCenter.default
-            .publisher(for: UIApplication.didEnterBackgroundNotification)
+            .publisher(for: UIApplication.willEnterForegroundNotification)
             .sink { [weak self] _ in
-//                self?.appDidEnterBackground()
+                self?.appDidStart()
             }
             .store(in: &cancellables)
 #elseif os(macOS)
-
+        NotificationCenter.default
+            .publisher(for: NSApplication.didBecomeActiveNotification)
+            .sink { [weak self] _ in
+                self?.appDidStart()
+            }
+            .store(in: &cancellables)
 #endif
+
+        
     }
 }

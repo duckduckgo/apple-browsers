@@ -18,7 +18,7 @@
 
 import Foundation
 import Subscription
-@testable import DuckDuckGo_Privacy_Browser
+import Attribution
 
 final class MockAttributionOriginProvider: AttributionOriginProvider {
     let origin: String?

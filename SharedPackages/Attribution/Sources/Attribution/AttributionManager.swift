@@ -23,6 +23,12 @@ import Combine
 import BrowserServicesKit
 import os.log
 
+/// macOS: `SystemDefaultBrowserProvider`
+/// iOS: `DefaultBrowserManager` limited to 4 times p/y, cached value
+public protocol AttributionDefaultBrowserProviding {
+    var isDefaultBrowser: Bool { get }
+}
+
 /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053?focus=true
 public final class AttributionManager {
 
@@ -30,13 +36,23 @@ public final class AttributionManager {
     private var dataStorage: AttributionDataStoring
     private let originProvider: (any AttributionOriginProvider)?
     private let featureFlagger: FeatureFlagger
+    private let defaultBrowserProviding: AttributionDefaultBrowserProviding
     var cancellables = Set<AnyCancellable>()
 
-    public init(pixelKit: PixelKit, dataStoring: AttributionDataStoring, featureFlagger: FeatureFlagger, originProvider: (any AttributionOriginProvider)?) {
+    public init(pixelKit: PixelKit,
+                dataStoring: AttributionDataStoring,
+                featureFlagger: FeatureFlagger,
+                originProvider: (any AttributionOriginProvider)?,
+                defaultBrowserProviding: AttributionDefaultBrowserProviding) {
         self.pixelKit = pixelKit
         self.dataStorage = dataStoring
         self.originProvider = originProvider
         self.featureFlagger = featureFlagger
+        self.defaultBrowserProviding = defaultBrowserProviding
+
+        if dataStorage.installDate == nil {
+            dataStorage.installDate = Date()
+        }
 
         if isEnabled {
             registerNotifications()
@@ -53,7 +69,7 @@ public final class AttributionManager {
         if let origin = originProvider?.origin {
             return (origin, nil)
         } else {
-            guard var installDate = dataStorage.appStarts?.timestamps.first else {
+            guard var installDate = dataStorage.installDate else {
                 assertionFailure("Missing install date")
                 return (nil, nil)
             }
@@ -61,12 +77,13 @@ public final class AttributionManager {
         }
     }()
 
-    var isDefaultBrowser: Bool {
-        return true // TODO: implement
-    }
+    var isDefaultBrowser: Bool { defaultBrowserProviding.isDefaultBrowser }
 
     var isLessThanSixMonths: Bool {
-        return true
+        guard let installDate = dataStorage.installDate else {
+            return true
+        }
+        return installDate.isLessThan(daysAgo: 28 * 6)
     }
 
     // MARK: - Triggers
@@ -85,17 +102,27 @@ public final class AttributionManager {
     func userDidSearch() {
         guard isEnabled else { return }
 
-        
     }
 
     // Calculations
 
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1211326699062077?focus=true
     func calculateRetention() {
-        var appStarts = dataStorage.appStarts ?? AppStarts()
-        appStarts.append(timestamp: Date())
 
-        switch appStarts.timePastFromInstallation() {
+        guard let installDate = dataStorage.installDate else {
+            Logger.attribution.error("Install date missing")
+            return
+        }
+        let now = Date()
+
+        let timePastFromInstall = TimePast.timePastFrom(date: now, andInstallationDate: installDate)
+        let lastRetentionThreshold = dataStorage.lastRetentionThreshold
+        guard lastRetentionThreshold != timePastFromInstall else {
+            Logger.attribution.error("Threshold not changed")
+            return
+        }
+
+        switch timePastFromInstall {
         case .none:
             Logger.attribution.debug("Less than a week from installation")
             return
@@ -109,7 +136,7 @@ public final class AttributionManager {
             pixelKit.fire(AttributionPixel.userRetentionMonth(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucketedMonth), frequency: .daily)
         }
 
-        dataStorage.appStarts = appStarts
+        dataStorage.lastRetentionThreshold = timePastFromInstall
     }
 
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1211326699062078?focus=true

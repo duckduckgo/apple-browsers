@@ -1,5 +1,5 @@
 //
-//  AppStarts.swift
+//  TimePast.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,45 +16,40 @@
 //  limitations under the License.
 //
 
-import  Foundation
+import Foundation
 
-public struct AppStarts: Codable {
-    var timestamps: [Date]
+public enum TimePast: Equatable, Codable {
+    case none
+    case weeks(Int)
+    case months(Int)
 
-    public init(timestamps: [Date] = []) {
-        self.timestamps = timestamps
-    }
-
-    mutating func append(timestamp: Date) {
-        timestamps.append(timestamp)
-    }
-
-    enum TimePast: Equatable {
-        case none
-        case weeks(Int)
-        case months(Int)
-    }
-
-    func timePastFromInstallation() -> TimePast {
-        guard timestamps.count > 1,
-              let installationDate = timestamps.first,
-              let lastAppStart = timestamps.last else {
-            return .none
+    public static func == (lhs: TimePast, rhs: TimePast) -> Bool {
+        switch (lhs, rhs) {
+        case (.none, .none):
+            return true
+        case (.weeks(let lhsWeeks), .weeks(let rhsWeeks)):
+            return lhsWeeks == rhsWeeks
+        case (.months(let lhsMonths), .months(let rhsMonths)):
+            return lhsMonths == rhsMonths
+        default:
+            return false
         }
+    }
 
-        let days = daysBetween(from: installationDate, to: lastAppStart)
-        
+    static func timePastFrom(date: Date, andInstallationDate installationDate: Date) -> TimePast {
+        let days = daysBetween(from: installationDate, to: date)
+
         // Handle negative time intervals (invalid dates)
-        guard days >= 0 else {
+        guard days > 0 else {
             return .none
         }
-        
+
         let weeks = days / 7
-        
+
         guard weeks > 0 else {
             return .none
         }
-        
+
         // If we have more than 3 weeks, switch to months
         // Months are calculated as weeks/4 (every 4 weeks = 1 month)
         if weeks > 3 {
@@ -64,8 +59,8 @@ public struct AppStarts: Codable {
             return .weeks(weeks)
         }
     }
-    
-    private func daysBetween(from startDate: Date, to endDate: Date) -> Int {
+
+    private static func daysBetween(from startDate: Date, to endDate: Date) -> Int {
         let timeInterval = endDate.timeIntervalSince(startDate)
         let secondsPerDay: TimeInterval = 24 * 60 * 60
         return Int(timeInterval / secondsPerDay)

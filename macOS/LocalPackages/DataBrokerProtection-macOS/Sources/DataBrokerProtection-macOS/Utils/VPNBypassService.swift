@@ -43,6 +43,10 @@ public final class VPNBypassService: VPNBypassServiceProvider {
         proxySettings.isExcluding(appIdentifier: backgroundAgentBundleId)
     }
 
+    public var isSupported: Bool {
+        vpnAppState.isUsingSystemExtension
+    }
+
     public var isOnboardingShown: Bool {
         get {
             dbpSettings.vpnBypassOnboardingShown

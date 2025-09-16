@@ -20,11 +20,12 @@ import Foundation
 import AppKit
 import Common
 import LoginItems
-import VPN
 import NetworkExtension
 import NetworkProtectionIPC
 import NetworkProtectionUI
 import Subscription
+import VPN
+import VPNAppState
 
 struct VPNMetadata: Encodable {
 
@@ -72,8 +73,6 @@ struct VPNMetadata: Encodable {
     struct LoginItemState: Encodable {
         let vpnMenuState: String
         let vpnMenuIsRunning: Bool
-        let notificationsAgentState: String
-        let notificationsAgentIsRunning: Bool
     }
 
     struct PrivacyProInfo: Encodable {
@@ -130,9 +129,11 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
     private let defaults: UserDefaults
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let settings: VPNSettings
+    private let vpnAppState: VPNAppState
 
     init(defaults: UserDefaults = .netP,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         vpnAppState: VPNAppState = .init(defaults: .netP)) {
 
         let ipcClient = VPNControllerXPCClient.shared
         ipcClient.register { _ in }
@@ -152,6 +153,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
         )
 
         self.settings = VPNSettings(defaults: defaults)
+        self.vpnAppState = vpnAppState
         updateSettings()
     }
 
@@ -288,23 +290,9 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
         let vpnMenuState = String(describing: LoginItem.vpnMenu.status)
         let vpnMenuIsRunning = !NSRunningApplication.runningApplications(withBundleIdentifier: LoginItem.vpnMenu.agentBundleID).isEmpty
 
-#if NETP_SYSTEM_EXTENSION
-        let notificationsAgentState = String(describing: LoginItem.notificationsAgent.status)
-        let notificationsAgentIsRunning = !NSRunningApplication.runningApplications(withBundleIdentifier: LoginItem.notificationsAgent.agentBundleID).isEmpty
-
         return .init(
             vpnMenuState: vpnMenuState,
-            vpnMenuIsRunning: vpnMenuIsRunning,
-            notificationsAgentState: notificationsAgentState,
-            notificationsAgentIsRunning: notificationsAgentIsRunning)
-#else
-        return .init(
-            vpnMenuState: vpnMenuState,
-            vpnMenuIsRunning: vpnMenuIsRunning,
-            notificationsAgentState: "not-required",
-            notificationsAgentIsRunning: false
-        )
-#endif
+            vpnMenuIsRunning: vpnMenuIsRunning)
     }
 
     func collectVPNSettingsState() -> VPNMetadata.VPNSettingsState {

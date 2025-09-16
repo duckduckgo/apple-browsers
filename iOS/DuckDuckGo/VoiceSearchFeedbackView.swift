@@ -115,7 +115,7 @@ extension VoiceSearchFeedbackView {
             speechModel.finish()
         } label: {
             Circle()
-                .foregroundColor(speechModel.searchTarget == .AIChat ? Colors.innerAIChatCircle: Colors.innerCircle)
+                .foregroundColor(Colors.innerCircle)
                 .frame(width: CircleSize.inner.width, height: CircleSize.inner.height, alignment: .center)
                 .animation(.easeInOut, value: speechModel.searchTarget)
         }
@@ -131,7 +131,7 @@ extension VoiceSearchFeedbackView {
 
     private var outerCircle: some View {
         Circle()
-            .foregroundColor(speechModel.searchTarget == .AIChat ? Colors.outerAIChatCircle: Colors.outerCircle)
+            .foregroundColor(Colors.outerCircle)
             .frame(width: CircleSize.outer.width,
                    height: CircleSize.outer.height,
                    alignment: .center)
@@ -211,9 +211,6 @@ extension VoiceSearchFeedbackView {
     private struct Colors {
         static let innerCircle = Color(designSystemColor: .accent)
         static let outerCircle = Color(designSystemColor: .accentGlowSecondary)
-
-        static let innerAIChatCircle = Color(baseColor: .purple30)
-        static let outerAIChatCircle = Color(baseColor: .purple30).opacity(0.2)
 
         static let footerText = Color(designSystemColor: .textSecondary)
         static let cancelButton = Color(designSystemColor: .textSecondary)

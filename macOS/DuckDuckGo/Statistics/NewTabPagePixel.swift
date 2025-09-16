@@ -22,7 +22,7 @@ import PixelKit
 /**
  * This enum keeps pixels related to HTML New Tab Page.
  */
-enum NewTabPagePixel: PixelKitEventV2 {
+enum NewTabPagePixel: PixelKitEvent {
 
     /**
      * Event Trigger: New Tab Page is displayed to user.
@@ -208,10 +208,6 @@ enum NewTabPagePixel: PixelKitEventV2 {
                 .omnibarShown:
             return nil
         }
-    }
-
-    var error: (any Error)? {
-        nil
     }
 
     enum OmnibarMode: String {

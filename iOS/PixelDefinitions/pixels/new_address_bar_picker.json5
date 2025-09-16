@@ -1,0 +1,35 @@
+// https://app.asana.com/1/137249556945/project/72649045549333/task/1210860792084465?focus=true
+// User choice screen for the new address bar
+
+{
+    m_aichat_new_address_bar_picker_displayed: {
+        description: 'Fires when the New Address Bar Picker modal is displayed',
+        owners: ['Bunn'],
+        triggers: ['other'],
+        suffixes: ['daily', 'platform', 'form_factor'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+    m_aichat_new_address_bar_picker_confirmed: {
+        description: 'Fires when user taps Confirm on the New Address Bar Picker',
+        owners: ['Bunn'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'selection',
+                description: 'Selected option',
+                type: 'string',
+                enum: ['search_only', 'search_and_ai'],
+            },
+        ],
+    },
+    m_aichat_new_address_bar_picker_not_now: {
+        description: 'Fires when user taps Not Now on the New Address Bar Picker',
+        owners: ['Bunn'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+}

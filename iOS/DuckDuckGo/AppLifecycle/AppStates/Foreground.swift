@@ -20,6 +20,10 @@
 import UIKit
 import Core
 
+private extension BoolFileMarker.Name {
+    static let hasSuccessfullyLaunchedBefore = BoolFileMarker.Name(rawValue: "app-launched-successfully")
+}
+
 /// Represents the state where the app is in the Foreground and is visible to the user.
 /// - Usage:
 ///   - This state is typically associated with the `applicationDidBecomeActive(_:)` method.
@@ -68,7 +72,8 @@ struct Foreground: ForegroundHandling {
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,
             shortcutItemHandler: appDependencies.mainCoordinator,
-            keyboardPresenter: KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller)
+            keyboardPresenter: KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller),
+            launchSourceService: appDependencies.launchSourceManager
         )
         interactionManager = UIInteractionManager(
             authenticationService: appDependencies.services.authenticationService,
@@ -105,6 +110,10 @@ struct Foreground: ForegroundHandling {
             /// This is called when the **app is ready to handle user interactions** after data clear and authentication are complete.
             onAppReadyForInteractions: {
                 appDependencies.launchTaskManager.start()
+                
+                // Mark that the app has successfully launched at least once
+                // This helps distinguish database corruption from fresh installs/restores
+                BoolFileMarker(name: .hasSuccessfullyLaunchedBefore)?.mark()
             }
         )
 
@@ -121,8 +130,11 @@ struct Foreground: ForegroundHandling {
         services.dbpService.resume()
         services.inactivityNotificationSchedulerService.resume()
         services.widePixelService.resume()
-
+        appDependencies.launchSourceManager.handleAppAction(launchAction)
         appDependencies.mainCoordinator.onForeground()
+        
+        let switchBarRetentionMetrics = SwitchBarRetentionMetrics(aiChatSettings: appDependencies.aiChatSettings)
+        switchBarRetentionMetrics.checkDailyAndSendPixelIfApplicable()
     }
 
     private func configureAppearance() {

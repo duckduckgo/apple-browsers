@@ -22,7 +22,7 @@ import BrowserServicesKit
 import DDGSync
 import Configuration
 
-enum GeneralPixel: PixelKitEventV2 {
+enum GeneralPixel: PixelKitEvent {
 
     case crash(appIdentifier: CrashPixelAppIdentifier?)
     case crashOnCrashHandlersSetUp
@@ -332,9 +332,9 @@ enum GeneralPixel: PixelKitEventV2 {
     case dbSaveExcludedHTTPSDomainsError(error: Error?)
     case dbSaveBloomFilterError(error: Error?)
 
-    case remoteMessagingSaveConfigError
-    case remoteMessagingUpdateMessageShownError
-    case remoteMessagingUpdateMessageStatusError
+    case remoteMessagingSaveConfigError(error: Error?)
+    case remoteMessagingUpdateMessageShownError(error: Error?)
+    case remoteMessagingUpdateMessageStatusError(error: Error?)
 
     case configurationFetchError(error: Error)
 
@@ -521,6 +521,16 @@ enum GeneralPixel: PixelKitEventV2 {
 
     // Enhanced statistics
     case usageSegments
+
+    // UserScript
+    /**
+     * Event Trigger: BrowserServicesKit.UserScript.loadJS fails to load the contents of a JS file.
+     *
+     * Anomaly Investigation:
+     * - App crashes after this pixel is fired.
+     * - Useful for investigating the underlying error causing the failure.
+     */
+    case userScriptLoadJSFailed(jsFile: String, error: Error)
 
     var name: String {
         switch self {
@@ -1231,31 +1241,9 @@ enum GeneralPixel: PixelKitEventV2 {
             // Enhanced statistics
         case .usageSegments: return "retention_segments"
 
-        }
-    }
+            // UserScript
+        case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
 
-    var error: (any Error)? {
-        switch self {
-        case .dbContainerInitializationError(let error),
-                .dbInitializationError(let error),
-                .dbSaveExcludedHTTPSDomainsError(let error?),
-                .dbSaveBloomFilterError(let error?),
-                .configurationFetchError(let error),
-                .secureVaultInitError(let error),
-                .secureVaultError(let error),
-                .syncSignupError(let error),
-                .syncLoginError(let error),
-                .syncLogoutError(let error),
-                .syncUpdateDeviceError(let error),
-                .syncRemoveDeviceError(let error),
-                .syncRefreshDevicesError(let error),
-                .syncDeleteAccountError(let error),
-                .syncLoginExistingAccountError(let error),
-                .syncSecureStorageReadError(let error),
-                .syncSecureStorageDecodingError(let error),
-                .bookmarksCouldNotLoadDatabase(let error?):
-            return error
-        default: return nil
         }
     }
 
@@ -1428,6 +1416,12 @@ enum GeneralPixel: PixelKitEventV2 {
 
         case .updaterAborted(let reason):
             return ["reason": reason]
+
+        case let .userScriptLoadJSFailed(jsFile, error):
+            var params = error.pixelParameters
+            params[PixelKit.Parameters.jsFile] = jsFile
+            return params
+
         default: return nil
         }
     }

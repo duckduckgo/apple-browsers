@@ -40,7 +40,10 @@ extension AppDelegate {
 
     @MainActor
     @objc func checkForUpdates(_ sender: Any?) {
-#if SPARKLE
+#if APPSTORE
+        PixelKit.fire(CheckForUpdatesAppStorePixels.checkForUpdate(source: .mainMenu))
+        NSWorkspace.shared.open(.appStore)
+#elseif SPARKLE
         if let warning = SupportedOSChecker().supportWarning,
            case .unsupported = warning {
 
@@ -770,14 +773,22 @@ extension AppDelegate {
         Application.appDelegate.configurationManager.forceRefresh(isDebug: true)
     }
 
-    private func setPrivacyConfigurationUrl(_ configurationUrl: URL?) {
-        configurationURLProvider.setCustomURL(configurationUrl, for: .privacyConfiguration)
+    private func setPrivacyConfigurationUrl(_ configurationUrl: URL?) throws {
+        try configurationURLProvider.setCustomURL(configurationUrl, for: .privacyConfiguration)
         Application.appDelegate.configurationManager.forceRefresh(isDebug: true)
         if let configurationUrl {
             Logger.config.debug("New configuration URL set to \(configurationUrl.absoluteString)")
         } else {
             Logger.config.log("New configuration URL reset to default")
         }
+    }
+
+    private func showErrorAlert(message: String) {
+        let alert = NSAlert()
+        alert.messageText = "Error"
+        alert.informativeText = message
+        alert.alertStyle = .warning
+        alert.runModal()
     }
 
     @objc func setCustomPrivacyConfigurationURL(_ sender: Any?) {
@@ -789,13 +800,20 @@ extension AppDelegate {
                 Logger.config.error("Failed to set custom configuration URL")
                 return
             }
-
-            setPrivacyConfigurationUrl(newConfigurationUrl)
+            do {
+                try setPrivacyConfigurationUrl(newConfigurationUrl)
+            } catch let error {
+                showErrorAlert(message: error.localizedDescription)
+            }
         }
     }
 
     @objc func resetPrivacyConfigurationToDefault(_ sender: Any?) {
-        setPrivacyConfigurationUrl(nil)
+        do {
+            try setPrivacyConfigurationUrl(nil)
+        } catch let error {
+            showErrorAlert(message: error.localizedDescription)
+        }
     }
 
     @objc func resetInstallStatistics() {
@@ -958,7 +976,7 @@ extension MainViewController {
 
     @objc func toggleDownloads(_ sender: Any) {
         var navigationBarViewController = self.navigationBarViewController
-        if view.window?.isPopUpWindow == true {
+        if isInPopUpWindow {
             if let vc = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.navigationBarViewController {
                 navigationBarViewController = vc
             } else {
@@ -1020,8 +1038,8 @@ extension MainViewController {
     }
 
     @objc func home(_ sender: Any?) {
-        guard view.window?.isPopUpWindow == false,
-            let (tab, _) = getActiveTabAndIndex(), tab === tabCollectionViewModel.selectedTab else {
+        guard !isInPopUpWindow,
+              let (tab, _) = getActiveTabAndIndex(), tab === tabCollectionViewModel.selectedTab else {
 
             browserTabViewController.openNewTab(with: .newtab)
             return
@@ -1255,6 +1273,10 @@ extension MainViewController {
 
         tabCollectionViewModel.append(tabs: otherTabs, andSelect: false)
         tabCollectionViewModel.tabCollection.localHistoryOfRemovedTabs += otherLocalHistoryOfRemovedTabs
+
+        // Tabs from `otherTabCollectionViewModels` were moved to `tabCollectionViewModel`
+        // clear the collection models so they are empty at `deinit` and no deinit checks assert.
+        otherTabCollectionViewModels.forEach { $0.clearAfterMerge() }
     }
 
     // MARK: - Printing
@@ -1457,7 +1479,7 @@ extension MainViewController: NSMenuItemValidation {
 
         // Pin Tab
         case #selector(MainViewController.pinOrUnpinTab(_:)):
-            guard getActiveTabAndIndex()?.tab.isUrl == true,
+            guard getActiveTabAndIndex()?.tab.content.canBePinned == true,
                   tabCollectionViewModel.pinnedTabsManager != nil,
                   !isBurner
             else {

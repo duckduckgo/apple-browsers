@@ -28,6 +28,7 @@ import BrowserServicesKit
 import OHHTTPStubs
 import OHHTTPStubsSwift
 import os.log
+import PixelKitTestingUtilities
 
 @MainActor
 final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
@@ -71,7 +72,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         static let mockParams: [String: String] = [:]
         static let mockScriptMessage = MockWKScriptMessage(name: "", body: "", webView: WKWebView() )
 
-        static let invalidTokenError = APIServiceError.serverError(statusCode: 401, errorCode: "invalid_token")
+        static let invalidTokenError = APIServiceError.serverError(statusCode: 401, statusDescription: "invalid_token")
     }
 
     var userDefaults: UserDefaults!
@@ -99,6 +100,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     var feature: (any SubscriptionPagesUseSubscriptionFeature)!
     var featureAuthV2: (any SubscriptionPagesUseSubscriptionFeature)!
 
+    var mockWidePixel: WidePixelMock!
     var pixelsFired: [String] = []
 
     // V2
@@ -186,6 +188,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                                  appStoreAccountManagementFlow: appStoreAccountManagementFlow)
 
         // Auth V2 mocks
+        mockWidePixel = WidePixelMock()
         subscriptionManagerV2 = SubscriptionManagerMockV2()
         purchaseFlow = AppStorePurchaseFlowMockV2()
         restoreFlow = AppStoreRestoreFlowMockV2()
@@ -195,7 +198,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                                          subscriptionAttributionOrigin: nil,
                                                                          appStorePurchaseFlow: purchaseFlow,
                                                                          appStoreRestoreFlow: restoreFlow,
-                                                                         internalUserDecider: mockInternalUserDecider)
+                                                                         internalUserDecider: mockInternalUserDecider,
+                                                                         widePixel: mockWidePixel)
 
     }
 

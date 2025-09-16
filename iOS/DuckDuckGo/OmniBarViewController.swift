@@ -204,12 +204,6 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onDismissPressed = { [weak self] in
             self?.onDismissPressed()
         }
-        barView.onSettingsLongPress = { [weak self] in
-            self?.onSettingsLongPress()
-        }
-        barView.onAccessoryLongPress = { [weak self] in
-            self?.onAccessoryLongPress()
-        }
     }
 
     private func configureEditingMenu() {
@@ -645,16 +639,9 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func onDismissPressed() {
+        Pixel.fire(pixel: .aiChatLegacyOmnibarBackButtonPressed)
         omniDelegate?.onCancelPressed()
         refreshState(state.onEditingStoppedState)
-    }
-
-    private func onSettingsLongPress() {
-        omniDelegate?.onSettingsLongPressed()
-    }
-
-    private func onAccessoryLongPress() {
-        omniDelegate?.onAccessoryLongPressed(accessoryType: barView.accessoryType)
     }
 }
 
@@ -672,7 +659,7 @@ extension OmniBarViewController: UITextFieldDelegate {
     }
 
     @objc func textFieldDidBeginEditing(_ textField: UITextField) {
-        DailyPixel.fire(pixel: .aiChatLegacyOmnibarShown)
+        DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarShown)
         
         DispatchQueue.main.async {
             let highlightText = self.omniDelegate?.onTextFieldDidBeginEditing(self.barView) ?? true

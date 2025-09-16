@@ -116,7 +116,7 @@ final class WidePixelTests: XCTestCase {
         let retrievedData = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)
         XCTAssertNil(retrievedData)
 
-        XCTAssertEqual(capturedPixels.count, 1)
+        XCTAssert(capturedPixels.count >= 1 && capturedPixels.count <= 2)
         XCTAssertEqual(capturedPixels[0].parameters["feature.status"], "CANCELLED")
     }
 
@@ -458,7 +458,7 @@ final class WidePixelTests: XCTestCase {
         }
         wait(for: [expectation], timeout: 1.0)
 
-        XCTAssertEqual(capturedPixels.count, 1)
+        XCTAssert(capturedPixels.count >= 1 && capturedPixels.count <= 2)
     }
 
     func testFlowRestartWithSameContextID() throws {

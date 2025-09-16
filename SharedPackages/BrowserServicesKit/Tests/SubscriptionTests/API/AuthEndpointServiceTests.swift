@@ -32,7 +32,7 @@ final class AuthEndpointServiceTests: XCTestCase {
 
         static let authorizationHeader = ["Authorization": "Bearer TOKEN"]
 
-        static let invalidTokenError = APIServiceError.serverError(statusCode: 401, errorCode: "invalid_token")
+        static let invalidTokenError = APIServiceError.serverError(statusCode: 401, statusDescription: "invalid_token")
     }
 
     var apiService: APIServiceMock!

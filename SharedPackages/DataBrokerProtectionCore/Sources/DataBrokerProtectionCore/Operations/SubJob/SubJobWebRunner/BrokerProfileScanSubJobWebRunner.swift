@@ -36,7 +36,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public let privacyConfig: PrivacyConfigurationManaging
     public let prefs: ContentScopeProperties
     public let context: SubJobContextProviding
-    public let emailService: EmailServiceProtocol
+    public let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     public let captchaService: CaptchaServiceProtocol
     public let cookieHandler: CookieHandler
     public let stageCalculator: StageDurationCalculator
@@ -56,7 +56,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public init(privacyConfig: PrivacyConfigurationManaging,
                 prefs: ContentScopeProperties,
                 context: SubJobContextProviding,
-                emailService: EmailServiceProtocol,
+                emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
@@ -70,7 +70,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         self.privacyConfig = privacyConfig
         self.prefs = prefs
         self.context = context
-        self.emailService = emailService
+        self.emailConfirmationDataService = emailConfirmationDataService
         self.captchaService = captchaService
         self.operationAwaitTime = operationAwaitTime
         self.stageCalculator = stageDurationCalculator
@@ -106,13 +106,18 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                 }
 
                 task = Task {
-                    await initialize(handler: webViewHandler, isFakeBroker: context.dataBroker.isFakeBroker, showWebView: showWebView)
+                    do {
+                        try await initialize(handler: webViewHandler, isFakeBroker: context.dataBroker.isFakeBroker, showWebView: showWebView)
+                    } catch {
+                        failed(with: error)
+                    }
+
                     do {
                         let scanStep = try context.dataBroker.scanStep()
                         if let actionsHandler = actionsHandler {
                             self.actionsHandler = actionsHandler
                         } else {
-                            self.actionsHandler = ActionsHandler(step: scanStep)
+                            self.actionsHandler = ActionsHandler.forScan(scanStep)
                         }
                         if self.shouldRunNextStep() {
                             await executeNextStep()

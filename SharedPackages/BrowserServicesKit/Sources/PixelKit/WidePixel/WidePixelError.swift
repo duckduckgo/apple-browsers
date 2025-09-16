@@ -17,8 +17,9 @@
 //
 
 import Foundation
+import Common
 
-public enum WidePixelError: Error, LocalizedError {
+public enum WidePixelError: DDGError, LocalizedError {
     case flowNotFound(pixelName: String)
     case typeMismatch(expected: String, actual: String)
     case serializationFailed(Error)
@@ -26,7 +27,7 @@ public enum WidePixelError: Error, LocalizedError {
     case storageError(Error)
     case invalidParameters(String)
 
-    public var errorDescription: String? {
+    public var description: String {
         switch self {
         case .flowNotFound(let pixelName):
             return "Wide pixel flow not found: \(pixelName)"
@@ -43,20 +44,54 @@ public enum WidePixelError: Error, LocalizedError {
         }
     }
 
-    public var failureReason: String? {
+    public var errorDescription: String? {
+        return description
+    }
+
+    public static var errorDomain: String { "com.duckduckgo.widePixel" }
+
+    public var errorCode: Int {
         switch self {
         case .flowNotFound:
-            return "The specified wide pixel flow has not been started or has been completed/cleared"
+            return 0
         case .typeMismatch:
-            return "The stored feature data type does not match the requested type"
+            return 1
         case .serializationFailed:
-            return "Failed to encode or decode wide pixel data"
+            return 2
         case .invalidFlowState:
-            return "The flow is in an invalid state for the requested operation"
+            return 3
         case .storageError:
-            return "Failed to read from or write to UserDefaults storage"
+            return 4
         case .invalidParameters:
-            return "The provided parameters are invalid or incomplete"
+            return 5
+        }
+    }
+
+    public var underlyingError: Error? {
+        switch self {
+        case .flowNotFound, .typeMismatch, .invalidFlowState, .invalidParameters:
+            return nil
+        case .serializationFailed(let error), .storageError(let error):
+            return error
+        }
+    }
+
+    public static func == (lhs: WidePixelError, rhs: WidePixelError) -> Bool {
+        switch (lhs, rhs) {
+        case (.flowNotFound(let lhsPixelName), .flowNotFound(let rhsPixelName)):
+            return lhsPixelName == rhsPixelName
+        case (.typeMismatch(let lhsExpected, let lhsActual), .typeMismatch(let rhsExpected, let rhsActual)):
+            return lhsExpected == rhsExpected && lhsActual == rhsActual
+        case (.serializationFailed(let lhsError), .serializationFailed(let rhsError)):
+            return (lhsError as NSError) == (rhsError as NSError)
+        case (.invalidFlowState, .invalidFlowState):
+            return true
+        case (.storageError(let lhsError), .storageError(let rhsError)):
+            return (lhsError as NSError) == (rhsError as NSError)
+        case (.invalidParameters(let lhsMessage), .invalidParameters(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        default:
+            return false
         }
     }
 }

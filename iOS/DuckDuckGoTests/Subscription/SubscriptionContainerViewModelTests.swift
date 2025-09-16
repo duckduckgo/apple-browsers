@@ -71,7 +71,8 @@ final class SubscriptionContainerViewModelTests: XCTestCase {
                                                                                subscriptionAttributionOrigin: nil,
                                                                                appStorePurchaseFlow: appStorePurchaseFlow,
                                                                                appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                               appStoreAccountManagementFlow: appStoreAccountManagementFlow))
+                                                                               appStoreAccountManagementFlow: appStoreAccountManagementFlow),
+                    dataBrokerProtectionViewControllerProvider: nil)
 
         // THEN
         XCTAssertEqual(sut.flow.purchaseURL, redirectPurchaseURL)
@@ -100,7 +101,8 @@ final class SubscriptionContainerViewModelTests: XCTestCase {
                                                                                subscriptionAttributionOrigin: nil,
                                                                                appStorePurchaseFlow: appStorePurchaseFlow,
                                                                                appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                               appStoreAccountManagementFlow: appStoreAccountManagementFlow))
+                                                                               appStoreAccountManagementFlow: appStoreAccountManagementFlow),
+                    dataBrokerProtectionViewControllerProvider: nil)
 
         // THEN
         XCTAssertEqual(sut.flow.purchaseURL, SubscriptionURL.purchase.subscriptionURL(environment: .production))

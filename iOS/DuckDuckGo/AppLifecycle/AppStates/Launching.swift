@@ -54,30 +54,30 @@ struct Launching: LaunchingHandling {
     private let services: AppServices
     private let mainCoordinator: MainCoordinator
     private let launchTaskManager = LaunchTaskManager()
+    private let launchSourceManager = LaunchSourceManager()
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
     init() throws {
         Logger.lifecycle.info("Launching: \(#function)")
 
+        let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
+
         // MARK: - Application Setup
         // Handles one-time application setup during launch
+        let isBookmarksStructureMissing = try configuration.start(syncKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
-        try configuration.start()
-
-        // MARK: - Service Initialization
-        // Create and initialize core services
+        // MARK: - Service Initialization (continued)
+        // Create and initialize remaining core services
         // These services are instantiated early in the app lifecycle for two main reasons:
         // 1. To begin their essential work immediately, without waiting for UI or other components
         // 2. To potentially complete their tasks before the app becomes visible to the user
         // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
-
-        let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
         let autofillService = AutofillService()
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared)
         let configurationService = RemoteConfigurationService()
-        let crashCollectionService = CrashCollectionService()
+        let crashCollectionService = CrashCollectionService(isBookmarksStructureMissing: isBookmarksStructureMissing)
         let statisticsService = StatisticsService()
         let reportingService = ReportingService(fireproofing: fireproofing, featureFlagging: featureFlagger)
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
@@ -90,7 +90,8 @@ struct Launching: LaunchingHandling {
                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                             configurationStore: AppDependencyProvider.shared.configurationStore,
                                                             privacyConfigurationManager: privacyConfigurationManager,
-                                                            configurationURLProvider: AppDependencyProvider.shared.configurationURLProvider)
+                                                            configurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
+                                                            syncService: syncService.sync)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
@@ -136,7 +137,9 @@ struct Launching: LaunchingHandling {
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                               defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                                               systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
-                                              daxDialogsManager: daxDialogs)
+                                              daxDialogsManager: daxDialogs,
+                                              dbpIOSPublicInterface: dbpService.dbpIOSPublicInterface,
+                                              launchSourceManager: launchSourceManager)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
@@ -160,6 +163,7 @@ struct Launching: LaunchingHandling {
             notificationServiceManager: notificationServiceManager,
             privacyConfigurationManager: privacyConfigurationManager
         )
+
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
@@ -224,22 +228,29 @@ struct Launching: LaunchingHandling {
         mainCoordinator.start()
     }
 
-    private func logAppLaunchTime() {
-        let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
-        Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
-                   withAdditionalParameters: [PixelParameters.time: String(launchTime)])
-    }
-
     // MARK: -
 
     private var appDependencies: AppDependencies {
         .init(
             mainCoordinator: mainCoordinator,
             services: services,
-            launchTaskManager: launchTaskManager
+            launchTaskManager: launchTaskManager,
+            launchSourceManager: launchSourceManager,
+            aiChatSettings: aiChatSettings
         )
     }
     
+}
+
+// MARK: - Logging
+
+private extension Launching {
+    
+    func logAppLaunchTime() {
+        let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
+        Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
+                   withAdditionalParameters: [PixelParameters.time: String(launchTime)])
+    }
 }
 
 extension Launching {

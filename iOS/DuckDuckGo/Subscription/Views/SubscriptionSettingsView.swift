@@ -95,6 +95,7 @@ struct SubscriptionSettingsView: View {
                     subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                     internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                     emailFlow: .manageEmailFlow,
+                    dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
                     onDisappear: {
                         Task {
                             await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .reloadIgnoringLocalCacheData)
@@ -112,6 +113,7 @@ struct SubscriptionSettingsView: View {
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 emailFlow: .activationFlow,
+                dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
                 onDisappear: {
                     Task {
                         await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .reloadIgnoringLocalCacheData)
@@ -721,6 +723,8 @@ struct SubscriptionSettingsViewV2: View {
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 emailFlow: .manageEmailFlow,
+                dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
+                widePixel: AppDependencyProvider.shared.widePixel,
                 onDisappear: {
                     Task {
                         await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
@@ -738,6 +742,8 @@ struct SubscriptionSettingsViewV2: View {
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 emailFlow: .activationFlow,
+                dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
+                widePixel: AppDependencyProvider.shared.widePixel,
                 onDisappear: {
                     Task {
                         await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)

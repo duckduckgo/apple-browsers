@@ -285,6 +285,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             didCrashDuringCrashHandlersSetUp.wrappedValue = false
         }
 
+        if AppVersion.runType.requiresEnvironment {
+            Self.configurePixelKit()
+        }
+
         do {
             keyValueStore = try KeyValueFileStore(location: URL.sandboxApplicationSupportURL, name: "AppKeyValueStore")
             // perform a dummy read to ensure that KVS is accessible
@@ -309,7 +313,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
 
         if AppVersion.runType.requiresEnvironment {
-            Self.configurePixelKit()
             let commonDatabase = Database()
             database = commonDatabase
 
@@ -1443,11 +1446,6 @@ extension AppDelegate: UserScriptDependenciesProviding {
     @MainActor
     func makeNewTabPageActionsManager() -> NewTabPageActionsManager? {
         guard let contentBlocking = privacyFeatures.contentBlocking as? AppContentBlocking else {
-            return nil
-        }
-
-        // This action manager is only used when NTP is independent per tab
-        guard featureFlagger.isFeatureOn(.newTabPagePerTab) else {
             return nil
         }
 

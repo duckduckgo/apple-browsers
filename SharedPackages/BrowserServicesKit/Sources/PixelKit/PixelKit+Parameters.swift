@@ -81,6 +81,9 @@ public extension PixelKit {
 
         // Data import
         public static let importedFavorites = "saved_favorites"
+
+        // UserScript
+        public static let jsFile = "jsFile"
     }
 
     enum Values {
@@ -89,14 +92,15 @@ public extension PixelKit {
 
 }
 
+@available(*, deprecated, message: "Consider refactoring using DDGError underlyingError chain")
 public protocol ErrorWithPixelParameters {
 
     var errorParameters: [String: String] { get }
-
 }
 
 public extension Error {
 
+    @available(*, deprecated, message: "Consider refactoring using DDGError underlyingError chain")
     var pixelParameters: [String: String] {
         var params = [String: String]()
 
@@ -127,7 +131,7 @@ public extension Error {
 
     /// Recursive call to add underlying error information
     ///
-    func underlyingErrorParameters(for nsError: NSError, level: Int = 0) -> [String: String] {
+    private func underlyingErrorParameters(for nsError: NSError, level: Int = 0) -> [String: String] {
         if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
             let errorCodeParameterName = PixelKit.Parameters.underlyingErrorCode + (level == 0 ? "" : String(level + 1))
             let errorDomainParameterName = PixelKit.Parameters.underlyingErrorDomain + (level == 0 ? "" : String(level + 1))

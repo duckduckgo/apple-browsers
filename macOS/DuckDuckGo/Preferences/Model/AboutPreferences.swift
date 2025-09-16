@@ -21,6 +21,7 @@ import Common
 import Combine
 import BrowserServicesKit
 import FeatureFlags
+import PixelKit
 
 final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
@@ -160,6 +161,11 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
     func copy(_ value: String) {
         NSPasteboard.general.copy(value)
+    }
+
+    @MainActor func checkForAppStoreUpdate() {
+        PixelKit.fire(CheckForUpdatesAppStorePixels.checkForUpdate(source: .aboutMenu))
+        NSWorkspace.shared.open(.appStore)
     }
 
 #if SPARKLE

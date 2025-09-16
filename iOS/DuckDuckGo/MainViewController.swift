@@ -45,6 +45,7 @@ import DesignResourcesKitIcons
 import Configuration
 import PixelKit
 import SystemSettingsPiPTutorial
+import DataBrokerProtection_iOS
 
 class MainViewController: UIViewController {
 
@@ -200,6 +201,7 @@ class MainViewController: UIViewController {
     let customConfigurationURLProvider: CustomConfigurationURLProviding
     let experimentalAIChatManager: ExperimentalAIChatManager
     let daxDialogsManager: DaxDialogsManaging
+    let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
 
     var appDidFinishLaunchingStartTime: CFAbsoluteTime?
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
@@ -234,6 +236,9 @@ class MainViewController: UIViewController {
     
     private let daxEasterEggPresenter: DaxEasterEggPresenting
 
+    private let internalUserCommands: URLBasedDebugCommands = InternalUserCommands()
+    private let launchSourceManager: LaunchSourceManaging
+
     init(
         bookmarksDatabase: CoreDataDatabase,
         bookmarksDatabaseCleaner: BookmarkDatabaseCleaner,
@@ -267,7 +272,9 @@ class MainViewController: UIViewController {
         customConfigurationURLProvider: CustomConfigurationURLProviding,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: DaxDialogsManaging,
-        daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter()
+        daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
+        dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
+        launchSourceManager: LaunchSourceManaging
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -305,6 +312,8 @@ class MainViewController: UIViewController {
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
         self.daxEasterEggPresenter = daxEasterEggPresenter
+        self.dbpIOSPublicInterface = dbpIOSPublicInterface
+        self.launchSourceManager = launchSourceManager
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -348,7 +357,8 @@ class MainViewController: UIViewController {
                                                                                          newTabDaxDialogManager: daxDialogsManager,
                                                                                          faviconLoader: faviconLoader,
                                                                                          messageNavigationDelegate: self,
-                                                                                         appSettings: appSettings)
+                                                                                         appSettings: appSettings,
+                                                                                         internalUserCommands: internalUserCommands)
 
         let suggestionTrayDependencies = SuggestionTrayDependencies(favoritesViewModel: favoritesViewModel,
                                                                     bookmarksDatabase: bookmarksDatabase,
@@ -446,6 +456,8 @@ class MainViewController: UIViewController {
         if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
+
+        presentNewAddressBarPickerIfNeeded()
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -601,6 +613,26 @@ class MainViewController: UIViewController {
         guard showOnboarding else { return }
         segueToDaxOnboarding()
     }
+    
+    private func presentNewAddressBarPickerIfNeeded() {
+        let validator = NewAddressBarPickerDisplayValidator(
+            aiChatSettings: aiChatSettings,
+            tutorialSettings: tutorialSettings,
+            featureFlagger: featureFlagger,
+            experimentalAIChatManager: experimentalAIChatManager,
+            appSettings: appSettings,
+            pickerStorage: NewAddressBarPickerStorage(),
+            launchSourceManager: launchSourceManager
+        )
+        guard validator.shouldDisplayNewAddressBarPicker() else { return }
+
+        let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: aiChatSettings)
+        pickerViewController.modalPresentationStyle = .pageSheet
+        pickerViewController.modalTransitionStyle = .coverVertical
+        pickerViewController.isModalInPresentation = true
+        validator.markPickerDisplayAsSeen()
+        self.present(pickerViewController, animated: true)
+    }
 
     func presentNetworkProtectionStatusSettingsModal() {
         Task {
@@ -648,6 +680,14 @@ class MainViewController: UIViewController {
     private func keyboardDidHide() {
         keyboardShowing = false
         didSendGestureDismissPixel = false
+
+        if #available(iOS 26, *) {
+            // Make sure the UI adjusts properly.
+            // Fix for a weird behavior on iOS 26, firing `keyboardWillChangeFrame` event
+            // with the same frame when keyboard is shown and hidden rapidly.
+            // https://app.asana.com/1/137249556945/project/414709148257752/task/1211140989378405
+            adjustUI(withKeyboardFrame: .zero)
+        }
     }
 
     private func setUpToolbarButtonsActions() {
@@ -658,6 +698,9 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarBookmarksButton.setCustomItemAction(on: self, action: #selector(onToolbarBookmarksPressed))
         viewCoordinator.menuToolbarButton.setCustomItemAction(on: self, action: #selector(onMenuPressed))
         viewCoordinator.toolbarFireBarButtonItem.setCustomItemAction(on: self, action: #selector(onFirePressed))
+
+        viewCoordinator.menuToolbarButton.customView?
+            .addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(onMenuLongPressed)))
     }
 
     private func registerForPageRefreshPatterns() {
@@ -797,6 +840,10 @@ class MainViewController: UIViewController {
         let animationCurveRaw = animationCurveRawNSN?.uintValue ?? UIView.AnimationOptions.curveEaseInOut.rawValue
         let animationCurve = UIView.AnimationOptions(rawValue: animationCurveRaw)
 
+        adjustUI(withKeyboardFrame: keyboardFrame, in: duration, animationCurve: animationCurve)
+    }
+
+    private func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
         var keyboardHeight = keyboardFrame.size.height
 
         let omniBarHeight = viewCoordinator.omniBar.barView.expectedHeight
@@ -847,7 +894,6 @@ class MainViewController: UIViewController {
                 self.currentTab?.borderView.layoutIfNeeded()
             }
         }
-
     }
 
     private func initTabButton() {
@@ -1005,7 +1051,8 @@ class MainViewController: UIViewController {
                                                   daxDialogsManager: daxDialogsManager,
                                                   faviconLoader: faviconLoader,
                                                   messageNavigationDelegate: self,
-                                                  appSettings: appSettings)
+                                                  appSettings: appSettings,
+                                                  internalUserCommands: internalUserCommands)
 
         controller.delegate = self
         controller.chromeDelegate = self
@@ -2316,6 +2363,13 @@ extension MainViewController: BrowserChromeDelegate {
 
     private func handleFavoriteSelected(_ favorite: BookmarkEntity) {
         guard let url = favorite.urlObject else { return }
+
+        // Handle shortcuts for internal testing
+        if let favUrl = favorite.url, let url = URL(string: favUrl), internalUserCommands.handle(url: url) {
+            dismissSuggestionTray()
+            return
+        }
+
         Pixel.fire(pixel: .favoriteLaunchedWebsite)
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()
@@ -2555,7 +2609,7 @@ extension MainViewController: OmniBarDelegate {
         segueToSettings()
     }
 
-    func onSettingsLongPressed() {
+    @objc func onMenuLongPressed() {
         if featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild {
             segueToDebugSettings()
         } else {
@@ -2682,14 +2736,6 @@ extension MainViewController: OmniBarDelegate {
     private func fireAIChatUsagePixelAndSetFeatureUsed(_ pixel: Pixel.Event) {
         Pixel.fire(pixel: pixel, withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
         featureDiscovery.setWasUsedBefore(.aiChat)
-    }
-
-    func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
-        if featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild {
-            segueToDebugSettings()
-        } else {
-            onAccessoryPressed(accessoryType: accessoryType)
-        }
     }
 
     func onVoiceSearchPressed() {
@@ -3130,10 +3176,19 @@ extension MainViewController: TabSwitcherDelegate {
         }
     }
 
+    private func deferNTPAppearance() {
+        newTabPageViewController?.view.alpha = 0.0
+        UIView.animate(withDuration: 0.2, delay: 0.2, options: [.curveEaseInOut, .beginFromCurrentState]) {
+            self.newTabPageViewController?.view.alpha = 1.0
+        }
+    }
+
     func tabSwitcherDidRequestNewTab(tabSwitcher: TabSwitcherViewController) {
         newTab()
         if newTabPageViewController?.isShowingLogo == true, !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             animateLogoAppearance()
+        } else if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            deferNTPAppearance()
         }
         themeColorManager.updateThemeColor()
     }
@@ -3676,6 +3731,10 @@ extension MainViewController: MainViewEditingStateTransitioning {
 
     private var isDaxLogoVisible: Bool {
         newTabPageViewController?.isShowingLogo == true
+    }
+
+    var newTabView: UIView? {
+        newTabPageViewController?.view
     }
 
     func hide(with barYOffset: CGFloat, contentYOffset: CGFloat) {

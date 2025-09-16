@@ -123,6 +123,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         } else {
             filteredAndSortedJobData = jobsData
                 .excludingUserRemoved()
+                .excludingOptOutsWithEmailConfirmationBeingHalted()
         }
 
         return filteredAndSortedJobData
@@ -132,7 +133,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         let allBrokerProfileQueryData: [BrokerProfileQueryData]
 
         do {
-            allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData()
+            // Jobs for removed brokers will already be prevented from being scheduled upstream and are filtered below to the specific broker ID
+            allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
         } catch {
             Logger.dataBrokerProtection.error("DataBrokerOperationsCollection error: runOperation, error: \(error.localizedDescription, privacy: .public)")
             return
@@ -243,5 +245,11 @@ private extension Array where Element == BrokerJobData {
 
     func excludingUserRemoved() -> [BrokerJobData] {
         filter { !$0.isRemovedByUser }
+    }
+
+    func excludingOptOutsWithEmailConfirmationBeingHalted() -> [BrokerJobData] {
+        filter { jobData in
+            jobData.historyEvents.max(by: { $0.date < $1.date })?.type != .optOutSubmittedAndAwaitingEmailConfirmation
+        }
     }
 }

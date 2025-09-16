@@ -144,13 +144,17 @@ struct SettingsAIFeaturesView: View {
         .onAppear {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisplayed,
                                          withAdditionalParameters: viewModel.featureDiscovery.addToParams([:], forFeature: .aiChat))
+            // Fire funnel pixel for first time viewing settings page with new input option
+            if let aiChatSettings = viewModel.aiChatSettings as? AIChatSettings {
+                aiChatSettings.processSettingsViewedFunnelStep()
+            }
         }
     }
 }
 
 private extension SettingsAIFeaturesView {
     var footerAttributedString: AttributedString {
-        var base = AttributedString(UserText.settingsAiExperimentalPickerFooterDescription + " ")
+        var base = AttributedString(UserText.settingsAIPickerFooterDescription + " ")
         var link = AttributedString(UserText.subscriptionFeedback)
         link.foregroundColor = Color(designSystemColor: .accent)
         link.link = FooterAction.shareFeedback.url

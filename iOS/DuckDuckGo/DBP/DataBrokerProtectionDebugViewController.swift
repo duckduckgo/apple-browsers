@@ -113,6 +113,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     enum DebugActionRows: Int, CaseIterable {
         case forceBrokerJSONRefresh
         case runPIRDebugMode
+        case runEmailConfirmationOperations
         case runPendingScans
         case runPendingOptOuts
         case runAllPendingJobs
@@ -124,6 +125,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return "Force Broker JSON Refresh"
             case .runPIRDebugMode:
                 return "Run PIR Debug Mode"
+            case .runEmailConfirmationOperations:
+                return "Run email confirmation operations"
             case .runPendingScans:
                 return "Run Pending Scans"
             case .runPendingOptOuts:
@@ -158,7 +161,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case metadataDisplay
     }
 
-    private var manager: DataBrokerProtectionIOSManager
+    private weak var databaseDelegate: DBPIOSInterface.DatabaseDelegate?
+    private weak var debuggingDelegate: DBPIOSInterface.DebuggingDelegate?
+    private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
     
@@ -191,11 +196,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     private var jobCountRefreshTimer: Timer?
     private let webViewWindowHelper = PIRDebugWebViewWindowHelper()
     
-    private lazy var eventPixels: DataBrokerProtectionEventPixels = {
-        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .iOS)
-        return DataBrokerProtectionEventPixels(database: manager.database, handler: sharedPixelsHandler)
-    }()
-    
     enum JobExecutionState: Equatable {
         case idle
         case running
@@ -205,10 +205,19 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
     // MARK: Lifecycle
 
-    required init?(coder: NSCoder) {
-        self.manager = DataBrokerProtectionIOSManager.shared!
+    required init?(coder: NSCoder,
+                   databaseDelegate: DBPIOSInterface.DatabaseDelegate?,
+                   debuggingDelegate: DBPIOSInterface.DebuggingDelegate?,
+                   runPrequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?) {
+        self.databaseDelegate = databaseDelegate
+        self.debuggingDelegate = debuggingDelegate
+        self.runPrerequisitesDelegate = runPrequisitesDelegate
 
         super.init(coder: coder)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
 
@@ -219,7 +228,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         refreshMetadata()
 
         // Check the manager state when entering the debug screen, since PIR could already be running
-        if manager.isRunningJobs && jobExecutionState == .idle {
+        if (debuggingDelegate?.isRunningJobs ?? false) && jobExecutionState == .idle {
             jobExecutionState = .running
         }
         
@@ -233,13 +242,13 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
     private func loadHealthOverview() {
         Task {
-            if await manager.validateRunPrerequisites() {
-                let hasScheduledBackgroundJob = await manager.hasScheduledBackgroundJob
-                self.healthOverview = .runPrerequisitesMet(jobScheduled: hasScheduledBackgroundJob)
+            if let delegate = runPrerequisitesDelegate, await delegate.validateRunPrerequisites() {
+                let hasScheduledBackgroundTask = await debuggingDelegate?.hasScheduledBackgroundTask ?? false
+                self.healthOverview = .runPrerequisitesMet(jobScheduled: hasScheduledBackgroundTask)
             } else {
-                let hasAccount = manager.meetsAuthenticationRunPrequisite
-                let hasEntitlement = (try? await manager.meetsEntitlementRunPrequisite) ?? false
-                let hasProfile = (try? manager.meetsProfileRunPrequisite) ?? false
+                let hasAccount = debuggingDelegate?.isUserAuthenticated() ?? false
+                let hasEntitlement = (try? await runPrerequisitesDelegate?.meetsEntitlementRunPrequisite) ?? false
+                let hasProfile = (try? runPrerequisitesDelegate?.meetsProfileRunPrequisite) ?? false
 
                 self.healthOverview = .runPrerequisitesNotMet(
                     hasAccount: hasAccount,
@@ -314,7 +323,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     }
     
     private func calculatePendingJobCounts() async -> (pendingScans: Int, pendingOptOuts: Int) {
-        guard let allData = try? manager.database.fetchAllBrokerProfileQueryData() else {
+        guard let allData = try? databaseDelegate?.getAllBrokerProfileQueryData() else {
             assertionFailure("Failed to fetch broker profile query data")
             return (0, 0)
         }
@@ -553,9 +562,11 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             self.navigationController?.pushViewController(debugModeViewController, animated: true)
         case .forceBrokerJSONRefresh:
             Task { @MainActor in
-                try await manager.refreshRemoteBrokerJSON()
+                try await debuggingDelegate?.refreshRemoteBrokerJSON()
                 tableView.reloadData()
             }
+        case .runEmailConfirmationOperations:
+            runEmailConfirmationOperations()
         case .runPendingScans:
             runPendingJobs(type: .scheduledScan)
         case .runPendingOptOuts:
@@ -564,7 +575,42 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             runPendingJobs(type: .all)
         case .fireWeeklyPixel:
             Task { @MainActor in
-                eventPixels.fireWeeklyReportPixels()
+                debuggingDelegate?.fireWeeklyPixels()
+            }
+        }
+    }
+    
+    private func runEmailConfirmationOperations() {
+        guard jobExecutionState == .idle else {
+            presentAlert(title: "Jobs Already Running", message: "Please wait for the current jobs to complete before starting new ones.")
+            return
+        }
+
+        Task {
+            self.jobExecutionState = .running
+
+            do {
+                guard let runPrerequisitesDelegate, await runPrerequisitesDelegate.validateRunPrerequisites() else {
+                    self.jobExecutionState = .failed(error: "PIR prerequisites not met")
+                    return
+                }
+
+                try await debuggingDelegate?.runEmailConfirmationJobs()
+
+                self.jobCounts = await calculatePendingJobCounts()
+                self.jobExecutionState = .idle
+            } catch {
+                let errorMessage: String
+                if error is CancellationError {
+                    errorMessage = "Operation was cancelled"
+                } else {
+                    errorMessage = error.localizedDescription
+                }
+
+                self.jobExecutionState = .failed(error: errorMessage)
+
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                self.jobExecutionState = .idle
             }
         }
     }
@@ -579,7 +625,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             self.jobExecutionState = .running
 
             do {
-                guard await manager.validateRunPrerequisites() else {
+                guard let delegate = runPrerequisitesDelegate,
+                    await delegate.validateRunPrerequisites() else {
                     self.jobExecutionState = .failed(error: "PIR prerequisites not met")
                     return
                 }
@@ -626,7 +673,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 }
             }
 
-            manager.runScheduledJobs(type: type, errorHandler: errorHandler) {
+            debuggingDelegate?.runScheduledJobs(type: type, errorHandler: errorHandler) {
                 continuation.resume()
             }
         }
@@ -640,7 +687,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     
     private func isJobExecutionAction(_ row: DebugActionRows) -> Bool {
         switch row {
-        case .runPendingScans, .runPendingOptOuts, .runAllPendingJobs:
+        case .runEmailConfirmationOperations, .runPendingScans, .runPendingOptOuts, .runAllPendingJobs:
             return true
         default:
             return false
@@ -649,6 +696,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     
     private func hasJobsForAction(_ row: DebugActionRows) -> Bool {
         switch row {
+        case .runEmailConfirmationOperations:
+            return true
         case .runPendingScans:
             return jobCounts.pendingScans > 0
         case .runPendingOptOuts:
@@ -665,10 +714,10 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     private func handleDatabaseAction(for row: DatabaseRows) {
         switch row {
         case .databaseBrowser:
-            let dbBrowser = DebugDatabaseBrowserViewController(database: manager.database)
+            let dbBrowser = DebugDatabaseBrowserViewController(databaseDelegate: databaseDelegate)
             self.navigationController?.pushViewController(dbBrowser, animated: true)
         case .saveProfile:
-            let saveProfileViewController = DebugSaveProfileViewController(database: manager.database)
+            let saveProfileViewController = DebugSaveProfileViewController(databaseDelegate: databaseDelegate)
             self.navigationController?.pushViewController(saveProfileViewController, animated: true)
         case .deleteAllData:
             presentDeleteAllDataAlertController()
@@ -680,7 +729,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     private func presentDeleteAllDataAlertController() {
         let alert = UIAlertController(title: "Delete All PIR Data?", message: "This will remove all data and statistics from the PIR database, and give you a new tester ID.", preferredStyle: .alert)
         alert.addAction(title: "Delete All Data", style: .destructive) { [weak self] in
-            try? self?.manager.deleteAllData()
+            try? self?.databaseDelegate?.deleteAllUserProfileData()
             self?.loadJobCounts()
             self?.tableView.reloadData()
         }
@@ -803,7 +852,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             }
 
             self?.settings.serviceRoot = value
-            try? self?.manager.deleteAllData()
+            try? self?.databaseDelegate?.deleteAllUserProfileData()
             self?.forceBrokerJSONFilesUpdate()
             self?.tableView.reloadData()
         }
@@ -823,7 +872,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             settings.resetBrokerDeliveryData()
 
             do {
-                try await manager.refreshRemoteBrokerJSON()
+                try await debuggingDelegate?.refreshRemoteBrokerJSON()
                 Logger.dataBrokerProtection.log("Successfully checked for broker updates")
             } catch {
                 Logger.dataBrokerProtection.error("Failed to check for broker updates: \(error.localizedDescription)")

@@ -23875,6 +23875,9 @@
         }
       }
     },
+    "DuckDuckGo Subscription" : {
+
+    },
     "duplicate.tab" : {
       "comment" : "Menu item. Duplicate as a verb",
       "extractionState" : "extracted_with_value",
@@ -64001,55 +64004,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Dein Feedback hilft uns, Privacy Pro zu verbessern."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Your Feedback will help us improve Privacy Pro."
+            "value" : "Your Feedback will help us improve the DuckDuckGo Subscription."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Tus comentarios nos ayudarán a mejorar Privacy Pro."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Vos commentaires nous aideront à améliorer Privacy Pro."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "La tua opinione ci aiuterà a migliorare Privacy Pro."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Jouw feedback helpt ons Privacy Pro te verbeteren."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Twoja opinia pomoże nam udoskonalić Privacy Pro."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "O teu Feedback ajuda-nos a melhorar o Privacy Pro."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ваш отзыв поможет нам улучшить тариф Privacy Pro."
           }
         }

@@ -166,7 +166,7 @@ extension UserText {
 
     static let pproFeedbackFormSendingConfirmationTitle = NSLocalizedString("ppro.feedback-form.sending-confirmation.title", value: "Thank you!", comment: "Title for the feedback sent view title of the feedback form")
 
-    static let pproFeedbackFormSendingConfirmationDescription = NSLocalizedString("ppro.feedback-form.sending-confirmation.description", value: "Your Feedback will help us improve Privacy Pro.", comment: "Title for the feedback sent view description of the feedback form")
+    static let pproFeedbackFormSendingConfirmationDescription = NSLocalizedString("ppro.feedback-form.sending-confirmation.description", value: "Your Feedback will help us improve the DuckDuckGo Subscription.", comment: "Title for the feedback sent view description of the feedback form")
 
     static let pproFeedbackFormSendingConfirmationError = NSLocalizedString("ppro.feedback-form.sending-confirmation.error", value: "We couldn't send your feedback right now, please try again.", comment: "Title for the feedback sending error text of the feedback form")
 

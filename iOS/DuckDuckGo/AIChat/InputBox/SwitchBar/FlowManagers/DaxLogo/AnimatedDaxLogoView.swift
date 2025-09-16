@@ -57,9 +57,9 @@ final class AnimatedDaxLogoView: UIView, DaxLogoViewSwitching {
     private func updateAnimationForCurrentTraitCollection() {
         let progress = logoAnimation.currentProgress
         if traitCollection.userInterfaceStyle == .dark {
-            logoAnimation.animation = LottieAnimation.named(Constant.daxLogoAnimationName)
-        } else {
             logoAnimation.animation = LottieAnimation.named(Constant.daxLogoAnimationDarkName)
+        } else {
+            logoAnimation.animation = LottieAnimation.named(Constant.daxLogoAnimationName)
         }
         logoAnimation.currentProgress = progress
     }

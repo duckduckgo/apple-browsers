@@ -57,9 +57,9 @@ final class AnimatedDaxLogoView: UIView, DaxLogoViewSwitching {
     private func updateAnimationForCurrentTraitCollection() {
         let progress = logoAnimation.currentProgress
         if traitCollection.userInterfaceStyle == .dark {
-            logoAnimation.animation = LottieAnimation.named("duckduckgo-ai-transition-dark.json")
+            logoAnimation.animation = LottieAnimation.named(Constant.daxLogoAnimationName)
         } else {
-            logoAnimation.animation = LottieAnimation.named("duckduckgo-ai-transition.json")
+            logoAnimation.animation = LottieAnimation.named(Constant.daxLogoAnimationDarkName)
         }
         logoAnimation.currentProgress = progress
     }
@@ -74,5 +74,10 @@ final class AnimatedDaxLogoView: UIView, DaxLogoViewSwitching {
 
     private struct Metrics {
         static let maxLogoSize: CGFloat = 162
+    }
+
+    private enum Constant {
+        static let daxLogoAnimationName = "duckduckgo-ai-transition.json"
+        static let daxLogoAnimationDarkName = "duckduckgo-ai-transition-dark.json"
     }
 }

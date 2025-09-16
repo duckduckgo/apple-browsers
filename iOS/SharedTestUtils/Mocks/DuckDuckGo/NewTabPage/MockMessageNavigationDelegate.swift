@@ -20,7 +20,7 @@
 @testable import DuckDuckGo
 
 class MockMessageNavigationDelegate: MessageNavigationDelegate {
-    func segueToSettingsAIChat(completion: (() -> Void)?) {}
+    func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, completion: (() -> Void)?) {}
     func segueToSettings() {}
     func segueToFeedback() {}
 }

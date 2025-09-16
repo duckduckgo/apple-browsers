@@ -20,7 +20,6 @@
 import Foundation
 
 public protocol SERPSettingsProviding {
-    /// Determines if Duck.AI is enabled.
     var isDuckAIEnabled: Bool { get }
     
     /// The user settings state for Allowing Duck.ai Follow-up Questions in Search Results

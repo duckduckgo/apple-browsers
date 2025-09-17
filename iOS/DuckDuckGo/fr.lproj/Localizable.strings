@@ -1918,6 +1918,9 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importez vos mots de passe sur DuckDuckGo";
 
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "Demander en privé";
+
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Vous devez activer le VPN à partir de l'application DuckDuckGo.";
 
@@ -2689,9 +2692,6 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Rechercher ou saisir une adresse";
 
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Demandez à Duck.ai";
-
 /* Search input toggle button title for asking AI Chat */
 "search.input.toggle.aichat.button.title" = "Duck.ai";
 
@@ -2763,6 +2763,9 @@
 
 /* Title for the 'Search Only' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_only" = "Recherche uniquement";
+
+/* Footer under the AI picker, descriptive sentence without link */
+"settings.ai.new.picker.footer" = "Essayez la nouvelle option permettant de basculer entre la recherche et Duck.ai dans la barre d'adresse.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Gérer les raccourcis Duck.ai";

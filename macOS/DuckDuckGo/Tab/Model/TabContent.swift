@@ -338,7 +338,9 @@ extension TabContent {
 
     var canBePinned: Bool {
         switch self {
-        case .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .history:
+        case .subscription, .identityTheftRestoration, .dataBrokerProtection, .history, .settings, .newtab, .bookmarks:
+            return true
+        case .releaseNotes:
             return false
         default:
             return isUrl

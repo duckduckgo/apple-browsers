@@ -1838,7 +1838,7 @@ public struct UserText {
 
     public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Tabs Screen", comment: "Toggle text to enable/disable Duck.ai in tab manager")
 
-    public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("search.input.field.placeholder.search.duckai", value: "Ask Duck.ai", comment: "Placeholder text for the search input field when searching Duck.ai")
+    public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask privately", comment: "Placeholder text for the duck.ai input field")
 
     // MARK: - AI Features Picker Footer
     public static let settingsAIPickerFooterDescription = NSLocalizedString(

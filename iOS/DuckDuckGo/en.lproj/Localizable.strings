@@ -1861,6 +1861,9 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Import your passwords to DuckDuckGo";
 
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "Ask privately";
+
 /* OK title for invite screen alert dismissal button */
 "invite.alert.ok.button" = "OK";
 
@@ -2586,9 +2589,6 @@ https://duckduckgo.com/mac";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Search or enter address";
-
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Ask Duck.ai";
 
 /* Search input toggle button title for asking AI Chat */
 "search.input.toggle.aichat.button.title" = "Duck.ai";

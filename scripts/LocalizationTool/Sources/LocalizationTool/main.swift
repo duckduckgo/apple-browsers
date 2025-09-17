@@ -31,7 +31,7 @@ struct LocalizationTool: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "localization-tool",
         abstract: "A tool for managing localization workflows with Smartling",
-        subcommands: [Upload.self, Status.self, Approve.self, Download.self]
+        subcommands: [Upload.self, Status.self, Approve.self, Download.self, Import.self]
     )
 }
 
@@ -356,6 +356,162 @@ extension LocalizationTool {
             print("❌ Download failed: \(error)")
             Foundation.exit(1)
         }
+    }
+}
+
+// MARK: - Import Command
+
+struct Import: AsyncParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Import translated files using loc_import.sh"
+    )
+
+    @OptionGroup var smartling: SmartlingOptions
+
+    @Option(name: .long, help: "Directory containing translated files")
+    var importDir: String
+
+    @Flag(name: .long, help: "Skip safety checks and force import")
+    var force: Bool = false
+
+    func run() async throws {
+        let credentials = try smartling.validateCredentials()
+        try await LocalizationTool.handleImport(importDir: importDir, force: force, credentials: credentials)
+    }
+}
+
+// MARK: - Import Handler
+
+extension LocalizationTool {
+    static func handleImport(importDir: String, force: Bool, credentials: Credentials) async throws {
+        print("🔍 Starting import from \(importDir)")
+
+        // Verify import directory exists
+        guard FileManager.default.fileExists(atPath: importDir) else {
+            print("IMPORTED=0")
+            print("❌ Import directory does not exist: \(importDir)")
+            Foundation.exit(1)
+        }
+
+        // Get all translation files
+        let importURL = URL(fileURLWithPath: importDir)
+        let translationFiles: [URL]
+        do {
+            let contents = try FileManager.default.contentsOfDirectory(at: importURL, includingPropertiesForKeys: nil)
+            translationFiles = contents.filter { $0.pathExtension == "xliff" || $0.pathExtension == "stringsdict" }
+        } catch {
+            print("IMPORTED=0")
+            print("❌ Failed to read import directory: \(error)")
+            Foundation.exit(1)
+        }
+
+        guard !translationFiles.isEmpty else {
+            print("IMPORTED=0")
+            print("⚠️  No translation files found in \(importDir)")
+            return
+        }
+
+        print("📋 Found \(translationFiles.count) translation files")
+
+        // Separate XLIFFs and stringsdicts
+        let xliffFiles = translationFiles.filter { $0.pathExtension == "xliff" }
+        let stringsdictFiles = translationFiles.filter { $0.pathExtension == "stringsdict" }
+
+        let scriptPath = "../../iOS/scripts/loc_import.sh"
+        var totalImported = 0
+
+        // Process XLIFFs first
+        if !xliffFiles.isEmpty {
+            print("📋 Processing \(xliffFiles.count) XLIFF files first...")
+            let xliffTempDir = try reorganizeFiles(translationFiles: xliffFiles)
+            let baseName = extractBaseName(from: xliffFiles[0].lastPathComponent)
+
+            let xliffProcess = Process()
+            xliffProcess.executableURL = URL(fileURLWithPath: "/bin/sh")
+            xliffProcess.arguments = [scriptPath, xliffTempDir.path, baseName]
+
+            print("📞 Calling loc_import.sh for XLIFFs...")
+            try xliffProcess.run()
+            xliffProcess.waitUntilExit()
+
+            // Clean up temp directory
+            try? FileManager.default.removeItem(at: xliffTempDir)
+
+            guard xliffProcess.terminationStatus == 0 else {
+                print("IMPORTED=0")
+                print("❌ XLIFF import failed with exit code \(xliffProcess.terminationStatus)")
+                Foundation.exit(1)
+            }
+
+            totalImported += xliffFiles.count
+            print("✅ Successfully imported \(xliffFiles.count) XLIFF files")
+        }
+
+        // Then process stringsdicts
+        if !stringsdictFiles.isEmpty {
+            print("📋 Processing \(stringsdictFiles.count) stringsdict files...")
+            let stringsdictTempDir = try reorganizeFiles(translationFiles: stringsdictFiles)
+            let baseName = extractBaseName(from: stringsdictFiles[0].lastPathComponent)
+
+            let stringsdictProcess = Process()
+            stringsdictProcess.executableURL = URL(fileURLWithPath: "/bin/sh")
+            stringsdictProcess.arguments = [scriptPath, stringsdictTempDir.path, baseName]
+
+            print("📞 Calling loc_import.sh for stringsdicts...")
+            try stringsdictProcess.run()
+            stringsdictProcess.waitUntilExit()
+
+            // Clean up temp directory
+            try? FileManager.default.removeItem(at: stringsdictTempDir)
+
+            guard stringsdictProcess.terminationStatus == 0 else {
+                print("IMPORTED=0")
+                print("❌ stringsdict import failed with exit code \(stringsdictProcess.terminationStatus)")
+                Foundation.exit(1)
+            }
+
+            totalImported += stringsdictFiles.count
+            print("✅ Successfully imported \(stringsdictFiles.count) stringsdict files")
+        }
+
+        print("IMPORTED=\(totalImported)")
+        print("🎉 Successfully imported \(totalImported) translation files")
+    }
+
+    static func reorganizeFiles(translationFiles: [URL]) throws -> URL {
+        // Create temp directory
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("smartling-import-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+
+        for file in translationFiles {
+            let fileName = file.lastPathComponent
+
+            // Extract locale from "filename_locale.xliff" format
+            let components = fileName.components(separatedBy: "_")
+            guard components.count >= 2 else { continue }
+
+            let localeComponent = components.last ?? ""
+            let locale = localeComponent.components(separatedBy: ".").first ?? ""
+            let baseName = extractBaseName(from: fileName)
+            let ext = file.pathExtension
+
+            // Create locale directory
+            let localeDir = tempDir.appendingPathComponent(locale)
+            try FileManager.default.createDirectory(at: localeDir, withIntermediateDirectories: true)
+
+            // Copy file with correct name
+            let targetPath = localeDir.appendingPathComponent("\(baseName).\(ext)")
+            try FileManager.default.copyItem(at: file, to: targetPath)
+        }
+
+        return tempDir
+    }
+
+    static func extractBaseName(from fileName: String) -> String {
+        // Extract base name from "filename_locale.xliff" -> "filename"
+        let components = fileName.components(separatedBy: "_")
+        guard components.count >= 2 else { return fileName }
+        return components.dropLast().joined(separator: "_")
     }
 }
 

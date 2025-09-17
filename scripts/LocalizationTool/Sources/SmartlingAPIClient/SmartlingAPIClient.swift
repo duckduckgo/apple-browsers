@@ -34,7 +34,7 @@ public final class SmartlingAPIClient {
     // MARK: - Authentication
 
     public func authenticate() async throws {
-        var request = try jsonRequest(
+        let request = try jsonRequest(
             method: "POST",
             path: "/auth-api/v2/authenticate",
             body: [
@@ -58,7 +58,7 @@ public final class SmartlingAPIClient {
             throw SmartlingAPIError.noRefreshToken
         }
 
-        var request = try jsonRequest(
+        let request = try jsonRequest(
             method: "POST",
             path: "/auth-api/v2/authenticate/refresh",
             body: ["refreshToken": refreshToken],
@@ -92,7 +92,7 @@ public final class SmartlingAPIClient {
     public func createJob(_ request: CreateJobRequest) async throws -> SmartlingJob {
         try await ensureValidToken()
 
-        var urlRequest = try jsonRequest(method: "POST", path: "/jobs-api/v3/projects/\(credentials.projectId)/jobs", body: request)
+        let urlRequest = try jsonRequest(method: "POST", path: "/jobs-api/v3/projects/\(credentials.projectId)/jobs", body: request)
 
         let (data, response) = try await session.data(for: urlRequest)
         try handleResponseOrThrow(data: data, response: response)
@@ -104,7 +104,7 @@ public final class SmartlingAPIClient {
     public func getJob(jobId: String) async throws -> SmartlingJob {
         try await ensureValidToken()
 
-        var request = newRequest(method: "GET", path: "/jobs-api/v3/projects/\(credentials.projectId)/jobs/\(jobId)")
+        let request = newRequest(method: "GET", path: "/jobs-api/v3/projects/\(credentials.projectId)/jobs/\(jobId)")
 
         let (data, response) = try await session.data(for: request)
         try handleResponseOrThrow(data: data, response: response)
@@ -116,7 +116,7 @@ public final class SmartlingAPIClient {
     public func getJobProgress(jobId: String) async throws -> JobProgressResponse.ProgressData {
         try await ensureValidToken()
 
-        var request = newRequest(method: "GET", path: "/jobs-api/v3/projects/\(credentials.projectId)/jobs/\(jobId)/progress")
+        let request = newRequest(method: "GET", path: "/jobs-api/v3/projects/\(credentials.projectId)/jobs/\(jobId)/progress")
 
         let (data, response) = try await session.data(for: request)
         try validateResponse(response)
@@ -152,7 +152,7 @@ public final class SmartlingAPIClient {
     public func createBatch(request: CreateBatchRequest) async throws -> BatchResponse.BatchData {
         try await ensureValidToken()
 
-        var urlRequest = try jsonRequest(method: "POST", path: "/job-batches-api/v2/projects/\(credentials.projectId)/batches", body: request)
+        let urlRequest = try jsonRequest(method: "POST", path: "/job-batches-api/v2/projects/\(credentials.projectId)/batches", body: request)
 
         let (data, response) = try await session.data(for: urlRequest)
         try handleResponseOrThrow(data: data, response: response)

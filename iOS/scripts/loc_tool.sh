@@ -43,6 +43,15 @@ if [ -z "${SMARTLING_USER_ID:-}" ] || [ -z "${SMARTLING_USER_SECRET:-}" ] || [ -
   exit 1
 fi
 
+# Helper function to parse --job-id argument
+parse_job_id() {
+  if [ "$1" != "--job-id" ] || [ -z "${2:-}" ]; then
+    echo "Usage: $0 $cmd --job-id <job-id>" >&2
+    exit 1
+  fi
+  echo "$2"
+}
+
 # Build the Swift CLI once up-front for all commands
 run_in_directory "$TOOL_DIR" swift build -c release >/dev/null
 
@@ -62,6 +71,37 @@ case "$cmd" in
     # Use the current git branch as the job name
     JOB_NAME=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
     CMD=("$TOOL_BIN" upload --job-name "$JOB_NAME" --xliff "$XLIFF" --stringsdict "$STRINGSDICT")
+    run_in_directory "$TOOL_DIR" "${CMD[@]}"
+    ;;
+  status)
+    JOB_ID=$(parse_job_id "$@")
+    
+    # Run status check
+    CMD=("$TOOL_BIN" status --job-id "$JOB_ID")
+    run_in_directory "$TOOL_DIR" "${CMD[@]}"
+    ;;
+  approve)
+    JOB_ID=$(parse_job_id "$@")
+    
+    # Run approval check
+    CMD=("$TOOL_BIN" approve --job-id "$JOB_ID")
+    run_in_directory "$TOOL_DIR" "${CMD[@]}"
+    ;;
+  download)
+    JOB_ID=$(parse_job_id "$@")
+    
+    # Parse optional output directory
+    OUT_DIR=""
+    if [ "${3:-}" = "--out-dir" ] && [ -n "${4:-}" ]; then
+      OUT_DIR="$4"
+    fi
+    
+    # Run download
+    if [ -n "$OUT_DIR" ]; then
+      CMD=("$TOOL_BIN" download --job-id "$JOB_ID" --out-dir "$OUT_DIR")
+    else
+      CMD=("$TOOL_BIN" download --job-id "$JOB_ID")
+    fi
     run_in_directory "$TOOL_DIR" "${CMD[@]}"
     ;;
   *)

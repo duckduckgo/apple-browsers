@@ -202,26 +202,74 @@ extension LocalizationTool {
         try await client.authenticate()
 
         let job = try await client.getJob(jobId: jobId)
-        let progress = try await client.getJobProgress(jobId: jobId)
-
+        
         print("STATUS=\(job.jobStatus)")
-        print("PERCENT=\(progress.progress.percentComplete)")
-
         print("\n📊 Job Status: \(job.jobStatus)")
-        print("Progress: \(progress.progress.percentComplete)%\n")
+        print("📋 Job Name: \(job.jobName)")
+        print("🎯 Target Locales: \(job.targetLocaleIds.count)")
+        
+        // Only try to get progress if job is authorized/in progress
+        if job.jobStatus != "AWAITING_AUTHORIZATION" {
+            do {
+                let progress = try await client.getJobProgress(jobId: jobId)
+                print("PERCENT=\(progress.progress.percentComplete)")
+                print("📈 Progress: \(progress.progress.percentComplete)%")
+            } catch {
+                print("PERCENT=0")
+                print("⚠️  Could not get progress: \(error)")
+            }
+        } else {
+            print("PERCENT=0")
+            print("⏳ Job is awaiting authorization")
+        }
+        print()
     }
 
-    // MARK: - Approve (stub)
+    // MARK: - Approve (with readiness check)
     static func handleApprove(jobId: String, credentials: Credentials) async throws {
-        // TODO: implement batch authorization API call when available
-        // For now, authenticate and echo
         let smartlingCredentials = SmartlingCredentials(userIdentifier: credentials.userId, userSecret: credentials.userSecret, projectId: credentials.projectId)
         let client = SmartlingAPIClient(credentials: smartlingCredentials)
         try await client.authenticate()
 
-        print("APPROVED=0")
-        print("⚠️  Approve not implemented yet for job \(jobId). Add batch authorization API.")
-        Foundation.exit(2)
+        // Check if job is ready for authorization
+        print("🔍 Checking job readiness...")
+        let job = try await client.getJob(jobId: jobId)
+        
+        // Validate job status
+        guard job.jobStatus == "AWAITING_AUTHORIZATION" else {
+            print("❌ Job is not ready for authorization")
+            print("   Current status: \(job.jobStatus)")
+            if job.jobStatus == "IN_PROGRESS" {
+                print("   💡 Job is already authorized and in progress")
+            } else if job.jobStatus == "COMPLETED" {
+                print("   ✅ Job is already completed")
+            }
+            Foundation.exit(1)
+        }
+        
+        print("✅ Job is ready for authorization")
+        print("📋 Job: \(job.jobName)")
+        print("🎯 Target locales: \(job.targetLocaleIds.count)")
+        
+        // Authorize the job (empty body uses default workflows)
+        print("🔄 Authorizing job for translation...")
+        do {
+            try await client.authorizeJob(jobId: jobId)
+            print("APPROVED=1")
+            print("✅ Job authorized successfully!")
+            print("🚀 Translation will begin for \(job.targetLocaleIds.count) locales")
+        } catch {
+            let errorMessage = "\(error)"
+            if errorMessage.contains("Job has no content") {
+                print("APPROVED=0")
+                print("ℹ️  Job has no new content to translate")
+                print("✅ All strings are already translated - no action needed")
+            } else {
+                print("APPROVED=0")
+                print("❌ Authorization failed: \(error)")
+                Foundation.exit(1)
+            }
+        }
     }
 
     // MARK: - Download (stub)

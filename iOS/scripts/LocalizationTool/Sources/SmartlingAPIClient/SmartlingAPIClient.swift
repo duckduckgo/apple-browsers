@@ -107,6 +107,16 @@ public final class SmartlingAPIClient {
         return progressResponse.response.data
     }
 
+    public func authorizeJob(jobId: String, localeWorkflows: [AuthorizeJobItemRequest] = []) async throws {
+        try await ensureValidToken()
+        
+        let request = AuthorizeJobRequest(localeWorkflows: localeWorkflows)
+        let urlRequest = try jsonRequest(method: "POST", path: "/jobs-api/v3/projects/\(credentials.projectId)/jobs/\(jobId)/authorize", body: request)
+        
+        let (data, response) = try await session.data(for: urlRequest)
+        try handleResponseOrThrow(data: data, response: response)
+    }
+
     // MARK: - Batch Operations
 
     public func createBatch(request: CreateBatchRequest) async throws -> BatchResponse.BatchData {

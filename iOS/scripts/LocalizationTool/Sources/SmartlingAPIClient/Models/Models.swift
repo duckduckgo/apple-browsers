@@ -83,6 +83,26 @@ public struct JobResponse: Codable {
     }
 }
 
+// MARK: - Job Authorization
+
+public struct AuthorizeJobRequest: Codable {
+    public let localeWorkflows: [AuthorizeJobItemRequest]
+    
+    public init(localeWorkflows: [AuthorizeJobItemRequest] = []) {
+        self.localeWorkflows = localeWorkflows
+    }
+}
+
+public struct AuthorizeJobItemRequest: Codable {
+    public let targetLocaleId: String
+    public let workflowUid: String
+    
+    public init(targetLocaleId: String, workflowUid: String) {
+        self.targetLocaleId = targetLocaleId
+        self.workflowUid = workflowUid
+    }
+}
+
 public struct JobProgressResponse: Codable {
     public let response: ResponseData
 

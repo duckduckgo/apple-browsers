@@ -3678,6 +3678,8 @@
 		EEBCE6842BA4643200B9DF00 /* NSSizeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC5E4E325D6BA9C007F5990 /* NSSizeExtension.swift */; };
 		EEBF15C22E4CE72E0053D15B /* BookmarksEmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBF15C12E4CE72E0053D15B /* BookmarksEmptyStateView.swift */; };
 		EEBF15C32E4CE72E0053D15B /* BookmarksEmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBF15C12E4CE72E0053D15B /* BookmarksEmptyStateView.swift */; };
+		EEC0E2D32E798B6F0075E2D7 /* NewDataImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC0E2D22E798B690075E2D7 /* NewDataImportView.swift */; };
+		EEC0E2D42E798B6F0075E2D7 /* NewDataImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC0E2D22E798B690075E2D7 /* NewDataImportView.swift */; };
 		EEC111E4294D06020086524F /* JSAlert.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EEC111E3294D06020086524F /* JSAlert.storyboard */; };
 		EEC111E6294D06290086524F /* JSAlertViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC111E5294D06290086524F /* JSAlertViewModel.swift */; };
 		EEC3BD262E5897300093F638 /* SyncDialogControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC3BD252E5897290093F638 /* SyncDialogControllerTests.swift */; };
@@ -5827,6 +5829,7 @@
 		EEBCA0C52BD7CE2C004DF19C /* VPNFailureRecoveryPixel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNFailureRecoveryPixel.swift; sourceTree = "<group>"; };
 		EEBCE6812BA444FA00B9DF00 /* XCUIElementExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XCUIElementExtension.swift; sourceTree = "<group>"; };
 		EEBF15C12E4CE72E0053D15B /* BookmarksEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksEmptyStateView.swift; sourceTree = "<group>"; };
+		EEC0E2D22E798B690075E2D7 /* NewDataImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewDataImportView.swift; sourceTree = "<group>"; };
 		EEC111E3294D06020086524F /* JSAlert.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = JSAlert.storyboard; sourceTree = "<group>"; };
 		EEC111E5294D06290086524F /* JSAlertViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSAlertViewModel.swift; sourceTree = "<group>"; };
 		EEC3BD252E5897290093F638 /* SyncDialogControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDialogControllerTests.swift; sourceTree = "<group>"; };
@@ -7731,6 +7734,7 @@
 		4B723DEC26B0002B00E14D75 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				EEC0E2D22E798B690075E2D7 /* NewDataImportView.swift */,
 				EEEE200F2E57B6EA0071A566 /* DataImportFlowLauncher.swift */,
 				B66CA41D2AD910B300447CF0 /* DataImportView.swift */,
 				B6BCC51D2AFCD9ED002C5499 /* DataImportSourcePicker.swift */,
@@ -12898,6 +12902,7 @@
 				3768D8452C2CC884004120AE /* RemoteMessagingConfigMatcherProvider.swift in Sources */,
 				EE7E0FD82E3BA8FA00E51C8B /* SyncDialogController.swift in Sources */,
 				3772BEDD2D019CE90019B9EF /* DefaultsFavoritesActionHandler.swift in Sources */,
+				EEC0E2D42E798B6F0075E2D7 /* NewDataImportView.swift in Sources */,
 				3706FAC0293F65D500E42796 /* DataTaskProviding.swift in Sources */,
 				3706FAC1293F65D500E42796 /* FeedbackViewController.swift in Sources */,
 				BB32C59E2DCD417600775E80 /* ColorsProviding.swift in Sources */,
@@ -15536,6 +15541,7 @@
 				37EE56322D5F197700D53C7C /* ZoomPopoverViewModel.swift in Sources */,
 				4BBD3C00285ACE090047A89D /* NSNotificationName+Favicons.swift in Sources */,
 				4B0DB5E528BD9D08007DD239 /* PinningManager.swift in Sources */,
+				EEC0E2D32E798B6F0075E2D7 /* NewDataImportView.swift in Sources */,
 				373D9B4829EEAC1B00381FDD /* SyncMetadataDatabase.swift in Sources */,
 				B68458C025C7E9E000DC17B6 /* TabCollectionViewModel+NSSecureCoding.swift in Sources */,
 				AA8EDF2724923EC70071C2E8 /* StringExtension.swift in Sources */,

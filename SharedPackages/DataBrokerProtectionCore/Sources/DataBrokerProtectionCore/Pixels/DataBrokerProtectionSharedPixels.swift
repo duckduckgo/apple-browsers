@@ -211,7 +211,7 @@ public enum DataBrokerProtectionSharedPixels {
     case serviceEmailConfirmationAttemptFailure(dataBrokerURL: String, brokerVersion: String, attemptNumber: Int, duration: Double, attemptId: UUID, actionId: String?)
     case serviceEmailConfirmationMaxRetriesExceeded(dataBrokerURL: String, brokerVersion: String, attemptId: UUID, actionId: String?)
     case serviceEmailConfirmationJobSuccess(dataBrokerURL: String, brokerVersion: String)
-    
+
     // Broker update pixels
     case updateDataBrokersSuccess(dataBroker: String, removedAt: Int64?)
     case updateDataBrokersFailure(dataBroker: String, removedAt: Int64?, error: Error)
@@ -318,7 +318,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .serviceEmailConfirmationAttemptFailure: return "dbp_service_email-confirmation_attempt-failure"
         case .serviceEmailConfirmationMaxRetriesExceeded: return "dbp_service_email-confirmation_max-retries-exceeded"
         case .serviceEmailConfirmationJobSuccess: return "dbp_service_email-confirmation_job-success"
-            
+
             // Broker update pixels
         case .updateDataBrokersSuccess: return "dbp_update_databrokers_success"
         case .updateDataBrokersFailure: return "dbp_update_databrokers_failure"
@@ -665,7 +665,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .serviceEmailConfirmationAttemptSuccess,
                     .serviceEmailConfirmationAttemptFailure,
                     .serviceEmailConfirmationMaxRetriesExceeded,
-                    .serviceEmailConfirmationJobSuccess:
+                    .serviceEmailConfirmationJobSuccess,
                     .updateDataBrokersSuccess:
 
                 self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)

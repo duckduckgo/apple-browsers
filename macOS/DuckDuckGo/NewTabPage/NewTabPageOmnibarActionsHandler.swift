@@ -126,7 +126,6 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
         let tabOpener = AIChatTabOpener(
             promptHandler: promptHandler,
-            addressBarQueryExtractor: AIChatAddressBarPromptExtractor(),
             aiChatTabManaging: windowControllersManager
         )
 

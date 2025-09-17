@@ -21,8 +21,7 @@ import AIChat
 
 enum AIChatContent {
     case empty
-    case query(String?)
-    case addressBarValue(AddressBarTextField.Value)
+    case query(String?, shouldAutoSubmit: Bool = true)
     case url(URL)
     case payload(AIChatPayload)
     case restoration(AIChatRestorationData)
@@ -38,18 +37,15 @@ protocol AIChatTabOpening {
 
 struct AIChatTabOpener: AIChatTabOpening {
     private let promptHandler: AIChatPromptHandler
-    private let addressBarQueryExtractor: AIChatAddressBarPromptExtractor
     private let aiChatTabManaging: AIChatTabManaging
 
     let aiChatRemoteSettings = AIChatRemoteSettings()
 
     init(
         promptHandler: AIChatPromptHandler,
-        addressBarQueryExtractor: AIChatAddressBarPromptExtractor,
         aiChatTabManaging: AIChatTabManaging
     ) {
         self.promptHandler = promptHandler
-        self.addressBarQueryExtractor = addressBarQueryExtractor
         self.aiChatTabManaging = aiChatTabManaging
     }
 
@@ -61,18 +57,7 @@ struct AIChatTabOpener: AIChatTabOpening {
         case .empty:
             openAIChatTab(query: nil, with: behavior, autoSubmit: true)
 
-        case .query(let query):
-            openAIChatTab(query: query, with: behavior, autoSubmit: true)
-
-        case .addressBarValue(let value):
-            let query = addressBarQueryExtractor.queryForValue(value)
-            // We don't want to auto-submit if the user is opening duck.ai from the SERP
-            let shouldAutoSubmit: Bool
-            if case let .url(_, url, _) = value {
-                shouldAutoSubmit = !url.isDuckDuckGoSearch
-            } else {
-                shouldAutoSubmit = true
-            }
+        case .query(let query, shouldAutoSubmit: let shouldAutoSubmit):
             openAIChatTab(query: query, with: behavior, autoSubmit: shouldAutoSubmit)
 
         case .url(let url):

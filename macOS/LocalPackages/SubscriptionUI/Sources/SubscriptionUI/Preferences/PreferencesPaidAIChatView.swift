@@ -46,8 +46,13 @@ public struct PreferencesPaidAIChatView: View {
     @ViewBuilder
     private var openFeatureSection: some View {
         PreferencePaneSection {
-            Button(UserText.openPaidAIChatButton) { model.openPaidAIChat() }
-                .padding(.top, 4)
+            if model.isAIFeaturesEnabled {
+                Button(UserText.openPaidAIChatButton) { model.openAIFeaturesSettings() }
+                    .padding(.top, 4)
+                TextButton(UserText.disableDuckAILink, weight: .semibold) { model.openAIFeaturesSettings() }
+            } else {
+                TextButton(UserText.enableDuckAILink, weight: .semibold) { model.openAIFeaturesSettings() }
+            }
         }
     }
 

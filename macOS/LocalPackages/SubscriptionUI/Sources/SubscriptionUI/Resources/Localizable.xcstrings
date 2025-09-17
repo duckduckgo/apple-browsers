@@ -2693,6 +2693,30 @@
         }
       }
     },
+    "subscription.preferences.paid.ai.chat.disable.link" : {
+      "comment" : "Text linking to the settings where it is possible to disable all AI features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disable Duck.ai in AI Features settings."
+          }
+        }
+      }
+    },
+    "subscription.preferences.paid.ai.chat.enable.link" : {
+      "comment" : "Text linking to the settings where it is possible to enable all AI features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Enable Duck.ai in AI Features settings."
+          }
+        }
+      }
+    },
     "subscription.preferences.personal.information.removal.title" : {
       "comment" : "Title of the preferences pane for Personal Information Removal",
       "extractionState" : "extracted_with_value",

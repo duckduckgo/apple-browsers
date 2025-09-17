@@ -6,7 +6,7 @@
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
     },
     m_aichat_experimental_omnibar_prompt_submitted: {
         description: 'Fires when user submits an AI chat prompt through the experimental omnibar',
@@ -71,7 +71,7 @@
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
     },
     m_aichat_experimental_omnibar_first_settings_viewed: {
         description: 'Fires when user first views the AI Features settings page containing the new input toggle',
@@ -92,21 +92,21 @@
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
     },
     m_aichat_legacy_omnibar_query_submitted: {
         description: 'Fires when user submits a search query through the legacy omnibar (baseline comparison for experimental omnibar)',
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
     },
     m_aichat_legacy_omnibar_aichat_button_pressed: {
         description: 'Fires when user presses the AI chat button in the legacy omnibar (baseline comparison for experimental omnibar AI prompts)',
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
     },
     m_aichat_experimental_omnibar_first_interaction: {
         description: 'Fires when user first enters text after enabling the experimental omnibar',
@@ -127,14 +127,14 @@
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
     },
     m_aichat_experimental_omnibar_full_conversion_user: {
         description: 'Fires when user achieves full conversion by using both search AND Duck.ai modes',
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
     },
     m_aichat_experimental_omnibar_text_area_focused: {
         description: 'Fires when user focuses the text input area in the experimental omnibar',
@@ -144,6 +144,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
+            'isInternalUser',
             {
                 key: 'orientation',
                 description: 'Device orientation when text area was focused: portrait or landscape',
@@ -175,6 +176,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
+            'isInternalUser',
             {
                 key: 'mode',
                 description: 'Current toggle mode when button was pressed: search or aiChat',
@@ -236,6 +238,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
+            'isInternalUser',
             {
                 key: 'searches_in_session',
                 description: 'Number of search queries submitted during the session',
@@ -256,6 +259,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
+            'isInternalUser',
             {
                 key: 'still_enabled',
                 description: 'Whether user still has feature enabled on return: true=retention, false=churn',

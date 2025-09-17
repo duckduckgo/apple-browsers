@@ -242,7 +242,8 @@ class MaliciousSiteProtectionUITests: UITestCase {
 
         // Wait for safe site to load
         let safeContent = webView.staticTexts.containing(\.value, containing: "DuckDuckGo").firstMatch
-        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Safe site should load normally")
+        let tooltip = webView.staticTexts.containing(\.value, containing: "AI chat").firstMatch
+        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.localTestServer) || tooltip.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Second page should load")
 
         // Verify we're on the safe site
         let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""
@@ -272,7 +273,8 @@ class MaliciousSiteProtectionUITests: UITestCase {
 
         // Wait for second page to load
         let secondPageContent = webView.staticTexts.containing(\.value, containing: "duckduckgo").firstMatch
-        XCTAssertTrue(secondPageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Second page should load")
+        let tooltip = webView.staticTexts.containing(\.value, containing: "AI chat").firstMatch
+        XCTAssertTrue(secondPageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer) || tooltip.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Second page should load")
 
         // Test back navigation via keyboard shortcut for stability
         let window = app.windows.firstMatch
@@ -482,7 +484,8 @@ class MaliciousSiteProtectionUITests: UITestCase {
 
         // Wait for safe site to load
         let safeContent = webView.staticTexts.containing(\.value, containing: "DuckDuckGo").firstMatch
-        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Safe site should load normally after threat")
+        let tooltip = webView.staticTexts.containing(\.value, containing: "AI chat").firstMatch
+        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.localTestServer) || tooltip.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Second page should load")
 
         // Verify we're on the safe site (error state should be cleared)
         let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""

@@ -1930,6 +1930,9 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Εισαγάγετε τους κωδικούς πρόσβασής σας στο DuckDuckGo";
 
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "Ρωτήστε ιδιωτικά";
+
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Πρέπει να ενεργοποιήσετε το VPN από την εφαρμογή DuckDuckGo.";
 
@@ -2301,6 +2304,30 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Συντομευσεις";
+
+/* Confirm button for the new address bar picker */
+"new.address.bar.picker.confirm" = "Επιβεβαίωση";
+
+/* Description text for the new address bar picker modal */
+"new.address.bar.picker.description" = "Οι λειτουργίες τεχνητής νοημοσύνης είναι πάντα προαιρετικές.";
+
+/* Footer text for the new address bar picker */
+"new.address.bar.picker.footer" = "Προσαρμόστε στις Ρυθμίσεις > Λειτουργίες τεχνητής νοημοσύνης";
+
+/* Not now button for the new address bar picker */
+"new.address.bar.picker.not.now" = "Όχι τώρα";
+
+/* Option for search and AI in the new address bar picker */
+"new.address.bar.picker.search.and.ai" = "Αναζήτηση και Duck.ai";
+
+/* Option for search only in the new address bar picker */
+"new.address.bar.picker.search.only" = "Αναζήτηση μόνο";
+
+/* Subtitle for the new address bar picker modal */
+"new.address.bar.picker.subtitle" = "Εναλλαγή μεταξύ αναζήτησης και συνομιλίας τεχνητής νοημοσύνης";
+
+/* Title for the new address bar picker modal */
+"new.address.bar.picker.title" = "Επιλογή γραμμής διευθύνσεων";
 
 /* No comment provided by engineer. */
 "No results found" = "Δεν βρέθηκαν αποτελέσματα";
@@ -2677,9 +2704,6 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Αναζήτηση ή εισαγωγή διεύθυνσης";
 
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Ρωτήστε το Duck.ai";
-
 /* Search input toggle button title for asking AI Chat */
 "search.input.toggle.aichat.button.title" = "Duck.ai";
 
@@ -2746,20 +2770,14 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Εμφάνιση πλήρους διεύθυνσης ιστότοπου";
 
-/* Caption indicating the default option in the AI experimental picker */
-"settings.ai.experimental.picker.default" = "(Προεπιλογή)";
-
-/* Caption indicating the experimental option in the AI experimental picker */
-"settings.ai.experimental.picker.experimental" = "(Πειραματικό)";
-
-/* Footer under the AI experimental picker, descriptive sentence without link */
-"settings.ai.experimental.picker.footer" = "Δοκιμάστε την πειραματική επιλογή μας για να ρωτήσετε το Duck.ai απευθείας από τη Γραμμή διευθύνσεων.";
-
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Αναζήτηση και Duck.ai";
 
 /* Title for the 'Search Only' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_only" = "Αναζήτηση μόνο";
+
+/* Footer under the AI picker, descriptive sentence without link */
+"settings.ai.new.picker.footer" = "Try the new option to toggle between search and Duck.ai in the Address Bar.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Διαχείριση συντομεύσεων Duck.ai";

@@ -107,4 +107,272 @@
             },
         ],
     },
+    'm_mac_dbp_service_email-confirmation-link_client-received': {
+        description: 'Fired when the client persists a confirmation link provided by the backend',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'data_broker_url',
+                description: 'The URL of the data broker that this action was operating on',
+                type: 'string',
+            },
+            {
+                key: 'broker_version',
+                description: 'The version of the broker JSON file',
+                type: 'string',
+            },
+            {
+                key: 'link_age_ms',
+                description: "Time from when the link is received on BE till it's retrieved on the client (in milliseconds)",
+                type: 'number',
+            },
+        ],
+    },
+    'm_mac_dbp_service_email-confirmation-link_backend-status_error': {
+        description: 'Fired when the backend returns an unknown/error status while polling email data',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'data_broker_url',
+                description: 'The URL of the data broker that this action was operating on',
+                type: 'string',
+            },
+            {
+                key: 'broker_version',
+                description: 'The version of the broker JSON file',
+                type: 'string',
+            },
+            {
+                key: 'status',
+                description: 'Backend item status',
+                type: 'string',
+                enum: ['unknown', 'error'],
+            },
+            {
+                key: 'error_code',
+                description: 'Backend item error code',
+                type: 'string',
+                enum: ['server_error', 'extraction_error', 'request_error'],
+            },
+        ],
+    },
+    'm_mac_dbp_optout_stage_submit-awaiting-email-confirmation': {
+        description: 'Fired when the opt-out form is submitted and the operation is awaiting email confirmation',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'data_broker_url',
+                description: 'The URL of the data broker that this action was operating on',
+                type: 'string',
+            },
+            {
+                key: 'broker_version',
+                description: 'The version of the broker JSON file',
+                type: 'string',
+            },
+            {
+                key: 'attempt_id',
+                description: 'The ID of the opt out attempt',
+                type: 'string',
+            },
+            {
+                key: 'action_id',
+                description: 'The ID of the action, to disambiguate between multiple actions in the same opt out attempt',
+                type: 'string',
+            },
+            {
+                key: 'duration',
+                description: 'The duration of the action execution in milliseconds',
+                type: 'number',
+            },
+            {
+                key: 'tries',
+                description: 'The number of tries it took for the action to complete',
+                type: 'integer',
+            },
+        ],
+    },
+    'm_mac_dbp_service_email-confirmation_attempt-start': {
+        description: 'Fired when an email confirmation attempt is starting',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'data_broker_url',
+                description: 'The URL of the data broker that this action was operating on',
+                type: 'string',
+            },
+            {
+                key: 'broker_version',
+                description: 'The version of the broker JSON file',
+                type: 'string',
+            },
+            {
+                key: 'attempt_number',
+                description: 'The confirmation attempt number (1..3)',
+                type: 'integer',
+            },
+            {
+                key: 'attempt_id',
+                description: 'The ID of the opt out attempt',
+                type: 'string',
+            },
+            {
+                key: 'action_id',
+                description: 'The ID of the action, to disambiguate between multiple actions in the same opt out attempt',
+                type: 'string',
+            },
+        ],
+    },
+    'm_mac_dbp_service_email-confirmation_attempt-success': {
+        description: 'Fired when an email confirmation attempt succeeds',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'data_broker_url',
+                description: 'The URL of the data broker that this action was operating on',
+                type: 'string',
+            },
+            {
+                key: 'broker_version',
+                description: 'The version of the broker JSON file',
+                type: 'string',
+            },
+            {
+                key: 'attempt_number',
+                description: 'The confirmation attempt number (1..3)',
+                type: 'integer',
+            },
+            {
+                key: 'duration',
+                description: 'The duration of the attempt in milliseconds',
+                type: 'number',
+            },
+            {
+                key: 'attempt_id',
+                description: 'The ID of the opt out attempt',
+                type: 'string',
+            },
+            {
+                key: 'action_id',
+                description: 'The ID of the action, to disambiguate between multiple actions in the same opt out attempt',
+                type: 'string',
+            },
+        ],
+    },
+    'm_mac_dbp_service_email-confirmation_attempt-failure': {
+        description: 'Fired when an email confirmation attempt fails (non-final).',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'data_broker_url',
+                description: 'The URL of the data broker that this action was operating on',
+                type: 'string',
+            },
+            {
+                key: 'broker_version',
+                description: 'The version of the broker JSON file',
+                type: 'string',
+            },
+            {
+                key: 'attempt_number',
+                description: 'The confirmation attempt number (1..3)',
+                type: 'integer',
+            },
+            {
+                key: 'duration',
+                description: 'The duration of the attempt in milliseconds',
+                type: 'number',
+            },
+            {
+                key: 'attempt_id',
+                description: 'The ID of the opt out attempt',
+                type: 'string',
+            },
+            {
+                key: 'action_id',
+                description: 'The ID of the action, to disambiguate between multiple actions in the same opt out attempt',
+                type: 'string',
+            },
+        ],
+    },
+    'm_mac_dbp_service_email-confirmation_max-retries-exceeded': {
+        description: 'Fired when the email confirmation job hits the maximum number of retries (final failure).',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'data_broker_url',
+                description: 'The URL of the data broker that this action was operating on',
+                type: 'string',
+            },
+            {
+                key: 'broker_version',
+                description: 'The version of the broker JSON file',
+                type: 'string',
+            },
+            {
+                key: 'attempt_id',
+                description: 'The ID of the opt out attempt',
+                type: 'string',
+            },
+            {
+                key: 'action_id',
+                description: 'The ID of the action, to disambiguate between multiple actions in the same opt out attempt',
+                type: 'string',
+            },
+        ],
+    },
+    'm_mac_dbp_service_email-confirmation_job-success': {
+        description: 'Fired when the email confirmation job finishes successfully (after any number of attempts).',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'isInternalUser',
+                description: 'Whether the user is internal',
+                type: 'string',
+                enum: ['true', 'false'],
+            },
+            {
+                key: 'data_broker_url',
+                description: 'The URL of the data broker that this action was operating on',
+                type: 'string',
+            },
+            {
+                key: 'broker_version',
+                description: 'The version of the broker JSON file',
+                type: 'string',
+            },
+        ],
+    },
 }

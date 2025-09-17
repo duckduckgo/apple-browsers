@@ -107,8 +107,10 @@ public class DataBrokerProtectionAgentManagerProvider {
         let mismatchCalculator = DefaultMismatchCalculator(database: dataManager.database,
                                                            pixelHandler: sharedPixelsHandler)
 
+        let emailConfirmationJobProvider = EmailConfirmationJobProvider()
         let queueManager =  BrokerProfileJobQueueManager(jobQueue: jobQueue,
                                                          jobProvider: jobProvider,
+                                                         emailConfirmationJobProvider: emailConfirmationJobProvider,
                                                          mismatchCalculator: mismatchCalculator,
                                                          pixelHandler: sharedPixelsHandler)
 
@@ -143,7 +145,7 @@ public class DataBrokerProtectionAgentManagerProvider {
             pixelHandler: sharedPixelsHandler,
             eventsHandler: eventsHandler,
             dataBrokerProtectionSettings: dbpSettings,
-            emailService: emailService,
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: featureFlagger,
             vpnBypassService: vpnBypassService)
@@ -178,7 +180,7 @@ public final class DataBrokerProtectionAgentManager {
     private var ipcServer: DataBrokerProtectionIPCServer
     private var queueManager: BrokerProfileJobQueueManaging
     private let dataManager: DataBrokerProtectionDataManaging
-    private let emailConfirmationDataService: EmailConfirmationDataServiceProvider
+    public var emailConfirmationDataService: EmailConfirmationDataServiceProvider?
     private let jobDependencies: BrokerProfileJobDependencyProviding
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
@@ -332,7 +334,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
 }
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivitySchedulerDataSource {
-    public func emailConfirmationDataServiceForDataBrokerProtectionBackgroundActivityScheduler(_ activityScheduler: any DataBrokerProtectionBackgroundActivityScheduler) -> (any EmailConfirmationDataServiceProvider)? {
+    public func emailConfirmationDataServiceForDataBrokerProtectionBackgroundActivityScheduler(_ activityScheduler: any DataBrokerProtectionBackgroundActivityScheduler) -> EmailConfirmationDataServiceProvider? {
         emailConfirmationDataService
     }
 }
@@ -468,6 +470,11 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
                                                     completion: nil))
     }
 
+    public func runEmailConfirmationOperations(showWebView: Bool) async {
+        await checkForEmailConfirmationData()
+        queueManager.addEmailConfirmationJobs(showWebView: showWebView, jobDependencies: jobDependencies)
+    }
+
     public func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {
 
         if let backgroundAgentVersion = Bundle.main.releaseVersionNumber,
@@ -493,7 +500,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAppToAgentInterf
 extension DataBrokerProtectionAgentManager: EmailConfirmationDataDelegate {
     public func checkForEmailConfirmationData() async {
         do {
-            try await emailConfirmationDataService.checkForEmailConfirmationData()
+            try await emailConfirmationDataService?.checkForEmailConfirmationData()
         } catch {
             Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
         }

@@ -724,6 +724,7 @@ struct SubscriptionSettingsViewV2: View {
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 emailFlow: .manageEmailFlow,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
+                widePixel: AppDependencyProvider.shared.widePixel,
                 onDisappear: {
                     Task {
                         await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
@@ -742,6 +743,7 @@ struct SubscriptionSettingsViewV2: View {
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 emailFlow: .activationFlow,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
+                widePixel: AppDependencyProvider.shared.widePixel,
                 onDisappear: {
                     Task {
                         await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)

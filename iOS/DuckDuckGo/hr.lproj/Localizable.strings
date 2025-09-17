@@ -1930,6 +1930,9 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Uvezi svoje lozinke u DuckDuckGo";
 
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "Pitaj privatno";
+
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Trebaš omogućiti VPN iz aplikacije DuckDuckGo.";
 
@@ -2301,6 +2304,30 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Prečaci";
+
+/* Confirm button for the new address bar picker */
+"new.address.bar.picker.confirm" = "Potvrdi";
+
+/* Description text for the new address bar picker modal */
+"new.address.bar.picker.description" = "Značajke umjetne inteligencije uvijek su neobavezne.";
+
+/* Footer text for the new address bar picker */
+"new.address.bar.picker.footer" = "Prilagodite u Postavkama > Značajke umjetne inteligencije";
+
+/* Not now button for the new address bar picker */
+"new.address.bar.picker.not.now" = "Ne sada";
+
+/* Option for search and AI in the new address bar picker */
+"new.address.bar.picker.search.and.ai" = "Pretraživanje i Duck.ai";
+
+/* Option for search only in the new address bar picker */
+"new.address.bar.picker.search.only" = "Samo pretraživanje";
+
+/* Subtitle for the new address bar picker modal */
+"new.address.bar.picker.subtitle" = "Prebacuj se između pretraživanja i AI čavrljanja";
+
+/* Title for the new address bar picker modal */
+"new.address.bar.picker.title" = "Opcija adresne trake";
 
 /* No comment provided by engineer. */
 "No results found" = "Nema rezultata";
@@ -2677,9 +2704,6 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Pretraži ili unesi adresu";
 
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Pitaj Duck.ai";
-
 /* Search input toggle button title for asking AI Chat */
 "search.input.toggle.aichat.button.title" = "Duck.ai";
 
@@ -2746,20 +2770,14 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Pokaži cijelu adresu web-mjesta";
 
-/* Caption indicating the default option in the AI experimental picker */
-"settings.ai.experimental.picker.default" = "(zadano)";
-
-/* Caption indicating the experimental option in the AI experimental picker */
-"settings.ai.experimental.picker.experimental" = "(Eksperimentalno)";
-
-/* Footer under the AI experimental picker, descriptive sentence without link */
-"settings.ai.experimental.picker.footer" = "Isprobaj našu eksperimentalnu opciju postavljanja pitanja usluzi Duck.ai izravno iz adresne trake.";
-
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Pretraživanje i Duck.ai";
 
 /* Title for the 'Search Only' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_only" = "Samo pretraživanje";
+
+/* Footer under the AI picker, descriptive sentence without link */
+"settings.ai.new.picker.footer" = "Isprobaj novu opciju za prebacivanje između pretraživanja i Duck.ai u adresnoj traci.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Upravljanje Duck.ai prečacima";

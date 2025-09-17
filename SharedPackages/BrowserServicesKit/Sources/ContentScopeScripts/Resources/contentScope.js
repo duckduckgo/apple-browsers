@@ -4805,9 +4805,6 @@
       if (this.getFeatureSettingEnabled("modifyCookies")) {
         this.modifyCookies();
       }
-      if (this.getFeatureSettingEnabled("disableDeviceEnumeration")) {
-        this.preventDeviceEnumeration();
-      }
       if (this.getFeatureSettingEnabled("enumerateDevices")) {
         this.deviceEnumerationFix();
       }
@@ -5362,32 +5359,6 @@
           }
         });
         this.forceViewportTag(viewportTag, newContent.join(", "));
-      }
-    }
-    /**
-     * Prevents device enumeration by returning an empty array when enabled
-     */
-    preventDeviceEnumeration() {
-      if (!window.MediaDevices) {
-        return;
-      }
-      let disableDeviceEnumeration = false;
-      const isFrame = window.self !== window.top;
-      if (isFrame) {
-        disableDeviceEnumeration = this.getFeatureSettingEnabled("disableDeviceEnumerationFrames");
-      } else {
-        disableDeviceEnumeration = this.getFeatureSettingEnabled("disableDeviceEnumeration");
-      }
-      if (disableDeviceEnumeration) {
-        const enumerateDevicesProxy = new DDGProxy(this, MediaDevices.prototype, "enumerateDevices", {
-          /**
-           * @returns {Promise<MediaDeviceInfo[]>}
-           */
-          apply() {
-            return Promise.resolve([]);
-          }
-        });
-        enumerateDevicesProxy.overload();
       }
     }
     /**
@@ -9617,6 +9588,7 @@ ul.messages {
           this.log.info("Parsed page data:", pageDataParsed);
           if (pageDataParsed.content) {
             this.pageData = pageDataParsed;
+            this.promptTelemetry?.sendContextPixelInfo(pageDataParsed, DuckAiPromptTelemetry.CONTEXT_ATTACH_PIXEL_NAME);
             if (this.contextPromiseResolve) {
               this.contextPromiseResolve(true);
               this.contextPromiseResolve = null;
@@ -9807,12 +9779,16 @@ ul.messages {
         if (this.textBox !== element) {
           this.textBox = element;
           this.log.info("Found AI text box");
-          element.addEventListener("keyup", (event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              this.log.info("Enter key pressed");
-              this.handleSendMessage();
-            }
-          });
+          element.addEventListener(
+            "keydown",
+            (event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                this.log.info("Enter key pressed");
+                this.handleSendMessage();
+              }
+            },
+            true
+          );
           this.setupValuePropertyDescriptor(element);
         }
       } else if (this.textBox) {
@@ -10025,11 +10001,11 @@ ${truncatedWarning}
       };
       const telemetryData = {
         totalPrompts: String(totalPrompts),
-        avgRawPromptSize: this.bucketSizeByThousands(avgRawPromptSize),
+        avgRawPromptSize: this.bucketSize(avgRawPromptSize),
         ...createSizeFields("raw", rawSizeBuckets),
-        avgTotalPromptSize: this.bucketSizeByThousands(avgTotalPromptSize),
+        avgTotalPromptSize: this.bucketSize(avgTotalPromptSize),
         ...createSizeFields("total", totalSizeBuckets),
-        avgContextSize: this.bucketSizeByThousands(avgContextSize),
+        avgContextSize: this.bucketSize(avgContextSize),
         contextUsageRate: String(Math.round(contextUsageRate * 100))
       };
       this.log.info("Sending daily telemetry pixel:", telemetryData);
@@ -10057,7 +10033,8 @@ ${truncatedWarning}
       if (!globalThis?.DDG?.pixel) {
         return;
       }
-      globalThis.DDG.pixel._pixels[_DuckAiPromptTelemetry.CONTEXT_PIXEL_NAME] = {};
+      globalThis.DDG.pixel._pixels[_DuckAiPromptTelemetry.CONTEXT_SEND_PIXEL_NAME] = {};
+      globalThis.DDG.pixel._pixels[_DuckAiPromptTelemetry.CONTEXT_ATTACH_PIXEL_NAME] = {};
       globalThis.DDG.pixel._pixels[_DuckAiPromptTelemetry.DAILY_PIXEL_NAME] = {};
     }
     /**
@@ -10072,28 +10049,28 @@ ${truncatedWarning}
       globalThis.DDG.pixel.fire(pixelName, params);
     }
     /**
-     * Bucket numbers by thousands for privacy-friendly reporting
+     * Bucket numbers by hundreds for privacy-friendly reporting
      * @param {number} number - Number to bucket
-     * @returns {string} Bucket lower bound (e.g., '0', '1000', '2000')
+     * @returns {string} Bucket lower bound (e.g., '0', '100', '200')
      */
-    bucketSizeByThousands(number) {
+    bucketSize(number) {
       if (number <= 0) {
         return "0";
       }
-      const bucketIndex = Math.floor(number / 1e3);
-      return String(bucketIndex * 1e3);
+      const bucketIndex = Math.floor(number / 100);
+      return String(bucketIndex * 100);
     }
     /**
      * Send context pixel info when context is used
      * @param {Object} contextData - Context data object
      */
-    sendContextPixelInfo(contextData) {
-      if (!contextData?.content) {
+    sendContextPixelInfo(contextData, pixelName) {
+      if (!contextData?.content || contextData.content.length === 0) {
         this.log.warn("sendContextPixelInfo: No content available for pixel tracking");
         return;
       }
-      this.sendPixel(_DuckAiPromptTelemetry.CONTEXT_PIXEL_NAME, {
-        contextLength: this.bucketSizeByThousands(contextData.content.length)
+      this.sendPixel(pixelName, {
+        contextLength: contextData.content.length
       });
     }
     /**
@@ -10118,14 +10095,15 @@ ${truncatedWarning}
         contextSize
       };
       if (contextData && contextSize > 0) {
-        this.sendContextPixelInfo(contextData);
+        this.sendContextPixelInfo(contextData, _DuckAiPromptTelemetry.CONTEXT_SEND_PIXEL_NAME);
       }
       this.checkShouldFireDailyTelemetry();
       this.storePromptTelemetry(promptData);
     }
   };
   __publicField(_DuckAiPromptTelemetry, "STORAGE_KEY", "aiChatPageContextTelemetry");
-  __publicField(_DuckAiPromptTelemetry, "CONTEXT_PIXEL_NAME", "dc_contextInfo");
+  __publicField(_DuckAiPromptTelemetry, "CONTEXT_ATTACH_PIXEL_NAME", "dc_contextInfoOnAttach");
+  __publicField(_DuckAiPromptTelemetry, "CONTEXT_SEND_PIXEL_NAME", "dc_contextInfoOnSubmit");
   __publicField(_DuckAiPromptTelemetry, "DAILY_PIXEL_NAME", "dc_pageContextDailyTelemetry");
   __publicField(_DuckAiPromptTelemetry, "ONE_DAY_MS", 24 * 60 * 60 * 1e3);
   var DuckAiPromptTelemetry = _DuckAiPromptTelemetry;

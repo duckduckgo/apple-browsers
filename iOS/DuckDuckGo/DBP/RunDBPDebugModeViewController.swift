@@ -354,7 +354,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     }
 
     private let contentScopeProperties: ContentScopeProperties
-    private let emailService: EmailService
+    private let emailConfirmationDataService: EmailConfirmationDataService
     private let captchaService: CaptchaService
     private let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
@@ -423,10 +423,40 @@ final class RunDBPDebugModeViewModel: ObservableObject {
             settings: dbpSettings
         )
         
-        self.emailService = EmailService(
+        let emailService = EmailService(
             authenticationManager: authenticationManager,
             settings: dbpSettings,
             servicePixel: backendServicePixels
+        )
+        
+        let emailServiceV1 = EmailServiceV1(
+            authenticationManager: authenticationManager,
+            settings: dbpSettings,
+            servicePixel: backendServicePixels
+        )
+        
+        // Create database
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
+            directoryName: DatabaseConstants.directoryName,
+            fileName: DatabaseConstants.fileName,
+            appGroupIdentifier: nil
+        )
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
+        let database: DataBrokerProtectionRepository
+        do {
+            let vault = try vaultFactory.makeVault(reporter: nil)
+            // swiftlint:disable:next force_cast
+            database = vault as! DataBrokerProtectionRepository
+        } catch {
+            fatalError("Failed to create database: \(error)")
+        }
+        
+        self.emailConfirmationDataService = EmailConfirmationDataService(
+            database: database,
+            emailServiceV0: emailService,
+            emailServiceV1: emailServiceV1,
+            featureFlagger: featureFlagger,
+            pixelHandler: fakePixelHandler
         )
         
         self.captchaService = CaptchaService(
@@ -498,7 +528,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                             privacyConfig: privacyConfigManager,
                             prefs: contentScopeProperties,
                             context: brokerProfileQueryData,
-                            emailService: emailService,
+                            emailConfirmationDataService: emailConfirmationDataService,
                             captchaService: captchaService,
                             featureFlagger: featureFlagger,
                             stageDurationCalculator: FakeStageDurationCalculator(),
@@ -631,12 +661,13 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                     privacyConfig: privacyConfigManager,
                     prefs: contentScopeProperties,
                     context: brokerProfileQueryData,
-                    emailService: emailService,
+                    emailConfirmationDataService: emailConfirmationDataService,
                     captchaService: captchaService,
                     featureFlagger: featureFlagger,
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
-                    executionConfig: executionConfig
+                    executionConfig: executionConfig,
+                    actionsHandlerMode: .optOut
                 ) { true }
                 
                 self.currentOptOutRunner = runner

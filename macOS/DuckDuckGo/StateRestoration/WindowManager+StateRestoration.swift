@@ -70,7 +70,7 @@ extension WindowsManager {
 
         let pinnedTabsManager = (window.windowController as? MainWindowController)?.mainViewController.tabCollectionViewModel.pinnedTabsManager
         if let pinnedTabs = item.pinnedTabs, let pinnedTabsManager, pinnedTabsManager !== Application.appDelegate.pinnedTabsManager {
-            pinnedTabsManager.setUp(with: pinnedTabs)
+            pinnedTabsManager.setUp(movingTabsFrom: pinnedTabs)
         }
     }
 
@@ -88,7 +88,7 @@ extension WindowControllersManager {
     }
 
     func restorePinnedTabs(_ collection: TabCollection) {
-        Application.appDelegate.pinnedTabsManager.setUp(with: collection)
+        Application.appDelegate.pinnedTabsManager.setUp(movingTabsFrom: collection)
     }
 
 }

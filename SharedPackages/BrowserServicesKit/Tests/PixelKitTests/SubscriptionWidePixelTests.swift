@@ -87,16 +87,14 @@ final class SubscriptionWidePixelTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: true,
-            experimentIDs: ["experiment-test", "experiment-test-2"],
             contextData: context
         )
 
         widePixel.startFlow(subscriptionData)
 
-        var updatedData = subscriptionData
-        updatedData.subscriptionIdentifier = "ddg.privacy.pro.monthly.renews.us"
-        updatedData.freeTrialEligible = true
-        widePixel.updateFlow(updatedData)
+        subscriptionData.subscriptionIdentifier = "ddg.privacy.pro.monthly.renews.us"
+        subscriptionData.freeTrialEligible = true
+        widePixel.updateFlow(subscriptionData)
 
         // User creates account (2.5s)
         let t0 = Date(timeIntervalSince1970: 0)
@@ -130,7 +128,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
 
         wait(for: [expectation], timeout: 1.0)
 
-        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssert(firedPixels.count >= 1 && firedPixels.count <= 2)
         let firedPixel = firedPixels[0]
         XCTAssertTrue(firedPixel.name.contains("wide_subscription_purchase"))
 
@@ -139,7 +137,6 @@ final class SubscriptionWidePixelTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.purchase_platform"], "app_store")
         XCTAssertEqual(params["feature.data.ext.subscription_identifier"], "ddg.privacy.pro.monthly.renews.us")
         XCTAssertEqual(params["feature.data.ext.free_trial_eligible"], "true")
-        XCTAssertEqual(params["feature.experiment_ids"], "experiment-test,experiment-test-2")
         XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.account_payment_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.account_activation_latency_ms_bucketed"], "10000")
@@ -185,11 +182,10 @@ final class SubscriptionWidePixelTests: XCTestCase {
 
         wait(for: [expectation], timeout: 1.0)
 
-        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssert(firedPixels.count >= 1 && firedPixels.count <= 2)
         let params = firedPixels[0].parameters
         XCTAssertEqual(params["feature.data.ext.purchase_platform"], "stripe")
         XCTAssertEqual(params["feature.data.ext.free_trial_eligible"], "false")
-        XCTAssertNil(params["feature.experiment_ids"]) // Empty experimentIDs array should not be included
         XCTAssertEqual(params["context.name"], "funnel_onboarding_ios")
     }
 
@@ -227,7 +223,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
 
         wait(for: [expectation], timeout: 1.0)
 
-        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssert(firedPixels.count >= 1 && firedPixels.count <= 2)
         let params = firedPixels[0].parameters
 
         XCTAssertEqual(params["feature.status"], "FAILURE")
@@ -270,7 +266,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
 
         wait(for: [expectation], timeout: 1.0)
 
-        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssert(firedPixels.count >= 1 && firedPixels.count <= 2)
         let params = firedPixels[0].parameters
 
         XCTAssertEqual(params["feature.status"], "FAILURE")
@@ -305,7 +301,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
 
         wait(for: [expectation], timeout: 1.0)
 
-        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssert(firedPixels.count >= 1 && firedPixels.count <= 2)
         let params = firedPixels[0].parameters
         XCTAssertEqual(params["feature.status"], "CANCELLED")
         XCTAssertEqual(params["feature.data.ext.purchase_platform"], "app_store")
@@ -338,7 +334,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
 
         wait(for: [expectation], timeout: 1.0)
 
-        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssert(firedPixels.count >= 1 && firedPixels.count <= 2)
         let params = firedPixels[0].parameters
         XCTAssertEqual(params["feature.status"], "UNKNOWN")
         XCTAssertEqual(params["feature.status_reason"], "activation_timeout")

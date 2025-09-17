@@ -116,6 +116,7 @@ public class DataBrokerProtectionIOSManagerProvider {
 
         let queueManager =  BrokerProfileJobQueueManager(jobQueue: operationQueue,
                                                          jobProvider: jobProvider,
+                                                         emailConfirmationJobProvider: EmailConfirmationJobProvider(),
                                                          mismatchCalculator: mismatchCalculator,
                                                          pixelHandler: sharedPixelsHandler)
 
@@ -143,7 +144,7 @@ public class DataBrokerProtectionIOSManagerProvider {
             pixelHandler: sharedPixelsHandler,
             eventsHandler: eventsHandler,
             dataBrokerProtectionSettings: dbpSettings,
-            emailService: emailService,
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: featureFlagger,
             vpnBypassService: nil,

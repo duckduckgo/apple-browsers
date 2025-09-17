@@ -1,5 +1,5 @@
 //
-//  ErrorPageTabExtensionTest.swift
+//  ErrorPageTabExtensionTests.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -36,7 +36,7 @@ extension WKError {
     }
 }
 
-final class ErrorPageTabExtensionTest: XCTestCase {
+final class ErrorPageTabExtensionTests: XCTestCase {
     var mockWebViewPublisher: PassthroughSubject<MockWKWebView, Never>!
     var scriptPublisher: PassthroughSubject<MockSpecialErrorPageScriptProvider, Never>!
     var errorPageExtention: SpecialErrorPageTabExtension!

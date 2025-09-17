@@ -536,7 +536,7 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
 
     func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
         let rowView = BookmarkTableRowView()
-        rowView.onSelectionChanged = onSelectionChanged
+        rowView.onSelectionChanged = { [weak self] in self?.onSelectionChanged() }
 
         return rowView
     }

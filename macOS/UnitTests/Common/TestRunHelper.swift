@@ -335,15 +335,14 @@ extension NSView {
     @objc dynamic func swizzled_initWithFrame(frame: CGRect) -> NSView {
         let view = swizzled_initWithFrame(frame: frame)
 
+        if let observer = view.value(forIvar: "_antialiasThresholdChangedNotificationObserver").map({ Unmanaged<AnyObject>.fromOpaque($0) })?.takeUnretainedValue() {
+            NotificationCenter.default.removeObserver(observer)
+        }
         if !(view.className.contains("NSMenu")
              || view.className.contains("NSNextStep")
              || view.className.hasPrefix("_")
              || (view.className.hasPrefix("WK") && !(view is WKWebView))
              || view.className.contains("NSTextView")) {
-
-            if let observer = view.value(forIvar: "_antialiasThresholdChangedNotificationObserver").map({ Unmanaged<AnyObject>.fromOpaque($0) })?.takeUnretainedValue() {
-                NotificationCenter.default.removeObserver(observer)
-            }
 
             TestRunHelper.shared.registerView(view)
         }

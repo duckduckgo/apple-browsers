@@ -113,6 +113,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     enum DebugActionRows: Int, CaseIterable {
         case forceBrokerJSONRefresh
         case runPIRDebugMode
+        case runEmailConfirmationOperations
         case runPendingScans
         case runPendingOptOuts
         case runAllPendingJobs
@@ -124,6 +125,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return "Force Broker JSON Refresh"
             case .runPIRDebugMode:
                 return "Run PIR Debug Mode"
+            case .runEmailConfirmationOperations:
+                return "Run email confirmation operations"
             case .runPendingScans:
                 return "Run Pending Scans"
             case .runPendingOptOuts:
@@ -562,6 +565,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 try await debuggingDelegate?.refreshRemoteBrokerJSON()
                 tableView.reloadData()
             }
+        case .runEmailConfirmationOperations:
+            runEmailConfirmationOperations()
         case .runPendingScans:
             runPendingJobs(type: .scheduledScan)
         case .runPendingOptOuts:
@@ -571,6 +576,41 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case .fireWeeklyPixel:
             Task { @MainActor in
                 debuggingDelegate?.fireWeeklyPixels()
+            }
+        }
+    }
+    
+    private func runEmailConfirmationOperations() {
+        guard jobExecutionState == .idle else {
+            presentAlert(title: "Jobs Already Running", message: "Please wait for the current jobs to complete before starting new ones.")
+            return
+        }
+
+        Task {
+            self.jobExecutionState = .running
+
+            do {
+                guard let runPrerequisitesDelegate, await runPrerequisitesDelegate.validateRunPrerequisites() else {
+                    self.jobExecutionState = .failed(error: "PIR prerequisites not met")
+                    return
+                }
+
+                try await debuggingDelegate?.runEmailConfirmationJobs()
+
+                self.jobCounts = await calculatePendingJobCounts()
+                self.jobExecutionState = .idle
+            } catch {
+                let errorMessage: String
+                if error is CancellationError {
+                    errorMessage = "Operation was cancelled"
+                } else {
+                    errorMessage = error.localizedDescription
+                }
+
+                self.jobExecutionState = .failed(error: errorMessage)
+
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                self.jobExecutionState = .idle
             }
         }
     }
@@ -647,7 +687,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     
     private func isJobExecutionAction(_ row: DebugActionRows) -> Bool {
         switch row {
-        case .runPendingScans, .runPendingOptOuts, .runAllPendingJobs:
+        case .runEmailConfirmationOperations, .runPendingScans, .runPendingOptOuts, .runAllPendingJobs:
             return true
         default:
             return false
@@ -656,6 +696,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     
     private func hasJobsForAction(_ row: DebugActionRows) -> Bool {
         switch row {
+        case .runEmailConfirmationOperations:
+            return true
         case .runPendingScans:
             return jobCounts.pendingScans > 0
         case .runPendingOptOuts:

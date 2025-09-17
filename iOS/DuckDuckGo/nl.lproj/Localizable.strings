@@ -1079,7 +1079,7 @@
 "crash.report.dialog.title" = "Automatisch crashrapporten verzenden?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Huidig aantal afwijzingen: %@";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "Aangepaste celinhoud";
@@ -1930,6 +1930,9 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Je wachtwoorden importeren in DuckDuckGo";
 
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "Vraag privé";
+
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Je moet de VPN inschakelen vanuit de DuckDuckGo-app.";
 
@@ -2301,6 +2304,30 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Sneltoetsen";
+
+/* Confirm button for the new address bar picker */
+"new.address.bar.picker.confirm" = "Bevestigen";
+
+/* Description text for the new address bar picker modal */
+"new.address.bar.picker.description" = "AI-functies zijn altijd optioneel.";
+
+/* Footer text for the new address bar picker */
+"new.address.bar.picker.footer" = "Aanpassen in Instellingen > AI-functies";
+
+/* Not now button for the new address bar picker */
+"new.address.bar.picker.not.now" = "Niet nu";
+
+/* Option for search and AI in the new address bar picker */
+"new.address.bar.picker.search.and.ai" = "Zoeken en Duck.ai";
+
+/* Option for search only in the new address bar picker */
+"new.address.bar.picker.search.only" = "Alleen zoeken";
+
+/* Subtitle for the new address bar picker modal */
+"new.address.bar.picker.subtitle" = "Schakelen tussen zoeken en AI-chat";
+
+/* Title for the new address bar picker modal */
+"new.address.bar.picker.title" = "Optie voor adresbalk";
 
 /* No comment provided by engineer. */
 "No results found" = "Geen resultaten gevonden";
@@ -2677,9 +2704,6 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Zoek of voer een adres in";
 
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Vraag stellen aan Duck.ai";
-
 /* Search input toggle button title for asking AI Chat */
 "search.input.toggle.aichat.button.title" = "Duck.ai";
 
@@ -2746,20 +2770,14 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Volledig siteadres weergeven";
 
-/* Caption indicating the default option in the AI experimental picker */
-"settings.ai.experimental.picker.default" = "(Standaard)";
-
-/* Caption indicating the experimental option in the AI experimental picker */
-"settings.ai.experimental.picker.experimental" = "(Experimenteel)";
-
-/* Footer under the AI experimental picker, descriptive sentence without link */
-"settings.ai.experimental.picker.footer" = "Probeer onze experimentele optie om Duck.ai direct vanuit de adresbalk te benaderen.";
-
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Zoeken en Duck.ai";
 
 /* Title for the 'Search Only' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_only" = "Alleen zoeken";
+
+/* Footer under the AI picker, descriptive sentence without link */
+"settings.ai.new.picker.footer" = "Probeer de nieuwe optie om te schakelen tussen zoeken en Duck.ai in de adresbalk.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Snelkoppelingen Duck.ai beheren";

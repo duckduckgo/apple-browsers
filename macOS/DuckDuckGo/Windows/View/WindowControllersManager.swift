@@ -439,7 +439,7 @@ extension WindowControllersManager {
     /// Returns the window controller for opening a tab from the given originating window controller and opener tab.
     /// If the originating window controller is a popup window, the function will recursively call itself with the popup's parent tab.
     private func windowController(forOpeningTabFrom originatingWindowController: MainWindowController, parentTab: Tab) -> MainWindowController? {
-        if !originatingWindowController.mainViewController.tabCollectionViewModel.isPopup  {
+        if !originatingWindowController.mainViewController.isInPopUpWindow  {
             return originatingWindowController
         }
         // originatingWindowController is a popUp, look for its parent window controller

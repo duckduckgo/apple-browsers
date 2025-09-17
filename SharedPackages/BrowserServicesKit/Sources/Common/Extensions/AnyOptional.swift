@@ -1,5 +1,5 @@
 //
-//  WidePixelEvents.swift
+//  AnyOptional.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,12 +16,14 @@
 //  limitations under the License.
 //
 
-import Foundation
+public protocol AnyOptional {
 
-public enum WidePixelEvent {
-    case saveFailed(pixelName: String, error: Error)
-    case updateFailed(pixelName: String, error: Error)
-    case loadFailed(pixelName: String, error: Error)
-    case completeFailed(pixelName: String, error: Error)
-    case discardFailed(pixelName: String, error: Error)
+    var isNil: Bool { get }
+
+}
+
+extension Optional: AnyOptional {
+
+    public var isNil: Bool { self == nil }
+
 }

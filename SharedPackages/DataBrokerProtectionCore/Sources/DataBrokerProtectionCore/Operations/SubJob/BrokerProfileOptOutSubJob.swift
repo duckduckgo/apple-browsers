@@ -115,26 +115,53 @@ struct BrokerProfileOptOutSubJob {
                                     showWebView: showWebView,
                                     shouldRunNextStep: shouldRunNextStep)
 
-            // 8c. Update state to indicate that the opt-out has been requested, for a future scan to confirm:
-            let tries = try fetchTotalNumberOfOptOutAttempts(database: dependencies.database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
-            stageDurationCalculator.fireOptOutValidate()
-            stageDurationCalculator.fireOptOutSubmitSuccess(tries: tries)
+            if dependencies.featureFlagger.isEmailConfirmationDecouplingFeatureOn,
+               brokerProfileQueryData.dataBroker.requiresEmailConfirmationDuringOptOut() {
+                // Halt the opt-out process
+                // The EmailConfirmationJob will handle obtaining and clicking the confirmation link,
+                // then resume the opt-out from this point
+                Logger.dataBrokerProtection.log("✉️ Opt-out halting for email confirmation - broker: \(brokerProfileQueryData.dataBroker.name, privacy: .public), profile: \(extractedProfileId, privacy: .public)")
+                try dependencies.database.add(.init(
+                    extractedProfileId: extractedProfileId,
+                    brokerId: brokerId,
+                    profileQueryId: profileQueryId,
+                    type: .optOutSubmittedAndAwaitingEmailConfirmation
+                ))
+                dependencies.pixelHandler.fire(
+                    .optOutStageSubmitAwaitingEmailConfirmation(
+                        dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+                        brokerVersion: brokerProfileQueryData.dataBroker.version,
+                        attemptId: stageDurationCalculator.attemptId,
+                        actionId: stageDurationCalculator.actionID ?? "unknown",
+                        duration: stageDurationCalculator.durationSinceLastStage(),
+                        tries: stageDurationCalculator.tries
+                    )
+                )
+                stageDurationCalculator.setStage(.emailConfirmHalted)
+                Logger.dataBrokerProtection.log("✉️ Opt-out status changed to awaiting email confirmation")
+            } else {
+                // Normal completion path - opt out was fully submitted
+                // 8c. Update state to indicate that the opt-out has been requested, for a future scan to confirm:
+                let tries = try fetchTotalNumberOfOptOutAttempts(database: dependencies.database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+                stageDurationCalculator.fireOptOutValidate()
+                stageDurationCalculator.fireOptOutSubmitSuccess(tries: tries)
 
-            let updater = OperationPreferredDateUpdater(database: dependencies.database)
-            try updater.updateChildrenBrokerForParentBroker(brokerProfileQueryData.dataBroker, profileQueryId: profileQueryId)
+                let updater = OperationPreferredDateUpdater(database: dependencies.database)
+                try updater.updateChildrenBrokerForParentBroker(brokerProfileQueryData.dataBroker, profileQueryId: profileQueryId)
 
-            try dependencies.database.addAttempt(extractedProfileId: extractedProfileId,
-                                                 attemptUUID: stageDurationCalculator.attemptId,
-                                                 dataBroker: stageDurationCalculator.dataBroker,
-                                                 lastStageDate: stageDurationCalculator.lastStateTime,
-                                                 startTime: stageDurationCalculator.startTime)
-            try dependencies.database.add(.init(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested))
-            try incrementOptOutAttemptCountIfNeeded(
-                database: dependencies.database,
-                brokerId: brokerId,
-                profileQueryId: profileQueryId,
-                extractedProfileId: extractedProfileId
-            )
+                try dependencies.database.addAttempt(extractedProfileId: extractedProfileId,
+                                                     attemptUUID: stageDurationCalculator.attemptId,
+                                                     dataBroker: stageDurationCalculator.dataBroker,
+                                                     lastStageDate: stageDurationCalculator.lastStateTime,
+                                                     startTime: stageDurationCalculator.startTime)
+                try dependencies.database.add(.init(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested))
+                try incrementOptOutAttemptCountIfNeeded(
+                    database: dependencies.database,
+                    brokerId: brokerId,
+                    profileQueryId: profileQueryId,
+                    extractedProfileId: extractedProfileId
+                )
+            }
         } catch {
             // 9. Catch errors from the opt-out job and report them:
             let tries = try? fetchTotalNumberOfOptOutAttempts(database: dependencies.database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)

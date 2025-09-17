@@ -57,7 +57,7 @@ final class DebugScanJob: SubJobWebRunning {
     let privacyConfig: PrivacyConfigurationManaging
     let prefs: ContentScopeProperties
     let context: SubJobContextProviding
-    let emailService: EmailServiceProtocol
+    let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     let captchaService: CaptchaServiceProtocol
     let stageCalculator: StageDurationCalculator
     let executionConfig: BrokerJobExecutionConfig
@@ -81,7 +81,7 @@ final class DebugScanJob: SubJobWebRunning {
     init(privacyConfig: PrivacyConfigurationManaging,
          prefs: ContentScopeProperties,
          context: SubJobContextProviding,
-         emailService: EmailServiceProtocol,
+         emailConfirmationDataService: EmailConfirmationDataServiceProvider,
          captchaService: CaptchaServiceProtocol,
          featureFlagger: DBPFeatureFlagging,
          executionConfig: BrokerJobExecutionConfig = BrokerJobExecutionConfig(),
@@ -92,7 +92,7 @@ final class DebugScanJob: SubJobWebRunning {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
         self.context = context
-        self.emailService = emailService
+        self.emailConfirmationDataService = emailConfirmationDataService
         self.captchaService = captchaService
         self.executionConfig = executionConfig
         self.operationAwaitTime = operationAwaitTime

@@ -25,25 +25,37 @@ struct SubscriptionAIChatView: View {
 
     let viewModel: SettingsViewModel
 
-    private var description: SettingsDescription {
-        SettingsDescription(imageName: "AIChat-Settings",
-                                     title: UserText.aiChatSubscriptionTitle,
-                                     status: viewModel.isPaidAIChatAvailable ? .on : .off,
-                                     explanation: UserText.aiChatSubscriptionCaption)
-    }
-
     var body: some View {
+        let isAIFeaturesEnabled = viewModel.isAIChatGenerallyEnabled
+        let hasSubscription = viewModel.isPaidAIChatAvailable
+        let shouldShowAsOn = hasSubscription && isAIFeaturesEnabled
+        
+        let currentDescription = SettingsDescription(imageName: "AIChat-Settings",
+                                                    title: UserText.aiChatSubscriptionTitle,
+                                                    status: shouldShowAsOn ? .on : .off,
+                                                    explanation: UserText.aiChatSubscriptionCaption)
+
         List {
-            SettingsDescriptionView(content: description)
-            Section {
-                SettingsCellView(label: UserText.openSubscriptionAIChat, action: {
-                    viewModel.openAIChat()
-                }, webLinkIndicator: true, isButton: true
-                )
+            SettingsDescriptionView(content: currentDescription)
+            if isAIFeaturesEnabled {
+                Section(footer: Text("Configure Duck.ai in AI Features settings.")) {
+                    SettingsCellView(label: UserText.openSubscriptionAIChat, action: {
+                        viewModel.openAIChat()
+                    }, webLinkIndicator: true, isButton: true
+                    )
+                }
+            } else {
+                Section {
+                    Text("Enable Duck.ai in AI Features settings.")
+                        .font(
+                            Font(uiFont: UIFont.daxSubheadSemibold())
+                        )
+                }
             }
         }
         .applySettingsListModifiers(title: UserText.aiChatSubscriptionTitle,
-                                     displayMode: .inline,
-                                     viewModel: viewModel)
+                                    displayMode: .inline,
+                                    viewModel: viewModel)
     }
+
 }

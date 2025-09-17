@@ -520,6 +520,11 @@ final class SettingsViewModel: ObservableObject {
         state.subscription.subscriptionFeatures.contains(Entitlement.ProductName.paidAIChat)
     }
 
+    // Indicates if AI features are generally enabled
+    var isAIChatGenerallyEnabled: Bool {
+        aiChatSettings.isAIChatEnabled
+    }
+
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,

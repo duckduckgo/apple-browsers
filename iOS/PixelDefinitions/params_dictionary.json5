@@ -34,6 +34,10 @@
         pattern: '^-?\\d+$',
         examples: ['-1009', '42'],
     },
+    isInternalUser: {
+        key: 'is_internal_user',
+        type: 'boolean'
+    },
     underlyingErrorCode: {
         keyPattern: '^ue[0-9]$',
         type: 'string',

@@ -16,6 +16,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
+            'isInternalUser',
             {
                 key: 'was_used_before',
                 description: 'Indicates if AI Chat was used before this submission: 1=returning user, 0=first-time user',
@@ -36,6 +37,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
+            'isInternalUser',
             {
                 key: 'text_length_bucket',
                 description: 'Indicates length of search query text using buckets: short (1-15), medium (16-40), long (41-100), very_long (100+)',
@@ -51,6 +53,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
+            'isInternalUser',
             {
                 key: 'direction',
                 description: 'Direction of the mode switch: to_search or to_duckai',
@@ -75,14 +78,14 @@
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
     },
     m_aichat_experimental_omnibar_first_enabled: {
         description: 'Fires when user first enables the experimental omnibar feature',
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
     },
     m_aichat_legacy_omnibar_shown: {
         description: 'Fires when the legacy omnibar is displayed to the user (baseline comparison for experimental omnibar)',
@@ -110,14 +113,14 @@
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
     },
     m_aichat_experimental_omnibar_first_search_submission: {
         description: 'Fires when user submits their first successful search query through the experimental omnibar',
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
     },
     m_aichat_experimental_omnibar_first_prompt_submission: {
         description: 'Fires when user submits their first successful Duck.ai prompt through the experimental omnibar',
@@ -156,6 +159,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
+            'isInternalUser',
             {
                 key: 'mode',
                 description: 'Current toggle mode when button was pressed: search or aiChat',
@@ -186,6 +190,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
+            'isInternalUser',
             {
                 key: 'mode',
                 description: 'Current toggle mode when button was pressed: search or aiChat',
@@ -201,6 +206,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
+            'isInternalUser',
             {
                 key: 'mode',
                 description: 'Current toggle mode when button was pressed: search or aiChat',
@@ -220,7 +226,7 @@
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
     },
     m_aichat_experimental_omnibar_session_summary: {
         description: 'Fires when app session ends to compare search/prompt activity across session types',

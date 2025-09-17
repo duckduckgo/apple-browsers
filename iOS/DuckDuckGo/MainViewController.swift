@@ -1043,6 +1043,8 @@ class MainViewController: UIViewController {
         tabModel.viewed = true
 
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
+        let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled && featureFlagger.isFeatureOn(.adjustNewSearchForLandscape)
+
         let controller = NewTabPageViewController(tab: tabModel,
                                                   interactionModel: favoritesViewModel,
                                                   homePageMessagesConfiguration: homePageConfiguration,
@@ -1052,7 +1054,9 @@ class MainViewController: UIViewController {
                                                   faviconLoader: faviconLoader,
                                                   messageNavigationDelegate: self,
                                                   appSettings: appSettings,
-                                                  internalUserCommands: internalUserCommands)
+                                                  internalUserCommands: internalUserCommands,
+                                                  narrowLayoutInLandscape: narrowLayoutInLandscape
+        )
 
         controller.delegate = self
         controller.chromeDelegate = self

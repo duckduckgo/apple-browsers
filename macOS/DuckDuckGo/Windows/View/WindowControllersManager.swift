@@ -60,9 +60,6 @@ protocol WindowControllersManagerProtocol: AnyObject {
     func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?)
     func showTab(with content: Tab.TabContent)
     func openTab(_ tab: Tab, afterParentTab parentTab: Tab, selected: Bool)
-
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior)
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool)
 }
 
 extension WindowControllersManagerProtocol {
@@ -197,35 +194,6 @@ extension WindowControllersManager {
 
     func showBookmarksTab() {
         showTab(with: .bookmarks)
-    }
-
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab) {
-        openAIChat(url, with: linkOpenBehavior, hasPrompt: false)
-    }
-
-    /// Opens an AI chat URL in the application.
-    ///
-    /// - Parameters:
-    ///   - url: The AI chat URL to open.
-    ///   - linkOpenBehavior: Specifies where to open the URL. Defaults to `.currentTab`.
-    ///   - hasPrompt: If `true` and the current tab is an AI chat, reloads the tab. Ignored if `target` is `.newTabSelected`
-    ///                or `.newTabUnselected`.
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab, hasPrompt: Bool) {
-
-        let tabCollectionViewModel = mainWindowController?.mainViewController.tabCollectionViewModel
-
-        switch linkOpenBehavior {
-        case .currentTab:
-            if let currentURL = tabCollectionViewModel?.selectedTab?.url, currentURL.isDuckAIURL {
-                if hasPrompt {
-                    tabCollectionViewModel?.selectedTab?.reload()
-                }
-            } else {
-                show(url: url, source: .ui, newTab: false)
-            }
-        default:
-            open(url, with: linkOpenBehavior, source: .ui, target: nil)
-        }
     }
 
     func showPreferencesTab(withSelectedPane pane: PreferencePaneIdentifier? = nil) {

@@ -36,28 +36,21 @@ protocol AIChatTabOpening {
     func openNewAIChat(in linkOpenBehavior: LinkOpenBehavior)
 }
 
-extension AIChatTabOpening {
-    @MainActor
-    func openNewAIChat(in linkOpenBehavior: LinkOpenBehavior) {
-        openAIChatTab(with: .empty, behavior: linkOpenBehavior)
-    }
-}
-
 struct AIChatTabOpener: AIChatTabOpening {
     private let promptHandler: AIChatPromptHandler
     private let addressBarQueryExtractor: AIChatAddressBarPromptExtractor
-    private let windowControllersManager: WindowControllersManagerProtocol
+    private let aiChatTabManaging: AIChatTabManaging
 
     let aiChatRemoteSettings = AIChatRemoteSettings()
 
     init(
         promptHandler: AIChatPromptHandler,
         addressBarQueryExtractor: AIChatAddressBarPromptExtractor,
-        windowControllersManager: WindowControllersManagerProtocol
+        aiChatTabManaging: AIChatTabManaging
     ) {
         self.promptHandler = promptHandler
         self.addressBarQueryExtractor = addressBarQueryExtractor
-        self.windowControllersManager = windowControllersManager
+        self.aiChatTabManaging = aiChatTabManaging
     }
 
     // MARK: - New Simplified API
@@ -83,20 +76,18 @@ struct AIChatTabOpener: AIChatTabOpening {
             openAIChatTab(query: query, with: behavior, autoSubmit: shouldAutoSubmit)
 
         case .url(let url):
-            windowControllersManager.openAIChat(url, with: behavior)
+            aiChatTabManaging.openAIChat(url, with: behavior)
 
         case .payload(let payload):
-            guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
-            let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
-            newAIChatTab.aiChat?.setAIChatNativeHandoffData(payload: payload)
-            tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
-
+            aiChatTabManaging.insertAIChatTab(with: aiChatRemoteSettings.aiChatURL, payload: payload)
         case .restoration(let data):
-            guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
-            let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
-            newAIChatTab.aiChat?.setAIChatRestorationData(data: data)
-            tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
+            aiChatTabManaging.insertAIChatTab(with: aiChatRemoteSettings.aiChatURL, restorationData: data)
         }
+    }
+
+    @MainActor
+    func openNewAIChat(in linkOpenBehavior: LinkOpenBehavior) {
+        openAIChatTab(with: .empty, behavior: linkOpenBehavior)
     }
 
     // MARK: - Private Helper
@@ -106,6 +97,69 @@ struct AIChatTabOpener: AIChatTabOpening {
         if let query = query {
             promptHandler.setData(.queryPrompt(query, autoSubmit: autoSubmit))
         }
-        windowControllersManager.openAIChat(aiChatRemoteSettings.aiChatURL, with: linkOpenBehavior, hasPrompt: query != nil)
+        aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: linkOpenBehavior, hasPrompt: query != nil)
+    }
+}
+
+protocol AIChatTabManaging {
+    @MainActor
+    func openAIChat(_ url: URL, with behavior: LinkOpenBehavior)
+
+    @MainActor
+    func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool)
+
+    @MainActor
+    func insertAIChatTab(with url: URL, payload: AIChatPayload)
+
+    @MainActor
+    func insertAIChatTab(with url: URL, restorationData: AIChatRestorationData)
+}
+
+extension WindowControllersManager: AIChatTabManaging {
+
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab) {
+        openAIChat(url, with: linkOpenBehavior, hasPrompt: false)
+    }
+
+    /// Opens an AI chat URL in the application.
+    ///
+    /// - Parameters:
+    ///   - url: The AI chat URL to open.
+    ///   - linkOpenBehavior: Specifies where to open the URL. Defaults to `.currentTab`.
+    ///   - hasPrompt: If `true` and the current tab is an AI chat, reloads the tab. Ignored if `target` is `.newTabSelected`
+    ///                or `.newTabUnselected`.
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab, hasPrompt: Bool) {
+
+        let tabCollectionViewModel = mainWindowController?.mainViewController.tabCollectionViewModel
+
+        switch linkOpenBehavior {
+        case .currentTab:
+            if let currentURL = tabCollectionViewModel?.selectedTab?.url, currentURL.isDuckAIURL {
+                if hasPrompt {
+                    tabCollectionViewModel?.selectedTab?.reload()
+                }
+            } else {
+                show(url: url, source: .ui, newTab: false)
+            }
+        default:
+            open(url, with: linkOpenBehavior, source: .ui, target: nil)
+        }
+    }
+
+    func insertAIChatTab(with url: URL, payload: AIChat.AIChatPayload) {
+        guard let tabCollectionViewModel = lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
+//        let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
+        let newAIChatTab = Tab(content: .url(url, source: .ui))
+        newAIChatTab.aiChat?.setAIChatNativeHandoffData(payload: payload)
+        tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
+
+    }
+
+    func insertAIChatTab(with url: URL, restorationData: AIChat.AIChatRestorationData) {
+        guard let tabCollectionViewModel = lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
+//        let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
+        let newAIChatTab = Tab(content: .url(url, source: .ui))
+        newAIChatTab.aiChat?.setAIChatRestorationData(data: restorationData)
+        tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
     }
 }

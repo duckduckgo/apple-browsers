@@ -20,7 +20,7 @@ import Foundation
 import AIChat
 
 enum AIChatContent {
-    case empty
+    case newChat
     case query(String?, shouldAutoSubmit: Bool = true)
     case url(URL)
     case payload(AIChatPayload)
@@ -54,7 +54,7 @@ struct AIChatTabOpener: AIChatTabOpening {
     @MainActor
     func openAIChatTab(with content: AIChatContent, behavior: LinkOpenBehavior) {
         switch content {
-        case .empty:
+        case .newChat:
             openAIChatTab(query: nil, with: behavior, autoSubmit: true)
 
         case .query(let query, shouldAutoSubmit: let shouldAutoSubmit):
@@ -72,7 +72,7 @@ struct AIChatTabOpener: AIChatTabOpening {
 
     @MainActor
     func openNewAIChat(in linkOpenBehavior: LinkOpenBehavior) {
-        openAIChatTab(with: .empty, behavior: linkOpenBehavior)
+        openAIChatTab(with: .newChat, behavior: linkOpenBehavior)
     }
 
     // MARK: - Private Helper

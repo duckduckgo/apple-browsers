@@ -153,6 +153,7 @@ extension URL {
         if let searchUrl = URL.makeSearchUrl(from: trimmed) {
             return searchUrl
         }
+
         Logger.general.error("URL extension: Making URL from \(addressBarString) failed")
         return nil
     }

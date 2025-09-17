@@ -39,6 +39,12 @@ public enum Classifier {
             self.allowPrivateSuffix = allowPrivateSuffix
             self.allowedSchemes = allowedSchemes
         }
+
+        public static let `default`: Self = .init(
+            allowIntranetSingleLabel: false,
+            allowPrivateSuffix: true,
+            allowedSchemes: ["http", "https", "ftp", "file", "about", "duck", "mailto"]
+        )
     }
 
     // MARK: - Decision (mirrors Rust enum)
@@ -102,7 +108,7 @@ public enum Classifier {
     // MARK: - Typed helpers
 
     /// Decode the result into the `Decision` enum.
-    public static func classify(input: String, policy: Policy? = nil) throws -> Decision {
+    public static func classify(input: String, policy: Policy? = .default) throws -> Decision {
         let json = try classifyRawJSON(input: input, policy: policy)
         let decoder = JSONDecoder()
         do {

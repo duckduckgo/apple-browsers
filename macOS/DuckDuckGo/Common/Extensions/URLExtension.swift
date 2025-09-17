@@ -120,11 +120,15 @@ extension URL {
     }
 
     static func makeURL(from addressBarString: String) -> URL? {
+        guard Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor) else {
+            return makeURLUsingNativePredictionLogic(from: addressBarString)
+        }
+        return makeURLUsingUnifiedPredictionLogic(from: addressBarString)
+    }
 
-        let trimmed = addressBarString.trimmingWhitespace()
-
+    static func makeURLUsingUnifiedPredictionLogic(from addressBarString: String) -> URL? {
         do {
-            switch try Classifier.classify(input: trimmed) {
+            switch try Classifier.classify(input: addressBarString) {
             case .navigate(let url):
                 return url
             case .search(let query):
@@ -137,6 +141,20 @@ extension URL {
             Logger.general.error("URL extension: Making URL from \(addressBarString) failed")
             return nil
         }
+    }
+
+    static func makeURLUsingNativePredictionLogic(from addressBarString: String) -> URL? {
+        let trimmed = addressBarString.trimmingWhitespace()
+
+        if let addressBarUrl = URL(trimmedAddressBarString: trimmed), addressBarUrl.isValid {
+            return addressBarUrl
+        }
+
+        if let searchUrl = URL.makeSearchUrl(from: trimmed) {
+            return searchUrl
+        }
+        Logger.general.error("URL extension: Making URL from \(addressBarString) failed")
+        return nil
     }
 
     static func makeURL(fromSuggestionPhrase phrase: String) -> URL? {

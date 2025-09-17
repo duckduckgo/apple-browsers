@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import URLPredictorC
+import URLPredictorRust
 
 // C symbols are assumed imported via modulemap/bridging header:
 // char *ddg_up_classify_json(const char *input, const char *policy_json);
@@ -45,6 +45,24 @@ public enum Classifier {
     public enum Decision: Equatable, Sendable {
         case navigate(url: URL)
         case search(query: String)
+
+        public var url: URL? {
+            switch self {
+            case .navigate(let url):
+                return url
+            case .search:
+                return nil
+            }
+        }
+
+        public var query: String? {
+            switch self {
+            case .navigate:
+                return nil
+            case .search(let query):
+                return query
+            }
+        }
     }
 
     // MARK: - Errors
@@ -87,7 +105,6 @@ public enum Classifier {
     public static func classify(input: String, policy: Policy? = nil) throws -> Decision {
         let json = try classifyRawJSON(input: input, policy: policy)
         let decoder = JSONDecoder()
-        // No special key strategy: enum tags are "Navigate"/"Search" and fields are "url"/"query".
         do {
             return try decoder.decode(Decision.self, from: Data(json.utf8))
         } catch {
@@ -129,4 +146,3 @@ extension Classifier.Decision: Codable {
         }
     }
 }
-

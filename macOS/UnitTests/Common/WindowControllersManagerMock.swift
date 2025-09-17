@@ -104,7 +104,6 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
         openTabCalls.append(OpenTabCall(tab: tab, parentTab: parentTab, selected: selected))
     }
 
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior) {}
     func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool) {}
 
     var showTabCalls: [Tab.TabContent] = []

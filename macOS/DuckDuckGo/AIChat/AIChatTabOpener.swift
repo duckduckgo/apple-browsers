@@ -76,7 +76,7 @@ struct AIChatTabOpener: AIChatTabOpening {
             openAIChatTab(query: query, with: behavior, autoSubmit: shouldAutoSubmit)
 
         case .url(let url):
-            aiChatTabManaging.openAIChat(url, with: behavior)
+            aiChatTabManaging.openAIChat(url, with: behavior, hasPrompt: false)
 
         case .payload(let payload):
             aiChatTabManaging.insertAIChatTab(with: aiChatRemoteSettings.aiChatURL, payload: payload)
@@ -103,9 +103,6 @@ struct AIChatTabOpener: AIChatTabOpening {
 
 protocol AIChatTabManaging {
     @MainActor
-    func openAIChat(_ url: URL, with behavior: LinkOpenBehavior)
-
-    @MainActor
     func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool)
 
     @MainActor
@@ -116,10 +113,6 @@ protocol AIChatTabManaging {
 }
 
 extension WindowControllersManager: AIChatTabManaging {
-
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab) {
-        openAIChat(url, with: linkOpenBehavior, hasPrompt: false)
-    }
 
     /// Opens an AI chat URL in the application.
     ///

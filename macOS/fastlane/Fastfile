@@ -333,15 +333,6 @@ platform :mac do
     UI.message("Release Date: #{timestamp}")
     UI.message("Is Critical: #{is_critical}")
     UI.message("📍 Available at: #{cdn_url}")
-    
-    # Return summary for workflow
-    {
-      version: version,
-      build_number: build_number,
-      release_date: timestamp,
-      is_critical: is_critical,
-      cdn_url: cdn_url
-    }
   end
 
   desc 'Creates a new Kechain to use on UI tests'
@@ -479,15 +470,6 @@ platform :mac do
       platform: 'osx',
       live: options[:live] || true
     )
-    
-    # The action sets these lane context variables:
-    # lane_context[SharedValues::LATEST_BUILD_NUMBER] - The build number
-    # lane_context[SharedValues::LATEST_VERSION] - The version number
-    
-    {
-      version: lane_context[SharedValues::LATEST_VERSION],
-      build_number: lane_context[SharedValues::LATEST_BUILD_NUMBER]
-    }
   end
 
 

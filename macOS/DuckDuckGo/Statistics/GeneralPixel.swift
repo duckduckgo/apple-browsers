@@ -324,8 +324,6 @@ enum GeneralPixel: PixelKitEvent {
 
     // MARK: - Debug
 
-    case assertionFailure(message: String, file: StaticString, line: UInt)
-
     case keyValueFileStoreInitError
     case dbContainerInitializationError(error: Error)
     case dbInitializationError(error: Error)
@@ -937,9 +935,6 @@ enum GeneralPixel: PixelKitEvent {
         case .developerToolsOpened: return "m_mac_dev_tools_opened"
 
             // DEBUG
-        case .assertionFailure:
-            return "assertion_failure"
-
         case .keyValueFileStoreInitError:
             return "key_value_file_store_init_error"
         case .dbContainerInitializationError:

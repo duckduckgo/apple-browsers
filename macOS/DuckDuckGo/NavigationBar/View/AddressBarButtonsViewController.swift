@@ -796,10 +796,10 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if let value = textFieldValue, !value.isEmpty {
             PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .tabWithPrompt), frequency: .dailyAndStandard)
-            aiChatTabOpener.openAIChatTab(value, with: behavior)
+            aiChatTabOpener.openAIChatTab(with: .addressBarValue(value), behavior: behavior)
         } else {
             PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .tab), frequency: .dailyAndStandard)
-            aiChatTabOpener.openAIChatTab(nil, with: behavior)
+            aiChatTabOpener.openNewAIChat(in: behavior)
         }
     }
 
@@ -1072,9 +1072,9 @@ final class AddressBarButtonsViewController: NSViewController {
             )
 
             if let value = textFieldValue {
-                aiChatTabOpener.openAIChatTab(value, with: behavior)
+                aiChatTabOpener.openAIChatTab(with: .addressBarValue(value), behavior: behavior)
             } else {
-                aiChatTabOpener.openAIChatTab(nil, with: behavior)
+                aiChatTabOpener.openNewAIChat(in: behavior)
             }
         } else {
             if let tab = tabViewModel?.tab {

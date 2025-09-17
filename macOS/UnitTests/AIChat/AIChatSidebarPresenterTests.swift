@@ -710,6 +710,11 @@ class MockAIChatSidebarProvider: AIChatSidebarProviding {
 }
 
 class MockAIChatTabOpener: AIChatTabOpening {
+    var openAIChatTabCalled = false
+    var lastContent: AIChatContent?
+    var lastBehavior: LinkOpenBehavior?
+
+    // Keep old flags for backward compatibility with existing tests
     var openNewAIChatTabCalled = false
     var openNewAIChatTabWithPayloadCalled = false
     var openNewAIChatTabWithRestorationDataCalled = false
@@ -729,44 +734,34 @@ class MockAIChatTabOpener: AIChatTabOpening {
     }
 
     @MainActor
-    func openAIChatTab(_ query: String?, with linkOpenBehavior: LinkOpenBehavior) {
-        openAIChatTabWithQueryCalled = true
-        lastQuery = query
-        lastLinkOpenBehavior = linkOpenBehavior
-        openMethodCalledExpectation?.fulfill()
-        openMethodCalledExpectation = nil
-    }
+    func openAIChatTab(with content: AIChatContent, behavior: LinkOpenBehavior) {
+        openAIChatTabCalled = true
+        lastContent = content
+        lastBehavior = behavior
 
-    @MainActor
-    func openAIChatTab(_ value: AddressBarTextField.Value, with linkOpenBehavior: LinkOpenBehavior) {
-        openAIChatTabWithValueCalled = true
-        lastValue = value
-        lastLinkOpenBehavior = linkOpenBehavior
-        openMethodCalledExpectation?.fulfill()
-        openMethodCalledExpectation = nil
-    }
+        // Set old flags for backward compatibility
+        switch content {
+        case .query(let query):
+            openAIChatTabWithQueryCalled = true
+            lastQuery = query
+        case .addressBarValue(let value):
+            openAIChatTabWithValueCalled = true
+            lastValue = value
+        case .url(let url):
+            openNewAIChatTabCalled = true
+            lastURL = url
+        case .payload(let payload):
+            openNewAIChatTabWithPayloadCalled = true
+            lastPayload = payload
+        case .restoration(let data):
+            openNewAIChatTabWithRestorationDataCalled = true
+            lastRestorationData = data
+        case .empty:
+            openAIChatTabWithQueryCalled = true
+            lastQuery = nil
+        }
 
-    @MainActor
-    func openNewAIChatTab(_ aiChatURL: URL, with linkOpenBehavior: LinkOpenBehavior) {
-        openNewAIChatTabCalled = true
-        lastURL = aiChatURL
-        lastLinkOpenBehavior = linkOpenBehavior
-        openMethodCalledExpectation?.fulfill()
-        openMethodCalledExpectation = nil
-    }
-
-    @MainActor
-    func openNewAIChatTab(withPayload payload: AIChatPayload) {
-        openNewAIChatTabWithPayloadCalled = true
-        lastPayload = payload
-        openMethodCalledExpectation?.fulfill()
-        openMethodCalledExpectation = nil
-    }
-
-    @MainActor
-    func openNewAIChatTab(withChatRestorationData data: AIChatRestorationData) {
-        openNewAIChatTabWithRestorationDataCalled = true
-        lastRestorationData = data
+        lastLinkOpenBehavior = behavior
         openMethodCalledExpectation?.fulfill()
         openMethodCalledExpectation = nil
     }

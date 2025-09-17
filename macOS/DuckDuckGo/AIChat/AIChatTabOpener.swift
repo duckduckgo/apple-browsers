@@ -19,27 +19,27 @@
 import Foundation
 import AIChat
 
+enum AIChatContent {
+    case empty
+    case query(String?)
+    case addressBarValue(AddressBarTextField.Value)
+    case url(URL)
+    case payload(AIChatPayload)
+    case restoration(AIChatRestorationData)
+}
+
 protocol AIChatTabOpening {
     @MainActor
-    func openAIChatTab(_ query: String?, with linkOpenBehavior: LinkOpenBehavior)
+    func openAIChatTab(with content: AIChatContent, behavior: LinkOpenBehavior)
 
     @MainActor
-    func openAIChatTab(_ value: AddressBarTextField.Value, with linkOpenBehavior: LinkOpenBehavior)
-
-    @MainActor
-    func openNewAIChatTab(_ aiChatURL: URL, with linkOpenBehavior: LinkOpenBehavior)
-
-    @MainActor
-    func openNewAIChatTab(withPayload payload: AIChatPayload)
-
-    @MainActor
-    func openNewAIChatTab(withChatRestorationData data: AIChatRestorationData)
+    func openNewAIChat(in linkOpenBehavior: LinkOpenBehavior)
 }
 
 extension AIChatTabOpening {
     @MainActor
-    func openAIChatTab() {
-        openAIChatTab(nil, with: .currentTab)
+    func openNewAIChat(in linkOpenBehavior: LinkOpenBehavior) {
+        openAIChatTab(with: .empty, behavior: linkOpenBehavior)
     }
 }
 
@@ -60,56 +60,52 @@ struct AIChatTabOpener: AIChatTabOpening {
         self.windowControllersManager = windowControllersManager
     }
 
-    @MainActor
-    func openAIChatTab(_ value: AddressBarTextField.Value, with linkOpenBehavior: LinkOpenBehavior) {
-        let query = addressBarQueryExtractor.queryForValue(value)
+    // MARK: - New Simplified API
 
-        // We don't want to auto-submit if the user is opening duck.ai from the SERP
-        // https://app.asana.com/1/137249556945/project/1204167627774280/task/1210024262385459?focus=true
-        let shouldAutoSubmit: Bool
-        if case let .url(_, url, _) = value {
-            shouldAutoSubmit = !url.isDuckDuckGoSearch
-        } else {
-            shouldAutoSubmit = true
+    @MainActor
+    func openAIChatTab(with content: AIChatContent, behavior: LinkOpenBehavior) {
+        switch content {
+        case .empty:
+            openAIChatTab(query: nil, with: behavior, autoSubmit: true)
+
+        case .query(let query):
+            openAIChatTab(query: query, with: behavior, autoSubmit: true)
+
+        case .addressBarValue(let value):
+            let query = addressBarQueryExtractor.queryForValue(value)
+            // We don't want to auto-submit if the user is opening duck.ai from the SERP
+            let shouldAutoSubmit: Bool
+            if case let .url(_, url, _) = value {
+                shouldAutoSubmit = !url.isDuckDuckGoSearch
+            } else {
+                shouldAutoSubmit = true
+            }
+            openAIChatTab(query: query, with: behavior, autoSubmit: shouldAutoSubmit)
+
+        case .url(let url):
+            windowControllersManager.openAIChat(url, with: behavior)
+
+        case .payload(let payload):
+            guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
+            let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
+            newAIChatTab.aiChat?.setAIChatNativeHandoffData(payload: payload)
+            tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
+
+        case .restoration(let data):
+            guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
+            let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
+            newAIChatTab.aiChat?.setAIChatRestorationData(data: data)
+            tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
         }
-        openAIChatTab(query, with: linkOpenBehavior, autoSubmit: shouldAutoSubmit)
     }
 
-    @MainActor
-    func openAIChatTab(_ query: String?, with linkOpenBehavior: LinkOpenBehavior) {
-        openAIChatTab(query, with: linkOpenBehavior, autoSubmit: true)
-    }
+    // MARK: - Private Helper
 
     @MainActor
-    func openNewAIChatTab(_ aiChatURL: URL, with linkOpenBehavior: LinkOpenBehavior) {
-        windowControllersManager.openAIChat(aiChatURL, with: linkOpenBehavior)
-    }
-
-    @MainActor
-    private func openAIChatTab(_ query: String?, with linkOpenBehavior: LinkOpenBehavior, autoSubmit: Bool) {
+    private func openAIChatTab(query: String?, with linkOpenBehavior: LinkOpenBehavior, autoSubmit: Bool) {
         if let query = query {
             promptHandler.setData(.queryPrompt(query, autoSubmit: autoSubmit))
         }
         windowControllersManager.openAIChat(aiChatRemoteSettings.aiChatURL, with: linkOpenBehavior, hasPrompt: query != nil)
-    }
-
-    @MainActor
-    func openNewAIChatTab(withPayload payload: AIChatPayload) {
-        guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
-
-        let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
-        newAIChatTab.aiChat?.setAIChatNativeHandoffData(payload: payload)
-
-        tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
-    }
-
-    @MainActor
-    func openNewAIChatTab(withChatRestorationData data: AIChatRestorationData) {
-        guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
-
-        let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
-        newAIChatTab.aiChat?.setAIChatRestorationData(data: data)
-
-        tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
     }
 }

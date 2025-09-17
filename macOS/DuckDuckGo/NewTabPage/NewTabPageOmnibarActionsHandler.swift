@@ -136,7 +136,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             behavior = .newTab(selected: isShiftPressed())
         }
 
-        tabOpener.openAIChatTab(chat, with: behavior)
+        tabOpener.openAIChatTab(with: .query(chat), behavior: behavior)
     }
 
     private func linkOpenBehavior(for target: NewTabPageDataModel.OpenTarget, using tabsPreferences: TabsPreferences) -> LinkOpenBehavior {

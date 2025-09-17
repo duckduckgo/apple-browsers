@@ -137,7 +137,7 @@ final class AIChatPreferences: ObservableObject {
     }
 
     @MainActor func openAIChatLink() {
-        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab()
+        NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: .currentTab)
     }
 
     @MainActor func openSearchAssistSettings() {

@@ -17,4 +17,6 @@ rm -r "$loc_path"
 # Run xcodebuild in the iOS directory to ensure only iOS strings are exported
 run_in_directory "$ios_dir" xcodebuild -exportLocalizations -project "DuckDuckGo-iOS.xcodeproj" -localizationPath "$loc_path" -sdk iphoneos -exportLanguage en
 
+if [ -z "${NO_OPEN:-}" ]; then
 open "${loc_path}/en.xcloc/Localized Contents"
+fi

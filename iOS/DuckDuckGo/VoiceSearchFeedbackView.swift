@@ -199,7 +199,7 @@ private struct VoiceSearchTargetPicker: View {
 extension VoiceSearchFeedbackView {
     private var footerWidth: CGFloat { 285 }
     private var pickerWidth: CGFloat { 216 }
-    private var voiceCircleVerticalPadding: CGFloat { sizeClass == .regular ? 60 : 43 }
+    private var voiceCircleVerticalPadding: CGFloat { sizeClass == .regular ? 60 : 23 }
     private var footerTextPadding: CGFloat { sizeClass == .regular ? 43 : 8 }
     private var micSize: CGSize { CGSize(width: 32, height: 32) }
 

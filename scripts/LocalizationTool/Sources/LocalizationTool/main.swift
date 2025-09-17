@@ -290,16 +290,72 @@ extension LocalizationTool {
         }
     }
 
-    // MARK: - Download (stub)
+    // MARK: - Download
     static func handleDownload(jobId: String, outDir: String, credentials: Credentials) async throws {
-        // Note: Download implementation pending - requires batch file listing
         let smartlingCredentials = SmartlingCredentials(userIdentifier: credentials.userId, userSecret: credentials.userSecret, projectId: credentials.projectId)
         let client = SmartlingAPIClient(credentials: smartlingCredentials)
         try await client.authenticate()
 
-        print("DOWNLOADED=0")
-        print("⚠️  Download not implemented yet for job \(jobId). Add batch file discovery + download.")
-        Foundation.exit(2)
+        print("🔍 Getting job details...")
+        let job = try await client.getJob(jobId: jobId)
+        print("📋 Job: \(job.jobName)")
+        print("📊 Job Status: \(job.jobStatus)")
+
+        // Check if job is complete
+        guard job.jobStatus == "COMPLETED" else {
+            print("DOWNLOADED=0")
+            print("⚠️  Job is not completed (status: \(job.jobStatus)). Only completed jobs can be downloaded.")
+            return
+        }
+
+        // Discover all files in the job
+        print("🔍 Discovering files in job...")
+        let jobFiles = try await client.getJobFiles(jobId: jobId)
+
+        guard !jobFiles.isEmpty else {
+            print("DOWNLOADED=0")
+            print("⚠️  No files found in job \(jobId)")
+            return
+        }
+
+        let fileUris = jobFiles.map { $0.fileUri }
+        print("📁 Found \(jobFiles.count) files in job:")
+        for file in jobFiles {
+            print("   • \(file.uri) (\(file.name))")
+        }
+
+        print("📁 Attempting to download files: \(fileUris)")
+        print("🎯 Target locales: \(job.targetLocaleIds.count)")
+
+        do {
+            let downloadedFiles = try await client.downloadTranslatedFiles(forJob: jobId, fileUris: fileUris)
+
+            if downloadedFiles.isEmpty {
+                print("DOWNLOADED=0")
+                print("⚠️  No files downloaded - they may not exist or have different URIs")
+                return
+            }
+
+            print("💾 Saving \(downloadedFiles.count) files to \(outDir)...")
+
+            // Create output directory if it doesn't exist
+            let outputURL = URL(fileURLWithPath: outDir)
+            try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
+
+            for file in downloadedFiles {
+                let fileURL = outputURL.appendingPathComponent(file.fileName)
+                try file.data.write(to: fileURL)
+                print("✅ \(file.fileName) (\(file.localeId))")
+            }
+
+            print("DOWNLOADED=\(downloadedFiles.count)")
+            print("🎉 Downloaded \(downloadedFiles.count) files to \(outDir)")
+
+        } catch {
+            print("DOWNLOADED=0")
+            print("❌ Download failed: \(error)")
+            Foundation.exit(1)
+        }
     }
 }
 

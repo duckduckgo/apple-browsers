@@ -135,6 +135,18 @@ public final class SmartlingAPIClient {
         try handleResponseOrThrow(data: data, response: response)
     }
 
+    public func getJobFiles(jobId: String) async throws -> [JobFile] {
+        try await ensureValidToken()
+
+        let request = newRequest(method: "GET", path: "/jobs-api/v3/projects/\(credentials.projectId)/jobs/\(jobId)/files")
+
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response)
+
+        let jobFilesResponse = try JSONDecoder().decode(JobFilesResponse.self, from: data)
+        return jobFilesResponse.response.data.items ?? []
+    }
+
     // MARK: - Batch Operations
 
     public func createBatch(request: CreateBatchRequest) async throws -> BatchResponse.BatchData {
@@ -284,18 +296,33 @@ public final class SmartlingAPIClient {
         return data
     }
 
-    public func downloadTranslatedFiles(forJob jobId: String) async throws -> [DownloadedFile] {
-        // Get job details first to get target locales
-        _ = try await getJob(jobId: jobId)
+    public func downloadTranslatedFiles(forJob jobId: String, fileUris: [String]) async throws -> [DownloadedFile] {
+        // Get job details to get target locales
+        let job = try await getJob(jobId: jobId)
+        var downloadedFiles: [DownloadedFile] = []
 
-        // This would typically need to get the file URIs from the job's batch information
-        // For now, returning empty array as the exact endpoint for getting batch files isn't clear
-        // In production, you'd need to:
-        // 1. Get batch details for the job
-        // 2. Get file URIs from the batch
-        // 3. Download each file for each locale
+        // Download each file for each target locale
+        for fileUri in fileUris {
+            for localeId in job.targetLocaleIds {
+                do {
+                    let fileData = try await downloadTranslatedFile(fileUri: fileUri, localeId: localeId)
+                    let fileName = URL(fileURLWithPath: fileUri).lastPathComponent
+                    let localizedFileName = fileName.replacingOccurrences(of: ".xliff", with: "_\(localeId).xliff")
+                                                    .replacingOccurrences(of: ".stringsdict", with: "_\(localeId).stringsdict")
 
-        return []
+                    downloadedFiles.append(DownloadedFile(
+                        fileName: localizedFileName,
+                        localeId: localeId,
+                        fileUri: fileUri,
+                        data: fileData
+                    ))
+                } catch {
+                    print("⚠️  Failed to download \(fileUri) for locale \(localeId): \(error)")
+                }
+            }
+        }
+
+        return downloadedFiles
     }
 
     // MARK: - Helpers

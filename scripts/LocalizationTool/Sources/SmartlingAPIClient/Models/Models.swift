@@ -121,6 +121,32 @@ public struct AuthorizeJobItemRequest: Codable {
     }
 }
 
+// MARK: - Job Files
+
+public struct JobFilesResponse: Codable {
+    public let response: ResponseData
+
+    public struct ResponseData: Codable {
+        public let code: String
+        public let data: JobFilesData
+    }
+
+    public struct JobFilesData: Codable {
+        public let items: [JobFile]?
+        public let totalCount: Int?
+    }
+}
+
+public struct JobFile: Codable {
+    public let uri: String
+    public let name: String
+    public let fileUid: String
+    public let localeIds: [String]?
+
+    // Computed property to maintain compatibility
+    public var fileUri: String { return uri }
+}
+
 public struct JobProgressResponse: Codable {
     public let response: ResponseData
 
@@ -210,9 +236,17 @@ public struct BatchStatusResponse: Codable {
 }
 
 public struct DownloadedFile {
-    public let locale: String
+    public let fileName: String
+    public let localeId: String
     public let fileUri: String
-    public let content: Data
+    public let data: Data
+
+    public init(fileName: String, localeId: String, fileUri: String, data: Data) {
+        self.fileName = fileName
+        self.localeId = localeId
+        self.fileUri = fileUri
+        self.data = data
+    }
 }
 
 public struct SmartlingError: LocalizedError, Codable {

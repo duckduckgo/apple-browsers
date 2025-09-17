@@ -1,3 +1,21 @@
+//
+//  main.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
 import Foundation
 import SmartlingAPIClient
 import ArgumentParser
@@ -22,22 +40,22 @@ struct LocalizationTool: AsyncParsableCommand {
 struct SmartlingOptions: ParsableArguments {
     @Option(name: .long, help: "Smartling user ID")
     var userId: String?
-    
+
     @Option(name: .long, help: "Smartling user secret")
     var userSecret: String?
-    
+
     @Option(name: .long, help: "Smartling project ID")
     var projectId: String?
-    
+
     func validateCredentials() throws -> Credentials {
         let uid = userId ?? ProcessInfo.processInfo.environment["SMARTLING_USER_ID"]
         let secret = userSecret ?? ProcessInfo.processInfo.environment["SMARTLING_USER_SECRET"]
         let proj = projectId ?? ProcessInfo.processInfo.environment["SMARTLING_PROJECT_ID"]
-        
+
         guard let uid, let secret, let proj else {
             throw ValidationError("Missing required credentials. Provide --user-id, --user-secret, --project-id or set environment variables SMARTLING_USER_ID, SMARTLING_USER_SECRET, SMARTLING_PROJECT_ID")
         }
-        
+
         return Credentials(userId: uid, userSecret: secret, projectId: proj)
     }
 }
@@ -47,18 +65,18 @@ struct Upload: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Upload XLIFF and stringsdict files to create a translation job"
     )
-    
+
     @OptionGroup var smartling: SmartlingOptions
-    
+
     @Option(name: .long, help: "Job name")
     var jobName: String
-    
+
     @Option(name: .long, help: "XLIFF file path")
     var xliff: String
-    
+
     @Option(name: .long, help: "Stringsdict file path")
     var stringsdict: String
-    
+
     func run() async throws {
         let credentials = try smartling.validateCredentials()
         try await LocalizationTool.handleUpload(
@@ -75,12 +93,12 @@ struct Status: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Check the status of a translation job"
     )
-    
+
     @OptionGroup var smartling: SmartlingOptions
-    
+
     @Option(name: .long, help: "Job ID")
     var jobId: String
-    
+
     func run() async throws {
         let credentials = try smartling.validateCredentials()
         try await LocalizationTool.handleStatus(jobId: jobId, credentials: credentials)
@@ -92,12 +110,12 @@ struct Approve: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Approve a translation job"
     )
-    
+
     @OptionGroup var smartling: SmartlingOptions
-    
+
     @Option(name: .long, help: "Job ID")
     var jobId: String
-    
+
     func run() async throws {
         let credentials = try smartling.validateCredentials()
         try await LocalizationTool.handleApprove(jobId: jobId, credentials: credentials)
@@ -109,15 +127,15 @@ struct Download: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Download translated files from a job"
     )
-    
+
     @OptionGroup var smartling: SmartlingOptions
-    
+
     @Option(name: .long, help: "Job ID")
     var jobId: String
-    
+
     @Option(name: .long, help: "Output directory")
     var outDir: String
-    
+
     func run() async throws {
         let credentials = try smartling.validateCredentials()
         try await LocalizationTool.handleDownload(jobId: jobId, outDir: outDir, credentials: credentials)
@@ -146,7 +164,7 @@ extension LocalizationTool {
 
         // Get current git branch name
         let branchName = try getCurrentGitBranch()
-        
+
         // Create job with project's valid locales fetched from Smartling
         let validLocales = try await client.fetchProjectLocales()
         let createJobReq = CreateJobRequest(jobName: jobName, targetLocaleIds: validLocales, description: "Created via LocalizationTool")
@@ -202,12 +220,12 @@ extension LocalizationTool {
         try await client.authenticate()
 
         let job = try await client.getJob(jobId: jobId)
-        
+
         print("STATUS=\(job.jobStatus)")
         print("\n📊 Job Status: \(job.jobStatus)")
         print("📋 Job Name: \(job.jobName)")
         print("🎯 Target Locales: \(job.targetLocaleIds.count)")
-        
+
         // Only try to get progress if job is authorized/in progress
         if job.jobStatus != "AWAITING_AUTHORIZATION" {
             do {
@@ -234,7 +252,7 @@ extension LocalizationTool {
         // Check if job is ready for authorization
         print("🔍 Checking job readiness...")
         let job = try await client.getJob(jobId: jobId)
-        
+
         // Validate job status
         guard job.jobStatus == "AWAITING_AUTHORIZATION" else {
             print("❌ Job is not ready for authorization")
@@ -246,11 +264,11 @@ extension LocalizationTool {
             }
             Foundation.exit(1)
         }
-        
+
         print("✅ Job is ready for authorization")
         print("📋 Job: \(job.jobName)")
         print("🎯 Target locales: \(job.targetLocaleIds.count)")
-        
+
         // Authorize the job (empty body uses default workflows)
         print("🔄 Authorizing job for translation...")
         do {
@@ -274,7 +292,7 @@ extension LocalizationTool {
 
     // MARK: - Download (stub)
     static func handleDownload(jobId: String, outDir: String, credentials: Credentials) async throws {
-        // TODO: implement listing batch files and download; for now stub
+        // Note: Download implementation pending - requires batch file listing
         let smartlingCredentials = SmartlingCredentials(userIdentifier: credentials.userId, userSecret: credentials.userSecret, projectId: credentials.projectId)
         let client = SmartlingAPIClient(credentials: smartlingCredentials)
         try await client.authenticate()
@@ -291,24 +309,24 @@ func getCurrentGitBranch() throws -> String {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
     process.arguments = ["rev-parse", "--abbrev-ref", "HEAD"]
-    
+
     let pipe = Pipe()
     process.standardOutput = pipe
     process.standardError = pipe
-    
+
     try process.run()
     process.waitUntilExit()
-    
+
     guard process.terminationStatus == 0 else {
         throw ValidationError("Failed to get git branch name")
     }
-    
+
     let data = pipe.fileHandleForReading.readDataToEndOfFile()
     let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-    
+
     guard !output.isEmpty else {
         throw ValidationError("Git branch name is empty")
     }
-    
+
     return output
 }

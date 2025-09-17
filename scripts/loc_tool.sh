@@ -8,9 +8,9 @@ set -euo pipefail
 # Location of the script
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 # Location of the iOS scripts
-IOS_SCRIPTS_DIR="$SCRIPT_DIR"
+IOS_SCRIPTS_DIR="$SCRIPT_DIR/../iOS/scripts"
 # Location of the Swift CLI
-TOOL_DIR="$IOS_SCRIPTS_DIR/LocalizationTool"
+TOOL_DIR="$SCRIPT_DIR/LocalizationTool"
 # Location of the Swift CLI binary after building
 TOOL_BIN="$TOOL_DIR/.build/release/localization-tool"
 # Location of the XLIFF files
@@ -19,7 +19,7 @@ XLIFF_DIR="$IOS_SCRIPTS_DIR/assets/loc/en.xcloc/Localized Contents"
 STRINGSDICT="$IOS_SCRIPTS_DIR/../DuckDuckGo/en.lproj/Localizable.stringsdict"
 
 # Source the common functions
-. "$SCRIPT_DIR/../../scripts/loc_export_common.sh"
+. "$SCRIPT_DIR/loc_export_common.sh"
 
 usage() {
   cat <<EOF

@@ -332,13 +332,13 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
             return
         }
 
-//        source = nil
         Task { @MainActor in
             do {
                 try await authenticateUser()
                 showSyncWithAnotherDevice()
             }
         }
+        self.source = nil
     }
 
     private func startSyncBackupIfNecessary() {
@@ -347,10 +347,10 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
             return
         }
 
-//        source = nil
         Task { @MainActor in
             await rootView.model.presentSyncWithSetUpSheetIfNeeded()
         }
+        self.source = nil
     }
 
     private func askForAuthThenStartPairing() {

@@ -446,7 +446,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.refreshButtonPosition))
         case .showAIChatAddressBarChoiceScreen:
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
-        case .aiSearchAnimatedDaxLogo, 
+        case .aiSearchAnimatedDaxLogo,
              .adjustNewSearchForLandscape:
             return .internalOnly()
         }

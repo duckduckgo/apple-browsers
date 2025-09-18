@@ -38,15 +38,6 @@ final class SyncRecoveryPromptService {
         static let hasPerformedSyncRecoveryCheck: String = "com.duckduckgo.syncrecovery.check.performed"
     }
 
-    private var hasPerformedCheck: Bool {
-        get {
-            (try? keyValueStore.object(forKey: Key.hasPerformedSyncRecoveryCheck) as? Bool) ?? false
-        }
-        set {
-            try? keyValueStore.set(newValue, forKey: Key.hasPerformedSyncRecoveryCheck)
-        }
-    }
-
     init(featureFlagger: FeatureFlagger,
          syncService: DDGSyncing,
          keyValueStore: ThrowingKeyValueStoring,
@@ -63,13 +54,15 @@ final class SyncRecoveryPromptService {
             return false
         }
 
-        guard isOnboardingComplete else {
-            Logger.sync.debug("[Sync Recovery] Onboarding not complete")
+        guard !hasPerformedCheck else {
+            Logger.sync.debug("[Sync Recovery] Already performed check")
             return false
         }
 
-        guard !hasAlreadyPerformedCheck else {
-            Logger.sync.debug("[Sync Recovery] Already performed check")
+        hasPerformedCheck = true
+
+        guard isOnboardingComplete else {
+            Logger.sync.debug("[Sync Recovery] Onboarding not complete")
             return false
         }
 
@@ -78,26 +71,19 @@ final class SyncRecoveryPromptService {
             return false
         }
 
-        hasPerformedCheck = true
+        guard vaultIsEmpty else {
+            Logger.sync.debug("[Sync Recovery] Vault is not empty")
+            return false
+        }
+
+        guard isFormerAutofillUser else {
+            Logger.sync.debug("[Sync Recovery] Is not a former autofill user")
+            return false
+        }
+
         Logger.sync.debug("[Sync Recovery] All conditions met - prompt can be shown")
 
         return true
-    }
-
-    // MARK: - Show Criteria Variables
-
-    private var isFeatureFlagEnabled: Bool {
-        featureFlagger.isFeatureOn(.newDeviceSyncPrompt)
-    }
-
-    // MARK: - Exclusion Criteria Variables
-
-    private var hasAlreadyPerformedCheck: Bool {
-        hasPerformedCheck
-    }
-
-    private var isSyncAlreadyEnabled: Bool {
-        syncService.account != nil
     }
 
     @discardableResult
@@ -112,5 +98,98 @@ final class SyncRecoveryPromptService {
             onSyncFlowSelected: onSyncFlowSelected
         )
         return true
+    }
+
+
+    // MARK: - Private
+
+    private var isFeatureFlagEnabled: Bool {
+        featureFlagger.isFeatureOn(.newDeviceSyncPrompt)
+    }
+
+    // MARK: - Exclusion Criteria Variables
+
+    private var hasPerformedCheck: Bool {
+        get {
+            (try? keyValueStore.object(forKey: Key.hasPerformedSyncRecoveryCheck) as? Bool) ?? false
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: Key.hasPerformedSyncRecoveryCheck)
+        }
+    }
+
+    private var isSyncAlreadyEnabled: Bool {
+        syncService.account != nil
+    }
+
+    private var vaultIsEmpty: Bool {
+        do {
+            let secureVault = try AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+            let accountsCount = try secureVault.accountsCount()
+            Logger.sync.debug("[Sync Recovery] Vault accounts count: \(accountsCount)")
+            return accountsCount == 0
+        } catch {
+            Logger.sync.error("[Sync Recovery] Failed to check vault: \(error)")
+            // If we can't access the vault, assume it's not empty to avoid false positives
+            return false
+        }
+    }
+
+    private var isFormerAutofillUser: Bool {
+        let autofillUsageStore = AutofillUsageStore()
+
+        let lastActiveDate = autofillUsageStore.lastActiveDate
+        let lastFillDate = autofillUsageStore.fillDate
+
+        let hasAutofillHistory = (lastActiveDate != nil && lastActiveDate != .distantPast) || (lastFillDate != nil && lastFillDate != .distantPast)
+
+        guard hasAutofillHistory else {
+            return false
+        }
+
+        let mostRecentAutofillDate: Date? = {
+            switch (lastActiveDate, lastFillDate) {
+            case (let activeDate?, let fillDate?) where activeDate != .distantPast && fillDate != .distantPast:
+                return max(activeDate, fillDate)
+            case (let activeDate?, _) where activeDate != .distantPast:
+                return activeDate
+            case (_, let fillDate?) where fillDate != .distantPast:
+                return fillDate
+            default:
+                return nil
+            }
+        }()
+
+        guard let autofillDate = mostRecentAutofillDate,
+              let vaultDate = vaultCreationDate else {
+            return false
+        }
+
+        // Vault must have been created after autofill was last used
+        return vaultDate > autofillDate
+    }
+
+    private var vaultCreationDate: Date? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecReturnAttributes as String: kCFBooleanTrue!,
+            kSecMatchLimit as String: kSecMatchLimitAll,
+            kSecAttrService as String: "DuckDuckGo Secure Vault v4"
+        ]
+
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+
+        if status == errSecSuccess, let items = result as? [[String: Any]], !items.isEmpty {
+            // Check creation date of the first v4 keychain item
+            guard let firstItem = items.first,
+                  let creationDate = firstItem[kSecAttrCreationDate as String] as? Date else {
+                return nil
+            }
+            return creationDate
+        }
+
+        Logger.sync.debug("[Sync Recovery] No v4 keychain items found")
+        return nil
     }
 }

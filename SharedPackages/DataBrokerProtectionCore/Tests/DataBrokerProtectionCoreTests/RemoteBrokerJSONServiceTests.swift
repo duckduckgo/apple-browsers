@@ -261,8 +261,8 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
         let successPixels = firedPixels.compactMap { pixel in
             switch pixel {
-            case .updateDataBrokersSuccess(let dataBroker, let removedAt):
-                return (dataBroker, removedAt)
+            case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt):
+                return (dataBrokerFileName, removedAt)
             default:
                 return nil
             }
@@ -326,8 +326,8 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
         let successPixels = firedPixels.compactMap { pixel in
             switch pixel {
-            case .updateDataBrokersSuccess(let dataBroker, let removedAt):
-                return (dataBroker, removedAt)
+            case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt):
+                return (dataBrokerFileName, removedAt)
             default:
                 return nil
             }
@@ -375,8 +375,8 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
         let failurePixels = firedPixels.compactMap { pixel in
             switch pixel {
-            case .updateDataBrokersFailure(let dataBroker, let removedAt, _):
-                return (dataBroker, removedAt)
+            case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, _):
+                return (dataBrokerFileName, removedAt)
             default:
                 return nil
             }
@@ -443,8 +443,8 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
         let failurePixels = firedPixels.compactMap { pixel in
             switch pixel {
-            case .updateDataBrokersFailure(let dataBroker, let removedAt, _):
-                return (dataBroker, removedAt)
+            case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, _):
+                return (dataBrokerFileName, removedAt)
             default:
                 return nil
             }

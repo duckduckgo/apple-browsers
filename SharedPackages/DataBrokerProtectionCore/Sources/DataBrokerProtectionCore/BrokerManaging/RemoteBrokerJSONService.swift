@@ -323,17 +323,17 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 dataBroker.setETag(eTagMapping[fileName] ?? "")
                 if activeBrokers.contains(fileName) {
                     try upsertBroker(dataBroker)
-                    pixelHandler?.fire(.updateDataBrokersSuccess(dataBroker: fileName, removedAt: dataBroker.removedAtTimestamp))
+                    pixelHandler?.fire(.updateDataBrokersSuccess(dataBrokerFileName: fileName, removedAt: dataBroker.removedAtTimestamp))
                 }
             } catch let error as DecodingError {
                 Logger.dataBrokerProtection.log("🧩 Failed to decode JSON file \(fileURL.lastPathComponent): \(error), skipping update")
-                pixelHandler?.fire(.updateDataBrokersFailure(dataBroker: fileName, removedAt: nil, error: error))
+                pixelHandler?.fire(.updateDataBrokersFailure(dataBrokerFileName: fileName, removedAt: nil, error: error))
             } catch let error as Step.DecodingError {
                 Logger.dataBrokerProtection.log("🧩 JSON file \(fileURL.lastPathComponent) contains unsupported data: \(error), skipping update")
-                pixelHandler?.fire(.updateDataBrokersFailure(dataBroker: fileName, removedAt: nil, error: error))
+                pixelHandler?.fire(.updateDataBrokersFailure(dataBrokerFileName: fileName, removedAt: nil, error: error))
             } catch {
                 Logger.dataBrokerProtection.log("🧩 Failed to upsert broker \(fileName): \(error)")
-                pixelHandler?.fire(.updateDataBrokersFailure(dataBroker: fileName, removedAt: nil, error: error))
+                pixelHandler?.fire(.updateDataBrokersFailure(dataBrokerFileName: fileName, removedAt: nil, error: error))
             }
         }
     }

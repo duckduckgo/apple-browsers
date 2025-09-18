@@ -106,6 +106,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let totalByBroker = "total_by_broker"
         public static let stalledByBroker = "stalled_by_broker"
         public static let jsFile = "jsFile"
+        public static let dataBrokerJsonFileKey = "data_broker_json_file"
         public static let removedAtParamKey = "removed_at"
     }
 
@@ -213,8 +214,8 @@ public enum DataBrokerProtectionSharedPixels {
     case serviceEmailConfirmationJobSuccess(dataBrokerURL: String, brokerVersion: String)
 
     // Broker update pixels
-    case updateDataBrokersSuccess(dataBroker: String, removedAt: Int64?)
-    case updateDataBrokersFailure(dataBroker: String, removedAt: Int64?, error: Error)
+    case updateDataBrokersSuccess(dataBrokerFileName: String, removedAt: Int64?)
+    case updateDataBrokersFailure(dataBrokerFileName: String, removedAt: Int64?, error: Error)
 }
 
 extension DataBrokerProtectionSharedPixels: PixelKitEvent {
@@ -548,14 +549,14 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .serviceEmailConfirmationJobSuccess(let dataBrokerURL, let brokerVersion):
             return [Consts.dataBrokerURL: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion]
-        case .updateDataBrokersSuccess(let dataBroker, let removedAt):
-            var params = [Consts.dataBrokerParamKey: dataBroker]
+        case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt):
+            var params = [Consts.dataBrokerJsonFileKey: dataBrokerFileName]
             if let removedAt = removedAt {
                 params[Consts.removedAtParamKey] = String(removedAt)
             }
             return params
-        case .updateDataBrokersFailure(let dataBroker, let removedAt, _):
-            var params = [Consts.dataBrokerParamKey: dataBroker]
+        case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, _):
+            var params = [Consts.dataBrokerJsonFileKey: dataBrokerFileName]
             if let removedAt = removedAt {
                 params[Consts.removedAtParamKey] = String(removedAt)
             }

@@ -1,0 +1,72 @@
+name: Smartling
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Platform"
+        type: choice
+        required: true
+        default: 'iOS'
+        options:
+           - iOS
+           - macOS
+      action:
+        description: "Action"
+        type: choice
+        required: true
+        default: 'upload'
+        options:
+           - upload
+           - approve
+           - status
+           - download
+      job-id:
+        description: "Smartling job ID"
+        required: false
+        type: string
+
+jobs:
+  smartling:
+    runs-on: macos-15-xlarge
+    name: Make ad-hoc build
+
+    env:
+      RUNS_ON: macos-15-xlarge # keep this in sync with runs-on above
+
+    steps:
+
+      - name: Register SSH keys for access to certificates
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Select Xcode
+        uses: ./.github/actions/select-xcode-version
+
+      - name: Export
+        id: export
+        if: ${{ github.event.inputs.action == 'upload' }}
+        run: |
+          ./iOS/scripts/loc_export.sh
+
+      - name: Archive and upload the app
+        id: archive-and-upload
+        env:
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        run: |
+          ./scripts/loc_tool.sh ${{ github.event.inputs.action }} --job-id ${{ github.event.inputs.job-id }}
+
+      - name: Import
+        id: import
+        if: ${{ github.event.inputs.action == 'download' }}
+        run: |
+          ./iOS/scripts/loc_import.sh

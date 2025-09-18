@@ -7,12 +7,6 @@ set -euo pipefail
 
 # Location of the script
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
-# Location of the iOS scripts
-IOS_SCRIPTS_DIR="$SCRIPT_DIR/../iOS/scripts"
-# Location of the XLIFF files
-XLIFF_DIR="$IOS_SCRIPTS_DIR/assets/loc/en.xcloc/Localized Contents"
-# Location of the stringsdict file
-STRINGSDICT="$IOS_SCRIPTS_DIR/../DuckDuckGo/en.lproj/Localizable.stringsdict"
 
 # Source the common functions
 . "$SCRIPT_DIR/loc_export_common.sh"
@@ -27,7 +21,7 @@ Usage:
   $0 import --import-dir <path> [--force]
 
 Requires env:
-  SMARTLING_USER_ID, SMARTLING_USER_SECRET, SMARTLING_PROJECT_ID
+  IOS_SMARTLING_USER_ID, IOS_SMARTLING_USER_SECRET, IOS_SMARTLING_PROJECT_ID
 EOF
 }
 
@@ -35,8 +29,8 @@ cmd=${1:-}
 shift || true
 
 # Fail if credentials are missing
-if [ -z "${SMARTLING_USER_ID:-}" ] || [ -z "${SMARTLING_USER_SECRET:-}" ] || [ -z "${SMARTLING_PROJECT_ID:-}" ]; then
-  echo "Missing required env vars: SMARTLING_USER_ID, SMARTLING_USER_SECRET, SMARTLING_PROJECT_ID" >&2
+if [ -z "${IOS_SMARTLING_USER_ID:-}" ] || [ -z "${IOS_SMARTLING_USER_SECRET:-}" ] || [ -z "${IOS_SMARTLING_PROJECT_ID:-}" ]; then
+  echo "Missing required env vars: IOS_SMARTLING_USER_ID, IOS_SMARTLING_USER_SECRET, IOS_SMARTLING_PROJECT_ID" >&2
   exit 1
 fi
 

@@ -1,7 +1,7 @@
 name: Smartling
 
 on:
-  push:
+  # push:
   workflow_dispatch:
     inputs:
       platform:
@@ -11,7 +11,7 @@ on:
         default: 'iOS'
         options:
            - iOS
-           - macOS
+          #  - macOS
       action:
         description: "Action"
         type: choice
@@ -30,10 +30,13 @@ on:
 jobs:
   smartling:
     runs-on: macos-15-xlarge
-    name: Make ad-hoc build
+    name: Smartling translation job
 
     env:
       RUNS_ON: macos-15-xlarge # keep this in sync with runs-on above
+      IOS_SMARTLING_USER_ID: ${{ secrets.IOS_SMARTLING_USER_ID }}
+      IOS_SMARTLING_USER_SECRET: ${{ secrets.IOS_SMARTLING_USER_SECRET }}
+      IOS_SMARTLING_PROJECT_ID: ${{ secrets.IOS_SMARTLING_PROJECT_ID }}
 
     steps:
 
@@ -56,15 +59,17 @@ jobs:
         run: |
           ./iOS/scripts/loc_export.sh
 
-      - name: Archive and upload the app
-        id: archive-and-upload
-        env:
-          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      - name: Upload to Smartling
+        if: ${{ github.event.inputs.action == 'upload' }}
         run: |
-          ./scripts/loc_tool.sh ${{ github.event.inputs.action }} --job-id ${{ github.event.inputs.job-id }}
+          # Use the current git branch name for the job
+          JOB_NAME="${{ github.ref_name }}"
+
+          # Upload XLIFF and stringsdict files
+          ./scripts/loc_tool.sh upload \
+            --job-name "$JOB_NAME" \
+            --files ./iOS/scripts/assets/loc/en.xcloc/Localized\ Contents/en.xliff \
+                    ./iOS/DuckDuckGo/en.lproj/Localizable.stringsdict
 
       - name: Import
         id: import

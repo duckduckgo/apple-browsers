@@ -179,12 +179,12 @@ def get_git_branch() -> str:
 
 def get_credentials(args) -> Credentials:
     """Get credentials from args or environment."""
-    user_id = getattr(args, 'user_id', None) or os.environ.get('SMARTLING_USER_ID')
-    user_secret = getattr(args, 'user_secret', None) or os.environ.get('SMARTLING_USER_SECRET')
-    project_id = getattr(args, 'project_id', None) or os.environ.get('SMARTLING_PROJECT_ID')
+    user_id = getattr(args, 'user_id', None) or os.environ.get('IOS_SMARTLING_USER_ID')
+    user_secret = getattr(args, 'user_secret', None) or os.environ.get('IOS_SMARTLING_USER_SECRET')
+    project_id = getattr(args, 'project_id', None) or os.environ.get('IOS_SMARTLING_PROJECT_ID')
 
     if not all([user_id, user_secret, project_id]):
-        print("❌ Missing credentials. Set SMARTLING_USER_ID, SMARTLING_USER_SECRET, SMARTLING_PROJECT_ID")
+        print("❌ Missing credentials. Set IOS_SMARTLING_USER_ID, IOS_SMARTLING_USER_SECRET, IOS_SMARTLING_PROJECT_ID")
         sys.exit(1)
 
     return Credentials(user_id, user_secret, project_id)
@@ -308,11 +308,12 @@ async def download_command(args):
                     data = await client.download_file(file_uri, locale)
                     file_name = Path(file_uri).name
 
-                    # Add locale suffix
-                    if '.xliff' in file_name:
-                        file_name = file_name.replace('.xliff', f'_{locale}.xliff')
-                    elif '.stringsdict' in file_name:
-                        file_name = file_name.replace('.stringsdict', f'_{locale}.stringsdict')
+                    # Add locale suffix before the last extension (or append if none)
+                    if '.' in file_name:
+                        name, ext = file_name.rsplit('.', 1)
+                        file_name = f"{name}_{locale}.{ext}"
+                    else:
+                        file_name = f"{file_name}_{locale}"
 
                     (out_dir / file_name).write_bytes(data)
                     print(f"   ✅ {file_name} ({locale})")

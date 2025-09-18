@@ -38,7 +38,7 @@ struct SubscriptionAIChatView: View {
         List {
             SettingsDescriptionView(content: currentDescription)
             if isAIFeaturesEnabled {
-                Section(footer: Text("Configure Duck.ai in AI Features settings.")) {
+                Section(footer: Text(UserText.aiChatSubscriptionEnableAI)) {
                     SettingsCellView(label: UserText.openSubscriptionAIChat, action: {
                         viewModel.openAIChat()
                     }, webLinkIndicator: true, isButton: true
@@ -46,10 +46,16 @@ struct SubscriptionAIChatView: View {
                 }
             } else {
                 Section {
-                    Text("Enable Duck.ai in AI Features settings.")
-                        .font(
-                            Font(uiFont: UIFont.daxSubheadSemibold())
-                        )
+                    VStack {
+                        Text(UserText.aiChatSubscriptionEnableAI)
+                            .foregroundStyle(.red)
+                            .font(
+                                Font(uiFont: UIFont.daxSubheadSemibold())
+                            )
+                    }
+                    .listRowInsets(EdgeInsets(top: -12, leading: -12, bottom: -12, trailing: -12))
+                    .listRowBackground(Color(designSystemColor: .background).edgesIgnoringSafeArea(.all))
+                    .frame(maxWidth: .infinity)
                 }
             }
         }

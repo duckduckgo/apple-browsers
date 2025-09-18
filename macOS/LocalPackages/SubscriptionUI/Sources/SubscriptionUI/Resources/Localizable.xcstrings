@@ -2694,13 +2694,13 @@
       }
     },
     "subscription.preferences.paid.ai.chat.disable.link" : {
-      "comment" : "Text linking to the settings where it is possible to disable all AI features",
+      "comment" : "Text linking to the settings where it is possible to configure all AI features",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Disable Duck.ai in AI Features settings."
+            "value" : "Configure Duck.ai in AI Features settings."
           }
         }
       }

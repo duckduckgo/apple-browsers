@@ -47,7 +47,7 @@ enum UserText {
     // MARK: Preferences - Duck.ai Premium
     static let preferencesPaidAIChatTitle = NSLocalizedString("subscription.paid.ai.chat.title", bundle: Bundle.module, value: "Duck.ai", comment: "Title of the preferences pane for Duck.ai Pro")
     static let openPaidAIChatButton = NSLocalizedString("subscription.preferences.paid.ai.chat.button", bundle: Bundle.module, value: "Open Duck.ai", comment: "Title for the preferences pane button to open Duck.ai Pro")
-    static let disableDuckAILink = NSLocalizedString("subscription.preferences.paid.ai.chat.disable.link", bundle: Bundle.module, value: "Disable Duck.ai in AI Features settings.", comment: "Text linking to the settings where it is possible to disable all AI features")
+    static let disableDuckAILink = NSLocalizedString("subscription.preferences.paid.ai.chat.disable.link", bundle: Bundle.module, value: "Configure Duck.ai in AI Features settings.", comment: "Text linking to the settings where it is possible to configure all AI features")
     static let enableDuckAILink = NSLocalizedString("subscription.preferences.paid.ai.chat.enable.link", bundle: Bundle.module, value: "Enable Duck.ai in AI Features settings.", comment: "Text linking to the settings where it is possible to enable all AI features")
 
     // MARK: Preferences - Identity Theft Restoration

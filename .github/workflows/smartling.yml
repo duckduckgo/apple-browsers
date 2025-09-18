@@ -90,8 +90,87 @@ jobs:
         run: |
           ./scripts/loc_tool.sh approve --job-id "${{ github.event.inputs.job-id }}"
 
-      - name: Import
-        id: import
+      - name: Download from Smartling
         if: ${{ github.event.inputs.action == 'download' }}
         run: |
-          ./iOS/scripts/loc_import.sh
+          # Create temporary download directory
+          DOWNLOAD_DIR="$(mktemp -d)/smartling_downloads"
+          mkdir -p "$DOWNLOAD_DIR"
+
+          # Download translated files
+          ./scripts/loc_tool.sh download --job-id "${{ github.event.inputs.job-id }}" --out-dir "$DOWNLOAD_DIR"
+
+          # Reorganize files into locale folders as expected by loc_import.sh
+          # Files are downloaded as: name_locale.extension
+          # Need to reorganize as: locale/name.extension
+
+          IMPORT_DIR="$(mktemp -d)/smartling_import"
+          mkdir -p "$IMPORT_DIR"
+
+          echo "Reorganizing downloaded files into locale folders..."
+
+          for file in "$DOWNLOAD_DIR"/*; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file")
+
+              # Extract locale from filename (format: name_locale.extension)
+              if [[ "$filename" =~ ^(.+)_([a-z]{2}(-[A-Z]{2})?)\.(.+)$ ]]; then
+                base_name="${BASH_REMATCH[1]}"
+                locale="${BASH_REMATCH[2]}"
+                extension="${BASH_REMATCH[4]}"
+
+                # Create locale directory
+                mkdir -p "$IMPORT_DIR/$locale"
+
+                # Copy file with original name (without locale suffix)
+                cp "$file" "$IMPORT_DIR/$locale/${base_name}.${extension}"
+                echo "  Moved $filename -> $locale/${base_name}.${extension}"
+              fi
+            fi
+          done
+
+          # Import XLIFF files first
+          echo "Importing XLIFF files..."
+          if ls "$IMPORT_DIR"/*/*.xliff >/dev/null 2>&1; then
+            # Determine the base name from the first xliff file found
+            XLIFF_BASE=""
+            for xliff in "$IMPORT_DIR"/*/*.xliff; do
+              if [ -f "$xliff" ]; then
+                XLIFF_BASE=$(basename "$xliff" .xliff)
+                echo "Found XLIFF with base name: $XLIFF_BASE"
+                break
+              fi
+            done
+
+            if [ -n "$XLIFF_BASE" ]; then
+              ./iOS/scripts/loc_import.sh "$IMPORT_DIR" "$XLIFF_BASE"
+            fi
+          else
+            echo "No XLIFF files found to import"
+          fi
+
+          # Import stringsdict files if present
+          echo "Checking for stringsdict files..."
+          if ls "$IMPORT_DIR"/*/Localizable.stringsdict >/dev/null 2>&1; then
+            echo "Importing stringsdict files..."
+            ./iOS/scripts/loc_import.sh "$IMPORT_DIR" "Localizable"
+          fi
+
+          # Cleanup
+          rm -rf "$DOWNLOAD_DIR" "$IMPORT_DIR"
+
+          # Commit the imported translations
+          echo "Committing imported translations..."
+
+          # Check if there are any changes to commit
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            # Add all changes
+            git add -A
+
+            # Create commit message
+            git commit -m "Import translations from Smartling job ${{ github.event.inputs.job-id }}"
+
+            echo "✅ Translations committed successfully"
+          fi

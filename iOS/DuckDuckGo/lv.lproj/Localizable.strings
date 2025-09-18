@@ -1709,7 +1709,7 @@
 "feedback.form.submit" = "Iesniegt";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Palīdzi uzlabot Privacy Pro";
+"feedback.form.title" = "Palīdzi uzlabot DuckDuckGo abonementu";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -2728,9 +2728,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Par";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "Turklāt mēs piedāvājam arī [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), mūsu trīs vienā abonēšanas pakalpojumu, kas ir integrēts mūsu pārlūkprogrammā. Privacy Pro abonenti saņem vēl lielāku privātuma aizsardzību ar ātru un vienkāršu [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), kas palīdz pasargāt tavas darbības tiešsaistē, pakalpojumu, kas atrod un izdzēš tavu personisko informāciju no cilvēku meklētāju vietnēm, un pakalpojumu, kas atjauno tavu identitāti, ja tā tiek nozagta.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "Papildus tam mēs piedāvājam arī [DuckDuckGo abonementu](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integrēts mūsu pārlūkprogrammā. Abonenti saņem vēl lielāku privātuma aizsardzību ar ātru un vienkāršu [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), kas palīdz pasargāt tavas darbības tiešsaistē un sniedz piekļuvi uzlabotiem MI modeļiem mūsu privātajā MI tērzēšanas pakalpojumā Duck.ai, un pakalpojumam, kas atrod un izdzēš tavu personisko informāciju no personu meklēšanas vietnēm, un pakalpojumam, kas atjauno tavu identitāti, ja tā tiek nozagta.";
 
@@ -2849,7 +2846,7 @@
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo citās platformās";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Tavs Privacy Pro abonements ir beidzies";
+"settings.duckduckgo.subscription.expired.title" = "Tavs DuckDuckGo abonements ir beidzies.";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Bloķē e-pasta izsekotājus un paslēp savu adresi, nemainot e-pasta pakalpojumu sniedzēju.\n[Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2938,9 +2935,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "Ieslēgts";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Privātuma politika un Pakalpojumu sniegšanas noteikumi";
 
@@ -3010,23 +3004,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Man ir abonements";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Tavs Privacy Pro abonements ir beidzies";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "DuckDuckGo abonements";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Ja tava identitāte tiks nozagta, mēs palīdzēsim to atjaunot";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Iegūsti Privacy Pro";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Abonementa iestatījumi";
@@ -3045,9 +3030,6 @@
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Izmēģini bez maksas";
-
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Izmēģināt Privacy Pro bez maksas";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3199,9 +3181,6 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Rediģēt e-pasta adresi";
 
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "Pievieno šai ierīcei savu Privacy Pro abonementu";
-
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Atcelt";
 
@@ -3220,9 +3199,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Sākt darbu";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Izmanto e-pasta adresi, lai pievienotu Privacy Pro šai ierīcei.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "Pievienot, izmantojot e-pasta adresi";
 
@@ -3234,15 +3210,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Pievienot e-pasta adresi";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Pievieno Privacy Pro citām ierīcēm";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Pievieno Privacy Pro citām ierīcēm ar Apple ID vai piesaistot e-pasta adresi. **[Uzzināt vairāk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Izmanto šo e-pasta adresi, lai pievienotu abonementu citām ierīcēm DuckDuckGo lietotnē. Dodies uz sadaļu \"Iestatījumi\" > Privacy Pro > \"Man ir abonements\". **[Uzzināt vairāk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Tavs abonements tika iegādāts Google Play veikalā. Lai atjaunotu abonementu, lūdzu, atver Google Play veikala abonēšanas iestatījumus ierīcē, kas ir pierakstījusies tajā pašā Google kontā, kurā sākotnēji iegādājies abonementu.";
@@ -3283,9 +3250,6 @@
 /* FAQ Button */
 "subscription.faq" = "Bieži uzdotie jautājumi un atbalsts";
 
-/* FAQ Description */
-"subscription.faq.description" = "Saņem atbildes uz bieži uzdotiem jautājumiem vai sazinies ar Privacy Pro atbalsta dienestu mūsu palīdzības lapās.";
-
 /* Share Feedback Button */
 "subscription.feedback" = "Kopīgot atsauksmi";
 
@@ -3319,14 +3283,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Skatīt plānus";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Aktivizē Privacy Pro datorā, lai iestatītu Personal Information Removal";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "DuckDuckGo pārlūkprogrammā galddatoram dodies uz %1$@ un noklikšķini uz %2$@, lai sāktu.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Iestatījumi > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Iestatījumi > Abonēt DuckDuckGo";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Man ir abonements";
@@ -3351,9 +3312,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Noņemt no šīs ierīces";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "Šajā ierīcē vairs nevarēsi piekļūt savam Privacy Pro abonementam. Tas neatcels tavu abonementu, un tas paliks aktīvs citās tavās ierīcēs.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Vai noņemt no šīs ierīces?";
@@ -3426,9 +3384,6 @@
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Tavs gada abonements atjaunojas %@.";
-
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Bezmaksas izmēģinājuma periods ir aktīvs";

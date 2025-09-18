@@ -1709,7 +1709,7 @@
 "feedback.form.submit" = "Send";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Hjelp oss med å forbedre Privacy Pro";
+"feedback.form.title" = "Hjelp oss å forbedre DuckDuckGo-abonnementet";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -2728,9 +2728,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Om";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "I tillegg tilbyr vi [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), en tre-i-ett abonnementstjeneste, integrert i nettleseren vår. Som abonnent på Privacy Pro får du enda mer personvernbeskyttelse med en rask og enkel [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), som bidrar til å sikre nettaktiviteten din; en tjeneste som finner og fjerner personopplysningene dine fra personsøknettsteder; og en tjeneste som gjenoppretter identiteten din hvis den skulle bli stjålet.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "I tillegg tilbyr vi [DuckDuckGo-abonnementet](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integrert i nettleseren vår. Som abonnent får du enda mer personvernbeskyttelse med en rask og enkel [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), som bidrar til å sikre nettaktiviteten din; tilgang til avanserte AI-modeller i vår private AI-chattjeneste Duck.ai; en tjeneste som finner og fjerner personopplysninger fra personsøkernettsteder; og en tjeneste som gjenoppretter identiteten din hvis den skulle bli stjålet.";
 
@@ -2849,7 +2846,7 @@
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo på andre plattformer";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Abonnementet ditt på Privacy Pro har utløpt";
+"settings.duckduckgo.subscription.expired.title" = "DuckDuckGo-abonnementet er utløpt";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Blokker e-postsporere og skjul adressen din uten å bytte e-postleverandør.\n[Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2938,9 +2935,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "På";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Personvernerklæring og vilkår for bruk";
 
@@ -3010,23 +3004,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Jeg har et abonnement";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Abonnementet ditt på Privacy Pro har utløpt";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "DuckDuckGo-abonnement";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Hvis identiteten din blir stjålet, hjelper vi deg med å få den tilbake";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Skaff deg Privacy Pro";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Abonnementsinnstillinger";
@@ -3045,9 +3030,6 @@
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Prøv gratis";
-
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Prøv Privacy Pro gratis";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3199,9 +3181,6 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Rediger e-postadresse";
 
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "Legg til Privacy Pro-abonnementet ditt på denne enheten";
-
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Avbryt";
 
@@ -3220,9 +3199,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Kom i gang";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Bruk en e-postadresse for å legge til Privacy Pro på denne enheten.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "Legg til via e-postadresse";
 
@@ -3234,15 +3210,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Legg til e-postadresse";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Legg til Privacy Pro på andre enheter";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Legg til Privacy Pro på andre enheter via Apple ID eller ved å koble til en e-postadresse. **[Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Bruk denne e-postadressen til å legge til abonnementet ditt på andre enheter i DuckDuckGo-appen. Gå til Innstillinger > Privacy Pro > Jeg har et abonnement. **[Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Abonnementet ditt ble kjøpt gjennom Google Play Store. Hvis du vil fornye abonnementet, må du åpne abonnementsinnstillingene for Google Play Store på en enhet som er logget på den samme Google-kontoen som du brukte til å kjøpe abonnementet.";
@@ -3283,9 +3250,6 @@
 /* FAQ Button */
 "subscription.faq" = "Vanlige spørsmål og kundestøtte";
 
-/* FAQ Description */
-"subscription.faq.description" = "Få svar på ofte stilte spørsmål eller kontakt Privacy Pro-støtte fra hjelpesidene våre.";
-
 /* Share Feedback Button */
 "subscription.feedback" = "Del tilbakemelding";
 
@@ -3319,14 +3283,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Se abonnementer";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Aktiver Privacy Pro på en datamaskin for å konfigurere Personal Information Removal";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "I DuckDuckGo-nettleseren for datamaskin går du til %1$@ og klikker på %2$@ for å komme i gang.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Innstillinger > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Innstillinger > Abonner på DuckDuckGo";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Jeg har et abonnement";
@@ -3351,9 +3312,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Fjern fra denne enheten";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "Du får ikke lenger tilgang til Privacy Pro-abonnementet ditt på denne enheten. Dette avslutter ikke abonnementet, det er fortsatt aktivt på de andre enhetene.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Vil du fjerne det fra denne enheten?";
@@ -3426,9 +3384,6 @@
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Årsabonnementet ditt fornyes %@.";
-
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Gratis prøveperiode er aktiv";

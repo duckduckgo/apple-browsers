@@ -34,11 +34,10 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     @Published var email: String?
     var hasEmail: Bool { !(email?.isEmpty ?? true) }
 
-    private var isRebrandingOn: () -> Bool
     @Published private(set) var rebrandingMessageDismissed: Bool = false
 
     public var showRebrandingMessage: Bool {
-        return isRebrandingOn() && !rebrandingMessageDismissed
+        return !rebrandingMessageDismissed
     }
 
     private var subscriptionPlatform: PrivacyProSubscription.Platform?
@@ -71,12 +70,10 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
                 subscriptionManager: SubscriptionManagerV2,
                 subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>,
-                keyValueStore: ThrowingKeyValueStoring,
-                isRebrandingOn: @escaping () -> Bool) {
+                keyValueStore: ThrowingKeyValueStoring) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.keyValueStore = keyValueStore
-        self.isRebrandingOn = isRebrandingOn
         self.rebrandingMessageDismissed = (try? keyValueStore.object(forKey: rebrandingDismissedKey) as? Bool) ?? false
 
         Task {
@@ -324,7 +321,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
             }
 
         case .expired, .inactive:
-            self.subscriptionDetails = UserText.preferencesSubscriptionExpiredCaption(isRebrandingOn: isRebrandingOn(), formattedDate: formattedDate)
+            self.subscriptionDetails = UserText.preferencesSubscriptionExpiredCaption(formattedDate: formattedDate)
         default:
             if hasActiveTrialOffer {
                 self.subscriptionDetails = UserText.preferencesTrialSubscriptionExpiringCaption(formattedDate: formattedDate)

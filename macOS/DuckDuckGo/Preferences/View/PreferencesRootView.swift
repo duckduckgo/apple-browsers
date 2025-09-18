@@ -376,7 +376,7 @@ enum Preferences {
                 case .identityTheftRestoration:
                     SubscriptionUI.PreferencesIdentityTheftRestorationView(model: identityTheftRestorationModel!)
                 case .subscriptionSettings:
-                    SubscriptionUI.PreferencesSubscriptionSettingsViewV2(model: subscriptionSettingsModel!, isSubscriptionRebrandingOn: { featureFlagger.isFeatureOn(.subscriptionRebranding) }, isPaidAIChatOn: { featureFlagger.isFeatureOn(.paidAIChat) })
+                    SubscriptionUI.PreferencesSubscriptionSettingsViewV2(model: subscriptionSettingsModel!, isPaidAIChatOn: { featureFlagger.isFeatureOn(.paidAIChat) })
                 case .autofill:
                     AutofillView(model: AutofillPreferencesModel())
                 case .accessibility:
@@ -523,8 +523,7 @@ enum Preferences {
             return PreferencesSubscriptionSettingsModelV2(userEventHandler: userEventHandler,
                                                           subscriptionManager: subscriptionManager,
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
-                                                          keyValueStore: NSApp.delegateTyped.keyValueStore,
-                                                          isRebrandingOn: { featureFlagger.isFeatureOn(.subscriptionRebranding) })
+                                                          keyValueStore: NSApp.delegateTyped.keyValueStore)
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {

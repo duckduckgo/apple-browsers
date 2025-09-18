@@ -1709,7 +1709,7 @@
 "feedback.form.submit" = "Potrdi";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Pomagajte izboljšati Privacy Pro";
+"feedback.form.title" = "Pomagajte izboljšati naročnino DuckDuckGo";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -2728,9 +2728,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Več o";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "Poleg tega ponujamo tudi [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), naročniško storitev tri v enem, integrirano v naš brskalnik. Naročniki na Privacy Pro dobijo še večjo zaščito zasebnosti s hitrim in preprostim omrežjem [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), ki pomaga zaščititi vašo spletno dejavnost, storitev, ki najde in odstrani vaše osebne podatke s spletnih mest za iskanje ljudi, in storitev, ki obnovi vašo identiteto, če je ukradena.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "Poleg tega ponujamo tudi [naročnino DuckDuckGo],(ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integrirano v naš brskalnik. Naročniki dobijo še večjo zaščito zasebnosti s hitrim in preprostim omrežjem [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), ki pomaga zaščititi vašo spletno dejavnost, dostop do naprednih modelov umetne inteligence v naši zasebni storitvi klepetanja z umetno inteligenco Duck.ai, storitev, ki najde in odstrani vaše osebne podatke s spletnih mest za iskanje ljudi, in storitev, ki obnovi vašo identiteto, če je ukradena.";
 
@@ -2765,7 +2762,7 @@
 "settings.ai.experimental.picker.search_only" = "Samo iskanje";
 
 /* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Try the new option to toggle between search and Duck.ai in the Address Bar.";
+"settings.ai.new.picker.footer" = "Preizkusite novo možnost preklopa med iskanjem in Duck.ai v naslovni vrstici.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Upravljanje bližnjic Duck.ai";
@@ -2849,7 +2846,7 @@
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo na drugih platformah";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Vaša naročnina na Privacy Pro je potekla";
+"settings.duckduckgo.subscription.expired.title" = "Vaša naročnina na DuckDuckGo je potekla";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Blokirajte sledilnike e-pošte in skrijte svoj naslov, ne da bi vam bilo treba zamenjati ponudnika e-pošte.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2938,9 +2935,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "Vključeno";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Pravilnik o zasebnosti in pogoji storitve";
 
@@ -3010,23 +3004,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Imam naročnino";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Vaša naročnina na Privacy Pro je potekla";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "Naročnina DuckDuckGo";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Če vam ukradejo identiteto, vam jo bomo pomagali povrniti.";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration (Obnovitev v primeru kraje identitete)";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Pridobite Privacy Pro";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Nastavitve naročnine";
@@ -3045,9 +3030,6 @@
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Poskusite brezplačno";
-
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Preizkusite Privacy Pro brezplačno";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3199,9 +3181,6 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Urejanje e-naslova";
 
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "V to napravo dodajte svojo naročnino na Privacy Pro";
-
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Prekliči";
 
@@ -3220,9 +3199,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Začni";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Uporabite e-poštni naslov, da v to napravo dodate Privacy Pro.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "Dodaj prek e-poštnega naslova";
 
@@ -3234,15 +3210,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Dodajte e-naslov";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Dodajte Privacy Pro v druge naprave";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Dodajte Privacy Pro v svoje druge naprave prek storitve Apple ID ali z uporabo e-poštnega naslova. **[Več o tem](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Uporabite ta e-naslov za dodajanje naročnine v drugih napravah v aplikaciji DuckDuckGo. Pojdite v Nastavitve > Privacy Pro > Imam naročnino. **[Več o tem](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Vaša naročnina je bila kupljena v trgovini Google Play. Če želite podaljšati naročnino, odprite nastavitve naročnine v trgovini Google Play v napravi, v kateri ste prijavljeni v isti račun Google, kot ste ga uporabili za prvotni nakup naročnine.";
@@ -3283,9 +3250,6 @@
 /* FAQ Button */
 "subscription.faq" = "Pogosta vprašanja in podpora";
 
-/* FAQ Description */
-"subscription.faq.description" = "Poiščite odgovore na pogosta vprašanja ali stopite v stik s podporo za naročnino Privacy Pro na naših straneh za pomoč.";
-
 /* Share Feedback Button */
 "subscription.feedback" = "Delite povratne informacije";
 
@@ -3319,14 +3283,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Oglejte si načrte";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Aktivirajte Privacy Pro na namizju, da nastavite Personal Information Removal";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "V brskalniku DuckDuckGo za namizje pojdite na %1$@ in kliknite %2$@, da začnete.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Nastavitve > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Nastavitve > Naročite se na DuckDuckGo";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Imam naročnino";
@@ -3351,9 +3312,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Odstrani iz te naprave";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "V tej napravi ne boste mogli več dostopati do naročnine Privacy Pro. S tem ne boste preklicali naročnine, ki bo ostala aktivna v drugih napravah.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Želite odstraniti iz te naprave?";
@@ -3426,9 +3384,6 @@
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Vaša letna naročnina se bo obnovila dne %@.";
-
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Brezplačni preizkus je aktiven";

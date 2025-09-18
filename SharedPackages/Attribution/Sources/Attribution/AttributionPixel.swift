@@ -19,7 +19,7 @@
 import Foundation
 import PixelKit
 
-enum AttributionPixel: PixelKitEvent {
+enum AttributionPixel: PixelKitEvent { // TODO: check special pixel extension requirements
     case userRetentionWeek(origin: String?, installDate: String?, defaultBrowser: Bool, count: Int)
     case userRetentionMonth(origin: String?, installDate: String?, defaultBrowser: Bool, count: Int)
     case userActivePastWeek(origin: String?, installDate: String?, days: Int)

@@ -43,26 +43,19 @@ public enum TimePast: Equatable, Codable {
         guard days > 0 else {
             return .none
         }
+        // 0 / 1-7/ 8-14 ...
+        let weeks = Float(days-1) / 7
 
-        let weeks = days / 7
-
-        guard weeks > 0 else {
-            return .none
-        }
-
-        // If we have more than 3 weeks, switch to months
-        // Months are calculated as weeks/4 (every 4 weeks = 1 month)
-        if weeks > 3 {
-            let months = weeks / 4
-            return .months(months)
+        if weeks < 4 {
+            return .weeks(Int(weeks+1))
         } else {
-            return .weeks(weeks)
+            let months = Float(days-1) / 28
+            return .months(Int(months+1))
         }
     }
 
     private static func daysBetween(from startDate: Date, to endDate: Date) -> Int {
         let timeInterval = endDate.timeIntervalSince(startDate)
-        let secondsPerDay: TimeInterval = 24 * 60 * 60
-        return Int(timeInterval / secondsPerDay)
+        return Int(timeInterval / .day)
     }
 }

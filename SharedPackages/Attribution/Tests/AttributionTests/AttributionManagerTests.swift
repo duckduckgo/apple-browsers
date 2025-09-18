@@ -60,10 +60,11 @@ final class AttributionManagerTests: XCTestCase {
         let featureFlagger: any FeatureFlagger = MockFeatureFlagger()
         let originProvider: AttributionOriginProvider = AttributionOriginProviderMock()
 
-        var attributionManager = AttributionManager(pixelKit: pixelKit,
-                                                dataStoring: dataStorage,
-                                                featureFlagger: featureFlagger,
-                                                originProvider: originProvider)
+//        var attributionManager = AttributionManager(pixelKit: pixelKit,
+//                                                    dataStoring: dataStorage,
+//                                                    featureFlagger: featureFlagger,
+//                                                    originProvider: originProvider,
+//                                                    defaultBrowserProviding: <#any AttributionDefaultBrowserProviding#>)
 
         // >>>
     }

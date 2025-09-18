@@ -96,18 +96,19 @@ public final class AttributionManager {
             return
         }
 
-        calculateRetention()
+        processRetention()
     }
 
     func userDidSearch() {
         guard isEnabled else { return }
 
+        processActiveSearchDays()
     }
 
     // Calculations
 
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1211326699062077?focus=true
-    func calculateRetention() {
+    func processRetention() {
 
         guard let installDate = dataStorage.installDate else {
             Logger.attribution.error("Install date missing")
@@ -140,8 +141,17 @@ public final class AttributionManager {
     }
 
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1211326699062078?focus=true
-    func calculateActiveSearchDays() {
+    func processActiveSearchDays() {
 
+        let search7Days = dataStorage.search7Days ?? RollingSevenDaysInt()
+        let searchCount = search7Days.count
+        if searchCount > 0 {
+            Logger.attribution.debug("\(searchCount) searches performed in the last week")
+            let bucketedSearchCount = searchCount // TODO: implement
+            pixelKit.fire(AttributionPixel.userActivePastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, days: bucketedSearchCount), frequency: .daily)
+        }
+
+        dataStorage.search7Days = search7Days
     }
 }
 

@@ -22,83 +22,66 @@ import XCTest
 final class TimePastTests: XCTestCase {
 
     let testDate = Date(timeIntervalSince1970: 434720061)
-}
 
-// MARK: - TimePast Tests
-
-extension TimePastTests {
-    
     func testTimePastCalculation() {
+
+/*
+ Install day is day 0
+ week 1 (week of install): days 1-7 after install → count 1 user_retention_week
+ They open the app on day [8,14]: count 2 user_retention_week
+ They open the app on day [15,21]: count 3 user_retention_week
+ They open the app on day [22,28]: count 4 user_retention_week
+ They open the app on day [29,56]: count 2 user_retention_month
+ ...
+ They open the app on day [141,168]: count 6 user_retention_month
+ Stop here
+ */
+
         let installDate = testDate
-        
-        // Less than 1 week - should return .none
-        let day2 = Calendar.current.date(byAdding: .day, value: 2, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day2, andInstallationDate: installDate), .none)
-        
-        let day3 = Calendar.current.date(byAdding: .day, value: 3, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day3, andInstallationDate: installDate), .none)
-        
-        let day4 = Calendar.current.date(byAdding: .day, value: 4, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day4, andInstallationDate: installDate), .none)
-        
-        // Week 1 boundary tests
-        let day6 = Calendar.current.date(byAdding: .day, value: 6, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day6, andInstallationDate: installDate), .none)
-        
-        let week1Date = Calendar.current.date(byAdding: .day, value: 7, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: week1Date, andInstallationDate: installDate), .weeks(1))
-        
-        let day8 = Calendar.current.date(byAdding: .day, value: 8, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day8, andInstallationDate: installDate), .weeks(1))
-        
+
+        // Install date
+        XCTAssertEqual(TimePast.timePastFrom(date: installDate, andInstallationDate: installDate), .none)
+
+        // Week 1
+        let day2 = Calendar.current.date(byAdding: .day, value: 1, to: installDate)!
+        XCTAssertEqual(TimePast.timePastFrom(date: day2, andInstallationDate: installDate), .weeks(1))
+
+        let day7 = Calendar.current.date(byAdding: .day, value: 7, to: installDate)!
+        XCTAssertEqual(TimePast.timePastFrom(date: day7, andInstallationDate: installDate), .weeks(1))
+
         // Week 2 boundary tests
-        let day13 = Calendar.current.date(byAdding: .day, value: 13, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day13, andInstallationDate: installDate), .weeks(1))
-        
-        let week2Date = Calendar.current.date(byAdding: .day, value: 14, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: week2Date, andInstallationDate: installDate), .weeks(2))
-        
-        let day15 = Calendar.current.date(byAdding: .day, value: 15, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day15, andInstallationDate: installDate), .weeks(2))
-        
+        let day8 = Calendar.current.date(byAdding: .day, value: 8, to: installDate)!
+        XCTAssertEqual(TimePast.timePastFrom(date: day8, andInstallationDate: installDate), .weeks(2))
+
+        let day14 = Calendar.current.date(byAdding: .day, value: 14, to: installDate)!
+        XCTAssertEqual(TimePast.timePastFrom(date: day14, andInstallationDate: installDate), .weeks(2))
+
         // Week 3 boundary tests
-        let day20 = Calendar.current.date(byAdding: .day, value: 20, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day20, andInstallationDate: installDate), .weeks(2))
-        
-        let week3Date = Calendar.current.date(byAdding: .day, value: 21, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: week3Date, andInstallationDate: installDate), .weeks(3))
-        
+        let day15 = Calendar.current.date(byAdding: .day, value: 15, to: installDate)!
+        XCTAssertEqual(TimePast.timePastFrom(date: day15, andInstallationDate: installDate), .weeks(3))
+
+        let day21 = Calendar.current.date(byAdding: .day, value: 21, to: installDate)!
+        XCTAssertEqual(TimePast.timePastFrom(date: day21, andInstallationDate: installDate), .weeks(3))
+
+        // Week 4 boundary tests
         let day22 = Calendar.current.date(byAdding: .day, value: 22, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day22, andInstallationDate: installDate), .weeks(3))
-        
-        // Week 4 = Month 1 boundary tests (28 days)
-        let day27 = Calendar.current.date(byAdding: .day, value: 27, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day27, andInstallationDate: installDate), .weeks(3))
-        
-        let month1Date = Calendar.current.date(byAdding: .day, value: 28, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: month1Date, andInstallationDate: installDate), .months(1))
-        
+        XCTAssertEqual(TimePast.timePastFrom(date: day22, andInstallationDate: installDate), .weeks(4))
+
+        let day28 = Calendar.current.date(byAdding: .day, value: 28, to: installDate)!
+        XCTAssertEqual(TimePast.timePastFrom(date: day28, andInstallationDate: installDate), .weeks(4))
+
+        // Month 2 boundary tests
         let day29 = Calendar.current.date(byAdding: .day, value: 29, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day29, andInstallationDate: installDate), .months(1))
+        XCTAssertEqual(TimePast.timePastFrom(date: day29, andInstallationDate: installDate), .months(2))
 
-        // Month 2 boundary tests (56 days)
-        let day55 = Calendar.current.date(byAdding: .day, value: 55, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day55, andInstallationDate: installDate), .months(1))
+        let day56 = Calendar.current.date(byAdding: .day, value: 56, to: installDate)!
+        XCTAssertEqual(TimePast.timePastFrom(date: day56, andInstallationDate: installDate), .months(2))
 
-        let week8Date = Calendar.current.date(byAdding: .day, value: 56, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: week8Date, andInstallationDate: installDate), .months(2))
-        
-        let day57 = Calendar.current.date(byAdding: .day, value: 57, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day57, andInstallationDate: installDate), .months(2))
-        
-        // Week 16 = Month 4 boundary tests (112 days)
-        let day111 = Calendar.current.date(byAdding: .day, value: 111, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day111, andInstallationDate: installDate), .months(3))
-        
-        let month4Date = Calendar.current.date(byAdding: .day, value: 112, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: month4Date, andInstallationDate: installDate), .months(4))
-        
-        let day113 = Calendar.current.date(byAdding: .day, value: 113, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day113, andInstallationDate: installDate), .months(4))
+        // Month 6 boundary tests
+        let day141 = Calendar.current.date(byAdding: .day, value: 141, to: installDate)!
+        XCTAssertEqual(TimePast.timePastFrom(date: day141, andInstallationDate: installDate), .months(6))
+
+        let day168 = Calendar.current.date(byAdding: .day, value: 168, to: installDate)!
+        XCTAssertEqual(TimePast.timePastFrom(date: day168, andInstallationDate: installDate), .months(6))
     }
 }

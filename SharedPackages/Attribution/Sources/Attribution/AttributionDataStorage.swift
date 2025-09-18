@@ -23,10 +23,7 @@ public protocol AttributionDataStoring {
     var installDate: Date? { get set }
     var lastRetentionThreshold: TimePast? { get set }
 
-    // Tresholds
-//    var retentionLastValue: Int { get set }
-//    var lastSearch7DaysValue: Int? { get set }
-//    var search7Days: RollingSevenDaysBool? { get set }
+    var search7Days: RollingSevenDaysInt? { get set }
 
     func removeAll()
 }
@@ -47,7 +44,7 @@ class AttributionDataStorage: AttributionDataStoring {
         case lastRetentionThreshold
 
         // Searches
-
+        case search7Days
     }
 
     // MARK: - Utilities
@@ -87,8 +84,8 @@ class AttributionDataStorage: AttributionDataStoring {
 
     // MARK: - Searches
 
-//    var search7Days: RollingSevenDaysBool? {
-//        set { encode(newValue, to: userDefaults, key: .search7Days) }
-//        get { return decode(from: userDefaults, key: .search7Days) }
-//    }
+    var search7Days: RollingSevenDaysInt? {
+        set { encode(newValue, to: userDefaults, key: .search7Days) }
+        get { return decode(from: userDefaults, key: .search7Days) }
+    }
 }

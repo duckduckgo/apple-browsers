@@ -54,12 +54,12 @@ final class SERPSettingsTests: XCTestCase {
         super.tearDown()
     }
     
-    func test_isDuckAIEnabled_WhenAIChatEnabled_ReturnsTrue() {
+    func test_isAIChatEnabled_WhenAIChatEnabled_ReturnsTrue() {
         // GIVEN
         mockAIChatSettings.isAIChatEnabled = true
         
         // WHEN & THEN
-        XCTAssertTrue(serpSettings.isDuckAIEnabled)
+        XCTAssertTrue(serpSettings.isAIChatEnabled)
     }
     
     func test_isDuckAIEnabled_WhenAIChatDisabled_ReturnsFalse() {
@@ -67,7 +67,7 @@ final class SERPSettingsTests: XCTestCase {
         mockAIChatSettings.isAIChatEnabled = false
         
         // WHEN & THEN
-        XCTAssertFalse(serpSettings.isDuckAIEnabled)
+        XCTAssertFalse(serpSettings.isAIChatEnabled)
     }
     
     func test_isAllowFollowUpQuestionsEnabled_WhenNotSet_ReturnsNil() {

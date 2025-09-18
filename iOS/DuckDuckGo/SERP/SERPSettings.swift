@@ -45,7 +45,7 @@ final class SERPSettings: SERPSettingsProviding {
         self.notificationCenter = notificationCenter
     }
     
-    var isDuckAIEnabled: Bool {
+    var isAIChatEnabled: Bool {
         aiChatSettings.isAIChatEnabled
     }
 

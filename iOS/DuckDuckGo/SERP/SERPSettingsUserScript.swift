@@ -36,7 +36,6 @@ protocol SERPSettingsUserScriptDelegate: AnyObject {
 
     func serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(_ userScript: SERPSettingsUserScript)
     func serpSettingsUserScriptDidRequestToCloseTabAndOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript)
-
     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript)
 
 }
@@ -46,7 +45,7 @@ public struct SERPSettingsSnapshot: Codable {
     public let allowFollowUpQuestion: Bool?
     
     public init(provider: SERPSettingsProviding) {
-        self.duckAI = provider.isDuckAIEnabled
+        self.duckAI = provider.isAIChatEnabled
         self.allowFollowUpQuestion = provider.isAllowFollowUpQuestionsEnabled
     }
     

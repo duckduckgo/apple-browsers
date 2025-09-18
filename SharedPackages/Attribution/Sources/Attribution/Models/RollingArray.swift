@@ -71,7 +71,7 @@ import Foundation
 /// the number of non-nil slots.
 public class RollingArray<T: Codable & Equatable>: Codable {
 
-    private var values: [InternalValue]
+    public var values: [InternalValue]
 
     public enum InternalValue: Codable, Equatable, CustomDebugStringConvertible {
         case unknown
@@ -129,12 +129,20 @@ public class RollingArray<T: Codable & Equatable>: Codable {
     /// ```
     public subscript(index: Int) -> T? {
         get {
-            guard index >= 0 && index < 7 else { return nil }
+            guard index >= 0 && index < values.count else { return nil }
             switch values[index] {
             case .unknown:
                 return nil
             case .value(let t):
                 return t
+            }
+        }
+        set {
+            guard index >= 0 && index < values.count else { return }
+            if let newValue = newValue {
+                values[index] = .value(newValue)
+            } else {
+                values[index] = .unknown
             }
         }
     }
@@ -163,19 +171,6 @@ public class RollingArray<T: Codable & Equatable>: Codable {
     }
     
     /// The number of non-nil values currently stored in the rolling structure.
-    ///
-    /// This count represents how many of the 7 slots contain actual values (not nil).
-    /// The count will be between 0 and 7, inclusive.
-    ///
-    /// ## Example:
-    /// ```swift
-    /// var rolling = RollingArray<Int>()
-    /// print(rolling.count) // 0
-    /// 
-    /// rolling.append(1)
-    /// rolling.append(2)
-    /// print(rolling.count) // 2
-    /// ```
     public var count: Int {
         return values.count(where: { $0 != .unknown })
     }

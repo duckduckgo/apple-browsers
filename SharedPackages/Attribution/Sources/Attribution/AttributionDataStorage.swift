@@ -23,7 +23,11 @@ public protocol AttributionDataStoring {
     var installDate: Date? { get set }
     var lastRetentionThreshold: TimePast? { get set }
 
-    var search7Days: RollingArrayInt? { get set }
+    var search8Days: RollingEightDaysInt { get set }
+    var adClick8Days: RollingEightDaysInt { get set }
+    var duckAIChat8Days: RollingEightDaysInt { get set }
+
+    var subscriptionDate: Date? { get set }
 
     func removeAll()
 }
@@ -42,9 +46,10 @@ class AttributionDataStorage: AttributionDataStoring {
 
         // retention
         case lastRetentionThreshold
-
-        // Searches
-        case search7Days
+        case search8Days
+        case adClick8Days
+        case duckAIChat8Days
+        case subscriptionDate
     }
 
     // MARK: - Utilities
@@ -82,10 +87,23 @@ class AttributionDataStorage: AttributionDataStoring {
         get { return decode(from: userDefaults, key: .lastRetentionThreshold)}
     }
 
-    // MARK: - Searches
+    var search8Days: RollingEightDaysInt {
+        set { encode(newValue, to: userDefaults, key: .search8Days) }
+        get { return decode(from: userDefaults, key: .search8Days) ?? RollingEightDaysInt() }
+    }
 
-    var search7Days: RollingArrayInt? {
-        set { encode(newValue, to: userDefaults, key: .search7Days) }
-        get { return decode(from: userDefaults, key: .search7Days) }
+    var adClick8Days: RollingEightDaysInt {
+        set { encode(newValue, to: userDefaults, key: .adClick8Days) }
+        get { return decode(from: userDefaults, key: .adClick8Days) ?? RollingEightDaysInt() }
+    }
+
+    var duckAIChat8Days: RollingEightDaysInt {
+        set { encode(newValue, to: userDefaults, key: .duckAIChat8Days) }
+        get { return decode(from: userDefaults, key: .duckAIChat8Days) ?? RollingEightDaysInt() }
+    }
+
+    var subscriptionDate: Date? {
+        set { encode(newValue, to: userDefaults, key: .subscriptionDate) }
+        get { return decode(from: userDefaults, key: .subscriptionDate) }
     }
 }

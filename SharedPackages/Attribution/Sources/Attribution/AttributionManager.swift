@@ -32,6 +32,11 @@ public protocol AttributionDefaultBrowserProviding {
 /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053?focus=true
 public final class AttributionManager {
 
+    struct Constants {
+        static let monthTimeInterval: TimeInterval = Double(Constants.daysInAMonth) * .day
+        static let daysInAMonth: Int = 28
+    }
+
     private let pixelKit: PixelKit
     private var dataStorage: AttributionDataStoring
     private let originProvider: (any AttributionOriginProvider)?
@@ -83,7 +88,7 @@ public final class AttributionManager {
         guard let installDate = dataStorage.installDate else {
             return true
         }
-        return installDate.isLessThan(daysAgo: 28 * 6)
+        return installDate.isLessThan(daysAgo: Constants.daysInAMonth * 6)
     }
 
     // MARK: - Triggers
@@ -97,17 +102,40 @@ public final class AttributionManager {
         }
 
         processRetention()
+        processActiveSearchDays()
     }
 
     func userDidSearch() {
         guard isEnabled else { return }
 
-        processActiveSearchDays()
+        recordActiveSearchDay()
+        processAverageSearchCount()
     }
 
-    // Calculations
+    func userDidClickAD() {
+        guard isEnabled else { return }
 
-    /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1211326699062077?focus=true
+        recordAdClick()
+        processAverageAdClick()
+    }
+
+    func userDidDuckAIChat() {
+        guard isEnabled else { return }
+
+        recordDuckAIChat()
+        processAverageDuckAIChat()
+    }
+
+    func userDidSubscribe() {
+        guard isEnabled else { return }
+
+        recordSubscriptionDate()
+
+    }
+
+    // MARK: - Retention
+    // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211301604929607?focus=true
+
     func processRetention() {
 
         guard let installDate = dataStorage.installDate else {
@@ -140,21 +168,90 @@ public final class AttributionManager {
         dataStorage.lastRetentionThreshold = timePastFromInstall
     }
 
-    /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1211326699062078?focus=true
+    // MARK: - Active search days
+    // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211301604929609?focus=true
+
+    func recordActiveSearchDay() {
+        let search8Days = dataStorage.search8Days
+        search8Days.increment()
+        dataStorage.search8Days = search8Days
+    }
+
     func processActiveSearchDays() {
+        let search8Days = dataStorage.search8Days
+        let searchCount = search8Days.countPast7Days
+        guard searchCount > 0 else { return }
+        Logger.attribution.debug("\(searchCount) searches performed in the last week")
+        let bucketedSearchCount = searchCount // TODO: implement
+        pixelKit.fire(AttributionPixel.userActivePastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, days: bucketedSearchCount), frequency: .daily)
+    }
 
-        let search7Days = dataStorage.search7Days ?? RollingArrayInt(capacity: 7)
+    // MARK: - Average searches
+    // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211313432282643?focus=true
 
-//new per day!
+    func processAverageSearchCount() {
+        let search8Days = dataStorage.search8Days
+        guard search8Days.countPast7Days > 1 else { return }
+        let average = search8Days.past7DaysAverage
+        let bucketedAverage = average // TODO: implement
+        Logger.attribution.debug("Average search count in the last week: \(bucketedAverage)")
+        pixelKit.fire(AttributionPixel.userAverageSearchesPastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .daily)
+    }
 
-        let searchCount = search7Days.count
-        if searchCount > 0 {
-            Logger.attribution.debug("\(searchCount) searches performed in the last week")
-            let bucketedSearchCount = searchCount // TODO: implement
-            pixelKit.fire(AttributionPixel.userActivePastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, days: bucketedSearchCount), frequency: .daily)
+    // MARK: - Average AD clicks
+    // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211301604929610?focus=true
+
+    func recordAdClick() {
+        let adClick8Days = dataStorage.adClick8Days
+        adClick8Days.increment()
+        dataStorage.adClick8Days = adClick8Days
+    }
+
+    func processAverageAdClick() {
+        let adClick8Days = dataStorage.adClick8Days
+        guard adClick8Days.countPast7Days > 1 else { return }
+        let average = adClick8Days.past7DaysAverage
+        let bucketedAverage = average // TODO: implement
+        Logger.attribution.debug("Average AD click count in the last week: \(bucketedAverage)")
+        pixelKit.fire(AttributionPixel.userAverageAdClicksPastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .daily)
+    }
+
+    // MARK: - Average Duck.ai chats
+    // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211301604929612?focus=true
+
+    func recordDuckAIChat() {
+        let duckAIChat8Days = dataStorage.duckAIChat8Days
+        duckAIChat8Days.increment()
+        dataStorage.duckAIChat8Days = duckAIChat8Days
+    }
+
+    func processAverageDuckAIChat() {
+        let duckAIChat8Days = dataStorage.duckAIChat8Days
+        guard duckAIChat8Days.countPast7Days > 1 else { return }
+        let average = duckAIChat8Days.past7DaysAverage
+        let bucketedAverage = average // TODO: implement
+        Logger.attribution.debug("Average Duck.AI chats count in the last week: \(bucketedAverage)")
+        pixelKit.fire(AttributionPixel.userAverageDuckAiUsagePastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .daily)
+    }
+
+    // MARK: - Subscription
+
+    func recordSubscriptionDate() {
+        dataStorage.subscriptionDate = Date()
+    }
+
+    func processSubscriptionCheck() {
+        guard let subscriptionDate = dataStorage.subscriptionDate else {
+            return
         }
-
-        dataStorage.search7Days = search7Days
+        let now = Date()
+        if subscriptionDate.isSameDay(now) {
+            Logger.attribution.debug("Subscription purchased today")
+            pixelKit.fire(AttributionPixel.userSubscribed(origin: originOrInstall.origin, installDate: originOrInstall.installDate, length: 1), frequency: .daily)
+        } else if TimePast.daysBetween(from: subscriptionDate, to: now) >= Constants.daysInAMonth {
+            Logger.attribution.debug("Subscription purchased more than 1 month ago")
+            pixelKit.fire(AttributionPixel.userSubscribed(origin: originOrInstall.origin, installDate: originOrInstall.installDate, length: 2), frequency: .daily)
+        }
     }
 }
 

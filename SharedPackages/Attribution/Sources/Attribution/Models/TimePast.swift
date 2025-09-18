@@ -54,7 +54,7 @@ public enum TimePast: Equatable, Codable {
         }
     }
 
-    private static func daysBetween(from startDate: Date, to endDate: Date) -> Int {
+    static func daysBetween(from startDate: Date, to endDate: Date) -> Int {
         let timeInterval = endDate.timeIntervalSince(startDate)
         return Int(timeInterval / .day)
     }

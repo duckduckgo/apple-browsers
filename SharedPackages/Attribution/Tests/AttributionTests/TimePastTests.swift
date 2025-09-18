@@ -84,4 +84,33 @@ final class TimePastTests: XCTestCase {
         let day168 = Calendar.current.date(byAdding: .day, value: 168, to: installDate)!
         XCTAssertEqual(TimePast.timePastFrom(date: day168, andInstallationDate: installDate), .months(6))
     }
+
+    func testDaysBetween() {
+        let calendar = Calendar.current
+        let baseDate = Date(timeIntervalSince1970: 0)
+
+        let sameDayStart = calendar.startOfDay(for: baseDate)
+        let sameDayEnd = calendar.date(byAdding: .hour, value: 12, to: sameDayStart)!
+        XCTAssertEqual(TimePast.daysBetween(from: sameDayStart, to: sameDayEnd), 0)
+
+        let oneDayLater = calendar.date(byAdding: .day, value: 1, to: sameDayStart)!
+        XCTAssertEqual(TimePast.daysBetween(from: sameDayStart, to: oneDayLater), 1)
+
+        let threeDaysLater = calendar.date(byAdding: .day, value: 3, to: sameDayStart)!
+        XCTAssertEqual(TimePast.daysBetween(from: sameDayStart, to: threeDaysLater), 3)
+
+        let sevenDaysLater = calendar.date(byAdding: .day, value: 7, to: sameDayStart)!
+        XCTAssertEqual(TimePast.daysBetween(from: sameDayStart, to: sevenDaysLater), 7)
+
+        let futureDate = calendar.date(byAdding: .day, value: -1, to: sameDayStart)!
+        XCTAssertEqual(TimePast.daysBetween(from: sameDayStart, to: futureDate), -1)
+
+        let startDate = calendar.date(from: DateComponents(year: 2024, month: 1, day: 15))!
+        let endDate = calendar.date(from: DateComponents(year: 2024, month: 1, day: 20))!
+        XCTAssertEqual(TimePast.daysBetween(from: startDate, to: endDate), 5)
+
+        let acrossMonths = calendar.date(from: DateComponents(year: 2024, month: 1, day: 30))!
+        let nextMonth = calendar.date(from: DateComponents(year: 2024, month: 2, day: 2))!
+        XCTAssertEqual(TimePast.daysBetween(from: acrossMonths, to: nextMonth), 3)
+    }
 }

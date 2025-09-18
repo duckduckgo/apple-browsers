@@ -53,9 +53,14 @@ jobs:
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
       - name: Install Python dependencies
         run: |
-          pip3 install aiohttp
+          pip install aiohttp
 
       - name: Export
         id: export

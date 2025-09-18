@@ -22,10 +22,13 @@ public enum DesignSystemColor {
     case background
 
     case backgroundTertiary
-    case surface
-    case surfaceTertiary
     case backgroundSheets
     case panel
+
+    // Surfaces
+    case surface // T-surface/secondary
+    case surfaceTertiary
+    case surfaceCanvas
 
     case urlBar
 

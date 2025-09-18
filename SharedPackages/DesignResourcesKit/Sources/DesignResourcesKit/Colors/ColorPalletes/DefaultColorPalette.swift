@@ -31,12 +31,14 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let xF9F9F9 = Color(0xF9F9F9)
     private static let x000000 = Color(0x000000)
     private static let xFFFFFF = Color(0xFFFFFF)
+    private static let xFAFAFA = Color(0xFAFAFA)
 
     // New dark mode colors
     private static let x080808 = Color(0x080808)
     private static let x282828 = Color(0x282828)
     private static let x373737 = Color(0x373737)
     private static let x474747 = Color(0x474747)
+    private static let x1C1C1C = Color(0x1C1C1C)
 
     // URL bar
     private static let urlBar = DynamicColor(lightColor: .white, darkColor: x474747)
@@ -44,6 +46,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Surfaces
     private static let surface = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
     private static let surfaceTertiary = DynamicColor(lightColor: .white, darkColor: .x474747)
+    private static let surfaceCanvas = DynamicColor(lightColor: xFAFAFA, darkColor: x1C1C1C)
 
     // Backgrounds
     private static let backdrop = DynamicColor(lightColor: xE0E0E0, darkColor: x080808)
@@ -152,7 +155,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .backgroundBlur: return backgroundBlur
         case .backdrop: return backdrop
         case .panel: return background
-        case .surface: return surface
         case .icons: return icons
         case .iconsSecondary: return iconsSecondary
         case .iconsTertiary: return iconsTertiary
@@ -161,7 +163,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .shadowPrimary: return shadowPrimary
         case .shadowSecondary: return shadowSecondary
         case .shadowTertiary: return shadowTertiary
-        case .surfaceTertiary: return surfaceTertiary
         case .controlsFillPrimary: return controlsFillPrimary
         case .controlsFillSecondary: return controlsFillSecondary
         case .controlsFillTertiary: return controlsFillTertiary
@@ -170,6 +171,10 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .decorationTertiary: return decorationTertiary
         case .highlightDecoration: return highlightDecoration
         case .accentContentPrimary: return accentContentPrimary
+
+        case .surface: return surface
+        case .surfaceTertiary: return surfaceTertiary
+        case .surfaceCanvas: return surfaceCanvas
 
         case .accent: return accent
         case .alertGreen: return alertGreen

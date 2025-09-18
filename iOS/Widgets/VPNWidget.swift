@@ -157,96 +157,84 @@ struct VPNStatusView: View {
     @ViewBuilder
     var body: some View {
         Group {
-            switch entry.status {
-            case .status(let status):
-                connectionView(with: status)
-            case .error, .notConfigured:
-                connectionView(with: .disconnected)
+            HStack {
+                switch entry.status {
+                case .status(let status):
+                    connectionView(with: status)
+                case .error, .notConfigured:
+                    connectionView(with: .disconnected)
+                }
+
+                Spacer()
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(16)
         .containerBackground(for: .widget) {
-            Color(designSystemColor: .backgroundSheets)
+            Color(designSystemColor: .surfaceCanvas)
         }
     }
 
     private func connectionView(with status: NEVPNStatus) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 0) {
-                Image(headerImageName(with: status))
-                    .useFullColorRendering()
-                    .padding([.bottom], 7)
-                    .accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: 0) {
+            Image(headerImageName(with: status))
+                .useFullColorRendering()
+                .padding(.bottom, 4)
+                .accessibilityHidden(true)
 
-                Text(title(with: status))
-                    .font(.system(size: 16, weight: .semibold))
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color(designSystemColor: .textPrimary))
+            Text(title(with: status))
+                .daxSubheadSemibold()
+                .foregroundStyle(Color(designSystemColor: .textPrimary))
 
+            Group {
                 if status == .connected {
                     Text(snoozeTimingStore.isSnoozing ? UserText.vpnWidgetSnoozingUntil(endDate: snoozeEndDateString) : entry.location)
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundStyle(Color(designSystemColor: .textSecondary))
-                        .opacity(status.isConnected ? 0.8 : 0.6)
                 } else {
                     Text(UserText.vpnWidgetDisconnectedSubtitle)
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundStyle(Color(designSystemColor: .textSecondary))
-                        .opacity(status.isConnected ? 0.8 : 0.6)
                 }
+            }
+            .daxCaption()
+            .foregroundStyle(Color(designSystemColor: .textPrimary))
+            .opacity(status.isConnected ? 0.8 : 0.6)
 
+            //  Should be padding of 7 here but use max space to ensure button's bottom padding looks right.
+            Spacer()
+
+            Group {
                 switch status {
                 case .connected:
                     let buttonTitle = snoozeTimingStore.isSnoozing ? UserText.vpnWidgetLiveActivityWakeUpButton : UserText.vpnWidgetDisconnectButton
                     let intent: any AppIntent = snoozeTimingStore.isSnoozing ? CancelSnoozeVPNIntent() : WidgetDisableVPNIntent()
 
                     Button(buttonTitle, intent: intent)
-                        .borderedStyle(widgetRenderingMode == .fullColor)
                         .makeAccentable(status == .connected)
-                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(snoozeTimingStore.isSnoozing ?
                                          connectButtonForegroundColor(isDisabled: false) :
-                                         disconnectButtonForegroundColor(isDisabled: status != .connected))
-                        .buttonBorderShape(.roundedRectangle(radius: 8))
+                                            disconnectButtonForegroundColor(isDisabled: status != .connected))
                         .tint(snoozeTimingStore.isSnoozing ?
                               Color(designSystemColor: .accent) :
                                 disconnectButtonBackgroundColor(isDisabled: status != .connected)
                         )
                         .disabled(status != .connected)
-                        .frame(height: 28)
-                        .padding(.top, 6)
-                        .padding(.bottom, 16)
                 case .connecting, .reasserting:
                     Button(UserText.vpnWidgetDisconnectButton, intent: WidgetDisableVPNIntent())
-                        .borderedStyle(widgetRenderingMode == .fullColor)
                         .makeAccentable(status == .connected)
-                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(disconnectButtonForegroundColor(isDisabled: status != .connected))
-                        .buttonBorderShape(.roundedRectangle(radius: 8))
                         .tint(disconnectButtonBackgroundColor(isDisabled: status != .connected))
                         .disabled(status != .connected)
-                        .frame(height: 28)
-                        .padding(.top, 6)
-                        .padding(.bottom, 16)
                 case .disconnected, .disconnecting:
                     connectButton
-                        .borderedStyle(widgetRenderingMode == .fullColor)
                         .makeAccentable(status == .disconnected)
-                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(connectButtonForegroundColor(isDisabled: status != .disconnected))
-                        .buttonBorderShape(.roundedRectangle(radius: 8))
                         .tint(Color(designSystemColor: .accent))
                         .disabled(status != .disconnected)
-                        .frame(height: 28)
-                        .padding(.top, 6)
-                        .padding(.bottom, 16)
                 default:
-                    Spacer()
+                    EmptyView()
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.top, 16)
-            Spacer()
+            .daxButton()
+            .frame(height: 30)
+            .buttonBorderShape(.roundedRectangle(radius: 12))
+            .borderedStyle(widgetRenderingMode == .fullColor)
         }
     }
 
@@ -386,7 +374,7 @@ struct VPNStatusView_Previews: PreviewProvider {
     }
 }
 
-extension Button {
+extension View {
 
     @ViewBuilder
     func borderedStyle(_ isBordered: Bool) -> some View {

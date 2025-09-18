@@ -178,7 +178,7 @@ struct FavoritesWidgetView: View {
             .padding(EdgeInsets(top: widgetFamily == .systemLarge ? 48 : 60, leading: 0, bottom: 0, trailing: 0))
 
         }
-        .widgetContainerBackground(color: Color(designSystemColor: .backgroundSheets))
+        .widgetContainerBackground(color: Color(designSystemColor: .surfaceCanvas))
     }
 
     /// iOS 17+ automatically added extra padding for the views inside the widget.
@@ -223,7 +223,7 @@ struct SearchWidgetView: View {
                 .accessibilityHidden(true)
             }.accessibilityLabel(Text(UserText.searchDuckDuckGo))
         }
-        .widgetContainerBackground(color: Color(designSystemColor: .backgroundSheets))
+        .widgetContainerBackground(color: Color(designSystemColor: .surfaceCanvas))
     }
 }
 
@@ -249,7 +249,7 @@ struct PasswordsWidgetView: View {
             }
             .accessibilityLabel(Text(UserText.passwords))
         }
-        .widgetContainerBackground(color: Color(designSystemColor: .backgroundSheets))
+        .widgetContainerBackground(color: Color(designSystemColor: .surfaceCanvas))
     }
 }
 

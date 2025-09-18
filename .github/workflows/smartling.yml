@@ -36,7 +36,7 @@ jobs:
       RUNS_ON: macos-15-xlarge # keep this in sync with runs-on above
       IOS_SMARTLING_USER_ID: ${{ secrets.IOS_SMARTLING_USER_ID }}
       IOS_SMARTLING_USER_SECRET: ${{ secrets.IOS_SMARTLING_USER_SECRET }}
-      IOS_SMARTLING_PROJECT_ID: ${{ secrets.IOS_SMARTLING_PROJECT_ID }}
+      IOS_SMARTLING_PROJECT_ID: ${{ vars.IOS_SMARTLING_PROJECT_ID }}
 
     steps:
 

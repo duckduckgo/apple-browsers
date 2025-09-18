@@ -204,17 +204,9 @@ final class PreferencesSidebarModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-                self.updatePaidAIChatStatus()
+                paidAIChatSubject.send(currentSubscriptionState.isPaidAIChatEnabled && aiFeaturesStatusProvider.isAIFeaturesEnabled ? .on : .off)
             }
             .store(in: &cancellables)
-    }
-
-    private func updatePaidAIChatStatus() {
-        let isSubscriptionEnabled = currentSubscriptionState.isPaidAIChatEnabled
-        let isAIFeaturesEnabled = aiFeaturesStatusProvider.isAIFeaturesEnabled
-        let shouldShowAsOn = isSubscriptionEnabled && isAIFeaturesEnabled
-
-        paidAIChatSubject.send(shouldShowAsOn ? .on : .off)
     }
 
     private func forceSelectedPanePixelIfNeeded() {
@@ -344,7 +336,7 @@ final class PreferencesSidebarModel: ObservableObject {
                 }
 
                 if self.currentSubscriptionState.isPaidAIChatEnabled != updatedState.isPaidAIChatEnabled {
-                    self.updatePaidAIChatStatus()
+                    paidAIChatSubject.send(updatedState.isPaidAIChatEnabled && aiFeaturesStatusProvider.isAIFeaturesEnabled ? .on : .off)
                 }
 
                 if self.currentSubscriptionState.isIdentityTheftRestorationEnabled != updatedState.isIdentityTheftRestorationEnabled {

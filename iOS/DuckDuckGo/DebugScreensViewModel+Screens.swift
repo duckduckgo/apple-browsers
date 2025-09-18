@@ -40,6 +40,9 @@ extension DebugScreensViewModel {
                 let syncPromoPresenter = SyncPromoManager(syncService: d.syncService)
                 syncPromoPresenter.resetPromos()
             }),
+            .action(title: "Reset Sync Prompt On Launch", { d in
+                try? d.keyValueStore.set(nil, forKey: SyncRecoveryPromptService.Key.hasPerformedSyncRecoveryCheck)
+            }),
             .action(title: "Reset TipKit", { d in
                 d.tipKitUIActionHandler.resetTipKitTapped()
             }),

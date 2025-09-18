@@ -7,7 +7,7 @@ appId: com.duckduckgo.mobile.ios
 - tapOn: Passwords
 - tapOn: Add 24
 - tapOn: Title
-- inputText: My Personal Website
+- inputText: mypersonalwebsite.com
 - tapOn: username@example.com
 - inputText: me@mypersonalwebsite.com
 - tapOn: example.com

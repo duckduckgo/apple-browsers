@@ -38,9 +38,9 @@ appId: com.duckduckgo.mobile.ios
 
 - tapOn: Passwords
 - scrollUntilVisible:
-    element: My Personal Website
-- assertVisible: My Personal Website
-- tapOn: My Personal Website
+    element: mypersonalwebsite.com
+- assertVisible: mypersonalwebsite.com
+- tapOn: mypersonalwebsite.com
 - assertVisible: me@mypersonalwebsite.com
 - assertVisible: mypersonalwebsite.com
 

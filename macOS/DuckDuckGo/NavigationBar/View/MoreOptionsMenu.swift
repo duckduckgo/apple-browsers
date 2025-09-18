@@ -246,7 +246,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         addPageItems()
 
-
 #if APPSTORE
         if !featureFlagger.isFeatureOn(.appStoreCheckForUpdatesFlow) {
             let checkForAppStoreUpdates = NSMenuItem(title: UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""),
@@ -459,7 +458,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         PixelKit.fire(MoreOptionsMenuPixel.printActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedPrint(self)
     }
-    
 
     private func addUpdateItem() {
         guard AppVersion.runType != .uiTests,

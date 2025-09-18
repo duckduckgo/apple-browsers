@@ -42,22 +42,22 @@ protocol SERPSettingsUserScriptDelegate: AnyObject {
 }
 
 public struct SERPSettingsSnapshot: Codable {
-    public let duckAI: Bool
+    public let aiChat: Bool
     public let allowFollowUpQuestion: Bool?
     
     public init(provider: SERPSettingsProviding) {
-        self.duckAI = provider.isAIChatEnabled
+        self.aiChat = provider.isAIChatEnabled
         self.allowFollowUpQuestion = provider.isAllowFollowUpQuestionsEnabled
     }
     
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(duckAI, forKey: .duckAI)
+        try container.encode(aiChat, forKey: .aiChat)
         try container.encodeIfPresent(allowFollowUpQuestion, forKey: .allowFollowUpQuestion)
     }
     
     private enum CodingKeys: String, CodingKey {
-        case duckAI = "duckai"
+        case aiChat = "duckai"
         case allowFollowUpQuestion = "kbg"
     }
 }

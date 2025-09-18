@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -euo pipefail
 
@@ -24,7 +24,7 @@ STRINGSDICT="$IOS_SCRIPTS_DIR/../DuckDuckGo/en.lproj/Localizable.stringsdict"
 usage() {
   cat <<EOF
 Usage:
-  $0 upload
+  $0 upload --job-name <name> --files <file1> [<file2> ...]
   $0 approve --job-id <id>
   $0 status --job-id <id>
   $0 download --job-id <id> [--out-dir <path>]
@@ -58,20 +58,51 @@ run_in_directory "$TOOL_DIR" swift build -c release >/dev/null
 
 case "$cmd" in
   upload)
-    # Export XLIFF
-    # NO_OPEN will prevent opening Finder
-    NO_OPEN=1 "$IOS_SCRIPTS_DIR/loc_export.sh"
-    
-    XLIFF=$(ls -1 "$XLIFF_DIR"/*.xliff 2>/dev/null | head -n 1 || true)
-    [ -n "$XLIFF" ] || { echo "No .xliff found in $XLIFF_DIR" >&2; exit 1; }
+    # Parse required arguments
+    JOB_NAME=""
+    FILES=()
 
-    echo "[loc_tool] Using XLIFF: $XLIFF"
-    echo "[loc_tool] Using STRINGSDICT: $STRINGSDICT"
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --job-name)
+          JOB_NAME="$2"
+          shift 2
+          ;;
+        --files)
+          shift
+          # Collect all files until next option or end
+          while [ $# -gt 0 ] && [[ "$1" != --* ]]; do
+            FILES+=("$1")
+            shift
+          done
+          ;;
+        *)
+          echo "Unknown option: $1" >&2
+          usage
+          exit 1
+          ;;
+      esac
+    done
+
+    # Validate required arguments
+    if [ -z "$JOB_NAME" ] || [ ${#FILES[@]} -eq 0 ]; then
+      echo "Usage: $0 upload --job-name <name> --files <file1> [<file2> ...]" >&2
+      exit 1
+    fi
+
+    # Validate file paths
+    for file in "${FILES[@]}"; do
+      [ -f "$file" ] || { echo "File not found: $file" >&2; exit 1; }
+    done
+
+    echo "[loc_tool] Job name: $JOB_NAME"
+    echo "[loc_tool] Files to upload:"
+    for file in "${FILES[@]}"; do
+      echo "  - $file"
+    done
 
     # Run CLI
-    # Use the current git branch as the job name
-    JOB_NAME=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
-    CMD=("$TOOL_BIN" upload --job-name "$JOB_NAME" --xliff "$XLIFF" --stringsdict "$STRINGSDICT")
+    CMD=("$TOOL_BIN" upload --job-name "$JOB_NAME" --files "${FILES[@]}")
     run_in_directory "$TOOL_DIR" "${CMD[@]}"
     ;;
   status)

@@ -63,7 +63,7 @@ struct SmartlingOptions: ParsableArguments {
 // MARK: - Upload Command
 struct Upload: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "Upload XLIFF and stringsdict files to create a translation job"
+        abstract: "Upload translation files to create a translation job"
     )
 
     @OptionGroup var smartling: SmartlingOptions
@@ -71,18 +71,14 @@ struct Upload: AsyncParsableCommand {
     @Option(name: .long, help: "Job name")
     var jobName: String
 
-    @Option(name: .long, help: "XLIFF file path")
-    var xliff: String
-
-    @Option(name: .long, help: "Stringsdict file path")
-    var stringsdict: String
+    @Option(name: .long, parsing: .upToNextOption, help: "File paths to upload")
+    var files: [String] = []
 
     func run() async throws {
         let credentials = try smartling.validateCredentials()
         try await LocalizationTool.handleUpload(
             jobName: jobName,
-            xliffPath: xliff,
-            stringsdictPath: stringsdict,
+            filePaths: files,
             credentials: credentials
         )
     }
@@ -146,16 +142,24 @@ struct Download: AsyncParsableCommand {
 extension LocalizationTool {
     static func handleUpload(
         jobName: String,
-        xliffPath: String,
-        stringsdictPath: String,
+        filePaths: [String],
         credentials: Credentials
     ) async throws {
-        let xliffURL = URL(fileURLWithPath: xliffPath)
-        let stringsdictURL = URL(fileURLWithPath: stringsdictPath)
+        guard !filePaths.isEmpty else {
+            throw ValidationError("At least one file must be provided")
+        }
 
-        let xliffData = try Data(contentsOf: xliffURL)
-        let fileName = xliffURL.lastPathComponent
-        print("📄 XLIFF: \(xliffURL.path)")
+        // Validate all file paths exist
+        for filePath in filePaths {
+            guard FileManager.default.fileExists(atPath: filePath) else {
+                throw ValidationError("File not found: \(filePath)")
+            }
+        }
+
+        print("📄 Files to upload:")
+        for filePath in filePaths {
+            print("   • \(filePath)")
+        }
 
         // Initialize client
         let smartlingCredentials = SmartlingCredentials(userIdentifier: credentials.userId, userSecret: credentials.userSecret, projectId: credentials.projectId)
@@ -172,10 +176,10 @@ extension LocalizationTool {
         print("✅ Created job: \(job.jobId)")
 
         // Prepare declared file URIs for the batch (must be provided up-front)
-        let fileUri = "\(branchName)/\(fileName)"
-        let sdName = stringsdictURL.lastPathComponent
-        let sdUri = "\(branchName)/\(sdName)"
-        let declaredFileUris: [String] = [fileUri, sdUri]
+        let declaredFileUris: [String] = filePaths.map { filePath in
+            let fileName = URL(fileURLWithPath: filePath).lastPathComponent
+            return "\(branchName)/\(fileName)"
+        }
 
         // Create batch (not authorizing yet) with declared file URIs
         let batchReq = CreateBatchRequest(authorize: false, translationJobUid: job.jobId, fileUris: declaredFileUris)
@@ -184,12 +188,15 @@ extension LocalizationTool {
 
         // Upload files into batch using the same declared URIs
         let validLocalesForBatch = try await client.fetchProjectLocales()
-        try await client.uploadFileToBatch(batchUid: batch.batchUid, fileData: xliffData, fileName: fileName, fileUri: fileUri, localeIds: validLocalesForBatch)
-        print("📤 Uploaded to batch: \(fileName)")
+        for (index, filePath) in filePaths.enumerated() {
+            let fileURL = URL(fileURLWithPath: filePath)
+            let fileName = fileURL.lastPathComponent
+            let fileUri = declaredFileUris[index]
+            let fileData = try Data(contentsOf: fileURL)
 
-        let stringsdictData = try Data(contentsOf: stringsdictURL)
-        try await client.uploadFileToBatch(batchUid: batch.batchUid, fileData: stringsdictData, fileName: sdName, fileUri: sdUri, localeIds: validLocalesForBatch)
-        print("📤 Uploaded to batch: \(sdName)")
+            try await client.uploadFileToBatch(batchUid: batch.batchUid, fileData: fileData, fileName: fileName, fileUri: fileUri, localeIds: validLocalesForBatch)
+            print("📤 Uploaded to batch: \(fileName)")
+        }
 
         // Poll batch status briefly (with initial delay)
         do {

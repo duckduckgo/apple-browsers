@@ -51,14 +51,23 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
     var automaticallySelectsTextOnAppear = false
+    var adjustsLayoutInLandscape = false {
+        didSet {
+            adjustLayoutForViewSize(view.bounds.size)
+        }
+    }
 
     // MARK: - Core Components
+    private lazy var contentContainerView = UIView()
 
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
 
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
     lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
+
+    private weak var contentContainerViewLeadingConstraint: NSLayoutConstraint?
+    private weak var contentContainerViewTrailingConstraint: NSLayoutConstraint?
 
     // MARK: - Manager Components
 
@@ -127,10 +136,58 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         daxLogoManager.containerYCenterConstraint?.constant = offset
     }
 
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+
+        adjustLayoutForViewSize(view.bounds.size)
+    }
+
+    private func requiresHorizontallyCompactLayout(for size: CGSize) -> Bool {
+        let isPhone = UIDevice.current.userInterfaceIdiom == .phone
+        return adjustsLayoutInLandscape && isPhone && size.width > size.height
+    }
+
+    private func adjustLayoutForViewSize(_ size: CGSize) {
+
+        let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: size)
+
+        let horizontalMargin: CGFloat = isHorizontallyCompactLayoutEnabled ? Constants.horizontalMarginForCompactLayout : 0
+        self.contentContainerViewLeadingConstraint?.constant = horizontalMargin
+        self.contentContainerViewTrailingConstraint?.constant = -horizontalMargin
+        self.updateDaxVisibility()
+
+        self.navigationActionBarManager?.navigationActionBarViewController?.isShowingGradient = !isHorizontallyCompactLayoutEnabled
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+
+        coordinator.animate { _ in
+            self.adjustLayoutForViewSize(size)
+            self.view.layoutIfNeeded()
+        }
+    }
+
     // MARK: - Private Methods
 
     private func setupView() {
+        setUpContentContainer()
+
         view.backgroundColor = UIColor(designSystemColor: .background)
+    }
+
+    private func setUpContentContainer() {
+        view.addSubview(contentContainerView)
+        contentContainerView.translatesAutoresizingMaskIntoConstraints = false
+
+        contentContainerViewLeadingConstraint = contentContainerView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor)
+        contentContainerViewLeadingConstraint?.isActive = true
+        contentContainerViewTrailingConstraint = contentContainerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
+        contentContainerViewTrailingConstraint?.isActive = true
+
+        NSLayoutConstraint.activate([
+            contentContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            contentContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
     }
 
     private func installComponents() {
@@ -140,19 +197,20 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         installDaxLogoView()
         installNavigationActionBar()
 
-        view.bringSubviewToFront(switchBarVC.view)
+        contentContainerView.bringSubviewToFront(switchBarVC.view)
     }
 
     private func installSwitchBarVC() {
         addChild(switchBarVC)
-        view.addSubview(switchBarVC.view)
+        let container = contentContainerView
+        container.addSubview(switchBarVC.view)
         switchBarVC.view.translatesAutoresizingMaskIntoConstraints = false
         switchBarVC.view.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
         NSLayoutConstraint.activate([
-            switchBarVC.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
-            switchBarVC.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            switchBarVC.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
+            switchBarVC.view.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 8),
+            switchBarVC.view.leadingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.leadingAnchor),
+            switchBarVC.view.trailingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.trailingAnchor)
         ])
 
         switchBarVC.didMove(toParent: self)
@@ -161,7 +219,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func installSwipeContainer() {
         let manager = SwipeContainerManager(switchBarHandler: switchBarHandler)
-        manager.installInViewController(self, belowView: switchBarVC.view)
+        manager.installInViewController(self, asSubviewOf: contentContainerView, belowView: switchBarVC.view)
         manager.delegate = self
         swipeContainerManager = manager
     }
@@ -179,13 +237,14 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func installDaxLogoView() {
         if let view = switchBarVC.segmentedPickerView {
-            daxLogoManager.installInViewController(self, belowView: view)
+            daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, belowView: view)
         }
     }
 
     private func installNavigationActionBar() {
         let manager = NavigationActionBarManager(switchBarHandler: switchBarHandler)
         manager.delegate = self
+        // Note this is not installed in contentContainerView - this is floating over content.
         manager.installInViewController(self)
         navigationActionBarManager = manager
     }
@@ -261,9 +320,10 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         let shouldDisplaySuggestionTray = suggestionTrayManager?.shouldDisplaySuggestionTray == true
         let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
+        let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
 
-        let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay
-        let isAIDaxVisible = !shouldDisplaySuggestionTray
+        let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
+        let isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
     }
@@ -324,5 +384,12 @@ extension OmniBarEditingStateViewController: NavigationActionBarManagerDelegate 
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             switchBarHandler.submitText(currentText)
         }
+    }
+}
+
+private extension OmniBarEditingStateViewController {
+    struct Constants {
+        // Adjusts for two buttons in the action bar
+        static let horizontalMarginForCompactLayout: CGFloat = 108
     }
 }

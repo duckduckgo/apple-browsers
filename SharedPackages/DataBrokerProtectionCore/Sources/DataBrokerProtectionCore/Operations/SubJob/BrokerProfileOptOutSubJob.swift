@@ -127,6 +127,17 @@ struct BrokerProfileOptOutSubJob {
                     profileQueryId: profileQueryId,
                     type: .optOutSubmittedAndAwaitingEmailConfirmation
                 ))
+                dependencies.pixelHandler.fire(
+                    .optOutStageSubmitAwaitingEmailConfirmation(
+                        dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+                        brokerVersion: brokerProfileQueryData.dataBroker.version,
+                        attemptId: stageDurationCalculator.attemptId,
+                        actionId: stageDurationCalculator.actionID ?? "unknown",
+                        duration: stageDurationCalculator.durationSinceLastStage(),
+                        tries: stageDurationCalculator.tries
+                    )
+                )
+                stageDurationCalculator.setStage(.emailConfirmHalted)
                 Logger.dataBrokerProtection.log("✉️ Opt-out status changed to awaiting email confirmation")
             } else {
                 // Normal completion path - opt out was fully submitted

@@ -39,6 +39,14 @@ final class NavigationActionBarView: UIView {
     }
     
     // MARK: - Properties
+
+    var isShowingGradient: Bool = true {
+        didSet {
+            backgroundGradientView.isHidden = !isShowingGradient
+            solidView.isHidden = !isShowingGradient
+        }
+    }
+
     private let viewModel: NavigationActionBarViewModel
     private var cancellables = Set<AnyCancellable>()
 

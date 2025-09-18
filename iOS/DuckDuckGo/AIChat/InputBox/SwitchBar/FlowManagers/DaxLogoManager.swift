@@ -41,11 +41,11 @@ final class DaxLogoManager {
 
     // MARK: - Public Methods
     
-    func installInViewController(_ viewController: UIViewController, belowView topView: UIView) {
+    func installInViewController(_ viewController: UIViewController, asSubviewOf parentView: UIView, belowView topView: UIView) {
 
         logoContainerView.translatesAutoresizingMaskIntoConstraints = false
         logoContainerView.isUserInteractionEnabled = false
-        viewController.view.addSubview(logoContainerView)
+        parentView.addSubview(logoContainerView)
 
         logoContainerView.addSubview(homeDaxLogoView)
         homeDaxLogoView.translatesAutoresizingMaskIntoConstraints = false
@@ -57,17 +57,17 @@ final class DaxLogoManager {
 
         let centeringGuide = UILayoutGuide()
         centeringGuide.identifier = "DaxLogoCenteringGuide"
-        viewController.view.addLayoutGuide(centeringGuide)
+        parentView.addLayoutGuide(centeringGuide)
 
         containerYCenterConstraint = logoContainerView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor)
 
         NSLayoutConstraint.activate([
 
             // Position layout centering guide vertically between top view and keyboard
-            viewController.view.leadingAnchor.constraint(equalTo: centeringGuide.leadingAnchor),
-            viewController.view.trailingAnchor.constraint(equalTo: centeringGuide.trailingAnchor),
+            parentView.leadingAnchor.constraint(equalTo: centeringGuide.leadingAnchor),
+            parentView.trailingAnchor.constraint(equalTo: centeringGuide.trailingAnchor),
             topView.bottomAnchor.constraint(equalTo: centeringGuide.topAnchor),
-            viewController.view.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor),
+            parentView.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor),
 
             // Center within the layout guide
             logoContainerView.topAnchor.constraint(greaterThanOrEqualTo: centeringGuide.topAnchor),
@@ -88,7 +88,7 @@ final class DaxLogoManager {
             aiDaxLogoView.bottomAnchor.constraint(equalTo: logoContainerView.bottomAnchor),
         ])
 
-        viewController.view.bringSubviewToFront(logoContainerView)
+        parentView.bringSubviewToFront(logoContainerView)
     }
 
     func updateVisibility(isHomeDaxVisible: Bool, isAIDaxVisible: Bool) {

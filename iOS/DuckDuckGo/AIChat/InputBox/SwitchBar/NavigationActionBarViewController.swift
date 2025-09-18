@@ -23,6 +23,11 @@ final class NavigationActionBarViewController: UIViewController {
     private let viewModel: NavigationActionBarViewModel
     private var navigationActionBarView: NavigationActionBarView!
 
+    var isShowingGradient: Bool {
+        get { navigationActionBarView.isShowingGradient }
+        set { navigationActionBarView.isShowingGradient = newValue }
+    }
+
     init(viewModel: NavigationActionBarViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)

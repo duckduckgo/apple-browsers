@@ -53,13 +53,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     var automaticallySelectsTextOnAppear = false
 
     let featureFlagger: FeatureFlagger
-
-    var adjustsLayoutInLandscape = false {
-        didSet {
-            adjustLayoutForViewSize(view.bounds.size)
-        }
-    }
-
+    
     // MARK: - Core Components
     private lazy var contentContainerView = UIView()
 
@@ -151,7 +145,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func requiresHorizontallyCompactLayout(for size: CGSize) -> Bool {
         let isPhone = UIDevice.current.userInterfaceIdiom == .phone
-        return adjustsLayoutInLandscape && isPhone && size.width > size.height
+        return isPhone && size.width > size.height
     }
 
     private func adjustLayoutForViewSize(_ size: CGSize) {

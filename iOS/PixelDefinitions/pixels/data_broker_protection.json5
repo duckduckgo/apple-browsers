@@ -7,12 +7,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
-            {
-                key: 'isInternalUser',
-                description: 'Whether the user is internal',
-                type: 'string',
-                enum: ['true', 'false'],
-            },
+            'isInternalUser',
             {
                 key: 'tries',
                 description: 'The number of tries it took for the action to complete',
@@ -53,12 +48,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
-            {
-                key: 'isInternalUser',
-                description: 'Whether the user is internal',
-                type: 'string',
-                enum: ['true', 'false'],
-            },
+            'isInternalUser',
             {
                 key: 'tries',
                 description: 'The number of tries it took for the action to complete',
@@ -350,12 +340,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
-            {
-                key: 'isInternalUser',
-                description: 'Whether the user is internal',
-                type: 'string',
-                enum: ['true', 'false'],
-            },
+            'isInternalUser',
             {
                 key: 'data_broker_url',
                 description: 'The URL of the data broker that this action was operating on',
@@ -396,12 +381,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
-            {
-                key: 'isInternalUser',
-                description: 'Whether the user is internal',
-                type: 'string',
-                enum: ['true', 'false'],
-            },
+            'isInternalUser',
             {
                 key: 'data_broker_url',
                 description: 'The URL of the data broker that this action was operating on',
@@ -442,12 +422,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
-            {
-                key: 'isInternalUser',
-                description: 'Whether the user is internal',
-                type: 'string',
-                enum: ['true', 'false'],
-            },
+            'isInternalUser',
             {
                 key: 'data_broker_url',
                 description: 'The URL of the data broker that this action was operating on',
@@ -478,12 +453,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
-            {
-                key: 'isInternalUser',
-                description: 'Whether the user is internal',
-                type: 'string',
-                enum: ['true', 'false'],
-            },
+            'isInternalUser',
             {
                 key: 'data_broker_url',
                 description: 'The URL of the data broker that this action was operating on',

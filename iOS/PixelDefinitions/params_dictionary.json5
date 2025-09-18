@@ -36,7 +36,7 @@
     },
     isInternalUser: {
         key: 'is_internal_user',
-        type: 'boolean'
+        type: 'boolean',
     },
     underlyingErrorCode: {
         keyPattern: '^ue[0-9]$',

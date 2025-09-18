@@ -53,6 +53,10 @@ jobs:
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
 
+      - name: Install Python dependencies
+        run: |
+          pip3 install aiohttp
+
       - name: Export
         id: export
         if: ${{ github.event.inputs.action == 'upload' }}

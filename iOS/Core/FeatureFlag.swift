@@ -180,6 +180,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1211257304926910
     case aiSearchAnimatedDaxLogo
+
+    /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1210716480546568?focus=true
+    case adjustNewSearchForLandscape
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -250,7 +253,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
              .refreshButtonPosition,
-             .aiSearchAnimatedDaxLogo:
+             .aiSearchAnimatedDaxLogo,
+             .adjustNewSearchForLandscape:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -442,7 +446,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.refreshButtonPosition))
         case .showAIChatAddressBarChoiceScreen:
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
-        case .aiSearchAnimatedDaxLogo:
+        case .aiSearchAnimatedDaxLogo, 
+             .adjustNewSearchForLandscape:
             return .internalOnly()
         }
     }

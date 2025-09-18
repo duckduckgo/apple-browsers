@@ -1918,6 +1918,9 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importuj svá hesla do DuckDuckGo";
 
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "Zeptej se soukromě";
+
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Musíš povolit VPN v aplikaci DuckDuckGo.";
 
@@ -2689,9 +2692,6 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Vyhledejte nebo zadejte adresu";
 
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Zeptej se Duck.ai";
-
 /* Search input toggle button title for asking AI Chat */
 "search.input.toggle.aichat.button.title" = "Duck.ai";
 
@@ -2763,6 +2763,9 @@
 
 /* Title for the 'Search Only' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_only" = "Jen vyhledávání";
+
+/* Footer under the AI picker, descriptive sentence without link */
+"settings.ai.new.picker.footer" = "Vyzkoušej novou možnost přepínání mezi vyhledáváním a Duck.ai v adresním řádku.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Spravovat zkratky Duck.ai";

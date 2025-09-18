@@ -1918,6 +1918,9 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Impordi paroolid DuckDuckGosse";
 
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "Küsi privaatselt";
+
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Peate lubama VPN-i rakenduses DuckDuckGo.";
 
@@ -2689,9 +2692,6 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Otsi või sisesta aadress";
 
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Küsi Duck.ai käest";
-
 /* Search input toggle button title for asking AI Chat */
 "search.input.toggle.aichat.button.title" = "Duck.ai";
 
@@ -2763,6 +2763,9 @@
 
 /* Title for the 'Search Only' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_only" = "Ainult otsi";
+
+/* Footer under the AI picker, descriptive sentence without link */
+"settings.ai.new.picker.footer" = "Proovi uut valikut lülituda otsingu ja Duck.ai vahel aadressiribal.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Duck.ai otseteede haldamine";

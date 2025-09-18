@@ -1801,6 +1801,7 @@ class MainViewController: UIViewController {
     private func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {
         // https://app.asana.com/0/0/1201408131067987
         UIMenuController.shared.hideMenu()
+        dismissOmniBar()
         viewCoordinator.omniBar.removeTextSelection()
         
         Pixel.fire(pixel: .openVoiceSearch)

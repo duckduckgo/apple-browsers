@@ -366,7 +366,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .osSupportForceWillSoonDropSupportMessage:
             return .disabled
         case .willSoonDropBigSurSupport:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.willSoonDropBigSurSupport))
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))
         case .importChromeShortcuts:

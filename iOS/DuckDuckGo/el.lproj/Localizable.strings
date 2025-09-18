@@ -1918,6 +1918,9 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Εισαγάγετε τους κωδικούς πρόσβασής σας στο DuckDuckGo";
 
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "Ρωτήστε ιδιωτικά";
+
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Πρέπει να ενεργοποιήσετε το VPN από την εφαρμογή DuckDuckGo.";
 
@@ -2689,9 +2692,6 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Αναζήτηση ή εισαγωγή διεύθυνσης";
 
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Ρωτήστε το Duck.ai";
-
 /* Search input toggle button title for asking AI Chat */
 "search.input.toggle.aichat.button.title" = "Duck.ai";
 
@@ -2763,6 +2763,9 @@
 
 /* Title for the 'Search Only' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_only" = "Αναζήτηση μόνο";
+
+/* Footer under the AI picker, descriptive sentence without link */
+"settings.ai.new.picker.footer" = "Try the new option to toggle between search and Duck.ai in the Address Bar.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Διαχείριση συντομεύσεων Duck.ai";

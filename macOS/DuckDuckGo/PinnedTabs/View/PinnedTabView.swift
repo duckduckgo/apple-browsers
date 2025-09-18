@@ -141,6 +141,7 @@ struct PinnedTabView: View, DropDelegate {
             guard let model = model else { return }
             collectionModel?.duplicate(model)
         }
+        .disabled(model.content.canBeDuplicated == false)
 
         Button(UserText.unpinTab) { [weak collectionModel, weak model] in
             guard let model = model else { return }

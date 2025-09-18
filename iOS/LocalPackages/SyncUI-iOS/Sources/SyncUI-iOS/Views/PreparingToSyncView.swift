@@ -31,6 +31,7 @@ public struct PreparingToSyncView: View {
             VStack(spacing: 0) {
                 Image("Sync-128")
                     .padding(20)
+                    .padding(.top, 56)
 
                 Text(UserText.preparingToSyncSheetTitle)
                     .daxTitle1()

@@ -79,7 +79,7 @@ final class SyncRecoveryPromptPresenter: NSObject, SyncRecoveryPromptPresenting 
                 },
                 onCancel: { [weak viewController] in
                     Pixel.fire(pixel: .syncRecoveryAlternativeDismissed)
-//                    viewController?.dismiss(animated: true)
+                    viewController?.dismiss(animated: true)
                 }
             )
         )

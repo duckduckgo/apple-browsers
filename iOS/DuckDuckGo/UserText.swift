@@ -1193,7 +1193,6 @@ public struct UserText {
 
         return String(format: format, deviceName)
     }
-    public static let syncRecoveryPromptTitle = NSLocalizedString("sync.recovery.prompt.title", value: "Welcome back! Let’s sync your passwords.", comment: "Title for the sync recovery prompt")
     public static let syncRecoveryPromptMessage = NSLocalizedString("sync.recovery.prompt.message", value: "DuckDuckGo passwords don’t transfer with iCloud because they’re encrypted on your device. Everything else is already here.", comment: "Message for the sync recovery prompt")
     public static let syncRecoveryPromptSyncButton = NSLocalizedString("sync.recovery.prompt.sync.button", value: "Sync With Another Device", comment: "Button title to sync with another device")
     public static let syncRecoveryPromptContinueButton = NSLocalizedString("sync.recovery.prompt.continue.button", value: "Don’t Have Another Device?", comment: "Button title to show alternatives")

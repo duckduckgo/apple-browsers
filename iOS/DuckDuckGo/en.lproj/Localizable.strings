@@ -3337,8 +3337,7 @@ Take back control of your personal information with the browser designed for dat
 /* Button title to sync with another device */
 "sync.recovery.prompt.sync.button" = "Sync With Another Device";
 
-/* Title for the sync recovery prompt
-   Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
 "sync.recovery.prompt.title" = "On a new %@? Let's sync your passwords.";
 
 /* Caption for a button to remove device from Sync */

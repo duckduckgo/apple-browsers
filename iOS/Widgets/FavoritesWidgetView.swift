@@ -40,19 +40,13 @@ struct FavoritesWidgetView: View {
                 Text(UserText.noFavoritesMessage)
                     .daxSubheadRegular()
                     .multilineTextAlignment(.center)
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .foregroundStyle(Color(designSystemColor: .textSecondary))
                     .padding(.horizontal)
                     .accessibilityHidden(true)
 
-                HStack {
-                    Text(UserText.noFavoritesCTA)
-                        .daxSubheadRegular()
-                        .foregroundColor(Color(designSystemColor: .accent))
-
-                    Image(systemName: "chevron.right")
-                        .imageScale(.medium)
-                        .foregroundColor(Color(designSystemColor: .accent))
-                }
+                Text(UserText.noFavoritesCTA)
+                    .daxSubheadSemibold()
+                    .foregroundColor(Color(designSystemColor: .accent))
             }
         }
     }

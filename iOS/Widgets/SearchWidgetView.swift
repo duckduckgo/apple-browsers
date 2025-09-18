@@ -41,12 +41,14 @@ struct SearchWidgetView: View {
                 ZStack(alignment: Alignment(horizontal: .trailing, vertical: .center)) {
 
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(designSystemColor: .controlsFillPrimary))
+                        .fill(Color(designSystemColor: .backgroundTertiary))
                         .frame(width: 126, height: 46)
+                        .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 12, x: 0, y: 8)
 
                     HStack {
                         Text(UserText.quickActionsSearch)
                             .daxBodyRegular()
+                            .foregroundStyle(Color(designSystemColor: .textSecondary))
 
                         Spacer()
 

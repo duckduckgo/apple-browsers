@@ -29,8 +29,9 @@ struct LargeSearchFieldView: View {
         Link(destination: DeepLinks.newSearch) {
             ZStack {
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(designSystemColor: .controlsFillPrimary))
+                    .fill(Color(designSystemColor: .backgroundTertiary))
                     .frame(minHeight: 46, maxHeight: 46)
+                    .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 12, x: 0, y: 8)
 
                 HStack(spacing: 0) {
                     Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
@@ -43,6 +44,7 @@ struct LargeSearchFieldView: View {
                     Text(UserText.searchDuckDuckGo)
                         .daxBodyRegular()
                         .makeAccentable()
+                        .foregroundStyle(Color(designSystemColor: .textSecondary))
 
                     Spacer()
 

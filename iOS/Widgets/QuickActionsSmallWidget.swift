@@ -158,6 +158,7 @@ private struct SearchBoxView: View {
             Text(UserText.quickActionsSearch)
                 .daxBodyRegular()
                 .makeAccentable()
+                .foregroundStyle(Color(designSystemColor: .textSecondary))
 
             Spacer()
         }
@@ -165,7 +166,8 @@ private struct SearchBoxView: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(designSystemColor: .controlsFillPrimary))
+                .fill(Color(designSystemColor: .backgroundTertiary))
+                .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 12, x: 0, y: 8)
         )
         .padding(.bottom, 16)
     }
@@ -177,14 +179,13 @@ private struct IconView: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(designSystemColor: .controlsFillPrimary))
+                .fill(Color(designSystemColor: .backgroundTertiary))
             image
                 .resizable()
                 .scaledToFit()
                 .frame(width: 24, height: 24)
                 .makeAccentable()
         }
-        // TODO Use 56 for small widgets and 60 for otherss
-        .frame(width: 60, height: 60)
+        .frame(width: 56, height: 56)
     }
 }

@@ -80,6 +80,16 @@ jobs:
             --files ./iOS/scripts/assets/loc/en.xcloc/Localized\ Contents/en.xliff \
                     ./iOS/DuckDuckGo/en.lproj/Localizable.stringsdict
 
+      - name: Check Status
+        if: ${{ github.event.inputs.action == 'status' }}
+        run: |
+          ./scripts/loc_tool.sh status --job-id "${{ github.event.inputs.job-id }}"
+
+      - name: Approve Job
+        if: ${{ github.event.inputs.action == 'approve' }}
+        run: |
+          ./scripts/loc_tool.sh approve --job-id "${{ github.event.inputs.job-id }}"
+
       - name: Import
         id: import
         if: ${{ github.event.inputs.action == 'download' }}

@@ -56,6 +56,10 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
 
+    private lazy var sharedPixelHandler: DataBrokerProtectionSharedPixelsHandler = {
+        return DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS)
+    }()
+
     private lazy var eventPixels: DataBrokerProtectionEventPixels = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
             directoryName: DatabaseConstants.directoryName,
@@ -69,14 +73,13 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         guard let vault = try? vaultFactory.makeVault(reporter: nil) else {
             fatalError("Failed to make secure storage vault for event pixels")
         }
-        let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS)
         let database = DataBrokerProtectionDatabase(
             fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
-            pixelHandler: pixelHandler,
+            pixelHandler: sharedPixelHandler,
             vault: vault,
             localBrokerService: brokerUpdater
         )
-        return DataBrokerProtectionEventPixels(database: database, handler: pixelHandler)
+        return DataBrokerProtectionEventPixels(database: database, handler: sharedPixelHandler)
     }()
 
     private lazy var brokerUpdater: BrokerJSONServiceProvider = {
@@ -93,6 +96,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                                        settings: DataBrokerProtectionSettings(defaults: .dbp),
                                        vault: vault,
                                        authenticationManager: authenticationManager,
+                                       pixelHandler: sharedPixelHandler,
                                        localBrokerProvider: nil)
     }()
 

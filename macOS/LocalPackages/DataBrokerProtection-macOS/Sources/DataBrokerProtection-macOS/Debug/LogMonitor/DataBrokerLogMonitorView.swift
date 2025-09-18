@@ -26,18 +26,23 @@ struct DataBrokerLogMonitorView: View {
             LogMonitorToolbarView(
                 isMonitoring: viewModel.isMonitoring,
                 logCount: viewModel.logCount,
+                subsystemDisplayName: viewModel.subsystemDisplayName,
                 onStartStop: {
                     viewModel.isMonitoring ? viewModel.stopMonitoring() : viewModel.startMonitoring()
                 },
                 onClear: viewModel.clearLogs,
-                retentionLimit: $viewModel.retentionLimitText
+                retentionLimit: $viewModel.retentionLimitText,
+                useCustomSubsystem: $viewModel.useCustomSubsystem,
+                customSubsystem: $viewModel.customSubsystem
             )
             .fixedSize(horizontal: false, vertical: true)
 
             Divider()
 
             LogFilterControlsView(
-                filterSettings: $viewModel.filterSettings
+                filterSettings: $viewModel.filterSettings,
+                useCustomCategory: $viewModel.useCustomCategory,
+                customCategory: $viewModel.customCategory
             )
             .fixedSize(horizontal: false, vertical: true)
 

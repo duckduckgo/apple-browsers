@@ -1,6 +1,7 @@
 name: Smartling
 
 on:
+  push:
   workflow_dispatch:
     inputs:
       platform:

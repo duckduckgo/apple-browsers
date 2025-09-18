@@ -164,7 +164,7 @@ private struct SearchBoxView: View {
         .frame(height: 52)
         .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 46)
+            RoundedRectangle(cornerRadius: 16)
                 .fill(Color(designSystemColor: .controlsFillPrimary))
         )
         .padding(.bottom, 16)
@@ -184,6 +184,7 @@ private struct IconView: View {
                 .frame(width: 24, height: 24)
                 .makeAccentable()
         }
+        // TODO Use 56 for small widgets and 60 for otherss
         .frame(width: 60, height: 60)
     }
 }

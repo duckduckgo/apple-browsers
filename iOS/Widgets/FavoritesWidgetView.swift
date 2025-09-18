@@ -1,0 +1,181 @@
+//
+//  FavoritesWidgetView.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+
+import SwiftUI
+import WidgetKit
+import DesignResourcesKit
+import DesignResourcesKitIcons
+
+struct FavoritesWidgetView: View {
+
+    @Environment(\.widgetFamily) var widgetFamily
+
+    var entry: Provider.Entry
+
+    @ViewBuilder
+    func addFavoritesPrompt() -> some View {
+        ZStack(alignment: .top) {
+            VStack(spacing: 0) {
+                FavoritesGridView(entry: entry)
+            }
+
+            VStack(spacing: 4) {
+                Text(UserText.noFavoritesMessage)
+                    .daxSubheadRegular()
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .padding(.horizontal)
+                    .accessibilityHidden(true)
+
+                HStack {
+                    Text(UserText.noFavoritesCTA)
+                        .daxSubheadRegular()
+                        .foregroundColor(Color(designSystemColor: .accent))
+
+                    Image(systemName: "chevron.right")
+                        .imageScale(.medium)
+                        .foregroundColor(Color(designSystemColor: .accent))
+                }
+            }
+        }
+    }
+
+    var body: some View {
+        DesignSystemWidgetContainerView {
+            VStack(alignment: .center, spacing: 0) {
+                LargeSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled)
+
+                if entry.favorites.isEmpty, !entry.isPreview {
+                    // The whole thing needs to be a link because the user could click anywhere
+                    Link(destination: DeepLinks.addFavorite) {
+                        addFavoritesPrompt()
+                    }
+                    .padding(.top, 8)
+                } else {
+                    FavoritesGridView(entry: entry)
+                }
+
+                Spacer()
+            }
+        }
+    }
+}
+
+struct FavoriteView: View {
+
+    var favorite: Favorite?
+    var isPreview: Bool
+
+    private let cornerRadius: CGFloat = 14
+
+    var body: some View {
+
+        ZStack {
+            if isPreview {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(Color(designSystemColor: .controlsFillPrimary))
+            }
+
+            if let favorite = favorite {
+
+                Link(destination: favorite.url) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .fill(favorite.needsColorBackground ? Color.forDomain(favorite.domain) : Color(designSystemColor: .controlsFillPrimary))
+                            .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 2)
+
+                        if let image = favorite.favicon {
+                            if image.size.width > 60 {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .useFullColorRendering()
+                                    .aspectRatio(contentMode: .fit)
+                                    .cornerRadius(10)
+                            } else {
+                                Image(uiImage: image)
+                                    .useFullColorRendering()
+                                    .cornerRadius(10)
+                            }
+
+                        } else if favorite.isDuckDuckGo {
+                            Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
+                                .resizable()
+                                .useFullColorRendering()
+                                .frame(width: 46, height: 46, alignment: .center)
+                                .isHidden(false)
+                                .accessibilityHidden(true)
+
+                        } else {
+                            Text(favorite.domain.first?.uppercased() ?? "")
+                                .foregroundColor(Color.white)
+                                .font(.system(size: 42))
+
+                        }
+                    }
+                }
+                .accessibilityLabel(Text(favorite.title))
+            }
+        }
+        .frame(width: 60, height: 60, alignment: .center)
+    }
+}
+
+struct FavoritesRowView: View {
+    var entry: Provider.Entry
+    var start: Int
+    var end: Int
+
+    var body: some View {
+        HStack {
+            ForEach(start...end, id: \.self) {
+                FavoriteView(favorite: entry.favoriteAt(index: $0), isPreview: entry.isPreview)
+
+                if $0 < end {
+                    Spacer()
+                }
+
+            }
+        }
+    }
+}
+
+struct FavoritesGridView: View {
+
+    @Environment(\.widgetFamily) var widgetFamily
+
+    var entry: Provider.Entry
+
+    var body: some View {
+
+        FavoritesRowView(entry: entry, start: 0, end: 3)
+
+        if widgetFamily == .systemLarge {
+
+            FavoritesRowView(entry: entry, start: 4, end: 7)
+                .padding(.top, 24)
+
+            FavoritesRowView(entry: entry, start: 8, end: 11)
+                .padding(.top, 24)
+
+        }
+
+    }
+
+}

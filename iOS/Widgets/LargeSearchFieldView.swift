@@ -28,16 +28,17 @@ struct LargeSearchFieldView: View {
     var body: some View {
         Link(destination: DeepLinks.newSearch) {
             ZStack {
-                RoundedRectangle(cornerRadius: 23)
+                RoundedRectangle(cornerRadius: 16)
                     .fill(Color(designSystemColor: .controlsFillPrimary))
                     .frame(minHeight: 46, maxHeight: 46)
 
-                HStack {
+                HStack(spacing: 0) {
                     Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
                         .resizable()
                         .useFullColorRendering()
-                        .frame(width: 28, height: 28, alignment: .leading)
+                        .frame(width: 24, height: 24, alignment: .leading)
                         .padding(.leading, 12)
+                        .padding(.trailing, 8)
 
                     Text(UserText.searchDuckDuckGo)
                         .daxBodyRegular()
@@ -47,8 +48,12 @@ struct LargeSearchFieldView: View {
 
                     if isAIChatEnabled {
                         Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
-                            CircleIconView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat))
+                            Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat)
+                                .resizable()
+                                .useFullColorRendering()
+                                .frame(width: 24, height: 24, alignment: .leading)
                         }
+                        .padding(.trailing, 12)
                     }
 
                 }

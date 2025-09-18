@@ -26,21 +26,25 @@ import URLPredictorRust
 public enum Classifier {
     // MARK: - Policy (mirrors Rust struct)
     public struct Policy: Codable, Sendable {
+        public var allowIntranetMultiLabel: Bool
         public var allowIntranetSingleLabel: Bool
         public var allowPrivateSuffix: Bool
         public var allowedSchemes: Set<String>
 
         public init(
+            allowIntranetMultiLabel: Bool,
             allowIntranetSingleLabel: Bool,
             allowPrivateSuffix: Bool,
             allowedSchemes: Set<String>
         ) {
+            self.allowIntranetMultiLabel = allowIntranetMultiLabel
             self.allowIntranetSingleLabel = allowIntranetSingleLabel
             self.allowPrivateSuffix = allowPrivateSuffix
             self.allowedSchemes = allowedSchemes
         }
 
         public static let `default`: Self = .init(
+            allowIntranetMultiLabel: true,
             allowIntranetSingleLabel: false,
             allowPrivateSuffix: true,
             allowedSchemes: ["http", "https", "ftp", "file", "about", "duck", "mailto"]

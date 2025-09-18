@@ -18,10 +18,11 @@
 //
 
 @testable import DuckDuckGo
+import DDGSync
 
 class MockMessageNavigationDelegate: MessageNavigationDelegate {
     func segueToSettingsAIChat(completion: (() -> Void)?) {}
     func segueToSettings() {}
     func segueToFeedback() {}
-    func segueToSettingsSync() {}
+    func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?) {}
 }

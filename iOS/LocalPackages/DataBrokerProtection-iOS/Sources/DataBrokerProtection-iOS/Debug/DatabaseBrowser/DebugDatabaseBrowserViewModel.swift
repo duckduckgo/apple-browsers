@@ -51,7 +51,8 @@ final class DebugDatabaseBrowserViewModel: ObservableObject {
 
         Task {
             guard let data = try? databaseDelegate.getAllBrokerProfileQueryData(),
-                  let attempts = try? databaseDelegate.getAllAttempts() else {
+                  let attempts = try? databaseDelegate.getAllAttempts(),
+                  let emailConfirmations = try? databaseDelegate.getAllOptOutEmailConfirmations() else {
                 assertionFailure("DataManager error during DataBrokerDatavaseBrowserViewModel.updateTables")
                 return
             }
@@ -74,9 +75,10 @@ final class DebugDatabaseBrowserViewModel: ObservableObject {
             let eventsTable = createTable(using: events.sorted(by: { $0.date > $1.date }), tableName: "Events")
             let attemptsTable = createTable(using: attempts.sorted(by: <), tableName: "OptOutAttempts")
             let backgroundTaskEventsTable = createTable(using: bgTaskEvents.sorted(by: { $0.timestamp < $1.timestamp }), tableName: "BackgroundTaskEvents")
+            let emailConfirmationsTable = createTable(using: emailConfirmations, tableName: "EmailConfirmations")
 
             DispatchQueue.main.async {
-                self.tables = [brokersTable, profileQueriesTable, scansTable, optOutsTable, extractedProfilesTable, eventsTable, attemptsTable, backgroundTaskEventsTable]
+                self.tables = [brokersTable, profileQueriesTable, scansTable, optOutsTable, extractedProfilesTable, eventsTable, attemptsTable, backgroundTaskEventsTable, emailConfirmationsTable]
             }
         }
  }

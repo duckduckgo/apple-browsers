@@ -87,6 +87,7 @@ public class DBPIOSInterface {
         func getAllDataBrokers() throws -> [DataBrokerProtectionCore.DataBroker]
         func getAllBrokerProfileQueryData() throws -> [DataBrokerProtectionCore.BrokerProfileQueryData]
         func getAllAttempts() throws -> [AttemptInformation]
+        func getAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData]
         func getBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent]
         func saveProfile(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile) async throws
         func deleteAllUserProfileData() throws
@@ -236,6 +237,10 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
 
     public func getAllAttempts() throws -> [AttemptInformation] {
         try database.fetchAllAttempts()
+    }
+
+    public func getAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData] {
+        try database.fetchAllOptOutEmailConfirmations()
     }
 
     public func getBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent] {
@@ -452,7 +457,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
                     earliestBeginDate = Date().addingTimeInterval(maxBackgroundTaskWaitTime)
                 }
 
-                request.earliestBeginDate = earliestBeginDate
+                request.earliestBeginDate = earliestBeginDate.addingTimeInterval(.hours(6))
                 Logger.dataBrokerProtection.log("PIR Background Task: Scheduling next task for \(earliestBeginDate)")
 
                 try BGTaskScheduler.shared.submit(request)

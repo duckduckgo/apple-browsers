@@ -210,6 +210,10 @@ jobs:
           if git diff --quiet && git diff --cached --quiet; then
             echo "No changes to commit"
           else
+            # Configure Git identity for the commit
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+
             # Add all changes
             git add -A
 

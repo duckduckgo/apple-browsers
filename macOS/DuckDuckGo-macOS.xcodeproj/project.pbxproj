@@ -3629,6 +3629,8 @@
 		CD34F0C22C886482006826BE /* MaliciousSiteProtectionMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD34F0BF2C886482006826BE /* MaliciousSiteProtectionMocks.swift */; };
 		CD89DD612C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD89DD5D2C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift */; };
 		CD89DD622C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD89DD5D2C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift */; };
+		D65D0F9F2E7239680075A784 /* NetworkQualityMonitor in Frameworks */ = {isa = PBXBuildFile; productRef = D65D0F9E2E7239680075A784 /* NetworkQualityMonitor */; };
+		D65D0FA12E7239730075A784 /* NetworkQualityMonitor in Frameworks */ = {isa = PBXBuildFile; productRef = D65D0FA02E7239730075A784 /* NetworkQualityMonitor */; };
 		D6E0ACB12CE36DCA005D3486 /* DuckPlayerOverlayPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E0ACB02CE36DC4005D3486 /* DuckPlayerOverlayPixels.swift */; };
 		D6E0ACB22CE36DCA005D3486 /* DuckPlayerOverlayPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E0ACB02CE36DC4005D3486 /* DuckPlayerOverlayPixels.swift */; };
 		E231C3CD2E1BB72700B53914 /* NewTabPageSectionsAvailabilityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E231C3CC2E1BB72300B53914 /* NewTabPageSectionsAvailabilityProvider.swift */; };
@@ -5801,6 +5803,7 @@
 		CDE248A52C821FFE00F9399D /* MaliciousSiteProtectionPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionPreferences.swift; sourceTree = "<group>"; };
 		CDE248A62C821FFE00F9399D /* phishingFilterSet.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = phishingFilterSet.json; sourceTree = "<group>"; };
 		CDE248A72C821FFE00F9399D /* MaliciousSiteProtectionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionState.swift; sourceTree = "<group>"; };
+		D65D0F9D2E7236D80075A784 /* NetworkQualityMonitor */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = NetworkQualityMonitor; sourceTree = "<group>"; };
 		D6E0ACB02CE36DC4005D3486 /* DuckPlayerOverlayPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerOverlayPixels.swift; sourceTree = "<group>"; };
 		E231C3CC2E1BB72300B53914 /* NewTabPageSectionsAvailabilityProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageSectionsAvailabilityProvider.swift; sourceTree = "<group>"; };
 		E274EFF22E1BD8B000373C41 /* NewTabPageSectionsAvailabilityProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageSectionsAvailabilityProviderTests.swift; sourceTree = "<group>"; };
@@ -5907,6 +5910,7 @@
 				7B1459572B7D43E500047F2C /* NetworkProtectionProxy in Frameworks */,
 				B6F7128229F6820A00594A45 /* QuickLookUI.framework in Frameworks */,
 				85F592DE2DE1E9FE00117D5E /* DesignResourcesKitIcons in Frameworks */,
+				D65D0FA12E7239730075A784 /* NetworkQualityMonitor in Frameworks */,
 				4B9EE34A2D76C97C00DDC75C /* DDGSync in Frameworks */,
 				4B9EE3482D76C96800DDC75C /* Configuration in Frameworks */,
 				4B9EE3582D76CA3500DDC75C /* PageRefreshMonitor in Frameworks */,
@@ -6269,6 +6273,7 @@
 				371BBC572D00C891008FA0C7 /* NewTabPage in Frameworks */,
 				9DB9800A2D96AD2B00B174B3 /* DataBrokerProtectionCore in Frameworks */,
 				4B94B7992D4731E80014AAB8 /* SyncUI-macOS in Frameworks */,
+				D65D0F9F2E7239680075A784 /* NetworkQualityMonitor in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -6951,6 +6956,7 @@
 				84AECC4F2DFBF76400438ACC /* LetsMove */,
 				9DB6E7222AA0DA7A00A17F3C /* LoginItems */,
 				7B25FE322AD12C990012AFAB /* NetworkProtectionMac */,
+				D65D0F9D2E7236D80075A784 /* NetworkQualityMonitor */,
 				374F18B32D006F940032EA4E /* NewTabPage */,
 				84494D1F2E18207600C9E5E8 /* ObjCTestsExtensions */,
 				85B6ABB72DE5E4E4009C85C7 /* Onboarding */,
@@ -11364,6 +11370,7 @@
 				85F592DD2DE1E9FE00117D5E /* DesignResourcesKitIcons */,
 				84C1763A2DF02567001DEEC7 /* CommonObjCExtensions */,
 				7BC26CA92DFC11D800E52480 /* VPN */,
+				D65D0FA02E7239730075A784 /* NetworkQualityMonitor */,
 			);
 			productName = DuckDuckGo;
 			productReference = 3706FD05293F65D500E42796 /* DuckDuckGo App Store.app */;
@@ -11881,6 +11888,7 @@
 				84C1764F2DF0462F001DEEC7 /* LetsMove */,
 				7BC26CA32DFC103D00E52480 /* VPN */,
 				846F4CDE2E048A0500266DB7 /* BWIntegration */,
+				D65D0F9E2E7239680075A784 /* NetworkQualityMonitor */,
 			);
 			productName = DuckDuckGo;
 			productReference = AA585D7E248FD31100E9A3E2 /* DuckDuckGo.app */;
@@ -18645,6 +18653,14 @@
 		C18BF9D12C736C9700ED6B8A /* Freemium */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Freemium;
+		};
+		D65D0F9E2E7239680075A784 /* NetworkQualityMonitor */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NetworkQualityMonitor;
+		};
+		D65D0FA02E7239730075A784 /* NetworkQualityMonitor */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NetworkQualityMonitor;
 		};
 		DC3F73D49B2D44464AFEFCD8 /* Subscription */ = {
 			isa = XCSwiftPackageProductDependency;

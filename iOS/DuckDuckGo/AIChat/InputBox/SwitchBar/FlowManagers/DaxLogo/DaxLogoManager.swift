@@ -27,10 +27,13 @@ final class DaxLogoManager {
     
     // MARK: - Properties
 
+    let animated: Bool
+
     private var logoContainerView: UIView = UIView()
 
-    private var homeDaxLogoView = DaxLogoView(isAIDax: false)
-    private var aiDaxLogoView = DaxLogoView(isAIDax: true)
+    private lazy var daxLogoView: DaxLogoViewSwitching = {
+        (animated ? AnimatedDaxLogoView() : StaticDaxLogoView()) as DaxLogoViewSwitching
+    }()
 
     private var isHomeDaxVisible: Bool = false
     private var isAIDaxVisible: Bool = false
@@ -38,6 +41,10 @@ final class DaxLogoManager {
     private var progress: CGFloat = 0
 
     private(set) var containerYCenterConstraint: NSLayoutConstraint?
+
+    init(animated: Bool) {
+        self.animated = animated
+    }
 
     // MARK: - Public Methods
     
@@ -47,13 +54,10 @@ final class DaxLogoManager {
         logoContainerView.isUserInteractionEnabled = false
         parentView.addSubview(logoContainerView)
 
-        logoContainerView.addSubview(homeDaxLogoView)
-        homeDaxLogoView.translatesAutoresizingMaskIntoConstraints = false
-        homeDaxLogoView.setContentHuggingPriority(.defaultHigh, for: .vertical)
-
-        logoContainerView.addSubview(aiDaxLogoView)
-        aiDaxLogoView.translatesAutoresizingMaskIntoConstraints = false
-        aiDaxLogoView.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        logoContainerView.addSubview(daxLogoView)
+        daxLogoView.frame = logoContainerView.bounds
+        daxLogoView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        daxLogoView.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
         let centeringGuide = UILayoutGuide()
         centeringGuide.identifier = "DaxLogoCenteringGuide"
@@ -75,17 +79,7 @@ final class DaxLogoManager {
             logoContainerView.leadingAnchor.constraint(greaterThanOrEqualTo: centeringGuide.leadingAnchor),
             logoContainerView.trailingAnchor.constraint(lessThanOrEqualTo: centeringGuide.trailingAnchor),
             logoContainerView.centerXAnchor.constraint(equalTo: centeringGuide.centerXAnchor),
-            containerYCenterConstraint!,
-
-            homeDaxLogoView.leadingAnchor.constraint(equalTo: logoContainerView.leadingAnchor),
-            homeDaxLogoView.trailingAnchor.constraint(equalTo: logoContainerView.trailingAnchor),
-            homeDaxLogoView.topAnchor.constraint(equalTo: logoContainerView.topAnchor),
-            homeDaxLogoView.bottomAnchor.constraint(equalTo: logoContainerView.bottomAnchor),
-
-            aiDaxLogoView.leadingAnchor.constraint(equalTo: logoContainerView.leadingAnchor),
-            aiDaxLogoView.trailingAnchor.constraint(equalTo: logoContainerView.trailingAnchor),
-            aiDaxLogoView.topAnchor.constraint(equalTo: logoContainerView.topAnchor),
-            aiDaxLogoView.bottomAnchor.constraint(equalTo: logoContainerView.bottomAnchor),
+            containerYCenterConstraint!
         ])
 
         parentView.bringSubviewToFront(logoContainerView)
@@ -105,20 +99,73 @@ final class DaxLogoManager {
     }
 
     private func updateState() {
+        if isHomeDaxVisible != isAIDaxVisible {
+            // Keep progress in one state, only update alpha
+            daxLogoView.updateProgress(isAIDaxVisible ? 1 : 0)
 
+            let homeLogoProgress = 1 - progress
+            let aiLogoProgress = progress
+
+            let homeDaxAlphaCoefficient: CGFloat = isHomeDaxVisible ? 1 : 0
+            let aiDaxAlphaCoefficient: CGFloat = isAIDaxVisible ? 1 : 0
+
+            let daxAlpha = homeDaxAlphaCoefficient * homeLogoProgress
+            let aiAlpha = aiDaxAlphaCoefficient * aiLogoProgress
+
+            daxLogoView.alpha = max(daxAlpha, aiAlpha)
+        } else if isHomeDaxVisible && isAIDaxVisible {
+            // Modify progress, don't modify alpha
+            daxLogoView.updateProgress(progress)
+
+            daxLogoView.alpha = 1
+        } else {
+            daxLogoView.alpha = 0
+        }
+
+    }
+}
+
+private final class StaticDaxLogoView: UIView, DaxLogoViewSwitching {
+    private let homeDaxLogoView = DaxLogoView(isAIDax: false)
+    private let aiDaxLogoView = DaxLogoView(isAIDax: true)
+
+    init() {
+        super.init(frame: .zero)
+
+        setUpSubviews()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func updateProgress(_ progress: CGFloat) {
         let homeLogoProgress = 1 - progress
         let aiLogoProgress = progress
 
-        if isHomeDaxVisible == isAIDaxVisible {
-            homeDaxLogoView.alpha = isHomeDaxVisible ? 1.0 : 0.0
-            homeDaxLogoView.textImage.alpha = isHomeDaxVisible ? homeLogoProgress : 0
-            aiDaxLogoView.alpha = isAIDaxVisible ? aiLogoProgress : 0
-        } else {
-            // Fade out home only when one logo is visible - prevents flashing
-            homeDaxLogoView.alpha = isHomeDaxVisible ? Easing.inOutCirc(homeLogoProgress) : 0
-            homeDaxLogoView.textImage.alpha = 1.0
-            aiDaxLogoView.alpha = isAIDaxVisible ? Easing.inOutCirc(aiLogoProgress) : 0
-        }
+        homeDaxLogoView.textImage.alpha = homeLogoProgress
+        aiDaxLogoView.alpha = aiLogoProgress
+    }
+
+    private func setUpSubviews() {
+
+        homeDaxLogoView.translatesAutoresizingMaskIntoConstraints = false
+        aiDaxLogoView.translatesAutoresizingMaskIntoConstraints = false
+
+        addSubview(homeDaxLogoView)
+        addSubview(aiDaxLogoView)
+
+        NSLayoutConstraint.activate([
+            homeDaxLogoView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            homeDaxLogoView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            homeDaxLogoView.topAnchor.constraint(equalTo: topAnchor),
+            homeDaxLogoView.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            aiDaxLogoView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            aiDaxLogoView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            aiDaxLogoView.topAnchor.constraint(equalTo: topAnchor),
+            aiDaxLogoView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
     }
 }
 
@@ -172,4 +219,8 @@ private final class DaxLogoView: UIView {
         static let maxLogoSize: CGFloat = 96
         static let spacing: CGFloat = 12
     }
+}
+
+protocol DaxLogoViewSwitching: UIView {
+    func updateProgress(_ progress: CGFloat)
 }

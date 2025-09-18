@@ -178,6 +178,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1210947754188321/task/1210869716452616?focus=true
     case refreshButtonPosition
 
+    /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1211257304926910
+    case aiSearchAnimatedDaxLogo
+
     /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1210716480546568?focus=true
     case adjustNewSearchForLandscape
     
@@ -253,6 +256,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
              .refreshButtonPosition,
+             .aiSearchAnimatedDaxLogo,
              .adjustNewSearchForLandscape,
              .serpSettingsFollowUpQuestions:
             return true
@@ -446,7 +450,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.refreshButtonPosition))
         case .showAIChatAddressBarChoiceScreen:
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
-        case .adjustNewSearchForLandscape:
+        case .aiSearchAnimatedDaxLogo,
+             .adjustNewSearchForLandscape:
             return .internalOnly()
         case .serpSettingsFollowUpQuestions:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.serpSettingsFollowUpQuestions))

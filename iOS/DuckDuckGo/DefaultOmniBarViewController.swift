@@ -190,7 +190,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         let switchBarHandler = createSwitchBarHandler(for: textField)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
-        let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)
+        let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler, featureFlagger: dependencies.featureFlagger)
         editingStateViewController.delegate = self
 
         editingStateViewController.modalPresentationStyle = .custom

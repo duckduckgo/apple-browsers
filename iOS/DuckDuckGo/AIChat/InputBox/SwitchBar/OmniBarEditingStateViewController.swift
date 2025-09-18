@@ -51,6 +51,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
     var automaticallySelectsTextOnAppear = false
+
+    let featureFlagger: FeatureFlagger
+
     var adjustsLayoutInLandscape = false {
         didSet {
             adjustLayoutForViewSize(view.bounds.size)
@@ -74,16 +77,20 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private var swipeContainerManager: SwipeContainerManager?
     private var navigationActionBarManager: NavigationActionBarManager?
     private var suggestionTrayManager: SuggestionTrayManager?
-    private let daxLogoManager = DaxLogoManager()
+    private let daxLogoManager: DaxLogoManager
     private var notificationCancellable: AnyCancellable?
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
 
     // MARK: - Initialization
 
     internal init(switchBarHandler: any SwitchBarHandling,
-                  switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics()) {
+                  switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
+                  featureFlagger: FeatureFlagger) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
+        self.featureFlagger = featureFlagger
+        self.daxLogoManager = DaxLogoManager(animated: featureFlagger.isFeatureOn(.aiSearchAnimatedDaxLogo))
+        
         super.init(nibName: nil, bundle: nil)
     }
 

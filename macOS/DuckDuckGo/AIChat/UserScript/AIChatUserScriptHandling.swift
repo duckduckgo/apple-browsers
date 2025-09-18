@@ -23,6 +23,11 @@ import Common
 import Foundation
 import PixelKit
 import UserScript
+import OSLog
+
+protocol AIChatMetricReportingHandling {
+    func didReportMetric(_ metric: AIChatMetric, completion: (() -> Void)?)
+}
 
 protocol AIChatUserScriptHandling {
     @MainActor func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -47,6 +52,7 @@ protocol AIChatUserScriptHandling {
     func submitPageContext(_ pageContext: AIChatPageContextData?)
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
+    func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 struct AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -62,18 +68,21 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring?
+    private let statisticsLoader: StatisticsLoader?
 
     init(
         storage: AIChatPreferencesStorage,
         messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
         windowControllersManager: WindowControllersManagerProtocol,
         pixelFiring: PixelFiring?,
+        statisticsLoader: StatisticsLoader?,
         notificationCenter: NotificationCenter = .default
     ) {
         self.storage = storage
         self.messageHandling = messageHandling
         self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
+        self.statisticsLoader = statisticsLoader
         self.notificationCenter = notificationCenter
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
@@ -197,6 +206,21 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         pageContextSubject.send(pageContext)
     }
 
+    func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let paramsDict = params as? [String: Any],
+           let jsonData = try? JSONSerialization.data(withJSONObject: paramsDict, options: []) {
+
+            let decoder = JSONDecoder()
+            do {
+                let metric = try decoder.decode(AIChatMetric.self, from: jsonData)
+                didReportMetric(metric, completion: nil)
+            } catch {
+                Logger.aiChat.debug("Failed to decode metric JSON in AIChatUserScript: \(error)")
+            }
+        }
+        return nil
+    }
+
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable? {
         guard let payload: TogglePageContextTelemetry = DecodableHelper.decode(from: params) else {
             return nil
@@ -210,6 +234,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
         return nil
     }
+
 }
 
 extension NSNotification.Name {
@@ -236,4 +261,26 @@ extension AIChatUserScriptHandler {
     struct TogglePageContextTelemetry: Codable, Equatable {
         let enabled: Bool
     }
+}
+
+extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
+
+    func didReportMetric(_ metric: AIChatMetric, completion: (() -> Void)? = nil) {
+        switch metric.metricName {
+        case .userDidSubmitFirstPrompt, .userDidSubmitPrompt:
+            DispatchQueue.main.async { [self] in
+                refreshAtbs(completion: completion)
+            }
+        default:
+            completion?()
+            return
+        }
+    }
+
+    private func refreshAtbs(completion: (() -> Void)? = nil) {
+        statisticsLoader?.refreshRetentionAtbOnDuckAiPromptSubmition {
+            completion?()
+        }
+    }
+
 }

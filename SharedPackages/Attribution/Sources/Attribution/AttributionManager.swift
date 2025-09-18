@@ -143,7 +143,10 @@ public final class AttributionManager {
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1211326699062078?focus=true
     func processActiveSearchDays() {
 
-        let search7Days = dataStorage.search7Days ?? RollingSevenDaysInt()
+        let search7Days = dataStorage.search7Days ?? RollingArrayInt(capacity: 7)
+
+//new per day!
+
         let searchCount = search7Days.count
         if searchCount > 0 {
             Logger.attribution.debug("\(searchCount) searches performed in the last week")

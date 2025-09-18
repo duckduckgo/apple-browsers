@@ -1,5 +1,5 @@
 //
-//  RollingSevenDaysTests.swift
+//  RollingArrayTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,15 +19,15 @@
 import XCTest
 @testable import Attribution
 
-final class RollingSevenDaysTests: XCTestCase {
+final class RollingArrayTests: XCTestCase {
     
-    private var rollingBool: RollingSevenDaysBool!
-    private var rollingInt: RollingSevenDaysInt!
+    private var rollingBool: RollingArray<Bool>!
+    private var rollingInt: RollingArray<Int>!
     
     override func setUp() {
         super.setUp()
-        rollingBool = RollingSevenDaysBool()
-        rollingInt = RollingSevenDaysInt()
+        rollingBool = RollingArray<Bool>(capacity: 7)
+        rollingInt = RollingArray<Int>(capacity: 7)
     }
     
     override func tearDown() {
@@ -39,7 +39,7 @@ final class RollingSevenDaysTests: XCTestCase {
 
 // MARK: - Core Functionality Tests
 
-extension RollingSevenDaysTests {
+extension RollingArrayTests {
     
     func testInitialization() {
         // Both types should start empty
@@ -116,7 +116,7 @@ extension RollingSevenDaysTests {
 
 // MARK: - Advanced Behavior Tests
 
-extension RollingSevenDaysTests {
+extension RollingArrayTests {
     
     func testLargeNumberOfAppends() {
         // Test with alternating pattern
@@ -145,12 +145,12 @@ extension RollingSevenDaysTests {
 
 // MARK: - Codable Tests
 
-extension RollingSevenDaysTests {
+extension RollingArrayTests {
     
     func testCodableRoundTrip() throws {
         // Test empty state
         let emptyData = try JSONEncoder().encode(rollingBool)
-        let decodedEmpty = try JSONDecoder().decode(RollingSevenDaysBool.self, from: emptyData)
+        let decodedEmpty = try JSONDecoder().decode(RollingArray<Bool>.self, from: emptyData)
         XCTAssertEqual(decodedEmpty.allValues, [])
         XCTAssertEqual(decodedEmpty.count, 0)
         
@@ -160,9 +160,41 @@ extension RollingSevenDaysTests {
         rollingInt.append(-5)
         
         let data = try JSONEncoder().encode(rollingInt)
-        let decoded = try JSONDecoder().decode(RollingSevenDaysInt.self, from: data)
+        let decoded = try JSONDecoder().decode(RollingArray<Int>.self, from: data)
         
         XCTAssertEqual(decoded.allValues, rollingInt.allValues)
         XCTAssertEqual(decoded.count, rollingInt.count)
+    }
+    
+    func testDifferentCapacities() {
+        // Test capacity 3
+        var rolling3 = RollingArray<Int>(capacity: 3)
+        XCTAssertEqual(rolling3.count, 0)
+        
+        rolling3.append(1)
+        rolling3.append(2)
+        rolling3.append(3)
+        XCTAssertEqual(rolling3.allValues, [1, 2, 3])
+        XCTAssertEqual(rolling3.count, 3)
+        
+        // Roll over
+        rolling3.append(4)
+        XCTAssertEqual(rolling3.allValues, [2, 3, 4])
+        XCTAssertEqual(rolling3.count, 3)
+        
+        // Test capacity 10
+        var rolling10 = RollingArray<String>(capacity: 10)
+        for i in 1...12 {
+            rolling10.append("item\(i)")
+        }
+        XCTAssertEqual(rolling10.count, 10)
+        XCTAssertEqual(rolling10.allValues, ["item3", "item4", "item5", "item6", "item7", "item8", "item9", "item10", "item11", "item12"])
+        
+        // Test minimum capacity of 1
+        var rolling1 = RollingArray<Bool>(capacity: 0) // Should default to 1
+        rolling1.append(true)
+        rolling1.append(false)
+        XCTAssertEqual(rolling1.allValues, [false])
+        XCTAssertEqual(rolling1.count, 1)
     }
 }

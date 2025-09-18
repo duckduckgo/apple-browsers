@@ -23,7 +23,7 @@ public protocol AttributionDataStoring {
     var installDate: Date? { get set }
     var lastRetentionThreshold: TimePast? { get set }
 
-    var search7Days: RollingSevenDaysInt? { get set }
+    var search7Days: RollingArrayInt? { get set }
 
     func removeAll()
 }
@@ -84,7 +84,7 @@ class AttributionDataStorage: AttributionDataStoring {
 
     // MARK: - Searches
 
-    var search7Days: RollingSevenDaysInt? {
+    var search7Days: RollingArrayInt? {
         set { encode(newValue, to: userDefaults, key: .search7Days) }
         get { return decode(from: userDefaults, key: .search7Days) }
     }

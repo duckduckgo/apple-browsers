@@ -187,10 +187,10 @@ final class AppStoreUpdateController: NSObject, UpdateController {
         return Bundle.main.infoDictionary?["CFBundleVersion"] as? String
     }
 
-    private func isUpdateAvailable(currentVersion: String?,
-                                   currentBuild: String?,
-                                   remoteVersion: String,
-                                   remoteBuild: String) async -> Bool {
+    internal func isUpdateAvailable(currentVersion: String?,
+                                    currentBuild: String?,
+                                    remoteVersion: String,
+                                    remoteBuild: String) async -> Bool {
         guard let currentVersion = currentVersion else { return true }
 
         // Use semantic version comparison
@@ -212,7 +212,7 @@ final class AppStoreUpdateController: NSObject, UpdateController {
         }
     }
 
-    private func compareSemanticVersions(_ version1: String, _ version2: String) -> ComparisonResult {
+    internal func compareSemanticVersions(_ version1: String, _ version2: String) -> ComparisonResult {
         let v1Components = version1.split(separator: ".").compactMap { Int($0) }
         let v2Components = version2.split(separator: ".").compactMap { Int($0) }
 

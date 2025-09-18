@@ -3278,6 +3278,22 @@
 		BB0B4EA22E7B131F005A2F57 /* AppStoreUpdateMenuItemFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EA12E7B1318005A2F57 /* AppStoreUpdateMenuItemFactory.swift */; };
 		BB0B4EA32E7B131F005A2F57 /* AppStoreUpdateMenuItemFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EA12E7B1318005A2F57 /* AppStoreUpdateMenuItemFactory.swift */; };
 		BB0B4EA42E7B17A1005A2F57 /* UpdateUserDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD6367242C877BE1009DE7A8 /* UpdateUserDriver.swift */; };
+		BB0B4EAD2E7B5084005A2F57 /* UpdateControllerProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EAB2E7B5084005A2F57 /* UpdateControllerProtocolTests.swift */; };
+		BB0B4EAE2E7B5084005A2F57 /* SparkleUpdaterAvailabilityCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EAA2E7B5084005A2F57 /* SparkleUpdaterAvailabilityCheckerTests.swift */; };
+		BB0B4EAF2E7B5084005A2F57 /* AppStoreUpdateMenuItemFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EA62E7B5084005A2F57 /* AppStoreUpdateMenuItemFactoryTests.swift */; };
+		BB0B4EB02E7B5084005A2F57 /* AppStoreUpdaterAvailabilityCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EA72E7B5084005A2F57 /* AppStoreUpdaterAvailabilityCheckerTests.swift */; };
+		BB0B4EB12E7B5084005A2F57 /* CheckForUpdatesAppStorePixelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EA82E7B5084005A2F57 /* CheckForUpdatesAppStorePixelsTests.swift */; };
+		BB0B4EB22E7B5084005A2F57 /* AppStoreUpdateControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EA52E7B5084005A2F57 /* AppStoreUpdateControllerTests.swift */; };
+		BB0B4EB32E7B5084005A2F57 /* SparkleUpdateMenuItemFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EA92E7B5084005A2F57 /* SparkleUpdateMenuItemFactoryTests.swift */; };
+		BB0B4EB42E7B5084005A2F57 /* UpdateModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EAC2E7B5084005A2F57 /* UpdateModelTests.swift */; };
+		BB0B4EB52E7B5084005A2F57 /* UpdateControllerProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EAB2E7B5084005A2F57 /* UpdateControllerProtocolTests.swift */; };
+		BB0B4EB62E7B5084005A2F57 /* SparkleUpdaterAvailabilityCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EAA2E7B5084005A2F57 /* SparkleUpdaterAvailabilityCheckerTests.swift */; };
+		BB0B4EB72E7B5084005A2F57 /* AppStoreUpdateMenuItemFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EA62E7B5084005A2F57 /* AppStoreUpdateMenuItemFactoryTests.swift */; };
+		BB0B4EB82E7B5084005A2F57 /* AppStoreUpdaterAvailabilityCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EA72E7B5084005A2F57 /* AppStoreUpdaterAvailabilityCheckerTests.swift */; };
+		BB0B4EB92E7B5084005A2F57 /* CheckForUpdatesAppStorePixelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EA82E7B5084005A2F57 /* CheckForUpdatesAppStorePixelsTests.swift */; };
+		BB0B4EBA2E7B5084005A2F57 /* AppStoreUpdateControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EA52E7B5084005A2F57 /* AppStoreUpdateControllerTests.swift */; };
+		BB0B4EBB2E7B5084005A2F57 /* SparkleUpdateMenuItemFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EA92E7B5084005A2F57 /* SparkleUpdateMenuItemFactoryTests.swift */; };
+		BB0B4EBC2E7B5084005A2F57 /* UpdateModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EAC2E7B5084005A2F57 /* UpdateModelTests.swift */; };
 		BB0DA4BF2DB12F8600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */; };
 		BB0DA4C02DB12F8600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */; };
 		BB0DA4D12DB1629A00AB9C29 /* shield-green-hover.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */; };
@@ -5646,6 +5662,14 @@
 		BB01275B2E6F409E00263AD8 /* CheckForUpdatesAppStorePixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckForUpdatesAppStorePixels.swift; sourceTree = "<group>"; };
 		BB0346F42CEB80B400D23E05 /* DownloadsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsUITests.swift; sourceTree = "<group>"; };
 		BB0B4EA12E7B1318005A2F57 /* AppStoreUpdateMenuItemFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreUpdateMenuItemFactory.swift; sourceTree = "<group>"; };
+		BB0B4EA52E7B5084005A2F57 /* AppStoreUpdateControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreUpdateControllerTests.swift; sourceTree = "<group>"; };
+		BB0B4EA62E7B5084005A2F57 /* AppStoreUpdateMenuItemFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreUpdateMenuItemFactoryTests.swift; sourceTree = "<group>"; };
+		BB0B4EA72E7B5084005A2F57 /* AppStoreUpdaterAvailabilityCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreUpdaterAvailabilityCheckerTests.swift; sourceTree = "<group>"; };
+		BB0B4EA82E7B5084005A2F57 /* CheckForUpdatesAppStorePixelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckForUpdatesAppStorePixelsTests.swift; sourceTree = "<group>"; };
+		BB0B4EA92E7B5084005A2F57 /* SparkleUpdateMenuItemFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdateMenuItemFactoryTests.swift; sourceTree = "<group>"; };
+		BB0B4EAA2E7B5084005A2F57 /* SparkleUpdaterAvailabilityCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdaterAvailabilityCheckerTests.swift; sourceTree = "<group>"; };
+		BB0B4EAB2E7B5084005A2F57 /* UpdateControllerProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateControllerProtocolTests.swift; sourceTree = "<group>"; };
+		BB0B4EAC2E7B5084005A2F57 /* UpdateModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateModelTests.swift; sourceTree = "<group>"; };
 		BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyShieldAddressBarStyleProviding.swift; sourceTree = "<group>"; };
 		BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-green-hover.json"; sourceTree = "<group>"; };
 		BB0DA4D32DB1630000AB9C29 /* shield-gray-dot-hover.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-gray-dot-hover.json"; sourceTree = "<group>"; };
@@ -6495,6 +6519,14 @@
 		1D838A302C44EFF20078373F /* Updates */ = {
 			isa = PBXGroup;
 			children = (
+				BB0B4EA52E7B5084005A2F57 /* AppStoreUpdateControllerTests.swift */,
+				BB0B4EA62E7B5084005A2F57 /* AppStoreUpdateMenuItemFactoryTests.swift */,
+				BB0B4EA72E7B5084005A2F57 /* AppStoreUpdaterAvailabilityCheckerTests.swift */,
+				BB0B4EA82E7B5084005A2F57 /* CheckForUpdatesAppStorePixelsTests.swift */,
+				BB0B4EA92E7B5084005A2F57 /* SparkleUpdateMenuItemFactoryTests.swift */,
+				BB0B4EAA2E7B5084005A2F57 /* SparkleUpdaterAvailabilityCheckerTests.swift */,
+				BB0B4EAB2E7B5084005A2F57 /* UpdateControllerProtocolTests.swift */,
+				BB0B4EAC2E7B5084005A2F57 /* UpdateModelTests.swift */,
 				BB486B502E74770D0026B972 /* LatestReleaseCheckerTests.swift */,
 				4BCBFDCA2E4BDD4800E41763 /* UpdateControllerTests.swift */,
 				1D838A312C44F0180078373F /* ReleaseNotesParserTests.swift */,
@@ -9425,7 +9457,6 @@
 				1D838A302C44EFF20078373F /* Updates */,
 				84A37DE02DAFB645009E0A68 /* URLDragPreviewProvider */,
 				AA0877B626D515EE00B05660 /* UserAgent */,
-				BBC0001C2DF743CC0003E9F5 /* VisualRefresh */,
 				4B9DB04D2A983B55000927DB /* Waitlist */,
 				1D9EB3122D43C21B004B7270 /* WebExtensions */,
 				3776582B27F7163B009A6B35 /* WebsiteBreakageReport */,
@@ -10904,13 +10935,6 @@
 				BBBD29932E2EB70A005E7664 /* pictogramDaxHeart.json */,
 			);
 			path = Animations;
-			sourceTree = "<group>";
-		};
-		BBC0001C2DF743CC0003E9F5 /* VisualRefresh */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = VisualRefresh;
 			sourceTree = "<group>";
 		};
 		BBDE001A2D6DE66100109F88 /* DefaultBrowserAndAddToDockPrompts */ = {
@@ -14184,6 +14208,14 @@
 				BDA764922BC4E57200D0400C /* MockVPNLocationFormatter.swift in Sources */,
 				3706FE4B293F661700E42796 /* BookmarksHTMLImporterTests.swift in Sources */,
 				9FA75A3F2BA00E1400DA5FA6 /* BookmarksBarMenuFactoryTests.swift in Sources */,
+				BB0B4EAD2E7B5084005A2F57 /* UpdateControllerProtocolTests.swift in Sources */,
+				BB0B4EAE2E7B5084005A2F57 /* SparkleUpdaterAvailabilityCheckerTests.swift in Sources */,
+				BB0B4EAF2E7B5084005A2F57 /* AppStoreUpdateMenuItemFactoryTests.swift in Sources */,
+				BB0B4EB02E7B5084005A2F57 /* AppStoreUpdaterAvailabilityCheckerTests.swift in Sources */,
+				BB0B4EB12E7B5084005A2F57 /* CheckForUpdatesAppStorePixelsTests.swift in Sources */,
+				BB0B4EB22E7B5084005A2F57 /* AppStoreUpdateControllerTests.swift in Sources */,
+				BB0B4EB32E7B5084005A2F57 /* SparkleUpdateMenuItemFactoryTests.swift in Sources */,
+				BB0B4EB42E7B5084005A2F57 /* UpdateModelTests.swift in Sources */,
 				56D145E929E6BB6300E3488A /* CapturingDataImportProvider.swift in Sources */,
 				3706FE4E293F661700E42796 /* BookmarkListTests.swift in Sources */,
 				3706FE4F293F661700E42796 /* BookmarksExporterTests.swift in Sources */,
@@ -16173,6 +16205,14 @@
 				C1D8BE452C1739E70057E426 /* DataBrokerProtectionMocks.swift in Sources */,
 				37A0BA312D747C7000130447 /* CapturingHistoryViewTabOpener.swift in Sources */,
 				5677A93D2C98414900DA7B0A /* ContextualDialogsManagerTests.swift in Sources */,
+				BB0B4EB52E7B5084005A2F57 /* UpdateControllerProtocolTests.swift in Sources */,
+				BB0B4EB62E7B5084005A2F57 /* SparkleUpdaterAvailabilityCheckerTests.swift in Sources */,
+				BB0B4EB72E7B5084005A2F57 /* AppStoreUpdateMenuItemFactoryTests.swift in Sources */,
+				BB0B4EB82E7B5084005A2F57 /* AppStoreUpdaterAvailabilityCheckerTests.swift in Sources */,
+				BB0B4EB92E7B5084005A2F57 /* CheckForUpdatesAppStorePixelsTests.swift in Sources */,
+				BB0B4EBA2E7B5084005A2F57 /* AppStoreUpdateControllerTests.swift in Sources */,
+				BB0B4EBB2E7B5084005A2F57 /* SparkleUpdateMenuItemFactoryTests.swift in Sources */,
+				BB0B4EBC2E7B5084005A2F57 /* UpdateModelTests.swift in Sources */,
 				AA652CCE25DD9071009059CC /* BookmarkListTests.swift in Sources */,
 				859E7D6D274548F2009C2B69 /* BookmarksExporterTests.swift in Sources */,
 				379857F92D7230CA008773F6 /* UserDefaultsHistoryViewOnboardingViewSettingsPersistorTests.swift in Sources */,

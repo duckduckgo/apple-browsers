@@ -54,7 +54,8 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .duckAISearchParameter:
             return .duckAI
         case .osSupportForceUnsupportedMessage,
-                .osSupportForceWillSoonDropSupportMessage:
+                .osSupportForceWillSoonDropSupportMessage,
+                .willSoonDropBigSurSupport:
             return .osSupportWarnings
         case .syncSeamlessAccountSwitching,
                 .syncSetupBarcodeIsUrlBased,

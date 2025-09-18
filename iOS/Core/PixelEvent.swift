@@ -1329,6 +1329,7 @@ extension Pixel {
         case aiChatExperimentalOmnibarFloatingSubmitPressed
         case aiChatExperimentalOmnibarFloatingReturnPressed
         case aiChatExperimentalOmnibarSessionSummary
+        case aiChatExperimentalOmnibarDailyRetention
         case aiChatLegacyOmnibarShown
         case aiChatLegacyOmnibarQuerySubmitted
         case aiChatLegacyOmnibarAichatButtonPressed
@@ -2602,6 +2603,7 @@ extension Pixel.Event {
         case .aiChatExperimentalOmnibarFloatingSubmitPressed: return "m_aichat_experimental_omnibar_floating_submit_pressed"
         case .aiChatExperimentalOmnibarFloatingReturnPressed: return "m_aichat_experimental_omnibar_floating_return_pressed"
         case .aiChatExperimentalOmnibarSessionSummary: return "m_aichat_experimental_omnibar_session_summary"
+        case .aiChatExperimentalOmnibarDailyRetention: return "m_aichat_experimental_omnibar_daily_retention"
         case .aiChatLegacyOmnibarShown: return "m_aichat_legacy_omnibar_shown"
         case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
         case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"

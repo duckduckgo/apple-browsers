@@ -1918,6 +1918,9 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Je wachtwoorden importeren in DuckDuckGo";
 
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "Vraag privé";
+
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Je moet de VPN inschakelen vanuit de DuckDuckGo-app.";
 
@@ -2688,9 +2691,6 @@
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Zoek of voer een adres in";
-
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Vraag stellen aan Duck.ai";
 
 /* Search input toggle button title for asking AI Chat */
 "search.input.toggle.aichat.button.title" = "Duck.ai";

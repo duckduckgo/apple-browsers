@@ -256,7 +256,7 @@ class StatisticsLoaderTests: XCTestCase {
         loadSuccessfulUpdateAtbStub()
 
         let expect = expectation(description: "Search retention ATB requested")
-        testee.refreshRetentionAtb(isSearch: true) {
+        testee.refreshRetentionAtbOnNavigation(isSearch: true, isDuckAI: false) {
             XCTAssertEqual(self.mockStatisticsStore.atb, "v20-1")
             XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "v77-5")
             XCTAssertTrue(self.fireSearchExperimentPixelsCalled)
@@ -274,7 +274,7 @@ class StatisticsLoaderTests: XCTestCase {
         loadSuccessfulUpdateAtbStub()
 
         let expect = expectation(description: "App retention ATB requested")
-        testee.refreshRetentionAtb(isSearch: false) {
+        testee.refreshRetentionAtbOnNavigation(isSearch: false, isDuckAI: false) {
             XCTAssertEqual(self.mockStatisticsStore.atb, "v20-1")
             XCTAssertEqual(self.mockStatisticsStore.appRetentionAtb, "v77-5")
             XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "searchRetentionAtb")
@@ -295,7 +295,7 @@ class StatisticsLoaderTests: XCTestCase {
         loadSuccessfulUpdateAtbStub()
 
         let expect = expectation(description: "App retention ATB not requested")
-        testee.refreshRetentionAtb(isSearch: false) {
+        testee.refreshRetentionAtbOnNavigation(isSearch: false, isDuckAI: false) {
             XCTAssertEqual(self.mockStatisticsStore.atb, "atb")
             XCTAssertEqual(self.mockStatisticsStore.appRetentionAtb, "appRetentionAtb")
             XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "searchRetentionAtb")
@@ -312,7 +312,7 @@ class StatisticsLoaderTests: XCTestCase {
         loadSuccessfulUpdateAtbStub()
 
         let expect = expectation(description: "App retention ATB requested")
-        testee.refreshRetentionAtb(isSearch: false) {
+        testee.refreshRetentionAtbOnNavigation(isSearch: false, isDuckAI: false) {
             XCTAssertEqual(self.mockStatisticsStore.atb, "v20-1")
             XCTAssertEqual(self.mockStatisticsStore.appRetentionAtb, "v77-5")
             XCTAssertNil(self.mockStatisticsStore.searchRetentionAtb)
@@ -409,4 +409,82 @@ class StatisticsLoaderTests: XCTestCase {
         }
     }
 
+    func testWhenDuckAIRefreshHasSuccessfulAtbRequestThenDuckAIRetentionAtbUpdated() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionAtb"
+        loadSuccessfulAtbStub()
+
+        let expect = expectation(description: "Successful DuckAI atb updates retention store")
+        testee.refreshDuckAIRetentionAtb {
+            XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "v77-5")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenDuckAIRefreshHasUnsuccessfulAtbRequestThenDuckAIRetentionAtbNotUpdated() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionAtb"
+        loadUnsuccessfulAtbStub()
+
+        let expect = expectation(description: "Unsuccessful DuckAI atb does not update store")
+        testee.refreshDuckAIRetentionAtb {
+            XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "retentionAtb")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenDuckAIRefreshCalledWithoutInstallStatisticsThenInstallStatisticsRequested() {
+        mockStatisticsStore.atb = nil
+        mockStatisticsStore.duckAIRetentionAtb = nil
+        loadSuccessfulAtbStub()
+        loadSuccessfulExiStub()
+
+        let expect = expectation(description: "DuckAI refresh triggers install statistics")
+        testee.refreshDuckAIRetentionAtb {
+            XCTAssertTrue(self.mockStatisticsStore.hasInstallStatistics)
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenDuckAIRefreshCalledWhileAnotherIsInProgressThenSecondCallIsIgnored() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionAtb"
+        loadSuccessfulAtbStub()
+
+        // Simulate an ongoing request
+        testee.isDuckAIRetentionRequestInProgress = true
+
+        let expect = expectation(description: "Second DuckAI refresh call is ignored")
+        testee.refreshDuckAIRetentionAtb {
+            // The refresh should be ignored, so no update should occur
+            XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "retentionAtb")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenSearchRefreshCalledWhileAnotherIsInProgressThenSecondCallIsIgnored() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "retentionAtb"
+        loadSuccessfulAtbStub()
+
+        // Simulate an ongoing request
+        testee.isSearchRetentionRequestInProgress = true
+
+        let expect = expectation(description: "Second Search refresh call is ignored")
+        testee.refreshSearchRetentionAtb {
+            // The refresh should be ignored, so no update should occur
+            XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "retentionAtb")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
 }

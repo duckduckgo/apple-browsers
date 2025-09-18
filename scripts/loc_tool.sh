@@ -9,10 +9,6 @@ set -euo pipefail
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 # Location of the iOS scripts
 IOS_SCRIPTS_DIR="$SCRIPT_DIR/../iOS/scripts"
-# Location of the Swift CLI
-TOOL_DIR="$SCRIPT_DIR/LocalizationTool"
-# Location of the Swift CLI binary after building
-TOOL_BIN="$TOOL_DIR/.build/release/localization-tool"
 # Location of the XLIFF files
 XLIFF_DIR="$IOS_SCRIPTS_DIR/assets/loc/en.xcloc/Localized Contents"
 # Location of the stringsdict file
@@ -53,8 +49,8 @@ parse_job_id() {
   echo "$2"
 }
 
-# Build the Swift CLI once up-front for all commands
-run_in_directory "$TOOL_DIR" swift build -c release >/dev/null
+# Python tool path
+PYTHON_TOOL="$SCRIPT_DIR/localization_tool.py"
 
 case "$cmd" in
   upload)
@@ -101,40 +97,39 @@ case "$cmd" in
       echo "  - $file"
     done
 
-    # Run CLI
-    CMD=("$TOOL_BIN" upload --job-name "$JOB_NAME" --files "${FILES[@]}")
-    run_in_directory "$TOOL_DIR" "${CMD[@]}"
+    # Run Python CLI
+    python3 "$PYTHON_TOOL" upload --job-name "$JOB_NAME" --files "${FILES[@]}"
     ;;
   status)
+    check_credentials
     JOB_ID=$(parse_job_id "$@")
-    
+
     # Run status check
-    CMD=("$TOOL_BIN" status --job-id "$JOB_ID")
-    run_in_directory "$TOOL_DIR" "${CMD[@]}"
+    python3 "$PYTHON_TOOL" status --job-id "$JOB_ID"
     ;;
   approve)
+    check_credentials
     JOB_ID=$(parse_job_id "$@")
-    
+
     # Run approval check
-    CMD=("$TOOL_BIN" approve --job-id "$JOB_ID")
-    run_in_directory "$TOOL_DIR" "${CMD[@]}"
+    python3 "$PYTHON_TOOL" approve --job-id "$JOB_ID"
     ;;
   download)
+    check_credentials
     JOB_ID=$(parse_job_id "$@")
-    
+
     # Parse optional output directory
     OUT_DIR=""
     if [ "${3:-}" = "--out-dir" ] && [ -n "${4:-}" ]; then
       OUT_DIR="$4"
     fi
-    
+
     # Run download
     if [ -n "$OUT_DIR" ]; then
-      CMD=("$TOOL_BIN" download --job-id "$JOB_ID" --out-dir "$OUT_DIR")
+      python3 "$PYTHON_TOOL" download --job-id "$JOB_ID" --out-dir "$OUT_DIR"
     else
-      CMD=("$TOOL_BIN" download --job-id "$JOB_ID")
+      python3 "$PYTHON_TOOL" download --job-id "$JOB_ID"
     fi
-    run_in_directory "$TOOL_DIR" "${CMD[@]}"
     ;;
   import)
     # Parse required --import-dir

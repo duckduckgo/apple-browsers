@@ -51,16 +51,19 @@ final class AppStoreUpdateController: NSObject, UpdateController {
     private let updaterChecker: AppStoreUpdaterAvailabilityChecker
     private let releaseChecker: LatestReleaseChecker
     private let featureFlagger: FeatureFlagger
+    private let internalUserDecider: InternalUserDecider
 
     // MARK: - Initialization
 
     init(updateCheckState: UpdateCheckState = UpdateCheckState(),
          releaseChecker: LatestReleaseChecker = LatestReleaseChecker(),
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         internalUserDecider: InternalUserDecider = NSApp.delegateTyped.internalUserDecider) {
         self.updateCheckState = updateCheckState
         self.updaterChecker = AppStoreUpdaterAvailabilityChecker()
         self.releaseChecker = releaseChecker
         self.featureFlagger = featureFlagger
+        self.internalUserDecider = internalUserDecider
         super.init()
 
         // Only setup cloud checking if feature flag is on
@@ -210,6 +213,14 @@ final class AppStoreUpdateController: NSObject, UpdateController {
                                     currentBuild: String?,
                                     remoteVersion: String,
                                     remoteBuild: String) async -> Bool {
+
+        // Internal user debug override for testing
+        let debugSettings = UpdatesDebugSettings()
+        if debugSettings.forceUpdateAvailable && internalUserDecider.isInternalUser {
+            Logger.updates.debug("🧪 INTERNAL DEBUG: Forcing update available = true")
+            return true
+        }
+
         guard let currentVersion = currentVersion else { return true }
 
         // Use semantic version comparison

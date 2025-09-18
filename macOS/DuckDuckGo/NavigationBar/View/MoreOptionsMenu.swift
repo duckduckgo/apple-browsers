@@ -246,6 +246,11 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         addPageItems()
 
+        let helpItem = NSMenuItem(title: UserText.mainMenuHelp, action: nil, keyEquivalent: "")
+            .withImage(moreOptionsMenuIconsProvider.helpIcon)
+        helpItem.submenu = HelpSubMenu(targetting: self)
+        addItem(helpItem)
+
 #if APPSTORE
         if !featureFlagger.isFeatureOn(.appStoreCheckForUpdatesFlow) {
             let checkForAppStoreUpdates = NSMenuItem(title: UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""),
@@ -256,11 +261,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             addItem(checkForAppStoreUpdates)
         }
 #endif
-
-        let helpItem = NSMenuItem(title: UserText.mainMenuHelp, action: nil, keyEquivalent: "")
-            .withImage(moreOptionsMenuIconsProvider.helpIcon)
-        helpItem.submenu = HelpSubMenu(targetting: self)
-        addItem(helpItem)
 
         let preferencesItem = NSMenuItem(title: UserText.settings, action: #selector(openPreferences(_:)), keyEquivalent: "")
             .targetting(self)

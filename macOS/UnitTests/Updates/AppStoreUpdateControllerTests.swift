@@ -330,4 +330,64 @@ final class AppStoreUpdateControllerTests: XCTestCase {
             XCTAssertFalse(controller.needsNotificationDot) // Initial state
         }
     }
+
+    // MARK: - Debug Settings Tests
+
+    func testIsUpdateAvailable_WithForceUpdateDebugSetting_ReturnsTrue() {
+        autoreleasepool {
+            // Given
+            let debugSettings = UpdatesDebugSettings()
+            let controller = AppStoreUpdateController()
+
+            // When - enabling force update debug setting
+            debugSettings.forceUpdateAvailable = true
+
+            // Then - should always return true regardless of versions
+            let expectation = XCTestExpectation(description: "Update available check")
+
+            Task {
+                let result = await controller.isUpdateAvailable(
+                    currentVersion: "2.0.0",
+                    currentBuild: "999",
+                    remoteVersion: "1.0.0",
+                    remoteBuild: "1"
+                )
+
+                XCTAssertTrue(result, "Should return true when force update is enabled")
+                expectation.fulfill()
+            }
+
+            wait(for: [expectation], timeout: 1.0)
+
+            // Cleanup
+            debugSettings.reset()
+        }
+    }
+
+    func testIsUpdateAvailable_WithoutForceUpdateDebugSetting_ReturnsNormalLogic() {
+        autoreleasepool {
+            // Given
+            let debugSettings = UpdatesDebugSettings()
+            debugSettings.forceUpdateAvailable = false // Ensure it's off
+
+            let controller = AppStoreUpdateController()
+
+            // When & Then - should follow normal version comparison logic
+            let expectation = XCTestExpectation(description: "Normal update check")
+
+            Task {
+                let result = await controller.isUpdateAvailable(
+                    currentVersion: "2.0.0",
+                    currentBuild: "999",
+                    remoteVersion: "1.0.0",
+                    remoteBuild: "1"
+                )
+
+                XCTAssertFalse(result, "Should return false when current version is newer")
+                expectation.fulfill()
+            }
+
+            wait(for: [expectation], timeout: 1.0)
+        }
+    }
 }

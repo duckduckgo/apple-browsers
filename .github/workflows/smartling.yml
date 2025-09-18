@@ -26,6 +26,11 @@ on:
         description: "Smartling job ID"
         required: false
         type: string
+      force:
+        description: "Force import even if it causes deletions"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   smartling:
@@ -158,6 +163,45 @@ jobs:
 
           # Cleanup
           rm -rf "$DOWNLOAD_DIR" "$IMPORT_DIR"
+
+          # Check for deleted translation keys
+          echo "Checking for deleted translation keys..."
+
+          # Look for deleted lines in .strings files (lines that start with -)
+          DELETED_KEYS=$(git diff --no-index --no-prefix --unified=0 -- '*.strings' 2>/dev/null | grep '^-"' | wc -l || echo "0")
+
+          # Also check using git status to see overall changes
+          DELETED_LINES=$(git diff -- '*.strings' '*.stringsdict' | grep '^-[^-]' | grep -v '^---' | wc -l)
+
+          if [ "$DELETED_LINES" -gt 0 ]; then
+            echo "⚠️ Detected $DELETED_LINES deleted lines in translation files"
+
+            # Show a sample of what was deleted
+            echo "Sample of deleted content:"
+            git diff -- '*.strings' | grep '^-"' | head -10
+
+            if [ "${{ github.event.inputs.force }}" != "true" ]; then
+              echo ""
+              echo "❌ ERROR: Import would delete existing translations"
+              echo ""
+              echo "This usually happens when:"
+              echo "1. Main was merged into the branch after translation started"
+              echo "2. Some features were removed"
+              echo ""
+              echo "Options:"
+              echo "• If deletions are expected: Run with force=true parameter"
+              echo "• If unexpected: Merge main and run 'upload' action to create a new translation job"
+              echo ""
+
+              # Revert all changes
+              git checkout -- .
+              exit 1
+            else
+              echo "⚠️ Proceeding with deletions because force=true was set"
+            fi
+          else
+            echo "✅ No translation keys deleted"
+          fi
 
           # Commit the imported translations
           echo "Committing imported translations..."

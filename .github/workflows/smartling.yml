@@ -173,4 +173,8 @@ jobs:
             git commit -m "Import translations from Smartling job ${{ github.event.inputs.job-id }}"
 
             echo "✅ Translations committed successfully"
+
+            # Push the commit to the current branch
+            git push origin HEAD:${{ github.ref_name }}
+            echo "✅ Changes pushed to branch ${{ github.ref_name }}"
           fi

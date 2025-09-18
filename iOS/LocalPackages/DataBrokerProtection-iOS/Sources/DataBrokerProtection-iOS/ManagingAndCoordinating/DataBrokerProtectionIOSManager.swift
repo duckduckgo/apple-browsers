@@ -457,7 +457,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
                     earliestBeginDate = Date().addingTimeInterval(maxBackgroundTaskWaitTime)
                 }
 
-                request.earliestBeginDate = earliestBeginDate.addingTimeInterval(.hours(6))
+                request.earliestBeginDate = earliestBeginDate
                 Logger.dataBrokerProtection.log("PIR Background Task: Scheduling next task for \(earliestBeginDate)")
 
                 try BGTaskScheduler.shared.submit(request)

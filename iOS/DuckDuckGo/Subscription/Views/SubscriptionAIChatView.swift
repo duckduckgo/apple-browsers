@@ -38,7 +38,7 @@ struct SubscriptionAIChatView: View {
         List {
             SettingsDescriptionView(content: currentDescription)
             if isAIFeaturesEnabled {
-                Section(footer: Text(UserText.aiChatSubscriptionEnableAI)) {
+                Section(footer: Text(UserText.aiChatSubscriptionDisableAI)) {
                     SettingsCellView(label: UserText.openSubscriptionAIChat, action: {
                         viewModel.openAIChat()
                     }, webLinkIndicator: true, isButton: true

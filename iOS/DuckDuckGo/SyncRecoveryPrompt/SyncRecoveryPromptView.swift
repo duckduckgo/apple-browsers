@@ -18,23 +18,29 @@
 //
 
 import SwiftUI
-import DesignResourcesKit
 import DuckUI
-import SyncUI_iOS
 
 struct SyncRecoveryPromptView: View {
-    let syncWithAnotherDeviceAction: () -> Void
-    let dismissAction: () -> Void
+    let onSyncWithAnotherDevice: () -> Void
+    let onShowAlternatives: () -> Void
+    let onCancel: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
-
             ScrollView {
                 VStack(spacing: 0) {
+                    HStack {
+                        Button(action: onCancel) {
+                            Text(UserText.actionCancel)
+                        }
+                        Spacer()
+                    }
+                    .frame(height: 56)
+
                     Image(.sync128)
                         .padding(24)
 
-                    Text(UserText.syncRecoveryPromptTitle)
+                    Text(UserText.syncRecoveryPromptTitle(deviceName: deviceDisplayName))
                         .daxTitle1()
                         .multilineTextAlignment(.center)
                         .padding(.bottom, 24)
@@ -44,19 +50,18 @@ struct SyncRecoveryPromptView: View {
                         .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 56)
                 .foregroundStyle(Color(designSystemColor: .textPrimary))
             }
 
             Spacer()
 
-            VStack(spacing: 16) {
-                Button(action: syncWithAnotherDeviceAction) {
+            VStack(spacing: 8) {
+                Button(action: onSyncWithAnotherDevice) {
                     Text(UserText.syncRecoveryPromptSyncButton)
                 }
                 .buttonStyle(PrimaryButtonStyle())
 
-                Button(action: dismissAction) {
+                Button(action: onShowAlternatives) {
                     Text(UserText.syncRecoveryPromptContinueButton)
                 }
                 .buttonStyle(GhostButtonStyle())
@@ -66,13 +71,20 @@ struct SyncRecoveryPromptView: View {
         }
         .padding(.bottom)
         .background(Color(designSystemColor: .backgroundSheets))
+    }
 
-    }    
+    private var deviceDisplayName: String {
+        switch UIDevice.current.userInterfaceIdiom {
+        case .pad:
+            return UserText.deviceTypeiPad
+        case .phone:
+            return UserText.deviceTypeiPhone
+        default:
+            return UserText.deviceTypeDefault
+        }
+    }
 }
 
 #Preview {
-    SyncRecoveryPromptView(
-        syncWithAnotherDeviceAction: {},
-        dismissAction: {}
-    )
+    SyncRecoveryPromptView(onSyncWithAnotherDevice: {}, onShowAlternatives: {}, onCancel: {})
 }

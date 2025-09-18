@@ -246,6 +246,18 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         addPageItems()
 
+
+#if APPSTORE
+        if !featureFlagger.isFeatureOn(.appStoreCheckForUpdatesFlow) {
+            let checkForAppStoreUpdates = NSMenuItem(title: UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""),
+                                                     action: #selector(checkForUpdates(_:)),
+                                                     keyEquivalent: "")
+                .withImage(DesignSystemImages.Glyphs.Size16.update)
+                .targetting(self)
+            addItem(checkForAppStoreUpdates)
+        }
+#endif
+
         let helpItem = NSMenuItem(title: UserText.mainMenuHelp, action: nil, keyEquivalent: "")
             .withImage(moreOptionsMenuIconsProvider.helpIcon)
         helpItem.submenu = HelpSubMenu(targetting: self)
@@ -447,6 +459,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         PixelKit.fire(MoreOptionsMenuPixel.printActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedPrint(self)
     }
+    
 
     private func addUpdateItem() {
         guard AppVersion.runType != .uiTests,

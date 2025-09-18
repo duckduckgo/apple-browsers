@@ -20,6 +20,8 @@ import Combine
 import os.log
 import Common
 import AppKit
+import BrowserServicesKit
+import FeatureFlags
 
 final class AppStoreUpdateController: NSObject, UpdateController {
     @Published private(set) var latestUpdate: Update?
@@ -48,26 +50,32 @@ final class AppStoreUpdateController: NSObject, UpdateController {
     private let updateCheckState: UpdateCheckState
     private let updaterChecker: AppStoreUpdaterAvailabilityChecker
     private let releaseChecker: LatestReleaseChecker
+    private let featureFlagger: FeatureFlagger
 
     // MARK: - Initialization
 
     init(updateCheckState: UpdateCheckState = UpdateCheckState(),
-         releaseChecker: LatestReleaseChecker = LatestReleaseChecker()) {
+         releaseChecker: LatestReleaseChecker = LatestReleaseChecker(),
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.updateCheckState = updateCheckState
         self.updaterChecker = AppStoreUpdaterAvailabilityChecker()
         self.releaseChecker = releaseChecker
+        self.featureFlagger = featureFlagger
         super.init()
 
-        // Observe needsNotificationDot changes
-        $needsNotificationDot
-            .sink { [weak self] value in
-                self?.notificationDotSubject.send(value)
-            }
-            .store(in: &cancellables)
+        // Only setup cloud checking if feature flag is on
+        if featureFlagger.isFeatureOn(.appStoreCheckForUpdatesFlow) {
+            // Observe needsNotificationDot changes
+            $needsNotificationDot
+                .sink { [weak self] value in
+                    self?.notificationDotSubject.send(value)
+                }
+                .store(in: &cancellables)
 
-        // Start automatic update checking
-        checkForUpdateAutomatically()
-        subscribeToWindowResignKeyNotifications()
+            // Start automatic update checking
+            checkForUpdateAutomatically()
+            subscribeToWindowResignKeyNotifications()
+        }
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -86,6 +94,11 @@ final class AppStoreUpdateController: NSObject, UpdateController {
 
     /// Checks for updates respecting automatic update settings and rate limiting
     func checkForUpdateAutomatically() {
+        // Only do automatic checks if feature flag is on
+        guard featureFlagger.isFeatureOn(.appStoreCheckForUpdatesFlow) else {
+            return // Legacy mode: no automatic checks
+        }
+
         Task { @UpdateCheckActor in
             await performUpdateCheck()
         }
@@ -93,15 +106,21 @@ final class AppStoreUpdateController: NSObject, UpdateController {
 
     /// User-initiated update check (bypasses automatic update settings and rate limiting)
     func checkForUpdate() {
-        Task { @UpdateCheckActor in
-            // User-initiated checks skip rate limiting but still log the attempt
-            guard await updateCheckState.canStartNewCheck(updater: updaterChecker, minimumInterval: 0) else {
-                Logger.updates.debug("User-initiated App Store update check skipped - updater not available")
-                return
-            }
+        if featureFlagger.isFeatureOn(.appStoreCheckForUpdatesFlow) {
+            // New flow - check cloud for updates
+            Task { @UpdateCheckActor in
+                // User-initiated checks skip rate limiting but still log the attempt
+                guard await updateCheckState.canStartNewCheck(updater: updaterChecker, minimumInterval: 0) else {
+                    Logger.updates.debug("User-initiated App Store update check skipped - updater not available")
+                    return
+                }
 
-            Logger.updates.debug("User-initiated App Store update check starting")
-            await performUpdateCheck(dismissRateLimiting: true)
+                Logger.updates.debug("User-initiated App Store update check starting")
+                await performUpdateCheck(dismissRateLimiting: true)
+            }
+        } else {
+            // Legacy flow - direct to App Store (no cloud checking)
+            openUpdatesPage()
         }
     }
 

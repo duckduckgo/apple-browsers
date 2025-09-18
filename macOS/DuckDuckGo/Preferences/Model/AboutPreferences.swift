@@ -68,6 +68,16 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         #endif
     }
 
+    var shouldShowUpdateStatus: Bool {
+        #if SPARKLE
+        // For Sparkle builds: always show update status regardless of feature flag
+        return true
+        #else
+        // For App Store builds: only show update status if feature flag is enabled
+        return featureFlagger.isFeatureOn(.appStoreCheckForUpdatesFlow)
+        #endif
+    }
+
     var mustCheckForUpdatesBeforeUserCanTakeAction: Bool {
         !useLegacyAutoRestartLogic
     }

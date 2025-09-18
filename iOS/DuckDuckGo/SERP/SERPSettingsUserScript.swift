@@ -21,6 +21,7 @@ import Common
 import UserScript
 import Foundation
 import WebKit
+import BrowserServicesKit
 
 public enum SERPSettingsUserScriptMessages: String, CaseIterable {
     case openNativeSettings
@@ -82,12 +83,15 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
 
     let featureName: String = "serpSettings"
     private let serpSettingsProvider: SERPSettingsProviding
+    private let featureFlagger: FeatureFlagger
 
     // MARK: - Initialization
 
-    init(serpSettingsProvider: SERPSettingsProviding) {
+    init(serpSettingsProvider: SERPSettingsProviding,
+         featureFlagger: FeatureFlagger) {
         self.serpSettingsProvider = serpSettingsProvider
         messageOriginPolicy = .only(rules: Self.buildMessageOriginRules())
+        self.featureFlagger = featureFlagger
         super.init()
 
         registerForNotifications()
@@ -142,7 +146,10 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
     
     @MainActor
     func getNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
-        SERPSettingsSnapshot(provider: serpSettingsProvider)
+        guard featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) else {
+            return nil
+        }
+        return SERPSettingsSnapshot(provider: serpSettingsProvider)
     }
 
     @MainActor

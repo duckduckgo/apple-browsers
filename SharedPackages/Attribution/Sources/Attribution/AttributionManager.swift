@@ -103,6 +103,7 @@ public final class AttributionManager {
 
         processRetention()
         processActiveSearchDays()
+        processSubscriptionCheck()
     }
 
     func userDidSearch() {
@@ -130,7 +131,13 @@ public final class AttributionManager {
         guard isEnabled else { return }
 
         recordSubscriptionDate()
+        processSubscriptionCheck()
+    }
 
+    func userDidSync(devicesCount: Int) {
+        guard isEnabled else { return }
+
+        processSyncCheck(devices: devicesCount)
     }
 
     // MARK: - Retention
@@ -157,12 +164,12 @@ public final class AttributionManager {
             return
         case .weeks(let week):
             Logger.attribution.debug("\(week) week(s) from installation")
-            let bucketedWeek = week // TODO: implement
-            pixelKit.fire(AttributionPixel.userRetentionWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucketedWeek), frequency: .daily)
+            let bucketedWeek = String(week) // TODO: implement
+            pixelKit.fire(AttributionPixel.userRetentionWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucketedWeek), frequency: .legacyDailyNoSuffix)
         case .months(let month):
             Logger.attribution.debug("\(month) month(s) from installation")
-            let bucketedMonth = month // TODO: implement
-            pixelKit.fire(AttributionPixel.userRetentionMonth(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucketedMonth), frequency: .daily)
+            let bucketedMonth = String(month) // TODO: implement
+            pixelKit.fire(AttributionPixel.userRetentionMonth(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucketedMonth), frequency: .legacyDailyNoSuffix)
         }
 
         dataStorage.lastRetentionThreshold = timePastFromInstall
@@ -183,7 +190,7 @@ public final class AttributionManager {
         guard searchCount > 0 else { return }
         Logger.attribution.debug("\(searchCount) searches performed in the last week")
         let bucketedSearchCount = searchCount // TODO: implement
-        pixelKit.fire(AttributionPixel.userActivePastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, days: bucketedSearchCount), frequency: .daily)
+        pixelKit.fire(AttributionPixel.userActivePastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, days: bucketedSearchCount), frequency: .legacyDailyNoSuffix)
     }
 
     // MARK: - Average searches
@@ -193,9 +200,9 @@ public final class AttributionManager {
         let search8Days = dataStorage.search8Days
         guard search8Days.countPast7Days > 1 else { return }
         let average = search8Days.past7DaysAverage
-        let bucketedAverage = average // TODO: implement
+        let bucketedAverage = String(average) // TODO: implement
         Logger.attribution.debug("Average search count in the last week: \(bucketedAverage)")
-        pixelKit.fire(AttributionPixel.userAverageSearchesPastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .daily)
+        pixelKit.fire(AttributionPixel.userAverageSearchesPastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .legacyDailyNoSuffix)
     }
 
     // MARK: - Average AD clicks
@@ -211,9 +218,9 @@ public final class AttributionManager {
         let adClick8Days = dataStorage.adClick8Days
         guard adClick8Days.countPast7Days > 1 else { return }
         let average = adClick8Days.past7DaysAverage
-        let bucketedAverage = average // TODO: implement
+        let bucketedAverage = String(average) // TODO: implement
         Logger.attribution.debug("Average AD click count in the last week: \(bucketedAverage)")
-        pixelKit.fire(AttributionPixel.userAverageAdClicksPastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .daily)
+        pixelKit.fire(AttributionPixel.userAverageAdClicksPastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .legacyDailyNoSuffix)
     }
 
     // MARK: - Average Duck.ai chats
@@ -229,9 +236,9 @@ public final class AttributionManager {
         let duckAIChat8Days = dataStorage.duckAIChat8Days
         guard duckAIChat8Days.countPast7Days > 1 else { return }
         let average = duckAIChat8Days.past7DaysAverage
-        let bucketedAverage = average // TODO: implement
+        let bucketedAverage = String(average) // TODO: implement
         Logger.attribution.debug("Average Duck.AI chats count in the last week: \(bucketedAverage)")
-        pixelKit.fire(AttributionPixel.userAverageDuckAiUsagePastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .daily)
+        pixelKit.fire(AttributionPixel.userAverageDuckAiUsagePastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .legacyDailyNoSuffix)
     }
 
     // MARK: - Subscription
@@ -247,11 +254,20 @@ public final class AttributionManager {
         let now = Date()
         if subscriptionDate.isSameDay(now) {
             Logger.attribution.debug("Subscription purchased today")
-            pixelKit.fire(AttributionPixel.userSubscribed(origin: originOrInstall.origin, installDate: originOrInstall.installDate, length: 1), frequency: .daily)
+            pixelKit.fire(AttributionPixel.userSubscribed(origin: originOrInstall.origin, installDate: originOrInstall.installDate, length: "1"), frequency: .legacyDailyNoSuffix)
         } else if TimePast.daysBetween(from: subscriptionDate, to: now) >= Constants.daysInAMonth {
             Logger.attribution.debug("Subscription purchased more than 1 month ago")
-            pixelKit.fire(AttributionPixel.userSubscribed(origin: originOrInstall.origin, installDate: originOrInstall.installDate, length: 2), frequency: .daily)
+            pixelKit.fire(AttributionPixel.userSubscribed(origin: originOrInstall.origin, installDate: originOrInstall.installDate, length: "2+"), frequency: .legacyDailyNoSuffix)
         }
+    }
+
+    // MARK: - Sync
+    // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211301604929616?focus=true
+
+    func processSyncCheck(devices: Int) {
+        Logger.attribution.debug("Device Sync")
+        // TODO: specs not clear: https://app.asana.com/1/137249556945/task/1211301604929616/comment/1211362907479310?focus=true
+        pixelKit.fire(AttributionPixel.userSyncedDevice(origin: originOrInstall.origin, installDate: originOrInstall.installDate, devices: devices == 1 ? "1" : "2+"), frequency: .standard)
     }
 }
 

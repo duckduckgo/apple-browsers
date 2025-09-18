@@ -20,15 +20,15 @@ import Foundation
 import PixelKit
 
 enum AttributionPixel: PixelKitEvent { // TODO: check special pixel extension requirements
-    case userRetentionWeek(origin: String?, installDate: String?, defaultBrowser: Bool, count: Int)
-    case userRetentionMonth(origin: String?, installDate: String?, defaultBrowser: Bool, count: Int)
+    case userRetentionWeek(origin: String?, installDate: String?, defaultBrowser: Bool, count: String)
+    case userRetentionMonth(origin: String?, installDate: String?, defaultBrowser: Bool, count: String)
     case userActivePastWeek(origin: String?, installDate: String?, days: Int)
-    case userAverageSearchesPastWeekFirstMonth(origin: String?, installDate: String?, count: Int)
-    case userAverageSearchesPastWeek(origin: String?, installDate: String?, count: Int)
-    case userAverageAdClicksPastWeek(origin: String?, installDate: String?, count: Int)
-    case userAverageDuckAiUsagePastWeek(origin: String?, installDate: String?, count: Int)
-    case userSubscribed(origin: String?, installDate: String?, length: Int)
-    case userSyncedDevice(origin: String?, installDate: String?, devices: Int)
+    case userAverageSearchesPastWeekFirstMonth(origin: String?, installDate: String?, count: String)
+    case userAverageSearchesPastWeek(origin: String?, installDate: String?, count: String)
+    case userAverageAdClicksPastWeek(origin: String?, installDate: String?, count: String)
+    case userAverageDuckAiUsagePastWeek(origin: String?, installDate: String?, count: String)
+    case userSubscribed(origin: String?, installDate: String?, length: String)
+    case userSyncedDevice(origin: String?, installDate: String?, devices: String)
 
     var name: String {
         switch self {
@@ -75,7 +75,7 @@ enum AttributionPixel: PixelKitEvent { // TODO: check special pixel extension re
                                 count: let count),
                 .userRetentionMonth(origin: let origin, installDate: let installDate, defaultBrowser: let defaultBrowser, count: let count):
             var result = [ConstantKeys.defaultBrowser: defaultBrowser.payloadString,
-                         ConstantKeys.count: count.payloadString]
+                         ConstantKeys.count: count]
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result
         case .userActivePastWeek(origin: let origin, installDate: let installDate, days: let days):
@@ -86,15 +86,15 @@ enum AttributionPixel: PixelKitEvent { // TODO: check special pixel extension re
                 .userAverageSearchesPastWeek(origin: let origin, installDate: let installDate, count: let count),
                 .userAverageAdClicksPastWeek(origin: let origin, installDate: let installDate, count: let count),
                 .userAverageDuckAiUsagePastWeek(origin: let origin, installDate: let installDate, count: let count):
-            var result = [ConstantKeys.count: count.payloadString]
+            var result = [ConstantKeys.count: count]
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result
         case .userSubscribed(origin: let origin, installDate: let installDate, length: let length):
-            var result = [ConstantKeys.length: length.payloadString]
+            var result = [ConstantKeys.length: length]
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result
         case .userSyncedDevice(origin: let origin, installDate: let installDate, devices: let devices):
-            var result = [ConstantKeys.numberOfDevices: devices.payloadString]
+            var result = [ConstantKeys.numberOfDevices: devices]
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result
         }

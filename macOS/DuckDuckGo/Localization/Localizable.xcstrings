@@ -1837,60 +1837,60 @@
       }
     },
     "aichat.address-bar.open-settings-button" : {
-      "comment" : "Button to open Duck.ai settings",
+      "comment" : "Button to open AI settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai-Einstellungen öffnen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open Duck.ai Settings"
+            "value" : "Open AI Settings"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Abrir ajustes de Duck.ai"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ouvrir les paramètres Duck.ai"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Apri le impostazioni di Duck.ai"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai-instellingen openen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Otwórz ustawienia Duck.ai"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Abrir as Definições do Duck.ai"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Открыть настройки Duck.ai"
           }
         }
@@ -48919,60 +48919,60 @@
       }
     },
     "newtabpage.context.menu.open.duckai.settings" : {
-      "comment" : "Context menu item to open Duck.ai Settings from the New Tab Page",
+      "comment" : "Context menu item to open AI Settings from the New Tab Page",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai-Einstellungen öffnen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open Duck.ai Settings"
+            "value" : "Open AI Settings"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Abrir ajustes de Duck.ai"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ouvrir les paramètres Duck.ai"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Apri le impostazioni di Duck.ai"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai-instellingen openen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Otwórz ustawienia Duck.ai"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Abrir as Definições do Duck.ai"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Открыть настройки Duck.ai"
           }
         }

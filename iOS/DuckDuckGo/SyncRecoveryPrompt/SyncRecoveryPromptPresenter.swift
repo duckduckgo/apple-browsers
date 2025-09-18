@@ -69,7 +69,7 @@ final class SyncRecoveryPromptPresenter: NSObject, SyncRecoveryPromptPresenting 
     }
     
     private func presentAlternativePrompt(from viewController: UIViewController,
-                                           onSyncFlowSelected: @escaping (String) -> Void) {
+                                          onSyncFlowSelected: @escaping (String) -> Void) {
         let alternativeController = UIHostingController(
             rootView: SyncRecoveryAlternativeView(
                 onSyncFlowSelected: { _ in },

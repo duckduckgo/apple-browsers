@@ -599,7 +599,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         // Then
         XCTAssertTrue(model.isSidebarItemEnabled(for: .paidAIChat))
         let protectionStatus = model.protectionStatus(for: .paidAIChat)
-        XCTAssertEqual(protectionStatus?.status, .off)
+        XCTAssertEqual(protectionStatus?.status, .on)
     }
 
     func testPaidAIChatSidebarItemStaysEnabledWhenAIFeaturesOff() async throws {

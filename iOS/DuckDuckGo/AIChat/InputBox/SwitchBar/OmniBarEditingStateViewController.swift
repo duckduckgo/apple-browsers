@@ -320,7 +320,30 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     private func handleMicrophoneButtonTapped() {
-        delegate?.onVoiceSearchRequested(from: switchBarHandler.currentToggleState)
+        // Do not dismiss the OmniBar. Just dismiss the keyboard and present Voice Search above.
+        switchBarVC.unfocusTextField()
+        SpeechRecognizer.requestMicAccess { [weak self] permission in
+            guard let self = self else { return }
+            if permission {
+                let preferredTarget: VoiceSearchTarget? = (self.switchBarHandler.currentToggleState == .aiChat) ? .AIChat : .SERP
+                self.showVoiceSearch(preferredTarget: preferredTarget)
+            } else {
+                self.showNoMicrophonePermissionAlert()
+            }
+        }
+    }
+
+    private func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {
+        let voiceSearchController = VoiceSearchViewController(preferredTarget: preferredTarget)
+        voiceSearchController.delegate = self
+        voiceSearchController.modalTransitionStyle = .crossDissolve
+        voiceSearchController.modalPresentationStyle = .overFullScreen
+        present(voiceSearchController, animated: true)
+    }
+
+    private func showNoMicrophonePermissionAlert() {
+        let alertController = NoMicPermissionAlert.buildAlert()
+        present(alertController, animated: true)
     }
 
     private func updateDaxVisibility() {
@@ -390,6 +413,28 @@ extension OmniBarEditingStateViewController: NavigationActionBarManagerDelegate 
         let currentText = switchBarHandler.currentText
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             switchBarHandler.submitText(currentText)
+        }
+    }
+}
+
+// MARK: - VoiceSearchViewControllerDelegate
+
+extension OmniBarEditingStateViewController: VoiceSearchViewControllerDelegate {
+
+    func voiceSearchViewController(_ controller: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget) {
+        controller.dismiss(animated: true) { [weak self] in
+            guard let self = self, let query = query else { return }
+            self.handleVoiceSearchCompletion(with: query, for: target)
+        }
+    }
+
+    private func handleVoiceSearchCompletion(with query: String, for target: VoiceSearchTarget) {
+        switch target {
+        case .SERP:
+            delegate?.onQuerySubmitted(query)
+
+        case .AIChat:
+            delegate?.onPromptSubmitted(query, tools: nil)
         }
     }
 }

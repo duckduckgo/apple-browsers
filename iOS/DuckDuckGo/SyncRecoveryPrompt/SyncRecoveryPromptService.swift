@@ -107,8 +107,6 @@ final class SyncRecoveryPromptService {
         featureFlagger.isFeatureOn(.newDeviceSyncPrompt)
     }
 
-    // MARK: - Exclusion Criteria Variables
-
     private var hasPerformedCheck: Bool {
         get {
             (try? keyValueStore.object(forKey: Key.hasPerformedSyncRecoveryCheck) as? Bool) ?? false
@@ -130,7 +128,6 @@ final class SyncRecoveryPromptService {
             return accountsCount == 0
         } catch {
             Logger.sync.error("[Sync Recovery] Failed to check vault: \(error)")
-            // If we can't access the vault, assume it's not empty to avoid false positives
             return false
         }
     }
@@ -181,7 +178,6 @@ final class SyncRecoveryPromptService {
         let status = SecItemCopyMatching(query as CFDictionary, &result)
 
         if status == errSecSuccess, let items = result as? [[String: Any]], !items.isEmpty {
-            // Check creation date of the first v4 keychain item
             guard let firstItem = items.first,
                   let creationDate = firstItem[kSecAttrCreationDate as String] as? Date else {
                 return nil

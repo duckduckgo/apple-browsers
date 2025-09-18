@@ -20,6 +20,7 @@
 import UIKit
 import SwiftUI
 import Core
+import PixelKit
 
 @MainActor
 protocol SyncRecoveryPromptPresenting: AnyObject {
@@ -42,11 +43,13 @@ final class SyncRecoveryPromptPresenter: NSObject, SyncRecoveryPromptPresenting 
         
         promptController.rootView = SyncRecoveryPromptView(
             onSyncWithAnotherDevice: { [weak viewController] in
+                Pixel.fire(pixel: .syncRecoveryPromptSyncWithAnotherDeviceTapped)
                 viewController?.dismiss(animated: true) {
                     onSyncFlowSelected(SyncSettingsViewController.Constants.startSyncFlow)
                 }
             },
             onShowAlternatives: { [weak self, weak promptController, weak viewController] in
+                Pixel.fire(pixel: .syncRecoveryPromptShowAlternativesTapped)
                 promptController?.dismiss(animated: true) {
                     guard let presentingViewController = viewController else { return }
                     self?.presentAlternativePrompt(from: presentingViewController,
@@ -54,12 +57,15 @@ final class SyncRecoveryPromptPresenter: NSObject, SyncRecoveryPromptPresenting 
                 }
             },
             onCancel: { [weak viewController] in
+                Pixel.fire(pixel: .syncRecoveryPromptDismissed)
                 viewController?.dismiss(animated: true)
             }
         )
         
         configureModalPresentation(for: promptController)
-        viewController.present(promptController, animated: true)
+        viewController.present(promptController, animated: true) {
+            Pixel.fire(pixel: .syncRecoveryPromptDisplayed)
+        }
     }
     
     private func presentAlternativePrompt(from viewController: UIViewController,
@@ -73,17 +79,26 @@ final class SyncRecoveryPromptPresenter: NSObject, SyncRecoveryPromptPresenting 
         
         alternativeController.rootView = SyncRecoveryAlternativeView(
             onSyncFlowSelected: { [weak viewController] flowType in
+                // Fire appropriate pixel based on which button was tapped
+                if flowType == SyncSettingsViewController.Constants.startSyncFlow {
+                    Pixel.fire(pixel: .syncRecoveryAlternativeScanRecoveryCodeTapped)
+                } else {
+                    Pixel.fire(pixel: .syncRecoveryAlternativeBackupThisDeviceTapped)
+                }
                 viewController?.dismiss(animated: true) {
                     onSyncFlowSelected(flowType)
                 }
             },
             onCancel: { [weak alternativeController] in
+                Pixel.fire(pixel: .syncRecoveryAlternativeDismissed)
                 alternativeController?.dismiss(animated: true)
             }
         )
         
         configureModalPresentation(for: alternativeController)
-        viewController.present(alternativeController, animated: true)
+        viewController.present(alternativeController, animated: true) {
+            Pixel.fire(pixel: .syncRecoveryAlternativeDisplayed)
+        }
     }
     
     private func configureModalPresentation(for hostingController: UIHostingController<some View>) {

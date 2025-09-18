@@ -28,12 +28,6 @@ EOF
 cmd=${1:-}
 shift || true
 
-# Fail if credentials are missing
-if [ -z "${IOS_SMARTLING_USER_ID:-}" ] || [ -z "${IOS_SMARTLING_USER_SECRET:-}" ] || [ -z "${IOS_SMARTLING_PROJECT_ID:-}" ]; then
-  echo "Missing required env vars: IOS_SMARTLING_USER_ID, IOS_SMARTLING_USER_SECRET, IOS_SMARTLING_PROJECT_ID" >&2
-  exit 1
-fi
-
 # Helper function to parse --job-id argument
 parse_job_id() {
   if [ "$1" != "--job-id" ] || [ -z "${2:-}" ]; then
@@ -95,21 +89,18 @@ case "$cmd" in
     python3 "$PYTHON_TOOL" upload --job-name "$JOB_NAME" --files "${FILES[@]}"
     ;;
   status)
-    check_credentials
     JOB_ID=$(parse_job_id "$@")
 
     # Run status check
     python3 "$PYTHON_TOOL" status --job-id "$JOB_ID"
     ;;
   approve)
-    check_credentials
     JOB_ID=$(parse_job_id "$@")
 
     # Run approval check
     python3 "$PYTHON_TOOL" approve --job-id "$JOB_ID"
     ;;
   download)
-    check_credentials
     JOB_ID=$(parse_job_id "$@")
 
     # Parse optional output directory

@@ -23,13 +23,14 @@ import DesignResourcesKitIcons
 
 struct LargeSearchFieldView: View {
 
+    let isAIChatEnabled: Bool
+
     var body: some View {
         Link(destination: DeepLinks.newSearch) {
             ZStack {
                 RoundedRectangle(cornerRadius: 23)
                     .fill(Color(designSystemColor: .controlsFillPrimary))
                     .frame(minHeight: 46, maxHeight: 46)
-                    .padding(.vertical, 16)
 
                 HStack {
                     Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
@@ -44,9 +45,17 @@ struct LargeSearchFieldView: View {
 
                     Spacer()
 
+                    if isAIChatEnabled {
+                        Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
+                            CircleIconView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat))
+                        }
+                    }
+
                 }
 
-            }.unredacted()
+            }
+            .padding(.bottom, 16)
+            .unredacted()
         }
     }
 

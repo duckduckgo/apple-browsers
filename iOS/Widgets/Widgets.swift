@@ -180,6 +180,7 @@ struct SearchWidget: Widget {
         .configurationDisplayName(UserText.searchWidgetGalleryDisplayName)
         .description(UserText.searchWidgetGalleryDescription)
         .supportedFamilies([.systemSmall])
+        .contentMarginsDisabled()
     }
 
 }
@@ -194,6 +195,7 @@ struct FavoritesWidget: Widget {
         .configurationDisplayName(UserText.favoritesWidgetGalleryDisplayName)
         .description(UserText.favoritesWidgetGalleryDescription)
         .supportedFamilies([.systemMedium, .systemLarge])
+        .contentMarginsDisabled()
     }
 }
 
@@ -207,6 +209,7 @@ struct PasswordsWidget: Widget {
         .configurationDisplayName(UserText.passwordsWidgetGalleryDisplayName)
         .description(UserText.passwordsWidgetGalleryDescription)
         .supportedFamilies([.systemSmall])
+        .contentMarginsDisabled()
     }
 
 }

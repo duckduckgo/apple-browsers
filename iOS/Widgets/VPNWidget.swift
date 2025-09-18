@@ -156,7 +156,7 @@ struct VPNStatusView: View {
 
     @ViewBuilder
     var body: some View {
-        Group {
+        DesignSystemWidgetContainerView {
             HStack {
                 switch entry.status {
                 case .status(let status):
@@ -167,10 +167,6 @@ struct VPNStatusView: View {
 
                 Spacer()
             }
-        }
-        .padding(16)
-        .containerBackground(for: .widget) {
-            Color(designSystemColor: .surfaceCanvas)
         }
     }
 

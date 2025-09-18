@@ -32,8 +32,10 @@ struct FavoriteView: View {
     var body: some View {
 
         ZStack {
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(Color(designSystemColor: .controlsFillPrimary))
+            if isPreview {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(Color(designSystemColor: .controlsFillPrimary))
+            }
 
             if let favorite = favorite {
 
@@ -108,17 +110,13 @@ struct FavoritesGridView: View {
 
         FavoritesRowView(entry: entry, start: 0, end: 3)
 
-        Spacer()
-
         if widgetFamily == .systemLarge {
 
             FavoritesRowView(entry: entry, start: 4, end: 7)
-
-            Spacer()
+                .padding(.top, 24)
 
             FavoritesRowView(entry: entry, start: 8, end: 11)
-
-            Spacer()
+                .padding(.top, 24)
 
         }
 
@@ -132,28 +130,12 @@ struct FavoritesWidgetView: View {
 
     var entry: Provider.Entry
 
-    var body: some View {
-        ZStack {
-
-            VStack(alignment: .center, spacing: 0) {
-                HStack(spacing: 12) {
-                    LargeSearchFieldView()
-                    if entry.isAIChatEnabled {
-                        Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
-                            CircleIconView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat))
-                        }
-                    }
-                }
-                if entry.favorites.isEmpty, !entry.isPreview {
-                    Link(destination: DeepLinks.addFavorite) {
-                        FavoritesGridView(entry: entry).accessibilityLabel(Text(UserText.noFavoritesCTA))
-                    }
-                } else {
-                    FavoritesGridView(entry: entry)
-                }
+    @ViewBuilder
+    func addFavoritesPrompt() -> some View {
+        ZStack(alignment: .top) {
+            VStack(spacing: 0) {
+                FavoritesGridView(entry: entry)
             }
-            .padding(hasSystemPadding ? 0 : 16)
-            .padding(.bottom, 8)
 
             VStack(spacing: 4) {
                 Text(UserText.noFavoritesMessage)
@@ -171,22 +153,28 @@ struct FavoritesWidgetView: View {
                     Image(systemName: "chevron.right")
                         .imageScale(.medium)
                         .foregroundColor(Color(designSystemColor: .accent))
-                }.accessibilityHidden(true)
-
+                }
             }
-            .isVisible(entry.favorites.isEmpty && !entry.isPreview)
-            .padding(EdgeInsets(top: widgetFamily == .systemLarge ? 48 : 60, leading: 0, bottom: 0, trailing: 0))
-
         }
-        .widgetContainerBackground(color: Color(designSystemColor: .surfaceCanvas))
     }
 
-    /// iOS 17+ automatically added extra padding for the views inside the widget.
-    private var hasSystemPadding: Bool {
-        if #available(iOS 17, *) {
-            return true
-        } else {
-            return false
+    var body: some View {
+        DesignSystemWidgetContainerView {
+            VStack(alignment: .center, spacing: 0) {
+                LargeSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled)
+
+                if entry.favorites.isEmpty, !entry.isPreview {
+                    // The whole thing needs to be a link because the user could click anywhere
+                    Link(destination: DeepLinks.addFavorite) {
+                        addFavoritesPrompt()
+                    }
+                    .padding(.top, 8)
+                } else {
+                    FavoritesGridView(entry: entry)
+                }
+
+                Spacer()
+            }
         }
     }
 }
@@ -195,7 +183,7 @@ struct SearchWidgetView: View {
     var entry: Provider.Entry
 
     var body: some View {
-        ZStack {
+        DesignSystemWidgetContainerView {
             VStack(alignment: .center, spacing: 15) {
 
                 Image(.logo)
@@ -223,7 +211,6 @@ struct SearchWidgetView: View {
                 .accessibilityHidden(true)
             }.accessibilityLabel(Text(UserText.searchDuckDuckGo))
         }
-        .widgetContainerBackground(color: Color(designSystemColor: .surfaceCanvas))
     }
 }
 
@@ -231,25 +218,29 @@ struct PasswordsWidgetView: View {
     var entry: Provider.Entry
 
     var body: some View {
-        ZStack {
-            VStack(alignment: .center, spacing: 6) {
+        DesignSystemWidgetContainerView {
+            HStack {
+                VStack(alignment: .leading, spacing: 0) {
+                    Image(.widgetPasswordIllustration)
+                            .useFullColorRendering()
+                            .isHidden(false)
+                            .accessibilityHidden(true)
 
-                Image(.widgetPasswordIllustration)
-                        .useFullColorRendering()
-                        .frame(width: 96, height: 72)
-                        .isHidden(false)
-                        .accessibilityHidden(true)
+                    Spacer()
 
-                Text(UserText.passwords)
-                        .daxSubheadRegular()
-                        .foregroundColor(Color(designSystemColor: .textPrimary))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 8)
+                    Text(UserText.passwords)
+                        .daxSubheadSemibold()
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
 
+                    HStack { Spacer() }
+                }
+
+                Spacer()
             }
-            .accessibilityLabel(Text(UserText.passwords))
         }
-        .widgetContainerBackground(color: Color(designSystemColor: .surfaceCanvas))
+        .accessibilityLabel(Text(UserText.passwords))
     }
 }
 

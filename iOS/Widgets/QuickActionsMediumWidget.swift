@@ -37,6 +37,7 @@ struct QuickActionsMediumWidget: Widget {
         .configurationDisplayName(UserText.quickActionsMediumWidgetGalleryDisplayName)
         .description(UserText.quickActionsMediumWidgetGalleryDescription)
         .supportedFamilies([.systemMedium])
+        .contentMarginsDisabled()
     }
 }
 
@@ -73,16 +74,9 @@ struct QuickActionsMediumWidgetView: View {
                                                .emailProtection]
 
     var body: some View {
-        ZStack {
+        DesignSystemWidgetContainerView {
             VStack(alignment: .center, spacing: 0) {
-                HStack(spacing: 12) {
-                    LargeSearchFieldView()
-                    if entry.isAIChatEnabled {
-                        Link(destination: DeepLinks.openAIChat) {
-                            CircleIconView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat))
-                        }
-                    }
-                }
+                LargeSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled)
 
                 HStack {
                     ForEach(shortcuts.indices, id: \.self) { index in
@@ -100,7 +94,6 @@ struct QuickActionsMediumWidgetView: View {
             }
             .padding(.bottom, 8)
         }
-        .widgetContainerBackground(color: Color(designSystemColor: .backgroundSheets))
     }
 }
 

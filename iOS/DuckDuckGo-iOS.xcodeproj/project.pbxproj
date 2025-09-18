@@ -687,6 +687,7 @@
 		8582D7282E58A11D00A356FD /* AutocompleteViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8582D7272E58A11800A356FD /* AutocompleteViewModelTests.swift */; };
 		858479C92B8792D800D156C1 /* HistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 858479C82B8792D800D156C1 /* HistoryManager.swift */; };
 		858479CD2B87964500D156C1 /* HistoryManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 858479CB2B8795C900D156C1 /* HistoryManagerTests.swift */; };
+		858544392E7C3B4700B0AABE /* DesignSystemWidgetContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 858544382E7C3AE300B0AABE /* DesignSystemWidgetContainerView.swift */; };
 		858566E8252E4F56007501B8 /* Debug.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 858566E7252E4F56007501B8 /* Debug.storyboard */; };
 		858566FB252E55D6007501B8 /* ImageCacheDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 858566FA252E55D6007501B8 /* ImageCacheDebugViewController.swift */; };
 		85864FBC24D31EF300E756FF /* SuggestionTrayViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85864FBB24D31EF300E756FF /* SuggestionTrayViewController.swift */; };
@@ -2599,6 +2600,7 @@
 		8582D7272E58A11800A356FD /* AutocompleteViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutocompleteViewModelTests.swift; sourceTree = "<group>"; };
 		858479C82B8792D800D156C1 /* HistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryManager.swift; sourceTree = "<group>"; };
 		858479CB2B8795C900D156C1 /* HistoryManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryManagerTests.swift; sourceTree = "<group>"; };
+		858544382E7C3AE300B0AABE /* DesignSystemWidgetContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystemWidgetContainerView.swift; sourceTree = "<group>"; };
 		858566E7252E4F56007501B8 /* Debug.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Debug.storyboard; sourceTree = "<group>"; };
 		858566FA252E55D6007501B8 /* ImageCacheDebugViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCacheDebugViewController.swift; sourceTree = "<group>"; };
 		85864FBB24D31EF300E756FF /* SuggestionTrayViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionTrayViewController.swift; sourceTree = "<group>"; };
@@ -4960,15 +4962,6 @@
 			path = LocalPackages;
 			sourceTree = "<group>";
 		};
-		365E90092E566C0A00BDB0E8 /* AppIntents */ = {
-			isa = PBXGroup;
-			children = (
-				365E90122E5673DF00BDB0E8 /* SearchInAppIntent.swift */,
-				365E900A2E566C2300BDB0E8 /* AIChatIntent.swift */,
-			);
-			path = AppIntents;
-			sourceTree = "<group>";
-		};
 		362E3EBA2E7184AB00E4C762 /* AIChat */ = {
 			isa = PBXGroup;
 			children = (
@@ -5156,6 +5149,15 @@
 				36F2CA5A2E60588F00C7039D /* MockUNUserNotificationCenter.swift */,
 			);
 			path = Application;
+			sourceTree = "<group>";
+		};
+		365E90092E566C0A00BDB0E8 /* AppIntents */ = {
+			isa = PBXGroup;
+			children = (
+				365E90122E5673DF00BDB0E8 /* SearchInAppIntent.swift */,
+				365E900A2E566C2300BDB0E8 /* AIChatIntent.swift */,
+			);
+			path = AppIntents;
 			sourceTree = "<group>";
 		};
 		369E692B2E5F6E9F00F98A8F /* AppServices */ = {
@@ -5952,6 +5954,7 @@
 		8512EA5224ED30D20073EE19 /* Widgets */ = {
 			isa = PBXGroup;
 			children = (
+				858544382E7C3AE300B0AABE /* DesignSystemWidgetContainerView.swift */,
 				8512EA5624ED30D30073EE19 /* Assets.xcassets */,
 				853273AC24FEF49600E3C778 /* ColorExtension.swift */,
 				31BB23A32D3A661A00809ABF /* ControlWidgetConfigurable.swift */,
@@ -11124,6 +11127,7 @@
 				31B0B2BF2D390CF400A702D4 /* QuickActionsSmallWidget.swift in Sources */,
 				31D2D2A52D40F99100549D12 /* WidgetSourceType.swift in Sources */,
 				7B1681092D10C678005EAE24 /* VPNControlStatusValueProvider.swift in Sources */,
+				858544392E7C3B4700B0AABE /* DesignSystemWidgetContainerView.swift in Sources */,
 				7B16810D2D10CF44005EAE24 /* WidgetVPNIntents.swift in Sources */,
 				4BB7CBB02AF59C310014A35F /* VPNWidget.swift in Sources */,
 				8512EA5424ED30D20073EE19 /* Widgets.swift in Sources */,

@@ -119,6 +119,7 @@ struct QuickActionsSmallWidget: Widget {
         .configurationDisplayName(UserText.quickActionsWidgetGalleryDisplayName)
         .description(UserText.quickActionsWidgetGalleryDescription)
         .supportedFamilies([.systemSmall])
+        .contentMarginsDisabled()
     }
 }
 
@@ -127,20 +128,21 @@ struct QuickActionsWidgetView: View {
     var entry: QuickActionsEntry
 
     var body: some View {
-        VStack(spacing: 12) {
-            Link(destination: DeepLinks.newSearch) {
-                SearchBoxView()
-            }
-            HStack(spacing: 12) {
-                Link(destination: entry.configuration.leftShortcut.destination) {
-                    IconView(image: entry.configuration.leftShortcut.icon)
+        DesignSystemWidgetContainerView {
+            VStack(spacing: 0) {
+                Link(destination: DeepLinks.newSearch) {
+                    SearchBoxView()
                 }
-                Link(destination: entry.configuration.rightShortcut.destination) {
-                    IconView(image: entry.configuration.rightShortcut.icon)
+                HStack(spacing: 12) {
+                    Link(destination: entry.configuration.leftShortcut.destination) {
+                        IconView(image: entry.configuration.leftShortcut.icon)
+                    }
+                    Link(destination: entry.configuration.rightShortcut.destination) {
+                        IconView(image: entry.configuration.rightShortcut.icon)
+                    }
                 }
             }
         }
-        .widgetContainerBackground(color: Color(designSystemColor: .backgroundSheets))
     }
 }
 
@@ -165,6 +167,7 @@ private struct SearchBoxView: View {
             RoundedRectangle(cornerRadius: 46)
                 .fill(Color(designSystemColor: .controlsFillPrimary))
         )
+        .padding(.bottom, 16)
     }
 }
 

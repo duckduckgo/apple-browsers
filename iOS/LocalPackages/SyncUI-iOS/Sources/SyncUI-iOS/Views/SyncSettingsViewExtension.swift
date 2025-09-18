@@ -76,14 +76,12 @@ extension SyncSettingsView {
         Section {
             Button(UserText.syncAndBackUpThisDeviceLink) {
                 Task { @MainActor in
-                    if await model.commonAuthenticate() {
-                        isSyncWithSetUpSheetVisible = true
-                    }
+                    await model.presentSyncWithSetUpSheetIfNeeded()
                 }
             }
-            .sheet(isPresented: $isSyncWithSetUpSheetVisible, content: {
+            .sheet(isPresented: $model.isSyncWithSetUpSheetVisible, content: {
                 SyncWithServerView(model: model, onCancel: {
-                    isSyncWithSetUpSheetVisible = false
+                    model.isSyncWithSetUpSheetVisible = false
                 })
             })
             .disabled(!model.isAccountCreationAvailable)

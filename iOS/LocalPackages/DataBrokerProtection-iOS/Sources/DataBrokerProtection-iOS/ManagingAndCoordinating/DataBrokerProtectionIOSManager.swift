@@ -128,7 +128,7 @@ public final class DataBrokerProtectionIOSManager {
     private static let backgroundTaskIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
 
     private let database: DataBrokerProtectionRepository
-    private var queueManager: BrokerProfileJobQueueManaging
+    private var queueManager: JobQueueManaging
     private let jobDependencies: BrokerProfileJobDependencyProviding
     public var emailConfirmationDataService: EmailConfirmationDataServiceProvider?
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
@@ -161,7 +161,7 @@ public final class DataBrokerProtectionIOSManager {
                                        localBrokerProvider: localBrokerService)
     }()
 
-    init(queueManager: BrokerProfileJobQueueManaging,
+    init(queueManager: JobQueueManaging,
          jobDependencies: BrokerProfileJobDependencyProviding,
          emailConfirmationDataService: EmailConfirmationDataServiceProvider,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
@@ -279,8 +279,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
     }
 }
 
-extension DataBrokerProtectionIOSManager: BrokerProfileJobQueueManagerDelegate {
-    public func queueManagerWillEnqueueOperations(_ queueManager: BrokerProfileJobQueueManaging) {
+extension DataBrokerProtectionIOSManager: JobQueueManagerDelegate {
+    public func queueManagerWillEnqueueOperations(_ queueManager: JobQueueManaging) {
         Task {
             do {
                 try await brokerUpdater?.checkForUpdates()

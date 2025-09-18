@@ -252,9 +252,9 @@ extension SyncSettingsView {
                     Text(UserText.unifiedFavoritesInstruction)
                         .daxFootnoteRegular()
                         .foregroundColor(.secondary)
-                        .accessibility(identifier: "UnifiedFavoritesToggle")
                 }
             }
+            .accessibility(identifier: "UnifiedFavoritesToggle")
         } header: {
             Text(UserText.optionsSectionHeader)
         }

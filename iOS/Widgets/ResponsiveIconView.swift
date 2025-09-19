@@ -1,5 +1,5 @@
 //
-//  DesignSystemWidgetContainerView.swift
+//  IconView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -20,23 +20,31 @@
 
 import SwiftUI
 import WidgetKit
+import AppIntents
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-/// Use this view to apply our standard design to widgets.  Ensure that the configuration for the widget uses the `.contentMarginsDisabled()` modifier.
-struct DesignSystemWidgetContainerView<Content: View>: View {
+struct ResponsiveIconView: View {
 
-    @ViewBuilder
-    let content: () -> Content
+    @Environment(\.widgetFamily) var widgetFamily
 
-    var body: some View {
-        Group {
-            // Adding a color background here can help debug
-            content()
-        }
-        .padding(16)
-        // Adding a different color background here can help debug
-        .widgetContainerBackground(color: Color(designSystemColor: .background))
+    let image: Image
+
+    var frameSize: CGFloat {
+        widgetFamily == .systemSmall ? 56 : 60
     }
 
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(designSystemColor: .backgroundTertiary))
+            image
+                .resizable()
+                .scaledToFit()
+                .frame(width: 24, height: 24)
+                .makeAccentable()
+                .foregroundStyle(Color(designSystemColor: .icons))
+        }
+        .frame(width: frameSize, height: frameSize)
+    }
 }

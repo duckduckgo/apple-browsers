@@ -31,37 +31,32 @@ struct FavoritesWidgetView: View {
 
     @ViewBuilder
     func addFavoritesPrompt() -> some View {
-        ZStack(alignment: .top) {
-            VStack(spacing: 0) {
-                FavoritesGridView(entry: entry)
-            }
+        VStack(spacing: 4) {
+            Text(UserText.noFavoritesMessage)
+                .daxSubheadRegular()
+                .multilineTextAlignment(.center)
+                .foregroundStyle(Color(designSystemColor: .textSecondary))
+                .padding(.horizontal)
+                .accessibilityHidden(true)
 
-            VStack(spacing: 4) {
-                Text(UserText.noFavoritesMessage)
-                    .daxSubheadRegular()
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(Color(designSystemColor: .textSecondary))
-                    .padding(.horizontal)
-                    .accessibilityHidden(true)
-
-                Text(UserText.noFavoritesCTA)
-                    .daxSubheadSemibold()
-                    .foregroundColor(Color(designSystemColor: .accent))
-            }
+            Text(UserText.noFavoritesCTA)
+                .daxSubheadSemibold()
+                .foregroundColor(Color(designSystemColor: .accent))
         }
+        .padding(0)
     }
 
     var body: some View {
         DesignSystemWidgetContainerView {
             VStack(alignment: .center, spacing: 0) {
-                LargeSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled)
+                ResponsiveSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled, showLogo: true, isRightIconEnabled: true)
 
                 if entry.favorites.isEmpty, !entry.isPreview {
                     // The whole thing needs to be a link because the user could click anywhere
                     Link(destination: DeepLinks.addFavorite) {
                         addFavoritesPrompt()
+                            .padding(.top, 8)
                     }
-                    .padding(.top, 8)
                 } else {
                     FavoritesGridView(entry: entry)
                 }

@@ -131,61 +131,18 @@ struct QuickActionsWidgetView: View {
         DesignSystemWidgetContainerView {
             VStack(spacing: 0) {
                 Link(destination: DeepLinks.newSearch) {
-                    SearchBoxView()
+                    ResponsiveSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled, showLogo: true, isRightIconEnabled: false)
                 }
                 HStack(spacing: 12) {
                     Link(destination: entry.configuration.leftShortcut.destination) {
-                        IconView(image: entry.configuration.leftShortcut.icon)
+                        ResponsiveIconView(image: entry.configuration.leftShortcut.icon)
                     }
                     Link(destination: entry.configuration.rightShortcut.destination) {
-                        IconView(image: entry.configuration.rightShortcut.icon)
+                        ResponsiveIconView(image: entry.configuration.rightShortcut.icon)
                     }
                 }
+                Spacer()
             }
         }
-    }
-}
-
-private struct SearchBoxView: View {
-    var body: some View {
-        HStack {
-            Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
-                .resizable()
-                .useFullColorRendering()
-                .frame(width: 28, height: 28)
-                .padding(.leading, 12)
-
-            Text(UserText.quickActionsSearch)
-                .daxBodyRegular()
-                .makeAccentable()
-                .foregroundStyle(Color(designSystemColor: .textSecondary))
-
-            Spacer()
-        }
-        .frame(height: 52)
-        .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(designSystemColor: .backgroundTertiary))
-                .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 12, x: 0, y: 8)
-        )
-        .padding(.bottom, 16)
-    }
-}
-
-private struct IconView: View {
-    let image: Image
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(designSystemColor: .backgroundTertiary))
-            image
-                .resizable()
-                .scaledToFit()
-                .frame(width: 24, height: 24)
-                .makeAccentable()
-        }
-        .frame(width: 56, height: 56)
     }
 }

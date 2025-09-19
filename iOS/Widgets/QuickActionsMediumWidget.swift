@@ -76,14 +76,14 @@ struct QuickActionsMediumWidgetView: View {
     var body: some View {
         DesignSystemWidgetContainerView {
             VStack(alignment: .center, spacing: 0) {
-                LargeSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled)
+                ResponsiveSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled, showLogo: true, isRightIconEnabled: true)
 
                 HStack {
                     ForEach(shortcuts.indices, id: \.self) { index in
                         let shortcut = shortcuts[index]
 
                         Link(destination: shortcut.destination) {
-                            QuickActionView(shortcut: shortcut)
+                            ResponsiveIconView(image: shortcut.icon)
                         }
 
                         if index < shortcuts.count - 1 {
@@ -97,24 +97,24 @@ struct QuickActionsMediumWidgetView: View {
     }
 }
 
-@available(iOS 17.0, *)
-private struct QuickActionView: View {
-    let shortcut: ShortcutOption
-
-    var body: some View {
-        VStack {
-            ZStack {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(Color(designSystemColor: .backgroundTertiary))
-                    .frame(width: 60, height: 60)
-                
-                shortcut.icon
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 24, height: 24)
-                    .makeAccentable()
-            }
-
-        }
-    }
-}
+// @available(iOS 17.0, *)
+// private struct QuickActionView: View {
+//    let shortcut: ShortcutOption
+//
+//    var body: some View {
+//        VStack {
+//            ZStack {
+//                RoundedRectangle(cornerRadius: 14)
+//                    .fill(Color(designSystemColor: .backgroundTertiary))
+//                    .frame(width: 60, height: 60)
+//                
+//                shortcut.icon
+//                    .resizable()
+//                    .scaledToFit()
+//                    .frame(width: 24, height: 24)
+//                    .makeAccentable()
+//            }
+//
+//        }
+//    }
+// }

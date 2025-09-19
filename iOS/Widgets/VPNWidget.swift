@@ -174,7 +174,7 @@ struct VPNStatusView: View {
         VStack(alignment: .leading, spacing: 0) {
             Image(headerImageName(with: status))
                 .useFullColorRendering()
-                .padding(.bottom, 4)
+                .padding(.bottom, 6)
                 .accessibilityHidden(true)
 
             Text(title(with: status))

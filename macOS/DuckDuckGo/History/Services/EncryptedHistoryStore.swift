@@ -134,24 +134,9 @@ final class EncryptedHistoryStore: HistoryStoring {
                 context.delete(item)
             }
             try context.save()
-        } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.historyCleanEntriesFailed, error: error))
-            context.reset()
-            return .failure(error)
-        }
-
-        let visitDeleteRequest = NSFetchRequest<VisitManagedObject>(entityName: VisitManagedObject.className())
-        visitDeleteRequest.predicate = NSPredicate(format: "date < %@", date as NSDate)
-
-        do {
-            let itemsToBeDeleted = try context.fetch(visitDeleteRequest)
-            for item in itemsToBeDeleted {
-                context.delete(item)
-            }
-            try context.save()
             return .success(())
         } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.historyCleanVisitsFailed, error: error))
+            PixelKit.fire(DebugEvent(GeneralPixel.historyCleanEntriesFailed, error: error))
             context.reset()
             return .failure(error)
         }

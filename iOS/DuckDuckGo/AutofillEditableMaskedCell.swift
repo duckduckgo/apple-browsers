@@ -86,7 +86,8 @@ struct AutofillEditableMaskedCell: View {
                             unmaskedString = String(unmaskedString.prefix(limit))
                         }
                     }
-                
+                    .accessibilityIdentifier(textFieldAccessibilityIdentifier)
+
                 Spacer()
                 
                 if unmaskedString.count > 0 {

@@ -83,7 +83,10 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func setupView() {
-        textView.font = UIFont.systemFont(ofSize: Constants.fontSize)
+        let fontMetrics = UIFontMetrics(forTextStyle: .body)
+        let textFont = fontMetrics.scaledFont(for: UIFont.systemFont(ofSize: Constants.fontSize))
+        textView.font = textFont
+        textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = UIColor.clear
         textView.tintColor = UIColor(designSystemColor: .accent)
         textView.textColor = UIColor(designSystemColor: .textPrimary)
@@ -93,7 +96,9 @@ class SwitchBarTextEntryView: UIView {
         textView.isScrollEnabled = false
         textView.showsVerticalScrollIndicator = false
 
-        placeholderLabel.font = UIFont.systemFont(ofSize: Constants.fontSize)
+
+        placeholderLabel.font = textFont
+        placeholderLabel.adjustsFontForContentSizeCategory = true
         placeholderLabel.textColor = UIColor(designSystemColor: .textSecondary)
 
         // Truncate text in case it exceeds single line

@@ -95,8 +95,8 @@ struct Launching: LaunchingHandling {
         let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
-        let widePixelService = WidePixelService(
-            widePixel: AppDependencyProvider.shared.widePixel,
+        let widePixelService = WideEventService(
+            wideEvent: AppDependencyProvider.shared.wideEvent,
             featureFlagger: featureFlagger,
             subscriptionBridge: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
         )

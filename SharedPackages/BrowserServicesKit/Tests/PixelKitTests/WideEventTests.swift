@@ -1,5 +1,5 @@
 //
-//  WidePixelTests.swift
+//  WideEventTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -20,9 +20,9 @@ import XCTest
 @testable import PixelKit
 import Foundation
 
-final class WidePixelTests: XCTestCase {
+final class WideEventTests: XCTestCase {
 
-    var widePixel: WidePixel!
+    var wideEvent: WideEvent!
     var testDefaults: UserDefaults!
     var capturedPixels: [(name: String, parameters: [String: String])] = []
     private var testSuiteName: String!
@@ -32,7 +32,7 @@ final class WidePixelTests: XCTestCase {
 
         testSuiteName = "\(type(of: self))-\(UUID().uuidString)"
         testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
-        widePixel = WidePixel(storage: WidePixelUserDefaultsStorage(userDefaults: testDefaults))
+        wideEvent = WideEvent(storage: WideEventUserDefaultsStorage(userDefaults: testDefaults))
         capturedPixels.removeAll()
         setupMockPixelKit()
     }
@@ -72,9 +72,9 @@ final class WidePixelTests: XCTestCase {
             subscriptionIdentifier: "test-subscription-id"
         )
 
-        widePixel.startFlow(subscriptionData)
+        wideEvent.startFlow(subscriptionData)
 
-        let retrievedData = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)
+        let retrievedData = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: subscriptionData.globalData.id)
 
         XCTAssertEqual(retrievedData.purchasePlatform, .appStore)
         XCTAssertEqual(retrievedData.contextData.id, subscriptionData.contextData.id)
@@ -84,15 +84,15 @@ final class WidePixelTests: XCTestCase {
 
     func testFlowUpdateWithDataReplacement() throws {
         let initialData = makeTestSubscriptionData(platform: .stripe, contextName: "initial")
-        widePixel.startFlow(initialData)
+        wideEvent.startFlow(initialData)
 
         var updatedData = initialData
         updatedData.failingStep = .accountCreate
         updatedData.subscriptionIdentifier = "updated-subscription"
         updatedData.freeTrialEligible = true
-        widePixel.updateFlow(updatedData)
+        wideEvent.updateFlow(updatedData)
 
-        let retrievedData = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: initialData.globalData.id)
+        let retrievedData = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: initialData.globalData.id)
         XCTAssertEqual(retrievedData.purchasePlatform, .stripe)
         XCTAssertEqual(retrievedData.failingStep, .accountCreate)
         XCTAssertEqual(retrievedData.subscriptionIdentifier, "updated-subscription")
@@ -101,19 +101,19 @@ final class WidePixelTests: XCTestCase {
 
     func testFlowCancellationClearsStorage() throws {
         let subscriptionData = makeTestSubscriptionData(contextName: "cancellation-test")
-        widePixel.startFlow(subscriptionData)
+        wideEvent.startFlow(subscriptionData)
 
-        _ = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)
+        _ = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: subscriptionData.globalData.id)
 
         let expectation = XCTestExpectation(description: "Flow cancelled")
-        widePixel.completeFlow(subscriptionData, status: .cancelled) { success, error in
+        wideEvent.completeFlow(subscriptionData, status: .cancelled) { success, error in
             XCTAssertTrue(success)
             XCTAssertNil(error)
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 1.0)
 
-        let retrievedData = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)
+        let retrievedData = wideEvent.getFlowData(SubscriptionPurchaseWideEventData.self, globalID: subscriptionData.globalData.id)
         XCTAssertNil(retrievedData)
 
         XCTAssert(capturedPixels.count >= 1 && capturedPixels.count <= 2)
@@ -124,7 +124,7 @@ final class WidePixelTests: XCTestCase {
 
     func testGetFlowDataForNonExistentFlow() {
         let nonExistentContextID = UUID().uuidString
-        let result = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: nonExistentContextID)
+        let result = wideEvent.getFlowData(SubscriptionPurchaseWideEventData.self, globalID: nonExistentContextID)
         XCTAssertNil(result)
     }
 
@@ -132,28 +132,28 @@ final class WidePixelTests: XCTestCase {
         let nonExistentContextID = UUID().uuidString
         let data = makeTestSubscriptionData(contextID: nonExistentContextID)
 
-        widePixel.updateFlow(data)
+        wideEvent.updateFlow(data)
     }
 
     func testCompleteFlowForNonExistentFlow() {
         let nonExistentContextID = UUID().uuidString
         let data = makeTestSubscriptionData(contextID: nonExistentContextID)
 
-        widePixel.completeFlow(data, status: .success) { _, _ in }
+        wideEvent.completeFlow(data, status: .success) { _, _ in }
     }
 
     func testDiscardFlowDeletesStoredData() throws {
         let subscriptionData = makeTestSubscriptionData(contextName: "discard-test")
-        widePixel.startFlow(subscriptionData)
+        wideEvent.startFlow(subscriptionData)
 
         // Verify flow exists
-        _ = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)
+        _ = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: subscriptionData.globalData.id)
 
         // Discard the flow
-        widePixel.discardFlow(subscriptionData)
+        wideEvent.discardFlow(subscriptionData)
 
         // Verify flow is deleted from storage
-        let retrievedData = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)
+        let retrievedData = wideEvent.getFlowData(SubscriptionPurchaseWideEventData.self, globalID: subscriptionData.globalData.id)
         XCTAssertNil(retrievedData, "Flow should be deleted from storage after discard")
 
         // Verify no pixel was fired
@@ -165,7 +165,7 @@ final class WidePixelTests: XCTestCase {
         let data = makeTestSubscriptionData(contextID: nonExistentContextID)
 
         // This should not crash and should handle the missing flow gracefully
-        widePixel.discardFlow(data)
+        wideEvent.discardFlow(data)
 
         // Verify no pixel was fired
         XCTAssertEqual(capturedPixels.count, 0)
@@ -173,28 +173,28 @@ final class WidePixelTests: XCTestCase {
 
     func testDiscardFlowAfterUpdates() throws {
         let subscriptionData = makeTestSubscriptionData(platform: .stripe, contextName: "discard-with-updates")
-        widePixel.startFlow(subscriptionData)
+        wideEvent.startFlow(subscriptionData)
 
         // Update the flow multiple times
         var updatedData = subscriptionData
         updatedData.subscriptionIdentifier = "test-subscription"
         updatedData.freeTrialEligible = true
-        widePixel.updateFlow(updatedData)
+        wideEvent.updateFlow(updatedData)
 
         updatedData.failingStep = .accountCreate
-        widePixel.updateFlow(updatedData)
+        wideEvent.updateFlow(updatedData)
 
         // Verify flow exists with updates
-        let retrievedBeforeDiscard = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)
+        let retrievedBeforeDiscard = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: subscriptionData.globalData.id)
         XCTAssertEqual(retrievedBeforeDiscard.subscriptionIdentifier, "test-subscription")
         XCTAssertEqual(retrievedBeforeDiscard.failingStep, .accountCreate)
         XCTAssertTrue(retrievedBeforeDiscard.freeTrialEligible)
 
         // Discard the flow
-        widePixel.discardFlow(updatedData)
+        wideEvent.discardFlow(updatedData)
 
         // Verify flow is deleted
-        let retrievedAfterDiscard = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)
+        let retrievedAfterDiscard = wideEvent.getFlowData(SubscriptionPurchaseWideEventData.self, globalID: subscriptionData.globalData.id)
         XCTAssertNil(retrievedAfterDiscard, "Updated flow should be deleted from storage after discard")
 
         // Verify no pixel was fired
@@ -202,12 +202,12 @@ final class WidePixelTests: XCTestCase {
     }
 
     func testSerializationFailure() throws {
-        struct NonSerializableData: WidePixelData {
+        struct NonSerializableData: WideEventData {
             static let pixelName = "non_serializable"
             let closure: () -> Void = { }
-            var contextData: WidePixelContextData = WidePixelContextData(id: UUID().uuidString)
-            var appData: WidePixelAppData = WidePixelAppData()
-            var globalData: WidePixelGlobalData = WidePixelGlobalData(platform: "", sampleRate: 1.0)
+            var contextData: WideEventContextData = WideEventContextData(id: UUID().uuidString)
+            var appData: WideEventAppData = WideEventAppData()
+            var globalData: WideEventGlobalData = WideEventGlobalData(platform: "", sampleRate: 1.0)
             func pixelParameters() -> [String: String] { [:] }
 
             enum CodingError: Error { case encodingNotSupported }
@@ -219,19 +219,19 @@ final class WidePixelTests: XCTestCase {
         }
 
         let nonSerializableData = NonSerializableData()
-        widePixel.startFlow(nonSerializableData)
+        wideEvent.startFlow(nonSerializableData)
     }
 
     func testCompleteFlowWithoutPixelKit() throws {
         PixelKit.tearDown()
 
         let subscriptionData = makeTestSubscriptionData()
-        widePixel.startFlow(subscriptionData)
+        wideEvent.startFlow(subscriptionData)
 
         let expectation = XCTestExpectation(description: "Completion called")
-        widePixel.completeFlow(subscriptionData, status: .success) { success, error in
+        wideEvent.completeFlow(subscriptionData, status: .success) { success, error in
             XCTAssertFalse(success)
-            guard let error = error, case WidePixelError.invalidFlowState = error else {
+            guard let error = error, case WideEventError.invalidFlowState = error else {
                 XCTFail("Expected invalidFlowState error, got \(String(describing: error))")
                 return
             }
@@ -246,31 +246,31 @@ final class WidePixelTests: XCTestCase {
 
     func testBasicMeasurementOperations() throws {
         let data = makeTestSubscriptionData()
-        widePixel.startFlow(data)
+        wideEvent.startFlow(data)
 
-        var started = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
-        started.createAccountDuration = WidePixel.MeasuredInterval.startingNow()
-        widePixel.updateFlow(started)
+        var started = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
+        started.createAccountDuration = WideEvent.MeasuredInterval.startingNow()
+        wideEvent.updateFlow(started)
 
-        let dataAfterStart = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
+        let dataAfterStart = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
         XCTAssertNotNil(dataAfterStart.createAccountDuration?.start)
         XCTAssertNil(dataAfterStart.createAccountDuration?.end)
 
-        var stopped = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
+        var stopped = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
         stopped.createAccountDuration?.complete()
-        widePixel.updateFlow(stopped)
+        wideEvent.updateFlow(stopped)
 
-        let dataAfterStop = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
+        let dataAfterStop = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
         XCTAssertNotNil(dataAfterStop.createAccountDuration?.start)
         XCTAssertNotNil(dataAfterStop.createAccountDuration?.end)
     }
 
     func testInstanceBasedMeasurements() throws {
         var data = makeTestSubscriptionData()
-        widePixel.startFlow(data)
+        wideEvent.startFlow(data)
 
         XCTAssertNil(data.createAccountDuration)
-        data.createAccountDuration = WidePixel.MeasuredInterval.startingNow()
+        data.createAccountDuration = WideEvent.MeasuredInterval.startingNow()
         XCTAssertNotNil(data.createAccountDuration?.start)
         XCTAssertNil(data.createAccountDuration?.end)
 
@@ -281,23 +281,23 @@ final class WidePixelTests: XCTestCase {
 
     func testMeasurementWithExtremeDurations() throws {
         let data = makeTestSubscriptionData()
-        widePixel.startFlow(data)
+        wideEvent.startFlow(data)
 
         // Test very short duration
         let shortStart = Date()
         let shortEnd = shortStart.addingTimeInterval(0.001)
-        var short = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
-        short.createAccountDuration = WidePixel.MeasuredInterval(start: shortStart, end: shortEnd)
-        widePixel.updateFlow(short)
+        var short = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
+        short.createAccountDuration = WideEvent.MeasuredInterval(start: shortStart, end: shortEnd)
+        wideEvent.updateFlow(short)
 
         // Test very long duration
         let longStart = Date(timeIntervalSince1970: 0)
         let longEnd = longStart.addingTimeInterval(3600 * 24)
-        var long = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
-        long.completePurchaseDuration = WidePixel.MeasuredInterval(start: longStart, end: longEnd)
-        widePixel.updateFlow(long)
+        var long = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
+        long.completePurchaseDuration = WideEvent.MeasuredInterval(start: longStart, end: longEnd)
+        wideEvent.updateFlow(long)
 
-        let typed = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
+        let typed = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
         var parameters: [String: String] = [:]
         parameters["global.platform"] = "macOS"
         parameters["global.type"] = "app"
@@ -306,7 +306,7 @@ final class WidePixelTests: XCTestCase {
         parameters["app.version"] = typed.appData.version
 
         if let formFactor = typed.appData.formFactor { parameters["global.form_factor"] = formFactor }
-        parameters["feature.name"] = SubscriptionPurchaseWidePixelData.pixelName
+        parameters["feature.name"] = SubscriptionPurchaseWideEventData.pixelName
 
         if let name = typed.contextData.name { parameters["context.name"] = name }
         if let data = typed.contextData.data {
@@ -321,14 +321,14 @@ final class WidePixelTests: XCTestCase {
 
     func testStopMeasurementWhenNeverStarted() throws {
         let data = makeTestSubscriptionData()
-        widePixel.startFlow(data)
+        wideEvent.startFlow(data)
 
         let now = Date()
-        var updated = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
-        updated.createAccountDuration = WidePixel.MeasuredInterval(start: now, end: now)
-        widePixel.updateFlow(updated)
+        var updated = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
+        updated.createAccountDuration = WideEvent.MeasuredInterval(start: now, end: now)
+        wideEvent.updateFlow(updated)
 
-        let dataAfterStop = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
+        let dataAfterStop = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
         XCTAssertNotNil(dataAfterStop.createAccountDuration?.start)
         XCTAssertNotNil(dataAfterStop.createAccountDuration?.end)
         XCTAssertEqual(dataAfterStop.createAccountDuration?.start, dataAfterStop.createAccountDuration?.end)
@@ -338,26 +338,26 @@ final class WidePixelTests: XCTestCase {
         let testError = makeTestError(domain: "TestErrorDomain", code: 12345)
         let contextID = UUID().uuidString
 
-        let subscriptionData = SubscriptionPurchaseWidePixelData(
+        let subscriptionData = SubscriptionPurchaseWideEventData(
             purchasePlatform: .appStore,
             failingStep: .accountCreate,
             subscriptionIdentifier: "ddg.privacy.pro.monthly",
             freeTrialEligible: true,
-            createAccountDuration: WidePixel.MeasuredInterval(
+            createAccountDuration: WideEvent.MeasuredInterval(
                 start: Date(timeIntervalSince1970: 1000),
                 end: Date(timeIntervalSince1970: 1002.5)
             ),
-            errorData: WidePixelErrorData(error: testError),
-            contextData: WidePixelContextData(
+            errorData: WideEventErrorData(error: testError),
+            contextData: WideEventContextData(
                 id: contextID,
                 name: "test-funnel",
                 data: ["source": "onboarding", "experiment": "control"]
             ),
-            appData: WidePixelAppData()
+            appData: WideEventAppData()
         )
 
-        widePixel.startFlow(subscriptionData)
-        let typed = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)
+        wideEvent.startFlow(subscriptionData)
+        let typed = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: subscriptionData.globalData.id)
         var parameters: [String: String] = [:]
 
         parameters["global.platform"] = "macOS"
@@ -366,7 +366,7 @@ final class WidePixelTests: XCTestCase {
         parameters["app.name"] = typed.appData.name
         parameters["app.version"] = typed.appData.version
         if let formFactor = typed.appData.formFactor { parameters["global.form_factor"] = formFactor }
-        parameters["feature.name"] = SubscriptionPurchaseWidePixelData.pixelName
+        parameters["feature.name"] = SubscriptionPurchaseWideEventData.pixelName
         if let name = typed.contextData.name { parameters["context.name"] = name }
         if let data = typed.contextData.data {
             for (key, value) in data { parameters["context.data.\(key)"] = value }
@@ -403,7 +403,7 @@ final class WidePixelTests: XCTestCase {
     }
 
     func testJsonParameterNesting() throws {
-        struct TestProvider: WidePixelParameterProviding {
+        struct TestProvider: WideEventParameterProviding {
             func pixelParameters() -> [String: String] {
                 return [
                     "app.name": "DuckDuckGo",
@@ -430,10 +430,10 @@ final class WidePixelTests: XCTestCase {
         let data1 = makeTestSubscriptionData(contextName: "flow-1")
         let data2 = makeTestSubscriptionData(contextName: "flow-2")
 
-        widePixel.startFlow(data1)
-        widePixel.startFlow(data2)
+        wideEvent.startFlow(data1)
+        wideEvent.startFlow(data2)
 
-        let allFlows = widePixel.getAllFlowData(SubscriptionPurchaseWidePixelData.self)
+        let allFlows = wideEvent.getAllFlowData(SubscriptionPurchaseWideEventData.self)
         XCTAssertEqual(allFlows.count, 2)
     }
 
@@ -443,15 +443,15 @@ final class WidePixelTests: XCTestCase {
         data.contextData.name = nil
         data.contextData.data = nil
 
-        widePixel.startFlow(data)
+        wideEvent.startFlow(data)
 
-        let retrievedData = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
+        let retrievedData = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
         XCTAssertNil(retrievedData.subscriptionIdentifier)
         XCTAssertNil(retrievedData.contextData.name)
         XCTAssertNil(retrievedData.contextData.data)
 
         let expectation = XCTestExpectation(description: "completeFlow")
-        widePixel.completeFlow(retrievedData, status: .success) { success, error in
+        wideEvent.completeFlow(retrievedData, status: .success) { success, error in
             XCTAssertTrue(success)
             XCTAssertNil(error)
             expectation.fulfill()
@@ -465,16 +465,16 @@ final class WidePixelTests: XCTestCase {
         let contextID = UUID().uuidString
         let data1 = makeTestSubscriptionData(platform: .appStore, contextID: contextID, contextName: "first")
 
-        widePixel.startFlow(data1)
+        wideEvent.startFlow(data1)
 
         let updated1 = data1
         updated1.subscriptionIdentifier = "subscription"
-        widePixel.updateFlow(updated1)
+        wideEvent.updateFlow(updated1)
 
         let data2 = makeTestSubscriptionData(platform: .stripe, contextID: contextID, contextName: "second")
-        widePixel.startFlow(data2)
+        wideEvent.startFlow(data2)
 
-        let retrievedData = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data2.globalData.id)
+        let retrievedData = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data2.globalData.id)
         XCTAssertEqual(retrievedData.purchasePlatform, .stripe)
         XCTAssertEqual(retrievedData.contextData.name, "second")
         XCTAssertNil(retrievedData.subscriptionIdentifier)
@@ -486,12 +486,12 @@ final class WidePixelTests: XCTestCase {
         let notSampled = makeTestSubscriptionData(contextID: contextID)
         notSampled.globalData.sampleRate = 0.0
 
-        widePixel.startFlow(notSampled)
+        wideEvent.startFlow(notSampled)
 
-        XCTAssertNil(widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: notSampled.globalData.id))
+        XCTAssertNil(wideEvent.getFlowData(SubscriptionPurchaseWideEventData.self, globalID: notSampled.globalData.id))
 
         let exp = expectation(description: "complete")
-        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, globalID: notSampled.globalData.id, status: .success) { success, error in
+        wideEvent.completeFlow(SubscriptionPurchaseWideEventData.self, globalID: notSampled.globalData.id, status: .success) { success, error in
             XCTAssertTrue(success)
             XCTAssertNil(error)
             exp.fulfill()
@@ -504,14 +504,14 @@ final class WidePixelTests: XCTestCase {
     // MARK: - Test Utilities
 
     func makeTestSubscriptionData(
-        platform: SubscriptionPurchaseWidePixelData.PurchasePlatform = .appStore,
+        platform: SubscriptionPurchaseWideEventData.PurchasePlatform = .appStore,
         contextID: String = UUID().uuidString,
         contextName: String? = nil,
         subscriptionIdentifier: String? = nil,
         freeTrialEligible: Bool? = nil
-    ) -> SubscriptionPurchaseWidePixelData {
-        let contextData = WidePixelContextData(id: contextID, name: contextName)
-        return SubscriptionPurchaseWidePixelData(
+    ) -> SubscriptionPurchaseWideEventData {
+        let contextData = WideEventContextData(id: contextID, name: contextName)
+        return SubscriptionPurchaseWideEventData(
             purchasePlatform: platform,
             subscriptionIdentifier: subscriptionIdentifier,
             freeTrialEligible: freeTrialEligible ?? false,
@@ -525,8 +525,8 @@ final class WidePixelTests: XCTestCase {
         ])
     }
 
-    func XCTUnwrapFlow<T: WidePixelData>(_ type: T.Type, globalID: String, file: StaticString = #file, line: UInt = #line) throws -> T {
-        guard let flow = widePixel.getFlowData(type, globalID: globalID) else {
+    func XCTUnwrapFlow<T: WideEventData>(_ type: T.Type, globalID: String, file: StaticString = #file, line: UInt = #line) throws -> T {
+        guard let flow = wideEvent.getFlowData(type, globalID: globalID) else {
             XCTFail("Expected flow data for \(type) with globalID \(globalID)", file: file, line: line)
             throw TestError.flowNotFound
         }

@@ -240,9 +240,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Wide Pixel Service
 
-    private lazy var widePixelService: WidePixelService = {
-        return WidePixelService(
-            widePixel: WidePixel(),
+    private lazy var wideEventService: WideEventService = {
+        return WideEventService(
+            wideEvent: WideEvent(),
             featureFlagger: featureFlagger,
             subscriptionBridge: subscriptionAuthV1toV2Bridge
         )
@@ -1010,7 +1010,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         freemiumDBPScanResultPolling = DefaultFreemiumDBPScanResultPolling(dataManager: DataBrokerProtectionManager.shared.dataManager, freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPScanResultPolling?.startPollingOrObserving()
 
-        widePixelService.sendAbandonedPixels { }
+        wideEventService.sendAbandonedPixels { }
 
         PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
     }

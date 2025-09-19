@@ -21,7 +21,7 @@ import Foundation
 
 struct WidePixelLaunchCleanupTask: LaunchTask {
 
-    let widePixelService: WidePixelService
+    let widePixelService: WideEventService
 
     var name: String = "Wide Pixel Launch Cleanup"
 

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKit
 
 protocol ColorsProviding {
     var navigationBackgroundColor: NSColor { get }
@@ -78,7 +79,7 @@ final class LegacyColorsProviding: ColorsProviding {
 }
 
 final class NewColorsProviding: ColorsProviding {
-    private let palette: ColorPalette
+    private let palette: ThemeColors
 
     var navigationBackgroundColor: NSColor { palette.surfacePrimary }
     var baseBackgroundColor: NSColor { palette.surfaceBackdrop }
@@ -86,7 +87,7 @@ final class NewColorsProviding: ColorsProviding {
     var textSecondaryColor: NSColor { palette.textSecondary }
     var textTertiaryColor: NSColor { palette.textTertiary }
     var accentPrimaryColor: NSColor { palette.accentPrimary }
-    var addressBarOutlineShadow: NSColor { palette.accentAltGlow }
+    var addressBarOutlineShadow: NSColor { palette.accentAltGlowPrimary }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
     var addressBarTextFieldColor: NSColor { palette.textPrimary }
     var settingsBackgroundColor: NSColor { palette.surfaceCanvas }
@@ -107,7 +108,7 @@ final class NewColorsProviding: ColorsProviding {
     var ntpLightBackgroundColor: String { "#FAFAFA" }
     var ntpDarkBackgroundColor: String { "#1C1C1C" }
 
-    init(palette: ColorPalette) {
+    init(palette: ThemeColors) {
         self.palette = palette
     }
 }

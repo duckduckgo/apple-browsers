@@ -18,6 +18,7 @@
 
 import AppKit
 import Foundation
+import DesignResourcesKit
 
 protocol TabStyleProviding {
     var separatorColor: NSColor { get }
@@ -58,7 +59,7 @@ final class LegacyTabStyleProvider: TabStyleProviding {
 }
 
 final class NewlineTabStyleProvider: TabStyleProviding {
-    private let palette: ColorPalette
+    private let palette: ThemeColors
 
     var separatorColor: NSColor { palette.decorationTertiary }
     var selectedTabColor: NSColor { palette.surfacePrimary }
@@ -77,7 +78,7 @@ final class NewlineTabStyleProvider: TabStyleProviding {
     let standardTabCornerRadius: CGFloat = 10.0
     let tabButtonActionsCornerRadius: CGFloat = 5
 
-    init(palette: any ColorPalette) {
+    init(palette: any ThemeColors) {
         self.palette = palette
     }
 }

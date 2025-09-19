@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKit
 
 protocol ColorPalette {
     var surfaceBackdrop: NSColor { get }
@@ -88,6 +89,7 @@ protocol ColorPalette {
 }
 
 final class NewColorPalette: ColorPalette {
+final class NewColorPalette: ThemeColors {
     let surfaceBackdrop: NSColor = .surfaceBackdrop
     let surfaceCanvas: NSColor = .surfaceCanvas
     let surfacePrimary: NSColor = .surfacePrimary
@@ -99,12 +101,12 @@ final class NewColorPalette: ColorPalette {
     let iconsPrimary: NSColor = .iconsPrimary
     let iconsSecondary: NSColor = .iconsSecondary
     let iconsTertiary: NSColor = .iconsTertiary
-    let toneTint: NSColor = .toneTint
-    let toneShade: NSColor = .toneShade
+    let toneTintPrimary: NSColor = .toneTint
+    let toneShadePrimary: NSColor = .toneShade
     let accentPrimary: NSColor = .accentPrimary
     let accentSecondary: NSColor = .accentSecondary
     let accentTertiary: NSColor = .accentTertiary
-    let accentGlow: NSColor = .accentGlow
+    let accentGlowPrimary: NSColor = .accentGlow
     let accentTextPrimary: NSColor = .accentTextPrimary
     let accentTextSecondary: NSColor = .accentTextSecondary
     let accentTextTertiary: NSColor = .accentTextTertiary
@@ -114,7 +116,7 @@ final class NewColorPalette: ColorPalette {
     let accentAltPrimary: NSColor = .accentAltPrimary
     let accentAltSecondary: NSColor = .accentAltSecondary
     let accentAltTertiary: NSColor = .accentAltTertiary
-    let accentAltGlow: NSColor = .accentAltGlow
+    let accentAltGlowPrimary: NSColor = .accentAltGlow
     let accentAltTextPrimary: NSColor = .accentAltTextPrimary
     let accentAltTextSecondary: NSColor = .accentAltTextSecondary
     let accentAltTextTertiary: NSColor = .accentAltTextTertiary
@@ -127,7 +129,7 @@ final class NewColorPalette: ColorPalette {
     let controlsDecorationPrimary: NSColor = .controlsDecorationPrimary
     let controlsDecorationSecondary: NSColor = .controlsDecorationSecondary
     let controlsDecorationTertiary: NSColor = .controlsDecorationTertiary
-    let highlightDecoration: NSColor = .highlightDecoration
+    let highlightPrimary: NSColor = .highlightDecoration
     let decorationPrimary: NSColor = .decorationPrimary
     let decorationSecondary: NSColor = .decorationSecondary
     let decorationTertiary: NSColor = .decorationTertiary

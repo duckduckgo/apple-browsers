@@ -66,7 +66,7 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?locale=en-NZ")
     }
 
-    func testAddingPrivacyProParameters() {
+    func testAddingSubscriptionParameters() {
         let builder = buildRemoteMessagingSurveyURLBuilder()
         let baseURL = URL(string: "https://duckduckgo.com")!
         let finalURL = builder.add(parameters: [.subscriptionStatus, .subscriptionPlatform, .subscriptionPlatform], to: baseURL)

@@ -238,25 +238,25 @@ class CommonUserAttributeMatcherTests: XCTestCase {
         ), .fail)
     }
 
-    func testWhenPrivacyProSubscriptionStatusMatchesThenReturnMatch() throws {
+    func testWhenSubscriptionStatusMatchesThenReturnMatch() throws {
         XCTAssertEqual(matcher.evaluate(
             matchingAttribute: SubscriptionStatusMatchingAttribute(value: ["active"], fallback: nil)
         ), .match)
     }
 
-    func testWhenPrivacyProSubscriptionStatusHasMultipleAttributesAndOneMatchesThenReturnMatch() throws {
+    func testWhenSubscriptionStatusHasMultipleAttributesAndOneMatchesThenReturnMatch() throws {
         XCTAssertEqual(matcher.evaluate(
             matchingAttribute: SubscriptionStatusMatchingAttribute(value: ["active", "expiring", "expired"], fallback: nil)
         ), .match)
     }
 
-    func testWhenPrivacyProSubscriptionStatusDoesNotMatchThenReturnFail() throws {
+    func testWhenSubscriptionStatusDoesNotMatchThenReturnFail() throws {
         XCTAssertEqual(matcher.evaluate(
             matchingAttribute: SubscriptionStatusMatchingAttribute(value: ["expiring"], fallback: nil)
         ), .fail)
     }
 
-    func testWhenPrivacyProSubscriptionStatusHasUnsupportedStatusThenReturnFail() throws {
+    func testWhenSubscriptionStatusHasUnsupportedStatusThenReturnFail() throws {
         XCTAssertEqual(matcher.evaluate(
             matchingAttribute: SubscriptionStatusMatchingAttribute(value: ["unsupported_status"], fallback: nil)
         ), .fail)

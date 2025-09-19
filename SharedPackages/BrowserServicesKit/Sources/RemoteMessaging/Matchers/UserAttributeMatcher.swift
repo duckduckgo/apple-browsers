@@ -188,7 +188,7 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
 
 public struct CommonUserAttributeMatcher: AttributeMatching {
 
-    private enum PrivacyProSubscriptionStatus: String {
+    private enum SubscriptionStatus: String {
         case active
         case expiring
         case expired
@@ -288,7 +288,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: subscriptionPurchasePlatform ?? "")
         case let matchingAttribute as SubscriptionStatusMatchingAttribute:
             let mappedStatuses = (matchingAttribute.value ?? []).compactMap { status in
-                return PrivacyProSubscriptionStatus(rawValue: status)
+                return SubscriptionStatus(rawValue: status)
             }
 
             for status in mappedStatuses {

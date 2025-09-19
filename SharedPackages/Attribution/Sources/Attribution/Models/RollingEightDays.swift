@@ -97,7 +97,7 @@ public class RollingEightDaysInt: RollingEightDays<Int> {
                 sum += intValue
             }
         }
-        return sum / values.count - 1 // TODO: how to round?
+        return Int((Float(sum) / Float(values.count - 1)).rounded(.toNearestOrAwayFromZero)) // E.g. 6.4 = 6, 6.5 = 7, 6.6 = 7
     }
 
     /// The number of not `.unknown` items in the past 7 days

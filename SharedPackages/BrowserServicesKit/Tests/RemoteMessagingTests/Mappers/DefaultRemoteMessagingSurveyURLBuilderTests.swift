@@ -172,7 +172,7 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
             daysSinceLastActive: vpnDaysSinceLastActive
         )
 
-        let subscription = PrivacyProSubscription(productId: "product-id",
+        let subscription = DuckDuckGoSubscription(productId: "product-id",
                                            name: "product-name",
                                            billingPeriod: .monthly,
                                            startedAt: Date(timeIntervalSince1970: 1000),

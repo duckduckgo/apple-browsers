@@ -30,13 +30,13 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
 
     private let statisticsStore: StatisticsStore
     private let vpnActivationDateStore: VPNActivationDateProviding
-    private let subscription: PrivacyProSubscription?
+    private let subscription: DuckDuckGoSubscription?
     private let localeIdentifier: String
     private let autofillUsageStore: AutofillUsageStore?
 
     public init(statisticsStore: StatisticsStore,
                 vpnActivationDateStore: VPNActivationDateProviding,
-                subscription: PrivacyProSubscription?,
+                subscription: DuckDuckGoSubscription?,
                 localeIdentifier: String = Locale.current.identifier,
                 autofillUsageStore: AutofillUsageStore?) {
         self.statisticsStore = statisticsStore
@@ -178,7 +178,7 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
     }
 }
 
-extension PrivacyProSubscription {
+extension DuckDuckGoSubscription {
     var privacyProStatusSurveyParameter: String {
         switch status {
         case .autoRenewable:

@@ -147,17 +147,12 @@ jobs:
 
             # Generate success message
             ./scripts/smartling_messages.sh upload upload_message.txt "${{ github.event.inputs.platform }}" "$job_id" "${{ env.SMARTLING_PROJECT_ID }}" success
+            cat upload_message.txt >> $GITHUB_STEP_SUMMARY
           else
             # Generate error message
             ./scripts/smartling_messages.sh upload upload_message.txt "${{ github.event.inputs.platform }}" "" "${{ env.SMARTLING_PROJECT_ID }}" failed
+            cat upload_message.txt >> $GITHUB_STEP_SUMMARY
           fi
-
-      - name: Comment upload result
-        if: ${{ github.event.inputs.action == 'upload' }}
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: smartling-upload
-          path: upload_message.txt
 
       - name: Check Status
         if: ${{ github.event.inputs.action == 'status' }}
@@ -171,13 +166,7 @@ jobs:
 
           # Generate status message
           ./scripts/smartling_messages.sh status status_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" "$status" "$percent"
-
-      - name: Comment status result
-        if: ${{ github.event.inputs.action == 'status' }}
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: smartling-status
-          path: status_message.txt
+          cat status_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Approve Job
         if: ${{ github.event.inputs.action == 'approve' }}
@@ -188,17 +177,12 @@ jobs:
           if echo "$output" | grep -q "APPROVED=1"; then
             # Generate success message
             ./scripts/smartling_messages.sh approve approve_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" success
+            cat approve_message.txt >> $GITHUB_STEP_SUMMARY
           else
             # Generate error message
             ./scripts/smartling_messages.sh approve approve_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" failed
+            cat approve_message.txt >> $GITHUB_STEP_SUMMARY
           fi
-
-      - name: Comment approve result
-        if: ${{ github.event.inputs.action == 'approve' }}
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: smartling-approve
-          path: approve_message.txt
 
       - name: Download from Smartling
         if: ${{ github.event.inputs.action == 'download' }}
@@ -213,24 +197,21 @@ jobs:
             if echo "$output" | grep -q "Changes pushed to current branch"; then
               # Generate success message
               ./scripts/smartling_messages.sh download download_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" success
+              cat download_message.txt >> $GITHUB_STEP_SUMMARY
             else
               # Generate no changes message
               ./scripts/smartling_messages.sh download download_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" no_changes
+              cat download_message.txt >> $GITHUB_STEP_SUMMARY
             fi
           else
             # Check for specific errors
             if echo "$output" | grep -q "Import would delete existing translations"; then
               # Generate deletion error message
               ./scripts/smartling_messages.sh download download_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" failed deletions
+              cat download_message.txt >> $GITHUB_STEP_SUMMARY
             else
               # Generate generic error message
               ./scripts/smartling_messages.sh download download_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" failed
+              cat download_message.txt >> $GITHUB_STEP_SUMMARY
             fi
           fi
-
-      - name: Comment download result
-        if: ${{ github.event.inputs.action == 'download' }}
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: smartling-download
-          path: download_message.txt

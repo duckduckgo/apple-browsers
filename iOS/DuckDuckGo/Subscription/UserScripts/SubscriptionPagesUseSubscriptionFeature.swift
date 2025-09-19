@@ -869,7 +869,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
                 return nil
             case .accountCreationFailed(let accountCreationError):
                 setTransactionError(.accountCreationFailed)
-                wideEvent
+
                 if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
                     wideEventData.markAsFailed(at: .accountCreate, error: accountCreationError)
                     wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })

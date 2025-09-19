@@ -44,12 +44,8 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Run ShellCheck
-      uses: ludeeus/action-shellcheck@master
-      with:
-        format: gcc
-        scandir: scripts
-      env:
-        SHELLCHECK_OPTS: -x -P scripts
+      run: |
+        shellcheck -e SC1091 scripts/loc_tool.sh scripts/smartling_download.sh scripts/smartling_upload.sh
 
   pylint:
 

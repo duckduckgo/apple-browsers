@@ -126,7 +126,6 @@ extension WindowControllersManager: AIChatTabManaging {
 
     func insertAIChatTab(with url: URL, payload: AIChat.AIChatPayload) {
         guard let tabCollectionViewModel = lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
-//        let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
         let newAIChatTab = Tab(content: .url(url, source: .ui))
         newAIChatTab.aiChat?.setAIChatNativeHandoffData(payload: payload)
         tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
@@ -135,7 +134,6 @@ extension WindowControllersManager: AIChatTabManaging {
 
     func insertAIChatTab(with url: URL, restorationData: AIChat.AIChatRestorationData) {
         guard let tabCollectionViewModel = lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
-//        let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
         let newAIChatTab = Tab(content: .url(url, source: .ui))
         newAIChatTab.aiChat?.setAIChatRestorationData(data: restorationData)
         tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)

@@ -31,7 +31,7 @@ public enum RemoteMessagingSurveyActionParameter: String, CaseIterable {
     case privacyProPlatform = "ppro_platform"
     case privacyProBilling = "ppro_billing"
     case privacyProDaysSincePurchase = "ppro_days_since_purchase"
-    case privacyProDaysUntilExpiry = "ppro_days_until_exp"
+    case subscriptionDaysUntilExpiry = "ppro_days_until_exp"
     case vpnFirstUsed = "vpn_first_used"
     case vpnLastUsed = "vpn_last_used"
 }

@@ -103,7 +103,7 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
                    let daysSincePurchase = Calendar.current.numberOfDaysBetween(startDate, and: Date()) {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: String(describing: daysSincePurchase)))
                 }
-            case .privacyProDaysUntilExpiry:
+            case .subscriptionDaysUntilExpiry:
                 if let expiryDate = subscription?.expiresOrRenewsAt,
                    let daysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: expiryDate) {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: String(describing: daysUntilExpiry)))

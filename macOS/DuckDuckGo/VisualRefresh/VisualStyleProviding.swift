@@ -74,7 +74,10 @@ struct VisualStyle: VisualStyleProviding {
     let addToolbarShadow: Bool
 
     static var current: VisualStyleProviding {
-        let palette = NewColorPalette()
+
+        let isThemesEnabled = NSApp.delegateTyped.featureFlagger.isFeatureOn(.themes)
+        let palette: ThemeColors = isThemesEnabled ? DefaultThemeColors() : NewColorPalette()
+
         return VisualStyle(toolbarButtonsCornerRadius: 9,
                            fireWindowGraphic: .burnerWindowGraphicNew,
                            areNavigationBarCornersRound: true,

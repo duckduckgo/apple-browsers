@@ -20,26 +20,26 @@ import Foundation
 import BrowserServicesKit
 
 public enum AttributionFeatureFlags: String, FeatureFlagDescribing {
-    case attributionEnabled
+    case behaviorMetricsEnabled
 
     public var defaultValue: Bool {
         switch self {
-        case .attributionEnabled:
+        case .behaviorMetricsEnabled:
             return true // TODO: change to false
         }
     }
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .attributionEnabled:
+        case .behaviorMetricsEnabled:
             return true
         }
     }
 
     public var source: BrowserServicesKit.FeatureFlagSource {
         switch self {
-        case .attributionEnabled:
-            return .remoteReleasable(.subfeature(AttributionSubfeature.global))
+        case .behaviorMetricsEnabled:
+            return .remoteReleasable(.subfeature(BehaviorMetricsSubfeature.behaviorMetricsEnabled))
         }
     }
 

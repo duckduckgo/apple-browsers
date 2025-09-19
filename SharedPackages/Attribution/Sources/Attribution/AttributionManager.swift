@@ -67,7 +67,7 @@ public final class AttributionManager {
     // MARK: -
 
     var isEnabled: Bool {
-        featureFlagger.isFeatureOn(for: AttributionFeatureFlags.attributionEnabled)
+        featureFlagger.isFeatureOn(for: AttributionFeatureFlags.behaviorMetricsEnabled)
     }
 
     lazy var originOrInstall: (origin: String?, installDate: String?) = {

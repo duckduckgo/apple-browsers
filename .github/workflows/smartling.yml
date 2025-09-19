@@ -79,6 +79,15 @@ jobs:
 
     steps:
 
+      - name: Assert not main or release branch
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]] || [[ "${{ github.ref_name }}" == release/* ]]; then
+            echo "🚫 Smartling workflow should not run on main or release branches"
+            echo "This workflow is for feature branches only"
+            exit 1
+          fi
+          echo "✅ Running on branch: ${{ github.ref_name }}"
+
       - name: Check out the code
         uses: actions/checkout@v4
         with:

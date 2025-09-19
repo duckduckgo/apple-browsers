@@ -242,14 +242,14 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             pixelHandler: pixelHandler,
             localBrokerProvider: localBrokerJSONService
         )
-        
+
         let tempDir = realFileManager.temporaryDirectory.appendingPathComponent("test-etag")
         let jsonDir = tempDir.appendingPathComponent("json")
         try realFileManager.createDirectory(at: jsonDir, withIntermediateDirectories: true)
-        
+
         let testFile = jsonDir.appendingPathComponent("broker.com.json")
         try testBrokerContent.write(to: testFile, atomically: true, encoding: .utf8)
-        
+
         try testRemoteService.processBrokerJSONs(
             eTag: "test-etag",
             fileNames: ["broker.com.json"],
@@ -307,11 +307,11 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             pixelHandler: pixelHandler,
             localBrokerProvider: localBrokerJSONService
         )
-        
+
         let tempDir = realFileManager.temporaryDirectory.appendingPathComponent("test-etag-removed")
         let jsonDir = tempDir.appendingPathComponent("json")
         try realFileManager.createDirectory(at: jsonDir, withIntermediateDirectories: true)
-        
+
         let testFile = jsonDir.appendingPathComponent("removedbroker.com.json")
         try testBrokerContent.write(to: testFile, atomically: true, encoding: .utf8)
 
@@ -356,11 +356,11 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             pixelHandler: pixelHandler,
             localBrokerProvider: localBrokerJSONService
         )
-        
+
         let tempDir = realFileManager.temporaryDirectory.appendingPathComponent("test-etag-invalid")
         let jsonDir = tempDir.appendingPathComponent("json")
         try realFileManager.createDirectory(at: jsonDir, withIntermediateDirectories: true)
-        
+
         let testFile = jsonDir.appendingPathComponent("invalidbroker.com.json")
         try invalidBrokerContent.write(to: testFile, atomically: true, encoding: .utf8)
 
@@ -423,11 +423,11 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             pixelHandler: pixelHandler,
             localBrokerProvider: localBrokerJSONService
         )
-        
+
         let tempDir = realFileManager.temporaryDirectory.appendingPathComponent("test-etag-upsert-fail")
         let jsonDir = tempDir.appendingPathComponent("json")
         try realFileManager.createDirectory(at: jsonDir, withIntermediateDirectories: true)
-        
+
         let testFile = jsonDir.appendingPathComponent("broker.com.json")
         try testBrokerContent.write(to: testFile, atomically: true, encoding: .utf8)
 

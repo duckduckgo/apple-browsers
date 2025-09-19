@@ -24,7 +24,6 @@ public protocol WidePixelStoring {
     func update<T: WidePixelData>(_ data: T) throws
     func delete<T: WidePixelData>(_ data: T)
     func allWidePixels<T: WidePixelData>(for type: T.Type) -> [T]
-    func percentile(for contextID: String) -> Float
 }
 
 public final class WidePixelUserDefaultsStorage: WidePixelStoring {
@@ -88,19 +87,6 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
         }
 
         return results
-    }
-
-    public func percentile(for contextID: String) -> Float {
-        let key = "\(contextID).percentile"
-
-        if let stored = defaults.object(forKey: key) as? Float {
-            return stored
-        }
-
-        let value = Float.random(in: 0...1)
-        defaults.set(value, forKey: key)
-
-        return value
     }
 
     private func storageKey<T: WidePixelData>(_ type: T.Type, globalID: String) -> String {

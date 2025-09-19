@@ -67,7 +67,7 @@ public final class WidePixel: WidePixelManaging {
                 failureEventMapping: EventMapping<WidePixelFailureEvent>? = WidePixelFailureEvent.eventMapping) {
         self.pixelKitProvider = pixelKitProvider
         self.storage = storage
-        self.sampler = sampler ?? DefaultWidePixelSampler(storage: self.storage)
+        self.sampler = sampler ?? DefaultWidePixelSampler()
         self.failureEventMapping = failureEventMapping
     }
 
@@ -183,10 +183,7 @@ public final class WidePixel: WidePixelManaging {
     }
 
     private func shouldSampleFlow(_ data: any WidePixelData) -> Bool {
-        return sampler.shouldSendPixel(
-            sampleRate: Float(data.globalData.sampleRate),
-            contextID: data.contextData.id
-        )
+        return sampler.shouldSendPixel(sampleRate: Float(data.globalData.sampleRate))
     }
 
     private func generateFinalParameters<T: WidePixelData>(from typed: T, status: WidePixelStatus) throws -> [String: String] {

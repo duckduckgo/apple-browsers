@@ -77,7 +77,6 @@ final class WidePixelTests: XCTestCase {
         let retrievedData = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)
 
         XCTAssertEqual(retrievedData.purchasePlatform, .appStore)
-        XCTAssertEqual(retrievedData.contextData.id, subscriptionData.contextData.id)
         XCTAssertEqual(retrievedData.contextData.name, "test-flow")
         XCTAssertEqual(retrievedData.subscriptionIdentifier, "test-subscription-id")
     }
@@ -123,22 +122,18 @@ final class WidePixelTests: XCTestCase {
     // MARK: - Error Handling Tests
 
     func testGetFlowDataForNonExistentFlow() {
-        let nonExistentContextID = UUID().uuidString
-        let result = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: nonExistentContextID)
+        let nonExistentGlobalID = UUID().uuidString
+        let result = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: nonExistentGlobalID)
         XCTAssertNil(result)
     }
 
     func testUpdateFlowForNonExistentFlow() {
-        let nonExistentContextID = UUID().uuidString
-        let data = makeTestSubscriptionData(contextID: nonExistentContextID)
-
+        let data = makeTestSubscriptionData()
         widePixel.updateFlow(data)
     }
 
     func testCompleteFlowForNonExistentFlow() {
-        let nonExistentContextID = UUID().uuidString
-        let data = makeTestSubscriptionData(contextID: nonExistentContextID)
-
+        let data = makeTestSubscriptionData()
         widePixel.completeFlow(data, status: .success) { _, _ in }
     }
 
@@ -161,10 +156,7 @@ final class WidePixelTests: XCTestCase {
     }
 
     func testDiscardFlowForNonExistentFlow() {
-        let nonExistentContextID = UUID().uuidString
-        let data = makeTestSubscriptionData(contextID: nonExistentContextID)
-
-        // This should not crash and should handle the missing flow gracefully
+        let data = makeTestSubscriptionData()
         widePixel.discardFlow(data)
 
         // Verify no pixel was fired
@@ -205,7 +197,7 @@ final class WidePixelTests: XCTestCase {
         struct NonSerializableData: WidePixelData {
             static let pixelName = "non_serializable"
             let closure: () -> Void = { }
-            var contextData: WidePixelContextData = WidePixelContextData(id: UUID().uuidString)
+            var contextData: WidePixelContextData = WidePixelContextData()
             var appData: WidePixelAppData = WidePixelAppData()
             var globalData: WidePixelGlobalData = WidePixelGlobalData(platform: "", sampleRate: 1.0)
             func pixelParameters() -> [String: String] { [:] }
@@ -286,14 +278,14 @@ final class WidePixelTests: XCTestCase {
         // Test very short duration
         let shortStart = Date()
         let shortEnd = shortStart.addingTimeInterval(0.001)
-        var short = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
+        let short = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
         short.createAccountDuration = WidePixel.MeasuredInterval(start: shortStart, end: shortEnd)
         widePixel.updateFlow(short)
 
         // Test very long duration
         let longStart = Date(timeIntervalSince1970: 0)
         let longEnd = longStart.addingTimeInterval(3600 * 24)
-        var long = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
+        let long = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
         long.completePurchaseDuration = WidePixel.MeasuredInterval(start: longStart, end: longEnd)
         widePixel.updateFlow(long)
 
@@ -324,7 +316,7 @@ final class WidePixelTests: XCTestCase {
         widePixel.startFlow(data)
 
         let now = Date()
-        var updated = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
+        let updated = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
         updated.createAccountDuration = WidePixel.MeasuredInterval(start: now, end: now)
         widePixel.updateFlow(updated)
 
@@ -336,7 +328,6 @@ final class WidePixelTests: XCTestCase {
 
     func testComprehensiveParameterFlattening() throws {
         let testError = makeTestError(domain: "TestErrorDomain", code: 12345)
-        let contextID = UUID().uuidString
 
         let subscriptionData = SubscriptionPurchaseWidePixelData(
             purchasePlatform: .appStore,
@@ -349,7 +340,6 @@ final class WidePixelTests: XCTestCase {
             ),
             errorData: WidePixelErrorData(error: testError),
             contextData: WidePixelContextData(
-                id: contextID,
                 name: "test-funnel",
                 data: ["source": "onboarding", "experiment": "control"]
             ),
@@ -362,7 +352,7 @@ final class WidePixelTests: XCTestCase {
 
         parameters["global.platform"] = "macOS"
         parameters["global.type"] = "app"
-        parameters["global.sample_rate"] = "1.0"
+        parameters["global.WidePixelSampling_rate"] = "1.0"
         parameters["app.name"] = typed.appData.name
         parameters["app.version"] = typed.appData.version
         if let formFactor = typed.appData.formFactor { parameters["global.form_factor"] = formFactor }
@@ -390,7 +380,6 @@ final class WidePixelTests: XCTestCase {
         // Context parameters
         XCTAssertEqual(parameters["context.name"], "test-funnel")
         XCTAssertEqual(parameters["context.data.source"], "onboarding")
-        XCTAssertNil(parameters["context.id"])
 
         // Global parameters
         XCTAssertNotNil(parameters["global.platform"])
@@ -407,8 +396,7 @@ final class WidePixelTests: XCTestCase {
             func pixelParameters() -> [String: String] {
                 return [
                     "app.name": "DuckDuckGo",
-                    "feature.status": "SUCCESS",
-                    "context.id": "onboarding",
+                    "feature.status": "SUCCESS"
                 ]
             }
         }
@@ -461,17 +449,15 @@ final class WidePixelTests: XCTestCase {
         XCTAssert(capturedPixels.count >= 1 && capturedPixels.count <= 2)
     }
 
-    func testFlowRestartWithSameContextID() throws {
-        let contextID = UUID().uuidString
-        let data1 = makeTestSubscriptionData(platform: .appStore, contextID: contextID, contextName: "first")
-
+    func testFlowRestartWithSameGlobalID() throws {
+        let data1 = makeTestSubscriptionData(platform: .appStore, contextName: "first")
         widePixel.startFlow(data1)
 
         let updated1 = data1
         updated1.subscriptionIdentifier = "subscription"
         widePixel.updateFlow(updated1)
 
-        let data2 = makeTestSubscriptionData(platform: .stripe, contextID: contextID, contextName: "second")
+        let data2 = makeTestSubscriptionData(platform: .stripe, contextName: "second")
         widePixel.startFlow(data2)
 
         let retrievedData = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data2.globalData.id)
@@ -481,9 +467,7 @@ final class WidePixelTests: XCTestCase {
     }
 
     func testSamplingDecisionAtStartSkipsPersistenceWhenNotSampled() throws {
-        let contextID = UUID().uuidString
-
-        let notSampled = makeTestSubscriptionData(contextID: contextID)
+        let notSampled = makeTestSubscriptionData()
         notSampled.globalData.sampleRate = 0.0
 
         widePixel.startFlow(notSampled)
@@ -505,12 +489,11 @@ final class WidePixelTests: XCTestCase {
 
     func makeTestSubscriptionData(
         platform: SubscriptionPurchaseWidePixelData.PurchasePlatform = .appStore,
-        contextID: String = UUID().uuidString,
         contextName: String? = nil,
         subscriptionIdentifier: String? = nil,
         freeTrialEligible: Bool? = nil
     ) -> SubscriptionPurchaseWidePixelData {
-        let contextData = WidePixelContextData(id: contextID, name: contextName)
+        let contextData = WidePixelContextData(name: contextName)
         return SubscriptionPurchaseWidePixelData(
             purchasePlatform: platform,
             subscriptionIdentifier: subscriptionIdentifier,

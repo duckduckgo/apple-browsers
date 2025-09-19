@@ -7,12 +7,18 @@ set -euo pipefail
 
 JOB_ID="$1"
 FORCE="${2:-false}"
-PLATFORM="${3:-iOS}"  # Default to iOS for backward compatibility
+PLATFORM="$3"
 
 if [ -z "$JOB_ID" ]; then
     echo "Error: Job ID is required"
-    echo "Usage: $0 <job-id> [force] [platform]"
-    echo "  platform: iOS or macOS (default: iOS)"
+    echo "Usage: $0 <job-id> [force] <platform>"
+    exit 1
+fi
+
+if [ -z "$PLATFORM" ]; then
+    echo "Error: Platform is required"
+    echo "Usage: $0 <job-id> [force] <platform>"
+    echo "  platform: iOS or macOS"
     exit 1
 fi
 
@@ -40,7 +46,7 @@ for file in "$DOWNLOAD_DIR"/*; do
     filename=$(basename "$file")
 
     # Extract locale from filename (format: name_locale.extension)
-    if [[ "$filename" =~ ^(.+)_([a-z]{2}(-[A-Z]{2})?)\\.(.+)$ ]]; then
+    if [[ "$filename" =~ ^(.+)_([a-z]{2}(-[A-Z]{2})?)\.(.+)$ ]]; then
       base_name="${BASH_REMATCH[1]}"
       locale="${BASH_REMATCH[2]}"
       extension="${BASH_REMATCH[4]}"

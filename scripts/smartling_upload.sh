@@ -5,8 +5,15 @@ set -euo pipefail
 # Uploads translation files to a Smartling job
 # Supports both iOS and macOS platforms
 
-PLATFORM="${1:-iOS}"  # Default to iOS for backward compatibility
+PLATFORM="$1"
 JOB_NAME="${2:-}"
+
+if [ -z "$PLATFORM" ]; then
+    echo "Error: Platform is required"
+    echo "Usage: $0 <platform> [job-name]"
+    echo "  platform: iOS or macOS"
+    exit 1
+fi
 
 if [ -z "$JOB_NAME" ]; then
     # If no job name provided, use current git branch

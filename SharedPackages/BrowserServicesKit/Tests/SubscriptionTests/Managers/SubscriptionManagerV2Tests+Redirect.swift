@@ -75,7 +75,7 @@ extension SubscriptionManagerV2Tests {
         XCTAssertEqual(result.getParameter(named: "origin"), "test")
     }
 
-    func testWhenURLIsPrivacyProWithSubdomainThenRedirectToSubscriptionBaseURLWithSubdomain() throws {
+    func testWhenURLIsSubscriptionWithSubdomainThenRedirectToSubscriptionBaseURLWithSubdomain() throws {
         // GIVEN
         let redirectURLComponents = try XCTUnwrap(URLComponents(string: "https://dev1.some-subdomain.duckduckgo.com/pro"))
         let expectedURL = try XCTUnwrap(URL(string: "https://dev1.some-subdomain.duckduckgo.com/subscriptions"))

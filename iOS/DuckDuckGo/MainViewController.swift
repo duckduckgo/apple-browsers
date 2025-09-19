@@ -137,7 +137,7 @@ class MainViewController: UIViewController {
     private var refreshButtonCancellables = Set<AnyCancellable>()
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
-    let privacyProDataReporter: PrivacyProDataReporting
+    let subscriptionDataReporter: SubscriptionDataReporting
 
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     private lazy var faviconLoader: FavoritesFaviconLoading = FavoritesFaviconLoader()
@@ -250,7 +250,7 @@ class MainViewController: UIViewController {
         previewsSource: TabPreviewsSource,
         tabManager: TabManager,
         syncPausedStateManager: any SyncPausedStateManaging,
-        privacyProDataReporter: PrivacyProDataReporting,
+        subscriptionDataReporter: SubscriptionDataReporting,
         contextualOnboardingLogic: ContextualOnboardingLogic,
         contextualOnboardingPixelReporter: OnboardingPixelReporting,
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
@@ -292,7 +292,7 @@ class MainViewController: UIViewController {
         self.featureDiscovery = featureDiscovery
         self.themeManager = themeManager
         self.syncPausedStateManager = syncPausedStateManager
-        self.privacyProDataReporter = privacyProDataReporter
+        self.subscriptionDataReporter = subscriptionDataReporter
         self.tutorialSettings = tutorialSettings
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.contextualOnboardingPixelReporter = contextualOnboardingPixelReporter
@@ -352,7 +352,7 @@ class MainViewController: UIViewController {
 
         let newTabPageDependencies = SuggestionTrayViewController.NewTabPageDependencies(favoritesModel: favoritesViewModel,
                                                                                          homePageMessagesConfiguration: homePageConfiguration,
-                                                                                         privacyProDataReporting: privacyProDataReporter,
+                                                                                         subscriptionDataReporting: subscriptionDataReporter,
                                                                                          newTabDialogFactory: newTabDaxDialogFactory,
                                                                                          newTabDaxDialogManager: daxDialogsManager,
                                                                                          faviconLoader: faviconLoader,
@@ -640,7 +640,7 @@ class MainViewController: UIViewController {
             if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection), canShowVPNInUI {
                 segueToVPN()
             } else {
-                segueToPrivacyPro()
+                segueToDuckDuckGoSubscription()
             }
         }
     }
@@ -1048,7 +1048,7 @@ class MainViewController: UIViewController {
         let controller = NewTabPageViewController(tab: tabModel,
                                                   interactionModel: favoritesViewModel,
                                                   homePageMessagesConfiguration: homePageConfiguration,
-                                                  privacyProDataReporting: privacyProDataReporter,
+                                                  subscriptionDataReporting: subscriptionDataReporter,
                                                   newTabDialogFactory: newTabDaxDialogFactory,
                                                   daxDialogsManager: daxDialogsManager,
                                                   faviconLoader: faviconLoader,
@@ -1838,7 +1838,7 @@ class MainViewController: UIViewController {
     }
 
     private func subscribeToURLInterceptorNotifications() {
-        NotificationCenter.default.publisher(for: .urlInterceptPrivacyPro)
+        NotificationCenter.default.publisher(for: .urlInterceptSubscription)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
@@ -2021,7 +2021,7 @@ class MainViewController: UIViewController {
 
     private func presentExpiredEntitlementAlert() {
         let alertController = CriticalAlerts.makeExpiredEntitlementAlert { [weak self] in
-            self?.segueToPrivacyPro()
+            self?.segueToDuckDuckGoSubscription()
         }
         dismiss(animated: true) {
             self.present(alertController, animated: true, completion: nil)
@@ -3455,7 +3455,7 @@ extension MainViewController: AutoClearWorker {
             transitionCompletion?()
             self.refreshUIAfterClear()
         } completion: {
-            self.privacyProDataReporter.saveFireCount()
+            self.subscriptionDataReporter.saveFireCount()
 
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {

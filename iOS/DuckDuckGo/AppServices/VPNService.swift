@@ -90,7 +90,7 @@ final class VPNService: NSObject {
     @MainActor
     private func presentExpiredEntitlementAlert() {
         let alertController = CriticalAlerts.makeExpiredEntitlementAlert {
-            self.mainCoordinator.segueToPrivacyPro()
+            self.mainCoordinator.segueToDuckDuckGoSubscription()
         }
         application.window?.rootViewController?.present(alertController, animated: true) {
             self.tunnelDefaults.showEntitlementAlert = false

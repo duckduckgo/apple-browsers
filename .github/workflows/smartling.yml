@@ -45,6 +45,7 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v4
         with:
+          submodules: recursive
           ref: ${{ github.ref_name }}
           persist-credentials: true
 
@@ -73,6 +74,11 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install aiohttp
+
+      - name: Install xmlstarlet (required for macOS export)
+        if: ${{ github.event.inputs.platform == 'macOS' }}
+        run: |
+          brew install xmlstarlet
 
       - name: Export
         id: export

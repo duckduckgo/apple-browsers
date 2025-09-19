@@ -69,7 +69,7 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
     func testAddingPrivacyProParameters() {
         let builder = buildRemoteMessagingSurveyURLBuilder()
         let baseURL = URL(string: "https://duckduckgo.com")!
-        let finalURL = builder.add(parameters: [.privacyProStatus, .privacyProPlatform, .privacyProPlatform], to: baseURL)
+        let finalURL = builder.add(parameters: [.subscriptionStatus, .subscriptionPlatform, .subscriptionPlatform], to: baseURL)
 
         XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?ppro_status=auto_renewable&ppro_platform=apple&ppro_platform=apple")
     }

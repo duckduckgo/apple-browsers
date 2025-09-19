@@ -32,7 +32,7 @@ struct DataBrokerLogMonitorView: View {
                 },
                 onClear: viewModel.clearLogs,
                 retentionLimit: $viewModel.retentionLimitText,
-                useCustomSubsystem: $viewModel.useCustomSubsystem,
+                shouldUseCustomSubsystem: $viewModel.shouldUseCustomSubsystem,
                 customSubsystem: $viewModel.customSubsystem
             )
             .fixedSize(horizontal: false, vertical: true)
@@ -41,7 +41,7 @@ struct DataBrokerLogMonitorView: View {
 
             LogFilterControlsView(
                 filterSettings: $viewModel.filterSettings,
-                useCustomCategory: $viewModel.useCustomCategory,
+                shouldUseCustomCategory: $viewModel.shouldUseCustomCategory,
                 customCategory: $viewModel.customCategory
             )
             .fixedSize(horizontal: false, vertical: true)

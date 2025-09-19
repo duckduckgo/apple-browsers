@@ -29,7 +29,7 @@ struct LogMonitorToolbarView: View {
     let onClear: () -> Void
 
     @Binding var retentionLimit: String
-    @Binding var useCustomSubsystem: Bool
+    @Binding var shouldUseCustomSubsystem: Bool
     @Binding var customSubsystem: String
 
     var body: some View {
@@ -66,11 +66,11 @@ struct LogMonitorToolbarView: View {
 
             // Subsystem selection
             HStack(spacing: 4) {
-                Toggle("Custom Subsystem", isOn: $useCustomSubsystem)
+                Toggle("Custom Subsystem", isOn: $shouldUseCustomSubsystem)
                     .font(.caption)
                     .disabled(isMonitoring)
 
-                if useCustomSubsystem {
+                if shouldUseCustomSubsystem {
                     TextField("Enter subsystem (e.g. \"PixelKit\" for pixels", text: $customSubsystem)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .frame(width: 120)
@@ -110,7 +110,7 @@ struct LogMonitorToolbarView: View {
 
 struct LogFilterControlsView: View {
     @Binding var filterSettings: LogFilterSettings
-    @Binding var useCustomCategory: Bool
+    @Binding var shouldUseCustomCategory: Bool
     @Binding var customCategory: String
 
     var body: some View {
@@ -120,10 +120,10 @@ struct LogFilterControlsView: View {
                     .font(.caption)
                     .fontWeight(.medium)
 
-                Toggle("Custom Category", isOn: $useCustomCategory)
+                Toggle("Custom Category", isOn: $shouldUseCustomCategory)
                     .font(.caption)
 
-                if useCustomCategory {
+                if shouldUseCustomCategory {
                     TextField("Enter category (e.g. \"PixelKit\" for pixels)", text: $customCategory)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .frame(width: 200)

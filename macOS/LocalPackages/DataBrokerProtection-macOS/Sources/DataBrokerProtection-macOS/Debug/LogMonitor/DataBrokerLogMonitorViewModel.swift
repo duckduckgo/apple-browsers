@@ -33,7 +33,7 @@ final class DataBrokerLogMonitorViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     // Subsystem selection
-    @Published var useCustomSubsystem: Bool = false {
+    @Published var shouldUseCustomSubsystem: Bool = false {
         didSet { updateSubsystemIfNeeded() }
     }
     @Published var customSubsystem: String = "" {
@@ -41,7 +41,7 @@ final class DataBrokerLogMonitorViewModel: ObservableObject {
     }
 
     // Category selection
-    @Published var useCustomCategory: Bool = false {
+    @Published var shouldUseCustomCategory: Bool = false {
         didSet { updateCategoryFiltering() }
     }
     @Published var customCategory: String = "" {
@@ -58,12 +58,12 @@ final class DataBrokerLogMonitorViewModel: ObservableObject {
 
     /// Returns the effective subsystem being monitored
     var effectiveSubsystem: String {
-        useCustomSubsystem ? customSubsystem : Logger.dbpSubsystem
+        shouldUseCustomSubsystem ? customSubsystem : Logger.dbpSubsystem
     }
 
     /// Returns the display name for the current subsystem
     var subsystemDisplayName: String {
-        useCustomSubsystem ? (customSubsystem.isEmpty ? "(enter subsystem)" : customSubsystem) : "PIR"
+        shouldUseCustomSubsystem ? (customSubsystem.isEmpty ? "(enter subsystem)" : customSubsystem) : "PIR"
     }
 
     init(logService: DataBrokerLogMonitorService = DataBrokerLogMonitorService()) {
@@ -145,7 +145,7 @@ final class DataBrokerLogMonitorViewModel: ObservableObject {
 
     /// Updates the monitored subsystem when the selection changes
     private func updateSubsystemIfNeeded() {
-        guard !useCustomSubsystem || !customSubsystem.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard !shouldUseCustomSubsystem || !customSubsystem.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return
         }
 
@@ -165,10 +165,10 @@ final class DataBrokerLogMonitorViewModel: ObservableObject {
 
     /// Updates the category filtering when the selection changes
     private func updateCategoryFiltering() {
-        filterSettings.useCustomCategory = useCustomCategory
+        filterSettings.shouldUseCustomCategory = shouldUseCustomCategory
         filterSettings.customCategory = customCategory
 
-        Logger.dataBrokerProtection.debug("Updated log monitor category filtering: custom=\(self.filterSettings.useCustomCategory, privacy: .public) category=\(self.filterSettings.customCategory, privacy: .public)")
+        Logger.dataBrokerProtection.debug("Updated log monitor category filtering: custom=\(self.filterSettings.shouldUseCustomCategory, privacy: .public) category=\(self.filterSettings.customCategory, privacy: .public)")
     }
 
     deinit {

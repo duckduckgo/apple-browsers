@@ -80,12 +80,12 @@ struct LogFilterSettings {
     var searchText: String = ""
     var autoScroll: Bool = true
 
-    var useCustomCategory: Bool = false
+    var shouldUseCustomCategory: Bool = false
     var customCategory: String = ""
 
     func matches(_ log: LogEntry) -> Bool {
         let categoryMatch: Bool
-        if useCustomCategory {
+        if shouldUseCustomCategory {
             categoryMatch = log.rawCategory == customCategory
         } else {
             categoryMatch = categories.contains(log.category)
@@ -101,7 +101,7 @@ struct LogFilterSettings {
     }
 
     var hasActiveFilters: Bool {
-        if useCustomCategory {
+        if shouldUseCustomCategory {
             return !customCategory.isEmpty || logLevels.count != OSLogEntryLog.Level.allPirSupportedLevels.count || !searchText.isEmpty
         } else {
             return categories.count != DataBrokerProtectionLoggerCategory.allCases.count ||

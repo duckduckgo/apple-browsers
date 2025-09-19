@@ -1316,10 +1316,10 @@
 "duckai.settings.allowFollowUpQuestions.section.description" = "Tämän asetuksen poistaminen käytöstä piilottaa Duck.ai-painikkeet ja -linkit DuckDuckGo-hausta";
 
 /* Title for section that groups settings related to search results */
-"duckai.settings.allowFollowUpQuestions.section.title" = "Search results shortcuts";
+"duckai.settings.allowFollowUpQuestions.section.title" = "Hakutulosten pikanäppäimet";
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
-"duckai.settings.allowFollowUpQuestions.toggle" = "Ask Follow-up Questions";
+"duckai.settings.allowFollowUpQuestions.toggle" = "Esitä jatkokysymyksiä";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Selaimen pikakuvakkeet";

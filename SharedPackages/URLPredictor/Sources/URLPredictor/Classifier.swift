@@ -20,15 +20,38 @@ import Foundation
 import URLPredictorRust
 
 // C symbols are assumed imported via modulemap/bridging header:
-// char *ddg_up_classify_json(const char *input, const char *policy_json);
-// void ddg_up_free_string(char *ptr);
 
+/// This namespace wraps API provided by `URLPredictorRust` framework.
+///
+/// ```c
+/// char *ddg_up_classify_json(const char *input, const char *policy_json);
+/// void ddg_up_free_string(char *ptr);
+/// ```
 public enum Classifier {
-    // MARK: - Policy (mirrors Rust struct)
+
+    /// This function classifies `input` as either `Decision.navigate` or `Decision.search`.
+    public static func classify(input: String, policy: Policy? = .default) throws -> Decision {
+        let json = try classifyRawJSON(input: input, policy: policy)
+        let decoder = JSONDecoder()
+        do {
+            return try decoder.decode(Decision.self, from: Data(json.utf8))
+        } catch {
+            throw Error.resultDecodingFailed(underlying: error)
+        }
+    }
+
+    /// This struct describes the policy to be used when classifying the input.
     public struct Policy: Codable, Sendable {
+        /// Treat any host-like strings as URLs (e.g. `package.json`) without consulting Public Suffix List.
         public var allowIntranetMultiLabel: Bool
+
+        /// Whether to allow single-label domains (e.g. `test` or `dev`).
         public var allowIntranetSingleLabel: Bool
+
+        /// When checking Public Suffix List, whether to consult private suffixes (e.g. `appspot.com` or `github.io`).
         public var allowPrivateSuffix: Bool
+
+        /// Defines schemes recognized by the app/
         public var allowedSchemes: Set<String>
 
         public init(
@@ -43,6 +66,7 @@ public enum Classifier {
             self.allowedSchemes = allowedSchemes
         }
 
+        /// The default policy used when not specified
         public static let `default`: Self = .init(
             allowIntranetMultiLabel: true,
             allowIntranetSingleLabel: false,
@@ -51,7 +75,6 @@ public enum Classifier {
         )
     }
 
-    // MARK: - Decision (mirrors Rust enum)
     public enum Decision: Equatable, Sendable {
         case navigate(url: URL)
         case search(query: String)
@@ -75,7 +98,6 @@ public enum Classifier {
         }
     }
 
-    // MARK: - Errors
     public enum Error: Swift.Error {
         case policyEncodingFailed
         case nativeReturnedNull
@@ -83,7 +105,8 @@ public enum Classifier {
         case resultDecodingFailed(underlying: Swift.Error)
     }
 
-    // MARK: - Core native call → raw JSON
+    // MARK: - Internal
+
     static func classifyRawJSON(input: String, policy: Policy?) throws -> String {
         // Encode policy with snake_case to match Rust field names.
         let encoder = JSONEncoder()
@@ -109,24 +132,12 @@ public enum Classifier {
         return jsonString
     }
 
-    // MARK: - Typed helpers
-
-    /// Decode the result into the `Decision` enum.
-    public static func classify(input: String, policy: Policy? = .default) throws -> Decision {
-        let json = try classifyRawJSON(input: input, policy: policy)
-        let decoder = JSONDecoder()
-        do {
-            return try decoder.decode(Decision.self, from: Data(json.utf8))
-        } catch {
-            throw Error.resultDecodingFailed(underlying: error)
-        }
-    }
 }
 
-// Codable for the externally tagged enum:
-// {"Navigate":{"url":"..."}}  or  {"Search":{"query":"..."}}
-// We only need Decodable, but Encodable provided for symmetry.
-extension Classifier.Decision: Codable {
+/// Codable for the externally tagged enum:
+///
+/// `{"Navigate":{"url":"..."}}`  or  `{"Search":{"query":"..."}}`
+extension Classifier.Decision: Decodable {
     public init(from decoder: Decoder) throws {
         // Try decoding as { "Navigate": { "url": "..." } } or { "Search": { "query": "..." } }
         let container = try decoder.singleValueContainer()
@@ -142,17 +153,7 @@ extension Classifier.Decision: Codable {
         }
         throw DecodingError.dataCorruptedError(
             in: container,
-            debugDescription: "Unexpected decision shape: \(raw)"
+            debugDescription: "Unexpected decision contents: \(raw)"
         )
-    }
-
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        switch self {
-        case .navigate(let url):
-            try container.encode(["Navigate": ["url": url.absoluteString]])
-        case .search(let query):
-            try container.encode(["Search": ["query": query]])
-        }
     }
 }

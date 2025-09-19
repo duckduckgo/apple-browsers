@@ -334,6 +334,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             } catch {
                 Logger.dataBrokerProtection.log("🧩 Failed to upsert broker \(fileName): \(error)")
                 pixelHandler?.fire(.updateDataBrokersFailure(dataBrokerFileName: fileName, removedAt: nil, error: error))
+                throw error
             }
         }
     }

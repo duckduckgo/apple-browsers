@@ -384,8 +384,8 @@
             'appVersion',
             'pixelSource',
             {
-                key: 'data_broker_url',
-                description: 'The URL of the data broker that this action was operating on',
+                key: 'data_broker_json_file',
+                description: 'The JSON file name for the data broker that this action was operating on',
                 type: 'string',
             },
             {
@@ -404,8 +404,8 @@
             'appVersion',
             'pixelSource',
             {
-                key: 'data_broker_url',
-                description: 'The URL of the data broker that this action was operating on',
+                key: 'data_broker_json_file',
+                description: 'The JSON file name for the data broker that this action was operating on',
                 type: 'string',
             },
             {

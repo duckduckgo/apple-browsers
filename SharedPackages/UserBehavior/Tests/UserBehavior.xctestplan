@@ -15,8 +15,8 @@
     {
       "target" : {
         "containerPath" : "container:",
-        "identifier" : "AttributionTests",
-        "name" : "AttributionTests"
+        "identifier" : "UserBehaviorTests",
+        "name" : "UserBehaviorTests"
       }
     }
   ],

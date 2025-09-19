@@ -1,5 +1,5 @@
 //
-//  AttributionPixel.swift
+//  UserBehaviorPixel.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import Foundation
 import PixelKit
 
-enum AttributionPixel: PixelKitEvent { // TODO: check special pixel extension requirements
+enum UserBehaviorPixel: PixelKitEvent { // TODO: check special pixel extension requirements
     case userRetentionWeek(origin: String?, installDate: String?, defaultBrowser: Bool, count: String)
     case userRetentionMonth(origin: String?, installDate: String?, defaultBrowser: Bool, count: String)
     case userActivePastWeek(origin: String?, installDate: String?, days: Int)

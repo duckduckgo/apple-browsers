@@ -19,30 +19,30 @@
 import PackageDescription
 
 let package = Package(
-    name: "Attribution",
+    name: "UserBehavior",
     platforms: [
         .iOS("15.0"),
         .macOS("11.4")
     ],
     products: [
         .library(
-            name: "Attribution",
-            targets: ["Attribution"]),
+            name: "UserBehavior",
+            targets: ["UserBehavior"]),
     ],
     dependencies: [
         .package(path: "../BrowserServicesKit")
     ],
     targets: [
         .target(
-            name: "Attribution",
+            name: "UserBehavior",
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
             ],
         ),
         .testTarget(
-            name: "AttributionTests",
-            dependencies: ["Attribution"]
+            name: "UserBehaviorTests",
+            dependencies: ["UserBehavior"]
         ),
     ]
 )

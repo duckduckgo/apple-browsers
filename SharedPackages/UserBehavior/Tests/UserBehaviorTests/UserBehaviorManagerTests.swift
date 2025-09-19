@@ -1,5 +1,5 @@
 //
-//  AttributionManagerTests.swift
+//  UserBehaviorManagerTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,11 +18,11 @@
 //
 
 import XCTest
-@testable import Attribution
+@testable import UserBehavior
 import PixelKit
 import BrowserServicesKit
 
-final class AttributionManagerTests: XCTestCase {
+final class UserBehaviorManagerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
@@ -56,15 +56,15 @@ final class AttributionManagerTests: XCTestCase {
 //            }
         }
 
-        let dataStorage = AttributionDataStorage(userDefaults: userDefaults)
+        let dataStorage = UserBehaviorDataStorage(userDefaults: userDefaults)
         let featureFlagger: any FeatureFlagger = MockFeatureFlagger()
-        let originProvider: AttributionOriginProvider = AttributionOriginProviderMock()
+        let originProvider: UserBehaviorOriginProvider = UserBehaviorOriginProviderMock()
 
-//        var attributionManager = AttributionManager(pixelKit: pixelKit,
+//        var attributionManager = UserBehaviorManager(pixelKit: pixelKit,
 //                                                    dataStoring: dataStorage,
 //                                                    featureFlagger: featureFlagger,
 //                                                    originProvider: originProvider,
-//                                                    defaultBrowserProviding: <#any AttributionDefaultBrowserProviding#>)
+//                                                    defaultBrowserProviding: <#any UserBehaviorDefaultBrowserProviding#>)
 
         // >>>
     }

@@ -1,5 +1,5 @@
 //
-//  AttributionDataStorage.swift
+//  UserBehaviorDataStorage.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,7 +18,7 @@
 
 import Foundation
 
-public protocol AttributionDataStoring {
+public protocol UserBehaviorDataStoring {
 
     var installDate: Date? { get set }
     var lastRetentionThreshold: TimePast? { get set }
@@ -32,7 +32,7 @@ public protocol AttributionDataStoring {
     func removeAll()
 }
 
-class AttributionDataStorage: AttributionDataStoring {
+class UserBehaviorDataStorage: UserBehaviorDataStoring {
 
     private let userDefaults: UserDefaults
 

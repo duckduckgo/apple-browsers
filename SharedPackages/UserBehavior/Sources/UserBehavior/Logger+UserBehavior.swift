@@ -1,5 +1,5 @@
 //
-//  Logger+Attribution.swift
+//  Logger+UserBehavior.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static let attribution = { Logger(subsystem: "Attribution", category: "") }()
+    static let userBehavior = { Logger(subsystem: "UserBehavior", category: "") }()
 }

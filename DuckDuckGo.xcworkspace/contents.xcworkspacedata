@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Workspace
    version = "1.0">
-   <FileRef
-      location = "group:SharedPackages/Attribution/Tests/Attribution.xctestplan">
-   </FileRef>
    <Group
       location = "group:SharedPackages"
       name = "SharedPackages">
@@ -32,7 +29,7 @@
          location = "group:DesignResourcesKit">
       </FileRef>
       <FileRef
-         location = "group:Attribution">
+         location = "group:UserBehavior">
       </FileRef>
    </Group>
    <FileRef

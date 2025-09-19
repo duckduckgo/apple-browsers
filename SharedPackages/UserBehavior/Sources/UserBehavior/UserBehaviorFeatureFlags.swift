@@ -1,5 +1,5 @@
 //
-//  AttributionFeatureFlags.swift
+//  UserBehaviorFeatureFlags.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import Foundation
 import BrowserServicesKit
 
-public enum AttributionFeatureFlags: String, FeatureFlagDescribing {
+public enum UserBehaviorFeatureFlags: String, FeatureFlagDescribing {
     case behaviorMetricsEnabled
 
     public var defaultValue: Bool {

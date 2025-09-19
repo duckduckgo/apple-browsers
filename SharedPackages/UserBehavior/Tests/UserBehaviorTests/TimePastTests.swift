@@ -17,7 +17,7 @@
 //
 
 import XCTest
-@testable import Attribution
+@testable import UserBehavior
 
 final class TimePastTests: XCTestCase {
 

@@ -1,5 +1,5 @@
 //
-//  AttributionOriginProviderMock.swift
+//  UserBehaviorOriginProviderMock.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,7 +18,7 @@
 
 import Foundation
 
-final class AttributionOriginProviderMock: AttributionOriginProvider {
+final class UserBehaviorOriginProviderMock: UserBehaviorOriginProvider {
     let origin: String?
 
     init(origin: String? = nil) {

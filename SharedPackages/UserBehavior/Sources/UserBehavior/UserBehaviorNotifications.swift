@@ -1,5 +1,5 @@
 //
-//  AttributionNotifications.swift
+//  UserBehaviorNotifications.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -24,7 +24,7 @@ import AppKit
 #endif
 
 
-extension AttributionManager {
+extension UserBehaviorManager {
     
     func registerNotifications() {
 

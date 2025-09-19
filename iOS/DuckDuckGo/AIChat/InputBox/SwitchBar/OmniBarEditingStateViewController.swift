@@ -422,6 +422,10 @@ extension OmniBarEditingStateViewController: NavigationActionBarManagerDelegate 
 extension OmniBarEditingStateViewController: VoiceSearchViewControllerDelegate {
 
     func voiceSearchViewController(_ controller: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget) {
+        if let text = query {
+            switchBarHandler.updateCurrentText(text)
+        }
+
         controller.dismiss(animated: true) { [weak self] in
             guard let self = self, let query = query else { return }
             self.handleVoiceSearchCompletion(with: query, for: target)

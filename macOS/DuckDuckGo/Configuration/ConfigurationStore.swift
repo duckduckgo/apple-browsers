@@ -165,15 +165,16 @@ final class ConfigurationStore: ConfigurationStoring {
                 let nserror = error as NSError
 
                 if nserror.domain != NSCocoaErrorDomain || nserror.code != NSFileReadNoSuchFileError {
-                    if config == .trackerDataSet, let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
-                        let parameters = [
+                    let pixel = config.couldNotLoadConfigurationPixelEvent
+                    let parameters: [String: String] = if config == .trackerDataSet, let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
+                        [
                             "experimentName": experimentName,
                             "etag": loadEtag(for: .trackerDataSet) ?? ""
                         ]
-                        PixelKit.fire(DebugEvent(GeneralPixel.trackerDataCouldNotBeLoaded, error: error), withAdditionalParameters: parameters)
                     } else {
-                        PixelKit.fire(DebugEvent(GeneralPixel.trackerDataCouldNotBeLoaded, error: error))
+                        [:]
                     }
+                    PixelKit.fire(DebugEvent(pixel, error: error), frequency: .dailyAndCount, withAdditionalParameters: parameters)
                 }
             }
         }
@@ -216,6 +217,29 @@ final class ConfigurationStore: ConfigurationStoring {
     func fileUrl(for configuration: Configuration) -> URL {
         let dir = FileManager.default.configurationDirectory()
         return dir.appendingPathComponent(configuration.fileName)
+    }
+
+}
+
+private extension Configuration {
+
+    var couldNotLoadConfigurationPixelEvent: GeneralPixel {
+        switch self {
+        case .bloomFilterBinary:
+            return .bloomFilterBinaryCouldNotBeLoaded
+        case .bloomFilterExcludedDomains:
+            return .bloomFilterExcludedDomainsCouldNotBeLoaded
+        case .bloomFilterSpec:
+            return .bloomFilterSpecCouldNotBeLoaded
+        case .privacyConfiguration:
+            return .privacyConfigurationCouldNotBeLoaded
+        case .remoteMessagingConfig:
+            return .remoteMessagingConfigCouldNotBeLoaded
+        case .surrogates:
+            return .surrogateCouldNotBeLoaded
+        case .trackerDataSet:
+            return .trackerDataCouldNotBeLoaded
+        }
     }
 
 }

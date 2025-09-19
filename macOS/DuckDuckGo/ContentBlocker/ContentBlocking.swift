@@ -186,9 +186,6 @@ final class AppContentBlocking {
         case .privacyConfigurationParseFailed:
             domainEvent = .privacyConfigurationParseFailed
 
-        case .privacyConfigurationCouldNotBeLoaded:
-            domainEvent = .privacyConfigurationCouldNotBeLoaded
-
         case .contentBlockingCompilationFailed(let listName, let component):
             let defaultTDSListName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
 

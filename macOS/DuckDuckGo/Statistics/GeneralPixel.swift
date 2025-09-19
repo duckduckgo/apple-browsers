@@ -342,7 +342,13 @@ enum GeneralPixel: PixelKitEvent {
 
     case privacyConfigurationParseFailed
     case privacyConfigurationReloadFailed
+
+    case bloomFilterBinaryCouldNotBeLoaded
+    case bloomFilterSpecCouldNotBeLoaded
+    case bloomFilterExcludedDomainsCouldNotBeLoaded
     case privacyConfigurationCouldNotBeLoaded
+    case surrogateCouldNotBeLoaded
+    case remoteMessagingConfigCouldNotBeLoaded
 
     case configurationFileCoordinatorError
 
@@ -967,8 +973,19 @@ enum GeneralPixel: PixelKitEvent {
             return "pcf_p"
         case .privacyConfigurationReloadFailed:
             return "pcf_r"
+
+        case .bloomFilterBinaryCouldNotBeLoaded:
+            return "bloom_filter_binary_could_not_be_loaded"
+        case .bloomFilterSpecCouldNotBeLoaded:
+            return "bloom-filter_spec_could_not_be_loaded"
+        case .bloomFilterExcludedDomainsCouldNotBeLoaded:
+            return "bloom_filter_exclued_domains_could_not_be_loaded"
         case .privacyConfigurationCouldNotBeLoaded:
-            return "pcf_l"
+            return "privacy_configuration_could_not_be_loaded"
+        case .surrogateCouldNotBeLoaded:
+            return "surrogates_could_not_be_loaded"
+        case .remoteMessagingConfigCouldNotBeLoaded:
+            return "remote_message_config_could_not_be_loaded"
 
         case .configurationFileCoordinatorError:
             return "configuration_file_coordinator_error"

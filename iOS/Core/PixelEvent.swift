@@ -733,11 +733,10 @@ extension Pixel {
         case fileStoreCoordinatorFailed
         case privacyConfigurationReloadFailed
         case privacyConfigurationParseFailed
-        case privacyConfigurationCouldNotBeLoaded
         
         case contentBlockingCompilationFailed(listType: CompileRulesListType,
                                               component: ContentBlockerDebugEvents.Component)
-        
+
         case contentBlockingLookupRulesSucceeded
         case contentBlockingFetchLRCSucceeded
         case contentBlockingNoMatchInLRC
@@ -745,7 +744,14 @@ extension Pixel {
         
         case contentBlockingCompilationTaskPerformance(iterationCount: Int, timeBucketAggregation: CompileTimeBucketAggregation)
         case ampBlockingRulesCompilationFailed
-        
+
+        case bloomFilterBinaryCouldNotBeLoaded
+        case bloomFilterSpecCouldNotBeLoaded
+        case bloomFilterExcludedDomainsCouldNotBeLoaded
+        case privacyConfigurationCouldNotBeLoaded
+        case surrogateCouldNotBeLoaded
+        case remoteMessagingConfigCouldNotBeLoaded
+
         case webKitDidTerminate
         case webKitTerminationDidReloadCurrentTab
         case webKitDidTerminateDuringWarmup
@@ -2035,7 +2041,6 @@ extension Pixel.Event {
         case .fileStoreCoordinatorFailed: return "m_d_configuration_file_coordinator_error"
         case .privacyConfigurationReloadFailed: return "m_d_pc_r"
         case .privacyConfigurationParseFailed: return "m_d_pc_p"
-        case .privacyConfigurationCouldNotBeLoaded: return "m_d_pc_l"
             
         case .contentBlockingCompilationFailed(let listType, let component):
             return "m_d_content_blocking_\(listType)_\(component)_compilation_failed"
@@ -2049,7 +2054,20 @@ extension Pixel.Event {
         case .contentBlockingCompilationTaskPerformance(let iterationCount, let timeBucketAggregation):
             return "m_content_blocking_compilation_loops_\(iterationCount)_time_\(timeBucketAggregation)"
         case .ampBlockingRulesCompilationFailed: return "m_debug_amp_rules_compilation_failed"
-            
+
+        case .bloomFilterBinaryCouldNotBeLoaded:
+            return "m_debug_bloom_filter_binary_could_not_be_loaded"
+        case .bloomFilterSpecCouldNotBeLoaded:
+            return "m_debug_bloom-filter_spec_could_not_be_loaded"
+        case .bloomFilterExcludedDomainsCouldNotBeLoaded:
+            return "m_debug_bloom_filter_exclued_domains_could_not_be_loaded"
+        case .privacyConfigurationCouldNotBeLoaded:
+            return "m_debug_privacy_configuration_could_not_be_loaded"
+        case .surrogateCouldNotBeLoaded:
+            return "m_debug_surrogates_could_not_be_loaded"
+        case .remoteMessagingConfigCouldNotBeLoaded:
+            return "m_debug_remote_message_config_could_not_be_loaded"
+
         case .webKitDidTerminate: return "m_d_wkt"
         case .webKitDidTerminateDuringWarmup: return "m_d_webkit-terminated-during-warmup"
         case .webKitTerminationDidReloadCurrentTab: return "m_d_wktct"

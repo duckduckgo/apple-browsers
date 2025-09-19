@@ -42,7 +42,6 @@ public enum ContentBlockerDebugEvents {
     case trackerDataCouldNotBeLoaded
     case privacyConfigurationReloadFailed
     case privacyConfigurationParseFailed
-    case privacyConfigurationCouldNotBeLoaded
 
     case contentBlockingCompilationFailed(listName: String, component: Component)
 

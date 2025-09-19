@@ -33,6 +33,10 @@ final class SyncRecoveryPromptService {
     private let syncService: DDGSyncing
     private let keyValueStore: ThrowingKeyValueStoring
     private let isOnboardingComplete: Bool
+    private let secureVault: (any AutofillSecureVault)?
+    private let autofillUsageStore: AutofillUsageStore
+    private let vaultDateProvider: VaultCreationDateProvider?
+    private lazy var defaultVaultDateProvider: VaultCreationDateProvider = KeychainVaultDateProvider()
 
     enum Key {
         static let hasPerformedSyncRecoveryCheck: String = "com.duckduckgo.syncrecovery.check.performed"
@@ -41,11 +45,17 @@ final class SyncRecoveryPromptService {
     init(featureFlagger: FeatureFlagger,
          syncService: DDGSyncing,
          keyValueStore: ThrowingKeyValueStoring,
-         isOnboardingComplete: Bool) {
+         isOnboardingComplete: Bool,
+         secureVault: (any AutofillSecureVault)? = nil,
+         autofillUsageStore: AutofillUsageStore? = nil,
+         vaultDateProvider: VaultCreationDateProvider? = nil) {
         self.featureFlagger = featureFlagger
         self.syncService = syncService
         self.keyValueStore = keyValueStore
         self.isOnboardingComplete = isOnboardingComplete
+        self.secureVault = secureVault
+        self.autofillUsageStore = autofillUsageStore ?? AutofillUsageStore()
+        self.vaultDateProvider = vaultDateProvider
     }
 
     func shouldShowPrompt() -> Bool {
@@ -100,7 +110,6 @@ final class SyncRecoveryPromptService {
         return true
     }
 
-
     // MARK: - Private
 
     private var isFeatureFlagEnabled: Bool {
@@ -122,8 +131,8 @@ final class SyncRecoveryPromptService {
 
     private var vaultIsEmpty: Bool {
         do {
-            let secureVault = try AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
-            let accountsCount = try secureVault.accountsCount()
+            let vault = try getOrCreateVault()
+            let accountsCount = try vault.accountsCount()
             Logger.sync.debug("[Sync Recovery] Vault accounts count: \(accountsCount)")
             return accountsCount == 0
         } catch {
@@ -132,9 +141,14 @@ final class SyncRecoveryPromptService {
         }
     }
 
-    private var isFormerAutofillUser: Bool {
-        let autofillUsageStore = AutofillUsageStore()
+    private func getOrCreateVault() throws -> any AutofillSecureVault {
+        if let secureVault = secureVault {
+            return secureVault
+        }
+        return try AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+    }
 
+    private var isFormerAutofillUser: Bool {
         let lastActiveDate = autofillUsageStore.lastActiveDate
         let lastFillDate = autofillUsageStore.fillDate
 
@@ -167,6 +181,19 @@ final class SyncRecoveryPromptService {
     }
 
     private var vaultCreationDate: Date? {
+        let provider = vaultDateProvider ?? defaultVaultDateProvider
+        return provider.getVaultCreationDate()
+    }
+}
+
+// MARK: - Vault Creation Date Provider
+
+protocol VaultCreationDateProvider {
+    func getVaultCreationDate() -> Date?
+}
+
+struct KeychainVaultDateProvider: VaultCreationDateProvider {
+    func getVaultCreationDate() -> Date? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecReturnAttributes as String: kCFBooleanTrue!,

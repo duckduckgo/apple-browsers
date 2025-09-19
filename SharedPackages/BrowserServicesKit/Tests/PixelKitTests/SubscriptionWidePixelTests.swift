@@ -82,7 +82,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
     // MARK: - Successful Subscription Flow Tests
 
     func testSuccessfulAppStoreSubscriptionFlow() throws {
-        let context = WidePixelContextData(id: UUID().uuidString, name: "funnel_onboarding_ios")
+        let context = WidePixelContextData(name: "funnel_onboarding_ios")
         let subscriptionData = SubscriptionPurchaseWidePixelData(
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
@@ -152,7 +152,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
     }
 
     func testSuccessfulStripeSubscriptionFlow() throws {
-        let context = WidePixelContextData(id: UUID().uuidString, name: "funnel_onboarding_ios")
+        let context = WidePixelContextData(name: "funnel_onboarding_ios")
         let subscriptionData = SubscriptionPurchaseWidePixelData(
             purchasePlatform: .stripe,
             subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
@@ -196,7 +196,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: true,
-            contextData: WidePixelContextData(id: UUID().uuidString)
+            contextData: WidePixelContextData()
         )
         widePixel.startFlow(subscriptionData)
 
@@ -240,7 +240,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: true,
-            contextData: WidePixelContextData(id: UUID().uuidString)
+            contextData: WidePixelContextData()
         )
         widePixel.startFlow(subscriptionData)
 
@@ -284,7 +284,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: false,
-            contextData: WidePixelContextData(id: UUID().uuidString)
+            contextData: WidePixelContextData()
         )
         widePixel.startFlow(subscriptionData)
 
@@ -315,7 +315,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
             purchasePlatform: .stripe,
             subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
             freeTrialEligible: false,
-            contextData: WidePixelContextData(id: UUID().uuidString)
+            contextData: WidePixelContextData()
         )
         widePixel.startFlow(subscriptionData)
 

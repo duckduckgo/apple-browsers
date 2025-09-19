@@ -352,7 +352,7 @@ final class WidePixelTests: XCTestCase {
 
         parameters["global.platform"] = "macOS"
         parameters["global.type"] = "app"
-        parameters["global.WidePixelSampling_rate"] = "1.0"
+        parameters["global.sample_rate"] = "1.0"
         parameters["app.name"] = typed.appData.name
         parameters["app.version"] = typed.appData.version
         if let formFactor = typed.appData.formFactor { parameters["global.form_factor"] = formFactor }

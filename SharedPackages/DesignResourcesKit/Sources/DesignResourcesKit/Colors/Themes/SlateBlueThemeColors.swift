@@ -56,7 +56,7 @@ public struct SlateBlueThemeColors: ThemeColors {
     public let surfacePrimary               = PlatformColor(darkHex: "1e3347", lightHex: "d2e5f3")
     public let surfaceSecondary             = PlatformColor(darkHex: "2b4259", lightHex: "ddedf7")
     public let surfaceTertiary              = PlatformColor(darkHex: "354f68", lightHex: "eff6fa")
-    public let surfaceWindow                = PlatformColor(darkHex: "0c151c", lightHex: "8aa5c0")
+    public let surfaceBackdrop              = PlatformColor(darkHex: "0c151c", lightHex: "8aa5c0")
     public let textPrimary                  = PlatformColor(darkHex: "f7fbfdf4", lightHex: "060a0ef4")
     public let textSecondary                = PlatformColor(darkHex: "f7fbfda8", lightHex: "060a0ea8")
     public let textTertiary                 = PlatformColor(darkHex: "f7fbfd5b", lightHex: "060a0e5b")
@@ -86,7 +86,6 @@ public struct SlateBlueThemeColors: ThemeColors {
     public let shadowPrimary                = PlatformColor(darkHex: "00000028", lightHex: "0000000c")
     public let shadowSecondary              = PlatformColor(darkHex: "0000003d", lightHex: "00000014")
     public let shadowTertiary               = PlatformColor(darkHex: "00000051", lightHex: "00000028")
-    public let surfaceBackdrop              = PlatformColor(darkHex: "070707", lightHex: "e0e0e0")
     public let toneShadePrimary             = PlatformColor(darkHex: "16161751", lightHex: "0000000f")
     public let toneTintPrimary              = PlatformColor(darkHex: "f9f9f91e", lightHex: "ffffff7a")
 }

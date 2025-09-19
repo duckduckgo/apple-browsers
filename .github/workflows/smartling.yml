@@ -33,6 +33,24 @@ on:
         default: false
 
 jobs:
+  shellcheck:
+
+    name: ShellCheck
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
+
+    - name: Run ShellCheck
+      uses: ludeeus/action-shellcheck@master
+      with:
+        format: gcc
+        scandir: scripts
+      env:
+        SHELLCHECK_OPTS: -x -P scripts
+
   smartling:
     runs-on: macos-15-xlarge
     name: Smartling translation job

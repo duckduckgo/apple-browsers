@@ -101,11 +101,8 @@ rm -rf "$DOWNLOAD_DIR" "$IMPORT_DIR"
 # Check for deleted translation keys
 echo "Checking for deleted translation keys..."
 
-# Look for deleted lines in .strings files (lines that start with -)
-DELETED_KEYS=$(git diff --no-index --no-prefix --unified=0 -- '*.strings' 2>/dev/null | grep '^-"' | wc -l || echo "0")
-
-# Also check using git status to see overall changes
-DELETED_LINES=$(git diff -- '*.strings' '*.stringsdict' | grep '^-[^-]' | grep -v '^---' | wc -l)
+# Check using git status to see overall changes
+DELETED_LINES=$(git diff -- '*.strings' '*.stringsdict' | grep -c '^-[^-]' | grep -v '^---' || echo "0")
 
 if [ "$DELETED_LINES" -gt 0 ]; then
   echo "⚠️ Detected $DELETED_LINES deleted lines in translation files"

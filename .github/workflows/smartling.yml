@@ -76,7 +76,7 @@ jobs:
           pip install aiohttp
 
       - name: Install xmlstarlet (required for macOS export)
-        if: ${{ github.event.inputs.platform == 'macOS' }}
+        if: ${{ github.event.inputs.platform == 'macOS' && github.event.inputs.action == 'upload' }}
         run: |
           brew install xmlstarlet
 

@@ -47,6 +47,6 @@ public struct PreparingToSyncView: View {
             Text(UserText.preparingToSyncSheetFooter)
                 .foregroundColor(Color(designSystemColor: .textSecondary))
         }
-        .background(Color(designSystemColor: .background))
+        .background(Color(designSystemColor: .backgroundSheets))
     }
 }

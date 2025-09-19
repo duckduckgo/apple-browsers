@@ -45,7 +45,7 @@ jobs:
 
     - name: Run ShellCheck
       run: |
-        shellcheck -e SC1091 scripts/loc_tool.sh scripts/smartling_download.sh scripts/smartling_upload.sh
+        shellcheck -e SC1091 scripts/loc_tool.sh scripts/smartling_download.sh scripts/smartling_upload.sh scripts/smartling_messages.sh
 
   pylint:
 

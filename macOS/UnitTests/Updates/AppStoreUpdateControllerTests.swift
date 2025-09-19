@@ -26,12 +26,14 @@ final class AppStoreUpdateControllerTests: XCTestCase {
 
     private var controller: AppStoreUpdateController!
     private var cancellables: Set<AnyCancellable>!
+    private var mockAppStoreOpener: MockAppStoreOpener!
 
     override func setUp() {
         super.setUp()
         autoreleasepool {
-            // Use the default dependencies for simpler testing
-            controller = AppStoreUpdateController()
+            // Use mocked dependencies to prevent actual App Store from opening
+            mockAppStoreOpener = MockAppStoreOpener()
+            controller = AppStoreUpdateController(appStoreOpener: mockAppStoreOpener)
             cancellables = Set<AnyCancellable>()
         }
     }
@@ -39,6 +41,7 @@ final class AppStoreUpdateControllerTests: XCTestCase {
     override func tearDown() {
         cancellables?.removeAll()
         controller = nil
+        mockAppStoreOpener = nil
         super.tearDown()
     }
 
@@ -279,15 +282,19 @@ final class AppStoreUpdateControllerTests: XCTestCase {
         autoreleasepool {
             // Given
             let mockFeatureFlagger = MockFeatureFlagger()
+            let mockAppStoreOpener = MockAppStoreOpener()
             // Feature flag is OFF by default
 
-            let controller = AppStoreUpdateController(featureFlagger: mockFeatureFlagger)
+            let controller = AppStoreUpdateController(
+                featureFlagger: mockFeatureFlagger,
+                appStoreOpener: mockAppStoreOpener
+            )
 
             // When
             controller.checkForUpdateAutomatically()
 
-            // Then - Should do nothing (no cloud check, no crash)
-            XCTAssertNotNil(controller)
+            // Then - Should do nothing (no cloud check, no crash, no App Store opening)
+            XCTAssertFalse(mockAppStoreOpener.openAppStoreCalled, "Should not open App Store on automatic check when feature flag is off")
         }
     }
 
@@ -295,15 +302,19 @@ final class AppStoreUpdateControllerTests: XCTestCase {
         autoreleasepool {
             // Given
             let mockFeatureFlagger = MockFeatureFlagger()
+            let mockAppStoreOpener = MockAppStoreOpener()
             mockFeatureFlagger.enabledFeatureFlags = [.appStoreCheckForUpdatesFlow]
 
-            let controller = AppStoreUpdateController(featureFlagger: mockFeatureFlagger)
+            let controller = AppStoreUpdateController(
+                featureFlagger: mockFeatureFlagger,
+                appStoreOpener: mockAppStoreOpener
+            )
 
             // When
             controller.checkForUpdateAutomatically()
 
-            // Then - Should attempt automatic check
-            XCTAssertNotNil(controller)
+            // Then - Should attempt automatic check without opening App Store
+            XCTAssertFalse(mockAppStoreOpener.openAppStoreCalled, "Should not open App Store on automatic check")
         }
     }
 
@@ -311,10 +322,14 @@ final class AppStoreUpdateControllerTests: XCTestCase {
         autoreleasepool {
             // Given
             let mockFeatureFlagger = MockFeatureFlagger()
+            let mockAppStoreOpener = MockAppStoreOpener()
             // Feature flag is OFF by default
 
             // When
-            let controller = AppStoreUpdateController(featureFlagger: mockFeatureFlagger)
+            let controller = AppStoreUpdateController(
+                featureFlagger: mockFeatureFlagger,
+                appStoreOpener: mockAppStoreOpener
+            )
 
             // Then - Should initialize without setting up automatic checks
             XCTAssertNotNil(controller)
@@ -327,10 +342,14 @@ final class AppStoreUpdateControllerTests: XCTestCase {
         autoreleasepool {
             // Given
             let mockFeatureFlagger = MockFeatureFlagger()
+            let mockAppStoreOpener = MockAppStoreOpener()
             mockFeatureFlagger.enabledFeatureFlags = [.appStoreCheckForUpdatesFlow]
 
             // When
-            let controller = AppStoreUpdateController(featureFlagger: mockFeatureFlagger)
+            let controller = AppStoreUpdateController(
+                featureFlagger: mockFeatureFlagger,
+                appStoreOpener: mockAppStoreOpener
+            )
 
             // Then - Should initialize and set up automatic checks
             XCTAssertNotNil(controller)
@@ -416,8 +435,12 @@ final class AppStoreUpdateControllerTests: XCTestCase {
             // Given
             let debugSettings = UpdatesDebugSettings()
             let mockInternalUserDecider = MockInternalUserDecider(isInternalUser: true)
+            let mockAppStoreOpener = MockAppStoreOpener()
 
-            let controller = AppStoreUpdateController(internalUserDecider: mockInternalUserDecider)
+            let controller = AppStoreUpdateController(
+                internalUserDecider: mockInternalUserDecider,
+                appStoreOpener: mockAppStoreOpener
+            )
 
             // When - enabling force update debug setting
             debugSettings.forceUpdateAvailable = true
@@ -449,8 +472,12 @@ final class AppStoreUpdateControllerTests: XCTestCase {
             // Given
             let debugSettings = UpdatesDebugSettings()
             let mockInternalUserDecider = MockInternalUserDecider(isInternalUser: false) // External user
+            let mockAppStoreOpener = MockAppStoreOpener()
 
-            let controller = AppStoreUpdateController(internalUserDecider: mockInternalUserDecider)
+            let controller = AppStoreUpdateController(
+                internalUserDecider: mockInternalUserDecider,
+                appStoreOpener: mockAppStoreOpener
+            )
 
             // When - enabling force update debug setting (but user is external)
             debugSettings.forceUpdateAvailable = true
@@ -482,10 +509,14 @@ final class AppStoreUpdateControllerTests: XCTestCase {
             // Given
             let debugSettings = UpdatesDebugSettings()
             let mockInternalUserDecider = MockInternalUserDecider(isInternalUser: true) // Even internal users follow normal logic when debug is off
+            let mockAppStoreOpener = MockAppStoreOpener()
 
             debugSettings.forceUpdateAvailable = false // Ensure it's off
 
-            let controller = AppStoreUpdateController(internalUserDecider: mockInternalUserDecider)
+            let controller = AppStoreUpdateController(
+                internalUserDecider: mockInternalUserDecider,
+                appStoreOpener: mockAppStoreOpener
+            )
 
             // When & Then - should follow normal version comparison logic
             let expectation = XCTestExpectation(description: "Normal update check")

@@ -52,8 +52,7 @@ public extension UIColor {
         self.init(red: componentA, green: componentB, blue: componentC, alpha: componentD)
     }
 
-    convenience init(darkHex: String, lightHex: String)
-    {
+    convenience init(darkHex: String, lightHex: String) {
         self.init { trait in
             switch trait.userInterfaceStyle {
             case .dark:

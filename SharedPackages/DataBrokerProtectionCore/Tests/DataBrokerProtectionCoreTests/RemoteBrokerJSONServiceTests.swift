@@ -431,14 +431,13 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         let testFile = jsonDir.appendingPathComponent("broker.com.json")
         try testBrokerContent.write(to: testFile, atomically: true, encoding: .utf8)
 
-        // This should not throw, but should fire a failure pixel
-        try testRemoteService.processBrokerJSONs(
+        // This should throw due to upsert failure, but should fire a failure pixel
+        XCTAssertThrowsError(try testRemoteService.processBrokerJSONs(
             eTag: "test-etag-upsert-fail",
             fileNames: ["broker.com.json"],
             eTagMapping: ["broker.com.json": "etag999"],
             activeBrokers: ["broker.com.json"],
-            testBrokers: []
-        )
+            testBrokers: []))
 
         let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
         let failurePixels = firedPixels.compactMap { pixel in

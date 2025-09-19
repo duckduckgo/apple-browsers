@@ -3396,6 +3396,8 @@
 		BB9BA22A2D10C0A5009229F3 /* TabBarActiveRemoteMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9BA2282D10C0A3009229F3 /* TabBarActiveRemoteMessage.swift */; };
 		BB9BDD492D09BAA80069E9EF /* TabBarRemoteMessageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9BDD482D09BA9D0069E9EF /* TabBarRemoteMessageViewModel.swift */; };
 		BB9BDD4A2D09BAA80069E9EF /* TabBarRemoteMessageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9BDD482D09BA9D0069E9EF /* TabBarRemoteMessageViewModel.swift */; };
+		BBA00F6A2E7D98740070A00E /* AppStoreOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA00F692E7D98740070A00E /* AppStoreOpener.swift */; };
+		BBA00F6B2E7D98740070A00E /* AppStoreOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA00F692E7D98740070A00E /* AppStoreOpener.swift */; };
 		BBA9A8572E40E23D00FB29A1 /* VPNPopoverPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA9A8562E40E23D00FB29A1 /* VPNPopoverPresenterTests.swift */; };
 		BBA9A8582E40E23D00FB29A1 /* VPNPopoverPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA9A8562E40E23D00FB29A1 /* VPNPopoverPresenterTests.swift */; };
 		BBB3F1F12E302143009E77AF /* ReportProblemFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB3F1F02E302143009E77AF /* ReportProblemFormView.swift */; };
@@ -5725,6 +5727,7 @@
 		BB9BA2252D10C089009229F3 /* TabBarRemoteMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarRemoteMessage.swift; sourceTree = "<group>"; };
 		BB9BA2282D10C0A3009229F3 /* TabBarActiveRemoteMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarActiveRemoteMessage.swift; sourceTree = "<group>"; };
 		BB9BDD482D09BA9D0069E9EF /* TabBarRemoteMessageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarRemoteMessageViewModel.swift; sourceTree = "<group>"; };
+		BBA00F692E7D98740070A00E /* AppStoreOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreOpener.swift; sourceTree = "<group>"; };
 		BBA9A8562E40E23D00FB29A1 /* VPNPopoverPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNPopoverPresenterTests.swift; sourceTree = "<group>"; };
 		BBB3F1F02E302143009E77AF /* ReportProblemFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportProblemFormView.swift; sourceTree = "<group>"; };
 		BBB881872C4029BA001247C6 /* BookmarkListTreeControllerSearchDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkListTreeControllerSearchDataSource.swift; sourceTree = "<group>"; };
@@ -10929,6 +10932,7 @@
 		BB98DF472E74AEC500C15330 /* AppStore */ = {
 			isa = PBXGroup;
 			children = (
+				BBA00F692E7D98740070A00E /* AppStoreOpener.swift */,
 				BB0B4EA12E7B1318005A2F57 /* AppStoreUpdateMenuItemFactory.swift */,
 				BB98DF4B2E74C11300C15330 /* AppStoreUpdaterAvailabilityChecker.swift */,
 				BB486B532E7499FE0026B972 /* AppStoreUpdateController.swift */,
@@ -13736,6 +13740,7 @@
 				3706FC3A293F65D500E42796 /* NSOpenPanelExtensions.swift in Sources */,
 				F118EA862BEACC7000F77634 /* NonStandardPixel.swift in Sources */,
 				37E307AC2D0745DB00599500 /* PrivacyStatsErrorHandler.swift in Sources */,
+				BBA00F6A2E7D98740070A00E /* AppStoreOpener.swift in Sources */,
 				7BD5049E2E5FA40F008A0646 /* WebExtensionNavigationBarUpdater.swift in Sources */,
 				3706FC3B293F65D500E42796 /* FirePopover.swift in Sources */,
 				4B4D60C12A0C848E00BCD287 /* NetworkProtectionControllerErrorStore.swift in Sources */,
@@ -15613,6 +15618,7 @@
 				7B60AFFF2C51426A008E32A3 /* VPNURLEventHandler.swift in Sources */,
 				37A6A8F62AFCCA59008580A3 /* FaviconsFetcherOnboardingViewController.swift in Sources */,
 				5677A9372C9812E800DA7B0A /* TrackerMessageProvider.swift in Sources */,
+				BBA00F6B2E7D98740070A00E /* AppStoreOpener.swift in Sources */,
 				319FCFF52CC83007004F9288 /* AIChatDebugMenu.swift in Sources */,
 				EE098E772C8EDE2C009EBA7F /* AutofillCredentialsImportManager.swift in Sources */,
 				3199AF6F2C80734A003AEBDC /* DuckPlayerOnboardingDecider.swift in Sources */,

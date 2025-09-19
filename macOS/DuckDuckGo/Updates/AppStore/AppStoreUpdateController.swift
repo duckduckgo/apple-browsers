@@ -52,18 +52,21 @@ final class AppStoreUpdateController: NSObject, UpdateController {
     private let releaseChecker: LatestReleaseChecker
     private let featureFlagger: FeatureFlagger
     private let internalUserDecider: InternalUserDecider
+    private let appStoreOpener: AppStoreOpener
 
     // MARK: - Initialization
 
     init(updateCheckState: UpdateCheckState = UpdateCheckState(),
          releaseChecker: LatestReleaseChecker = LatestReleaseChecker(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         internalUserDecider: InternalUserDecider = NSApp.delegateTyped.internalUserDecider) {
+         internalUserDecider: InternalUserDecider = NSApp.delegateTyped.internalUserDecider,
+         appStoreOpener: AppStoreOpener = DefaultAppStoreOpener()) {
         self.updateCheckState = updateCheckState
         self.updaterChecker = AppStoreUpdaterAvailabilityChecker()
         self.releaseChecker = releaseChecker
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
+        self.appStoreOpener = appStoreOpener
         super.init()
 
         // Only setup cloud checking if feature flag is on
@@ -196,7 +199,7 @@ final class AppStoreUpdateController: NSObject, UpdateController {
     }
 
     @objc func openUpdatesPage() {
-        NSWorkspace.shared.open(.appStore)
+        appStoreOpener.openAppStore()
     }
 
     // MARK: - Private Methods

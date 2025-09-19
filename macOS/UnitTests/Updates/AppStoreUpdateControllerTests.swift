@@ -237,16 +237,20 @@ final class AppStoreUpdateControllerTests: XCTestCase {
         autoreleasepool {
             // Given
             let mockFeatureFlagger = MockFeatureFlagger()
+            let mockAppStoreOpener = MockAppStoreOpener()
             // Feature flag is OFF by default
 
-            let controller = AppStoreUpdateController(featureFlagger: mockFeatureFlagger)
+            let controller = AppStoreUpdateController(
+                featureFlagger: mockFeatureFlagger,
+                appStoreOpener: mockAppStoreOpener
+            )
 
             // When
             controller.checkForUpdate()
 
-            // Then - Should go directly to App Store (we can't easily verify this without more mocking,
-            // but the code path is covered and won't crash)
-            XCTAssertNotNil(controller) // Basic validation that it doesn't crash
+            // Then - Should go directly to App Store
+            XCTAssertTrue(mockAppStoreOpener.openAppStoreCalled, "Should open App Store when feature flag is off")
+            XCTAssertEqual(mockAppStoreOpener.openAppStoreCallCount, 1)
         }
     }
 
@@ -254,16 +258,20 @@ final class AppStoreUpdateControllerTests: XCTestCase {
         autoreleasepool {
             // Given
             let mockFeatureFlagger = MockFeatureFlagger()
+            let mockAppStoreOpener = MockAppStoreOpener()
             mockFeatureFlagger.enabledFeatureFlags = [.appStoreCheckForUpdatesFlow]
 
-            let controller = AppStoreUpdateController(featureFlagger: mockFeatureFlagger)
+            let controller = AppStoreUpdateController(
+                featureFlagger: mockFeatureFlagger,
+                appStoreOpener: mockAppStoreOpener
+            )
 
             // When
             controller.checkForUpdate()
 
-            // Then - Should attempt cloud check (we can't easily verify without complex mocking,
-            // but the code path is covered and won't crash)
-            XCTAssertNotNil(controller) // Basic validation that it doesn't crash
+            // Then - Should attempt cloud check, NOT open App Store directly
+            XCTAssertFalse(mockAppStoreOpener.openAppStoreCalled, "Should not open App Store when feature flag is on")
+            XCTAssertEqual(mockAppStoreOpener.openAppStoreCallCount, 0)
         }
     }
 
@@ -331,18 +339,90 @@ final class AppStoreUpdateControllerTests: XCTestCase {
         }
     }
 
+    // MARK: - App Store Opening Tests
+
+    func testRunUpdate_AlwaysOpensAppStore() {
+        autoreleasepool {
+            // Given
+            let mockAppStoreOpener = MockAppStoreOpener()
+            let controller = AppStoreUpdateController(appStoreOpener: mockAppStoreOpener)
+
+            // When
+            controller.runUpdate()
+
+            // Then - Should always open App Store regardless of feature flag
+            XCTAssertTrue(mockAppStoreOpener.openAppStoreCalled, "runUpdate should always open App Store")
+            XCTAssertEqual(mockAppStoreOpener.openAppStoreCallCount, 1)
+        }
+    }
+
+    func testRunUpdate_AlwaysOpensAppStore_EvenWithFeatureFlagOn() {
+        autoreleasepool {
+            // Given
+            let mockFeatureFlagger = MockFeatureFlagger()
+            mockFeatureFlagger.enabledFeatureFlags = [.appStoreCheckForUpdatesFlow]
+            let mockAppStoreOpener = MockAppStoreOpener()
+
+            let controller = AppStoreUpdateController(
+                featureFlagger: mockFeatureFlagger,
+                appStoreOpener: mockAppStoreOpener
+            )
+
+            // When
+            controller.runUpdate()
+
+            // Then - Should open App Store even when feature flag is on
+            XCTAssertTrue(mockAppStoreOpener.openAppStoreCalled, "runUpdate should always open App Store")
+            XCTAssertEqual(mockAppStoreOpener.openAppStoreCallCount, 1)
+        }
+    }
+
+    func testOpenUpdatesPage_OpensAppStore() {
+        autoreleasepool {
+            // Given
+            let mockAppStoreOpener = MockAppStoreOpener()
+            let controller = AppStoreUpdateController(appStoreOpener: mockAppStoreOpener)
+
+            // When
+            controller.openUpdatesPage()
+
+            // Then - Should open App Store
+            XCTAssertTrue(mockAppStoreOpener.openAppStoreCalled, "openUpdatesPage should open App Store")
+            XCTAssertEqual(mockAppStoreOpener.openAppStoreCallCount, 1)
+        }
+    }
+
+    func testOpenUpdatesPage_CanBeCalledMultipleTimes() {
+        autoreleasepool {
+            // Given
+            let mockAppStoreOpener = MockAppStoreOpener()
+            let controller = AppStoreUpdateController(appStoreOpener: mockAppStoreOpener)
+
+            // When
+            controller.openUpdatesPage()
+            controller.openUpdatesPage()
+            controller.openUpdatesPage()
+
+            // Then - Should track multiple calls
+            XCTAssertTrue(mockAppStoreOpener.openAppStoreCalled)
+            XCTAssertEqual(mockAppStoreOpener.openAppStoreCallCount, 3)
+        }
+    }
+
     // MARK: - Debug Settings Tests
 
-    func testIsUpdateAvailable_WithForceUpdateDebugSetting_ReturnsTrue() {
+    func testIsUpdateAvailable_WithForceUpdateDebugSetting_InternalUser_ReturnsTrue() {
         autoreleasepool {
             // Given
             let debugSettings = UpdatesDebugSettings()
-            let controller = AppStoreUpdateController()
+            let mockInternalUserDecider = MockInternalUserDecider(isInternalUser: true)
+
+            let controller = AppStoreUpdateController(internalUserDecider: mockInternalUserDecider)
 
             // When - enabling force update debug setting
             debugSettings.forceUpdateAvailable = true
 
-            // Then - should always return true regardless of versions
+            // Then - should always return true regardless of versions for internal users
             let expectation = XCTestExpectation(description: "Update available check")
 
             Task {
@@ -353,7 +433,40 @@ final class AppStoreUpdateControllerTests: XCTestCase {
                     remoteBuild: "1"
                 )
 
-                XCTAssertTrue(result, "Should return true when force update is enabled")
+                XCTAssertTrue(result, "Should return true when force update is enabled for internal users")
+                expectation.fulfill()
+            }
+
+            wait(for: [expectation], timeout: 1.0)
+
+            // Cleanup
+            debugSettings.reset()
+        }
+    }
+
+    func testIsUpdateAvailable_WithForceUpdateDebugSetting_ExternalUser_ReturnsNormalLogic() {
+        autoreleasepool {
+            // Given
+            let debugSettings = UpdatesDebugSettings()
+            let mockInternalUserDecider = MockInternalUserDecider(isInternalUser: false) // External user
+
+            let controller = AppStoreUpdateController(internalUserDecider: mockInternalUserDecider)
+
+            // When - enabling force update debug setting (but user is external)
+            debugSettings.forceUpdateAvailable = true
+
+            // Then - should follow normal logic since user is not internal
+            let expectation = XCTestExpectation(description: "Update available check")
+
+            Task {
+                let result = await controller.isUpdateAvailable(
+                    currentVersion: "2.0.0",
+                    currentBuild: "999",
+                    remoteVersion: "1.0.0",
+                    remoteBuild: "1"
+                )
+
+                XCTAssertFalse(result, "Should return false (normal logic) when force update is enabled but user is not internal")
                 expectation.fulfill()
             }
 
@@ -368,9 +481,11 @@ final class AppStoreUpdateControllerTests: XCTestCase {
         autoreleasepool {
             // Given
             let debugSettings = UpdatesDebugSettings()
+            let mockInternalUserDecider = MockInternalUserDecider(isInternalUser: true) // Even internal users follow normal logic when debug is off
+
             debugSettings.forceUpdateAvailable = false // Ensure it's off
 
-            let controller = AppStoreUpdateController()
+            let controller = AppStoreUpdateController(internalUserDecider: mockInternalUserDecider)
 
             // When & Then - should follow normal version comparison logic
             let expectation = XCTestExpectation(description: "Normal update check")
@@ -383,11 +498,28 @@ final class AppStoreUpdateControllerTests: XCTestCase {
                     remoteBuild: "1"
                 )
 
-                XCTAssertFalse(result, "Should return false when current version is newer")
+                XCTAssertFalse(result, "Should return false when current version is newer, even for internal users when debug is off")
                 expectation.fulfill()
             }
 
             wait(for: [expectation], timeout: 1.0)
         }
+    }
+}
+
+// MARK: - Mock Objects
+
+class MockAppStoreOpener: AppStoreOpener {
+    private(set) var openAppStoreCalled = false
+    private(set) var openAppStoreCallCount = 0
+
+    func openAppStore() {
+        openAppStoreCalled = true
+        openAppStoreCallCount += 1
+    }
+
+    func reset() {
+        openAppStoreCalled = false
+        openAppStoreCallCount = 0
     }
 }

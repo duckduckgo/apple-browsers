@@ -73,19 +73,8 @@ struct VisualStyle: VisualStyleProviding {
     let tabBarButtonSize: CGFloat
     let addToolbarShadow: Bool
 
-    /// This property is being temporarily preserved for compatibility reasons, and will be removed in a follow-up PR
-    ///
     static var current: VisualStyleProviding {
-        style(isThemesEnabled: false)
-    }
-
-    static func style(featureFlagger: FeatureFlagger) -> VisualStyleProviding {
-        let isThemesEnabled = featureFlagger.isFeatureOn(.themes)
-        return style(isThemesEnabled: isThemesEnabled)
-    }
-
-    static func style(isThemesEnabled: Bool) -> VisualStyleProviding {
-        let palette: ThemeColors = isThemesEnabled ? DefaultThemeColors() : NewColorPalette()
+        let palette = NewColorPalette()
 
         return VisualStyle(toolbarButtonsCornerRadius: 9,
                            fireWindowGraphic: .burnerWindowGraphicNew,

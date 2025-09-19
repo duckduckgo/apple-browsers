@@ -9,15 +9,12 @@ Licensed under the Apache License, Version 2.0
 import os
 import sys
 import json
-import time
 import asyncio
 import argparse
 import subprocess
-import tempfile
-import shutil
 from pathlib import Path
 from datetime import datetime, timedelta
-from typing import List, Optional, Dict, Any
+from typing import List, Dict
 from dataclasses import dataclass
 from urllib.parse import urlencode
 
@@ -30,6 +27,7 @@ import aiohttp
 
 @dataclass
 class Credentials:
+    """Smartling API credentials."""
     user_id: str
     user_secret: str
     project_id: str
@@ -77,7 +75,7 @@ class SmartlingClient:
 
             if resp.status >= 400:
                 error = data.get('response', {}).get('errors', [{}])[0].get('message', 'API Error')
-                raise Exception(f"HTTP {resp.status}: {error}")
+                raise RuntimeError(f"HTTP {resp.status}: {error}")
 
             return data
 
@@ -103,12 +101,16 @@ class SmartlingClient:
 
     async def get_job(self, job_id: str) -> Dict:
         """Get job details."""
-        data = await self._request('GET', f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/{job_id}')
+        data = await self._request(
+            'GET', f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/{job_id}'
+        )
         return data['response']['data']
 
     async def get_job_progress(self, job_id: str) -> int:
         """Get job progress percentage."""
-        data = await self._request('GET', f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/{job_id}/progress')
+        data = await self._request(
+            'GET', f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/{job_id}/progress'
+        )
         return data['response']['data']['progress']['percentComplete']
 
     async def authorize_job(self, job_id: str):
@@ -133,11 +135,15 @@ class SmartlingClient:
         )
         return data['response']['data']['batchUid']
 
-    async def upload_to_batch(self, batch_id: str, file_path: Path, file_uri: str, locales: List[str]):
+    async def upload_to_batch(
+        self, batch_id: str, file_path: Path, file_uri: str, locales: List[str]
+    ):
         """Upload file to batch."""
         form = aiohttp.FormData()
         form.add_field('fileUri', file_uri)
-        form.add_field('fileType', 'xliff' if file_path.suffix == '.xliff' else 'stringsdict')
+        form.add_field(
+            'fileType', 'xliff' if file_path.suffix == '.xliff' else 'stringsdict'
+        )
         for locale in locales:
             form.add_field('localeIdsToAuthorize[]', locale)
         form.add_field('file', file_path.read_bytes(), filename=file_path.name)
@@ -150,18 +156,25 @@ class SmartlingClient:
 
     async def get_batch_status(self, batch_id: str) -> str:
         """Get batch processing status."""
-        data = await self._request('GET', f'/job-batches-api/v2/projects/{self.creds.project_id}/batches/{batch_id}')
+        data = await self._request(
+            'GET', f'/job-batches-api/v2/projects/{self.creds.project_id}/batches/{batch_id}'
+        )
         return data['response']['data']['status']
 
     async def get_job_files(self, job_id: str) -> List[str]:
         """Get file URIs in job."""
-        data = await self._request('GET', f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/{job_id}/files')
+        data = await self._request(
+            'GET', f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/{job_id}/files'
+        )
         return [f['uri'] for f in data['response']['data'].get('items', [])]
 
     async def download_file(self, file_uri: str, locale: str) -> bytes:
         """Download translated file."""
         params = {'fileUri': file_uri}
-        url = f"{self.BASE_URL}/files-api/v2/projects/{self.creds.project_id}/locales/{locale}/file?{urlencode(params)}"
+        url = (
+            f"{self.BASE_URL}/files-api/v2/projects/{self.creds.project_id}/"
+            f"locales/{locale}/file?{urlencode(params)}"
+        )
         async with self.session.get(url, headers={'Authorization': f'Bearer {self.token}'}) as resp:
             return await resp.read()
 
@@ -184,7 +197,10 @@ def get_credentials(args) -> Credentials:
     project_id = getattr(args, 'project_id', None) or os.environ.get('SMARTLING_PROJECT_ID')
 
     if not all([user_id, user_secret, project_id]):
-        print("❌ Missing credentials. Set SMARTLING_USER_ID, SMARTLING_USER_SECRET, SMARTLING_PROJECT_ID")
+        print(
+            "❌ Missing credentials. Set SMARTLING_USER_ID, "
+            "SMARTLING_USER_SECRET, SMARTLING_PROJECT_ID"
+        )
         sys.exit(1)
 
     return Credentials(user_id, user_secret, project_id)
@@ -226,7 +242,7 @@ async def upload_command(args):
         try:
             status = await client.get_batch_status(batch_id)
             print(f"📝 Batch status: {status}")
-        except:
+        except Exception:  # pylint: disable=broad-except
             print("📝 Batch created successfully")
 
         print(f"JOB_ID={job_id}")
@@ -249,7 +265,7 @@ async def status_command(args):
                 progress = await client.get_job_progress(args.job_id)
                 print(f"PERCENT={progress}")
                 print(f"📈 Progress: {progress}%")
-            except:
+            except Exception:  # pylint: disable=broad-except
                 print("PERCENT=0")
                 print("⚠️  Could not get progress")
         else:
@@ -272,7 +288,7 @@ async def approve_command(args):
             await client.authorize_job(args.job_id)
             print("APPROVED=1")
             print("✅ Job authorized successfully!")
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             print("APPROVED=0")
             print(f"❌ Authorization failed: {e}")
             sys.exit(1)
@@ -318,7 +334,7 @@ async def download_command(args):
                     (out_dir / file_name).write_bytes(data)
                     print(f"   ✅ {file_name} ({locale})")
                     count += 1
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-except
                     print(f"⚠️  Failed to download {file_uri} for {locale}: {e}")
 
         print(f"DOWNLOADED={count}")
@@ -330,6 +346,7 @@ async def download_command(args):
 # ============================================================================
 
 def main():
+    """Main CLI entry point."""
     parser = argparse.ArgumentParser(description='Smartling localization tool')
     subparsers = parser.add_subparsers(dest='command')
 
@@ -369,7 +386,7 @@ def main():
     except KeyboardInterrupt:
         print("\n❌ Cancelled")
         sys.exit(1)
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         print(f"\n❌ Error: {e}")
         sys.exit(1)
 

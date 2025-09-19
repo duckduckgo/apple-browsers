@@ -51,6 +51,29 @@ jobs:
       env:
         SHELLCHECK_OPTS: -x -P scripts
 
+  pylint:
+
+    name: Python Lint
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Python dependencies
+      run: |
+        pip install aiohttp pylint
+
+    - name: Run pylint
+      run: |
+        pylint scripts/localization_tool.py
+
   smartling:
     runs-on: macos-15-xlarge
     name: Smartling translation job

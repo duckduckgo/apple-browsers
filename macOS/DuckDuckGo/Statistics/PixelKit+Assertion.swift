@@ -20,6 +20,6 @@ import Foundation
 import PixelKit
 
 public func pixelAssertionFailure(_ message: @autoclosure () -> String = String(), file: StaticString = #fileID, line: UInt = #line) {
-    PixelKit.fire(DebugEvent(GeneralPixel.assertionFailure(message: message(), file: file, line: line)))
+    PixelKit.fire(DebugEvent(eventType: .assertionFailure(message: message(), file: file, line: line)), frequency: .dailyAndStandard)
     Swift.assertionFailure(message(), file: file, line: line)
 }

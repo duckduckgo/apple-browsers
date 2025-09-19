@@ -1709,7 +1709,7 @@
 "feedback.form.submit" = "Trimite";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Contribuie la îmbunătățirea Privacy Pro";
+"feedback.form.title" = "Contribuie la îmbunătățirea abonamentului DuckDuckGo";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -2728,9 +2728,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Despre";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "În plus, oferim și [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), un serviciu de abonament trei-în-unu, integrat în browserul nostru. Abonații Privacy Pro beneficiază de și mai multă protecție a vieții private, cu un [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) rapid și simplu care contribuie la securizarea activității tale online, un serviciu care găsește și elimină datele tale cu caracter personal de pe site-urile de căutare a persoanelor și un serviciu care îți restabilește identitatea în cazul în care aceasta este sustrasă.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "În plus, oferim și [abonamentul DuckDuckGo](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integrat în browserul nostru. Abonații beneficiază de și mai multă protecție a vieții private, cu un [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) rapid și simplu care contribuie la securizarea activității tale online, acces la modele de IA avansate în serviciul nostru de chat privat IA Duck.ai, un serviciu care găsește și elimină datele tale cu caracter personal de pe site-urile de căutare a persoanelor și un serviciu care îți recuperează identitatea în cazul în care ai fost ținta unui furt de identitate.";
 
@@ -2765,7 +2762,7 @@
 "settings.ai.experimental.picker.search_only" = "Doar căutare";
 
 /* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Try the new option to toggle between search and Duck.ai in the Address Bar.";
+"settings.ai.new.picker.footer" = "Încearcă noua opțiune de a comuta între căutare și Duck.ai în bara de adrese.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Gestionează comenzile rapide Duck.ai";
@@ -2849,7 +2846,7 @@
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo pe alte platforme";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Abonamentul tău Privacy Pro a expirat";
+"settings.duckduckgo.subscription.expired.title" = "Abonamentul tău DuckDuckGo a expirat";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Blochează tehnologiile de urmărire prin e-mail și ascunde-ți adresa fără a schimba furnizorul de servicii de e-mail.\n[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2938,9 +2935,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "Activat";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Politica de confidențialitate și Condițiile de prestare a serviciului";
 
@@ -3010,23 +3004,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Am un abonament";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Abonamentul tău Privacy Pro a expirat";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "Abonament DuckDuckGo";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Dacă identitatea ta este furată, te vom ajuta să o restabilești.";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Obține Privacy Pro";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Setări pentru abonament";
@@ -3045,9 +3030,6 @@
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Încearcă gratuit";
-
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Încearcă Privacy Pro gratuit";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3199,9 +3181,6 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Editează adresa de e-mail";
 
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "Adaugă abonamentul tău Privacy Pro pe acest dispozitiv";
-
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Renunță";
 
@@ -3220,9 +3199,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Să începem";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Folosește o adresă de e-mail pentru a adăuga Privacy Pro pe acest dispozitiv.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "Adaugă folosind adresa de e-mail";
 
@@ -3234,15 +3210,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Adaugă adresa de e-mail";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Adaugă Privacy Pro pe alte dispozitive";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Adaugă Privacy Pro pe celelalte dispozitive ale tale prin Apple ID sau prin conectarea unei adrese de e-mail. **[Află mai multe](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Folosește această adresă de e-mail pentru a-ți adăuga abonamentul pe celelalte dispozitive ale tale, în aplicația DuckDuckGo. Accesează Setări > Privacy Pro > Am un abonament. **[Află mai multe](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Abonamentul tău a fost achiziționat prin Magazinul Google Play. Pentru a-ți reînnoi abonamentul, deschide setările abonamentului din Magazinului Google Play pe un dispozitiv conectat la același cont Google folosit pentru achiziționarea inițială a abonamentului.";
@@ -3283,9 +3250,6 @@
 /* FAQ Button */
 "subscription.faq" = "Întrebări frecvente și asistență";
 
-/* FAQ Description */
-"subscription.faq.description" = "Primește răspunsuri la întrebările frecvente sau contactează asistența Privacy Pro din paginile noastre de ajutor.";
-
 /* Share Feedback Button */
 "subscription.feedback" = "Trimitere feedback";
 
@@ -3319,14 +3283,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Vezi planurile";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Activează Privacy Pro pe desktop pentru a configura Personal Information Removal";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "În browserul DuckDuckGo pentru desktop, accesează %1$@ și dă clic pe %2$@ pentru a începe.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Setări > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Setări > Abonează-te la DuckDuckGo";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Am un abonament";
@@ -3351,9 +3312,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Elimină de pe acest dispozitiv";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "Nu vei mai putea-ți să accesezi abonamentul Privacy Pro de pe acest dispozitiv. Acest lucru nu îți va anula abonamentul, care va rămâne activ pe celelalte dispozitive.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Dorești să elimini de pe acest dispozitiv?";
@@ -3426,9 +3384,6 @@
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Abonamentul tău anual se reînnoiește la data de %@.";
-
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Perioada de încercare gratuită este activă";

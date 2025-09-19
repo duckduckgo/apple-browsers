@@ -1709,7 +1709,7 @@
 "feedback.form.submit" = "Υποβολή";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Βοηθήστε να βελτιώσουμε το Privacy Pro";
+"feedback.form.title" = "Βοηθήστε μας να βελτιώσουμε τη συνδρομή DuckDuckGo";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -2728,9 +2728,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Σχετικά";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "Επιπλέον, προσφέρουμε επίσης το [Privacy Pro] (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), μια συνδρομητική υπηρεσία τρία σε ένα, ενσωματωμένη στο πρόγραμμα περιήγησής μας. Οι συνδρομητές του Privacy Pro απολαμβάνουν ακόμα μεγαλύτερη προστασία απορρήτου με ένα γρήγορο και απλό [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), που βοηθά στην ασφάλεια της διαδικτυακής δραστηριότητάς σας, μια υπηρεσία που εντοπίζει και αφαιρεί τα προσωπικά στοιχεία σας από ιστότοπους εύρεσης ατόμων και μια υπηρεσία που αποκαθιστά την ταυτότητά σας σε περίπτωση κλοπής.\n\n";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "Επιπλέον, προσφέρουμε επίσης τη συνδρομή [DuckDuckGo subscription](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) ενοποιημένη στο πρόγραμμα περιήγησής σας. Οι συνδρομητές απολαμβάνουν ακόμα μεγαλύτερη προστασία απορρήτου με ένα γρήγορο και απλό [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), που βοηθά στην ασφάλεια της διαδικτυακής δραστηριότητάς σας, στην πρόσβαση σε προηγμένα μοντέλα τεχνητής νοημοσύνης στην ιδιωτική υπηρεσία συνομιλίας AI Duck.ai, σε μια υπηρεσία που εντοπίζει και αφαιρεί τα προσωπικά στοιχεία σας από ιστότοπους εύρεσης ατόμων και σε μια υπηρεσία που αποκαθιστά την ταυτότητά σας σε περίπτωση κλοπής.\n\n";
 
@@ -2765,7 +2762,7 @@
 "settings.ai.experimental.picker.search_only" = "Αναζήτηση μόνο";
 
 /* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Try the new option to toggle between search and Duck.ai in the Address Bar.";
+"settings.ai.new.picker.footer" = "Δοκιμάστε τη νέα επιλογή για εναλλαγή μεταξύ αναζήτησης και Duck.ai στη γραμμή διευθύνσεων.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Διαχείριση συντομεύσεων Duck.ai";
@@ -2849,7 +2846,7 @@
 "settings.duckduckgo.on.other.platforms" = "Το DuckDuckGo σε άλλες πλατφόρμες";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Η συνδρομή σας στο Privacy Pro έληξε";
+"settings.duckduckgo.subscription.expired.title" = "Η συνδρομή σας στο DuckDuckGo έληξε";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Αποκλείστε εφαρμογές παρακολούθησης email και αποκρύψτε τη διεύθυνσή σας, χωρίς να αλλάξετε πάροχο email.\n[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2938,9 +2935,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "Ενεργό";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Πολιτική απορρήτου και Όροι χρήσης υπηρεσιών";
 
@@ -3010,23 +3004,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Έχω συνδρομή";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Η συνδρομή σας στο Privacy Pro έληξε";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "Συνδρομή DuckDuckGo";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Αν κλαπεί η ταυτότητά σας, θα σας βοηθήσουμε να την αποκαταστήσετε";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Απόκτησε το Privacy Pro";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Ρυθμίσεις συνδρομής";
@@ -3045,9 +3030,6 @@
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Δοκιμάστε το δωρεάν";
-
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Δοκιμάστε το Privacy Pro δωρεάν";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3199,9 +3181,6 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Επεξεργασία email";
 
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "Προσθέστε τη συνδρομή σας Privacy Pro σε αυτήν τη συσκευή";
-
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Ακύρωση";
 
@@ -3220,9 +3199,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Ξεκινήστε";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Χρησιμοποιήστε μια διεύθυνση email για να προσθέσετε το Privacy Pro σε αυτήν τη συσκευή.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "Πρόσθεσε μέσω διεύθυνσης email";
 
@@ -3234,15 +3210,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Προσθήκη email";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Προσθήκη Privacy Pro σε άλλες συσκευές";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Προσθέστε το Privacy Pro στις άλλες συσκευές σας μέσω Apple ID ή συνδέοντας μια διεύθυνση email. **[Μάθε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Χρησιμοποιήστε αυτό το email για να προσθέσετε τη συνδρομή σας στις άλλες συσκευές σας στην εφαρμογή DuckDuckGo. Μεταβείτε στις Ρυθμίσεις > Privacy Pro > Έχω συνδρομή. **[Μάθε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Η συνδρομή σας αγοράστηκε μέσω του Google Play Store. Για να ανανεώσετε τη συνδρομή σας, ανοίξτε τις ρυθμίσεις συνδρομής στο Google Play Store σε συσκευή που είναι συνδεδεμένη στον ίδιο λογαριασμό Google που χρησιμοποιήθηκε για την αρχική αγορά της συνδρομής σας.";
@@ -3283,9 +3250,6 @@
 /* FAQ Button */
 "subscription.faq" = "Συχνές ερωτήσεις και υποστήριξη";
 
-/* FAQ Description */
-"subscription.faq.description" = "Πάρτε απαντήσεις σε συχνές ερωτήσεις ή επικοινωνήστε με την υποστήριξη του Privacy Pro από τις σελίδες βοήθειας που διαθέτουμε.";
-
 /* Share Feedback Button */
 "subscription.feedback" = "Κοινοποίηση σχολίου";
 
@@ -3319,14 +3283,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Προβολή προγραμμάτων";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Ενεργοποιήστε το Privacy Pro στην επιφάνεια εργασίας για να ρυθμίσετε το Personal Information Removal";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "Στο πρόγραμμα περιήγησης DuckDuckGo για επιτραπέζιους υπολογιστές, μεταβείτε στο %1$@ και κάντε κλικ στο %2$@ για να αρχίσετε.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Ρυθμίσεις > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Ρυθμίσεις > Εγγραφείτε στο DuckDuckGo";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Έχω συνδρομή";
@@ -3351,9 +3312,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Αφαίρεση από αυτήν τη συσκευή";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "Δεν θα μπορείτε πλέον να έχετε πρόσβαση στη συνδρομή Privacy Pro σε αυτήν τη συσκευή. Αυτό δεν θα ακυρώσει τη συνδρομή σας και θα παραμείνει ενεργή στις υπόλοιπες συσκευές σας.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Αφαίρεση από αυτήν τη συσκευή;";
@@ -3426,9 +3384,6 @@
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Η ετήσια συνδρομή σας ανανεώνεται %@.";
-
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Η δωρεάν δοκιμή είναι ενεργή";

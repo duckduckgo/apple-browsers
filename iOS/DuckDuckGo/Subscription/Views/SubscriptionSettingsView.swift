@@ -85,7 +85,7 @@ struct SubscriptionSettingsView: View {
     }
 
     private var devicesSection: some View {
-        Section(header: Text(UserText.subscriptionDevicesSectionHeader(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)),
+        Section(header: Text(UserText.subscriptionDevicesSectionHeader),
                 footer: devicesSectionFooter) {
 
             if let email = viewModel.state.subscriptionEmail, !email.isEmpty {
@@ -131,7 +131,7 @@ struct SubscriptionSettingsView: View {
 
     private var devicesSectionFooter: some View {
         let hasEmail = !(viewModel.state.subscriptionEmail ?? "").isEmpty
-        let footerText = hasEmail ? UserText.subscriptionDevicesSectionWithEmailFooter(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled) : UserText.subscriptionDevicesSectionNoEmailFooter(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)
+        let footerText = hasEmail ? UserText.subscriptionDevicesSectionWithEmailFooter : UserText.subscriptionDevicesSectionNoEmailFooter
         return Text(.init("\(footerText)")) // required to parse markdown formatting
             .environment(\.openURL, OpenURLAction { _ in
                 viewModel.displayLearnMoreView(true)
@@ -208,7 +208,7 @@ struct SubscriptionSettingsView: View {
         .alert(isPresented: $isShowingRemovalNotice) {
             Alert(
                 title: Text(UserText.subscriptionRemoveFromDeviceConfirmTitle),
-                message: Text(UserText.subscriptionRemoveFromDeviceConfirmText(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)),
+                message: Text(UserText.subscriptionRemoveFromDeviceConfirmText),
                 primaryButton: .cancel(Text(UserText.subscriptionRemoveCancel)) {},
                 secondaryButton: .destructive(Text(UserText.subscriptionRemove)) {
                     Pixel.fire(pixel: .privacyProSubscriptionManagementRemoval)
@@ -260,7 +260,7 @@ struct SubscriptionSettingsView: View {
             }
         } else {
             Section(header: Text(UserText.subscriptionHelpAndSupport),
-                    footer: Text(UserText.subscriptionFAQFooter(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled))) {
+                    footer: Text(UserText.subscriptionFAQFooter)) {
                 faqButton
             }
         }
@@ -499,7 +499,7 @@ struct SubscriptionSettingsViewV2: View {
     }
 
     private var devicesSection: some View {
-        Section(header: Text(UserText.subscriptionDevicesSectionHeader(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)),
+        Section(header: Text(UserText.subscriptionDevicesSectionHeader),
                 footer: devicesSectionFooter) {
 
             if let email = viewModel.state.subscriptionEmail, !email.isEmpty {
@@ -521,7 +521,7 @@ struct SubscriptionSettingsViewV2: View {
 
     private var devicesSectionFooter: some View {
         let hasEmail = !(viewModel.state.subscriptionEmail ?? "").isEmpty
-        let footerText = hasEmail ? UserText.subscriptionDevicesSectionWithEmailFooter(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled) : UserText.subscriptionDevicesSectionNoEmailFooter(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)
+        let footerText = hasEmail ? UserText.subscriptionDevicesSectionWithEmailFooter : UserText.subscriptionDevicesSectionNoEmailFooter
         return Text(.init("\(footerText)")) // required to parse markdown formatting
             .environment(\.openURL, OpenURLAction { _ in
                 viewModel.displayLearnMoreView(true)
@@ -598,7 +598,7 @@ struct SubscriptionSettingsViewV2: View {
         .alert(isPresented: $isShowingRemovalNotice) {
             Alert(
                 title: Text(UserText.subscriptionRemoveFromDeviceConfirmTitle),
-                message: Text(UserText.subscriptionRemoveFromDeviceConfirmText(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)),
+                message: Text(UserText.subscriptionRemoveFromDeviceConfirmText),
                 primaryButton: .cancel(Text(UserText.subscriptionRemoveCancel)) {},
                 secondaryButton: .destructive(Text(UserText.subscriptionRemove)) {
                     Pixel.fire(pixel: .privacyProSubscriptionManagementRemoval)
@@ -650,7 +650,7 @@ struct SubscriptionSettingsViewV2: View {
             }
         } else {
             Section(header: Text(UserText.subscriptionHelpAndSupport),
-                    footer: Text(UserText.subscriptionFAQFooter(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled))) {
+                    footer: Text(UserText.subscriptionFAQFooter)) {
                 faqButton
             }
         }

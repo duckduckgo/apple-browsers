@@ -23416,7 +23416,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Im Suchfeld auf der neuen Registerkarte anzeigen"
           }
         },
@@ -23428,43 +23428,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Mostrar en el cuadro de búsqueda de nueva página de pestaña"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Afficher dans la boîte de recherche sur la page Nouvel onglet"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Mostra nella casella di ricerca nella pagina Nuova scheda"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Weergeven in het zoekvak op de nieuwe tabbladpagina"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Pokaż w polu wyszukiwania na stronie nowej karty"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Mostrar na caixa de pesquisa na página do novo separador"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Показать в поле поиска на странице новой вкладки"
           }
         }
@@ -23871,6 +23871,58 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DuckDuckGo запрашивает разрешение на чтение файла закладок %1$@. Чтобы импортировать закладки, выберите папку %2$@."
+          }
+        }
+      }
+    },
+    "DuckDuckGo Subscription" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo Abonnement"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suscripción a DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnement DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbonamento DuckDuckGo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo-abonnement"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subskrypcja DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subscrição DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подписка DuckDuckGo"
           }
         }
       }
@@ -25454,66 +25506,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Помогите нам улучшить подписку DuckDuckGo"
-          }
-        }
-      }
-    },
-    "feedback-form.title.deprecated" : {
-      "comment" : "Title for each screen of the feedback form",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hilf mit, Privacy Pro zu verbessern"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Help Improve Privacy Pro"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ayudar a mejorar Privacy Pro"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aidez-nous à améliorer Privacy Pro"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aiuta a migliorare Privacy Pro"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Help Privacy Pro te verbeteren"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pomóż ulepszyć Privacy Pro"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajuda a melhorar o Privacy Pro"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Помогите нам улучшить Privacy Pro"
           }
         }
       }
@@ -64002,55 +63994,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dein Feedback hilft uns, Privacy Pro zu verbessern."
+            "value" : "Dein Feedback hilft uns, das DuckDuckGo-Abo zu verbessern."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Your Feedback will help us improve Privacy Pro."
+            "value" : "Your Feedback will help us improve the DuckDuckGo Subscription."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tus comentarios nos ayudarán a mejorar Privacy Pro."
+            "value" : "Tus comentarios nos ayudarán a mejorar la suscripción a DuckDuckGo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vos commentaires nous aideront à améliorer Privacy Pro."
+            "value" : "Vos commentaires nous aideront à améliorer l'abonnement DuckDuckGo."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La tua opinione ci aiuterà a migliorare Privacy Pro."
+            "value" : "La tua opinione ci aiuterà a migliorare l'abbonamento DuckDuckGo."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jouw feedback helpt ons Privacy Pro te verbeteren."
+            "value" : "Je feedback helpt ons het DuckDuckGo-abonnement te verbeteren."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Twoja opinia pomoże nam udoskonalić Privacy Pro."
+            "value" : "Twoja opinia pomoże nam ulepszyć subskrypcję DuckDuckGo."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O teu Feedback ajuda-nos a melhorar o Privacy Pro."
+            "value" : "O teu feedback ajuda-nos a melhorar a subscrição da DuckDuckGo."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ваш отзыв поможет нам улучшить тариф Privacy Pro."
+            "value" : "Ваш отзыв поможет нам улучшить подписку DuckDuckGo"
           }
         }
       }
@@ -70295,58 +70287,6 @@
         }
       }
     },
-    "Privacy Pro" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro"
-          }
-        }
-      }
-    },
     "private.search.explenation" : {
       "comment" : "feature explanation in settings",
       "extractionState" : "extracted_with_value",
@@ -73134,66 +73074,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Помогите улучшить браузер DuckDuckGo"
-          }
-        }
-      }
-    },
-    "send.ppro.feedback" : {
-      "comment" : "Menu with feedback commands",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Feedback von Privacy Pro senden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Send Privacy Pro Feedback"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enviar comentarios sobre Privacy Pro"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Envoyer des commentaires sur Privacy Pro"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invia feedback su Privacy Pro"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Feedback sturen naar Privacy Pro"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wyślij opinię na temat Privacy Pro"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enviar feedback sobre o Privacy Pro"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отправить отзыв о Privacy Pro"
           }
         }
       }

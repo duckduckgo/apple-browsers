@@ -23,6 +23,7 @@ public protocol UsageSegmentationStoring {
 
     var searchAtbs: [Atb] { get set }
     var appUseAtbs: [Atb] { get set }
+    var duckAIAtbs: [Atb] { get set }
 
 }
 
@@ -31,6 +32,7 @@ public final class UsageSegmentationStorage: UsageSegmentationStoring {
     enum Keys {
         static let search = "usageSegmentation.atbs.search"
         static let appUse = "usageSegmentation.atbs.appUse"
+        static let duckAI = "usageSegmentation.atbs.duckAI"
     }
 
     public var searchAtbs: [Atb] {
@@ -60,6 +62,21 @@ public final class UsageSegmentationStorage: UsageSegmentationStoring {
             keyValueStore.set(newValue.map {
                 $0.version
             }, forKey: Keys.appUse)
+        }
+    }
+
+    public var duckAIAtbs: [Atb] {
+        get {
+            let storedAtbs: [String] = (keyValueStore.object(forKey: Keys.duckAI) as? [String]) ?? []
+            return storedAtbs.map {
+                Atb(version: $0, updateVersion: nil)
+            }
+        }
+
+        set {
+            keyValueStore.set(newValue.map {
+                $0.version
+            }, forKey: Keys.duckAI)
         }
     }
 

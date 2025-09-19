@@ -1709,7 +1709,7 @@
 "feedback.form.submit" = "Abschicken";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Hilf mit, Privacy Pro zu verbessern";
+"feedback.form.title" = "Hilf mit, das DuckDuckGo-Abo zu verbessern";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -2681,10 +2681,10 @@
 "Reset" = "Zurücksetzen";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Pillen-Verwerfen-Zähler zurücksetzen";
+"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Priming-Modalzustand zurücksetzen";
+"Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
 "Results" = "Ergebnisse";
@@ -2728,9 +2728,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Über";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "Zusätzlich bieten wir [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) an, einen Drei-in-Eins-Abonnementdienst, der in unseren Browser integriert ist. Abonnenten von Privacy Pro erhalten noch mehr Datenschutz: mit einem schnellen und einfachen [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), das deine Online-Aktivitäten schützt, einem Dienst, der deine persönlichen Daten von Personensuchmaschinen findet und entfernt, und einem Dienst, der deine Identität wiederherstellt, falls sie gestohlen wird.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "Zusätzlich bieten wir auch das [DuckDuckGo-Abo](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) an, das in unseren Browser integriert ist. Abonnenten erhalten noch mehr Datenschutz mit einem schnellen und einfachen [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), das deine Online-Aktivitäten schützt, Zugriff auf fortschrittliche KI-Modelle in unserem privaten KI-Chatdienst Duck.ai, einem Dienst, der deine persönlichen Daten in Personensuchmaschinen findet und entfernt, und einem Dienst, der deine Identität wiederherstellt, falls sie gestohlen wird.";
 
@@ -2765,7 +2762,7 @@
 "settings.ai.experimental.picker.search_only" = "Nur Suchen";
 
 /* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Try the new option to toggle between search and Duck.ai in the Address Bar.";
+"settings.ai.new.picker.footer" = "Probiere die neue Option aus, um in der Adressleiste zwischen Suchen und Duck.ai zu wechseln.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Duck.ai-Shortcuts verwalten";
@@ -2849,7 +2846,7 @@
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo auf anderen Plattformen";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Dein Privacy Pro Abonnement ist abgelaufen";
+"settings.duckduckgo.subscription.expired.title" = "Dein DuckDuckGo-Abo ist abgelaufen";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "E-Mail-Tracker blockieren und deine Adresse verbergen, ohne dafür den E-Mail-Anbieter wechseln zu müssen.\n[Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2938,9 +2935,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "An";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Datenschutzerklärung und Nutzungsbedingungen";
 
@@ -3010,23 +3004,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Ich habe ein Abonnement";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Dein Privacy Pro Abonnement ist abgelaufen";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "DuckDuckGo Abonnement";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Wenn deine Identität gestohlen wird, helfen wir dir, sie wiederherzustellen.";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Privacy Pro kaufen";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Abonnementeinstellungen";
@@ -3045,9 +3030,6 @@
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Kostenlos testen";
-
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Privacy Pro kostenlos testen";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3199,9 +3181,6 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "E-Mail bearbeiten";
 
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "Dein Privacy Pro Abonnement zu diesem Gerät hinzufügen";
-
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Abbrechen";
 
@@ -3220,9 +3199,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Los geht's!";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Verwende eine E-Mail-Adresse, um Privacy Pro zu diesem Gerät hinzuzufügen.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "Per E-Mail-Adresse hinzufügen";
 
@@ -3234,15 +3210,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "E-Mail-Adresse hinzufügen";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Privacy Pro zu anderen Geräten hinzufügen";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Füge Privacy Pro über deine Apple ID oder durch Verknüpfung einer E-Mail-Adresse zu deinen anderen Geräten hinzu. **[Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Verwende diese E-Mail-Adresse, um dein Abonnement auf deinen anderen Geräten in der DuckDuckGo-App hinzuzufügen. Gehe zu Einstellungen > Privacy Pro > Ich habe ein Abonnement. **[Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Dein Abonnement wurde über den Google Play Store erworben. Um dein Abonnement zu verlängern, öffne bitte die Abonnementeinstellungen im Google Play Store auf einem Gerät, das mit demselben Google-Konto angemeldet ist, mit dem du dein Abonnement ursprünglich gekauft hast.";
@@ -3283,9 +3250,6 @@
 /* FAQ Button */
 "subscription.faq" = "F&A und Support";
 
-/* FAQ Description */
-"subscription.faq.description" = "Erhalte Antworten auf häufig gestellte Fragen oder kontaktiere den Privacy-Pro-Support über unsere Hilfeseiten.";
-
 /* Share Feedback Button */
 "subscription.feedback" = "Feedback teilen";
 
@@ -3319,14 +3283,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Tarife anzeigen";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Aktiviere Privacy Pro auf dem Desktop, um Personal Information Removal einzurichten";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "Gehe im DuckDuckGo-Browser für den Desktop zu %1$@ und klicke auf %2$@, um zu beginnen.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Einstellungen > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Einstellungen > DuckDuckGo abonnieren";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Ich habe ein Abonnement";
@@ -3351,9 +3312,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Von diesem Gerät entfernen";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "Dies hat zur Folge, dass du mit diesem Gerät nicht mehr auf dein Privacy-Pro-Abonnement zugreifen kannst. Dein Abonnement wird dadurch nicht gekündigt; es bleibt auf deinen anderen Geräten aktiv.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Von diesem Gerät entfernen?";
@@ -3426,9 +3384,6 @@
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Dein Jahresabonnement verlängert sich am %@.";
-
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Kostenlose Testphase aktiv";

@@ -24,8 +24,10 @@ import Combine
 import Common
 import History
 import NetworkProtectionIPC
+import NetworkQualityMonitor
 import os.log
 import PixelKit
+import SwiftUI
 import VPN
 
 final class MainViewController: NSViewController {
@@ -826,6 +828,13 @@ extension MainViewController {
         default:
             return event
         }
+    }
+
+    // MARK: - Network Quality Testing
+
+    @objc func testNetworkQuality() {
+        let windowController = NetworkQualitySwiftUIWindowController()
+        windowController.showWindow(nil)
     }
 }
 

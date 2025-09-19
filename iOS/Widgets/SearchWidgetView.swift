@@ -38,31 +38,9 @@ struct SearchWidgetView: View {
 
                 Spacer()
 
-                ZStack(alignment: Alignment(horizontal: .trailing, vertical: .center)) {
-
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(designSystemColor: .backgroundTertiary))
-                        .frame(width: 126, height: 46)
-                        .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 12, x: 0, y: 8)
-
-                    HStack {
-                        Text(UserText.quickActionsSearch)
-                            .daxBodyRegular()
-                            .foregroundStyle(Color(designSystemColor: .textSecondary))
-
-                        Spacer()
-
-                        Image(uiImage: DesignSystemImages.Glyphs.Size20.findSearch)
-                            .useFullColorRendering()
-                            .frame(width: 20, height: 20)
-                            .accessibilityHidden(true)
-                            .foregroundStyle(Color(designSystemColor: .icons))
-                    }
-                    .padding(.horizontal, 12)
-
-                }
-                .accessibilityHidden(true)
-            }.accessibilityLabel(Text(UserText.searchDuckDuckGo))
+                ResponsiveSearchFieldView(isAIChatEnabled: false, showLogo: false, isRightIconEnabled: true)
+            }
+            .accessibilityLabel(Text(UserText.searchDuckDuckGo))
         }
     }
 }

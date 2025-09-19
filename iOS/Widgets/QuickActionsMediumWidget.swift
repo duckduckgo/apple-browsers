@@ -77,6 +77,7 @@ struct QuickActionsMediumWidgetView: View {
         DesignSystemWidgetContainerView {
             VStack(alignment: .center, spacing: 0) {
                 ResponsiveSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled, showLogo: true, isRightIconEnabled: true)
+                    .padding(.bottom, 16)
 
                 HStack {
                     ForEach(shortcuts.indices, id: \.self) { index in

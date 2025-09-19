@@ -50,6 +50,7 @@ struct FavoritesWidgetView: View {
         DesignSystemWidgetContainerView {
             VStack(alignment: .center, spacing: 0) {
                 ResponsiveSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled, showLogo: true, isRightIconEnabled: true)
+                    .padding(.bottom, 16)
 
                 if entry.favorites.isEmpty, !entry.isPreview {
                     // The whole thing needs to be a link because the user could click anywhere
@@ -60,9 +61,10 @@ struct FavoritesWidgetView: View {
                 } else {
                     FavoritesGridView(entry: entry)
                 }
-
+                
                 Spacer()
             }
+            .padding(0)
         }
     }
 }

@@ -30,7 +30,7 @@ struct ResponsiveSearchFieldView: View {
     let isRightIconEnabled: Bool
 
     var fieldHeight: CGFloat {
-        widgetFamily == .systemSmall ? 52 : 46
+        widgetFamily == .systemSmall && showLogo ? 52 : 46
     }
 
     var prompt: String {
@@ -89,7 +89,6 @@ struct ResponsiveSearchFieldView: View {
                 }
 
             }
-            .padding(.bottom, 16)
             .unredacted()
         }
     }

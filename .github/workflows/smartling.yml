@@ -135,20 +135,102 @@ jobs:
 
       - name: Upload to Smartling
         if: ${{ github.event.inputs.action == 'upload' }}
+        id: upload
         run: |
-          ./scripts/smartling_upload.sh "${{ github.event.inputs.platform }}" "${{ github.ref_name }}"
+          # Capture output and extract job ID
+          output=$(./scripts/smartling_upload.sh "${{ github.event.inputs.platform }}" "${{ github.ref_name }}" 2>&1 || echo "FAILED")
+          echo "$output"
+
+          if echo "$output" | grep -q "JOB_ID="; then
+            job_id=$(echo "$output" | grep -o 'JOB_ID=[^[:space:]]*' | cut -d= -f2)
+            echo "job_id=$job_id" >> $GITHUB_OUTPUT
+
+            # Generate success message
+            ./scripts/smartling_messages.sh upload upload_message.txt "${{ github.event.inputs.platform }}" "$job_id" "${{ env.SMARTLING_PROJECT_ID }}" success
+          else
+            # Generate error message
+            ./scripts/smartling_messages.sh upload upload_message.txt "${{ github.event.inputs.platform }}" "" "${{ env.SMARTLING_PROJECT_ID }}" failed
+          fi
+
+      - name: Comment upload result
+        if: ${{ github.event.inputs.action == 'upload' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: smartling-upload
+          path: upload_message.txt
 
       - name: Check Status
         if: ${{ github.event.inputs.action == 'status' }}
         run: |
-          ./scripts/loc_tool.sh status --job-id "${{ github.event.inputs.job-id }}"
+          output=$(./scripts/loc_tool.sh status --job-id "${{ github.event.inputs.job-id }}" 2>&1)
+          echo "$output"
+
+          # Extract status and progress
+          status=$(echo "$output" | grep -o 'STATUS=[^[:space:]]*' | cut -d= -f2 || echo "UNKNOWN")
+          percent=$(echo "$output" | grep -o 'PERCENT=[^[:space:]]*' | cut -d= -f2 || echo "0")
+
+          # Generate status message
+          ./scripts/smartling_messages.sh status status_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" "$status" "$percent"
+
+      - name: Comment status result
+        if: ${{ github.event.inputs.action == 'status' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: smartling-status
+          path: status_message.txt
 
       - name: Approve Job
         if: ${{ github.event.inputs.action == 'approve' }}
         run: |
-          ./scripts/loc_tool.sh approve --job-id "${{ github.event.inputs.job-id }}"
+          output=$(./scripts/loc_tool.sh approve --job-id "${{ github.event.inputs.job-id }}" 2>&1)
+          echo "$output"
+
+          if echo "$output" | grep -q "APPROVED=1"; then
+            # Generate success message
+            ./scripts/smartling_messages.sh approve approve_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" success
+          else
+            # Generate error message
+            ./scripts/smartling_messages.sh approve approve_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" failed
+          fi
+
+      - name: Comment approve result
+        if: ${{ github.event.inputs.action == 'approve' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: smartling-approve
+          path: approve_message.txt
 
       - name: Download from Smartling
         if: ${{ github.event.inputs.action == 'download' }}
         run: |
-          ./scripts/smartling_download.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.force }}" "${{ github.event.inputs.platform }}"
+          set +e
+          output=$(./scripts/smartling_download.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.force }}" "${{ github.event.inputs.platform }}" 2>&1)
+          exit_code=$?
+          set -e
+          echo "$output"
+
+          if [ $exit_code -eq 0 ]; then
+            if echo "$output" | grep -q "Changes pushed to current branch"; then
+              # Generate success message
+              ./scripts/smartling_messages.sh download download_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" success
+            else
+              # Generate no changes message
+              ./scripts/smartling_messages.sh download download_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" no_changes
+            fi
+          else
+            # Check for specific errors
+            if echo "$output" | grep -q "Import would delete existing translations"; then
+              # Generate deletion error message
+              ./scripts/smartling_messages.sh download download_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" failed deletions
+            else
+              # Generate generic error message
+              ./scripts/smartling_messages.sh download download_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" failed
+            fi
+          fi
+
+      - name: Comment download result
+        if: ${{ github.event.inputs.action == 'download' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: smartling-download
+          path: download_message.txt

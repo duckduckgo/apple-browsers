@@ -1655,7 +1655,7 @@
 "feedback.form.submit" = "Submit";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Help Improve Privacy Pro";
+"feedback.form.title" = "Help Improve the DuckDuckGo Subscription";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -2620,9 +2620,6 @@ https://duckduckgo.com/mac";
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "About";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "In addition, we also offer [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), a three-in-one subscription service, integrated into our browser. Subscribers to Privacy Pro get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "In addition, we also offer the [DuckDuckGo subscription](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integrated into our browser. Subscribers get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, access to advanced AI models in our private AI chat service Duck.ai, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.";
 
@@ -2747,7 +2744,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo on Other Platforms";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Your Privacy Pro subscription expired";
+"settings.duckduckgo.subscription.expired.title" = "Your DuckDuckGo subscription expired";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Block email trackers and hide your address without switching your email provider.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2836,9 +2833,6 @@ Take back control of your personal information with the browser designed for dat
 /* Label describing a feature which is turned on */
 "settings.on" = "On";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Privacy Policy and Terms of Service";
 
@@ -2908,23 +2902,14 @@ Take back control of your personal information with the browser designed for dat
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "I Have a Subscription";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Your Privacy Pro subscription expired";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "DuckDuckGo Subscription";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "If your identity is stolen, we'll help restore it";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Get Privacy Pro";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Subscription Settings";
@@ -2943,9 +2928,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Try Free";
-
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Try Privacy Pro Free";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3091,9 +3073,6 @@ Take back control of your personal information with the browser designed for dat
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Edit Email";
 
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "Add your Privacy Pro subscription to this device";
-
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Cancel";
 
@@ -3112,9 +3091,6 @@ Take back control of your personal information with the browser designed for dat
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Get Started";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Use an email address to add Privacy Pro to this device.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "Add via email address";
 
@@ -3126,15 +3102,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Add Email";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Add Privacy Pro to Other Devices";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Add Privacy Pro to your other devices via Apple ID or by linking an email address. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Use this email to add your subscription on your other devices in the DuckDuckGo app. Go to Settings > Privacy Pro > I Have a Subscription. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Your subscription was purchased through the Google Play Store. To renew your subscription, please open Google Play Store subscription settings on a device signed in to the same Google Account used to originally purchase your subscription.";
@@ -3175,9 +3142,6 @@ Take back control of your personal information with the browser designed for dat
 /* FAQ Button */
 "subscription.faq" = "FAQs and Support";
 
-/* FAQ Description */
-"subscription.faq.description" = "Get answers to frequently asked questions or contact Privacy Pro support from our help pages.";
-
 /* Share Feedback Button */
 "subscription.feedback" = "Share Feedback";
 
@@ -3211,14 +3175,11 @@ Take back control of your personal information with the browser designed for dat
 /* View plans button text */
 "subscription.notFound.view.plans" = "View Plans";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Activate Privacy Pro on desktop to set up Personal Information Removal";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "In the DuckDuckGo browser for desktop, go to %1$@ and click %2$@ to get started.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Settings > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Settings > Subscribe to DuckDuckGo";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "I have a subscription";
@@ -3243,9 +3204,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Remove From This Device";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "You will no longer be able to access your Privacy Pro subscription on this device. This will not cancel your subscription, and it will remain active on your other devices.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Remove from this device?";
@@ -3318,9 +3276,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Your annual subscription renews on %@.";
-
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Free Trial Active";

@@ -67,9 +67,6 @@ final class PreferencesSidebarModel: ObservableObject {
     private let pixelFiring: PixelFiring?
     private var isInitialSelectedPanePixelFired = false
     private let featureFlagger: FeatureFlagger
-    var isSubscriptionRebrandingEnabled: Bool {
-        featureFlagger.isFeatureOn(.subscriptionRebranding)
-    }
 
     var selectedTabContent: AnyPublisher<Tab.TabContent, Never> {
         $selectedTabIndex.map { [tabSwitcherTabs] in tabSwitcherTabs[$0] }.eraseToAnyPublisher()

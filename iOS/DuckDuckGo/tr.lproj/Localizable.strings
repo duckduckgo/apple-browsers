@@ -1709,7 +1709,7 @@
 "feedback.form.submit" = "Gönder";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Privacy Pro'nun İyileştirilmesine Yardımcı Olun";
+"feedback.form.title" = "DuckDuckGo Aboneliğini Geliştirmeye Yardımcı Olun";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -2728,9 +2728,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Hakkında";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "Buna ek olarak, tarayıcımıza entegre edilmiş üçü bir arada abonelik hizmeti [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)'yu da sunuyoruz. Privacy Pro aboneleri, internetteki etkinliğinizin güvenliğini sağlayan hızlı ve basit bir [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), kişisel bilgilerinizi kişi bulma sitelerinden bulup kaldırma hizmeti ve çalınması durumunda kimliğinizi geri yükleme özelliği ile daha fazla gizlilik koruması elde eder.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "Ayrıca, tarayıcımıza entegre edilmiş bir [DuckDuckGo aboneliği](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) de sunuyoruz. Aboneler, internetteki etkinliklerinin güvenliğini sağlayan hızlı ve basit bir [VPN] (ddgQuickLink: //duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), yapay zekâ sohbet hizmetimiz Duck.ai'daki gelişmiş yapay zekâ modellerine erişim, kişisel bilgilerinizi kişi bulma sitelerinden bulan ve kaldıran ve çalınması durumunda kimliğinizi geri yükleyen bir hizmet ile daha fazla gizlilik koruması elde eder.";
 
@@ -2849,7 +2846,7 @@
 "settings.duckduckgo.on.other.platforms" = "Diğer Platformlarda DuckDuckGo";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Privacy Pro aboneliğiniz sona erdi";
+"settings.duckduckgo.subscription.expired.title" = "DuckDuckGo aboneliğinizin süresi doldu";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "E-posta sağlayıcınızı değiştirmeden e-posta izleyicileri engelleyin ve adresinizi gizleyin.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2938,9 +2935,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "Açık";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Gizlilik Politikası ve Hizmet Şartları";
 
@@ -3010,23 +3004,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Aboneliğim Var";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Privacy Pro aboneliğiniz sona erdi";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "DuckDuckGo Aboneliği";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Kimliğiniz çalınırsa kurtarmanıza yardımcı olacağız";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Privacy Pro'yu Al";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Abonelik Ayarları";
@@ -3045,9 +3030,6 @@
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Ücretsiz Deneyin";
-
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Privacy Pro'yu Ücretsiz Deneyin";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3199,9 +3181,6 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "E-postayı Düzenle";
 
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "Privacy Pro aboneliğinizi bu cihaza ekleyin";
-
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "İptal";
 
@@ -3220,9 +3199,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Başlayın";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Bu cihaza Privacy Pro eklemek için bir e-posta adresi kullanın.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "E-posta Adresiyle ekle";
 
@@ -3234,15 +3210,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "E-posta Ekle";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Privacy Pro'yu Diğer Cihazlara Ekleyin";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Privacy Pro'yu diğer cihazlarınıza Apple ID aracılığıyla veya bir e-posta adresi bağlayarak ekleyin. **[Daha fazla bilgi edinin](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Aboneliğinizi DuckDuckGo uygulamasındaki diğer cihazlarınıza eklemek için bu e-postayı kullanın. Ayarlar > Privacy Pro > Aboneliğim Var'a gidin. **[Daha fazla bilgi edinin](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Aboneliğiniz Google Play Store üzerinden satın alınmış. Aboneliğinizi yenilemek için lütfen ilk olarak aboneliğinizi satın alırken kullandığınız Google Hesabında oturum açılmış bir cihazda Google Play Store abonelik ayarlarını açın.";
@@ -3283,9 +3250,6 @@
 /* FAQ Button */
 "subscription.faq" = "SSS ve Destek";
 
-/* FAQ Description */
-"subscription.faq.description" = "Yardım sayfalarımızdan sıkça sorulan soruların yanıtlarını alabilir veya Privacy Pro destek ekibiyle iletişime geçebilirsiniz.";
-
 /* Share Feedback Button */
 "subscription.feedback" = "Geri Bildirim Paylaş";
 
@@ -3319,14 +3283,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Planları Görüntüle";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Personal Information Removal kurulumu için masaüstünde Privacy Pro'yu etkinleştirin";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "Masaüstü için DuckDuckGo tarayıcısında %1$@ adresine gidin ve başlamak için %2$@ seçeneğine tıklayın.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Ayarlar > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Ayarlar > DuckDuckGo'ya abone ol";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Aboneliğim Var";
@@ -3351,9 +3312,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Bu Cihazdan Kaldır";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "Privacy Pro aboneliğinize artık bu cihaz üzerinden erişemeyeceksiniz. Bu, aboneliğinizi iptal etmez ve abonelik diğer cihazlarınızda aktif kalır.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Bu cihazdan kaldırılsın mı?";
@@ -3426,9 +3384,6 @@
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Yıllık aboneliğiniz %@ tarihinde yenilenecek.";
-
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Ücretsiz Deneme Süresi Aktif";

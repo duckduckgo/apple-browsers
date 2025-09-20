@@ -1709,7 +1709,7 @@
 "feedback.form.submit" = "Odeslat";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Pomoz zlepšit službu Privacy Pro";
+"feedback.form.title" = "Pomoz nám vylepšit předplatné DuckDuckGo";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -2728,9 +2728,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "O společnosti";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "Kromě toho nabízíme taky službu [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/). To je předplacená služba „tři v jednom“, která je integrovaná v našem prohlížeči. Předplatitelé Privacy Pro získávají ještě větší ochranu soukromí díky rychlé a jednoduché [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), která pomáhá zabezpečit tvoje online aktivity, službě, která vyhledává a maže tvé osobní údaje ze stránek pro vyhledávání osob, a službě, která obnoví tvou identitu, kdyby ji někdo ukradl.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "Kromě toho nabízíme také [předplatné DuckDuckGo](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integrované do našeho prohlížeče. Předplatitelé získávají ještě lepší ochranu soukromí díky rychlé a jednoduché [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), která pomáhá zabezpečit online aktivity, přístup k pokročilým modelům umělé inteligence v naší soukromé AI chatovací službě Duck.ai, službu, která vyhledává a maže osobní údaje ze stránek pro vyhledávání osob, a službu, která obnoví tvou identitu, kdyby došlo k její krádeži.";
 
@@ -2849,7 +2846,7 @@
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo na jiných platformách";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Tvoje předplatné Privacy Pro vypršelo";
+"settings.duckduckgo.subscription.expired.title" = "Tvoje předplatné DuckDuckGo vypršelo";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Blokuje e-mailové trackery a skryje tvou adresu bez nutnosti přepínat poskytovatele e-mailu.\n[Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2938,9 +2935,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "Aktivní";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Zásady ochrany osobních údajů a podmínky služby";
 
@@ -3010,23 +3004,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Mám předplatné";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Tvoje předplatné Privacy Pro vypršelo";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "Předplatné DuckDuckGo";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Pokud dojde ke krádeži tvé identity, pomůžeme ti ji obnovit.";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Pořiď si službu Privacy Pro";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Nastavení předplatného";
@@ -3045,9 +3030,6 @@
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Vyzkoušet zdarma";
-
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Vyzkoušej zdarma službu Privacy Pro";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3199,9 +3181,6 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Upravit e-mail";
 
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "Přidej do tohoto zařízení své předplatné Privacy Pro";
-
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Zrušit";
 
@@ -3220,9 +3199,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Začínáme";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Pokud si do tohoto zařízení chceš přidat předplatné Privacy Pro, použij e-mailovou adresu.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "Přidat přes e-mailovou adresu";
 
@@ -3234,15 +3210,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Přidat e-mail";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Přidej předplatné Privacy Pro do dalších zařízení";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Přidej předplatné Privacy Pro do svých dalších zařízení přes Apple ID nebo propojením e-mailové adresy. **[Další informace](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Pomocí tohoto e-mailu si v aplikaci DuckDuckGo přidej předplatné do ostatních zařízení. Přejdi do Nastavení > Privacy Pro > Mám předplatné. **[Další informace](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Předplatné bylo zakoupeno prostřednictvím obchodu Google Play. Předplatné se dá obnovit tak, že otevřeš nastavení předplatného obchodu Google Play na zařízení přihlášeném ke stejnému účtu Google, který byl původně použit k nákupu předplatného.";
@@ -3283,9 +3250,6 @@
 /* FAQ Button */
 "subscription.faq" = "Časté dotazy a podpora";
 
-/* FAQ Description */
-"subscription.faq.description" = "Získej odpovědi na časté otázky nebo přes naše stránky nápovědy kontaktuj podporu služby Privacy Pro.";
-
 /* Share Feedback Button */
 "subscription.feedback" = "Podělte se o zpětnou vazbu";
 
@@ -3319,14 +3283,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Zobrazit tarify";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Aktivuj si na počítači službu Privacy Pro a nastav si v ní funkci Personal Information Removal";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "V prohlížeči DuckDuckGo pro počítače přejdi na %1$@ a klikni na %2$@.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Nastavení > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Nastavení > Předplatit si DuckDuckGo";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Mám předplatné";
@@ -3351,9 +3312,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Odebrat z tohohle zařízení";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "Na tomhle zařízení už nebudeš mít přístup k předplatnému Privacy Pro. Tím se tvoje předplatné nezruší, na tvých ostatních zařízeních zůstane aktivní.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Odebrat z tohohle zařízení?";
@@ -3426,9 +3384,6 @@
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Tvoje roční předplatné se obnoví %@.";
-
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Bezplatná zkušební verze je aktivní";

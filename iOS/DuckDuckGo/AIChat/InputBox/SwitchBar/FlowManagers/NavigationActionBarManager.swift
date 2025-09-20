@@ -35,7 +35,7 @@ final class NavigationActionBarManager {
     weak var delegate: NavigationActionBarManagerDelegate?
     
     private let switchBarHandler: SwitchBarHandling
-    private var navigationActionBarViewController: NavigationActionBarViewController?
+    private(set) var navigationActionBarViewController: NavigationActionBarViewController?
     private var navigationActionBarViewModel: NavigationActionBarViewModel?
 
     var view: UIView? { navigationActionBarViewController?.viewIfLoaded }

@@ -231,6 +231,18 @@ extension URL {
             ])
     }
 
+    static func duckAIAtb(atbWithVariant: String, setAtb: String?) -> URL {
+        var params: [String: String?] = [
+            DuckDuckGoParameters.ATB.activityType: DuckDuckGoParameters.ATB.duckAIValue,
+            DuckDuckGoParameters.ATB.atb: atbWithVariant,
+            DuckDuckGoParameters.ATB.setAtb: setAtb
+        ]
+
+        // Don't include setAtb if the parameter is nil
+        return Self.initialAtb
+            .appendingParameters(params.compactMapValues { $0 })
+    }
+
     static func exti(forAtb atb: String) -> URL {
         let extiUrl = URL(string: Self.exti)!
         return extiUrl.appendingParameter(name: DuckDuckGoParameters.ATB.atb, value: atb)
@@ -483,6 +495,7 @@ extension URL {
             static let email = "email"
 
             static let appUsageValue = "app_use"
+            static let duckAIValue = "duckai"
         }
     }
 

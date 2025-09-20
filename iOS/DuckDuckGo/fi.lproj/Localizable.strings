@@ -1709,7 +1709,7 @@
 "feedback.form.submit" = "Lähetä";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Auta parantamaan Privacy Prota";
+"feedback.form.title" = "Auta parantamaan DuckDuckGo-tilausta";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -2728,9 +2728,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Tietoja";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "Lisäksi tarjoamme myös [Privacy Pron](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), selaimeemme integroidun 3-in-1-tilauspalvelun. Privacy Pron tilaajat saavat entistä paremman tietosuojan nopealla ja yksinkertaisella [VPN:llä](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), joka auttaa suojaamaan verkkotoimintaasi. Tämä palvelu etsii ja poistaa henkilötietosi käyttäjiä etsiviltä sivustoilta ja palauttaa henkilöllisyytesi, jos se varastetaan.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "Lisäksi tarjoamme myös [DuckDuckGo-tilauksen](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integroituna selaimeemme. Tilaajat saavat entistä paremman yksityisyyden suojan helpolla ja nopealla [VPN:llä] (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), joka auttaa suojaamaan toimintaasi verkossa, pääsyn edistyneisiin tekoälymalleihin yksityisessä Duck.ai-tekoälykeskustelupalvelussamme, joka etsii ja poistaa henkilötietosi henkilöhakusivustoilta, ja palvelun, joka palauttaa henkilöllisyytesi, jos se varastetaan.";
 
@@ -2849,7 +2846,7 @@
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo muilla alustoilla";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Privacy Pro -tilauksesi on päättynyt";
+"settings.duckduckgo.subscription.expired.title" = "DuckDuckGo-tilauksesi on päättynyt";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Estä sähköpostiseuranta ja piilota osoitteesi vaihtamatta sähköpostintarjoajaa.\n[Lisätietoja](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2938,9 +2935,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "Päällä";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Tietosuojakäytäntö ja palveluehdot";
 
@@ -3010,23 +3004,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Minulla on tilaus";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Privacy Pro -tilauksesi on päättynyt";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "DuckDuckGo-tilaus";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Jos henkilöllisyytesi varastetaan, me autamme palauttamaan sen.";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Hanki Privacy Pro";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Tilauksen asetukset";
@@ -3045,9 +3030,6 @@
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Kokeile maksutta";
-
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Kokeile Privacy Pro -tilausta ilmaiseksi";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3199,9 +3181,6 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Muokkaa sähköpostiosoitetta";
 
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "Lisää Privacy Pro -tilauksesi tähän laitteeseen";
-
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Peruuta";
 
@@ -3220,9 +3199,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Aloita";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Lisää Privacy Pro tähän laitteeseen käyttämällä sähköpostiosoitetta.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "Lisää sähköpostiosoitteen kautta";
 
@@ -3234,15 +3210,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Lisää sähköpostiosoite";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Lisää Privacy Pro muihin laitteisiin";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Lisää Privacy Pro muihin laitteisiisi käyttämällä Apple ID:tä tai linkittämällä sähköpostiosoite. **[Lue lisää](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Lisää tilauksesi muihin laitteisiisi DuckDuckGo-sovelluksessa käyttämällä tätä sähköpostiosoitetta. Siirry kohtaan Asetukset > Privacy Pro > Minulla on tilaus. **[Lue lisää](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Tilauksesi on ostettu Google Play Kaupasta. Jos haluat uusia tilauksesi, avaa Google Play Kaupan tilausasetukset laitteella, jolla olet kirjautunut samalle Google-tilille, jolla alun perin ostit tilauksesi.";
@@ -3283,9 +3250,6 @@
 /* FAQ Button */
 "subscription.faq" = "Usein kysytyt kysymykset ja tuki";
 
-/* FAQ Description */
-"subscription.faq.description" = "Katso vastaukset usein kysyttyihin kysymyksiin tai ota yhteyttä Privacy Pron tukeen ohjesivuiltamme.";
-
 /* Share Feedback Button */
 "subscription.feedback" = "Jaa palaute";
 
@@ -3319,14 +3283,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Näytä tilaukset";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Aktivoi Privacy Pro tietokoneella Personal Information Removalin asentamiseksi";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "Avaa aluksi tietokoneessa DuckDuckGo-selain, siirry osoitteeseen %1$@ ja klikkaa %2$@.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Asetukset > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Asetukset > Tilaa DuckDuckGo";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Minulla on tilaus";
@@ -3351,9 +3312,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Poista tältä laitteelta";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "Et voi enää käyttää Privacy Pro -tilaustasi tällä laitteella. Tämä ei peruuta tilaustasi, vaan se pysyy aktiivisena muilla laitteillasi.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Poistetaanko tältä laitteelta?";
@@ -3426,9 +3384,6 @@
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Vuositilauksesi uusiutuu %@.";
-
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Ilmainen kokeilujakso on aktiivinen";

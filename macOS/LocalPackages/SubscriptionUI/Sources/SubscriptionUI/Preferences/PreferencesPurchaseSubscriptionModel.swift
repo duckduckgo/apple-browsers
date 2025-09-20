@@ -32,8 +32,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
     lazy var sheetModel = SubscriptionAccessViewModel(actionHandlers: sheetActionHandler,
-                                                      purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform,
-                                                      isRebrandingOn: { [weak self] in self?.featureFlagger.isFeatureOn(.subscriptionRebranding) ?? false })
+                                                      purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform)
 
     var shouldDirectlyLaunchActivationFlow: Bool {
         subscriptionManager.currentEnvironment.purchasePlatform == .stripe
@@ -90,10 +89,6 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
 
     var isPaidAIChatEnabled: Bool {
         featureFlagger.isFeatureOn(.paidAIChat) && subscriptionManager is DefaultSubscriptionManagerV2
-    }
-
-    var isSubscriptionRebrandingEnabled: Bool {
-        featureFlagger.isFeatureOn(.subscriptionRebranding)
     }
 
     /// Updates the user's eligibility for a free trial based on feature flag status and subscription manager checks.

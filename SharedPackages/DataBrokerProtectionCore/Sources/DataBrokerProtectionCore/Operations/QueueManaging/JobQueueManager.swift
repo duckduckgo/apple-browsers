@@ -1,5 +1,5 @@
 //
-//  BrokerProfileJobQueueManager.swift
+//  JobQueueManager.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -71,8 +71,8 @@ public enum DataBrokerProtectionQueueManagerDebugCommand {
                                completion: (() -> Void)?)
 }
 
-public protocol BrokerProfileJobQueueManaging {
-    var delegate: BrokerProfileJobQueueManagerDelegate? { get set }
+public protocol JobQueueManaging {
+    var delegate: JobQueueManagerDelegate? { get set }
 
     init(jobQueue: BrokerProfileJobQueue,
          jobProvider: BrokerProfileJobProviding,
@@ -99,12 +99,12 @@ public protocol BrokerProfileJobQueueManaging {
     var debugRunningStatusString: String { get }
 }
 
-public protocol BrokerProfileJobQueueManagerDelegate: AnyObject {
-    func queueManagerWillEnqueueOperations(_ queueManager: BrokerProfileJobQueueManaging)
+public protocol JobQueueManagerDelegate: AnyObject {
+    func queueManagerWillEnqueueOperations(_ queueManager: JobQueueManaging)
 }
 
-public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
-    public weak var delegate: BrokerProfileJobQueueManagerDelegate?
+public final class JobQueueManager: JobQueueManaging {
+    public weak var delegate: JobQueueManagerDelegate?
 
     private var jobQueue: BrokerProfileJobQueue
     private let jobProvider: BrokerProfileJobProviding
@@ -222,7 +222,7 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
     }
 }
 
-private extension BrokerProfileJobQueueManager {
+private extension JobQueueManager {
 
     func startScheduledJobsIfPermitted(for jobType: JobType,
                                        showWebView: Bool,
@@ -331,7 +331,7 @@ private extension BrokerProfileJobQueueManager {
     }
 }
 
-extension BrokerProfileJobQueueManager: BrokerProfileJobErrorDelegate {
+extension JobQueueManager: BrokerProfileJobErrorDelegate {
     public func dataBrokerOperationDidError(_ error: any Error, withBrokerName brokerName: String?, version: String?) {
         operationErrors.append(error)
 
@@ -348,7 +348,7 @@ extension BrokerProfileJobQueueManager: BrokerProfileJobErrorDelegate {
     }
 }
 
-extension BrokerProfileJobQueueManager: EmailConfirmationErrorDelegate {
+extension JobQueueManager: EmailConfirmationErrorDelegate {
     public func emailConfirmationOperationDidError(_ error: Error, withBrokerName brokerName: String?, version: String?) {
         operationErrors.append(error)
 

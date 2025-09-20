@@ -1709,7 +1709,7 @@
 "feedback.form.submit" = "Elküldés";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Segíts a Privacy Pro fejlesztésében";
+"feedback.form.title" = "Segíts javítani a DuckDuckGo-előfizetést";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -2728,9 +2728,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Rólunk";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "Kínálatunkban szerepel továbbá a böngészőbe integrált három az egyben [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) szolgáltatás. A Privacy Pro előfizetői még nagyobb adatvédelmet élvezhetnek egy gyors és egyszerű [VPN-nel](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), melynek segítségével biztonságossá tehető az online tevékenység oly módon, hogy a szolgáltatás megkeresi és eltávolítja a személyek keresésére alkalmas webhelyeken elérhető személyes adatokat, illetve eltulajdonítás esetén visszaállítja a személyazonosságot.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "Ezen felül böngészőnkbe integráltan kínáljuk a [DuckDuckGo-előfizetést](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/). Az előfizetők még nagyobb adatvédelmet élvezhetnek a következőknek köszönhetően: gyors és egyszerű [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), melynek segítségével biztonságossá tehető az online tevékenység; hozzáférés a fejlett MI-modellekhez (a privát MI-alapú csevegőszolgáltatásunkban, a Duck.ai-ban); egy szolgáltatás, amely felkutatja és eltávolítja a személyes adatokat a kereshető személyadatbázis-oldalakról; illetve egy másik szolgáltatás, amely segít helyreállítani a személyazonosságot annak ellopása esetén.";
 
@@ -2849,7 +2846,7 @@
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo más platformokhoz";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Lejárt a Privacy Pro-előfizetésed";
+"settings.duckduckgo.subscription.expired.title" = "A DuckDuckGo-előfizetésed lejárt";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Tiltsd le az e-mail-nyomkövetőket, és rejtsd el a címedet anélkül, hogy e-mail-szolgáltatót váltanál.\n[További információ](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2938,9 +2935,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "Be";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Adatvédelmi szabályzat és szolgáltatási feltételek";
 
@@ -3010,23 +3004,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Van előfizetésem";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Lejárt a Privacy Pro-előfizetésed";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "DuckDuckGo-előfizetés";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Ha ellopták a személyazonosságod, segítünk helyreállítani";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Privacy Pro előfizetése";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Előfizetési beállítások";
@@ -3045,9 +3030,6 @@
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Ingyenes próba";
-
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Próbáld ki a Privacy Prót ingyen";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3199,9 +3181,6 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "E-mail-cím szerkesztése";
 
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "Add hozzá a Privacy Pro-előfizetésedet ehhez az eszközhöz";
-
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Mégsem";
 
@@ -3220,9 +3199,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Első lépések";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Egy e-mail-cím megadásával adhatod hozzá a Privacy Pro szolgáltatást ehhez az eszközhöz.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "Hozzáadás e-mail-címmel";
 
@@ -3234,15 +3210,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "E-mail-cím hozzáadása";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Privacy Pro hozzáadása más eszközökhöz";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Add hozzá a Privacy Prót a többi eszközödhöz Apple ID-n keresztül vagy egy e-mail-cím hozzákapcsolásával. **[További információ](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "A DuckDuckGo-alkalmazásban hozzáadhatod az előfizetésedet a többi eszközödön ezzel az e-mail-címmel. Ezt a Beállítások > Privacy Pro > Van előfizetésem menüpontban tudod megtenni. **[További információ](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Előfizetésed a Google Play áruházban lett megvásárolva. Az előfizetés megújításához nyisd meg a Google Play áruház előfizetési beállításait egy olyan eszközön, amely ugyanabba a Google-fiókba van bejelentkezve, amellyel eredetileg megvásároltad az előfizetést.";
@@ -3283,9 +3250,6 @@
 /* FAQ Button */
 "subscription.faq" = "GYIK és segítségnyújtás";
 
-/* FAQ Description */
-"subscription.faq.description" = "A súgóoldalainkon választ kaphatsz a gyakran ismételt kérdésekre, vagy felveheted a kapcsolatot a Privacy Pro-támogatást nyújtó ügyfélszolgálattal.";
-
 /* Share Feedback Button */
 "subscription.feedback" = "Visszajelzés megosztása";
 
@@ -3319,14 +3283,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Csomagok megtekintése";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Privacy Pro aktiválása asztali számítógépen a Personal Information Removal beállításához";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "A kezdéshez a DuckDuckGo böngésző asztali verziójában lépj a %1$@ menüpontra, és kattints a %2$@ lehetőségre.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Beállítások > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Beállítások > Előfizetés a DuckDuckGóra";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Van előfizetésem";
@@ -3351,9 +3312,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Eltávolítás erről az eszközről";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "Ezen az eszközön többé nem férhetsz hozzá a Privacy Pro-előfizetésedhez. Ez nem szünteti meg az előfizetésedet, amely a többi eszközödön aktív marad.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Eltávolítod erről az eszközről?";
@@ -3426,9 +3384,6 @@
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Az éves előfizetésed megújul ekkor: %@.";
-
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Az ingyenes próbaidőszak aktív";

@@ -25,7 +25,7 @@ struct UnifiedFeedbackFormView: View {
     var body: some View {
         VStack(spacing: 0) {
             Group {
-                Text(UserText.feedbackFormTitle(isSubscriptionRebrandingEnabled: viewModel.isSubscriptionRebrandingEnabled))
+                Text(UserText.feedbackFormTitle)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.secondary)
             }

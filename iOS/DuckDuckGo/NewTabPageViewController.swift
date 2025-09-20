@@ -58,6 +58,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          messageNavigationDelegate: MessageNavigationDelegate,
          appSettings: AppSettings,
          internalUserCommands: URLBasedDebugCommands,
+         narrowLayoutInLandscape: Bool = false,
          appWidthObserver: AppWidthObserver = .shared) {
 
         self.associatedTab = tab
@@ -75,7 +76,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 privacyProDataReporter: privacyProDataReporting,
                                                 navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate))
 
-        super.init(rootView: NewTabPageView(viewModel: self.newTabPageViewModel,
+        super.init(rootView: NewTabPageView(narrowLayoutInLandscape: narrowLayoutInLandscape,
+                                            viewModel: self.newTabPageViewModel,
                                             messagesModel: self.messagesModel,
                                             favoritesViewModel: self.favoritesModel))
 

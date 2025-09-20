@@ -751,7 +751,7 @@ public struct UserText {
     static let browserFeedbackRequestFeature = NSLocalizedString("send.browser.feedback.request-feature", value: "Request a feature", comment: "Name of the option the user can chose to give browser feedback about a feature they would like")
     static let browserFeedbackGeneralFeedback = NSLocalizedString("send.browser.feedback.general-feedback", value: "General feedback", comment: "Name of the option the user can chose to give general browser feedback")
     static let browserFeedbackSelectCategory = NSLocalizedString("send.browser.feedback.select-category", value: "Select a category", comment: "Title of the picker where the user can chose the category of the feedback they want ot send.")
-    static let feedbackFormTitle = NSLocalizedString("feedback.form.title", value: "Help Improve Privacy Pro", comment: "Title of the feedback form")
+    static let feedbackFormTitle = NSLocalizedString("feedback.form.title", value: "Help Improve the DuckDuckGo Subscription", comment: "Title of the feedback form")
     static let generalFeedbackFormCategorySelect = NSLocalizedString("feedback.general.category.select", value: "Select a category", comment: "Prompt to select a category for general feedback")
     static let generalFeedbackFormCategoryPPro = NSLocalizedString("feedback.general.category.ppro", value: "Subscription and Payments", comment: "Category for subscription and payments feedback")
     static let generalFeedbackFormCategoryVPN = NSLocalizedString("feedback.general.category.vpn", value: "VPN", comment: "Category for VPN feedback")
@@ -920,21 +920,12 @@ public struct UserText {
 
     public static let aboutProtectionTagline = NSLocalizedString("settings.about.tagline", value: "Protection. Privacy. Peace of Mind.", comment: "about tagline")
 
-    public static func aboutText(isSubscriptionRebrandingOn: Bool) -> String {
-        let subscriptionSentence: String
-        if isSubscriptionRebrandingOn {
-            subscriptionSentence = NSLocalizedString(
-                "settings.about.subscription.sentence.rebranding.ai",
-                value: "In addition, we also offer the [DuckDuckGo subscription](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integrated into our browser. Subscribers get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, access to advanced AI models in our private AI chat service Duck.ai, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.",
-                comment: "About page subscription sentence: rebranding + AI chat"
-            )
-        } else {
-            subscriptionSentence = NSLocalizedString(
-                "settings.about.subscription.sentence.deprecated",
-                value: "In addition, we also offer [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), a three-in-one subscription service, integrated into our browser. Subscribers to Privacy Pro get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.",
-                comment: "About page subscription sentence: deprecated"
-            )
-        }
+    public static var aboutText: String {
+        let subscriptionSentence = NSLocalizedString(
+            "settings.about.subscription.sentence.rebranding.ai",
+            value: "In addition, we also offer the [DuckDuckGo subscription](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integrated into our browser. Subscribers get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, access to advanced AI models in our private AI chat service Duck.ai, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.",
+            comment: "About page subscription sentence: rebranding + AI chat"
+        )
 
         let aboutTemplate = NSLocalizedString(
             "settings.about.text.template",
@@ -1346,12 +1337,7 @@ public struct UserText {
     public static let settingsAboutSection = NSLocalizedString("settings.about.section", value: "About", comment: "Settings section title for About DuckDuckGo")
     public static let settingsFeedback = NSLocalizedString("settings.feedback", value: "Share Feedback", comment: "Settings cell for Feedback")
     public static let settingsBrowserFeedback = NSLocalizedString("settings.browser.feedback", value: "Browser Feedback", comment: "Settings cell for Browser Feedback")
-    public static func settingsSubscriptionFeedback(isSubscriptionRebrandingOn: Bool) -> String {
-        if isSubscriptionRebrandingOn {
-            return NSLocalizedString("settings.subscription.feedback", value: "DuckDuckGo Subscription", comment: "Settings cell for Subscription Feedback")
-        }
-        return NSLocalizedString("settings.subscription.feedback.deprecated", value: "Privacy Pro", comment: "Settings cell for Subscription Feedback")
-    }
+    public static let settingsSubscriptionFeedback = NSLocalizedString("settings.subscription.feedback", value: "DuckDuckGo Subscription", comment: "Settings cell for Subscription Feedback")
     public static let duckduckgoOnOtherPlatforms = NSLocalizedString("settings.duckduckgo.on.other.platforms", value: "DuckDuckGo on Other Platforms", comment: "Settings cell to link users to other products by DuckDuckGo")
 
     // General Section
@@ -1382,12 +1368,7 @@ public struct UserText {
     public static let settingsAutoLockDescription = NSLocalizedString("settings.autolock.description", value: "If Touch ID, Face ID, or a system passcode is enabled, you'll be asked to unlock the app when opening it.", comment: "Section footer Autolock description")
 
     // Subscription Section
-    public static func settingsSubscriptionSection(isSubscriptionRebrandingOn: Bool) -> String {
-        if isSubscriptionRebrandingOn {
-            return NSLocalizedString("settings.subscription.Section", value: "DuckDuckGo Subscription", comment: "Product name for the subscription bundle")
-        }
-        return NSLocalizedString("settings.ppro", value: "Privacy Pro", comment: "Product name for the subscription bundle")
-    }
+    public static let settingsSubscriptionSection = NSLocalizedString("settings.subscription.Section", value: "DuckDuckGo Subscription", comment: "Product name for the subscription bundle")
     public static let settingsPProSectionFooter = NSLocalizedString("settings.ppro.footer", value: "Privacy Policy and Terms of Service", comment: "Title for Link in the Footer of Privacy Pro section")
     public static func settingsSubscription(isPaidAIChatEnabled: Bool) -> String {
         if isPaidAIChatEnabled {
@@ -1409,18 +1390,8 @@ public struct UserText {
     }
     public static let settingsPProActivating = NSLocalizedString("settings.subscription.activating", value:"Activating", comment: "Privacy pro description subtitle in settings when the is activating")
 
-    public static func getSubscriptionButton(isSubscriptionRebrandingOn: Bool) -> String {
-        if isSubscriptionRebrandingOn {
-            return NSLocalizedString("settings.subscription.subscribe.button", value: "Subscribe to DuckDuckGo", comment: "Subscribe to DuckDuckGo button text")
-        }
-        return NSLocalizedString("settings.subscription.learn.more", value: "Get Privacy Pro", comment: "Get Privacy Pro button text for privacy pro")
-    }
-    public static func trySubscriptionButton(isSubscriptionRebrandingOn: Bool) -> String {
-        if isSubscriptionRebrandingOn {
-            return NSLocalizedString("settings.subscription.try.free.button", value: "Try Free", comment: "Try DuckDuckGo Subscription Free button text")
-        }
-        return NSLocalizedString("settings.subscription.try.free.no.ai.chat", value: "Try Privacy Pro Free", comment: "Try Privacy Pro Free button text for privacy pro")
-    }
+    public static let getSubscriptionButton = NSLocalizedString("settings.subscription.subscribe.button", value: "Subscribe to DuckDuckGo", comment: "Subscribe to DuckDuckGo button text")
+    public static let trySubscriptionButton = NSLocalizedString("settings.subscription.try.free.button", value: "Try Free", comment: "Try DuckDuckGo Subscription Free button text")
     public static let settingsPProIHaveASubscription = NSLocalizedString("settings.subscription.existing.subscription", value: "I Have a Subscription", comment: "I have a Subscription button text for privacy pro")
 
     public static let settingsPProManageSubscription = NSLocalizedString("settings.subscription.manage", value: "Subscription Settings", comment: "Subscription Settings button text for privacy pro")
@@ -1435,12 +1406,7 @@ public struct UserText {
     public static let settingsPProActivationPendingDescription = NSLocalizedString("settings.subscription.activation.pending.description", value: "This is taking longer than usual, please check back later.", comment: "Subscription activation pending description")
 
     // Expired Subscription
-    public static func settingsPProSubscriptionExpiredTitle(isRebrandingOn: Bool) -> String {
-        if isRebrandingOn {
-            return NSLocalizedString("settings.duckduckgo.subscription.expired.title", value: "Your Privacy Pro subscription expired", comment: "Subscription expired tittle message")
-        }
-        return NSLocalizedString("settings.subscription.expired.title", value: "Your Privacy Pro subscription expired", comment: "Subscription expired tittle message")
-    }
+    public static let settingsPProSubscriptionExpiredTitle = NSLocalizedString("settings.duckduckgo.subscription.expired.title", value: "Your DuckDuckGo subscription expired", comment: "Subscription expired tittle message")
 
     // Customize Section
     public static let settingsCustomizeSection = NSLocalizedString("settings.customize", value: "Customize", comment: "Settings title for the customize section")
@@ -1483,13 +1449,7 @@ public struct UserText {
     static let subscriptionCompletingPurchaseTitle = NSLocalizedString("subscription.progress.view.completing.purchase", value: "Completing purchase...", comment: "Progress view title when completing the purchase")
 
     // Subscription Settings
-    public static var subscriptionTitle: String {
-        // Temporary until rebranding launch
-        if AppDependencyProvider.shared.featureFlagger.isFeatureOn(.subscriptionRebranding) {
-            return NSLocalizedString("subscription.settings.title", value: "DuckDuckGo Subscription", comment: "Navigation bar Title for subscriptions")
-        }
-        return NSLocalizedString("subscription.title", value: "Privacy Pro", comment: "Navigation bar Title for subscriptions")
-    }
+    public static var subscriptionTitle = NSLocalizedString("subscription.settings.title", value: "DuckDuckGo Subscription", comment: "Navigation bar Title for subscriptions")
     public static let subscriptionSubscribed = NSLocalizedString("subscription.subscribed", value: "Subscribed", comment: "Subtitle in header when subscribed")
     public static let subscriptionCloseButton = NSLocalizedString("subscription.close", value: "Close", comment: "Navigation Button for closing subscription view")
     public static let trialSubscription = NSLocalizedString("subscription.trial", value: "Free Trial Active", comment: "Subtitle in header when on a free trial subscription")
@@ -1574,25 +1534,10 @@ public struct UserText {
         return String(format: localized, expiryDate)
     }
 
-    public static func subscriptionDevicesSectionHeader(isRebrandingOn: Bool) -> String {
-        if isRebrandingOn {
-            return NSLocalizedString("duckduckgo.subscription.add.to.devices.header", value: "Add your subscription to other devices", comment: "Header for section for activating subscription on other devices")
-        }
-        return NSLocalizedString("subscription.add.to.devices.header", value: "Add Privacy Pro to Other Devices", comment: "Header for section for activating subscription on other devices")
-    }
+    public static let subscriptionDevicesSectionHeader = NSLocalizedString("duckduckgo.subscription.add.to.devices.header", value: "Add your subscription to other devices", comment: "Header for section for activating subscription on other devices")
     public static let subscriptionRebrandingMessage = NSLocalizedString("subscription.rebranding.message", value: "Privacy Pro is now just called the DuckDuckGo subscription", comment: "Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription")
-    public static func subscriptionDevicesSectionNoEmailFooter(isRebrandingOn: Bool) -> String {
-        if isRebrandingOn {
-            return NSLocalizedString("duckduckgo.subscription.add.to.devices.no.email.footer", value: "Add your subscription to your other devices via Apple ID or by linking an email address. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email was not yet added")
-        }
-        return NSLocalizedString("subscription.add.to.devices.no.email.footer", value: "Add Privacy Pro to your other devices via Apple ID or by linking an email address. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email was not yet added")
-    }
-    public static func subscriptionDevicesSectionWithEmailFooter(isRebrandingOn: Bool) -> String {
-        if isRebrandingOn {
-            return NSLocalizedString("duckduckgo.subscription.add.to.devices.with.email.footer", value: "Use this email to add your subscription on your other devices in the DuckDuckGo app, go to Settings > DuckDuckGo Subscription > I Have a Subscription. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email is added")
-        }
-        return NSLocalizedString("subscription.add.to.devices.with.email.footer", value: "Use this email to add your subscription on your other devices in the DuckDuckGo app. Go to Settings > Privacy Pro > I Have a Subscription. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email is added")
-    }
+    public static let subscriptionDevicesSectionNoEmailFooter = NSLocalizedString("duckduckgo.subscription.add.to.devices.no.email.footer", value: "Add your subscription to your other devices via Apple ID or by linking an email address. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email was not yet added")
+    public static let subscriptionDevicesSectionWithEmailFooter = NSLocalizedString("duckduckgo.subscription.add.to.devices.with.email.footer", value: "Use this email to add your subscription on your other devices in the DuckDuckGo app, go to Settings > DuckDuckGo Subscription > I Have a Subscription. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email is added")
     public static let subscriptionRemoveFromDevice = NSLocalizedString("subscription.remove.from.device.button", value: "Remove From This Device", comment: "Remove from this device button")
     public static let subscriptionManageTitle = NSLocalizedString("subscription.manage.title", value: "Subscription", comment: "Header for the subscription section")
     public static let subscriptionManagePlan = NSLocalizedString("subscription.manage.plan", value: "Manage Plan", comment: "Manage Plan header")
@@ -1600,12 +1545,7 @@ public struct UserText {
     public static let subscriptionHelpAndSupport = NSLocalizedString("subscription.help", value: "Help and support", comment: "Help and support Section header")
     public static let subscriptionFAQ = NSLocalizedString("subscription.faq", value: "FAQs and Support", comment: "FAQ Button")
     public static let subscriptionFeedback = NSLocalizedString("subscription.feedback", value: "Share Feedback", comment: "Share Feedback Button")
-    public static func subscriptionFAQFooter(isRebrandingOn: Bool) -> String {
-        if isRebrandingOn {
-            return NSLocalizedString("duckduckgo.subscription.faq.description", value: "Get answers to frequently asked questions or contact subscription support from our help pages.", comment: "FAQ Description")
-        }
-        return NSLocalizedString("subscription.faq.description", value: "Get answers to frequently asked questions or contact Privacy Pro support from our help pages.", comment: "FAQ Description")
-    }
+    public static let subscriptionFAQFooter = NSLocalizedString("duckduckgo.subscription.faq.description", value: "Get answers to frequently asked questions or contact subscription support from our help pages.", comment: "FAQ Description")
 
     // Update or cancel internal plan
     public static let subscriptionManageInternalTitle = "Change Plan or Billing"
@@ -1613,32 +1553,16 @@ public struct UserText {
 
     // Remove subscription confirmation
     public static let subscriptionRemoveFromDeviceConfirmTitle = NSLocalizedString("subscription.remove.from.device.title", value: "Remove from this device?", comment: "Remove from device confirmation dialog title")
-    public static func subscriptionRemoveFromDeviceConfirmText(isRebrandingOn: Bool) -> String {
-        if isRebrandingOn {
-            return NSLocalizedString("duckduckgo.subscription.remove.from.device.text", value: "You will no longer be able to access your DuckDuckGo subscription on this device. This will not cancel your subscription, and it will remain active on your other devices.", comment: "Remove from device confirmation dialog text")
-        }
-        return NSLocalizedString("subscription.remove.from.device.text", value: "You will no longer be able to access your Privacy Pro subscription on this device. This will not cancel your subscription, and it will remain active on your other devices.", comment: "Remove from device confirmation dialog text")
-    }
+    public static let subscriptionRemoveFromDeviceConfirmText = NSLocalizedString("duckduckgo.subscription.remove.from.device.text", value: "You will no longer be able to access your DuckDuckGo subscription on this device. This will not cancel your subscription, and it will remain active on your other devices.", comment: "Remove from device confirmation dialog text")
     public static let subscriptionRemove = NSLocalizedString("subscription.remove.subscription", value: "Remove Subscription", comment: "Remove subscription button text")
     public static let subscriptionRemoveCancel = NSLocalizedString("subscription.remove.subscription.cancel", value: "Cancel", comment: "Remove subscription cancel button text")
     public static let subscriptionRemovalConfirmation = NSLocalizedString("subscription.cancel.message", value: "Your subscription has been removed from this device.", comment: "Subscription Removal confirmation message")
 
     // Subscription Restore
     public static let subscriptionActivateViewTitle = NSLocalizedString("subscription.activate.view.title", value: "I Have a Subscription", comment: "View title for activating subscription")
-    public static func subscriptionActivateHeaderTitle (isRebrandingOn: Bool) -> String {
-        if isRebrandingOn {
-            return NSLocalizedString("duckduckgo.subscription.activate.header.title", value: "Add your DuckDuckGo subscription to this device", comment: "Header title for the subscription activation view")
-        }
-        return NSLocalizedString("subscription.activate.header.title", value: "Add your Privacy Pro subscription to this device", comment: "Header title for the subscription activation view")
-    }
-
+    public static let subscriptionActivateHeaderTitle = NSLocalizedString("duckduckgo.subscription.activate.header.title", value: "Add your DuckDuckGo subscription to this device", comment: "Header title for the subscription activation view")
     public static let subscriptionActivateViaEmailTitle = NSLocalizedString("subscription.activate.via.email.title", value: "Add via email address", comment: "Title for adding subscription via email address")
-    public static func subscriptionActivateViaEmailDescription(isRebrandingOn: Bool) -> String {
-        if isRebrandingOn {
-            return NSLocalizedString("duckduckgo.subscription.activate.via.email.description", value: "Use an email address to add your subscription to this device.", comment: "Description for adding subscription via email address")
-        }
-        return NSLocalizedString("subscription.activate.via.email.description", value: "Use an email address to add Privacy Pro to this device.", comment: "Description for adding subscription via email address")
-    }
+    public static let subscriptionActivateViaEmailDescription = NSLocalizedString("duckduckgo.subscription.activate.via.email.description", value: "Use an email address to add your subscription to this device.", comment: "Description for adding subscription via email address")
     public static let subscriptionActivateViaEmailButton = NSLocalizedString("subscription.activate.via.email.button", value: "Get Started", comment: "Button title for starting the process of adding subscription via email address")
 
     public static let subscriptionActivateViaAppleAccountTitle = NSLocalizedString("subscription.activate.via.apple.account.title", value: "Add via Apple Account", comment: "Title for adding subscription via Apple Account")
@@ -1688,14 +1612,9 @@ public struct UserText {
 
 
     // PIR:
-    public static func subscriptionPIRHeroText(isRebrandingOn: Bool) -> String {
-        if isRebrandingOn {
-            return NSLocalizedString("duckduckgo.subscription.pir.hero", value: "Activate the DuckDuckGo subscription on desktop to set up Personal Information Removal", comment: "Hero Text for Personal information removal")
-        }
-        return NSLocalizedString("subscription.pir.hero", value: "Activate Privacy Pro on desktop to set up Personal Information Removal", comment: "Hero Text for Personal information removal")
-    }
-    public static let subscriptionPIRHeroDetail = NSLocalizedString("subscription.pir.heroText", value: "In the DuckDuckGo browser for desktop, go to %@ and click %@ to get started.", comment: "Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription>")
-    public static let subscriptionPIRHeroDesktopMenuLocation = NSLocalizedString("subscription.pir.heroTextLocation", value: "Settings > Privacy Pro", comment: "Settings references a menu in the Desktop app, Privacy Pro, references our product name")
+    public static let subscriptionPIRHeroText = NSLocalizedString("duckduckgo.subscription.pir.hero", value: "Activate the DuckDuckGo subscription on desktop to set up Personal Information Removal", comment: "Hero Text for Personal information removal")
+    public static let subscriptionPIRHeroDetail = NSLocalizedString("subscription.pir.heroText", value: "In the DuckDuckGo browser for desktop, go to %@ and click %@ to get started.", comment: "Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription>")
+    public static let subscriptionPIRHeroDesktopMenuLocation = NSLocalizedString("subscription.pir.heroTextLocation", value: "Settings > Subscribe to DuckDuckGo", comment: "Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name")
     public static let subscriptionPIRHeroDesktopMenuItem = NSLocalizedString("subscription.pir.heroTextMenyEntry", value: "I have a subscription", comment: "Menu item for enabling Personal Information Removal on Desktop")
     public static let subscriptionPIRWindows = NSLocalizedString("subscription.pir.windows", value: "Windows", comment: "Text for the 'Windows' button")
     public static let subscriptionPIRMacOS = NSLocalizedString("subscription.pir.macos", value: "Mac", comment: "Text for the 'macOS' button")

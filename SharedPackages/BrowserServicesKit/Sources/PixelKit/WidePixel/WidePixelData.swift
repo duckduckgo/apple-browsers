@@ -169,11 +169,9 @@ extension WidePixelAppData: WidePixelParameterProviding {
 public struct WidePixelContextData: Codable {
 
     public var name: String?
-    public var data: [String: String]?
 
-    public init(name: String? = nil, data: [String: String]? = nil) {
+    public init(name: String? = nil) {
         self.name = name
-        self.data = data
     }
 
 }
@@ -182,12 +180,7 @@ extension WidePixelContextData: WidePixelParameterProviding {
 
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
-
         if let name = name { parameters[WidePixelParameter.Context.name] = name }
-        if let data = data {
-            for (key, value) in data { parameters["context.data.\(key)"] = value }
-        }
-
         return parameters
     }
 

@@ -130,7 +130,7 @@ struct Foreground: ForegroundHandling {
         services.defaultBrowserPromptService.resume()
         services.dbpService.resume()
         services.inactivityNotificationSchedulerService.resume()
-        services.widePixelService.resume()
+        services.wideEventService.resume()
         appDependencies.launchSourceManager.handleAppAction(launchAction)
         appDependencies.mainCoordinator.onForeground()
         

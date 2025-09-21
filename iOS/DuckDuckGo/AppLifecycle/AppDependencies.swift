@@ -47,7 +47,7 @@ struct AppServices {
     let defaultBrowserPromptService: DefaultBrowserPromptService
     let systemSettingsPiPTutorialService: SystemSettingsPiPTutorialService
     let inactivityNotificationSchedulerService: InactivityNotificationSchedulerService
-    let widePixelService: WideEventService
+    let wideEventService: WideEventService
     let aiChatService: AIChatService
 
 }

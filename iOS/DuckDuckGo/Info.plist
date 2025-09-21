@@ -183,7 +183,7 @@
 	<array>
 		<dict>
 			<key>UIApplicationShortcutItemIconFile</key>
-			<string>Clipboard</string>
+			<string>ApplicationShortcutItemPaste</string>
 			<key>UIApplicationShortcutItemTitle</key>
 			<string>Paste from Clipboard</string>
 			<key>UIApplicationShortcutItemType</key>
@@ -191,7 +191,7 @@
 		</dict>
 		<dict>
 			<key>UIApplicationShortcutItemIconFile</key>
-			<string>Key-24</string>
+			<string>ApplicationShortcutItemPasswords</string>
 			<key>UIApplicationShortcutItemTitle</key>
 			<string>Search Passwords</string>
 			<key>UIApplicationShortcutItemType</key>
@@ -199,15 +199,7 @@
 		</dict>
 		<dict>
 			<key>UIApplicationShortcutItemIconFile</key>
-			<string>AIChat-24</string>
-			<key>UIApplicationShortcutItemTitle</key>
-			<string>Duck.ai</string>
-			<key>UIApplicationShortcutItemType</key>
-			<string>com.duckduckgo.mobile.ios.aichat</string>
-		</dict>
-		<dict>
-			<key>UIApplicationShortcutItemIconFile</key>
-			<string>Microphone-Solid-Search-24</string>
+			<string>ApplicationShortcutItemVoice</string>
 			<key>UIApplicationShortcutItemTitle</key>
 			<string>Voice Search</string>
 			<key>UIApplicationShortcutItemType</key>

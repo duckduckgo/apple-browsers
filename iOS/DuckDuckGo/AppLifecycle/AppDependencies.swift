@@ -48,5 +48,6 @@ struct AppServices {
     let systemSettingsPiPTutorialService: SystemSettingsPiPTutorialService
     let inactivityNotificationSchedulerService: InactivityNotificationSchedulerService
     let widePixelService: WideEventService
+    let aiChatService: AIChatService
 
 }

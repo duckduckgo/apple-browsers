@@ -767,6 +767,8 @@
 		85E242172AB1B54D000F3E28 /* ReturnUserMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85E242162AB1B54D000F3E28 /* ReturnUserMeasurement.swift */; };
 		85E4FD112DBA75DF002CA888 /* FeatureDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85E4FD102DBA75DC002CA888 /* FeatureDiscovery.swift */; };
 		85E58C2C28FDA94F006A801A /* FavoritesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85E58C2B28FDA94F006A801A /* FavoritesViewController.swift */; };
+		85E8036F2E785BD8008E87CA /* ApplicationShortcutItems.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85E8036E2E785BD8008E87CA /* ApplicationShortcutItems.xcassets */; };
+		85E803732E786B95008E87CA /* AIChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85E803722E786B95008E87CA /* AIChatService.swift */; };
 		85EE7F55224667DD000FE757 /* WebContainer.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 85EE7F54224667DD000FE757 /* WebContainer.storyboard */; };
 		85EE7F572246685B000FE757 /* WebContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85EE7F562246685B000FE757 /* WebContainerViewController.swift */; };
 		85EE7F59224673C5000FE757 /* WebContainerNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85EE7F58224673C5000FE757 /* WebContainerNavigationController.swift */; };
@@ -2684,6 +2686,8 @@
 		85E242162AB1B54D000F3E28 /* ReturnUserMeasurement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReturnUserMeasurement.swift; sourceTree = "<group>"; };
 		85E4FD102DBA75DC002CA888 /* FeatureDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureDiscovery.swift; sourceTree = "<group>"; };
 		85E58C2B28FDA94F006A801A /* FavoritesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesViewController.swift; sourceTree = "<group>"; };
+		85E8036E2E785BD8008E87CA /* ApplicationShortcutItems.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = ApplicationShortcutItems.xcassets; sourceTree = "<group>"; };
+		85E803722E786B95008E87CA /* AIChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatService.swift; sourceTree = "<group>"; };
 		85EE7F54224667DD000FE757 /* WebContainer.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = WebContainer.storyboard; sourceTree = "<group>"; };
 		85EE7F562246685B000FE757 /* WebContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebContainerViewController.swift; sourceTree = "<group>"; };
 		85EE7F58224673C5000FE757 /* WebContainerNavigationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebContainerNavigationController.swift; sourceTree = "<group>"; };
@@ -5952,6 +5956,7 @@
 				98788E9C2521DA1E00D55218 /* Localizable.stringsdict */,
 				85DFEDF624CB1CAB00973FE7 /* ShareSheet.xcassets */,
 				85C29709247EB7AA0063A335 /* Text.xcassets */,
+				85E8036E2E785BD8008E87CA /* ApplicationShortcutItems.xcassets */,
 			);
 			name = UserInterfaceResources;
 			sourceTree = "<group>";
@@ -7733,6 +7738,7 @@
 		CBAD0F0E2D006291006267B8 /* AppServices */ = {
 			isa = PBXGroup;
 			children = (
+				85E803722E786B95008E87CA /* AIChatService.swift */,
 				369E69272E5F4B8500F98A8F /* InactivityNotificationSchedulerService.swift */,
 				9F2E797D2E0B9F6500E2BEF3 /* DefaultBrowserPromptService.swift */,
 				9858189F2D8C296D00993B04 /* AppKeyValueFileStoreService.swift */,
@@ -9606,6 +9612,7 @@
 				1DDF402B2BA05A65006850D9 /* Settings.xcassets in Resources */,
 				984147A824F0259000362052 /* Onboarding.storyboard in Resources */,
 				984147AE24F0261A00362052 /* Feedback.storyboard in Resources */,
+				85E8036F2E785BD8008E87CA /* ApplicationShortcutItems.xcassets in Resources */,
 				984147B724F0268D00362052 /* PrivacyDashboard.storyboard in Resources */,
 				9FC555D12E2F4AFC00763BEC /* default-browser-tutorial.mp4 in Resources */,
 				F176699F1E40BC86003D3222 /* Settings.storyboard in Resources */,
@@ -10212,6 +10219,7 @@
 				31D4CD502D4D3CD600BC27C6 /* Navigatable.swift in Sources */,
 				D668D9292B69681C008E2FF2 /* IdentityTheftRestorationPagesUserScript.swift in Sources */,
 				D64648AD2B59936B0033090B /* SubscriptionEmailView.swift in Sources */,
+				85E803732E786B95008E87CA /* AIChatService.swift in Sources */,
 				F4147354283BF834004AA7A5 /* AutofillContentScopeFeatureToggles.swift in Sources */,
 				986DA94A24884B18004A7E39 /* WebViewTransition.swift in Sources */,
 				9F0949A72D389F1E0079291B /* MaliciousSiteProtectionAPI.swift in Sources */,

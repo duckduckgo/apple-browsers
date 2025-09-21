@@ -65,7 +65,7 @@ final class SyncRecoveryPromptPresenterTests: XCTestCase {
 
         // Then
         XCTAssertNotNil(presentedViewController)
-        XCTAssertTrue(presentedViewController is UIHostingController<SyncRecoveryPromptView>)
+        XCTAssertTrue(presentedViewController is SyncRecoveryPromptHostingController)
     }
 
     // MARK: - Alternative Prompt Tests

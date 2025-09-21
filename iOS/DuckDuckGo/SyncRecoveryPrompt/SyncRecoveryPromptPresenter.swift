@@ -28,12 +28,32 @@ protocol SyncRecoveryPromptPresenting: AnyObject {
                                    onSyncFlowSelected: @escaping (String) -> Void)
 }
 
+// MARK: - Custom Hosting Controllers for Orientation Control
+
+final class SyncRecoveryPromptHostingController: UIHostingController<SyncRecoveryPromptView> {
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return .all
+        }
+        return .portrait
+    }
+}
+
+final class SyncRecoveryAlternativeHostingController: UIHostingController<SyncRecoveryAlternativeView> {
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return .all
+        }
+        return .portrait
+    }
+}
+
 @MainActor
 final class SyncRecoveryPromptPresenter: NSObject, SyncRecoveryPromptPresenting {
     
     func presentSyncRecoveryPrompt(from viewController: UIViewController,
                                    onSyncFlowSelected: @escaping (String) -> Void) {
-        let promptController = UIHostingController(
+        let promptController = SyncRecoveryPromptHostingController(
             rootView: SyncRecoveryPromptView(
                 onSyncWithAnotherDevice: { [weak viewController] in
                     Pixel.fire(pixel: .syncRecoveryPromptSyncWithAnotherDeviceTapped)
@@ -64,7 +84,7 @@ final class SyncRecoveryPromptPresenter: NSObject, SyncRecoveryPromptPresenting 
     
     private func presentAlternativePrompt(from viewController: UIViewController,
                                           onSyncFlowSelected: @escaping (String) -> Void) {
-        let alternativeController = UIHostingController(
+        let alternativeController = SyncRecoveryAlternativeHostingController(
             rootView: SyncRecoveryAlternativeView(
                 onSyncFlowSelected: { [weak viewController] flowType in
                     // Fire appropriate pixel based on which button was tapped

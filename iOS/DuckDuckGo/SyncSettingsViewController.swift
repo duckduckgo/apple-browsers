@@ -338,7 +338,6 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
                 showSyncWithAnotherDevice()
             }
         }
-        self.source = nil
     }
 
     private func startSyncBackupIfNecessary() {
@@ -350,7 +349,6 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         Task { @MainActor in
             await rootView.model.presentSyncWithSetUpSheetIfNeeded()
         }
-        self.source = nil
     }
 
     private func askForAuthThenStartPairing() {
@@ -547,7 +545,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
 
     private func sendCodeRecognisedPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
         guard setupSource != .recovery, setupSource != .unknown else { return }
-        let parameters = [PixelParameters.source: setupSource.rawValue]
+        let parameters = source.map { [PixelParameters.source: $0] } ?? [PixelParameters.source: setupSource.rawValue]
         switch codeSource {
         case .qrCode:
             Pixel.fire(pixel: .syncSetupBarcodeScannerSuccess, withAdditionalParameters: parameters, includedParameters: [.appVersion])
@@ -575,7 +573,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
 
     private func sendSetupEndedSuccessfullyPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
         guard setupSource != .recovery, setupSource != .unknown else { return }
-        let parameters = [PixelParameters.source: setupSource.rawValue]
+        let parameters = source.map { [PixelParameters.source: $0] } ?? [PixelParameters.source: setupSource.rawValue]
         switch codeSource {
         case .pastedCode, .qrCode:
             Pixel.fire(pixel: .syncSetupEndedSuccessful, withAdditionalParameters: parameters, includedParameters: [.appVersion])

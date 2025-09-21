@@ -23,6 +23,7 @@ import NewTabPage
 import os.log
 import Persistence
 import PixelKit
+import Common
 
 protocol NewTabPageAIChatShortcutSettingProviding: AnyObject {
     var isAIChatShortcutEnabled: Bool { get set }
@@ -145,6 +146,11 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     var showCustomizePopover: Bool {
         get {
+#if REVIEW
+            if AppVersion.runType == .uiTests {
+                return false
+            }
+#endif
             if customizePopoverPresentationCount > Constants.maxNumberOfPopoverPresentations.rawValue {
                 return false
             } else {

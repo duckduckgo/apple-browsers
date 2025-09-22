@@ -4,6 +4,7 @@
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
+// swiftlint:disable file_length
 
 import Foundation
 import WebKit
@@ -152,6 +153,7 @@ public class SitePerformanceTester: NSObject {
         return nil
     }
 
+    // swiftlint:disable:next function_body_length
     private func collectPerformanceMetrics() async -> DetailedPerformanceMetrics? {
         let script = """
             (function() {

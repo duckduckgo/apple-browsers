@@ -31,21 +31,12 @@
     const paintEntries = performance.getEntriesByType('paint');
     const firstContentfulPaint = paintEntries.find(entry => entry.name === 'first-contentful-paint');
 
-<<<<<<< HEAD:macOS/LocalPackages/PerformanceTest/Sources/PerformanceTest/Resources/JavaScript/performanceMetrics.js
-    // LCP (If implemented)
-    const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
-    const largestContentfulPaint = lcpEntries.length > 0 ? lcpEntries[lcpEntries.length - 1] : null;
-
-    // Other Metrics
-    const metrics = {
-=======
     // LCP (If available)
     const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
     const largestContentfulPaint = lcpEntries.length > 0 ? lcpEntries[lcpEntries.length - 1] : null;
 
     // Return metrics
     return {
->>>>>>> b0e50b6f1 (Refactor strings to constants and properly load JavaScript from resources):macOS/LocalPackages/PerformanceTest/Sources/PerformanceTest/Resources/performanceMetrics.js
         // Time to First Byte
         timeToFirstByte: navigationEntry.responseStart - navigationEntry.fetchStart,
 

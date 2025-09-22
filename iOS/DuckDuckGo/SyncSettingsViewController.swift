@@ -229,6 +229,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
     private func updateSyncPausedState(_ viewModel: SyncSettingsViewModel, syncPausedStateManager: any SyncPausedStateManaging) {
         viewModel.isSyncBookmarksPaused = syncPausedStateManager.isSyncBookmarksPaused
         viewModel.isSyncCredentialsPaused = syncPausedStateManager.isSyncCredentialsPaused
+        viewModel.isSyncCreditCardsPaused = syncPausedStateManager.isSyncCreditCardsPaused
         viewModel.isSyncPaused = syncPausedStateManager.isSyncPaused
     }
 

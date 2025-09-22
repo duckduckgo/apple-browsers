@@ -852,10 +852,8 @@ extension MainViewController {
         }
 
         // Use the package to handle everything
-        // PR1: Core only - UI components will be added in PR2
-        // let windowController = PerformanceTestWindowController(webView: currentTab.webView)
-        // windowController.showWindow(nil)
-        print("Performance test UI not available in PR1 - core functionality only")
+        let windowController = PerformanceTestWindowController(webView: currentTab.webView)
+        windowController.showWindow(nil)
     }
 }
 

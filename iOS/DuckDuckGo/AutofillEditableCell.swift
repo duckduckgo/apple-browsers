@@ -32,7 +32,8 @@ struct AutofillEditableCell: View {
     let inEditMode: Bool
     var characterLimit: Int?
     @Binding var selectedCell: UUID?
-    
+    let textFieldAccessibilityIdentifier: String
+
     @FocusState private var isFieldFocused: Bool
     
     var body: some View {
@@ -61,6 +62,7 @@ struct AutofillEditableCell: View {
                                    characterLimit: characterLimit)
                 }
             }
+            .accessibilityIdentifier(textFieldAccessibilityIdentifier)
         }
         .frame(minHeight: 60)
         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))

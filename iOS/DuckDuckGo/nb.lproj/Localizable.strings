@@ -3421,6 +3421,36 @@
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Synkroniser og sikkerhetskopier passordene dine";
 
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sync & Backup denne enheten";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Ved å oppbevare gjenopprettingskoden din kan du lett gjenopprette passordene dine i fremtiden.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Synkroniserte passord kan bare gjenopprettes hvis du har tilgang til en annen enhet, eller ved å bruke gjenopprettingskoden som du får som en del av Sync & Backup-konfigurasjonen.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Skann gjenopprettingskoden";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Har du ingen annen enhet tilgjengelig? Skann gjenopprettingskoden.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Har du ingen annen enhet?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "DuckDuckGo-passord overføres ikke med iCloud fordi de er kryptert på enheten din. Alt det andre er allerede her.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Synkroniser med en annen enhet";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Er du på en ny %@? La oss synkronisere passordene dine.";
+
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Fjern";
 

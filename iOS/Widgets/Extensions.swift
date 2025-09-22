@@ -1,5 +1,5 @@
 //
-//  ColorExtension.swift
+//  Extensions.swift
 //  DuckDuckGo
 //
 //  Copyright © 2020 DuckDuckGo. All rights reserved.

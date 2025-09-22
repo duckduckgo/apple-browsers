@@ -83,163 +83,162 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let xFFFFFFC6 = Color(0xFFFFFFc6)
 
     // URL bar
-    private static let urlBar = DynamicColor(lightColor: .white, darkColor: x474747)
+    public static let urlBar = DynamicColor(lightColor: .white, darkColor: x474747)
 
     // Surfaces
-    private static let surface = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
-    private static let surfaceTertiary = DynamicColor(lightColor: .white, darkColor: .x474747)
+    public static let surface = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
+    public static let surfaceTertiary = DynamicColor(lightColor: .white, darkColor: .x474747)
 
     // Backgrounds
-    private static let backdrop = DynamicColor(lightColor: xE0E0E0, darkColor: x080808)
-    private static let background = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
-    private static let backgroundTertiary = DynamicColor(lightColor: .white, darkColor: x474747)
-    private static let backgroundSheets = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
-    private static let backgroundBlur = DynamicColor(staticColor: .gray90.opacity(0.7))
+    public static let backdrop = DynamicColor(lightColor: xE0E0E0, darkColor: x080808)
+    public static let background = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
+    public static let backgroundTertiary = DynamicColor(lightColor: .white, darkColor: x474747)
+    public static let backgroundSheets = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
+    public static let backgroundBlur = DynamicColor(staticColor: .gray90.opacity(0.7))
 
     // Shadow
-    private static let shadowPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.04), darkColor: .shade(0.16))
-    private static let shadowSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.08), darkColor: .shade(0.24))
-    private static let shadowTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.16), darkColor: .shade(0.32))
+    public static let shadowPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.04), darkColor: .shade(0.16))
+    public static let shadowSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.08), darkColor: .shade(0.24))
+    public static let shadowTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.16), darkColor: .shade(0.32))
 
     // Controls
-    private static let controlsFillPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
-    private static let controlsFillSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.12), darkColor: xF9F9F9.opacity(0.18))
-    private static let controlsFillTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.18), darkColor: xF9F9F9.opacity(0.24))
+    public static let controlsFillPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
+    public static let controlsFillSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.12), darkColor: xF9F9F9.opacity(0.18))
+    public static let controlsFillTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.18), darkColor: xF9F9F9.opacity(0.24))
 
     // Icons
-    private static let icons = DynamicColor(lightColor: x1F1F1F.opacity(0.84), darkColor: .tint(0.78))
-    private static let iconsPrimary = DynamicColor(lightColor: x000000D6, darkColor: xFFFFFFC6)
-    private static let iconsSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.6), darkColor: .tint(0.48))
-    private static let iconsTertiary = DynamicColor(lightColor: x000000.opacity(0.36), darkColor: xFFFFFF.opacity(0.24))
+    public static let icons = DynamicColor(lightColor: x1F1F1F.opacity(0.84), darkColor: .tint(0.78))
+    public static let iconsPrimary = DynamicColor(lightColor: x000000D6, darkColor: xFFFFFFC6)
+    public static let iconsSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.6), darkColor: .tint(0.48))
+    public static let iconsTertiary = DynamicColor(lightColor: x000000.opacity(0.36), darkColor: xFFFFFF.opacity(0.24))
 
     // Text
-    private static let textPrimary = DynamicColor(lightColor: x1F1F1F, darkColor: .tint(0.9))
-    private static let textSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.72), darkColor: .tint(0.6))
-    private static let textTertiary = DynamicColor(lightColor: x0000005B, darkColor: xFFFFFF5B)
-    private static let textPlaceholder = DynamicColor(lightColor: x1F1F1F.opacity(0.4), darkColor: .tint(0.4))
+    public static let textPrimary = DynamicColor(lightColor: x1F1F1F, darkColor: .tint(0.9))
+    public static let textSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.72), darkColor: .tint(0.6))
+    public static let textTertiary = DynamicColor(lightColor: x0000005B, darkColor: xFFFFFF5B)
+    public static let textPlaceholder = DynamicColor(lightColor: x1F1F1F.opacity(0.4), darkColor: .tint(0.4))
 
     // System
-    private static let lines = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
+    public static let lines = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
 
     // Decorations
-    private static let decorationPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.3), darkColor: xF9F9F9.opacity(0.36))
-    private static let decorationSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.48), darkColor: xF9F9F9.opacity(0.64))
-    private static let decorationTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.60), darkColor: xF9F9F9.opacity(0.74))
+    public static let decorationPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.3), darkColor: xF9F9F9.opacity(0.36))
+    public static let decorationSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.48), darkColor: xF9F9F9.opacity(0.64))
+    public static let decorationTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.60), darkColor: xF9F9F9.opacity(0.74))
 
     // Highlight
-    private static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))
-    private static let highlightPrimary = DynamicColor(lightColor: xFFFFFF3D, darkColor: xF9F9F91E)
+    public static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))
+    public static let highlightPrimary = DynamicColor(lightColor: xFFFFFF3D, darkColor: xF9F9F91E)
 
     // Accents
-    private static let accentContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
+    public static let accentContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
 
     // Various
-    private static let variousIPadTabs = DynamicColor(lightColor: .gray20, darkColor: .black)
-    private static let variousOutline = DynamicColor(lightColor: .shade(0.24), darkColor: .tint(0.24))
+    public static let variousIPadTabs = DynamicColor(lightColor: .gray20, darkColor: .black)
+    public static let variousOutline = DynamicColor(lightColor: .shade(0.24), darkColor: .tint(0.24))
 
     // Text
-    private static let textLink = DynamicColor(lightColor: .blue50, darkColor: .blue30)
-    private static let textSelectionFill = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
+    public static let textLink = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    public static let textSelectionFill = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
 
     // Brand
-    private static let accent = DynamicColor(lightColor: .blue50, darkColor: .blue30)
-    private static let accentGlowSecondary = DynamicColor(lightColor: x3969EF.opacity(0.12), darkColor: x7295F6.opacity(0.12))
+    public static let accent = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    public static let accentGlowSecondary = DynamicColor(lightColor: x3969EF.opacity(0.12), darkColor: x7295F6.opacity(0.12))
 
     // System
-    private static let border = DynamicColor(lightColor: .gray30, darkColor: .gray40)
+    public static let border = DynamicColor(lightColor: .gray30, darkColor: .gray40)
 
     // Alert
-    private static let alertGreen = DynamicColor(lightColor: .alertGreen, darkColor: .alertGreen)
-    private static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
+    public static let alertGreen = DynamicColor(lightColor: .alertGreen, darkColor: .alertGreen)
+    public static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
 
     // Buttons/Primary
-    private static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
-    private static let buttonsPrimaryPressed = DynamicColor(lightColor: .blue70, darkColor: .blue50)
-    private static let buttonsPrimaryDisabled = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))
-    private static let buttonsPrimaryText = DynamicColor(lightColor: .white, darkColor: .shade(0.84))
-    private static let buttonsPrimaryTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
+    public static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    public static let buttonsPrimaryPressed = DynamicColor(lightColor: .blue70, darkColor: .blue50)
+    public static let buttonsPrimaryDisabled = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))
+    public static let buttonsPrimaryText = DynamicColor(lightColor: .white, darkColor: .shade(0.84))
+    public static let buttonsPrimaryTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
 
     // Buttons/SecondaryFill
-    private static let buttonsSecondaryFillDefault = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))
-    private static let buttonsSecondaryFillPressed = DynamicColor(lightColor: .shade(0.18), darkColor: .tint(0.3))
-    private static let buttonsSecondaryFillDisabled = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))
-    private static let buttonsSecondaryFillText = DynamicColor(lightColor: .shade(0.84), darkColor: .white)
-    private static let buttonsSecondaryFillTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
+    public static let buttonsSecondaryFillDefault = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))
+    public static let buttonsSecondaryFillPressed = DynamicColor(lightColor: .shade(0.18), darkColor: .tint(0.3))
+    public static let buttonsSecondaryFillDisabled = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))
+    public static let buttonsSecondaryFillText = DynamicColor(lightColor: .shade(0.84), darkColor: .white)
+    public static let buttonsSecondaryFillTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
 
     // Buttons/SecondaryWire
-    private static let buttonsSecondaryWireDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
-    private static let buttonsSecondaryWirePressedFill = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
-    private static let buttonsSecondaryWireDisabledStroke = DynamicColor(lightColor: .shade(0.12), darkColor: .tint(0.24))
-    private static let buttonsSecondaryWireText = DynamicColor(lightColor: .blue50, darkColor: .blue30)
-    private static let buttonsSecondaryWireTextPressed = DynamicColor(lightColor: .blue70, darkColor: .blue20)
-    private static let buttonsSecondaryWireTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
+    public static let buttonsSecondaryWireDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    public static let buttonsSecondaryWirePressedFill = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
+    public static let buttonsSecondaryWireDisabledStroke = DynamicColor(lightColor: .shade(0.12), darkColor: .tint(0.24))
+    public static let buttonsSecondaryWireText = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    public static let buttonsSecondaryWireTextPressed = DynamicColor(lightColor: .blue70, darkColor: .blue20)
+    public static let buttonsSecondaryWireTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
 
     // Buttons/Ghost
-    private static let buttonsGhostPressedFill = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
-    private static let buttonsGhostText = DynamicColor(lightColor: .blue50, darkColor: .blue30)
-    private static let buttonsGhostTextPressed = DynamicColor(lightColor: .blue70, darkColor: .blue20)
-    private static let buttonsGhostTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
+    public static let buttonsGhostPressedFill = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
+    public static let buttonsGhostText = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    public static let buttonsGhostTextPressed = DynamicColor(lightColor: .blue70, darkColor: .blue20)
+    public static let buttonsGhostTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
 
     // Buttons/Color
-    private static let buttonsBlack = DynamicColor(lightColor: .black, darkColor: .white)
-    private static let buttonsWhite = DynamicColor(lightColor: .white, darkColor: .black)
+    public static let buttonsBlack = DynamicColor(lightColor: .black, darkColor: .white)
+    public static let buttonsWhite = DynamicColor(lightColor: .white, darkColor: .black)
 
     // Buttons/DeleteGhost
-    private static let buttonsDeleteGhostPressedFill = DynamicColor(lightColor: .alertRed50.opacity(0.12), darkColor: .alertRed20.opacity(0.18))
-    private static let buttonsDeleteGhostTextPressed = DynamicColor(lightColor: .alertRed70, darkColor: .alertRed10)
-    private static let buttonsDeleteGhostText = DynamicColor(lightColor: .alertRedOnLight, darkColor: .alertRedOnDark)
-    private static let buttonsDeleteGhostTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
+    public static let buttonsDeleteGhostPressedFill = DynamicColor(lightColor: .alertRed50.opacity(0.12), darkColor: .alertRed20.opacity(0.18))
+    public static let buttonsDeleteGhostTextPressed = DynamicColor(lightColor: .alertRed70, darkColor: .alertRed10)
+    public static let buttonsDeleteGhostText = DynamicColor(lightColor: .alertRedOnLight, darkColor: .alertRedOnDark)
+    public static let buttonsDeleteGhostTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
 
     // Controls
-    private static let controlsDecorationPrimary = DynamicColor(lightColor: x1F1F1F4C, darkColor: xF9F9F95B)
-    private static let controlsDecorationSecondary = DynamicColor(lightColor: x1F1F1F7A, darkColor: xF9F9F9A3)
-    private static let controlsDecorationTertiary = DynamicColor(lightColor: x1F1F1F99, darkColor: xF9F9F9B7)
+    public static let controlsDecorationPrimary = DynamicColor(lightColor: x1F1F1F4C, darkColor: xF9F9F95B)
+    public static let controlsDecorationSecondary = DynamicColor(lightColor: x1F1F1F7A, darkColor: xF9F9F9A3)
+    public static let controlsDecorationTertiary = DynamicColor(lightColor: x1F1F1F99, darkColor: xF9F9F9B7)
 
     // Accent
-    private static let accentContentSecondary = DynamicColor(lightColor: xCCDAFF, darkColor: x03091A)
-    private static let accentContentTertiary = DynamicColor(lightColor: xADC2FC, darkColor: x000000)
-    private static let accentGlowPrimary = DynamicColor(lightColor: x3969EF33, darkColor: x7295F633)
-    private static let accentPrimary = DynamicColor(lightColor: x3969EF, darkColor: x7295F6)
-    private static let accentSecondary = DynamicColor(lightColor: x2B55CA, darkColor: x557FF3)
-    private static let accentTertiary = DynamicColor(lightColor: x1E42A4, darkColor: x3969EF)
-    private static let accentTextPrimary = DynamicColor(lightColor: x3969EF, darkColor: xADC2FC)
-    private static let accentTextSecondary = DynamicColor(lightColor: x2B55CA, darkColor: x8FABF9)
-    private static let accentTextTertiary = DynamicColor(lightColor: x1E42A4, darkColor: x7295F6)
+    public static let accentContentSecondary = DynamicColor(lightColor: xCCDAFF, darkColor: x03091A)
+    public static let accentContentTertiary = DynamicColor(lightColor: xADC2FC, darkColor: x000000)
+    public static let accentGlowPrimary = DynamicColor(lightColor: x3969EF33, darkColor: x7295F633)
+    public static let accentPrimary = DynamicColor(lightColor: x3969EF, darkColor: x7295F6)
+    public static let accentSecondary = DynamicColor(lightColor: x2B55CA, darkColor: x557FF3)
+    public static let accentTertiary = DynamicColor(lightColor: x1E42A4, darkColor: x3969EF)
+    public static let accentTextPrimary = DynamicColor(lightColor: x3969EF, darkColor: xADC2FC)
+    public static let accentTextSecondary = DynamicColor(lightColor: x2B55CA, darkColor: x8FABF9)
+    public static let accentTextTertiary = DynamicColor(lightColor: x1E42A4, darkColor: x7295F6)
 
     // Accent Alt
-    private static let accentAltContentPrimary = DynamicColor(lightColor: x1E42A4, darkColor: xCCDAFF)
-    private static let accentAltContentSecondary = DynamicColor(lightColor: x0B2059, darkColor: xE5EDFF)
-    private static let accentAltContentTertiary = DynamicColor(lightColor: x051133, darkColor: xFFFFFF)
-    private static let accentAltGlowPrimary = DynamicColor(lightColor: x7295F633, darkColor: x8FABF933)
-    private static let accentAltPrimary = DynamicColor(lightColor: xCCDAFF, darkColor: x2B55CA)
-    private static let accentAltSecondary = DynamicColor(lightColor: xADC2FC, darkColor: x1E42A4)
-    private static let accentAltTertiary = DynamicColor(lightColor: x8FABF9, darkColor: x14307E)
-    private static let accentAltTextPrimary = DynamicColor(lightColor: x1E42A4, darkColor: xCCDAFF)
-    private static let accentAltTextSecondary = DynamicColor(lightColor: x14307E, darkColor: xADC2FC)
-    private static let accentAltTextTertiary = DynamicColor(lightColor: x0B2059, darkColor: x8FABF9)
+    public static let accentAltContentPrimary = DynamicColor(lightColor: x1E42A4, darkColor: xCCDAFF)
+    public static let accentAltContentSecondary = DynamicColor(lightColor: x0B2059, darkColor: xE5EDFF)
+    public static let accentAltContentTertiary = DynamicColor(lightColor: x051133, darkColor: xFFFFFF)
+    public static let accentAltGlowPrimary = DynamicColor(lightColor: x7295F633, darkColor: x8FABF933)
+    public static let accentAltPrimary = DynamicColor(lightColor: xCCDAFF, darkColor: x2B55CA)
+    public static let accentAltSecondary = DynamicColor(lightColor: xADC2FC, darkColor: x1E42A4)
+    public static let accentAltTertiary = DynamicColor(lightColor: x8FABF9, darkColor: x14307E)
+    public static let accentAltTextPrimary = DynamicColor(lightColor: x1E42A4, darkColor: xCCDAFF)
+    public static let accentAltTextSecondary = DynamicColor(lightColor: x14307E, darkColor: xADC2FC)
+    public static let accentAltTextTertiary = DynamicColor(lightColor: x0B2059, darkColor: x8FABF9)
 
     // Destructive
-    private static let destructiveContentPrimary = DynamicColor(lightColor: xFFFFFF, darkColor: x000000)
-    private static let destructiveContentSecondary = DynamicColor(lightColor: xFFFFFFE5, darkColor: x000000E5)
-    private static let destructiveContentTertiary = DynamicColor(lightColor: xFFFFFF99, darkColor: x00000099)
-    private static let destructiveGlow = DynamicColor(lightColor: xEE102533, darkColor: xEE102533)
-    private static let destructivePrimary = DynamicColor(lightColor: xEE1025, darkColor: xEE1025)
-    private static let destructiveSecondary = DynamicColor(lightColor: xD11527, darkColor: xD11527)
-    private static let destructiveTertiary = DynamicColor(lightColor: xAA1926, darkColor: xAA1926)
-    private static let destructiveTextPrimary = DynamicColor(lightColor: xEE1025, darkColor: xEE1025)
-    private static let destructiveTextSecondary = DynamicColor(lightColor: xD11527, darkColor: xD11527)
-    private static let destructiveTextTertiary = DynamicColor(lightColor: xAA1926, darkColor: xAA1926)
+    public static let destructiveContentPrimary = DynamicColor(lightColor: xFFFFFF, darkColor: x000000)
+    public static let destructiveContentSecondary = DynamicColor(lightColor: xFFFFFFE5, darkColor: x000000E5)
+    public static let destructiveContentTertiary = DynamicColor(lightColor: xFFFFFF99, darkColor: x00000099)
+    public static let destructiveGlow = DynamicColor(lightColor: xEE102533, darkColor: xEE102533)
+    public static let destructivePrimary = DynamicColor(lightColor: xEE1025, darkColor: xEE1025)
+    public static let destructiveSecondary = DynamicColor(lightColor: xD11527, darkColor: xD11527)
+    public static let destructiveTertiary = DynamicColor(lightColor: xAA1926, darkColor: xAA1926)
+    public static let destructiveTextPrimary = DynamicColor(lightColor: xEE1025, darkColor: xEE1025)
+    public static let destructiveTextSecondary = DynamicColor(lightColor: xD11527, darkColor: xD11527)
+    public static let destructiveTextTertiary = DynamicColor(lightColor: xAA1926, darkColor: xAA1926)
 
     // Surfaces
-    private static let surfaceBackdrop = DynamicColor(lightColor: xE0E0E0, darkColor: x070707)
-    private static let surfaceCanvas = DynamicColor(lightColor: xFAFAFA, darkColor: x1C1C1C)
-    private static let surfacePrimary = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
-    private static let surfaceSecondary = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
+    public static let surfaceBackdrop = DynamicColor(lightColor: xE0E0E0, darkColor: x070707)
+    public static let surfaceCanvas = DynamicColor(lightColor: xFAFAFA, darkColor: x1C1C1C)
+    public static let surfacePrimary = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
+    public static let surfaceSecondary = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
 
     // Tone
-    private static let toneShadePrimary = DynamicColor(lightColor: x0000000F, darkColor: x16161751)
-    private static let toneTintPrimary = DynamicColor(lightColor: xFFFFFF7A, darkColor: xF9F9F91E)
-
+    public static let toneShadePrimary = DynamicColor(lightColor: x0000000F, darkColor: x16161751)
+    public static let toneTintPrimary = DynamicColor(lightColor: xFFFFFF7A, darkColor: xF9F9F91E)
 
     static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
         switch singleUseColor {

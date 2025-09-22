@@ -24,5 +24,8 @@ let package = Package(
             resources: [
                 .copy("Resources/performanceMetrics.js")
             ]),
+        .testTarget(
+            name: "PerformanceTestTests",
+            dependencies: ["PerformanceTest"]),
     ]
 )

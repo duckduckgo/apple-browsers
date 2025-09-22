@@ -75,7 +75,6 @@ struct VisualStyle: VisualStyleProviding {
 
     static var current: VisualStyleProviding {
         let palette = NewColorPalette()
-
         return VisualStyle(toolbarButtonsCornerRadius: 9,
                            fireWindowGraphic: .burnerWindowGraphicNew,
                            areNavigationBarCornersRound: true,

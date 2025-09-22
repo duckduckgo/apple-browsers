@@ -18,7 +18,6 @@
 
 import AppKit
 import Foundation
-import DesignResourcesKit
 
 protocol TabStyleProviding {
     var separatorColor: NSColor { get }

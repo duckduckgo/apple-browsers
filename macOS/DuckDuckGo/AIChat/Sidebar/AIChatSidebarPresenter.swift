@@ -135,10 +135,10 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
         if isShowingSidebar {
             let sidebarViewController: AIChatSidebarViewController = {
-                if let sidebar = sidebarProvider.getSidebar(for: tabID) {
-                    return sidebar.sidebarViewController
+                if let existingViewController = sidebarProvider.getSidebarViewController(for: tabID) {
+                    return existingViewController
                 } else {
-                    return sidebarProvider.makeSidebar(for: tabID, burnerMode: sidebarHost.burnerMode).sidebarViewController
+                    return sidebarProvider.makeSidebarViewController(for: tabID, burnerMode: sidebarHost.burnerMode)
                 }
             }()
 
@@ -179,9 +179,8 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
         guard let currentTabID = sidebarHost.currentTabID else { return }
 
-        if let sidebar = sidebarProvider.getSidebar(for: currentTabID) {
+        if let sidebarViewController = sidebarProvider.getSidebarViewController(for: currentTabID) {
             // If sidebar is open append conversation with prompt
-            let sidebarViewController = sidebar.sidebarViewController
             sidebarViewController.setAIChatPrompt(prompt)
         } else {
             AIChatPromptHandler.shared.setData(prompt)
@@ -198,7 +197,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
         if !isShowingSidebar {
             // If not showing the sidebar open it with the payload received
-            let sidebarViewController = sidebarProvider.makeSidebar(for: currentTabID, burnerMode: sidebarHost.burnerMode).sidebarViewController
+            let sidebarViewController = sidebarProvider.makeSidebarViewController(for: currentTabID, burnerMode: sidebarHost.burnerMode)
             sidebarViewController.aiChatPayload = payload
             updateSidebarConstraints(for: currentTabID, isShowingSidebar: true, withAnimation: true)
             pixelFiring?.fire(

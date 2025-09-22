@@ -28,32 +28,19 @@ final class AIChatSidebar: NSObject {
     private let burnerMode: BurnerMode
 
     /// The view controller that displays the sidebar contents.
-    /// This property is lazily created when first accessed.
-    var sidebarViewController: AIChatSidebarViewController {
-        get {
-            guard let sidebarViewController = _sidebarViewController else {
-                let sidebarViewController = AIChatSidebarViewController(currentAIChatURL: currentAIChatURL, burnerMode: burnerMode)
-                _sidebarViewController = sidebarViewController
-                return sidebarViewController
-            }
-            return sidebarViewController
-        }
-    }
-
-    // swiftlint:disable identifier_name
-    private var _sidebarViewController: AIChatSidebarViewController?
+    /// This property is set by the AIChatSidebarProvider when the view controller is created.
+    var sidebarViewController: AIChatSidebarViewController?
 
     /// The current AI chat URL being displayed.
     private var currentAIChatURL: URL {
         get {
-            if let _sidebarViewController {
-                return _sidebarViewController.currentAIChatURL
+            if let sidebarViewController {
+                return sidebarViewController.currentAIChatURL
             } else {
                 return initialAIChatURL
             }
         }
     }
-    // swiftlint:enable identifier_name
 
     private let aiChatRemoteSettings = AIChatRemoteSettings()
 

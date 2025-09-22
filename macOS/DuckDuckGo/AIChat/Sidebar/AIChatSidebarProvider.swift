@@ -18,6 +18,7 @@
 
 import Combine
 import Foundation
+import BrowserServicesKit
 
 typealias TabIdentifier = String
 typealias AIChatSidebarsByTab = [TabIdentifier: AIChatSidebar]
@@ -28,17 +29,17 @@ protocol AIChatSidebarProviding: AnyObject {
     /// The width of the chat sidebar in points.
     var sidebarWidth: CGFloat { get }
 
-    /// Returns the existing cached chat sidebar instance for the specified tab, if one exists.
+    /// Returns the existing cached sidebar view controller for the specified tab, if one exists.
     /// - Parameter tabID: The unique identifier of the tab
-    /// - Returns: An `AIChatSidebar` instance associated with the tab, or `nil` if no sidebar exists
-    func getSidebar(for tabID: TabIdentifier) -> AIChatSidebar?
+    /// - Returns: An `AIChatSidebarViewController` instance associated with the tab, or `nil` if no view controller exists
+    func getSidebarViewController(for tabID: TabIdentifier) -> AIChatSidebarViewController?
 
-    /// Creates and caches a new chat sidebar instance for the specified tab.
+    /// Creates and caches a new sidebar view controller for the specified tab.
     /// - Parameters:
     ///   - tabID: The unique identifier of the tab
     ///   - burnerMode: The burner mode configuration for the sidebar
-    /// - Returns: A newly created `AIChatSidebar` instance
-    func makeSidebar(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebar
+    /// - Returns: A newly created `AIChatSidebarViewController` instance
+    func makeSidebarViewController(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebarViewController
 
     /// Checks if a sidebar is currently being displayed for the specified tab.
     /// - Parameter tabID: The unique identifier of the tab
@@ -84,26 +85,43 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
         self.sidebarsByTab = sidebarsByTab ?? [:]
     }
 
-    func getSidebar(for tabID: TabIdentifier) -> AIChatSidebar? {
-        return sidebarsByTab[tabID]
+    func getSidebarViewController(for tabID: TabIdentifier) -> AIChatSidebarViewController? {
+        return sidebarsByTab[tabID]?.sidebarViewController
     }
 
-    func makeSidebar(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebar {
+    func makeSidebarViewController(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebarViewController {
+        let sidebar = sidebarsByTab[tabID] ?? makeSidebar(for: tabID, burnerMode: burnerMode)
+
+        if let existingViewController = sidebar.sidebarViewController {
+            return existingViewController
+        }
+
+        let aiChatRemoteSettings = AIChatRemoteSettings()
+        let initialAIChatURL = aiChatRemoteSettings.aiChatURL.forAIChatSidebar()
+        let sidebarViewController = AIChatSidebarViewController(currentAIChatURL: initialAIChatURL, burnerMode: burnerMode)
+        sidebar.sidebarViewController = sidebarViewController
+
+        return sidebarViewController
+    }
+
+    private func makeSidebar(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebar {
         let sidebar = AIChatSidebar(burnerMode: burnerMode)
         sidebarsByTab[tabID] = sidebar
         return sidebar
     }
 
     func isShowingSidebar(for tabID: TabIdentifier) -> Bool {
-        return getSidebar(for: tabID) != nil
+        return sidebarsByTab[tabID] != nil
     }
 
     func handleSidebarDidClose(for tabID: TabIdentifier) {
-        guard let tabSidebar = getSidebar(for: tabID) else {
+        guard let tabSidebar = sidebarsByTab[tabID] else {
             return
         }
-        tabSidebar.sidebarViewController.stopLoading()
-        tabSidebar.sidebarViewController.removeCompletely()
+        if let sidebarViewController = tabSidebar.sidebarViewController {
+            sidebarViewController.stopLoading()
+            sidebarViewController.removeCompletely()
+        }
         sidebarsByTab.removeValue(forKey: tabID)
     }
 

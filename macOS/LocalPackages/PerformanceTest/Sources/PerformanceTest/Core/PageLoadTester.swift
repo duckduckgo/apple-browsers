@@ -20,6 +20,9 @@ import Foundation
 import WebKit
 import os.log
 
+/// Default timeout for page load operations
+public let defaultPageLoadTimeout: TimeInterval = 30.0
+
 /// Measures page load performance using WebKit
 @MainActor
 public class PageLoadTester: NSObject {
@@ -27,9 +30,9 @@ public class PageLoadTester: NSObject {
     // MARK: - Constants
 
     private enum Constants {
+        static let defaultTimeout: TimeInterval = 30.0
         static let loggerSubsystem = "com.duckduckgo.macos.browser.performancetest"
         static let loggerCategory = "PageLoadTester"
-        fileprivate static let defaultTimeout: TimeInterval = 30.0
         static let unknownURLString = "unknown"
 
         enum MetricsKeys {
@@ -86,7 +89,7 @@ public class PageLoadTester: NSObject {
     /// Measure page load performance for a URL
     public func measurePageLoad(
         url: URL,
-        timeout: TimeInterval = Constants.defaultTimeout,
+        timeout: TimeInterval = defaultPageLoadTimeout,
         maxRetries: Int = 1
     ) async throws -> TestResult {
         var lastError: Error?

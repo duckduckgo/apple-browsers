@@ -99,7 +99,6 @@ public class PageLoadTester: NSObject {
                 self.currentURL = url
                 self.navigationStartTime = Date()
 
-                // Start loading
                 let request = URLRequest(url: url)
                 self.webView.load(request)
 
@@ -122,36 +121,34 @@ public class PageLoadTester: NSObject {
     }
 
     private func collectPerformanceMetrics() async throws -> PerformanceMetrics? {
-        // Use JavaScript to collect performance metrics
-        let script = """
-            (function() {
-                const perf = performance.getEntriesByType('navigation')[0];
-                const paintEntries = performance.getEntriesByType('paint');
-                const fcp = paintEntries.find(e => e.name === 'first-contentful-paint');
-                const lcp = performance.getEntriesByType('largest-contentful-paint')[0];
-
-                return {
-                    loadTime: perf ? perf.loadEventEnd - perf.fetchStart : null,
-                    firstContentfulPaint: fcp ? fcp.startTime : null,
-                    largestContentfulPaint: lcp ? lcp.startTime : null,
-                    timeToFirstByte: perf ? perf.responseStart - perf.fetchStart : null
-                };
-            })();
-        """
+        // Load JavaScript from resource bundle
+        guard let scriptURL = Bundle.module.url(forResource: "performanceMetrics", withExtension: "js", subdirectory: "JavaScript"),
+              let scriptContent = try? String(contentsOf: scriptURL) else {
+            logger.error("Failed to load performance metrics JavaScript")
+            return nil
+        }
 
         do {
-            let result = try await webView.evaluateJavaScript(script)
+            let result = try await webView.evaluateJavaScript(scriptContent)
             guard let metrics = result as? [String: Any] else { return nil }
 
-            // Convert milliseconds to seconds for loadTime
-            let loadTimeMs = metrics["loadTime"] as? Double ?? 0
-            let loadTime = loadTimeMs / 1000.0
+            // Check for errors from JavaScript
+            if let error = metrics["error"] as? String {
+                logger.error("JavaScript metrics collection error: \(error)")
+                return nil
+            }
+
+            // Convert milliseconds to seconds for time metrics
+            let loadComplete = (metrics["loadComplete"] as? Double ?? 0) / 1000.0
+            let fcp = metrics["firstContentfulPaint"] as? Double
+            let lcp = metrics["largestContentfulPaint"] as? Double
+            let ttfb = metrics["timeToFirstByte"] as? Double
 
             return PerformanceMetrics(
-                loadTime: loadTime,
-                firstContentfulPaint: metrics["firstContentfulPaint"] as? Double,
-                largestContentfulPaint: metrics["largestContentfulPaint"] as? Double,
-                timeToFirstByte: metrics["timeToFirstByte"] as? Double
+                loadTime: loadComplete,
+                firstContentfulPaint: fcp,
+                largestContentfulPaint: lcp,
+                timeToFirstByte: ttfb
             )
         } catch {
             logger.warning("Failed to collect performance metrics: \(error)")

@@ -19,6 +19,7 @@
 
 import RemoteMessaging
 import UIKit
+import DDGSync
 
 protocol MessageNavigator {
 
@@ -31,6 +32,7 @@ protocol MessageNavigationDelegate: AnyObject {
     func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, completion: (() -> Void)?)
     func segueToSettings()
     func segueToFeedback()
+    func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?)
 
 }
 
@@ -52,6 +54,8 @@ class DefaultMessageNavigator: MessageNavigator {
             delegate?.segueToSettings()
         case .feedback:
             delegate?.segueToFeedback()
+        case .sync:
+            delegate?.segueToSettingsSync(with: nil, pairingInfo: nil)
         }
     }
 

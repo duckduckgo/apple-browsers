@@ -401,7 +401,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         navigationController?.present(navController, animated: true) {
             self.checkCameraPermission(model: model)
             if let onPresentPixelInfo {
-                Pixel.fire(onPresentPixelInfo.pixel, withAdditionalParameters: [PixelParameters.source: onPresentPixelInfo.source.rawValue])
+                let pixelSource = self.source ?? onPresentPixelInfo.source.rawValue
+                Pixel.fire(onPresentPixelInfo.pixel, withAdditionalParameters: [PixelParameters.source: pixelSource])
             }
         }
     }

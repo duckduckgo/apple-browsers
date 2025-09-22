@@ -290,6 +290,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncSetupBarcodeIsUrlBased
     case refactorOfSyncPreferences
     case newSyncEntryPoints
+    case newDeviceSyncPrompt
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {
@@ -312,7 +313,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProOnboardingPromotion
     case privacyProFreeTrial
     case paidAIChat
-    case subscriptionRebranding
     case vpnToolbarUpsell
     case supportsAlternateStripePaymentFlow
     case subscriptionPurchaseWidePixelMeasurement

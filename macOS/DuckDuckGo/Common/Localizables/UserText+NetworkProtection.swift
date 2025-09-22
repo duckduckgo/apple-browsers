@@ -80,12 +80,7 @@ extension UserText {
 
     // MARK: - Feedback Form
 
-    static func feedbackFormTitle(isSubscriptionRebrandingEnabled: Bool) -> String {
-        if isSubscriptionRebrandingEnabled {
-            return NSLocalizedString("feedback-form.title", value: "Help Improve the DuckDuckGo Subscription", comment: "Title for each screen of the feedback form")
-        }
-        return NSLocalizedString("feedback-form.title.deprecated", value: "Help Improve Privacy Pro", comment: "Title for each screen of the feedback form")
-    }
+    static let feedbackFormTitle = NSLocalizedString("feedback-form.title", value: "Help Improve the DuckDuckGo Subscription", comment: "Title for each screen of the feedback form")
 
     static let generalFeedbackFormCategorySelect = NSLocalizedString("general.feedback-form.category.select-feature", value: "Select a category", comment: "Title for the feature selection state of the general feedback form")
 
@@ -171,7 +166,7 @@ extension UserText {
 
     static let pproFeedbackFormSendingConfirmationTitle = NSLocalizedString("ppro.feedback-form.sending-confirmation.title", value: "Thank you!", comment: "Title for the feedback sent view title of the feedback form")
 
-    static let pproFeedbackFormSendingConfirmationDescription = NSLocalizedString("ppro.feedback-form.sending-confirmation.description", value: "Your Feedback will help us improve Privacy Pro.", comment: "Title for the feedback sent view description of the feedback form")
+    static let pproFeedbackFormSendingConfirmationDescription = NSLocalizedString("ppro.feedback-form.sending-confirmation.description", value: "Your Feedback will help us improve the DuckDuckGo Subscription.", comment: "Title for the feedback sent view description of the feedback form")
 
     static let pproFeedbackFormSendingConfirmationError = NSLocalizedString("ppro.feedback-form.sending-confirmation.error", value: "We couldn't send your feedback right now, please try again.", comment: "Title for the feedback sending error text of the feedback form")
 

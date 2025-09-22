@@ -121,10 +121,6 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.paidAIChat)
     }
 
-    var isSubscriptionRebrandingEnabled: Bool {
-        featureFlagger.isFeatureOn(.subscriptionRebranding)
-    }
-
     var isPIREnabled: Bool {
         featureFlagger.isFeatureOn(.personalInformationRemoval)
     }

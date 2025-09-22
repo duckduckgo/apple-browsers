@@ -22,6 +22,7 @@ import BrowserServicesKit
 import RemoteMessaging
 import AIChat
 import OSLog
+import WebKit
 
 protocol AIChatMetricReportingHandling {
     func didReportMetric(_ metric: AIChatMetric)
@@ -38,6 +39,7 @@ protocol AIChatUserScriptHandling {
     func hideChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
+    func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -130,5 +132,99 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {
         self.metricReportingHandler = metricHandler
+    }
+
+    /// Handle openKeyboard messages from content-scope-scripts
+    /// This is a notify-type handler that focuses a specific element using a CSS selector
+    /// Following security guidelines, it validates and sanitizes the CSS selector
+    func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable? {
+        Logger.aiChat.debug("openKeyboard received")
+
+        // Validate input parameters following security guidelines
+        guard let paramsDict = params as? [String: Any] else {
+            Logger.aiChat.error("Invalid params format for openKeyboard")
+            return nil
+        }
+
+        // Extract CSS selector with validation
+        guard let cssSelector = paramsDict["selector"] as? String,
+              !cssSelector.isEmpty else {
+            Logger.aiChat.error("Missing or empty CSS selector for openKeyboard")
+            return nil
+        }
+
+        // Sanitize CSS selector to prevent JavaScript injection
+        let sanitizedSelector = sanitizeCSSSelector(cssSelector)
+
+        // Validate that the sanitized selector is safe to use
+        guard !sanitizedSelector.isEmpty else {
+            Logger.aiChat.error("CSS selector failed validation for openKeyboard")
+            return nil
+        }
+
+        // Get the webView from the parameter
+        guard let webView = webView else {
+            Logger.aiChat.error("WebView not available for openKeyboard")
+            return nil
+        }
+
+        // Focus the element using the CSS selector on the main queue
+        DispatchQueue.main.async {
+            let javascript = """
+            (function() {
+                try {
+                    const element = document.querySelector('\(sanitizedSelector)');
+                    element?.focus?();
+                    return true;
+                } catch (error) {
+                    console.error('Error focusing element:', error);
+                    return false;
+                }
+            })();
+            """
+
+            webView.evaluateJavaScript(javascript) { _, error in
+                if let error = error {
+                    Logger.aiChat.error("Failed to execute openKeyboard JavaScript: \(error.localizedDescription)")
+                } else {
+                    Logger.aiChat.debug("openKeyboard JavaScript executed successfully")
+                }
+            }
+        }
+
+        // Notify-type handlers return nil (no response needed)
+        return nil
+    }
+
+    // MARK: - Private Helper Methods
+
+    /// Sanitize CSS selector to prevent JavaScript injection
+    /// Following security guidelines to validate all external inputs
+    private func sanitizeCSSSelector(_ selector: String) -> String {
+        // Remove any potentially dangerous characters that could be used for injection
+        let allowedCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_#.[]():,>+~*= ")
+
+        // Filter out any characters not in the allowed set
+        let sanitized = selector.components(separatedBy: allowedCharacters.inverted).joined()
+
+        // Additional validation: ensure it looks like a valid CSS selector
+        // Basic validation - starts with valid selector characters
+        guard !sanitized.isEmpty,
+              !sanitized.hasPrefix("javascript:"),
+              !sanitized.contains("expression("),
+              !sanitized.contains("url("),
+              !sanitized.contains("@import") else {
+            Logger.aiChat.error("CSS selector contains potentially dangerous content")
+            return ""
+        }
+
+        // Limit length to prevent extremely long selectors
+        let maxLength = 500
+        if sanitized.count > maxLength {
+            Logger.aiChat.warning("CSS selector truncated due to length")
+            return String(sanitized.prefix(maxLength))
+        }
+
+        return sanitized
     }
 }

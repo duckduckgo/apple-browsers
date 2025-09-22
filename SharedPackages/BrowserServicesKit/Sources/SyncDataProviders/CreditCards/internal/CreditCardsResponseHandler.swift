@@ -99,14 +99,10 @@ final class CreditCardsResponseHandler {
         if shouldDeduplicateEntities,
            var deduplicatedEntity = try deduplicatedCreditCard(with: syncable, secureVaultEncryptionKey: secureVaultEncryptionKey) {
             let oldUUID = deduplicatedEntity.metadata.uuid
-            if var creditCard = deduplicatedEntity.creditCard {
-                if let decryptedTitle = try syncable.encryptedTitle.flatMap(decrypt) {
-                    creditCard.title = decryptedTitle
-                } else {
-                    creditCard.title = ""
-                }
-                // TODO - review
-                deduplicatedEntity.creditCard = creditCard
+            if let decryptedTitle = try syncable.encryptedTitle.flatMap(decrypt) {
+                deduplicatedEntity.creditCard?.title = decryptedTitle
+            } else {
+                deduplicatedEntity.creditCard?.title = ""
             }
             deduplicatedEntity.metadata.uuid = syncableUUID
             try secureVault.storeSyncableCreditCard(deduplicatedEntity,
@@ -156,17 +152,17 @@ final class CreditCardsResponseHandler {
             return nil
         }
 
-        let title = try syncable.encryptedTitle.flatMap(decrypt)
         let cardholderName = try syncable.encryptedCardholderName.flatMap(decrypt)
         let cardNumber = try syncable.encryptedCardNumber.flatMap(decrypt)
+        let cardSecurityCode = try syncable.encryptedCardSecurityCode.flatMap(decrypt)
         let expirationMonth = try syncable.encryptedExpirationMonth.flatMap(decrypt)
         let expirationYear = try syncable.encryptedExpirationYear.flatMap(decrypt)
 
         let creditCardAlias = TableAlias()
         let conditions = [
             !allReceivedIDs.contains(SecureVaultModels.SyncableCreditCardsRecord.Columns.uuid),
-            creditCardAlias[SecureVaultModels.CreditCard.Columns.title] == title,
             creditCardAlias[SecureVaultModels.CreditCard.Columns.cardholderName] == cardholderName,
+            creditCardAlias[SecureVaultModels.CreditCard.Columns.cardSecurityCode] == cardSecurityCode,
             creditCardAlias[SecureVaultModels.CreditCard.Columns.expirationMonth] == expirationMonth,
             creditCardAlias[SecureVaultModels.CreditCard.Columns.expirationYear] == expirationYear
         ]

@@ -35,7 +35,7 @@ extension SecureVaultModels {
     /**
      * Convenience struct representing Website Credentials including its respective Account information and Sync metadata.
      *
-     * This is the main data object used by Sync.
+     * This is the main data object used by Sync for credentials.
      */
     public struct SyncableCredentials: FetchableRecord, Decodable {
         public var metadata: SyncableCredentialsRecord

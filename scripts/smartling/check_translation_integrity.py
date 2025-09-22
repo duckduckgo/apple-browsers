@@ -177,7 +177,7 @@ def analyze_translation_changes():
             continue
 
         # If there are deleted keys, fail immediately
-        if (set(original.keys()) - set(current.keys())):
+        if set(original.keys()) - set(current.keys()):
             return 1
 
         # Find problematic replacements
@@ -188,7 +188,7 @@ def analyze_translation_changes():
             # Check for empty or significantly shortened values (after trimming)
             if not new_val or len(new_val) < len(old_val) // 2:
                 return 1
-    
+
     return 0
 
 

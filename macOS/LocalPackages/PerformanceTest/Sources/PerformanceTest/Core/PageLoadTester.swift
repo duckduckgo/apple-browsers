@@ -29,7 +29,7 @@ public class PageLoadTester: NSObject {
     private enum Constants {
         static let loggerSubsystem = "com.duckduckgo.macos.browser.performancetest"
         static let loggerCategory = "PageLoadTester"
-        static let defaultTimeout: TimeInterval = 30.0
+        fileprivate static let defaultTimeout: TimeInterval = 30.0
         static let unknownURLString = "unknown"
 
         enum MetricsKeys {
@@ -45,9 +45,12 @@ public class PageLoadTester: NSObject {
             static let failedToCollectMetrics = "Failed to collect performance metrics: "
             static let allRetryAttemptsFailed = "All retry attempts failed"
             static let testAttemptFailed = "Test attempt %d failed: "
+            static let navigationFailed = "Navigation failed: "
+        }
+
+        enum DebugMessages {
             static let navigationStarted = "Navigation started for: "
             static let navigationFinished = "Navigation finished for: "
-            static let navigationFailed = "Navigation failed: "
         }
     }
 
@@ -83,13 +86,13 @@ public class PageLoadTester: NSObject {
     /// Measure page load performance for a URL
     public func measurePageLoad(
         url: URL,
-        timeout: TimeInterval = 30.0,
+        timeout: TimeInterval = Constants.defaultTimeout,
         maxRetries: Int = 1
     ) async throws -> TestResult {
         var lastError: Error?
         var attempts = 0
 
-        while attempts < maxRetries {
+        while attempts <= maxRetries {
             attempts += 1
 
             // Call setup hook if provided
@@ -129,9 +132,10 @@ public class PageLoadTester: NSObject {
                 let request = URLRequest(url: url)
                 self.webView.load(request)
 
-                // Set timeout
-                Task {
+                // Set timeout with weak self to avoid retain cycle
+                Task { [weak self] in
                     try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                    guard let self = self else { return }
                     if self.continuation != nil {
                         self.continuation?.resume(throwing: PageLoadError.timeout(duration: timeout))
                         self.continuation = nil
@@ -139,9 +143,13 @@ public class PageLoadTester: NSObject {
                 }
             }
         } onCancel: {
-            Task { @MainActor in
-                self.continuation?.resume(throwing: CancellationError())
-                self.continuation = nil
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                // Check if continuation exists before resuming to prevent crashes
+                if let continuation = self.continuation {
+                    self.continuation = nil
+                    continuation.resume(throwing: CancellationError())
+                }
                 self.webView.stopLoading()
             }
         }
@@ -149,8 +157,21 @@ public class PageLoadTester: NSObject {
 
     private func collectPerformanceMetrics() async throws -> PerformanceMetrics? {
         // Load JavaScript from bundle resources
-        guard let scriptURL = Bundle.module.url(forResource: "performanceMetrics", withExtension: "js"),
-              let scriptContent = try? String(contentsOf: scriptURL) else {
+        // Try Bundle.module first (for SPM), fall back to class bundle
+        var scriptURL: URL?
+
+        // For Swift Package Manager
+        if let moduleBundle = Bundle(path: Bundle.main.bundleURL.appendingPathComponent("PerformanceTest_PerformanceTest.bundle").path) {
+            scriptURL = moduleBundle.url(forResource: "performanceMetrics", withExtension: "js")
+        }
+
+        // Fallback to class bundle
+        if scriptURL == nil {
+            scriptURL = Bundle(for: type(of: self)).url(forResource: "performanceMetrics", withExtension: "js")
+        }
+
+        guard let url = scriptURL,
+              let scriptContent = try? String(contentsOf: url) else {
             logger.error("Failed to load performance metrics JavaScript from bundle")
             return nil
         }
@@ -189,7 +210,7 @@ public class PageLoadTester: NSObject {
 extension PageLoadTester: WKNavigationDelegate {
 
     public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        logger.debug("\(Constants.ErrorMessages.navigationStarted)\(self.currentURL?.absoluteString ?? Constants.unknownURLString)")
+        logger.debug("\(Constants.DebugMessages.navigationStarted)\(self.currentURL?.absoluteString ?? Constants.unknownURLString)")
         progressHandler?(0.1)
     }
 
@@ -198,13 +219,16 @@ extension PageLoadTester: WKNavigationDelegate {
     }
 
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        logger.debug("\(Constants.ErrorMessages.navigationFinished)\(self.currentURL?.absoluteString ?? Constants.unknownURLString)")
+        logger.debug("\(Constants.DebugMessages.navigationFinished)\(self.currentURL?.absoluteString ?? Constants.unknownURLString)")
         progressHandler?(0.9)
 
         guard let startTime = navigationStartTime,
               let url = currentURL else {
-            continuation?.resume(throwing: PageLoadError.invalidURL)
-            continuation = nil
+            // Check if continuation exists before resuming to prevent crashes
+            if let continuation = continuation {
+                self.continuation = nil
+                continuation.resume(throwing: PageLoadError.invalidURL)
+            }
             return
         }
 
@@ -229,8 +253,11 @@ extension PageLoadTester: WKNavigationDelegate {
 
             progressHandler?(1.0)
             completionHandler?(result)
-            continuation?.resume(returning: result)
-            continuation = nil
+            // Check if continuation exists before resuming to prevent crashes
+            if let continuation = self.continuation {
+                self.continuation = nil
+                continuation.resume(returning: result)
+            }
         }
     }
 
@@ -247,8 +274,11 @@ extension PageLoadTester: WKNavigationDelegate {
 
         guard let startTime = navigationStartTime,
               let url = currentURL else {
-            continuation?.resume(throwing: PageLoadError.invalidURL)
-            continuation = nil
+            // Check if continuation exists before resuming to prevent crashes
+            if let continuation = continuation {
+                self.continuation = nil
+                continuation.resume(throwing: PageLoadError.invalidURL)
+            }
             return
         }
 
@@ -276,8 +306,11 @@ extension PageLoadTester: WKNavigationDelegate {
         )
 
         completionHandler?(result)
-        continuation?.resume(throwing: testError)
-        continuation = nil
+        // Check if continuation exists before resuming to prevent crashes
+        if let continuation = continuation {
+            self.continuation = nil
+            continuation.resume(throwing: testError)
+        }
     }
 }
 

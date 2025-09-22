@@ -17,7 +17,7 @@
 //
 
 /**
- * Collects comprehensive performance metrics from the browser's Performance API
+ * Collects performance metrics from the browser's Performance API
  * @returns {Object} Performance metrics object with timing and resource information
  */
 function collectPerformanceMetrics() {
@@ -27,24 +27,24 @@ function collectPerformanceMetrics() {
         return { error: 'No navigation timing data available' };
     }
 
-    // Get paint timing entries
+    // Paint timing
     const paintEntries = performance.getEntriesByType('paint');
     const firstPaint = paintEntries.find(entry => entry.name === 'first-paint');
     const firstContentfulPaint = paintEntries.find(entry => entry.name === 'first-contentful-paint');
 
-    // Get largest contentful paint if available
+    // LCP (If implemented)
     const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
     const largestContentfulPaint = lcpEntries.length > 0 ? lcpEntries[lcpEntries.length - 1] : null;
 
-    // Calculate key metrics
+    // Other Metrics
     const metrics = {
         // Time to First Byte
         timeToFirstByte: navigationEntry.responseStart - navigationEntry.fetchStart,
 
-        // First Contentful Paint
+        // FCP
         firstContentfulPaint: firstContentfulPaint ? firstContentfulPaint.startTime : null,
 
-        // Largest Contentful Paint
+        // LCP
         largestContentfulPaint: largestContentfulPaint ? largestContentfulPaint.startTime : null,
 
         // DOM metrics
@@ -55,7 +55,7 @@ function collectPerformanceMetrics() {
         // Load complete time
         loadComplete: navigationEntry.loadEventEnd - navigationEntry.fetchStart,
 
-        // Network timings
+        // Network times
         dnsLookupTime: navigationEntry.domainLookupEnd - navigationEntry.domainLookupStart,
         tcpConnectionTime: navigationEntry.connectEnd - navigationEntry.connectStart,
         secureConnectionTime: navigationEntry.secureConnectionStart > 0 ?

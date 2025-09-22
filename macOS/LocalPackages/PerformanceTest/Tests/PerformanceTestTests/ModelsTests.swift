@@ -154,7 +154,7 @@ final class ModelsTests: XCTestCase {
         let error = TestError.timeout(duration: duration)
 
         // Then
-        XCTAssertEqual(error.localizedDescription, "Test timed out after 15.0 seconds")
+        XCTAssertEqual(error.errorDescription, "Test timed out after 15.0 seconds")
     }
 
     func testTestErrorNetworkError() {
@@ -163,15 +163,23 @@ final class ModelsTests: XCTestCase {
         let error = TestError.networkError(message: message)
 
         // Then
-        XCTAssertEqual(error.localizedDescription, "Network error: DNS lookup failed")
+        XCTAssertEqual(error.errorDescription, "Network error: DNS lookup failed")
     }
 
-    func testTestErrorMetricsUnavailable() {
+    func testTestErrorInvalidURL() {
         // Given
-        let error = TestError.metricsUnavailable
+        let error = TestError.invalidURL
 
         // Then
-        XCTAssertEqual(error.localizedDescription, "Performance metrics unavailable")
+        XCTAssertEqual(error.errorDescription, "Invalid URL")
+    }
+
+    func testTestErrorCancelled() {
+        // Given
+        let error = TestError.cancelled
+
+        // Then
+        XCTAssertEqual(error.errorDescription, "Test was cancelled")
     }
 
     func testTestErrorOtherError() {
@@ -180,6 +188,6 @@ final class ModelsTests: XCTestCase {
         let error = TestError.otherError(message: message)
 
         // Then
-        XCTAssertEqual(error.localizedDescription, "Unexpected error occurred")
+        XCTAssertEqual(error.errorDescription, "Unexpected error occurred")
     }
 }

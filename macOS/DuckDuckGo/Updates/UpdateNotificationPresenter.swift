@@ -62,8 +62,8 @@ final class UpdateNotificationPresenter {
 
     func openUpdatesPage() {
         // Track update notification tapped
-        PixelKit.fire(UpdateFlowPixels.updateNotificationTapped)
-        
+         PixelKit.fire(UpdateFlowPixels.updateNotificationTapped)
+
         DispatchQueue.main.async {
             Application.appDelegate.updateController.openUpdatesPage()
         }

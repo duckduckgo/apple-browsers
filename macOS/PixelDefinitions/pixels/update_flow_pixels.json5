@@ -19,28 +19,19 @@
         description: 'Fired when the update notification popover appears after an update is detected',
         owners: ['jotaemepereira'],
         triggers: ['other'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-        ],
+        parameters: ['appVersion', 'pixelSource'],
     },
     m_mac_update_notification_tapped: {
         description: 'Fired when user interacts with the update notification popover',
         owners: ['jotaemepereira'],
         triggers: ['other'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-        ],
+        parameters: ['appVersion', 'pixelSource'],
     },
     m_mac_update_duckduckgo_button_tapped: {
         description: 'Fired when user taps the "Update DuckDuckGo" button in the About preferences',
         owners: ['jotaemepereira'],
         triggers: ['other'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-        ],
+        parameters: ['appVersion', 'pixelSource'],
     },
     m_mac_release_metadata_fetch_failed: {
         description: 'Fired when the network request to fetch latest release information fails',

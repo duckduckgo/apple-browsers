@@ -233,6 +233,15 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory {
+            /// Dynamic Type size changed, calculate views inset
+            updateTextViewHeight()
+            adjustTextViewContentInset()
+        }
+    }
+
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
     private func isUnexpandedURL() -> Bool {
         return !hasBeenInteractedWith && isURL
@@ -249,8 +258,10 @@ class SwitchBarTextEntryView: UIView {
         if isUnexpandedURL() ||
             // https://app.asana.com/1/137249556945/project/392891325557410/task/1210916875279070?focus=true
             textView.text.isBlank {
-            
-            heightConstraint?.constant = Constants.minHeight
+
+            /// When empty (or showing an unexpanded URL), size to one line  to avoid clipping at larger accessibility sizes.
+            let requiredEmptyStateHeight = requiredHeightForSingleLineContent()
+            heightConstraint?.constant = max(Constants.minHeight, min(Constants.maxHeight, requiredEmptyStateHeight))
             textView.isScrollEnabled = false
             textView.showsVerticalScrollIndicator = false
             textView.textContainer.lineBreakMode = .byTruncatingTail
@@ -269,6 +280,17 @@ class SwitchBarTextEntryView: UIView {
         }
 
         adjustScrollPosition()
+    }
+
+    /// Computes the min height for one line given current fonts/insets, using the larger of the text view or placeholder font.
+    private func requiredHeightForSingleLineContent() -> CGFloat {
+        let textLineHeight = (textView.font ?? UIFont.systemFont(ofSize: Constants.fontSize)).lineHeight
+        let textNeeded = textLineHeight + Constants.textTopInset + Constants.textBottomInset
+
+        let placeholderLineHeight = placeholderLabel.font.lineHeight
+        let placeholderNeeded = placeholderLineHeight + Constants.placeholderTopOffset + Constants.textBottomInset
+
+        return ceil(max(textNeeded, placeholderNeeded))
     }
 
     private func adjustScrollPosition() {

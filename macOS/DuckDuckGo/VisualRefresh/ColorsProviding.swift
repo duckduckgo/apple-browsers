@@ -50,7 +50,7 @@ protocol ColorsProviding {
 }
 
 final class NewColorsProviding: ColorsProviding {
-    private let palette: ThemeColors
+    private let palette: ColorPalette
 
     var navigationBackgroundColor: NSColor { palette.surfacePrimary }
     var baseBackgroundColor: NSColor { palette.surfaceBackdrop }
@@ -79,7 +79,7 @@ final class NewColorsProviding: ColorsProviding {
     var ntpLightBackgroundColor: String { "#FAFAFA" }
     var ntpDarkBackgroundColor: String { "#1C1C1C" }
 
-    init(palette: ThemeColors) {
+    init(palette: ColorPalette) {
         self.palette = palette
     }
 }

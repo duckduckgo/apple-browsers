@@ -89,7 +89,6 @@ protocol ColorPalette {
 }
 
 final class NewColorPalette: ColorPalette {
-final class NewColorPalette: ThemeColors {
     let surfaceBackdrop: NSColor = .surfaceBackdrop
     let surfaceCanvas: NSColor = .surfaceCanvas
     let surfacePrimary: NSColor = .surfacePrimary

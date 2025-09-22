@@ -3421,6 +3421,36 @@
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sincroniza e faz uma cópia de segurança das tuas palavras-passe";
 
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sync & Backup deste dispositivo";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Guardar o código de recuperação garante que consegues restaurar as tuas palavras-passe facilmente no futuro.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Só é possível restaurar as palavras-passe sincronizadas se tiveres acesso a outro dispositivo ou ao utilizar o código de recuperação fornecido como parte da configuração Sync & Backup.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Sabe mais](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Ler código de recuperação";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Não tens outro dispositivo disponível? Lê o teu código de recuperação.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Não tens outro dispositivo?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "As palavras-passe do DuckDuckGo não são transferidas com a iCloud, uma vez que estão encriptadas no teu dispositivo. Tudo o resto já cá está.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Sincronizar com outro dispositivo";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Estás num novo %@? Vamos sincronizar as palavras-passe.";
+
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Remover";
 

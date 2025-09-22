@@ -20,6 +20,7 @@
 import Core
 import RemoteMessaging
 import XCTest
+import DDGSync
 
 @testable import DuckDuckGo
 
@@ -31,6 +32,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     private var segueToAIChatSettingsCallCount = 0
     private var segueToSettingsCallCount = 0
     private var segueToFeedbackCallCount = 0
+    private var segueToSyncSettingsCallCount = 0
 
     override func setUpWithError() throws {
         messagesConfiguration = HomePageMessagesConfigurationMock(homeMessages: [])
@@ -38,6 +40,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         segueToAIChatSettingsCallCount = 0
         segueToSettingsCallCount = 0
         segueToFeedbackCallCount = 0
+        segueToSyncSettingsCallCount = 0
     }
 
     override func tearDownWithError() throws {
@@ -285,6 +288,10 @@ extension NewTabPageMessagesModelTests: MessageNavigationDelegate {
 
     func segueToFeedback() {
         segueToFeedbackCallCount += 1
+    }
+
+    func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?) {
+        segueToSyncSettingsCallCount += 1
     }
 
 }

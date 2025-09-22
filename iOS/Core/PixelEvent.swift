@@ -906,6 +906,16 @@ extension Pixel {
         case syncPromoConfirmed
         case syncPromoDismissed
 
+        case syncRecoveryPromptDisplayed
+        case syncRecoveryPromptSyncWithAnotherDeviceTapped
+        case syncRecoveryPromptShowAlternativesTapped
+        case syncRecoveryPromptDismissed
+
+        case syncRecoveryAlternativeDisplayed
+        case syncRecoveryAlternativeScanRecoveryCodeTapped
+        case syncRecoveryAlternativeBackupThisDeviceTapped
+        case syncRecoveryAlternativeDismissed
+
         case syncSetupBarcodeScreenShown
         case syncSetupBarcodeScannerSuccess
         case syncSetupBarcodeScannerFailed
@@ -2256,6 +2266,16 @@ extension Pixel.Event {
         case .syncPromoDisplayed: return "sync_promotion_displayed"
         case .syncPromoConfirmed: return "sync_promotion_confirmed"
         case .syncPromoDismissed: return "sync_promotion_dismissed"
+
+        case .syncRecoveryPromptDisplayed: return "sync_recovery_prompt_displayed"
+        case .syncRecoveryPromptSyncWithAnotherDeviceTapped: return "sync_recovery_prompt_sync_with_another_device_tapped"
+        case .syncRecoveryPromptShowAlternativesTapped: return "sync_recovery_prompt_show_alternatives_tapped"
+        case .syncRecoveryPromptDismissed: return "sync_recovery_prompt_dismissed"
+
+        case .syncRecoveryAlternativeDisplayed: return "sync_recovery_alternative_displayed"
+        case .syncRecoveryAlternativeScanRecoveryCodeTapped: return "sync_recovery_alternative_scan_recovery_code_tapped"
+        case .syncRecoveryAlternativeBackupThisDeviceTapped: return "sync_recovery_alternative_backup_this_device_tapped"
+        case .syncRecoveryAlternativeDismissed: return "sync_recovery_alternative_dismissed"
 
         case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
         case .syncSetupBarcodeScannerSuccess: return "sync_setup_barcode_scanner_success"

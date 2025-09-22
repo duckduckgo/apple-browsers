@@ -20,6 +20,7 @@ let package = Package(
     targets: [
         .target(
             name: "PerformanceTest",
-            dependencies: ["NetworkQualityMonitor"]),
+            dependencies: ["NetworkQualityMonitor"],
+            resources: [.process("Resources/Assets.xcassets")]),
     ]
 )

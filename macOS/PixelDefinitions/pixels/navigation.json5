@@ -31,5 +31,6 @@
                 description: 'Input text from the address bar',
             },
         ],
+        expires: '2025-10-31',
     },
 }

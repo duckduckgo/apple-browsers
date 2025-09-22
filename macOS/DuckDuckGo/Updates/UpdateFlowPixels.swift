@@ -1,5 +1,5 @@
 //
-//  CheckForUpdatesAppStorePixels.swift
+//  UpdateFlowPixels.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,7 +17,7 @@
 //
 import PixelKit
 
-enum CheckForUpdatesAppStorePixels: PixelKitEvent {
+enum UpdateFlowPixels: PixelKitEvent {
 
     /**
      * Event Trigger: Check for Updates tapped on App Store builds

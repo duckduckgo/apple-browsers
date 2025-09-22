@@ -205,7 +205,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     @MainActor func checkForAppStoreUpdate() {
-        PixelKit.fire(CheckForUpdatesAppStorePixels.checkForUpdate(source: .aboutMenu))
+        PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .aboutMenu))
         NSWorkspace.shared.open(.appStore)
     }
 

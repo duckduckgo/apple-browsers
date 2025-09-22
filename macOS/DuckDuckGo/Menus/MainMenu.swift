@@ -694,6 +694,8 @@ final class MainMenu: NSMenu {
                 .submenu(HistoryDebugMenu(historyCoordinator: historyCoordinator, featureFlagger: featureFlagger))
             NSMenuItem(title: "Test Network Quality", action: #selector(MainViewController.testNetworkQuality))
                 .withAccessibilityIdentifier("MainMenu.testNetworkQuality")
+            NSMenuItem(title: "Test Current Site Performance", action: #selector(MainViewController.testCurrentSitePerformance))
+                .withAccessibilityIdentifier("MainMenu.testCurrentSitePerformance")
             NSMenuItem(title: "Content Scopes Experiment") {
                 NSMenuItem(title: "Show Active Experiments", action: #selector(AppDelegate.showContentScopeExperiments))
             }

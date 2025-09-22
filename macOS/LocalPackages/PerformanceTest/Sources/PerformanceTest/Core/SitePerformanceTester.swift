@@ -9,11 +9,8 @@ import Foundation
 import WebKit
 import os.log
 
-/// Manages site performance testing with cache clearing and multiple iterations
 @MainActor
 public class SitePerformanceTester: NSObject {
-
-    // MARK: - Properties
 
     private let webView: WKWebView
     private let logger = Logger(subsystem: "com.duckduckgo.macos.browser.performancetest", category: "SitePerformanceTester")
@@ -24,16 +21,11 @@ public class SitePerformanceTester: NSObject {
     /// Cancellation check
     public var isCancelled: () -> Bool = { false }
 
-    // MARK: - Initialization
-
     public init(webView: WKWebView) {
         self.webView = webView
         super.init()
     }
 
-    // MARK: - Public Methods
-
-    /// Run performance test with multiple iterations
     public func runPerformanceTest(
         url: URL,
         iterations: Int = 10,
@@ -104,40 +96,26 @@ public class SitePerformanceTester: NSObject {
         )
     }
 
-    // MARK: - Private Methods
-
     private func clearCacheForURL(_ url: URL) async {
         let dataStore = WKWebsiteDataStore.default()
         let dataTypes = WKWebsiteDataStore.allWebsiteDataTypes()
-        let records = await dataStore.dataRecords(ofTypes: dataTypes)
 
-        // Filter records for this specific domain
-        let domain = url.host ?? url.absoluteString
-        let recordsToDelete = records.filter { record in
-            record.displayName.lowercased().contains(domain.lowercased()) ||
-            record.displayName == domain
+        // Clear ALL website data to ensure clean test conditions
+        // This handles redirects, third-party resources, and cached data
+        let records = await dataStore.dataRecords(ofTypes: dataTypes)
+        if !records.isEmpty {
+            await dataStore.removeData(ofTypes: dataTypes, for: records)
         }
 
-        // Remove the data only for this specific domain
-        if !recordsToDelete.isEmpty {
-            await dataStore.removeData(ofTypes: dataTypes, for: recordsToDelete)
+        // Also clear all cookies to ensure complete cache clearing
+        let httpCookieStore = dataStore.httpCookieStore
+        let cookies = await httpCookieStore.allCookies()
 
-            // Also clear HTTP cache and cookies more aggressively
-            let httpCookieStore = dataStore.httpCookieStore
-            let cookies = await httpCookieStore.allCookies()
-
-            // Batch delete cookies for this domain
-            let domainCookies = cookies.filter { cookie in
-                cookie.domain.contains(domain) || domain.contains(cookie.domain)
-            }
-
-            // Use Task group for concurrent deletion if there are multiple cookies
-            if !domainCookies.isEmpty {
-                await withTaskGroup(of: Void.self) { group in
-                    for cookie in domainCookies {
-                        group.addTask {
-                            await httpCookieStore.delete(cookie)
-                        }
+        if !cookies.isEmpty {
+            await withTaskGroup(of: Void.self) { group in
+                for cookie in cookies {
+                    group.addTask {
+                        await httpCookieStore.delete(cookie)
                     }
                 }
             }
@@ -271,8 +249,6 @@ public class SitePerformanceTester: NSObject {
     // DetailedMetrics struct removed - using DetailedPerformanceMetrics from Models
 }
 
-// MARK: - Navigation Delegate
-
 private class NavigationDelegate: NSObject, WKNavigationDelegate {
     private var startTime: Date?
     var loadTime: TimeInterval?
@@ -303,8 +279,6 @@ private class NavigationDelegate: NSObject, WKNavigationDelegate {
         isComplete = true
     }
 }
-
-// MARK: - Collected Metrics Structure
 
 public struct CollectedMetrics {
     var loadComplete: [TimeInterval] = []
@@ -339,8 +313,6 @@ public struct CollectedMetrics {
         tti.append(metrics.timeToInteractive ?? 0)
     }
 }
-
-// MARK: - Results Model
 
 public struct PerformanceTestResults {
     public let url: URL

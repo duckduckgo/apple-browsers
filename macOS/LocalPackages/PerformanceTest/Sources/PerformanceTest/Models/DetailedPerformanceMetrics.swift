@@ -18,8 +18,6 @@
 
 import Foundation
 
-// MARK: - Constants
-
 private enum PerformanceConstants {
     enum Protocols {
         static let h2 = "h2"
@@ -49,97 +47,60 @@ private enum PerformanceConstants {
     }
 }
 
-/// Extended performance metrics with detailed timing information
 public struct DetailedPerformanceMetrics: Codable, Equatable {
-
-    // MARK: - Constants
-
     private typealias Constants = PerformanceConstants
 
-    // MARK: - Core Timing Properties
-
-    /// Total page load completion time in seconds
     public let loadComplete: TimeInterval
 
-    /// DOM complete time in seconds
     public let domComplete: TimeInterval
 
-    /// DOM content loaded time in seconds
     public let domContentLoaded: TimeInterval
 
-    /// DOM interactive time in seconds
     public let domInteractive: TimeInterval
 
-    // MARK: - Paint Metrics
 
-    /// First Contentful Paint (FCP) in seconds
     public let firstContentfulPaint: TimeInterval
 
-    /// Largest Contentful Paint (LCP) in seconds (optional)
     public let largestContentfulPaint: TimeInterval?
 
-    // MARK: - Network Timing
 
-    /// Time to First Byte (TTFB) in seconds
     public let timeToFirstByte: TimeInterval
 
-    /// Response download time in seconds
     public let responseTime: TimeInterval
 
-    /// Server processing time in seconds
     public let serverTime: TimeInterval
 
-    /// DNS lookup time in seconds
     public let dnsLookupTime: TimeInterval?
 
-    /// TCP connection time in seconds
     public let tcpConnectionTime: TimeInterval?
 
-    /// Secure connection (TLS) time in seconds
     public let secureConnectionTime: TimeInterval?
 
-    // MARK: - Size Metrics
 
-    /// Total transfer size in bytes
     public let transferSize: Double
 
-    /// Encoded body size in bytes
     public let encodedBodySize: Double
 
-    /// Decoded body size in bytes
     public let decodedBodySize: Double
 
-    // MARK: - Resource Metrics
 
-    /// Number of resources loaded
     public let resourceCount: Int
 
-    /// Total size of all resources in bytes
     public let totalResourcesSize: Double
 
-    // MARK: - Interactivity Metrics
 
-    /// Time to Interactive (TTI) in seconds
     public let timeToInteractive: TimeInterval?
 
-    /// First Input Delay (FID) in milliseconds
     public let firstInputDelay: TimeInterval?
 
-    /// Cumulative Layout Shift (CLS) score
     public let cumulativeLayoutShift: Double?
 
-    // MARK: - Additional Metadata
 
-    /// Network protocol used (e.g., "h2", "http/1.1")
     public let `protocol`: String?
 
-    /// Number of redirects
     public let redirectCount: Int
 
-    /// Navigation type (e.g., "navigate", "reload", "back_forward")
     public let navigationType: String
-
-    // MARK: - Initialization
 
     public init(
         loadComplete: TimeInterval,
@@ -191,21 +152,17 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
         self.navigationType = navigationType
     }
 
-    // MARK: - Computed Properties
 
-    /// Compression ratio (encoded vs decoded size)
     public var compressionRatio: Double? {
         guard encodedBodySize > 0 && decodedBodySize > 0 else { return nil }
         return 1.0 - (encodedBodySize / decodedBodySize)
     }
 
-    /// Average resource size in bytes
     public var averageResourceSize: Double? {
         guard resourceCount > 0 else { return nil }
         return totalResourcesSize / Double(resourceCount)
     }
 
-    /// Whether the page used HTTP/2 or newer
     public var usesModernProtocol: Bool {
         guard let proto = `protocol` else { return false }
         return proto.contains(Constants.Protocols.h2) ||
@@ -213,7 +170,6 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
                proto.contains(Constants.Protocols.quic)
     }
 
-    /// Core Web Vitals assessment
     public var coreWebVitals: CoreWebVitalsAssessment {
         CoreWebVitalsAssessment(
             lcp: largestContentfulPaint ?? firstContentfulPaint,
@@ -222,7 +178,6 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
         )
     }
 
-    // MARK: - Performance Score
 
     /// Overall performance score (0-100)
     public var performanceScore: Int {
@@ -294,8 +249,6 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
         }
     }
 }
-
-// MARK: - Core Web Vitals Assessment
 
 public struct CoreWebVitalsAssessment: Codable, Equatable {
     private typealias Constants = PerformanceConstants

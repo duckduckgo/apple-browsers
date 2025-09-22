@@ -30,13 +30,11 @@ struct DesignSystemWidgetContainerView<Content: View>: View {
     let content: () -> Content
 
     var body: some View {
-        Group {
-            ZStack {
-                // Adding a color background here can help debug
-                content()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        ZStack(alignment: .top) {
+            // Adding a color background here can help debug
+            content()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(16)
         // Adding a different color background here in addition to the container backgrund can help debug
         .widgetContainerBackground(color: Color(designSystemColor: .background))

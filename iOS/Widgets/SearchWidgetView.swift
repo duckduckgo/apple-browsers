@@ -40,7 +40,8 @@ struct SearchWidgetView: View {
 
                 ResponsiveSearchFieldView(isAIChatEnabled: false, showLogo: false, isRightIconEnabled: true)
             }
-            .accessibilityLabel(Text(UserText.searchDuckDuckGo))
+            .accessibilityLabel (Text(UserText.searchDuckDuckGo))
+            .padding(0)
         }
     }
 }

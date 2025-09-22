@@ -76,8 +76,11 @@ struct QuickActionsMediumWidgetView: View {
     var body: some View {
         DesignSystemWidgetContainerView {
             VStack(alignment: .center, spacing: 0) {
-                ResponsiveSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled, showLogo: true, isRightIconEnabled: true)
-                    .padding(.bottom, 16)
+                Link(destination: DeepLinks.newSearch) {
+                    ResponsiveSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled, showLogo: true, isRightIconEnabled: true)
+                }
+
+                Spacer()
 
                 HStack {
                     ForEach(shortcuts.indices, id: \.self) { index in
@@ -92,8 +95,9 @@ struct QuickActionsMediumWidgetView: View {
                         }
                     }
                 }
+                .padding(3)
             }
-            .padding(.bottom, 8)
+            .padding(0)
         }
     }
 }

@@ -59,7 +59,7 @@ struct ResponsiveSearchFieldView: View {
                         .daxBodyRegular()
                         .makeAccentable()
                         .foregroundStyle(Color(designSystemColor: .textSecondary))
-                        .padding(.leading, 8)
+                        .padding(.leading, showLogo ? 8 : 12)
 
                     Spacer()
 

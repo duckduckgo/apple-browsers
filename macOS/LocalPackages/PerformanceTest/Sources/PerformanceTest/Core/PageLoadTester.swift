@@ -161,7 +161,7 @@ public class PageLoadTester: NSObject {
         var scriptURL: URL?
 
         // For Swift Package Manager
-        if let moduleBundle = try? Bundle(path: Bundle.main.bundleURL.appendingPathComponent("PerformanceTest_PerformanceTest.bundle").path) {
+        if let moduleBundle = Bundle(path: Bundle.main.bundleURL.appendingPathComponent("PerformanceTest_PerformanceTest.bundle").path) {
             scriptURL = moduleBundle.url(forResource: "performanceMetrics", withExtension: "js")
         }
 

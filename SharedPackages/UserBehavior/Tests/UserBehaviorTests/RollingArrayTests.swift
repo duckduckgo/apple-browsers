@@ -183,7 +183,7 @@ extension RollingArrayTests {
         XCTAssertEqual(rolling3.count, 3)
         
         // Test capacity 10
-        var rolling10 = RollingArray<String>(capacity: 10)
+        let rolling10 = RollingArray<String>(capacity: 10)
         for i in 1...12 {
             rolling10.append("item\(i)")
         }
@@ -191,7 +191,7 @@ extension RollingArrayTests {
         XCTAssertEqual(rolling10.allValues, ["item3", "item4", "item5", "item6", "item7", "item8", "item9", "item10", "item11", "item12"])
         
         // Test minimum capacity of 1
-        var rolling1 = RollingArray<Bool>(capacity: 0) // Should default to 1
+        let rolling1 = RollingArray<Bool>(capacity: 0) // Should default to 1
         rolling1.append(true)
         rolling1.append(false)
         XCTAssertEqual(rolling1.allValues, [false])

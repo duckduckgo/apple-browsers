@@ -107,7 +107,9 @@ public class RollingArray<T: Codable & Equatable>: Codable {
     /// // rolling[5] == "Monday", rolling[6] == "Tuesday"
     /// ```
     public func append(_ value: T) {
-        values.removeFirst()
+        if !values.isEmpty {
+            values.removeFirst()
+        }
         values.append(InternalValue.value(value))
     }
     

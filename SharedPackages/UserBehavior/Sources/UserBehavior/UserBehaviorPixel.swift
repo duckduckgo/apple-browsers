@@ -64,10 +64,6 @@ enum UserBehaviorPixel: PixelKitEvent { // TODO: check special pixel extension r
     }
 
     var parameters: [String : String]? {
-
-        // TODO bucket-ise all count, length, and devices
-
-
         switch self {
         case .userRetentionWeek(origin: let origin,
                                 installDate: let installDate,

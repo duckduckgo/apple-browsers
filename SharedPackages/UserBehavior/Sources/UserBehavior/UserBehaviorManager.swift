@@ -93,7 +93,17 @@ public final class UserBehaviorManager {
 
     // MARK: - Triggers
 
-    func appDidStart() {
+    public enum Trigger {
+        case appDidStart
+        case userDidSearch
+        case userDidClickAD
+        case userDidDuckAIChat
+        case userDidSubscribe
+        case userDidSync(devicesCount: Int)
+    }
+
+    public func process(trigger: Trigger) {
+
         guard isEnabled else { return }
 
         guard isLessThanSixMonths else {
@@ -101,43 +111,26 @@ public final class UserBehaviorManager {
             return
         }
 
-        processRetention()
-        processActiveSearchDays()
-        processSubscriptionCheck()
-    }
-
-    func userDidSearch() {
-        guard isEnabled else { return }
-
-        recordActiveSearchDay()
-        processAverageSearchCount()
-    }
-
-    func userDidClickAD() {
-        guard isEnabled else { return }
-
-        recordAdClick()
-        processAverageAdClick()
-    }
-
-    func userDidDuckAIChat() {
-        guard isEnabled else { return }
-
-        recordDuckAIChat()
-        processAverageDuckAIChat()
-    }
-
-    func userDidSubscribe() {
-        guard isEnabled else { return }
-
-        recordSubscriptionDate()
-        processSubscriptionCheck()
-    }
-
-    func userDidSync(devicesCount: Int) {
-        guard isEnabled else { return }
-
-        processSyncCheck(devices: devicesCount)
+        switch trigger {
+        case .appDidStart:
+            processRetention()
+            processActiveSearchDays()
+            processSubscriptionCheck()
+        case .userDidSearch:
+            recordActiveSearchDay()
+            processAverageSearchCount()
+        case .userDidClickAD:
+            recordAdClick()
+            processAverageAdClick()
+        case .userDidDuckAIChat:
+            recordDuckAIChat()
+            processAverageDuckAIChat()
+        case .userDidSubscribe:
+            recordSubscriptionDate()
+            processSubscriptionDay()
+        case .userDidSync(devicesCount: let devicesCount):
+            processSyncCheck(devices: devicesCount)
+        }
     }
 
     // MARK: - Retention
@@ -247,15 +240,19 @@ public final class UserBehaviorManager {
         dataStorage.subscriptionDate = Date()
     }
 
+    func processSubscriptionDay() {
+        Logger.userBehavior.debug("Subscription purchased today")
+        pixelKit.fire(UserBehaviorPixel.userSubscribed(origin: originOrInstall.origin, installDate: originOrInstall.installDate, length: "1"), frequency: .legacyDailyNoSuffix)
+    }
+
     func processSubscriptionCheck() {
         guard let subscriptionDate = dataStorage.subscriptionDate else {
+            Logger.userBehavior.error("Missing subscription date")
+            assertionFailure("Missing subscription date")
             return
         }
         let now = Date()
-        if subscriptionDate.isSameDay(now) {
-            Logger.userBehavior.debug("Subscription purchased today")
-            pixelKit.fire(UserBehaviorPixel.userSubscribed(origin: originOrInstall.origin, installDate: originOrInstall.installDate, length: "1"), frequency: .legacyDailyNoSuffix)
-        } else if TimePast.daysBetween(from: subscriptionDate, to: now) >= Constants.daysInAMonth {
+        if TimePast.daysBetween(from: subscriptionDate, to: now) >= Constants.daysInAMonth {
             Logger.userBehavior.debug("Subscription purchased more than 1 month ago")
             pixelKit.fire(UserBehaviorPixel.userSubscribed(origin: originOrInstall.origin, installDate: originOrInstall.installDate, length: "2+"), frequency: .legacyDailyNoSuffix)
         }

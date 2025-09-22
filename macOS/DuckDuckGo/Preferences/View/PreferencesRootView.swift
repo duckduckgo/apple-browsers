@@ -472,10 +472,10 @@ enum Preferences {
                  }
              }
 
-             return PreferencesPaidAIChatModel(userEventHandler: userEventHandler,
-                                                             statusUpdates: model.paidAIChatUpdates,
-                                                             aiFeaturesEnabledUpdates: model.aiFeaturesEnabledUpdates)
-         }
+            return PreferencesPaidAIChatModel(userEventHandler: userEventHandler,
+                                              statusUpdates: model.paidAIChatUpdates,
+                                              aiFeaturesEnabledUpdates: model.aiFeaturesEnabledUpdates)
+        }
 
         private func makeIdentityTheftRestorationViewModel() -> PreferencesIdentityTheftRestorationModel {
             let userEventHandler: (PreferencesIdentityTheftRestorationModel.UserEvent) -> Void = { event in

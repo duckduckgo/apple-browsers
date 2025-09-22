@@ -52,13 +52,19 @@ public protocol FeatureDiscovery {
 final public class DefaultFeatureDiscovery: FeatureDiscovery {
 
     private let wasUsedBeforeStorage: KeyValueStoring
+    private let notificationCenter: NotificationCenter
 
-    public init(wasUsedBeforeStorage: KeyValueStoring = UserDefaults.standard) {
+    public init(wasUsedBeforeStorage: KeyValueStoring = UserDefaults.standard,
+                notificationCenter: NotificationCenter = NotificationCenter.default) {
         self.wasUsedBeforeStorage = wasUsedBeforeStorage
+        self.notificationCenter = notificationCenter
     }
 
     public func setWasUsedBefore(_ feature: WasUsedBeforeFeature) {
         wasUsedBeforeStorage.set(true, forKey: feature.storageKey)
+        notificationCenter.post(name: .featureDiscoverySetWasUsedBefore,
+                                object: self,
+                                userInfo: ["feature": feature.rawValue])
     }
 
     public func wasUsedBefore(_ feature: WasUsedBeforeFeature) -> Bool {
@@ -71,4 +77,8 @@ final public class DefaultFeatureDiscovery: FeatureDiscovery {
         return params
     }
 
+}
+
+public extension Notification.Name {
+    static let featureDiscoverySetWasUsedBefore = Notification.Name("featureDiscoverySetWasUsedBefore")
 }

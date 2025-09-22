@@ -20,6 +20,7 @@ import Cocoa
 import SwiftUI
 import Common
 import os.log
+import PixelKit
 
 final class UpdateNotificationPresenter {
 
@@ -60,6 +61,9 @@ final class UpdateNotificationPresenter {
     }
 
     func openUpdatesPage() {
+        // Track update notification tapped
+        PixelKit.fire(UpdateFlowPixels.updateNotificationTapped)
+        
         DispatchQueue.main.async {
             Application.appDelegate.updateController.openUpdatesPage()
         }

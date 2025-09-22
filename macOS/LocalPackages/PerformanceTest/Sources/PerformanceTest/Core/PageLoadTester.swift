@@ -73,6 +73,7 @@ public class PageLoadTester: NSObject {
     // Navigation tracking
     private var navigationStartTime: Date?
     private var currentURL: URL?
+    private var currentTimeout: TimeInterval = defaultPageLoadTimeout
     private var continuation: CheckedContinuation<TestResult, Error>?
 
     // MARK: - Initialization
@@ -129,6 +130,7 @@ public class PageLoadTester: NSObject {
             try await withCheckedThrowingContinuation { continuation in
                 self.continuation = continuation
                 self.currentURL = url
+                self.currentTimeout = timeout
                 self.navigationStartTime = Date()
 
                 let request = URLRequest(url: url)
@@ -279,7 +281,7 @@ extension PageLoadTester: WKNavigationDelegate {
 
         switch nsError.code {
         case NSURLErrorTimedOut:
-            testError = .timeout(duration: defaultPageLoadTimeout)
+            testError = .timeout(duration: currentTimeout)
         case NSURLErrorCannotFindHost, NSURLErrorCannotConnectToHost:
             testError = .networkError(message: error.localizedDescription)
         case NSURLErrorCancelled:

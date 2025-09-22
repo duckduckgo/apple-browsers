@@ -43,26 +43,28 @@ struct FavoritesWidgetView: View {
                 .daxSubheadSemibold()
                 .foregroundColor(Color(designSystemColor: .accent))
         }
-        .padding(0)
     }
 
     var body: some View {
         DesignSystemWidgetContainerView {
-            VStack(alignment: .center, spacing: 0) {
+            VStack(spacing: 0) {
                 ResponsiveSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled, showLogo: true, isRightIconEnabled: true)
                     .padding(.bottom, 16)
 
                 if entry.favorites.isEmpty, !entry.isPreview {
                     // The whole thing needs to be a link because the user could click anywhere
-                    Link(destination: DeepLinks.addFavorite) {
-                        addFavoritesPrompt()
-                            .padding(.top, 8)
+                    VStack{
+                        Link(destination: DeepLinks.addFavorite) {
+                            addFavoritesPrompt()
+                        }
+                        Spacer()
                     }
+                    .padding(.top, 8)
+                    .frame(maxHeight: .infinity)
                 } else {
                     FavoritesGridView(entry: entry)
+                        .frame(maxHeight: .infinity)
                 }
-                
-                Spacer()
             }
             .padding(0)
         }

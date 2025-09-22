@@ -34,6 +34,12 @@ extension Preferences {
 
                     PreferencePaneSubSection {
                         ToggleMenuItem(UserText.automaticallyClearData, isOn: $model.isAutoClearEnabled)
+                        if model.shouldShowAutoClearAIChatHistorySetting {
+                            ToggleMenuItem("Delete Duck.ai chat history when DuckDuckGo quits",
+                                           isOn: $model.isAutoClearAIChatHistoryEnabled)
+                            .disabled(!model.isAutoClearEnabled)
+                            .padding(.leading, 16)
+                        }
                         ToggleMenuItem(UserText.warnBeforeQuit,
                                        isOn: $model.isWarnBeforeClearingEnabled)
                         .disabled(!model.isAutoClearEnabled)

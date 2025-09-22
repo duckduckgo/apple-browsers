@@ -157,8 +157,21 @@ public class PageLoadTester: NSObject {
 
     private func collectPerformanceMetrics() async throws -> PerformanceMetrics? {
         // Load JavaScript from bundle resources
-        guard let scriptURL = Bundle.module.url(forResource: "performanceMetrics", withExtension: "js"),
-              let scriptContent = try? String(contentsOf: scriptURL) else {
+        // Try Bundle.module first (for SPM), fall back to class bundle
+        var scriptURL: URL?
+
+        // For Swift Package Manager
+        if let moduleBundle = try? Bundle(path: Bundle.main.bundleURL.appendingPathComponent("PerformanceTest_PerformanceTest.bundle").path) {
+            scriptURL = moduleBundle.url(forResource: "performanceMetrics", withExtension: "js")
+        }
+
+        // Fallback to class bundle
+        if scriptURL == nil {
+            scriptURL = Bundle(for: type(of: self)).url(forResource: "performanceMetrics", withExtension: "js")
+        }
+
+        guard let url = scriptURL,
+              let scriptContent = try? String(contentsOf: url) else {
             logger.error("Failed to load performance metrics JavaScript from bundle")
             return nil
         }

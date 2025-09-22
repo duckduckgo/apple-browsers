@@ -96,23 +96,23 @@ jobs:
         if: ${{ github.event.inputs.action == 'upload' }}
         id: upload
         run: |
-          ./scripts/smartling_upload.sh "${{ github.event.inputs.platform }}" "${{ github.ref_name }}"
+          ./scripts/smartling/smartling_upload.sh "${{ github.event.inputs.platform }}" "${{ github.ref_name }}"
           cat upload_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Check Status
         if: ${{ github.event.inputs.action == 'status' }}
         run: |
-          ./scripts/smartling_status.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.platform }}"
+          ./scripts/smartling/smartling_status.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.platform }}"
           cat status_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Approve Job
         if: ${{ github.event.inputs.action == 'approve' }}
         run: |
-          ./scripts/smartling_approve.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.platform }}"
+          ./scripts/smartling/smartling_approve.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.platform }}"
           cat approve_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Download from Smartling
         if: ${{ github.event.inputs.action == 'download' }}
         run: |
-          ./scripts/smartling_download.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.force }}" "${{ github.event.inputs.platform }}"
+          ./scripts/smartling/smartling_download.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.force }}" "${{ github.event.inputs.platform }}"
           cat download_message.txt >> $GITHUB_STEP_SUMMARY

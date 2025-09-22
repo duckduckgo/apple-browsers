@@ -26,14 +26,14 @@ echo "Job name: $JOB_NAME"
 if [ "$PLATFORM" = "iOS" ]; then
     # Upload iOS files (XLIFF and stringsdict)
     echo "Uploading iOS files..."
-    output=$(./scripts/loc_tool.sh upload \
+    output=$(./scripts/smartling/loc_tool.sh upload \
         --job-name "$JOB_NAME" \
         --files ./iOS/scripts/assets/loc/en.xcloc/Localized\ Contents/en.xliff \
                 ./iOS/DuckDuckGo/en.lproj/Localizable.stringsdict 2>&1) || upload_failed=1
 elif [ "$PLATFORM" = "macOS" ]; then
     # Upload macOS file (XLIFF only)
     echo "Uploading macOS files..."
-    output=$(./scripts/loc_tool.sh upload \
+    output=$(./scripts/smartling/loc_tool.sh upload \
         --job-name "$JOB_NAME" \
         --files ./macOS/scripts/assets/loc/en.xliff 2>&1) || upload_failed=1
 else
@@ -49,12 +49,12 @@ if [ "${upload_failed:-0}" = "0" ] && echo "$output" | grep -q "JOB_ID="; then
     job_id=$(echo "$output" | grep -o 'JOB_ID=[^[:space:]]*' | cut -d= -f2)
     echo "JOB_ID=$job_id"  # Still output for any other consumers
     
-    ./scripts/smartling_messages.sh upload upload_message.txt "$PLATFORM" "$job_id" "$SMARTLING_PROJECT_ID" success
+    ./scripts/smartling/smartling_messages.sh upload upload_message.txt "$PLATFORM" "$job_id" "$SMARTLING_PROJECT_ID" success
     echo "✅ Upload complete"
     exit 0
 else
     # Generate error message
-    ./scripts/smartling_messages.sh upload upload_message.txt "$PLATFORM" "" "$SMARTLING_PROJECT_ID" failed
+    ./scripts/smartling/smartling_messages.sh upload upload_message.txt "$PLATFORM" "" "$SMARTLING_PROJECT_ID" failed
     echo "❌ Upload failed"
     exit 1
 fi

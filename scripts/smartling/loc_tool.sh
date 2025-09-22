@@ -9,7 +9,7 @@ set -euo pipefail
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 
 # Source the common functions
-. "$SCRIPT_DIR/loc_export_common.sh"
+. "$SCRIPT_DIR/../loc_export_common.sh"
 
 usage() {
   cat <<EOF

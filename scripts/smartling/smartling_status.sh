@@ -24,7 +24,7 @@ echo "Checking status for job: $JOB_ID"
 echo "Platform: $PLATFORM"
 
 # Capture the loc_tool.sh output
-output=$(./scripts/loc_tool.sh status --job-id "$JOB_ID" 2>&1) || status_failed=1
+output=$(./scripts/smartling/loc_tool.sh status --job-id "$JOB_ID" 2>&1) || status_failed=1
 
 echo "$output"
 
@@ -37,7 +37,7 @@ if [ "${status_failed:-0}" = "0" ]; then
     echo "PERCENT=$percent"
     
     # Generate status message
-    ./scripts/smartling_messages.sh status status_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" "$status" "$percent"
+    ./scripts/smartling/smartling_messages.sh status status_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" "$status" "$percent"
     echo "✅ Status check complete"
     exit 0
 else

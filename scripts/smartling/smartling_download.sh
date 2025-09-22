@@ -30,7 +30,7 @@ mkdir -p "$DOWNLOAD_DIR"
 
 # Download translated files
 echo "Downloading translations from Smartling job $JOB_ID..."
-./scripts/loc_tool.sh download --job-id "$JOB_ID" --out-dir "$DOWNLOAD_DIR"
+./scripts/smartling/loc_tool.sh download --job-id "$JOB_ID" --out-dir "$DOWNLOAD_DIR"
 
 # Reorganize files into locale folders as expected by loc_import.sh
 # Files are downloaded as: name_locale.extension
@@ -102,9 +102,9 @@ rm -rf "$DOWNLOAD_DIR" "$IMPORT_DIR"
 echo "Checking for deleted translation keys and value replacements..."
 
 # Run integrity check. Non-zero exit means issues detected
-if ! ./scripts/check_translation_integrity.py; then
+if ! ./scripts/smartling/check_translation_integrity.py; then
   if [ "$FORCE" != "true" ]; then
-    ./scripts/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" failed deletions
+    ./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" failed deletions
     git checkout -- .
     exit 1
   else
@@ -119,7 +119,7 @@ echo "Committing imported translations..."
 if git diff --quiet && git diff --cached --quiet; then
   echo "No changes to commit"
   # Generate no changes message
-  ./scripts/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" no_changes
+  ./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" no_changes
 else
   # Configure Git identity for the commit
   git config user.name "Dax the Duck"
@@ -138,5 +138,5 @@ else
   echo "✅ Changes pushed to current branch"
   
   # Generate success message
-  ./scripts/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" success
+  ./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" success
 fi

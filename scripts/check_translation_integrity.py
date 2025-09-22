@@ -13,7 +13,6 @@ import json
 import subprocess
 import sys
 
-
 def get_changed_files():
     """Get list of changed .strings and .stringsdict files.
 
@@ -162,94 +161,50 @@ def analyze_translation_changes():
     """Main check function.
 
     Returns:
-        Tuple of (deleted_keys, problematic_replacements) where:
-        - deleted_keys: List of (file_path, key, old_value) tuples
-        - problematic_replacements: List of (file_path, key, old_value, new_value) tuples
-
-    Example:
-        >>> analyze_translation_changes()
-        (
-            [('en.strings', 'some.key', 'Some value')],
-            [('en.strings', 'some.other.key', 'Other value', '')]
-        )
+        Integer indicating if the check failed (1) or passed (0).
     """
-    deleted_keys = []
-    problematic_replacements = []
-
     for file_path in get_changed_files():
-        try:
-            current_content = get_file_content(file_path, 'WORKING')
-            original_content = get_file_content(file_path, 'HEAD')
+        current_content = get_file_content(file_path, 'WORKING')
+        original_content = get_file_content(file_path, 'HEAD')
 
-            if file_path.endswith('.strings'):
-                current = parse_strings_file(current_content)
-                original = parse_strings_file(original_content)
-            elif file_path.endswith('.stringsdict'):
-                current = parse_stringsdict_file(current_content)
-                original = parse_stringsdict_file(original_content)
-            else:
-                continue
-
-            # Find deleted keys
-            for key in set(original.keys()) - set(current.keys()):
-                deleted_keys.append((file_path, key, original[key]))
-
-            # Find problematic replacements
-            for key in set(original.keys()) & set(current.keys()):
-                old_val = str(original[key]).strip()
-                new_val = str(current[key]).strip()
-
-                # Check for empty or significantly shortened values (after trimming)
-                if not new_val or len(new_val) < len(old_val) // 2:
-                    problematic_replacements.append((file_path, key, old_val, new_val))
-        except Exception:  # pylint: disable=broad-except
+        if file_path.endswith('.strings'):
+            current = parse_strings_file(current_content)
+            original = parse_strings_file(original_content)
+        elif file_path.endswith('.stringsdict'):
+            current = parse_stringsdict_file(current_content)
+            original = parse_stringsdict_file(original_content)
+        else:
             continue
 
-    return deleted_keys, problematic_replacements
+        # If there are deleted keys, fail immediately
+        if (set(original.keys()) - set(current.keys())):
+            return 1
 
+        # Find problematic replacements
+        for key in set(original.keys()) & set(current.keys()):
+            old_val = str(original[key]).strip()
+            new_val = str(current[key]).strip()
 
-def format_output(deleted_keys, problematic_replacements):
-    """Format results for consumption by bash script.
-
-    Args:
-        deleted_keys: List of (file_path, key, old_value) tuples.
-        problematic_replacements: List of (file_path, key, old_value, new_value) tuples.
-
-    Output to stdout:
-        Machine-readable format for bash script consumption.
-
-    Example:
-        >>> format_output([('file.strings', 'key1', 'value1')],
-        ...                [('file.strings', 'key2', 'old', 'new')])
-        DELETED=1
-        REPLACED=1
-    """
-    print(f"DELETED={len(deleted_keys)}")
-    print(f"REPLACED={len(problematic_replacements)}")
+            # Check for empty or significantly shortened values (after trimming)
+            if not new_val or len(new_val) < len(old_val) // 2:
+                return 1
+    
+    return 0
 
 
 def main():
     """Main entry point.
 
-    Analyzes translation changes and outputs results.
-    Exits with code 1 on error, 0 on success.
-
-    Example usage:
-        $ ./check_translation_integrity.py
-        DELETED=0
-        REPLACED=0
-
-        $ ./check_translation_integrity.py
-        DELETED=2
-        REPLACED=1
+    Runs the integrity check and exits with its return code:
+    - 0 when no issues detected
+    - 1 when deletions or suspicious replacements are found
     """
     try:
-        deleted_keys, problematic_replacements = analyze_translation_changes()
-        format_output(deleted_keys, problematic_replacements)
+        exit_code = analyze_translation_changes()
+        sys.exit(exit_code)
     except Exception as e:  # pylint: disable=broad-except
         print(f"ERROR: {e}", file=sys.stderr)
         sys.exit(1)
-
 
 if __name__ == '__main__':
     main()

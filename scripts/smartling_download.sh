@@ -101,21 +101,10 @@ rm -rf "$DOWNLOAD_DIR" "$IMPORT_DIR"
 # Check for deleted translation keys and problematic replacements
 echo "Checking for deleted translation keys and value replacements..."
 
-# Use dedicated Python script for robust analysis
-check_result=$(./scripts/check_translation_integrity.py 2>/dev/null) || check_result=""
-
-# Parse the Python output
-DELETED_LINES=$(echo "$check_result" | grep "^DELETED=" | cut -d= -f2 || echo "0")
-PROBLEMATIC_REPLACEMENTS=$(echo "$check_result" | grep "^REPLACED=" | cut -d= -f2 || echo "0")
-
-TOTAL_ISSUES=$((DELETED_LINES + PROBLEMATIC_REPLACEMENTS))
-
-if [ "$TOTAL_ISSUES" -gt 0 ]; then
+# Run integrity check. Non-zero exit means issues detected
+if ! ./scripts/check_translation_integrity.py; then
   if [ "$FORCE" != "true" ]; then
-    # Generate error message for GitHub Actions step summary
     ./scripts/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" failed deletions
-
-    # Revert all changes
     git checkout -- .
     exit 1
   else

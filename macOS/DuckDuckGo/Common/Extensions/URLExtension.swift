@@ -141,6 +141,8 @@ extension URL {
             PixelKit.fire(DebugEvent(GeneralPixel.unifiedURLPredictionMismatch(prediction: "search", input: addressBarString)))
         case (false, true):
             PixelKit.fire(DebugEvent(GeneralPixel.unifiedURLPredictionMismatch(prediction: "navigate", input: addressBarString)))
+        case (nil, nil):
+            break
         case (nil, _):
             PixelKit.fire(DebugEvent(GeneralPixel.unifiedURLPredictionMismatch(prediction: "error", input: addressBarString)))
         default:

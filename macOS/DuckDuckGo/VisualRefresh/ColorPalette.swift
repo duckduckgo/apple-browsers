@@ -19,6 +19,76 @@
 import AppKit
 import DesignResourcesKit
 
+protocol ColorPalette {
+    var surfaceBackdrop: NSColor { get }
+    var surfaceCanvas: NSColor { get }
+    var surfacePrimary: NSColor { get }
+    var surfaceSecondary: NSColor { get }
+    var surfaceTertiary: NSColor { get }
+
+    var textPrimary: NSColor { get }
+    var textSecondary: NSColor { get }
+    var textTertiary: NSColor { get }
+
+    var iconsPrimary: NSColor { get }
+    var iconsSecondary: NSColor { get }
+    var iconsTertiary: NSColor { get }
+
+    var toneTint: NSColor { get }
+    var toneShade: NSColor { get }
+
+    var accentPrimary: NSColor { get }
+    var accentSecondary: NSColor { get }
+    var accentTertiary: NSColor { get }
+    var accentGlow: NSColor { get }
+    var accentTextPrimary: NSColor { get }
+    var accentTextSecondary: NSColor { get }
+    var accentTextTertiary: NSColor { get }
+    var accentContentPrimary: NSColor { get }
+    var accentContentSecondary: NSColor { get }
+    var accentContentTertiary: NSColor { get }
+
+    var accentAltPrimary: NSColor { get }
+    var accentAltSecondary: NSColor { get }
+    var accentAltTertiary: NSColor { get }
+    var accentAltGlow: NSColor { get }
+    var accentAltTextPrimary: NSColor { get }
+    var accentAltTextSecondary: NSColor { get }
+    var accentAltTextTertiary: NSColor { get }
+    var accentAltContentPrimary: NSColor { get }
+    var accentAltContentSecondary: NSColor { get }
+    var accentAltContentTertiary: NSColor { get }
+
+    var controlsFillPrimary: NSColor { get }
+    var controlsFillSecondary: NSColor { get }
+    var controlsFillTertiary: NSColor { get }
+    var controlsDecorationPrimary: NSColor { get }
+    var controlsDecorationSecondary: NSColor { get }
+    var controlsDecorationTertiary: NSColor { get }
+
+    var highlightDecoration: NSColor { get }
+
+    var decorationPrimary: NSColor { get }
+    var decorationSecondary: NSColor { get }
+    var decorationTertiary: NSColor { get }
+
+    var shadowPrimary: NSColor { get }
+    var shadowSecondary: NSColor { get }
+    var shadowTertiary: NSColor { get }
+
+    var destructivePrimary: NSColor { get }
+    var destructiveSecondary: NSColor { get }
+    var destructiveTertiary: NSColor { get }
+    var destructiveGlow: NSColor { get }
+    var destructiveTextPrimary: NSColor { get }
+    var destructiveTextSecondary: NSColor { get }
+    var destructiveTextTertiary: NSColor { get }
+    var destructiveContentPrimary: NSColor { get }
+    var destructiveContentSecondary: NSColor { get }
+    var destructiveContentTertiary: NSColor { get }
+}
+
+final class NewColorPalette: ColorPalette {
 final class NewColorPalette: ThemeColors {
     let surfaceBackdrop: NSColor = .surfaceBackdrop
     let surfaceCanvas: NSColor = .surfaceCanvas

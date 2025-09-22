@@ -135,6 +135,7 @@ class MainViewController: UIViewController {
     private var feedbackCancellable: AnyCancellable?
     private var aiChatCancellables = Set<AnyCancellable>()
     private var refreshButtonCancellables = Set<AnyCancellable>()
+    private var syncRecoveryPromptService: SyncRecoveryPromptService?
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     let privacyProDataReporter: PrivacyProDataReporting
@@ -457,7 +458,9 @@ class MainViewController: UIViewController {
             showFireButtonPulse()
         }
 
-        presentNewAddressBarPickerIfNeeded()
+        if !presentSyncRecoveryPromptIfNeeded() {
+            presentNewAddressBarPickerIfNeeded()
+        }
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -632,6 +635,25 @@ class MainViewController: UIViewController {
         pickerViewController.isModalInPresentation = true
         validator.markPickerDisplayAsSeen()
         self.present(pickerViewController, animated: true)
+    }
+
+    @discardableResult
+    func presentSyncRecoveryPromptIfNeeded() -> Bool {
+        syncRecoveryPromptService = SyncRecoveryPromptService(
+            featureFlagger: featureFlagger,
+            syncService: syncService,
+            keyValueStore: keyValueStore,
+            isOnboardingComplete: tutorialSettings.hasSeenOnboarding
+        )
+
+        guard let syncRecoveryPromptService = syncRecoveryPromptService else { return false }
+
+        return syncRecoveryPromptService.tryPresentSyncRecoveryPrompt(
+            from: self,
+            onSyncFlowSelected: { [weak self] source in
+                self?.segueToSettingsSync(with: source)
+            }
+        )
     }
 
     func presentNetworkProtectionStatusSettingsModal() {
@@ -1043,7 +1065,7 @@ class MainViewController: UIViewController {
         tabModel.viewed = true
 
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
-        let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled && featureFlagger.isFeatureOn(.adjustNewSearchForLandscape)
+        let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
 
         let controller = NewTabPageViewController(tab: tabModel,
                                                   interactionModel: favoritesViewModel,

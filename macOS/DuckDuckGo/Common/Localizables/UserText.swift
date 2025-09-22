@@ -495,7 +495,7 @@ struct UserText {
     static let aiChatOpenSidebarButton = NSLocalizedString("aichat.address-bar.open-sidebar-button", value: "Open Duck.ai Sidebar", comment: "Button to open Duck.ai sidebar")
     static let aiChatCloseSidebarButton = NSLocalizedString("aichat.address-bar.close-sidebar-button", value: "Close Duck.ai Sidebar", comment: "Button to close Duck.ai sidebar")
     static let aiChatAddressBarHideButton = NSLocalizedString("aichat.address-bar.hide-button", value: "Hide Duck.ai Shortcut", comment: "Button to hide duck.ai shortcut in address bar")
-    static let aiChatOpenSettingsButton = NSLocalizedString("aichat.address-bar.open-settings-button", value: "Open Duck.ai Settings", comment: "Button to open Duck.ai settings")
+    static let aiChatOpenSettingsButton = NSLocalizedString("aichat.address-bar.open-settings-button", value: "Open AI Settings", comment: "Button to open AI settings")
     static let askAIChatButtonTitle = NSLocalizedString("aichat.address-bar.ask-button.title", value: "Ask Duck.ai", comment: "Title for button to ask Duck.ai")
 
     static let searchAssistSettings = NSLocalizedString("duckai.search-assist-settings", value: "Search Assist Settings", comment: "The section name in preferences for Search Assist Settings")
@@ -1460,7 +1460,7 @@ struct UserText {
     static let newTabPageContextMenuFavorites = NSLocalizedString("newtabpage.context.menu.favorites", value: "Favorites", comment: "Context menu item to manage Favorites section on the New Tab Page")
     static let newTabPageContextMenuProtectionsReport = NSLocalizedString("newtabpage.context.menu.protections.report", value: "Protections Report", comment: "Context menu item to manage Protections Report section on the New Tab Page")
     static let newTabPageContextMenuShowDuckAI = NSLocalizedString("newtabpage.context.menu.show.duckai", value: "Show Duck.ai in Search Box", comment: "Context menu item to manage Duck.ai on the New Tab Page")
-    static let newTabPageContextMenuOpenDuckAISettings = NSLocalizedString("newtabpage.context.menu.open.duckai.settings", value: "Open Duck.ai Settings", comment: "Context menu item to open Duck.ai Settings from the New Tab Page")
+    static let newTabPageContextMenuOpenDuckAISettings = NSLocalizedString("newtabpage.context.menu.open.duckai.settings", value: "Open AI Settings", comment: "Context menu item to open AI Settings from the New Tab Page")
 
     // Favorites
     static let newTabFavoriteSectionTitle = NSLocalizedString("newTab.favorites.section.title", value: "Favorites", comment: "Title of the Favorites section in the home page")

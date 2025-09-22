@@ -29,7 +29,7 @@ public class PageLoadTester: NSObject {
     private enum Constants {
         static let loggerSubsystem = "com.duckduckgo.macos.browser.performancetest"
         static let loggerCategory = "PageLoadTester"
-        static let defaultTimeout: TimeInterval = 30.0
+        fileprivate static let defaultTimeout: TimeInterval = 30.0
         static let unknownURLString = "unknown"
 
         enum MetricsKeys {
@@ -83,13 +83,13 @@ public class PageLoadTester: NSObject {
     /// Measure page load performance for a URL
     public func measurePageLoad(
         url: URL,
-        timeout: TimeInterval = 30.0,
+        timeout: TimeInterval = Constants.defaultTimeout,
         maxRetries: Int = 1
     ) async throws -> TestResult {
         var lastError: Error?
         var attempts = 0
 
-        while attempts < maxRetries {
+        while attempts <= maxRetries {
             attempts += 1
 
             // Call setup hook if provided

@@ -20,8 +20,8 @@ import Foundation
 
 private enum PerformanceConstants {
     enum Protocols {
-        static let h2 = "h2"
-        static let h3 = "h3"
+        static let http2 = "h2"
+        static let http3 = "h3"
         static let quic = "quic"
         static let unknown = "unknown"
     }
@@ -33,11 +33,11 @@ private enum PerformanceConstants {
     }
 
     enum Grades {
-        static let a = "A"
-        static let b = "B"
-        static let c = "C"
-        static let d = "D"
-        static let f = "F"
+        static let gradeA = "A"
+        static let gradeB = "B"
+        static let gradeC = "C"
+        static let gradeD = "D"
+        static let gradeF = "F"
     }
 
     enum Assessments {
@@ -58,11 +58,9 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
 
     public let domInteractive: TimeInterval
 
-
     public let firstContentfulPaint: TimeInterval
 
     public let largestContentfulPaint: TimeInterval?
-
 
     public let timeToFirstByte: TimeInterval
 
@@ -76,25 +74,21 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
 
     public let secureConnectionTime: TimeInterval?
 
-
     public let transferSize: Double
 
     public let encodedBodySize: Double
 
     public let decodedBodySize: Double
 
-
     public let resourceCount: Int
 
     public let totalResourcesSize: Double
-
 
     public let timeToInteractive: TimeInterval?
 
     public let firstInputDelay: TimeInterval?
 
     public let cumulativeLayoutShift: Double?
-
 
     public let `protocol`: String?
 
@@ -152,7 +146,6 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
         self.navigationType = navigationType
     }
 
-
     public var compressionRatio: Double? {
         guard encodedBodySize > 0 && decodedBodySize > 0 else { return nil }
         return 1.0 - (encodedBodySize / decodedBodySize)
@@ -165,8 +158,8 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
 
     public var usesModernProtocol: Bool {
         guard let proto = `protocol` else { return false }
-        return proto.contains(Constants.Protocols.h2) ||
-               proto.contains(Constants.Protocols.h3) ||
+        return proto.contains(Constants.Protocols.http2) ||
+               proto.contains(Constants.Protocols.http3) ||
                proto.contains(Constants.Protocols.quic)
     }
 
@@ -177,7 +170,6 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
             cls: cumulativeLayoutShift
         )
     }
-
 
     /// Overall performance score (0-100)
     public var performanceScore: Int {
@@ -241,11 +233,11 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
     /// Performance grade based on score
     public var performanceGrade: String {
         switch performanceScore {
-        case 90...100: return Constants.Grades.a
-        case 80..<90: return Constants.Grades.b
-        case 70..<80: return Constants.Grades.c
-        case 60..<70: return Constants.Grades.d
-        default: return Constants.Grades.f
+        case 90...100: return Constants.Grades.gradeA
+        case 80..<90: return Constants.Grades.gradeB
+        case 70..<80: return Constants.Grades.gradeC
+        case 60..<70: return Constants.Grades.gradeD
+        default: return Constants.Grades.gradeF
         }
     }
 }
@@ -258,23 +250,35 @@ public struct CoreWebVitalsAssessment: Codable, Equatable {
     public let cls: Double? // Cumulative Layout Shift
 
     public var lcpAssessment: String {
-        if lcp <= 2.5 { return Constants.Assessments.good }
-        else if lcp <= 4.0 { return Constants.Assessments.needsImprovement }
-        else { return Constants.Assessments.poor }
+        if lcp <= 2.5 {
+            return Constants.Assessments.good
+        } else if lcp <= 4.0 {
+            return Constants.Assessments.needsImprovement
+        } else {
+            return Constants.Assessments.poor
+        }
     }
 
     public var fidAssessment: String? {
         guard let fid = fid else { return nil }
-        if fid <= 0.1 { return Constants.Assessments.good }
-        else if fid <= 0.3 { return Constants.Assessments.needsImprovement }
-        else { return Constants.Assessments.poor }
+        if fid <= 0.1 {
+            return Constants.Assessments.good
+        } else if fid <= 0.3 {
+            return Constants.Assessments.needsImprovement
+        } else {
+            return Constants.Assessments.poor
+        }
     }
 
     public var clsAssessment: String? {
         guard let cls = cls else { return nil }
-        if cls <= 0.1 { return Constants.Assessments.good }
-        else if cls <= 0.25 { return Constants.Assessments.needsImprovement }
-        else { return Constants.Assessments.poor }
+        if cls <= 0.1 {
+            return Constants.Assessments.good
+        } else if cls <= 0.25 {
+            return Constants.Assessments.needsImprovement
+        } else {
+            return Constants.Assessments.poor
+        }
     }
 
     public var overallAssessment: String {
@@ -282,8 +286,12 @@ public struct CoreWebVitalsAssessment: Codable, Equatable {
         let poorCount = assessments.filter { $0 == Constants.Assessments.poor }.count
         let needsImprovementCount = assessments.filter { $0 == Constants.Assessments.needsImprovement }.count
 
-        if poorCount > 0 { return Constants.Assessments.poor }
-        else if needsImprovementCount > 1 { return Constants.Assessments.needsImprovement }
-        else { return Constants.Assessments.good }
+        if poorCount > 0 {
+            return Constants.Assessments.poor
+        } else if needsImprovementCount > 1 {
+            return Constants.Assessments.needsImprovement
+        } else {
+            return Constants.Assessments.good
+        }
     }
 }

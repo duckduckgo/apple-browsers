@@ -63,7 +63,6 @@ public struct TestResult: Codable, Equatable {
         self.endTime = endTime
     }
 
-
     /// Duration of the test if endTime is available
     public var duration: TimeInterval? {
         guard let endTime = endTime else { return nil }

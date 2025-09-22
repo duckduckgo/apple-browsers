@@ -140,10 +140,27 @@ public class PageLoadTester: NSObject {
     }
 
     private func collectPerformanceMetrics() async throws -> PerformanceMetrics? {
-        let scriptURL = Bundle.module.url(forResource: "performanceMetrics", withExtension: "js")
+        // Try to find the bundle containing our resources
+        let bundleName = "DuckDuckGo_PerformanceTest"
+        let candidates = [
+            // Bundle for Swift Package Manager resources
+            Bundle.main.bundleURL.appendingPathComponent("\(bundleName).bundle"),
+            // Bundle for the module itself
+            Bundle(for: type(of: self)).bundleURL.appendingPathComponent("Resources"),
+            // Direct resource in main bundle
+            Bundle.main.bundleURL
+        ]
 
-        guard let url = scriptURL,
-              let scriptContent = try? String(contentsOf: url) else {
+        var scriptContent: String?
+        for candidate in candidates {
+            let url = candidate.appendingPathComponent("performanceMetrics.js")
+            if let content = try? String(contentsOf: url) {
+                scriptContent = content
+                break
+            }
+        }
+
+        guard let scriptContent = scriptContent else {
             logger.error("Failed to load performance metrics JavaScript from bundle")
             return nil
         }
@@ -176,7 +193,6 @@ public class PageLoadTester: NSObject {
         }
     }
 }
-
 
 extension PageLoadTester: WKNavigationDelegate {
 

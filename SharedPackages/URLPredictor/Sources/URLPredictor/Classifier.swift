@@ -19,8 +19,6 @@
 import Foundation
 import URLPredictorRust
 
-// C symbols are assumed imported via modulemap/bridging header:
-
 /// This namespace wraps API provided by `URLPredictorRust` framework.
 ///
 /// ```c

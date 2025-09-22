@@ -26,8 +26,8 @@ protocol AIChatPromptExtracting {
     /// Extracts AI chat content from the given value.
     ///
     /// - Parameter value: The value from which to extract the AI chat content.
-    /// - Returns: An `AIChatContent` instance containing the query and auto-submit preference.
-    func extractAIChatQuery(for value: ValueType) -> AIChatContent
+    /// - Returns: An `AIChatOpenTrigger` instance containing the query and auto-submit preference.
+    func extractAIChatQuery(for value: ValueType) -> AIChatOpenTrigger
 }
 
 /// A struct that implements the `AIChatPromptExtracting` protocol for extracting AI chat content
@@ -35,14 +35,14 @@ protocol AIChatPromptExtracting {
 struct AIChatAddressBarPromptExtractor: AIChatPromptExtracting {
     typealias ValueType = AddressBarTextField.Value
 
-    public func extractAIChatQuery(for value: ValueType) -> AIChatContent {
+    public func extractAIChatQuery(for value: ValueType) -> AIChatOpenTrigger {
         // Extract query from address bar text field value
         let query: String? = queryForValue(value)
 
         // We don't want to auto-submit if the user is opening duck.ai from the SERP
         let shouldAutoSubmit: Bool = shouldAutoSubmitForValue(value)
 
-        return AIChatContent.query(query, shouldAutoSubmit: shouldAutoSubmit)
+        return AIChatOpenTrigger.query(query, shouldAutoSubmit: shouldAutoSubmit)
     }
 
     /// Extracts a query string from the given `AddressBarTextField.Value`.

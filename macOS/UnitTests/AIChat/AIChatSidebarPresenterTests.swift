@@ -730,7 +730,7 @@ class MockAIChatSidebarProvider: AIChatSidebarProviding {
 
 class MockAIChatTabOpener: AIChatTabOpening {
     var openAIChatTabCalled = false
-    var lastContent: AIChatContent?
+    var lastTrigger: AIChatOpenTrigger?
     var lastBehavior: LinkOpenBehavior?
 
     var openNewAIChatCalled = false
@@ -750,13 +750,13 @@ class MockAIChatTabOpener: AIChatTabOpening {
     }
 
     @MainActor
-    func openAIChatTab(with content: AIChatContent, behavior: LinkOpenBehavior) {
+    func openAIChatTab(with trigger: AIChatOpenTrigger, behavior: LinkOpenBehavior) {
         openAIChatTabCalled = true
-        lastContent = content
+        lastTrigger = trigger
         lastBehavior = behavior
 
         // Extract specific data based on content type
-        switch content {
+        switch trigger {
         case .newChat:
             break
         case .query(let query, let shouldAutoSubmit):
@@ -785,7 +785,7 @@ class MockAIChatTabOpener: AIChatTabOpening {
 
     func reset() {
         openAIChatTabCalled = false
-        lastContent = nil
+        lastTrigger = nil
         lastBehavior = nil
         openNewAIChatCalled = false
         lastNewAIChatBehavior = nil

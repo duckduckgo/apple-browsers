@@ -75,12 +75,11 @@ struct QuickActionsMediumWidgetView: View {
 
     var body: some View {
         DesignSystemWidgetContainerView {
-            VStack(alignment: .center, spacing: 0) {
+            VStack(spacing: 0) {
                 Link(destination: DeepLinks.newSearch) {
                     ResponsiveSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled, showLogo: true, isRightIconEnabled: true)
                 }
-
-                Spacer()
+                .padding(.bottom, 16)
 
                 HStack {
                     ForEach(shortcuts.indices, id: \.self) { index in
@@ -95,31 +94,7 @@ struct QuickActionsMediumWidgetView: View {
                         }
                     }
                 }
-                .padding(3)
             }
-            .padding(0)
         }
     }
 }
-
-// @available(iOS 17.0, *)
-// private struct QuickActionView: View {
-//    let shortcut: ShortcutOption
-//
-//    var body: some View {
-//        VStack {
-//            ZStack {
-//                RoundedRectangle(cornerRadius: 14)
-//                    .fill(Color(designSystemColor: .backgroundTertiary))
-//                    .frame(width: 60, height: 60)
-//                
-//                shortcut.icon
-//                    .resizable()
-//                    .scaledToFit()
-//                    .frame(width: 24, height: 24)
-//                    .makeAccentable()
-//            }
-//
-//        }
-//    }
-// }

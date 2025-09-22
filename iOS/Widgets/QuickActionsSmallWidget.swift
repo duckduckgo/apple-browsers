@@ -133,8 +133,7 @@ struct QuickActionsWidgetView: View {
                 Link(destination: DeepLinks.newSearch) {
                     ResponsiveSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled, showLogo: true, isRightIconEnabled: false)
                 }
-
-                Spacer()
+                .padding(.bottom, 15)
 
                 HStack(spacing: 12) {
                     Link(destination: entry.configuration.leftShortcut.destination) {
@@ -144,9 +143,7 @@ struct QuickActionsWidgetView: View {
                         ResponsiveIconView(image: entry.configuration.rightShortcut.icon)
                     }
                 }
-                .padding(.bottom, 3)
             }
-            .padding(0)
         }
     }
 }

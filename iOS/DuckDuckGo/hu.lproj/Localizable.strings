@@ -3421,6 +3421,36 @@
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Jelszavak szinkronizálása és biztonsági mentése";
 
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sync & Backup ezen az eszközön";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "A Helyreállítási kód elmentésével biztosíthatod, hogy a jelszavaidat a jövőben könnyen vissza tudd állítani.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "A szinkronizált jelszavakat csak akkor tudod visszaállítani, ha van hozzáférésed egy másik eszközhöz, vagy ha rendelkezel a Sync & Backup beállításakor megadott Helyreállítási kóddal.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[További információk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Helyreállítási kód beolvasása";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Nem férsz hozzá másik eszközhöz? Olvasd be a helyreállítási kódodat.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Nincs másik eszközöd?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "A DuckDuckGo-jelszavak nem kerülnek át az új eszközödre az iCloudon keresztül, mert titkosítva vannak az eszközödön. Minden más már itt van.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Szinkronizálás másik eszközzel";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Új %@ eszközre váltottál? Szinkronizáljuk a jelszavaidat.";
+
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Eltávolítás";
 

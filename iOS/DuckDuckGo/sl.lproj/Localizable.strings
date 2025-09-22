@@ -3421,6 +3421,36 @@
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sinhronizirajte in varnostno kopirajte svoja gesla";
 
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sinhronizacija in varnostno kopiranje te naprave";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Če shranite obnovitveno kodo, boste v prihodnje lahko zlahka obnovili svoja gesla.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Sinhronizirana gesla lahko obnovite le, če imate dostop do druge naprave ali če uporabite obnovitveno kodo, ki je na voljo v sklopu nastavitve funkcije Sinhronizacija in varnostno kopiranje.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Skeniranje obnovitvene kode";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Ali druga naprava ni na voljo? Skenirajte svojo obnovitveno kodo.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Ali nimate druge naprave?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "Gesla DuckDuckGo se ne prenesejo s storitvijo iCloud, ker so šifrirana v vaši napravi. Vse ostalo je že tukaj.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Sinhronizacija z drugo napravo";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Ali ste v novi napravi %@? Sinhronizirajmo vaša gesla.";
+
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Odstrani";
 

@@ -3421,6 +3421,36 @@
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Synchronizuj a zálohuj si hesla";
 
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Synchronizovat a zálohovat toto zařízení";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Uložením kódu pro obnovení ti v budoucnu může pomoci snadno obnovit heslo.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Synchronizovaná hesla můžeš obnovit pouze tehdy, pokud máš přístup k jinému zařízení, nebo pomocí kódu pro obnovení, který byl vytvořen při nastavování funkce Sync & Backup.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Naskenovat kód pro obnovení";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Je jiné zařízení nedostupné? Naskenuj svůj kód pro obnovení.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Nemáš jiné zařízení?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "Hesla DuckDuckGo se nepřenášejí přes iCloud, protože jsou zašifrovaná přímo na zařízení. Všechno ostatní už je tady.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Synchronizovat s jiným zařízením";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Na nové zařízení %@? Synchronizujme tvá hesla.";
+
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Odstranit";
 

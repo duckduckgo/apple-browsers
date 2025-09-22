@@ -1183,6 +1183,29 @@ public struct UserText {
     public static let syncPromoConfirmAction = NSLocalizedString("sync.promo.confirm.action", value: "Set Up Sync", comment: "Title for a button in the Sync Promotion banner to set up Sync")
     public static let syncPromoDismissAction = NSLocalizedString("sync.promo.dismiss.action", value: "No Thanks", comment: "Title for a button in the Sync Promotion banner to dismiss Sync promotion banner")
 
+    // MARK: Sync Recovery Prompts
+    public static func syncRecoveryPromptTitle(deviceName: String) -> String {
+        let format = NSLocalizedString(
+            "sync.recovery.prompt.title",
+            value: "On a new %@? Let's sync your passwords.",
+            comment: "Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad)"
+        )
+
+        return String(format: format, deviceName)
+    }
+    public static let syncRecoveryPromptMessage = NSLocalizedString("sync.recovery.prompt.message", value: "DuckDuckGo passwords don’t transfer with iCloud because they’re encrypted on your device. Everything else is already here.", comment: "Message for the sync recovery prompt")
+    public static let syncRecoveryPromptSyncButton = NSLocalizedString("sync.recovery.prompt.sync.button", value: "Sync With Another Device", comment: "Button title to sync with another device")
+    public static let syncRecoveryPromptContinueButton = NSLocalizedString("sync.recovery.prompt.continue.button", value: "Don’t Have Another Device?", comment: "Button title to show alternatives")
+
+
+    public static let syncRecoveryAlternativePromptTitle = NSLocalizedString("sync.recovery.alternative.prompt.title", value: "Other device unavailable? Scan your Recovery Code.", comment: "Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords")
+    public static let syncRecoveryAlternativePromptMessage = NSLocalizedString("sync.recovery.alternative.prompt.message", value: "Synced passwords can only be restored if you have access to another device or by using the Recovery Code provided as part of Sync & Backup setup.", comment: "Message for the sync recovery alternative prompt")
+    public static let syncRecoveryAlternativePromptMessageLink = NSLocalizedString("sync.recovery.alternative.prompt.message.link", value: "[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)", comment: "Learn more link after the message for the sync recovery alternative prompt")
+
+    public static let syncRecoveryAlternativePromptSyncButton = NSLocalizedString("sync.recovery.alternative.prompt.sync.button", value: "Scan Recovery Code", comment: "Button title to start sync QR scan")
+    public static let syncRecoveryAlternativePromptBackupButton = NSLocalizedString("sync.recovery.alternative.prompt.backup.button", value: "Sync & Backup This Device", comment: "Button title to start backup")
+    public static let syncRecoveryAlternativePromptFooter = NSLocalizedString("sync.recovery.alternative.prompt.footer", value: "Saving your Recovery Code can ensure you’ll be able to restore your passwords easily in the future.", comment: "Footer for the sync recovery prompt")
+
     // Mark: Import Promotion
     public static let importPasswordsPromoTitle =  NSLocalizedString("import.passwords.promo.title", value: "Import your passwords to DuckDuckGo", comment: "Title for the Import Passwords Promotion banner")
     public static let importPasswordsPromoMessage =  NSLocalizedString("import.passwords.promo.message", value: "Quickly and securely transfer your passwords from another browser.", comment: "Message body for the Import Passwords Promotion banner")

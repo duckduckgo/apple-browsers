@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import AppKit
+import PixelKit
 
 protocol UpdateController: AnyObject {
 
@@ -197,5 +198,8 @@ extension UpdateController {
         }
 
         lastUpdateNotificationShownDate = Date()
+        
+        // Track update notification shown
+        PixelKit.fire(UpdateFlowPixels.updateNotificationShown)
     }
 }

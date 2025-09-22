@@ -190,7 +190,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         let switchBarHandler = createSwitchBarHandler(for: textField)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
-        let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler, featureFlagger: dependencies.featureFlagger)
+        let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)
         editingStateViewController.delegate = self
 
         editingStateViewController.modalPresentationStyle = .custom
@@ -198,7 +198,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
         editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
         editingStateViewController.automaticallySelectsTextOnAppear = shouldAutoSelectText
-        editingStateViewController.adjustsLayoutInLandscape = dependencies.featureFlagger.isFeatureOn(.adjustNewSearchForLandscape)
 
         switchBarHandler.clearButtonTappedPublisher
             .receive(on: DispatchQueue.main)

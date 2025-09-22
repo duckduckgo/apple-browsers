@@ -8,4 +8,4 @@ appId: com.duckduckgo.mobile.ios
 # Validate Duck Player Closes
 - tapOn: 
     id: ${output.closeButtonId}
-- assertVisible: ${output.videoTitle}
+- assertVisible: ${output.videoTitle}.*

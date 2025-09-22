@@ -9058,9 +9058,9 @@ ul.messages {
     }
     async setup() {
       this.createButtonUI();
+      this.setupTelemetry();
       await this.setupMessageBridge();
       this.setupTextBoxDetection();
-      this.setupTelemetry();
       this.cleanupExistingPrompts();
       this.setupPromptCleanupObserver();
     }
@@ -9640,7 +9640,7 @@ ul.messages {
     handleSendMessage() {
       this.log.info("handleSendMessage called");
       this.triggerInputEvents();
-      if (this.textBox && this.promptTelemetry) {
+      if (this.textBox && this.promptTelemetry && !this.hasContextBeenUsed) {
         const rawPromptText = this.getRawPromptText();
         const totalPromptText = this.textBox.value;
         const contextSize = this.pageData?.content?.length || 0;
@@ -10043,10 +10043,12 @@ ${truncatedWarning}
      * @param {Object} params - Parameters to send with pixel
      */
     sendPixel(pixelName, params) {
-      if (!globalThis?.DDG?.pixel) {
+      if (!globalThis?.DDG?.pixel?.fire) {
+        this.log.warn("sendPixel: No pixel object found");
         return;
       }
       globalThis.DDG.pixel.fire(pixelName, params);
+      this.log.info("Pixel sent", { pixelName, params });
     }
     /**
      * Bucket numbers by hundreds for privacy-friendly reporting
@@ -10063,6 +10065,7 @@ ${truncatedWarning}
     /**
      * Send context pixel info when context is used
      * @param {Object} contextData - Context data object
+     * @param {string} pixelName - Name of pixel to fire
      */
     sendContextPixelInfo(contextData, pixelName) {
       if (!contextData?.content || contextData.content.length === 0) {
@@ -10070,7 +10073,7 @@ ${truncatedWarning}
         return;
       }
       this.sendPixel(pixelName, {
-        contextLength: contextData.content.length
+        contextLength: contextData.fullContentLength
       });
     }
     /**
@@ -10358,6 +10361,8 @@ ${children}
         metaDescription: this.getMetaDescription(),
         content: mainContent,
         truncated,
+        fullContentLength: this.fullContentLength,
+        // Include full content length before truncation
         headings: this.getHeadings(),
         links: this.getLinks(),
         images: this.getImages(),
@@ -10380,7 +10385,8 @@ ${children}
       return metaDesc ? metaDesc.getAttribute("content") || "" : "";
     }
     getMainContent() {
-      const maxLength = this.getFeatureSetting("maxContentLength") || 950;
+      const maxLength = this.getFeatureSetting("maxContentLength") || 9500;
+      const upperLimit = this.getFeatureSetting("upperLimit") || 5e5;
       let excludeSelectors = this.getFeatureSetting("excludeSelectors") || [".ad", ".sidebar", ".footer", ".nav", ".header"];
       excludeSelectors = excludeSelectors.concat(["script", "style", "link", "meta", "noscript", "svg", "canvas"]);
       let content = "";
@@ -10400,13 +10406,15 @@ ${children}
           elements.forEach((el) => el.remove());
         });
         this.log.info("Calling domToMarkdown", clone.innerHTML);
-        content += domToMarkdown(clone, maxLength);
+        content += domToMarkdown(clone, upperLimit);
       }
+      content = content.trim();
+      this.fullContentLength = content.length;
       if (content.length > maxLength) {
         this.log.info("Truncating content", content);
         content = content.substring(0, maxLength) + "...";
       }
-      return content.trim();
+      return content;
     }
     getHeadings() {
       const headings = [];

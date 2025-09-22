@@ -3310,6 +3310,36 @@ Take back control of your personal information with the browser designed for dat
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sync & Back Up Your Passwords";
 
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sync & Backup This Device";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Saving your Recovery Code can ensure you’ll be able to restore your passwords easily in the future.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Synced passwords can only be restored if you have access to another device or by using the Recovery Code provided as part of Sync & Backup setup.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Scan Recovery Code";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Other device unavailable? Scan your Recovery Code.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Don’t Have Another Device?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "DuckDuckGo passwords don’t transfer with iCloud because they’re encrypted on your device. Everything else is already here.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Sync With Another Device";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "On a new %@? Let's sync your passwords.";
+
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Remove";
 

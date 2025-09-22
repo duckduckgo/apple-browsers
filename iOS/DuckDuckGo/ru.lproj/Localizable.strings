@@ -3421,6 +3421,36 @@
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Синхронизация и резервное копирование паролей";
 
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Синхронизация и резервная копия";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Сохраните код для восстановления паролей: он может пригодиться вам в будущем.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Синхронизированные пароли можно восстановить, только если у вас есть доступ к другому устройству или код восстановления, указываемый во время настройки Sync & Backup.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Отсканировать код";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Нет доступа к другому устройству? Отсканируйте код восстановления.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Нет другого устройства?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "Пароли DuckDuckGo не передаются через iCloud, так как они шифруются на вашем устройстве. Но все остальное уже перенесено.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Синхронизировать с другим устройством";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Новый %@? Давайте синхронизируем пароли.";
+
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Удалить";
 

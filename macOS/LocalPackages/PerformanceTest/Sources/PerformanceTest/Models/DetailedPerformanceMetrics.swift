@@ -125,7 +125,7 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
         cumulativeLayoutShift: Double? = nil,
         `protocol`: String? = nil,
         redirectCount: Int = 0,
-        navigationType: String = Constants.NavigationTypes.navigate
+        navigationType: String = "navigate"
     ) {
         self.loadComplete = max(0, loadComplete)
         self.domComplete = max(0, domComplete)

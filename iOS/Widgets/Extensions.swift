@@ -33,6 +33,9 @@ extension Color {
 extension View {
 
     @ViewBuilder func widgetContainerBackground(color: Color = .clear) -> some View {
+        if #available(iOSApplicationExtension 26.0, *) {
+            background(color)
+        } else
         if #available(iOSApplicationExtension 17.0, *) {
             containerBackground(for: .widget) {
                 color

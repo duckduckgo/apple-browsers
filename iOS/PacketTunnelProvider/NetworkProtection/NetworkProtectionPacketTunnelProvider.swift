@@ -457,11 +457,11 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             let keychainType: KeychainType = .dataProtection(.named(subscriptionAppGroup))
             let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
             let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
-                let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-                                  PixelParameters.privacyProKeychainError: error.localizedDescription,
+                let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
+                                  PixelParameters.subscriptionKeychainError: error.localizedDescription,
                                   PixelParameters.source: KeychainErrorSource.vpn.rawValue,
                                   PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
-                DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainAccessError,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
                                              withAdditionalParameters: parameters)
             }
@@ -656,11 +656,11 @@ extension NetworkProtectionPacketTunnelProvider: AccountManagerKeychainAccessDel
             return
         }
 
-        let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-                          PixelParameters.privacyProKeychainError: expectedError.errorDescription ?? "Unknown",
+        let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
+                          PixelParameters.subscriptionKeychainError: expectedError.errorDescription ?? "Unknown",
                           PixelParameters.source: KeychainErrorSource.vpn.rawValue,
                           PixelParameters.authVersion: KeychainErrorAuthVersion.v1.rawValue]
-        DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
+        DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainAccessError,
                                      pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
                                      withAdditionalParameters: parameters)
     }

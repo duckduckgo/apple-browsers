@@ -89,6 +89,6 @@ final class VPNPopoverPresenterTests: XCTestCase {
 
         // Then
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, PrivacyProPixel.privacyProToolbarButtonPopoverShown.name)
+        XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.privacyProToolbarButtonPopoverShown.name)
     }
 }

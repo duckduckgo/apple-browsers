@@ -47,32 +47,32 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
     public func handle(pixel: Subscription.SubscriptionPixelType) {
         switch pixel {
         case .invalidRefreshToken:
-            PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenDetected(source), frequency: .dailyAndCount)
+            PixelKit.fire(SubscriptionPixel.privacyProInvalidRefreshTokenDetected(source), frequency: .dailyAndCount)
         case .subscriptionIsActive:
-            PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActive(AuthVersion.v2), frequency: .legacyDaily)
+            PixelKit.fire(SubscriptionPixel.privacyProSubscriptionActive(AuthVersion.v2), frequency: .legacyDaily)
         case .migrationFailed(let error):
-            PixelKit.fire(PrivacyProPixel.privacyProAuthV2MigrationFailed(source, error), frequency: .dailyAndCount)
+            PixelKit.fire(SubscriptionPixel.privacyProAuthV2MigrationFailed(source, error), frequency: .dailyAndCount)
         case .migrationSucceeded:
-            PixelKit.fire(PrivacyProPixel.privacyProAuthV2MigrationSucceeded(source), frequency: .dailyAndCount)
+            PixelKit.fire(SubscriptionPixel.privacyProAuthV2MigrationSucceeded(source), frequency: .dailyAndCount)
         case .getTokensError(let policy, let error):
-            PixelKit.fire(PrivacyProPixel.privacyProAuthV2GetTokensError(policy, source, error), frequency: .dailyAndCount)
+            PixelKit.fire(SubscriptionPixel.privacyProAuthV2GetTokensError(policy, source, error), frequency: .dailyAndCount)
         case .invalidRefreshTokenSignedOut:
-            PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
+            PixelKit.fire(SubscriptionPixel.privacyProInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
         case .invalidRefreshTokenRecovered:
-            PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenRecovered, frequency: .dailyAndCount)
+            PixelKit.fire(SubscriptionPixel.privacyProInvalidRefreshTokenRecovered, frequency: .dailyAndCount)
         }
     }
 
     public func handle(pixel: Subscription.KeychainManager.Pixel) {
         switch pixel {
         case .deallocatedWithBacklog:
-            PixelKit.fire(PrivacyProPixel.privacyProKeychainManagerDeallocatedWithBacklog(source), frequency: .dailyAndCount)
+            PixelKit.fire(SubscriptionPixel.privacyProKeychainManagerDeallocatedWithBacklog(source), frequency: .dailyAndCount)
         case .dataAddedToTheBacklog:
-            PixelKit.fire(PrivacyProPixel.privacyProKeychainManagerDataAddedToTheBacklog(source), frequency: .dailyAndCount)
+            PixelKit.fire(SubscriptionPixel.privacyProKeychainManagerDataAddedToTheBacklog(source), frequency: .dailyAndCount)
         case .dataWroteFromBacklog:
-            PixelKit.fire(PrivacyProPixel.privacyProKeychainManagerDataWroteFromBacklog(source), frequency: .dailyAndCount)
+            PixelKit.fire(SubscriptionPixel.privacyProKeychainManagerDataWroteFromBacklog(source), frequency: .dailyAndCount)
         case .failedToWriteDataFromBacklog:
-            PixelKit.fire(PrivacyProPixel.privacyProKeychainManagerFailedToWriteDataFromBacklog(source), frequency: .dailyAndCount)
+            PixelKit.fire(SubscriptionPixel.privacyProKeychainManagerFailedToWriteDataFromBacklog(source), frequency: .dailyAndCount)
         }
     }
 }

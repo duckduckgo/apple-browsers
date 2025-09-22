@@ -1,5 +1,5 @@
 //
-//  PrivacyProPixel.swift
+//  SubscriptionPixel.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -29,7 +29,7 @@ fileprivate let appDistribution = "direct"
 #endif
 // swiftlint:enable private_over_fileprivate
 
-enum PrivacyProPixel: PixelKitEvent {
+enum SubscriptionPixel: PixelKitEvent {
     // Subscription
     case privacyProSubscriptionActive(AuthVersion)
     case privacyProOfferScreenImpression
@@ -156,7 +156,7 @@ enum PrivacyProPixel: PixelKitEvent {
         }
     }
 
-    private struct PrivacyProPixelsDefaults {
+    private struct SubscriptionPixelsDefaults {
         static let errorKey = "error"
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
@@ -170,14 +170,14 @@ enum PrivacyProPixel: PixelKitEvent {
                 .privacyProKeychainManagerDeallocatedWithBacklog(let source),
                 .privacyProKeychainManagerDataWroteFromBacklog(let source),
                 .privacyProKeychainManagerFailedToWriteDataFromBacklog(let source):
-            return [PrivacyProPixelsDefaults.sourceKey: source.description]
+            return [SubscriptionPixelsDefaults.sourceKey: source.description]
         case .privacyProAuthV2GetTokensError(let policy, let source, let error):
-            return [PrivacyProPixelsDefaults.errorKey: error.localizedDescription,
-                    PrivacyProPixelsDefaults.policyCacheKey: policy.description,
-                    PrivacyProPixelsDefaults.sourceKey: source.description]
+            return [SubscriptionPixelsDefaults.errorKey: error.localizedDescription,
+                    SubscriptionPixelsDefaults.policyCacheKey: policy.description,
+                    SubscriptionPixelsDefaults.sourceKey: source.description]
         case .privacyProAuthV2MigrationFailed(let source, let error):
-            return [PrivacyProPixelsDefaults.errorKey: error.localizedDescription,
-                    PrivacyProPixelsDefaults.sourceKey: source.description]
+            return [SubscriptionPixelsDefaults.errorKey: error.localizedDescription,
+                    SubscriptionPixelsDefaults.sourceKey: source.description]
         case .privacyProSubscriptionActive(let authVersion):
             return [AuthVersion.key: authVersion.rawValue]
         default:

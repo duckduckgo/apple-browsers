@@ -74,9 +74,9 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
 
         switch subscriptionActivationError {
         case .purchaseFailed(let error):
-            PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureStoreError(error), frequency: .legacyDailyAndCount)
+            PixelKit.fire(SubscriptionPixel.privacyProPurchaseFailureStoreError(error), frequency: .legacyDailyAndCount)
         case .missingEntitlements:
-            PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureBackendError, frequency: .legacyDailyAndCount)
+            PixelKit.fire(SubscriptionPixel.privacyProPurchaseFailureBackendError, frequency: .legacyDailyAndCount)
         case .failedToGetSubscriptionOptions:
             break
         case .failedToSetSubscription:
@@ -84,16 +84,16 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
         case .cancelledByUser:
             break
         case .accountCreationFailed(let error):
-            PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated(error), frequency: .legacyDailyAndCount)
+            PixelKit.fire(SubscriptionPixel.privacyProPurchaseFailureAccountNotCreated(error), frequency: .legacyDailyAndCount)
         case .activeSubscriptionAlreadyPresent:
             break
         case .otherPurchaseError:
-            PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureOther, frequency: .legacyDailyAndCount)
+            PixelKit.fire(SubscriptionPixel.privacyProPurchaseFailureOther, frequency: .legacyDailyAndCount)
         case .restoreFailedDueToNoSubscription,
              .restoreFailedDueToExpiredSubscription:
-            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound, frequency: .legacyDailyAndCount)
+            PixelKit.fire(SubscriptionPixel.privacyProRestorePurchaseStoreFailureNotFound, frequency: .legacyDailyAndCount)
         case .otherRestoreError:
-            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther, frequency: .legacyDailyAndCount)
+            PixelKit.fire(SubscriptionPixel.privacyProRestorePurchaseStoreFailureOther, frequency: .legacyDailyAndCount)
         }
     }
 }

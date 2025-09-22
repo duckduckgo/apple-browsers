@@ -1,5 +1,5 @@
 //
-//  OnboardingPrivacyProPromotionHelper.swift
+//  OnboardingSubscriptionPromotionHelper.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -26,8 +26,8 @@ import Subscription
 ///
 /// Conforming types provide logic for determining when the Privacy Pro promotion should be shown during onboarding,
 /// as well as utilities for experiment tracking and pixel firing related to the promotion.
-protocol OnboardingPrivacyProPromotionHelping {
-    
+protocol OnboardingSubscriptionPromotionHelping {
+
     /// Text to display on the promotion proceed button
     var proceedButtonText: String { get }
 
@@ -49,11 +49,11 @@ protocol OnboardingPrivacyProPromotionHelping {
     func fireDismissPixel()
 }
 
-/// A helper struct that implements the OnboardingPrivacyProPromotionHelping protocol.
+/// A helper struct that implements the OnboardingSubscriptionPromotionHelping protocol.
 ///
 /// This struct provides the logic for determining when to show the Privacy Pro promotion during onboarding,
 /// as well as handling experiment tracking and pixel firing.
-struct OnboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping {
+struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping {
 
     /// Constants used by the helper.
     enum Constants {
@@ -70,7 +70,7 @@ struct OnboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping
     /// The pixel firing service used to track user interactions with the promotion.
     private let pixelFiring: PixelFiring.Type
 
-    /// Initializes a new instance of the OnboardingPrivacyProPromotionHelper.
+    /// Initializes a new instance of the OnboardingSubscriptionPromotionHelper.
     ///
     /// - Parameters:
     ///   - featureFlagger: The feature flagging service. Defaults to the shared instance.
@@ -105,16 +105,16 @@ struct OnboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping
 
     /// Fires a pixel when the onboarding promotion is shown to the user.
     func fireImpressionPixel() {
-        pixelFiring.fire(.privacyProOnboardingPromotionImpression, withAdditionalParameters: [:])
+        pixelFiring.fire(.subscriptionOnboardingPromotionImpression, withAdditionalParameters: [:])
     }
 
     /// Fires a pixel when the onboarding promotion is tapped by the user.
     func fireTapPixel() {
-        pixelFiring.fire(.privacyProOnboardingPromotionTap, withAdditionalParameters: [:])
+        pixelFiring.fire(.subscriptionOnboardingPromotionTap, withAdditionalParameters: [:])
     }
 
     /// Fires a pixel when the onboarding promotion is dismissed by the user.
     func fireDismissPixel() {
-        pixelFiring.fire(.privacyProOnboardingPromotionDismiss, withAdditionalParameters: [:])
+        pixelFiring.fire(.subscriptionOnboardingPromotionDismiss, withAdditionalParameters: [:])
     }
 }

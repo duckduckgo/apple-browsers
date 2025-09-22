@@ -131,16 +131,16 @@ final class SubscriptionFlowViewModel: ObservableObject {
              DispatchQueue.main.async {
                  switch feature {
                  case .networkProtection:
-                     UniquePixel.fire(pixel: .privacyProWelcomeVPN)
+                     UniquePixel.fire(pixel: .subscriptionWelcomeVPN)
                      self.state.selectedFeature = .netP
                  case .dataBrokerProtection:
-                     UniquePixel.fire(pixel: .privacyProWelcomePersonalInformationRemoval)
+                     UniquePixel.fire(pixel: .subscriptionWelcomePersonalInformationRemoval)
                      self.state.selectedFeature = .dbp
                  case .identityTheftRestoration, .identityTheftRestorationGlobal:
-                     UniquePixel.fire(pixel: .privacyProWelcomeIdentityRestoration)
+                     UniquePixel.fire(pixel: .subscriptionWelcomeIdentityRestoration)
                      self.state.selectedFeature = .itr
                  case .paidAIChat:
-                     UniquePixel.fire(pixel: .privacyProWelcomeAIChat)
+                     UniquePixel.fire(pixel: .subscriptionWelcomeAIChat)
                      self.urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
                  case .unknown:
                      break
@@ -169,11 +169,11 @@ final class SubscriptionFlowViewModel: ObservableObject {
         
         switch error {
         case .purchaseFailed:
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureStoreError,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureStoreError,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .purchaseFailed
         case .missingEntitlements:
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureBackendError,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureBackendError,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .missingEntitlements
         case .failedToGetSubscriptionOptions:
@@ -183,7 +183,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         case .cancelledByUser:
             state.transactionError = .cancelledByUser
         case .accountCreationFailed:
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureAccountNotCreated,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureAccountNotCreated,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .generalError
         case .activeSubscriptionAlreadyPresent:
@@ -198,7 +198,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
             // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
             state.transactionError = .failedToRestorePastPurchase
         case .generalError:
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureOther,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureOther,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .generalError
         }
@@ -330,7 +330,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         }
         await self.setupTransactionObserver()
         await self.setupWebViewObservers()
-        Pixel.fire(pixel: .privacyProOfferScreenImpression)
+        Pixel.fire(pixel: .subscriptionOfferScreenImpression)
     }
 
     @MainActor

@@ -1,5 +1,5 @@
 //
-//  OnboardingPrivacyProPromotionHelpingTests.swift
+//  OnboardingSubscriptionPromotionHelpingTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -22,7 +22,7 @@ import Core
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 
-final class OnboardingPrivacyProPromotionHelpingTests: XCTestCase {
+final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
 
     private var sut: OnboardingPrivacyProPromotionHelping!
     private var mockFeatureFlagger: MockFeatureFlagger!

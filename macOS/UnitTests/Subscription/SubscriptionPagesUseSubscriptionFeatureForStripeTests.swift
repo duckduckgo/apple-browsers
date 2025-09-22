@@ -296,8 +296,8 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
         // Then
         XCTAssertEqual(uiEventsHappened, [.didDismissProgressViewController])
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c"])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c"])
     }
 
     func testSubscriptionSelectedSuccessWhenRepurchasingForExpiredAppleSubscription() async throws {
@@ -316,8 +316,8 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
         XCTAssertFalse(authService.createAccountCalled)
         XCTAssertEqual(uiEventsHappened, [.didDismissProgressViewController])
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c"])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c"])
     }
 
     func testSubscriptionSelectedErrorWhenUnauthenticatedAndAccountCreationFails() async throws {
@@ -339,11 +339,11 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
                                           .didShowTab(.subscription(subscriptionManager.url(for: .purchase))),
                                           .didDismissProgressViewController])
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated(Constants.invalidTokenError).name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated(Constants.invalidTokenError).name + "_c",
-                                     PrivacyProPixel.privacyProOfferScreenImpression.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c",
+                                     SubscriptionPixel.privacyProPurchaseFailureAccountNotCreated(Constants.invalidTokenError).name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseFailureAccountNotCreated(Constants.invalidTokenError).name + "_c",
+                                     SubscriptionPixel.privacyProOfferScreenImpression.name])
     }
 
     // MARK: - Tests for completeStripePayment
@@ -365,8 +365,8 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
         let dictionaryResult = try XCTUnwrap(result as? [String: String])
         XCTAssertTrue(dictionaryResult.isEmpty)
 
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseStripeSuccess.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseStripeSuccess.name + "_c"])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseStripeSuccess.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseStripeSuccess.name + "_c"])
     }
 }
 
@@ -397,12 +397,12 @@ extension SubscriptionPagesUseSubscriptionFeatureForStripeTests {
 
         // Assert no other Privacy Pro pixels were fired except the expected
 #if APPSTORE
-        let privacyProPixelPrefix = "m_mac_store_privacy-pro"
+        let subscriptionPixelPrefix = "m_mac_store_privacy-pro"
 #else
-        let privacyProPixelPrefix = "m_mac_direct_privacy-pro"
+        let subscriptionPixelPrefix = "m_mac_direct_privacy-pro"
 #endif
         let otherPixels = pixelsFired.subtracting(expectedPixels)
-        let otherPrivacyProPixels = otherPixels.filter { $0.hasPrefix(privacyProPixelPrefix) }
+        let otherPrivacyProPixels = otherPixels.filter { $0.hasPrefix(subscriptionPixelPrefix) }
         XCTAssertTrue(otherPrivacyProPixels.isEmpty,
                       "Unexpected Privacy Pro pixels fired: \(otherPrivacyProPixels)",
                       file: file,

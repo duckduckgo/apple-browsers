@@ -159,7 +159,7 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .didClickIHaveASubscription:
-                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
+                        PixelKit.fire(SubscriptionPixel.privacyProRestorePurchaseClick)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     }
@@ -170,7 +170,7 @@ enum Preferences {
                 openActivateViaEmailURL: {
                     let url = subscriptionManager.url(for: .activationFlow)
                     Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
-                    PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
+                    PixelKit.fire(SubscriptionPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {
                         Task {
@@ -184,7 +184,7 @@ enum Preferences {
                                 uiHandler: subscriptionUIHandler)
                             await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
 
-                            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
+                            PixelKit.fire(SubscriptionPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
                         }
                     }
                 })
@@ -200,12 +200,12 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .openPIR:
-                        PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
+                        PixelKit.fire(SubscriptionPixel.privacyProPersonalInformationRemovalSettings)
                         Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
-                        PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettingsImpression)
+                        PixelKit.fire(SubscriptionPixel.privacyProPersonalInformationRemovalSettingsImpression)
                     }
                 }
             }
@@ -219,13 +219,13 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .openITR:
-                        PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
+                        PixelKit.fire(SubscriptionPixel.privacyProIdentityRestorationSettings)
                         let url = subscriptionManager.url(for: .identityTheftRestoration)
                         Application.appDelegate.windowControllersManager.showTab(with: .identityTheftRestoration(url))
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenITRPreferencePane:
-                        PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettingsImpression)
+                        PixelKit.fire(SubscriptionPixel.privacyProIdentityRestorationSettingsImpression)
                     }
                 }
             }
@@ -249,13 +249,13 @@ enum Preferences {
                     case .openCustomerPortalURL(let url):
                         Application.appDelegate.windowControllersManager.showTab(with: .url(url, source: .ui))
                     case .didClickManageEmail:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
+                        PixelKit.fire(SubscriptionPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
                     case .didOpenSubscriptionSettings:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                        PixelKit.fire(SubscriptionPixel.privacyProSubscriptionSettings)
                     case .didClickChangePlanOrBilling:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementPlanBilling)
+                        PixelKit.fire(SubscriptionPixel.privacyProSubscriptionManagementPlanBilling)
                     case .didClickRemoveSubscription:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementRemoval)
+                        PixelKit.fire(SubscriptionPixel.privacyProSubscriptionManagementRemoval)
                     }
                 }
             }
@@ -402,7 +402,7 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .didClickIHaveASubscription:
-                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
+                        PixelKit.fire(SubscriptionPixel.privacyProRestorePurchaseClick)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     }
@@ -413,7 +413,7 @@ enum Preferences {
                 openActivateViaEmailURL: {
                     let url = subscriptionManager.url(for: .activationFlow)
                     showTab(.subscription(url))
-                    PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
+                    PixelKit.fire(SubscriptionPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {
                         Task {
@@ -424,7 +424,7 @@ enum Preferences {
                                                                                                      uiHandler: subscriptionUIHandler)
                             await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
 
-                            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
+                            PixelKit.fire(SubscriptionPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
                         }
                     }
                 })
@@ -440,12 +440,12 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .openPIR:
-                        PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
+                        PixelKit.fire(SubscriptionPixel.privacyProPersonalInformationRemovalSettings)
                         showTab(.dataBrokerProtection)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
-                        PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettingsImpression)
+                        PixelKit.fire(SubscriptionPixel.privacyProPersonalInformationRemovalSettingsImpression)
                     }
                 }
             }
@@ -459,13 +459,13 @@ enum Preferences {
                  DispatchQueue.main.async {
                      switch event {
                      case .openAIC:
-                         PixelKit.fire(PrivacyProPixel.privacyProPaidAIChatSettings)
+                         PixelKit.fire(SubscriptionPixel.privacyProPaidAIChatSettings)
                          let aiChatURL = aiChatURLSettings.aiChatURL
                          showTab(.url(aiChatURL, source: .ui))
                      case .openURL(let url):
                          openURL(subscriptionURL: url)
                      case .didOpenAICPreferencePane:
-                         PixelKit.fire(PrivacyProPixel.privacyProPaidAIChatSettingsImpression)
+                         PixelKit.fire(SubscriptionPixel.privacyProPaidAIChatSettingsImpression)
                      }
                  }
              }
@@ -479,13 +479,13 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .openITR:
-                        PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
+                        PixelKit.fire(SubscriptionPixel.privacyProIdentityRestorationSettings)
                         let url = subscriptionManager.url(for: .identityTheftRestoration)
                         showTab(.identityTheftRestoration(url))
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenITRPreferencePane:
-                        PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettingsImpression)
+                        PixelKit.fire(SubscriptionPixel.privacyProIdentityRestorationSettingsImpression)
                     }
                 }
             }
@@ -509,13 +509,13 @@ enum Preferences {
                     case .openCustomerPortalURL(let url):
                         showTab(.url(url, source: .ui))
                     case .didClickManageEmail:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
+                        PixelKit.fire(SubscriptionPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
                     case .didOpenSubscriptionSettings:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                        PixelKit.fire(SubscriptionPixel.privacyProSubscriptionSettings)
                     case .didClickChangePlanOrBilling:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementPlanBilling)
+                        PixelKit.fire(SubscriptionPixel.privacyProSubscriptionManagementPlanBilling)
                     case .didClickRemoveSubscription:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementRemoval)
+                        PixelKit.fire(SubscriptionPixel.privacyProSubscriptionManagementRemoval)
                     }
                 }
             }
@@ -534,7 +534,7 @@ enum Preferences {
                 showTab(.subscription(url))
 
                 if subscriptionURL == .purchase {
-                    PixelKit.fire(PrivacyProPixel.privacyProOfferScreenImpression)
+                    PixelKit.fire(SubscriptionPixel.privacyProOfferScreenImpression)
                 }
             }
         }

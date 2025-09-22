@@ -26,7 +26,7 @@ protocol SubscriptionAttributionPixelHandler: AnyObject {
 
 // MARK: - SubscriptionAttributionPixelHandler
 
-final class PrivacyProSubscriptionAttributionPixelHandler: SubscriptionAttributionPixelHandler {
+final class DuckDuckGoSubscriptionAttributionPixelHandler: SubscriptionAttributionPixelHandler {
 
     var origin: String?
     private let decoratedAttributionPixelHandler: AttributionPixelHandler
@@ -37,7 +37,7 @@ final class PrivacyProSubscriptionAttributionPixelHandler: SubscriptionAttributi
 
     func fireSuccessfulSubscriptionAttributionPixel() {
         decoratedAttributionPixelHandler.fireAttributionPixel(
-            event: PrivacyProPixel.privacyProSuccessfulSubscriptionAttribution,
+            event: SubscriptionPixel.privacyProSuccessfulSubscriptionAttribution,
             frequency: .standard,
             origin: origin,
             additionalParameters: nil

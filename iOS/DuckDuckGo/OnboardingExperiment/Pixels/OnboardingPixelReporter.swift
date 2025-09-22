@@ -303,7 +303,7 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
     }
 
     func measurePrivacyPromoDialogNewTabDismissButtonTapped() {
-        fire(event: .onboardingPrivacyPromoDialogDismissButtonTapped, unique: false)
+        fire(event: .onboardingSubscriptionDialogDismissButtonTapped, unique: false)
     }
 
     func measureEndOfJourneyDialogCTAAction() {

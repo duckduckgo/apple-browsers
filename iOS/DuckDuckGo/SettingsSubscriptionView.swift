@@ -44,7 +44,7 @@ struct SettingsSubscriptionView: View {
     @State var isShowingRestoreFlow = false
     @State var isShowingGoogleView = false
     @State var isShowingStripeView = false
-    @State var isShowingPrivacyPro = false
+    @State var isShowingSubscription = false
 
     var subscriptionRestoreView: some View {
         SubscriptionContainerViewFactory.makeRestoreFlow(navigationCoordinator: subscriptionNavigationCoordinator,
@@ -113,7 +113,7 @@ struct SettingsSubscriptionView: View {
                 let restoreView = subscriptionRestoreView
                     .navigationViewStyle(.stack)
                     .onFirstAppear {
-                        Pixel.fire(pixel: .privacyProRestorePurchaseClick)
+                        Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
                     }
                 NavigationLink(destination: restoreView,
                                isActive: $isShowingRestoreFlow) {
@@ -123,7 +123,7 @@ struct SettingsSubscriptionView: View {
                 let restoreView = subscriptionRestoreViewV2
                     .navigationViewStyle(.stack)
                     .onFirstAppear {
-                        Pixel.fire(pixel: .privacyProRestorePurchaseClick)
+                        Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
                     }
                 NavigationLink(destination: restoreView,
                                isActive: $isShowingRestoreFlow) {
@@ -342,7 +342,7 @@ struct SettingsSubscriptionView: View {
         
     var body: some View {
         Group {
-            if isShowingPrivacyPro {
+            if isShowingSubscription {
 
                 let isSignedIn = settingsViewModel.state.subscription.isSignedIn
                 let hasSubscription = settingsViewModel.state.subscription.hasSubscription
@@ -389,7 +389,7 @@ struct SettingsSubscriptionView: View {
             }
         }
         .onReceive(settingsViewModel.$state) { state in
-            isShowingPrivacyPro = (state.subscription.isSignedIn || state.subscription.canPurchase)
+            isShowingSubscription = (state.subscription.isSignedIn || state.subscription.canPurchase)
         }
     }
 }

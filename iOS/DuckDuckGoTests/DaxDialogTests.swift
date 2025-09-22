@@ -957,33 +957,33 @@ final class DaxDialog: XCTestCase {
         XCTAssertNotEqual(result, .privacyProPromotion)
     }
 
-    func testWhenPrivacyProPromotionDialogSeenIsSet_ThenSettingsValueIsUpdated() {
+    func testWhenSubscriptionPromotionDialogSeenIsSet_ThenSettingsValueIsUpdated() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         let sut = makeSUT(settings: settings)
         XCTAssertFalse(settings.privacyProPromotionDialogShown)
 
         // WHEN
-        sut.privacyProPromotionDialogSeen = true
+        sut.subscriptionPromotionDialogSeen = true
 
         // THEN
         XCTAssertTrue(settings.privacyProPromotionDialogShown)
     }
 
-    func testWhenPrivacyProPromotionDialogSeenIsGet_ThenSettingsValueIsReturned() {
+    func testWhenSubscriptionPromotionDialogSeenIsGet_ThenSettingsValueIsReturned() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         settings.privacyProPromotionDialogShown = true
         let sut = makeSUT(settings: settings)
 
         // WHEN
-        let result = sut.privacyProPromotionDialogSeen
+        let result = sut.subscriptionPromotionDialogSeen
 
         // THEN
         XCTAssertTrue(result)
     }
 
-    func testWhenCurrentHomeSpecIsPrivacyProPromotion_ThenIsShowingPrivacyProPromotionIsTrue() {
+    func testWhenCurrentHomeSpecIsPrivacyProPromotion_ThenIsShowingSubscriptionPromotionIsTrue() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         settings.browsingFinalDialogShown = true
@@ -994,32 +994,32 @@ final class DaxDialog: XCTestCase {
 
         // WHEN
         _ = sut.nextHomeScreenMessageNew()
-        let result = sut.isShowingPrivacyProPromotion
+        let result = sut.isShowingSubscriptionPromotion
 
         // THEN
         XCTAssertTrue(result)
     }
 
-    func testWhenCurrentHomeSpecIsNotPrivacyProPromotion_ThenIsShowingPrivacyProPromotionIsFalse() {
+    func testWhenCurrentHomeSpecIsNotPrivacyProPromotion_ThenIsShowingSubscriptionPromotionIsFalse() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         let sut = makeSUT(settings: settings)
 
         // WHEN
-        let result = sut.isShowingPrivacyProPromotion
+        let result = sut.isShowingSubscriptionPromotion
 
         // THEN
         XCTAssertFalse(result)
     }
 
-    func testWhenCurrentHomeSpecIsFinal_ThenIsShowingPrivacyProPromotionIsFalse() {
+    func testWhenCurrentHomeSpecIsFinal_ThenIsShowingSubscriptionPromotionIsFalse() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         let sut = makeSUT(settings: settings)
 
         // WHEN
         _ = sut.nextHomeScreenMessageNew()
-        let result = sut.isShowingPrivacyProPromotion
+        let result = sut.isShowingSubscriptionPromotion
 
         // THEN
         XCTAssertFalse(result)

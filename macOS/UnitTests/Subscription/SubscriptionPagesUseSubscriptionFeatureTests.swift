@@ -173,7 +173,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                        authEndpointService: authService,
                                                        accountManager: accountManager)
 
-        subscriptionAttributionPixelHandler = PrivacyProSubscriptionAttributionPixelHandler()
+        subscriptionAttributionPixelHandler = DuckDuckGoSubscriptionAttributionPixelHandler()
 
         subscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true, usesUnifiedFeedbackForm: false)
 
@@ -293,8 +293,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(accountManager.email, Constants.email)
         XCTAssertEqual(accountManager.externalID, Constants.externalID)
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProRestorePurchaseEmailSuccess.name + "_d",
-                                     PrivacyProPixel.privacyProRestorePurchaseEmailSuccess.name + "_c"])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProRestorePurchaseEmailSuccess.name + "_d",
+                                     SubscriptionPixel.privacyProRestorePurchaseEmailSuccess.name + "_c"])
     }
 
     func testSetSubscriptionErrorWhenFailedToExchangeToken() async throws {
@@ -311,8 +311,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertNil(accountManager.authToken)
         XCTAssertFalse(accountManager.isUserAuthenticated)
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProRestorePurchaseEmailSuccess.name + "_d",
-                                     PrivacyProPixel.privacyProRestorePurchaseEmailSuccess.name + "_c"])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProRestorePurchaseEmailSuccess.name + "_d",
+                                     SubscriptionPixel.privacyProRestorePurchaseEmailSuccess.name + "_c"])
     }
 
     func testSetSubscriptionErrorWhenFailedToFetchAccountDetails() async throws {
@@ -330,8 +330,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertNil(accountManager.authToken)
         XCTAssertFalse(accountManager.isUserAuthenticated)
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProRestorePurchaseEmailSuccess.name + "_d",
-                                     PrivacyProPixel.privacyProRestorePurchaseEmailSuccess.name + "_c"])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProRestorePurchaseEmailSuccess.name + "_d",
+                                     SubscriptionPixel.privacyProRestorePurchaseEmailSuccess.name + "_c"])
     }
 
     // MARK: - Tests for backToSettings
@@ -456,11 +456,11 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                           .didUpdateProgressViewController,
                                           .didDismissProgressViewController])
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseSuccess.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseSuccess.name + "_c",
-                                     PrivacyProPixel.privacyProSubscriptionActivated.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c",
+                                     SubscriptionPixel.privacyProPurchaseSuccess.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseSuccess.name + "_c",
+                                     SubscriptionPixel.privacyProSubscriptionActivated.name])
     }
 
     func testSubscriptionSelectedSuccessWhenPurchasingFirstTimeAndUserIsFreemium() async throws {
@@ -499,11 +499,11 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                           .didUpdateProgressViewController,
                                           .didDismissProgressViewController])
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseSuccess.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseSuccess.name + "_c",
-                                     PrivacyProPixel.privacyProSubscriptionActivated.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c",
+                                     SubscriptionPixel.privacyProPurchaseSuccess.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseSuccess.name + "_c",
+                                     SubscriptionPixel.privacyProSubscriptionActivated.name])
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.subscription)
     }
 
@@ -539,11 +539,11 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                           .didDismissProgressViewController])
         XCTAssertTrue(storePurchaseManager.purchaseSubscriptionCalled)
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseSuccess.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseSuccess.name + "_c",
-                                     PrivacyProPixel.privacyProSubscriptionActivated.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c",
+                                     SubscriptionPixel.privacyProPurchaseSuccess.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseSuccess.name + "_c",
+                                     SubscriptionPixel.privacyProSubscriptionActivated.name])
     }
 
     func testSubscriptionSelectedSuccessWhenRepurchasingForExpiredStripeSubscription() async throws {
@@ -570,11 +570,11 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                           .didUpdateProgressViewController,
                                           .didDismissProgressViewController])
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseSuccess.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseSuccess.name + "_c",
-                                     PrivacyProPixel.privacyProSubscriptionActivated.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c",
+                                     SubscriptionPixel.privacyProPurchaseSuccess.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseSuccess.name + "_c",
+                                     SubscriptionPixel.privacyProSubscriptionActivated.name])
     }
 
     func testSubscriptionSelectedErrorWhenPurchasingWhenHavingActiveSubscription() async throws {
@@ -595,9 +595,9 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                           .didDismissProgressViewController,
                                           .didShowAlert(.subscriptionFound)])
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProRestoreAfterPurchaseAttempt.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c",
+                                     SubscriptionPixel.privacyProRestoreAfterPurchaseAttempt.name])
     }
 
     func testSubscriptionSelectedErrorWhenPurchasingWhenUnauthenticatedAndHavingActiveSubscriptionOnAppleID() async throws {
@@ -627,11 +627,11 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                           .didDismissProgressViewController,
                                           .didShowAlert(.subscriptionFound)])
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProRestoreAfterPurchaseAttempt.name,
-                                     PrivacyProPixel.privacyProRestorePurchaseStoreSuccess.name + "_d",
-                                     PrivacyProPixel.privacyProRestorePurchaseStoreSuccess.name + "_c"])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c",
+                                     SubscriptionPixel.privacyProRestoreAfterPurchaseAttempt.name,
+                                     SubscriptionPixel.privacyProRestorePurchaseStoreSuccess.name + "_d",
+                                     SubscriptionPixel.privacyProRestorePurchaseStoreSuccess.name + "_c"])
     }
 
     func testSubscriptionSelectedErrorWhenUnauthenticatedAndAccountCreationFails() async throws {
@@ -665,11 +665,11 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                           .didShowAlert(.somethingWentWrong),
                                           .didShowTab(.subscription(subscriptionManager.url(for: .purchase)))])
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated(StorePurchaseManagerError.purchaseCancelledByUser).name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated(StorePurchaseManagerError.purchaseCancelledByUser).name + "_c",
-                                     PrivacyProPixel.privacyProOfferScreenImpression.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c",
+                                     SubscriptionPixel.privacyProPurchaseFailureAccountNotCreated(StorePurchaseManagerError.purchaseCancelledByUser).name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseFailureAccountNotCreated(StorePurchaseManagerError.purchaseCancelledByUser).name + "_c",
+                                     SubscriptionPixel.privacyProOfferScreenImpression.name])
     }
 
     func testSubscriptionSelectedErrorWhenPurchaseCancelledByUser() async throws {
@@ -689,8 +689,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(uiEventsHappened, [.didPresentProgressViewController,
                                           .didDismissProgressViewController])
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c"])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c"])
     }
 
     func testSubscriptionSelectedErrorWhenProductNotFound() async throws {
@@ -714,11 +714,11 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                           .didShowAlert(.somethingWentWrong),
                                           .didShowTab(.subscription(subscriptionManager.url(for: .purchase)))])
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.productNotFound).name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.productNotFound).name + "_c",
-                                     PrivacyProPixel.privacyProOfferScreenImpression.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c",
+                                     SubscriptionPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.productNotFound).name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.productNotFound).name + "_c",
+                                     SubscriptionPixel.privacyProOfferScreenImpression.name])
     }
 
     func testSubscriptionSelectedErrorWhenExternalIDIsNotValidUUID() async throws {
@@ -742,11 +742,11 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                           .didShowAlert(.somethingWentWrong),
                                           .didShowTab(.subscription(subscriptionManager.url(for: .purchase)))])
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.externalIDisNotAValidUUID).name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.externalIDisNotAValidUUID).name + "_c",
-                                     PrivacyProPixel.privacyProOfferScreenImpression.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c",
+                                     SubscriptionPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.externalIDisNotAValidUUID).name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.externalIDisNotAValidUUID).name + "_c",
+                                     SubscriptionPixel.privacyProOfferScreenImpression.name])
     }
 
     func testSubscriptionSelectedErrorWhenPurchaseFailed() async throws {
@@ -772,11 +772,11 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                           .didShowAlert(.somethingWentWrong),
                                           .didShowTab(.subscription(subscriptionManager.url(for: .purchase)))])
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError(error).name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError(error).name + "_c",
-                                     PrivacyProPixel.privacyProOfferScreenImpression.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c",
+                                     SubscriptionPixel.privacyProPurchaseFailureStoreError(error).name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseFailureStoreError(error).name + "_c",
+                                     SubscriptionPixel.privacyProOfferScreenImpression.name])
     }
 
     func testSubscriptionSelectedErrorWhenTransactionCannotBeVerified() async throws {
@@ -800,11 +800,11 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                           .didShowAlert(.somethingWentWrong),
                                           .didShowTab(.subscription(subscriptionManager.url(for: .purchase)))])
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.transactionCannotBeVerified).name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.transactionCannotBeVerified).name + "_c",
-                                     PrivacyProPixel.privacyProOfferScreenImpression.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c",
+                                     SubscriptionPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.transactionCannotBeVerified).name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.transactionCannotBeVerified).name + "_c",
+                                     SubscriptionPixel.privacyProOfferScreenImpression.name])
     }
 
     func testSubscriptionSelectedErrorWhenTransactionPendingAuthentication() async throws {
@@ -828,11 +828,11 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                           .didShowAlert(.somethingWentWrong),
                                           .didShowTab(.subscription(subscriptionManager.url(for: .purchase)))])
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.transactionPendingAuthentication).name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.transactionPendingAuthentication).name + "_c",
-                                     PrivacyProPixel.privacyProOfferScreenImpression.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c",
+                                     SubscriptionPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.transactionPendingAuthentication).name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.transactionPendingAuthentication).name + "_c",
+                                     SubscriptionPixel.privacyProOfferScreenImpression.name])
     }
 
     func testSubscriptionSelectedErrorDueToUnknownPurchaseError() async throws {
@@ -856,11 +856,11 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                           .didShowAlert(.somethingWentWrong),
                                           .didShowTab(.subscription(subscriptionManager.url(for: .purchase)))])
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.unknownError).name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.unknownError).name + "_c",
-                                     PrivacyProPixel.privacyProOfferScreenImpression.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProPurchaseAttempt.name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseAttempt.name + "_c",
+                                     SubscriptionPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.unknownError).name + "_d",
+                                     SubscriptionPixel.privacyProPurchaseFailureStoreError(StorePurchaseManagerError.unknownError).name + "_c",
+                                     SubscriptionPixel.privacyProOfferScreenImpression.name])
     }
 
     // MARK: - Tests for activateSubscription
@@ -882,7 +882,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         // Then
         await fulfillment(of: [uiHandlerCalledExpectation], timeout: 0.5)
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProRestorePurchaseOfferPageEntry.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProRestorePurchaseOfferPageEntry.name])
     }
 
     // MARK: - Tests for featureSelected
@@ -901,7 +901,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         // Then
         await fulfillment(of: [notificationPostedExpectation], timeout: 0.5)
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProWelcomeVPN.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProWelcomeVPN.name])
     }
 
     func testFeatureSelectedSuccessForPersonalInformationRemoval() async throws {
@@ -925,7 +925,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         // Then
         await fulfillment(of: [notificationPostedExpectation, uiHandlerCalledExpectation], timeout: 0.5)
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProWelcomePersonalInformationRemoval.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProWelcomePersonalInformationRemoval.name])
     }
 
     func testFeatureSelectedSuccessForIdentityTheftRestoration() async throws {
@@ -950,7 +950,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         // Then
         await fulfillment(of: [uiHandlerCalledExpectation], timeout: 0.5)
         XCTAssertNil(result)
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProWelcomeIdentityRestoration.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.privacyProWelcomeIdentityRestoration.name])
     }
 
     // MARK: - Tests for getAccessToken
@@ -1150,12 +1150,12 @@ extension SubscriptionPagesUseSubscriptionFeatureTests {
 
         // Assert no other Privacy Pro pixels were fired except the expected
 #if APPSTORE
-        let privacyProPixelPrefix = "m_mac_store_privacy-pro"
+        let subscriptionPixelPrefix = "m_mac_store_privacy-pro"
 #else
-        let privacyProPixelPrefix = "m_mac_direct_privacy-pro"
+        let subscriptionPixelPrefix = "m_mac_direct_privacy-pro"
 #endif
         let otherPixels = pixelsFired.subtracting(expectedPixels)
-        let otherPrivacyProPixels = otherPixels.filter { $0.hasPrefix(privacyProPixelPrefix) }
+        let otherPrivacyProPixels = otherPixels.filter { $0.hasPrefix(subscriptionPixelPrefix) }
         XCTAssertTrue(otherPrivacyProPixels.isEmpty,
                       "Unexpected Privacy Pro pixels fired: \(otherPrivacyProPixels)",
                       file: file,

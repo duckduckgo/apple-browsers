@@ -1093,11 +1093,11 @@ extension SubscriptionPagesUseSubscriptionFeatureTests {
                       line: line)
 
         // Assert no other Privacy Pro pixels were fired except the expected
-        let privacyProPixelPrefix = "m_privacy-pro"
+        let subscriptionPixelPrefix = "m_privacy-pro"
         let otherPixels = pixelsFired.subtracting(expectedPixels)
-        let otherPrivacyProPixels = otherPixels.filter { $0.hasPrefix(privacyProPixelPrefix) }
+        let otherSubscriptionPixels = otherPixels.filter { $0.hasPrefix(subscriptionPixelPrefix) }
         XCTAssertTrue(otherPrivacyProPixels.isEmpty,
-                      "Unexpected Privacy Pro pixels fired: \(otherPrivacyProPixels)",
+                      "Unexpected Privacy Pro pixels fired: \(otherSubscriptionPixels)",
                       file: file,
                       line: line)
     }

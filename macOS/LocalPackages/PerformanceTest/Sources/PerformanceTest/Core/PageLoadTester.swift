@@ -130,6 +130,7 @@ public class PageLoadTester: NSObject {
         }
     }
 
+    // swiftlint:disable:next function_body_length
     private func collectPerformanceMetrics() async throws -> PerformanceMetrics? {
         // Load JavaScript from bundle resources
         let scriptContent: String

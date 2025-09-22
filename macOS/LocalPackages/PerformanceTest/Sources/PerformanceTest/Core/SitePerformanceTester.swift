@@ -242,7 +242,10 @@ public class SitePerformanceTester: NSObject {
                     navigationType: metrics["navigationType"] as? String ?? "navigate"
                 )
 
-                logger.debug("Processed metrics - loadComplete: \(detailedMetrics.loadComplete), domComplete: \(detailedMetrics.domComplete), ttfb: \(detailedMetrics.timeToFirstByte)")
+                logger.debug(
+                    "Processed metrics - loadComplete: \(detailedMetrics.loadComplete), " +
+                    "domComplete: \(detailedMetrics.domComplete), ttfb: \(detailedMetrics.timeToFirstByte)"
+                )
                 return detailedMetrics
             } else {
                 logger.debug("Failed to cast result to metrics dictionary. Result type: \(type(of: result))")

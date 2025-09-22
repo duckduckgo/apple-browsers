@@ -236,7 +236,7 @@ class SwitchBarTextEntryView: UIView {
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         if previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory {
-            /// Dynamic Type size changed, calculate views inset
+            /// Dynamic Type size changed, calculate views layout
             updateTextViewHeight()
             adjustTextViewContentInset()
         }

@@ -3421,6 +3421,36 @@
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sincronizează și creează copii de rezervă pentru parolele tale";
 
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sync & Backup pentru acest dispozitiv";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Salvarea codului de recuperare poate asigura faptul că vei putea să-ți restaurezi parolele cu ușurință în viitor.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Parolele sincronizate pot fi restaurate numai dacă ai acces la un alt dispozitiv sau utilizând codul de recuperare furnizat ca parte a configurării Sync & Backup.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Scanează codul de recuperare";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Celălalt dispozitiv nu este disponibil? Scanează codul de recuperare.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Nu ai un alt dispozitiv?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "Parolele DuckDuckGo nu se transferă cu iCloud, deoarece sunt criptate pe dispozitivul tău. Orice altceva se află deja aici.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Sincronizează cu un alt dispozitiv";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Ești pe un nou %@? Haide să-ți sincronizăm parolele.";
+
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Elimină";
 

@@ -176,8 +176,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1210947754188321/task/1210869716452616?focus=true
     case refreshButtonPosition
 
-    /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1211257304926910
-    case aiSearchAnimatedDaxLogo
+    /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211394727337421?focus=true
+    case newDeviceSyncPrompt
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -194,7 +194,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .daxEasterEggLogos,
              .subscriptionPurchaseWidePixelMeasurement,
              .askAIChatSuggestion,
-             .refreshButtonPosition:
+             .refreshButtonPosition,
+             .newDeviceSyncPrompt:
             true
         default:
             false
@@ -247,7 +248,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
              .refreshButtonPosition,
-             .aiSearchAnimatedDaxLogo:
+             .newDeviceSyncPrompt:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -437,8 +438,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.refreshButtonPosition))
         case .showAIChatAddressBarChoiceScreen:
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
-        case .aiSearchAnimatedDaxLogo:
-            return .internalOnly()
+        case .newDeviceSyncPrompt:
+            return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
         }
     }
 }

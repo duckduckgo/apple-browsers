@@ -3421,6 +3421,36 @@
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Oma paroolide sünkroonimine ja varundamine";
 
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sync & Backup see seade";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Taastamiskoodi salvestamine tagab, et saad tulevikus oma paroole hõlpsasti taastada.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Sünkroonitud paroole saab taastada ainult siis, kui sul on juurdepääs teisele seadmele või kasutades taastamiskoodi, mis on osa Sync & Backupi seadistamisest.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Skanni taastamiskood";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Kas teine seade pole saadaval? Skanni oma taastamiskood.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Kas sul pole teist seadet?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "DuckDuckGo paroolid ei kandu iCloudiga üle, sest need on sinu seadmesse krüpteeritud. Kõik muu on juba olemas.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Sünkrooni teise seadmega";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Kasutad uut %@? Sünkroonime su paroolid.";
+
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Eemaldage";
 

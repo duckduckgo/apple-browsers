@@ -3421,6 +3421,36 @@
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sincronizza e fai il backup delle password";
 
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sync & Backup di questo dispositivo";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Salvando il tuo codice di recupero, potrai ripristinare facilmente le tue password in futuro.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Le password sincronizzate possono essere ripristinate solo se hai accesso a un altro dispositivo o utilizzando il codice di ripristino fornito come parte della configurazione di Sync & Backup.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Scopri di più](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Scansiona il codice di recupero";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Altro dispositivo non disponibile? Scansiona il tuo codice di recupero.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Non hai un altro dispositivo?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "Le password di DuckDuckGo non vengono trasferite con iCloud perché sono crittografate sul tuo dispositivo. Tutto il resto è già qui.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Sincronizza con un altro dispositivo";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Su un nuovo %@? Sincronizziamo le tue password.";
+
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Rimuovi";
 

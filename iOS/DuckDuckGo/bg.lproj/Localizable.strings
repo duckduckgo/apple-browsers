@@ -3421,6 +3421,36 @@
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Синхронизирайте и архивирайте паролите си";
 
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sync & Backup на това устройство";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Запазването на твоя код за възстановяване може да гарантира, че ще можеш лесно да възстановиш паролите си в бъдеще.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Синхронизираните пароли могат да бъдат възстановени само ако имаш достъп до друго устройство или чрез използване на кода за възстановяване, предоставен като част от настройката на Sync & Backup.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Научи повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Код за възстановяване на сканиране";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Друго устройство недостъпно ли е? Сканирай своя код за възстановяване.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Нямаш друго устройство?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "Паролите на DuckDuckGo не се прехвърлят с iCloud, защото са криптирани на твоето устройство. Всичко останало вече е тук.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Синхронизиране с друго устройство";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "На нов %@? Нека синхронизираме паролите ти.";
+
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Премахване";
 

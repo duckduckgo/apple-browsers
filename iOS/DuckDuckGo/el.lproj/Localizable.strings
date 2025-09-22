@@ -3421,6 +3421,36 @@
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας των κωδικών πρόσβασής σας";
 
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας σε αυτήν τη συσκευή";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Η αποθήκευση του κωδικού ανάκτησης μπορεί να διασφαλίσει ότι θα μπορείτε να επαναφέρετε εύκολα τους κωδικούς σας στο μέλλον.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Οι συγχρονισμένοι κωδικοί πρόσβασης μπορούν να αποκατασταθούν μόνο εάν έχετε πρόσβαση σε άλλη συσκευή ή χρησιμοποιώντας τον κωδικό ανάκτησης που παρέχεται στο πλαίσιο της ρύθμισης του Sync & Backup.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Σάρωση κωδικού ανάκτησης";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Δεν είναι διαθέσιμη άλλη συσκευή; Σαρώστε τον Κωδικό ανάκτησής σας.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Δεν έχετε άλλη συσκευή;";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "Οι κωδικοί πρόσβασης του DuckDuckGo δεν μεταφέρονται με το iCloud επειδή είναι κρυπτογραφημένοι στη συσκευή σας. Όλα τα υπόλοιπα είναι ήδη εδώ.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Συγχρονισμός με άλλη συσκευή";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Σε ένα καινούργιο %@; Ας συγχρονίσουμε τους κωδικούς σας.";
+
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Αφαίρεση";
 

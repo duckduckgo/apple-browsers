@@ -112,18 +112,23 @@ final class PageLoadTesterTests: XCTestCase {
         let url = URL(string: "https://example.com")!
         var attemptCount = 0
 
+        // Override navigation to timeout on each attempt
+        webView.navigationDelegate = navigationDelegate
+        navigationDelegate.shouldNeverComplete = true
+
         tester.beforeLoadHandler = {
             attemptCount += 1
         }
 
         // When
         do {
-            _ = try await tester.measurePageLoad(url: url, timeout: 0.1, maxRetries: 2)
+            _ = try await tester.measurePageLoad(url: url, timeout: 0.5, maxRetries: 2)
         } catch {
-            // Expected to fail
+            // Expected to fail with timeout
         }
 
         // Then - with maxRetries: 2, should attempt 3 times total (initial + 2 retries)
+        // The loop is while attempts <= maxRetries, with attempts starting at 0
         XCTAssertEqual(attemptCount, 3)
     }
 

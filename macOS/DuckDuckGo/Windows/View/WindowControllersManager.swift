@@ -468,7 +468,7 @@ extension WindowControllersManager {
         windowController.mainViewController.navigationBarViewController.showNetworkProtectionStatus()
     }
 
-    /// Shows the non-privacy pro feedback modal
+    /// Shows the non-subscription feedback modal
     func showFeedbackModal(preselectedFormOption: FeedbackViewController.FormOption? = nil) {
         if internalUserDecider.isInternalUser {
             showTab(with: .url(.internalFeedbackForm, source: .ui))
@@ -477,7 +477,7 @@ extension WindowControllersManager {
         }
     }
 
-    /// Shows the Privacy Pro feedback modal
+    /// Shows the Subscription feedback modal
     func showShareFeedbackModal(source: UnifiedFeedbackSource = .default) {
         let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source, featureFlagger: featureFlagger)
         let feedbackFormWindowController = feedbackFormViewController.wrappedInWindowController()

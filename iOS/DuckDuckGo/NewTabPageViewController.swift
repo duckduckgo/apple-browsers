@@ -193,7 +193,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     weak var delegate: NewTabPageControllerDelegate?
 
     private func launchNewSearch() {
-        // If we are displaying a Privacy Pro promotion on a new tab, do not activate search
+        // If we are displaying a Subscription promotion on a new tab, do not activate search
         guard !daxDialogsManager.isShowingSubscriptionPromotion else { return }
         chromeDelegate?.omniBar.beginEditing(animated: true)
     }

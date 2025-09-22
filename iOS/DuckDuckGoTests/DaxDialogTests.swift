@@ -893,87 +893,87 @@ final class DaxDialog: XCTestCase {
 
     // MARK: - States
 
-    func testWhenShouldDisplayPromotionAndHasNotSeenPromotion_OnNextHomeScreenMessageNew_ReturnsPrivacyProPromotion() {
+    func testWhenShouldDisplayPromotionAndHasNotSeenPromotion_OnNextHomeScreenMessageNew_ReturnsSubscriptionPromotion() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         settings.browsingFinalDialogShown = true
-        settings.privacyProPromotionDialogShown = false
-        let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
+        settings.subscriptionPromotionDialogShown = false
+        let mockOnboardingPromotionHelper = MockOnboardingSubscriptionPromotionHelper()
         mockOnboardingPromotionHelper.shouldDisplayValue = true
-        let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
+        let sut = makeSUT(settings: settings, onboardingSubscriptionPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
         let result = sut.nextHomeScreenMessageNew()
 
         // THEN
-        XCTAssertEqual(result, .privacyProPromotion)
+        XCTAssertEqual(result, .subscriptionPromotion)
     }
 
-    func testWhenShouldNotDisplayPromotion_OnNextHomeScreenMessageNew_DoesNotReturnPrivacyProPromotion() {
+    func testWhenShouldNotDisplayPromotion_OnNextHomeScreenMessageNew_DoesNotReturnSubscriptionPromotion() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         settings.browsingFinalDialogShown = true
-        settings.privacyProPromotionDialogShown = false
-        let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
+        settings.subscriptionPromotionDialogShown = false
+        let mockOnboardingPromotionHelper = MockOnboardingSubscriptionPromotionHelper()
         mockOnboardingPromotionHelper.shouldDisplayValue = false
-        let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
+        let sut = makeSUT(settings: settings, onboardingSubscriptionPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
         let result = sut.nextHomeScreenMessageNew()
 
         // THEN
-        XCTAssertNotEqual(result, .privacyProPromotion)
+        XCTAssertNotEqual(result, .subscriptionPromotion)
     }
 
-    func testWhenUserHasSeenPromotion_OnNextHomeScreenMessageNew_DoesNotReturnPrivacyProPromotion() {
+    func testWhenUserHasSeenPromotion_OnNextHomeScreenMessageNew_DoesNotReturnSubscriptionPromotion() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         settings.browsingFinalDialogShown = true
-        settings.privacyProPromotionDialogShown = true
-        let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
+        settings.subscriptionPromotionDialogShown = true
+        let mockOnboardingPromotionHelper = MockOnboardingSubscriptionPromotionHelper()
         mockOnboardingPromotionHelper.shouldDisplayValue = true
-        let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
+        let sut = makeSUT(settings: settings, onboardingSubscriptionPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
         let result = sut.nextHomeScreenMessageNew()
 
         // THEN
-        XCTAssertNotEqual(result, .privacyProPromotion)
+        XCTAssertNotEqual(result, .subscriptionPromotion)
     }
 
-    func testWhenFinalDialogNotSeen_OnNextHomeScreenMessageNew_DoesNotReturnPrivacyProPromotion() {
+    func testWhenFinalDialogNotSeen_OnNextHomeScreenMessageNew_DoesNotReturnSubscriptionPromotion() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         settings.browsingFinalDialogShown = false
-        settings.privacyProPromotionDialogShown = false
-        let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
+        settings.subscriptionPromotionDialogShown = false
+        let mockOnboardingPromotionHelper = MockOnboardingSubscriptionPromotionHelper()
         mockOnboardingPromotionHelper.shouldDisplayValue = true
-        let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
+        let sut = makeSUT(settings: settings, onboardingSubscriptionPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
         let result = sut.nextHomeScreenMessageNew()
 
         // THEN
-        XCTAssertNotEqual(result, .privacyProPromotion)
+        XCTAssertNotEqual(result, .subscriptionPromotion)
     }
 
     func testWhenSubscriptionPromotionDialogSeenIsSet_ThenSettingsValueIsUpdated() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         let sut = makeSUT(settings: settings)
-        XCTAssertFalse(settings.privacyProPromotionDialogShown)
+        XCTAssertFalse(settings.subscriptionPromotionDialogShown)
 
         // WHEN
         sut.subscriptionPromotionDialogSeen = true
 
         // THEN
-        XCTAssertTrue(settings.privacyProPromotionDialogShown)
+        XCTAssertTrue(settings.subscriptionPromotionDialogShown)
     }
 
     func testWhenSubscriptionPromotionDialogSeenIsGet_ThenSettingsValueIsReturned() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
-        settings.privacyProPromotionDialogShown = true
+        settings.subscriptionPromotionDialogShown = true
         let sut = makeSUT(settings: settings)
 
         // WHEN
@@ -983,14 +983,14 @@ final class DaxDialog: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    func testWhenCurrentHomeSpecIsPrivacyProPromotion_ThenIsShowingSubscriptionPromotionIsTrue() {
+    func testWhenCurrentHomeSpecIsSubscriptionPromotion_ThenIsShowingSubscriptionPromotionIsTrue() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         settings.browsingFinalDialogShown = true
-        settings.privacyProPromotionDialogShown = false
-        let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
+        settings.subscriptionPromotionDialogShown = false
+        let mockOnboardingPromotionHelper = MockOnboardingSubscriptionPromotionHelper()
         mockOnboardingPromotionHelper.shouldDisplayValue = true
-        let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
+        let sut = makeSUT(settings: settings, onboardingSubscriptionPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
         _ = sut.nextHomeScreenMessageNew()
@@ -1000,7 +1000,7 @@ final class DaxDialog: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    func testWhenCurrentHomeSpecIsNotPrivacyProPromotion_ThenIsShowingSubscriptionPromotionIsFalse() {
+    func testWhenCurrentHomeSpecIsNotSubscriptionPromotion_ThenIsShowingSubscriptionPromotionIsFalse() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         let sut = makeSUT(settings: settings)
@@ -1134,15 +1134,15 @@ final class DaxDialog: XCTestCase {
                            protectionStatus: protectionStatus)
     }
 
-    private func makeSUT(settings: DaxDialogsSettings, onboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping = MockOnboardingPrivacyProPromotionHelper()) -> DaxDialogs {
+    private func makeSUT(settings: DaxDialogsSettings, onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = MockOnboardingSubscriptionPromotionHelper()) -> DaxDialogs {
         DaxDialogs(settings: settings,
                    entityProviding: entityProvider,
                    variantManager: MockVariantManager(),
-                   onboardingPrivacyProPromotionHelper: onboardingPrivacyProPromotionHelper)
+                   onboardingSubscriptionPromotionHelper: onboardingSubscriptionPromotionHelper)
     }
 }
 
-final class MockOnboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping {
+final class MockOnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping {
     
     var proceedButtonText = ""
     

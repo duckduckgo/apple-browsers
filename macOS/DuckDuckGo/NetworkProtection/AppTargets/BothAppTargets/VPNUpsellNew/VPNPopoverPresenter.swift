@@ -91,7 +91,7 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
         show(newPopover, positionedBelow: view)
 
         // Fire pixel when popover is shown
-        pixelHandler(.privacyProToolbarButtonPopoverShown)
+        pixelHandler(.subscriptionToolbarButtonPopoverShown)
     }
 
     func dismiss() {

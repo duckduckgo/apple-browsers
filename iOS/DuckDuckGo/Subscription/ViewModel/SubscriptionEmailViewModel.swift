@@ -167,7 +167,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
         subFeature.onSetSubscription = {
             DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseEmailSuccess,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-            UniquePixel.fire(pixel: .ddgSubscriptionActivated)
+            UniquePixel.fire(pixel: .subscriptionActivated)
             DispatchQueue.main.async {
                 self.state.subscriptionActive = true
             }

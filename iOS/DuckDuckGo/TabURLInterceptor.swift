@@ -88,7 +88,7 @@ extension TabURLInterceptorDefault {
 
     private func handleURLInterception(interceptedURLType: InterceptedURLType, interceptedURLComponents: URLComponents? = nil) -> Bool {
         switch interceptedURLType {
-            // Opens the Privacy Pro Subscription Purchase page (if user can purchase)
+            // Opens the DuckDuckGo Subscription Purchase page (if user can purchase)
         case .subscription:
             if canPurchase() {
                 // We pass `interceptedURLComponents` to properly resolve final purchase URL

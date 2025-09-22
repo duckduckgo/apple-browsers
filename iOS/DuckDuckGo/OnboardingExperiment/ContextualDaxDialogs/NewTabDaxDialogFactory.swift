@@ -71,7 +71,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
             createFinalDialog(onCompletion: onCompletion, onManualDismiss: onManualDismiss)
         case .subscriptionPromotion:
             // Re-use same dismiss closure as dismissing the final dialog will set onboarding completed true
-            createPrivacyProPromoDialog(proceedButtonText: onboardingSubscriptionPromotionHelper.proceedButtonText, onDismiss: onCompletion)
+            createSubscriptionPromoDialog(proceedButtonText: onboardingSubscriptionPromotionHelper.proceedButtonText, onDismiss: onCompletion)
         }
     }
 
@@ -160,7 +160,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
 }
 
 private extension NewTabDaxDialogFactory {
-    private func createPrivacyProPromoDialog(proceedButtonText: String, onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
+    private func createSubscriptionPromoDialog(proceedButtonText: String, onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
 
         return FadeInView {
             SubscriptionPromotionView(
@@ -181,7 +181,7 @@ private extension NewTabDaxDialogFactory {
                 },
                 onManualDismiss: { [weak self] in
                     self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()
-                    self?.onboardingPixelReporter.measurePrivacyPromoDialogNewTabDismissButtonTapped()
+                    self?.onboardingPixelReporter.measureSubscriptionDialogNewTabDismissButtonTapped()
                     onDismiss(true)
                 }
             )

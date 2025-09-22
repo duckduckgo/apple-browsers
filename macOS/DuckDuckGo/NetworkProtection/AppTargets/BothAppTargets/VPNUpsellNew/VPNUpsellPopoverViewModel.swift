@@ -143,7 +143,7 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
     }
 
     func showSubscriptionLandingPage() {
-        pixelHandler(.privacyProToolbarButtonPopoverProceedButtonClicked)
+        pixelHandler(.subscriptionToolbarButtonPopoverProceedButtonClicked)
         onDismiss()
 
         guard let components = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.vpnUpsell.rawValue),
@@ -158,7 +158,7 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
     }
 
     func dismiss() {
-        pixelHandler(.privacyProToolbarButtonPopoverDismissButtonClicked)
+        pixelHandler(.subscriptionToolbarButtonPopoverDismissButtonClicked)
         vpnUpsellVisibilityManager.dismissUpsell()
         onDismiss()
     }

@@ -22,16 +22,16 @@ import Core
 import Foundation
 import Subscription
 
-/// Protocol defining the interface for the Privacy Pro onboarding promotion helper.
+/// Protocol defining the interface for the Subscription onboarding promotion helper.
 ///
-/// Conforming types provide logic for determining when the Privacy Pro promotion should be shown during onboarding,
+/// Conforming types provide logic for determining when the Subscription promotion should be shown during onboarding,
 /// as well as utilities for experiment tracking and pixel firing related to the promotion.
 protocol OnboardingSubscriptionPromotionHelping {
 
     /// Text to display on the promotion proceed button
     var proceedButtonText: String { get }
 
-    /// Indicates whether the Privacy Pro promotion should be displayed to the user during onboarding.
+    /// Indicates whether the Subscription promotion should be displayed to the user during onboarding.
     var shouldDisplay: Bool { get }
 
     /// Provides the URL components for redirecting as part of the onboarding promotion experiment.
@@ -51,13 +51,13 @@ protocol OnboardingSubscriptionPromotionHelping {
 
 /// A helper struct that implements the OnboardingSubscriptionPromotionHelping protocol.
 ///
-/// This struct provides the logic for determining when to show the Privacy Pro promotion during onboarding,
+/// This struct provides the logic for determining when to show the Subscription promotion during onboarding,
 /// as well as handling experiment tracking and pixel firing.
 struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping {
 
     /// Constants used by the helper.
     enum Constants {
-        /// The origin parameter value for this privacy pro promotion funnel.
+        /// The origin parameter value for this Subscriptionpromotion funnel.
         static let origin = "funnel_onboarding_ios"
     }
 
@@ -89,7 +89,7 @@ struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHel
         subscriptionManager.isUserEligibleForFreeTrial() ? UserText.SubscriptionPromotionOnboarding.Buttons.tryItForFree : UserText.SubscriptionPromotionOnboarding.Buttons.learnMore
     }
 
-    /// Indicates whether the Privacy Pro promotion should be displayed to the user during onboarding.
+    /// Indicates whether the Subscription promotion should be displayed to the user during onboarding.
     ///
     /// This property checks if the feature flag is enabled and if the user can purchase a subscription.
     var shouldDisplay: Bool {

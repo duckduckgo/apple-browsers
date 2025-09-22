@@ -111,7 +111,7 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
 
         // Then
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.privacyProToolbarButtonPopoverDismissButtonClicked.name)
+        XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.subscriptionToolbarButtonPopoverDismissButtonClicked.name)
     }
 
     func testWhenPrimaryCTAIsClicked_SubscriptionLandingPageIsOpened_AndOriginIsSet() throws {
@@ -141,7 +141,7 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
 
         // Then
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.privacyProToolbarButtonPopoverProceedButtonClicked.name)
+        XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.subscriptionToolbarButtonPopoverProceedButtonClicked.name)
     }
 
     func testWhenUserIsEligibleForFreeTrial_ThenMainCTATitleIsTryForFree() throws {

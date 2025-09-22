@@ -107,7 +107,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         // When
         sut = createUpsellManager(isFirstLaunch: false, isNewUser: true) { [weak self] pixel in
             self?.firedPixels.append(pixel)
-            if pixel.name == SubscriptionPixel.privacyProToolbarButtonShown.name {
+            if pixel.name == SubscriptionPixel.subscriptionToolbarButtonShown.name {
                 expectation.fulfill()
             }
         }
@@ -116,7 +116,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
         XCTAssertEqual(sut.state, .visible)
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.privacyProToolbarButtonShown.name)
+        XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.subscriptionToolbarButtonShown.name)
     }
 
     // MARK: - Manual Unpinning Tests

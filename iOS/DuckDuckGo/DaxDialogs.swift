@@ -506,7 +506,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
 
         guard isEnabled else { return nil }
 
-        // If the user has already seen the end of journey dialog we want to check if the user is eligible to purchase Privacy Pro and if so, display an additional Privacy Pro promotion dialog.
+        // If the user has already seen the end of journey dialog we want to check if the user is eligible to purchase Subscription and if so, display an additional Subscription promotion dialog.
         guard !finalDaxDialogSeen else {
 
             if onboardingSubscriptionPromotionHelper.shouldDisplay && !subscriptionPromotionDialogSeen {

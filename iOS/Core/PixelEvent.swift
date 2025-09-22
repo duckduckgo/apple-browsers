@@ -1040,8 +1040,8 @@ extension Pixel {
         case historyInsertVisitFailed
         case historyRemoveVisitsFailed
 
-        // MARK: Privacy pro
-        case ddgSubscriptionActive
+        // MARK: Subscription
+        case subscriptionActive
         case subscriptionOfferScreenImpression
         case subscriptionPurchaseAttempt
         case subscriptionPurchaseFailureOther
@@ -1058,7 +1058,7 @@ extension Pixel {
         case subscriptionRestorePurchaseStoreFailureNotFound
         case subscriptionRestorePurchaseStoreFailureOther
         case subscriptionRestoreAfterPurchaseAttempt
-        case ddgSubscriptionActivated
+        case subscriptionActivated
         case subscriptionWelcomeAddDevice
         case subscriptionWelcomeVPN
         case subscriptionWelcomePersonalInformationRemoval
@@ -2326,7 +2326,7 @@ extension Pixel.Event {
         case .historyRemoveVisitsFailed: return "m_debug_history-remove-visits-failed"
 
         // MARK: Subscription
-        case .ddgSubscriptionActive: return "m_privacy-pro_app_subscription_active"
+        case .subscriptionActive: return "m_privacy-pro_app_subscription_active"
         case .subscriptionOfferScreenImpression: return "m_privacy-pro_offer_screen_impression"
         case .subscriptionPurchaseAttempt: return "m_privacy-pro_terms-conditions_subscribe_click"
         case .subscriptionPurchaseFailureOther: return "m_privacy-pro_app_subscription-purchase_failure_other"
@@ -2343,7 +2343,7 @@ extension Pixel.Event {
         case .subscriptionRestorePurchaseStoreFailureNotFound: return "m_privacy-pro_app_subscription-restore-using-store_failure_not-found"
         case .subscriptionRestorePurchaseStoreFailureOther: return "m_privacy-pro_app_subscription-restore-using-store_failure_other"
         case .subscriptionRestoreAfterPurchaseAttempt: return "m_privacy-pro_app_subscription-restore-after-purchase-attempt_success"
-        case .ddgSubscriptionActivated: return "m_privacy-pro_app_subscription_activated_u"
+        case .subscriptionActivated: return "m_privacy-pro_app_subscription_activated_u"
         case .subscriptionWelcomeAddDevice: return "m_privacy-pro_welcome_add-device_click_u"
         case .subscriptionWelcomeVPN: return "m_privacy-pro_welcome_vpn_click_u"
         case .subscriptionWelcomePersonalInformationRemoval: return "m_privacy-pro_welcome_personal-information-removal_click_u"

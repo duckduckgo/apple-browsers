@@ -37,7 +37,7 @@ final class DuckDuckGoSubscriptionAttributionPixelHandler: SubscriptionAttributi
 
     func fireSuccessfulSubscriptionAttributionPixel() {
         decoratedAttributionPixelHandler.fireAttributionPixel(
-            event: SubscriptionPixel.privacyProSuccessfulSubscriptionAttribution,
+            event: SubscriptionPixel.subscriptionSuccessfulSubscriptionAttribution,
             frequency: .standard,
             origin: origin,
             additionalParameters: nil

@@ -452,7 +452,7 @@ extension URL {
         return URL(string: "https://duckduckgo.com/privacy")!
     }
 
-    static var privacyPro: URL {
+    static var subscription: URL {
         return URL(string: "https://duckduckgo.com/pro")!
     }
 

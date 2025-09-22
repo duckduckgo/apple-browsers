@@ -31,128 +31,128 @@ fileprivate let appDistribution = "direct"
 
 enum SubscriptionPixel: PixelKitEvent {
     // Subscription
-    case privacyProSubscriptionActive(AuthVersion)
-    case privacyProOfferScreenImpression
-    case privacyProPurchaseAttempt
-    case privacyProPurchaseFailureOther
-    case privacyProPurchaseFailureStoreError(Error)
-    case privacyProPurchaseFailureBackendError
-    case privacyProPurchaseFailureAccountNotCreated(Error)
-    case privacyProPurchaseSuccess
-    case privacyProRestorePurchaseOfferPageEntry
-    case privacyProRestorePurchaseClick
-    case privacyProRestorePurchaseSettingsMenuEntry
-    case privacyProRestorePurchaseEmailStart
-    case privacyProRestorePurchaseStoreStart
-    case privacyProRestorePurchaseEmailSuccess
-    case privacyProRestorePurchaseStoreSuccess
-    case privacyProRestorePurchaseStoreFailureNotFound
-    case privacyProRestorePurchaseStoreFailureOther
-    case privacyProRestoreAfterPurchaseAttempt
-    case privacyProSubscriptionActivated
-    case privacyProWelcomeAddDevice
-    case privacyProWelcomeVPN
-    case privacyProWelcomePersonalInformationRemoval
-    case privacyProWelcomeAIChat
-    case privacyProWelcomeIdentityRestoration
-    case privacyProSubscriptionSettings
-    case privacyProVPNSettings
-    case privacyProPersonalInformationRemovalSettings
-    case privacyProPersonalInformationRemovalSettingsImpression
-    case privacyProPaidAIChatSettings
-    case privacyProPaidAIChatSettingsImpression
-    case privacyProIdentityRestorationSettings
-    case privacyProIdentityRestorationSettingsImpression
-    case privacyProSubscriptionManagementEmail
-    case privacyProSubscriptionManagementPlanBilling
-    case privacyProSubscriptionManagementRemoval
-    case privacyProPurchaseStripeSuccess
-    case privacyProSuccessfulSubscriptionAttribution
+    case subscriptionActive(AuthVersion)
+    case subscriptionOfferScreenImpression
+    case subscriptionPurchaseAttempt
+    case subscriptionPurchaseFailureOther
+    case subscriptionPurchaseFailureStoreError(Error)
+    case subscriptionPurchaseFailureBackendError
+    case subscriptionPurchaseFailureAccountNotCreated(Error)
+    case subscriptionPurchaseSuccess
+    case subscriptionRestorePurchaseOfferPageEntry
+    case subscriptionRestorePurchaseClick
+    case subscriptionRestorePurchaseSettingsMenuEntry
+    case subscriptionRestorePurchaseEmailStart
+    case subscriptionRestorePurchaseStoreStart
+    case subscriptionRestorePurchaseEmailSuccess
+    case subscriptionRestorePurchaseStoreSuccess
+    case subscriptionRestorePurchaseStoreFailureNotFound
+    case subscriptionRestorePurchaseStoreFailureOther
+    case subscriptionRestoreAfterPurchaseAttempt
+    case subscriptionActivated
+    case subscriptionWelcomeAddDevice
+    case subscriptionWelcomeVPN
+    case subscriptionWelcomePersonalInformationRemoval
+    case subscriptionWelcomeAIChat
+    case subscriptionWelcomeIdentityRestoration
+    case subscriptionSettings
+    case subscriptionVPNSettings
+    case subscriptionPersonalInformationRemovalSettings
+    case subscriptionPersonalInformationRemovalSettingsImpression
+    case subscriptionPaidAIChatSettings
+    case subscriptionPaidAIChatSettingsImpression
+    case subscriptionIdentityRestorationSettings
+    case subscriptionIdentityRestorationSettingsImpression
+    case subscriptionManagementEmail
+    case subscriptionManagementPlanBilling
+    case subscriptionManagementRemoval
+    case subscriptionPurchaseStripeSuccess
+    case subscriptionSuccessfulSubscriptionAttribution
     // Web pixels
-    case privacyProOfferMonthlyPriceClick
-    case privacyProOfferYearlyPriceClick
-    case privacyProAddEmailSuccess
-    case privacyProWelcomeFAQClick
+    case subscriptionOfferMonthlyPriceClick
+    case subscriptionOfferYearlyPriceClick
+    case subscriptionAddEmailSuccess
+    case subscriptionWelcomeFAQClick
     // Auth v2
-    case privacyProInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
-    case privacyProInvalidRefreshTokenSignedOut
-    case privacyProInvalidRefreshTokenRecovered
-    case privacyProAuthV2MigrationFailed(SubscriptionPixelHandler.Source, Error)
-    case privacyProAuthV2MigrationSucceeded(SubscriptionPixelHandler.Source)
-    case privacyProAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
+    case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
+    case subscriptionInvalidRefreshTokenSignedOut
+    case subscriptionInvalidRefreshTokenRecovered
+    case subscriptionAuthV2MigrationFailed(SubscriptionPixelHandler.Source, Error)
+    case subscriptionAuthV2MigrationSucceeded(SubscriptionPixelHandler.Source)
+    case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
     // KeychainManager
-    case privacyProKeychainManagerDataAddedToTheBacklog(SubscriptionPixelHandler.Source)
-    case privacyProKeychainManagerDeallocatedWithBacklog(SubscriptionPixelHandler.Source)
-    case privacyProKeychainManagerDataWroteFromBacklog(SubscriptionPixelHandler.Source)
-    case privacyProKeychainManagerFailedToWriteDataFromBacklog(SubscriptionPixelHandler.Source)
+    case subscriptionKeychainManagerDataAddedToTheBacklog(SubscriptionPixelHandler.Source)
+    case subscriptionKeychainManagerDeallocatedWithBacklog(SubscriptionPixelHandler.Source)
+    case subscriptionKeychainManagerDataWroteFromBacklog(SubscriptionPixelHandler.Source)
+    case subscriptionKeychainManagerFailedToWriteDataFromBacklog(SubscriptionPixelHandler.Source)
     // Toolbar Button Upsell
-    case privacyProToolbarButtonShown
-    case privacyProToolbarButtonPopoverShown
-    case privacyProToolbarButtonPopoverDismissButtonClicked
-    case privacyProToolbarButtonPopoverProceedButtonClicked
+    case subscriptionToolbarButtonShown
+    case subscriptionToolbarButtonPopoverShown
+    case subscriptionToolbarButtonPopoverDismissButtonClicked
+    case subscriptionToolbarButtonPopoverProceedButtonClicked
 
     var name: String {
         switch self {
-        case .privacyProSubscriptionActive: return "m_mac_\(appDistribution)_privacy-pro_app_subscription_active"
-        case .privacyProOfferScreenImpression: return "m_mac_\(appDistribution)_privacy-pro_offer_screen_impression"
-        case .privacyProPurchaseAttempt: return "m_mac_\(appDistribution)_privacy-pro_terms-conditions_subscribe_click"
-        case .privacyProPurchaseFailureOther: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_other"
-        case .privacyProPurchaseFailureStoreError: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_store"
-        case .privacyProPurchaseFailureBackendError: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_backend"
-        case .privacyProPurchaseFailureAccountNotCreated: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_account-creation"
-        case .privacyProPurchaseSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_success"
-        case .privacyProRestorePurchaseOfferPageEntry: return "m_mac_\(appDistribution)_privacy-pro_offer_restore-purchase_click"
-        case .privacyProRestorePurchaseClick: return "m_mac_\(appDistribution)_privacy-pro_settings_restore-purchase_click"
-        case .privacyProRestorePurchaseSettingsMenuEntry: return "m_mac_\(appDistribution)_privacy-pro_settings_restore-purchase_click"
-        case .privacyProRestorePurchaseEmailStart: return "m_mac_\(appDistribution)_privacy-pro_activate-subscription_enter-email_click"
-        case .privacyProRestorePurchaseStoreStart: return "m_mac_\(appDistribution)_privacy-pro_activate-subscription_restore-purchase_click"
-        case .privacyProRestorePurchaseEmailSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-restore-using-email_success"
-        case .privacyProRestorePurchaseStoreSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-restore-using-store_success"
-        case .privacyProRestorePurchaseStoreFailureNotFound: return "m_mac_\(appDistribution)_privacy-pro_subscription-restore-using-store_failure_not-found"
-        case .privacyProRestorePurchaseStoreFailureOther: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-restore-using-store_failure_other"
-        case .privacyProRestoreAfterPurchaseAttempt: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-restore-after-purchase-attempt_success"
-        case .privacyProSubscriptionActivated: return "m_mac_\(appDistribution)_privacy-pro_app_subscription_activated_u"
-        case .privacyProWelcomeAddDevice: return "m_mac_\(appDistribution)_privacy-pro_welcome_add-device_click_u"
-        case .privacyProWelcomeVPN: return "m_mac_\(appDistribution)_privacy-pro_welcome_vpn_click_u"
-        case .privacyProWelcomePersonalInformationRemoval: return "m_mac_\(appDistribution)_privacy-pro_welcome_personal-information-removal_click_u"
-        case .privacyProWelcomeAIChat:
+        case .subscriptionActive: return "m_mac_\(appDistribution)_privacy-pro_app_subscription_active"
+        case .subscriptionOfferScreenImpression: return "m_mac_\(appDistribution)_privacy-pro_offer_screen_impression"
+        case .subscriptionPurchaseAttempt: return "m_mac_\(appDistribution)_privacy-pro_terms-conditions_subscribe_click"
+        case .subscriptionPurchaseFailureOther: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_other"
+        case .subscriptionPurchaseFailureStoreError: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_store"
+        case .subscriptionPurchaseFailureBackendError: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_backend"
+        case .subscriptionPurchaseFailureAccountNotCreated: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_account-creation"
+        case .subscriptionPurchaseSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_success"
+        case .subscriptionRestorePurchaseOfferPageEntry: return "m_mac_\(appDistribution)_privacy-pro_offer_restore-purchase_click"
+        case .subscriptionRestorePurchaseClick: return "m_mac_\(appDistribution)_privacy-pro_settings_restore-purchase_click"
+        case .subscriptionRestorePurchaseSettingsMenuEntry: return "m_mac_\(appDistribution)_privacy-pro_settings_restore-purchase_click"
+        case .subscriptionRestorePurchaseEmailStart: return "m_mac_\(appDistribution)_privacy-pro_activate-subscription_enter-email_click"
+        case .subscriptionRestorePurchaseStoreStart: return "m_mac_\(appDistribution)_privacy-pro_activate-subscription_restore-purchase_click"
+        case .subscriptionRestorePurchaseEmailSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-restore-using-email_success"
+        case .subscriptionRestorePurchaseStoreSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-restore-using-store_success"
+        case .subscriptionRestorePurchaseStoreFailureNotFound: return "m_mac_\(appDistribution)_privacy-pro_subscription-restore-using-store_failure_not-found"
+        case .subscriptionRestorePurchaseStoreFailureOther: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-restore-using-store_failure_other"
+        case .subscriptionRestoreAfterPurchaseAttempt: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-restore-after-purchase-attempt_success"
+        case .subscriptionActivated: return "m_mac_\(appDistribution)_privacy-pro_app_subscription_activated_u"
+        case .subscriptionWelcomeAddDevice: return "m_mac_\(appDistribution)_privacy-pro_welcome_add-device_click_u"
+        case .subscriptionWelcomeVPN: return "m_mac_\(appDistribution)_privacy-pro_welcome_vpn_click_u"
+        case .subscriptionWelcomePersonalInformationRemoval: return "m_mac_\(appDistribution)_privacy-pro_welcome_personal-information-removal_click_u"
+        case .subscriptionWelcomeAIChat:
             return "m_mac_\(appDistribution)_privacy-pro_welcome_ai-chat_click_u"
-        case .privacyProWelcomeIdentityRestoration: return "m_mac_\(appDistribution)_privacy-pro_welcome_identity-theft-restoration_click_u"
-        case .privacyProSubscriptionSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_screen_impression"
-        case .privacyProVPNSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_vpn_click"
-        case .privacyProPersonalInformationRemovalSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_personal-information-removal_click"
-        case .privacyProPersonalInformationRemovalSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_personal-information-removal_impression"
-        case .privacyProPaidAIChatSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_paid-ai-chat_click"
-        case .privacyProPaidAIChatSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_paid-ai-chat_impression"
-        case .privacyProIdentityRestorationSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_identity-theft-restoration_click"
-        case .privacyProIdentityRestorationSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_identity-theft-restoration_impression"
-        case .privacyProSubscriptionManagementEmail: return "m_mac_\(appDistribution)_privacy-pro_manage-email_edit_click"
-        case .privacyProSubscriptionManagementPlanBilling: return "m_mac_\(appDistribution)_privacy-pro_settings_change-plan-or-billing_click"
-        case .privacyProSubscriptionManagementRemoval: return "m_mac_\(appDistribution)_privacy-pro_settings_remove-from-device_click"
-        case .privacyProPurchaseStripeSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_stripe_success"
-        case .privacyProSuccessfulSubscriptionAttribution: return "m_mac_\(appDistribution)_subscribe"
+        case .subscriptionWelcomeIdentityRestoration: return "m_mac_\(appDistribution)_privacy-pro_welcome_identity-theft-restoration_click_u"
+        case .subscriptionSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_screen_impression"
+        case .subscriptionVPNSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_vpn_click"
+        case .subscriptionPersonalInformationRemovalSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_personal-information-removal_click"
+        case .subscriptionPersonalInformationRemovalSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_personal-information-removal_impression"
+        case .subscriptionPaidAIChatSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_paid-ai-chat_click"
+        case .subscriptionPaidAIChatSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_paid-ai-chat_impression"
+        case .subscriptionIdentityRestorationSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_identity-theft-restoration_click"
+        case .subscriptionIdentityRestorationSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_identity-theft-restoration_impression"
+        case .subscriptionManagementEmail: return "m_mac_\(appDistribution)_privacy-pro_manage-email_edit_click"
+        case .subscriptionManagementPlanBilling: return "m_mac_\(appDistribution)_privacy-pro_settings_change-plan-or-billing_click"
+        case .subscriptionManagementRemoval: return "m_mac_\(appDistribution)_privacy-pro_settings_remove-from-device_click"
+        case .subscriptionPurchaseStripeSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_stripe_success"
+        case .subscriptionSuccessfulSubscriptionAttribution: return "m_mac_\(appDistribution)_subscribe"
             // Web
-        case .privacyProOfferMonthlyPriceClick: return "m_mac_\(appDistribution)_privacy-pro_offer_monthly-price_click"
-        case .privacyProOfferYearlyPriceClick: return "m_mac_\(appDistribution)_privacy-pro_offer_yearly-price_click"
-        case .privacyProAddEmailSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_add-email_success_u"
-        case .privacyProWelcomeFAQClick: return "m_mac_\(appDistribution)_privacy-pro_welcome_faq_click_u"
+        case .subscriptionOfferMonthlyPriceClick: return "m_mac_\(appDistribution)_privacy-pro_offer_monthly-price_click"
+        case .subscriptionOfferYearlyPriceClick: return "m_mac_\(appDistribution)_privacy-pro_offer_yearly-price_click"
+        case .subscriptionAddEmailSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_add-email_success_u"
+        case .subscriptionWelcomeFAQClick: return "m_mac_\(appDistribution)_privacy-pro_welcome_faq_click_u"
             // Auth v2
-        case .privacyProInvalidRefreshTokenDetected: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_detected"
-        case .privacyProInvalidRefreshTokenSignedOut: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_signed_out"
-        case .privacyProInvalidRefreshTokenRecovered: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_recovered"
-        case .privacyProAuthV2MigrationFailed: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_failure"
-        case .privacyProAuthV2MigrationSucceeded: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_success"
-        case .privacyProAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokens_error"
+        case .subscriptionInvalidRefreshTokenDetected: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_detected"
+        case .subscriptionInvalidRefreshTokenSignedOut: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_signed_out"
+        case .subscriptionInvalidRefreshTokenRecovered: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_recovered"
+        case .subscriptionAuthV2MigrationFailed: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_failure"
+        case .subscriptionAuthV2MigrationSucceeded: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_success"
+        case .subscriptionAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokens_error"
             // KeychainManager
-        case .privacyProKeychainManagerDataAddedToTheBacklog: return "m_mac_privacy-pro_keychain_manager_data_added_to_backlog"
-        case .privacyProKeychainManagerDeallocatedWithBacklog: return "m_mac_privacy-pro_keychain_manager_deallocated_with_backlog"
-        case .privacyProKeychainManagerDataWroteFromBacklog: return "m_mac_privacy-pro_keychain_manager_data_wrote_from_backlog"
-        case .privacyProKeychainManagerFailedToWriteDataFromBacklog: return "m_mac_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
+        case .subscriptionKeychainManagerDataAddedToTheBacklog: return "m_mac_privacy-pro_keychain_manager_data_added_to_backlog"
+        case .subscriptionKeychainManagerDeallocatedWithBacklog: return "m_mac_privacy-pro_keychain_manager_deallocated_with_backlog"
+        case .subscriptionKeychainManagerDataWroteFromBacklog: return "m_mac_privacy-pro_keychain_manager_data_wrote_from_backlog"
+        case .subscriptionKeychainManagerFailedToWriteDataFromBacklog: return "m_mac_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
             // Toolbar Button Upsell
-        case .privacyProToolbarButtonShown: return "m_mac_privacy-pro_toolbar_button_shown"
-        case .privacyProToolbarButtonPopoverShown: return "m_mac_privacy-pro_toolbar_button_popover_shown"
-        case .privacyProToolbarButtonPopoverDismissButtonClicked: return "m_mac_privacy-pro_toolbar_button_popover_dismiss_button_clicked"
-        case .privacyProToolbarButtonPopoverProceedButtonClicked: return "m_mac_privacy-pro_toolbar_button_popover_proceed_button_clicked"
+        case .subscriptionToolbarButtonShown: return "m_mac_privacy-pro_toolbar_button_shown"
+        case .subscriptionToolbarButtonPopoverShown: return "m_mac_privacy-pro_toolbar_button_popover_shown"
+        case .subscriptionToolbarButtonPopoverDismissButtonClicked: return "m_mac_privacy-pro_toolbar_button_popover_dismiss_button_clicked"
+        case .subscriptionToolbarButtonPopoverProceedButtonClicked: return "m_mac_privacy-pro_toolbar_button_popover_proceed_button_clicked"
         }
     }
 
@@ -164,21 +164,21 @@ enum SubscriptionPixel: PixelKitEvent {
 
     var parameters: [String: String]? {
         switch self {
-        case .privacyProInvalidRefreshTokenDetected(let source),
-                .privacyProAuthV2MigrationSucceeded(let source),
-                .privacyProKeychainManagerDataAddedToTheBacklog(let source),
-                .privacyProKeychainManagerDeallocatedWithBacklog(let source),
-                .privacyProKeychainManagerDataWroteFromBacklog(let source),
-                .privacyProKeychainManagerFailedToWriteDataFromBacklog(let source):
+        case .subscriptionInvalidRefreshTokenDetected(let source),
+                .subscriptionAuthV2MigrationSucceeded(let source),
+                .subscriptionKeychainManagerDataAddedToTheBacklog(let source),
+                .subscriptionKeychainManagerDeallocatedWithBacklog(let source),
+                .subscriptionKeychainManagerDataWroteFromBacklog(let source),
+                .subscriptionKeychainManagerFailedToWriteDataFromBacklog(let source):
             return [SubscriptionPixelsDefaults.sourceKey: source.description]
-        case .privacyProAuthV2GetTokensError(let policy, let source, let error):
+        case .subscriptionAuthV2GetTokensError(let policy, let source, let error):
             return [SubscriptionPixelsDefaults.errorKey: error.localizedDescription,
                     SubscriptionPixelsDefaults.policyCacheKey: policy.description,
                     SubscriptionPixelsDefaults.sourceKey: source.description]
-        case .privacyProAuthV2MigrationFailed(let source, let error):
+        case .subscriptionAuthV2MigrationFailed(let source, let error):
             return [SubscriptionPixelsDefaults.errorKey: error.localizedDescription,
                     SubscriptionPixelsDefaults.sourceKey: source.description]
-        case .privacyProSubscriptionActive(let authVersion):
+        case .subscriptionActive(let authVersion):
             return [AuthVersion.key: authVersion.rawValue]
         default:
             return nil
@@ -186,22 +186,22 @@ enum SubscriptionPixel: PixelKitEvent {
     }
 }
 
-enum PrivacyProErrorPixel: PixelKitEvent {
+enum SubscriptionErrorPixel: PixelKitEvent {
 
-    case privacyProKeychainAccessError(accessType: AccountKeychainAccessType,
+    case subscriptionKeychainAccessError(accessType: AccountKeychainAccessType,
                                        accessError: AccountKeychainAccessError,
                                        source: KeychainErrorSource,
                                        authVersion: KeychainErrorAuthVersion )
 
     var name: String {
         switch self {
-        case .privacyProKeychainAccessError: return "m_mac_privacy-pro_keychain_access_error"
+        case .subscriptionKeychainAccessError: return "m_mac_privacy-pro_keychain_access_error"
         }
     }
 
     var parameters: [String: String]? {
         switch self {
-        case .privacyProKeychainAccessError(let accessType, let accessError, let source, let authVersion):
+        case .subscriptionKeychainAccessError(let accessType, let accessError, let source, let authVersion):
             return [
                 "access_type": accessType.rawValue,
                 "error": accessError.errorDescription ?? "Unknown",

@@ -43,7 +43,7 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
         case .invalidRefreshToken:
             DailyPixel.fireDailyAndCount(pixel: .subscriptionInvalidRefreshTokenDetected, withAdditionalParameters: sourceParam)
         case .subscriptionIsActive:
-            DailyPixel.fire(pixel: .ddgSubscriptionActive, withAdditionalParameters: [AuthVersion.key: AuthVersion.v2.rawValue])
+            DailyPixel.fire(pixel: .subscriptionActive, withAdditionalParameters: [AuthVersion.key: AuthVersion.v2.rawValue])
         case .migrationFailed(let error):
             DailyPixel.fireDailyAndCount(pixel: .subscriptionAuthV2MigrationFailed, withAdditionalParameters: [Defaults.errorKey: error.localizedDescription].merging(sourceParam) { $1 })
             DailyPixel.fireDailyAndCount(pixel: .subscriptionAuthV2MigrationFailed2, error: error, withAdditionalParameters: sourceParam)

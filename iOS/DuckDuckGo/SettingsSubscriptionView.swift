@@ -97,7 +97,7 @@ struct SettingsSubscriptionView: View {
                              image: Image(uiImage: DesignSystemImages.Color.Size24.subscription))
             .disabled(true)
 
-            // Get privacy pro
+            // Get Subscription
             let getText = settingsViewModel.state.subscription.isEligibleForTrialOffer ? UserText.trySubscriptionButton : UserText.getSubscriptionButton
             SettingsCustomCell(content: {
                 Text(getText)

@@ -24,10 +24,37 @@ import os.log
 @MainActor
 public class PageLoadTester: NSObject {
 
+    // MARK: - Constants
+
+    private enum Constants {
+        static let loggerSubsystem = "com.duckduckgo.macos.browser.performancetest"
+        static let loggerCategory = "PageLoadTester"
+        static let defaultTimeout: TimeInterval = 30.0
+        static let unknownURLString = "unknown"
+
+        enum MetricsKeys {
+            static let error = "error"
+            static let loadComplete = "loadComplete"
+            static let firstContentfulPaint = "firstContentfulPaint"
+            static let largestContentfulPaint = "largestContentfulPaint"
+            static let timeToFirstByte = "timeToFirstByte"
+        }
+
+        enum ErrorMessages {
+            static let javascriptMetricsError = "JavaScript metrics collection error: "
+            static let failedToCollectMetrics = "Failed to collect performance metrics: "
+            static let allRetryAttemptsFailed = "All retry attempts failed"
+            static let testAttemptFailed = "Test attempt %d failed: "
+            static let navigationStarted = "Navigation started for: "
+            static let navigationFinished = "Navigation finished for: "
+            static let navigationFailed = "Navigation failed: "
+        }
+    }
+
     // MARK: - Properties
 
     private let webView: WKWebView
-    private let logger = Logger(subsystem: "com.duckduckgo.macos.browser.performancetest", category: "PageLoadTester")
+    private let logger = Logger(subsystem: Constants.loggerSubsystem, category: Constants.loggerCategory)
 
     /// Progress callback for UI updates (0.0 to 1.0)
     public var progressHandler: ((Double) -> Void)?
@@ -73,7 +100,7 @@ public class PageLoadTester: NSObject {
                 return result
             } catch {
                 lastError = error
-                logger.warning("Test attempt \(attempts) failed: \(error.localizedDescription)")
+                logger.warning("\(String(format: Constants.ErrorMessages.testAttemptFailed, attempts))\(error.localizedDescription)")
 
                 // Only retry on transient errors
                 if case PageLoadError.timeout = error {
@@ -87,7 +114,7 @@ public class PageLoadTester: NSObject {
         }
 
         // No more retries
-        throw lastError ?? PageLoadError.networkError(message: "All retry attempts failed")
+        throw lastError ?? PageLoadError.networkError(message: Constants.ErrorMessages.allRetryAttemptsFailed)
     }
 
     // MARK: - Private Methods
@@ -121,10 +148,10 @@ public class PageLoadTester: NSObject {
     }
 
     private func collectPerformanceMetrics() async throws -> PerformanceMetrics? {
-        // Load JavaScript from resource bundle
-        guard let scriptURL = Bundle.module.url(forResource: "performanceMetrics", withExtension: "js", subdirectory: "JavaScript"),
+        // Load JavaScript from bundle resources
+        guard let scriptURL = Bundle.module.url(forResource: "performanceMetrics", withExtension: "js"),
               let scriptContent = try? String(contentsOf: scriptURL) else {
-            logger.error("Failed to load performance metrics JavaScript")
+            logger.error("Failed to load performance metrics JavaScript from bundle")
             return nil
         }
 
@@ -133,16 +160,16 @@ public class PageLoadTester: NSObject {
             guard let metrics = result as? [String: Any] else { return nil }
 
             // Check for errors from JavaScript
-            if let error = metrics["error"] as? String {
-                logger.error("JavaScript metrics collection error: \(error)")
+            if let error = metrics[Constants.MetricsKeys.error] as? String {
+                logger.error("\(Constants.ErrorMessages.javascriptMetricsError)\(error)")
                 return nil
             }
 
             // Convert milliseconds to seconds for time metrics
-            let loadComplete = (metrics["loadComplete"] as? Double ?? 0) / 1000.0
-            let fcp = metrics["firstContentfulPaint"] as? Double
-            let lcp = metrics["largestContentfulPaint"] as? Double
-            let ttfb = metrics["timeToFirstByte"] as? Double
+            let loadComplete = (metrics[Constants.MetricsKeys.loadComplete] as? Double ?? 0) / 1000.0
+            let fcp = metrics[Constants.MetricsKeys.firstContentfulPaint] as? Double
+            let lcp = metrics[Constants.MetricsKeys.largestContentfulPaint] as? Double
+            let ttfb = metrics[Constants.MetricsKeys.timeToFirstByte] as? Double
 
             return PerformanceMetrics(
                 loadTime: loadComplete,
@@ -151,7 +178,7 @@ public class PageLoadTester: NSObject {
                 timeToFirstByte: ttfb
             )
         } catch {
-            logger.warning("Failed to collect performance metrics: \(error)")
+            logger.warning("\(Constants.ErrorMessages.failedToCollectMetrics)\(error)")
             return nil
         }
     }
@@ -162,7 +189,7 @@ public class PageLoadTester: NSObject {
 extension PageLoadTester: WKNavigationDelegate {
 
     public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        logger.debug("Navigation started for: \(self.currentURL?.absoluteString ?? "unknown")")
+        logger.debug("\(Constants.ErrorMessages.navigationStarted)\(self.currentURL?.absoluteString ?? Constants.unknownURLString)")
         progressHandler?(0.1)
     }
 
@@ -171,7 +198,7 @@ extension PageLoadTester: WKNavigationDelegate {
     }
 
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        logger.debug("Navigation finished for: \(self.currentURL?.absoluteString ?? "unknown")")
+        logger.debug("\(Constants.ErrorMessages.navigationFinished)\(self.currentURL?.absoluteString ?? Constants.unknownURLString)")
         progressHandler?(0.9)
 
         guard let startTime = navigationStartTime,
@@ -216,7 +243,7 @@ extension PageLoadTester: WKNavigationDelegate {
     }
 
     private func handleNavigationError(_ error: Error) {
-        logger.error("Navigation failed: \(error.localizedDescription)")
+        logger.error("\(Constants.ErrorMessages.navigationFailed)\(error.localizedDescription)")
 
         guard let startTime = navigationStartTime,
               let url = currentURL else {
@@ -230,7 +257,7 @@ extension PageLoadTester: WKNavigationDelegate {
 
         switch nsError.code {
         case NSURLErrorTimedOut:
-            testError = .timeout(duration: 30.0)
+            testError = .timeout(duration: Constants.defaultTimeout)
         case NSURLErrorCannotFindHost, NSURLErrorCannotConnectToHost:
             testError = .networkError(message: error.localizedDescription)
         case NSURLErrorCancelled:
@@ -265,7 +292,7 @@ public enum PageLoadError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .timeout(let duration):
-            return "Page load timed out after \(duration) seconds"
+            return String(format: "Page load timed out after %.0f seconds", duration)
         case .networkError(let message):
             return "Network error: \(message)"
         case .invalidURL:

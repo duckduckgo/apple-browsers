@@ -20,7 +20,7 @@
  * Collects performance metrics from the browser's Performance API
  * @returns {Object} Performance metrics object with timing and resource information
  */
-function collectPerformanceMetrics() {
+(function() {
     // Get navigation timing data
     const navigationEntry = performance.getEntriesByType('navigation')[0];
     if (!navigationEntry) {
@@ -29,15 +29,23 @@ function collectPerformanceMetrics() {
 
     // Paint timing
     const paintEntries = performance.getEntriesByType('paint');
-    const firstPaint = paintEntries.find(entry => entry.name === 'first-paint');
     const firstContentfulPaint = paintEntries.find(entry => entry.name === 'first-contentful-paint');
 
+<<<<<<< HEAD:macOS/LocalPackages/PerformanceTest/Sources/PerformanceTest/Resources/JavaScript/performanceMetrics.js
     // LCP (If implemented)
     const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
     const largestContentfulPaint = lcpEntries.length > 0 ? lcpEntries[lcpEntries.length - 1] : null;
 
     // Other Metrics
     const metrics = {
+=======
+    // LCP (If available)
+    const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
+    const largestContentfulPaint = lcpEntries.length > 0 ? lcpEntries[lcpEntries.length - 1] : null;
+
+    // Return metrics
+    return {
+>>>>>>> b0e50b6f1 (Refactor strings to constants and properly load JavaScript from resources):macOS/LocalPackages/PerformanceTest/Sources/PerformanceTest/Resources/performanceMetrics.js
         // Time to First Byte
         timeToFirstByte: navigationEntry.responseStart - navigationEntry.fetchStart,
 
@@ -70,7 +78,9 @@ function collectPerformanceMetrics() {
         decodedBodySize: navigationEntry.decodedBodySize || 0,
 
         // Server timing
-        serverTiming: extractServerTiming(navigationEntry),
+        serverTiming: navigationEntry.serverTiming ?
+            navigationEntry.serverTiming.reduce((total, entry) => total + (entry.duration || 0), 0) :
+            (navigationEntry.responseStart - navigationEntry.requestStart),
 
         // Resource count
         resourceCount: performance.getEntriesByType('resource').length,
@@ -80,27 +90,4 @@ function collectPerformanceMetrics() {
         redirectCount: navigationEntry.redirectCount || 0,
         navigationType: navigationEntry.type || 'navigate'
     };
-
-    return metrics;
-}
-
-/**
- * Extracts server timing information from navigation entry
- * @param {PerformanceNavigationTiming} navigationEntry - The navigation timing entry
- * @returns {number} Server processing time in milliseconds
- */
-function extractServerTiming(navigationEntry) {
-    // If serverTiming is available, calculate total server time
-    if (navigationEntry.serverTiming && navigationEntry.serverTiming.length > 0) {
-        return navigationEntry.serverTiming.reduce((total, entry) => {
-            return total + (entry.duration || 0);
-        }, 0);
-    }
-
-    // Fallback: estimate server time from response timings
-    // This is the time between request sent and first byte received
-    return navigationEntry.responseStart - navigationEntry.requestStart;
-}
-
-// Export the main function for WebKit to call
-collectPerformanceMetrics();
+})()

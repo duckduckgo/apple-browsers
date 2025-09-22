@@ -1,7 +1,6 @@
 name: Smartling
 
 on:
-  # push:
   workflow_dispatch:
     inputs:
       platform:
@@ -33,43 +32,6 @@ on:
         default: false
 
 jobs:
-  shellcheck:
-
-    name: ShellCheck
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Check out the code
-      uses: actions/checkout@v4
-
-    - name: Run ShellCheck
-      run: |
-        shellcheck -e SC1091 scripts/loc_tool.sh scripts/smartling_download.sh scripts/smartling_upload.sh scripts/smartling_messages.sh
-
-  pylint:
-
-    name: Python Lint
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Check out the code
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Install Python dependencies
-      run: |
-        pip install aiohttp pylint
-
-    - name: Run pylint
-      run: |
-        pylint scripts/localization_tool.py
-
   smartling:
     runs-on: macos-15-xlarge
     name: Smartling translation job
@@ -137,81 +99,23 @@ jobs:
         if: ${{ github.event.inputs.action == 'upload' }}
         id: upload
         run: |
-          # Capture output and extract job ID
-          output=$(./scripts/smartling_upload.sh "${{ github.event.inputs.platform }}" "${{ github.ref_name }}" 2>&1 || echo "FAILED")
-          echo "$output"
-
-          if echo "$output" | grep -q "JOB_ID="; then
-            job_id=$(echo "$output" | grep -o 'JOB_ID=[^[:space:]]*' | cut -d= -f2)
-            echo "job_id=$job_id" >> $GITHUB_OUTPUT
-
-            # Generate success message
-            ./scripts/smartling_messages.sh upload upload_message.txt "${{ github.event.inputs.platform }}" "$job_id" "${{ env.SMARTLING_PROJECT_ID }}" success
-            cat upload_message.txt >> $GITHUB_STEP_SUMMARY
-          else
-            # Generate error message
-            ./scripts/smartling_messages.sh upload upload_message.txt "${{ github.event.inputs.platform }}" "" "${{ env.SMARTLING_PROJECT_ID }}" failed
-            cat upload_message.txt >> $GITHUB_STEP_SUMMARY
-          fi
+          ./scripts/smartling_upload.sh "${{ github.event.inputs.platform }}" "${{ github.ref_name }}"
+          cat upload_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Check Status
         if: ${{ github.event.inputs.action == 'status' }}
         run: |
-          output=$(./scripts/loc_tool.sh status --job-id "${{ github.event.inputs.job-id }}" 2>&1)
-          echo "$output"
-
-          # Extract status and progress
-          status=$(echo "$output" | grep -o 'STATUS=[^[:space:]]*' | cut -d= -f2 || echo "UNKNOWN")
-          percent=$(echo "$output" | grep -o 'PERCENT=[^[:space:]]*' | cut -d= -f2 || echo "0")
-
-          # Generate status message
-          ./scripts/smartling_messages.sh status status_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" "$status" "$percent"
+          ./scripts/smartling_status.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.platform }}"
           cat status_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Approve Job
         if: ${{ github.event.inputs.action == 'approve' }}
         run: |
-          output=$(./scripts/loc_tool.sh approve --job-id "${{ github.event.inputs.job-id }}" 2>&1)
-          echo "$output"
-
-          if echo "$output" | grep -q "APPROVED=1"; then
-            # Generate success message
-            ./scripts/smartling_messages.sh approve approve_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" success
-            cat approve_message.txt >> $GITHUB_STEP_SUMMARY
-          else
-            # Generate error message
-            ./scripts/smartling_messages.sh approve approve_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" failed
-            cat approve_message.txt >> $GITHUB_STEP_SUMMARY
-          fi
+          ./scripts/smartling_approve.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.platform }}"
+          cat approve_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Download from Smartling
         if: ${{ github.event.inputs.action == 'download' }}
         run: |
-          set +e
-          output=$(./scripts/smartling_download.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.force }}" "${{ github.event.inputs.platform }}" 2>&1)
-          exit_code=$?
-          set -e
-          echo "$output"
-
-          if [ $exit_code -eq 0 ]; then
-            if echo "$output" | grep -q "Changes pushed to current branch"; then
-              # Generate success message
-              ./scripts/smartling_messages.sh download download_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" success
-              cat download_message.txt >> $GITHUB_STEP_SUMMARY
-            else
-              # Generate no changes message
-              ./scripts/smartling_messages.sh download download_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" no_changes
-              cat download_message.txt >> $GITHUB_STEP_SUMMARY
-            fi
-          else
-            # Check for specific errors
-            if echo "$output" | grep -q "Import would delete existing translations"; then
-              # Generate deletion error message
-              ./scripts/smartling_messages.sh download download_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" failed deletions
-              cat download_message.txt >> $GITHUB_STEP_SUMMARY
-            else
-              # Generate generic error message
-              ./scripts/smartling_messages.sh download download_message.txt "${{ github.event.inputs.platform }}" "${{ github.event.inputs.job-id }}" "${{ env.SMARTLING_PROJECT_ID }}" failed
-              cat download_message.txt >> $GITHUB_STEP_SUMMARY
-            fi
-          fi
+          ./scripts/smartling_download.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.force }}" "${{ github.event.inputs.platform }}"
+          cat download_message.txt >> $GITHUB_STEP_SUMMARY

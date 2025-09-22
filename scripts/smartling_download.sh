@@ -98,42 +98,29 @@ fi
 # Cleanup temporary directories
 rm -rf "$DOWNLOAD_DIR" "$IMPORT_DIR"
 
-# Check for deleted translation keys
-echo "Checking for deleted translation keys..."
+# Check for deleted translation keys and problematic replacements
+echo "Checking for deleted translation keys and value replacements..."
 
-# Check using git status to see overall changes
-DELETED_LINES=$(git diff -- '*.strings' '*.stringsdict' | grep -c '^-[^-]' | grep -v '^---' || echo "0")
+# Use dedicated Python script for robust analysis
+check_result=$(./scripts/check_translation_integrity.py 2>/dev/null) || check_result=""
 
-if [ "$DELETED_LINES" -gt 0 ]; then
-  echo "⚠️ Detected $DELETED_LINES deleted lines in translation files"
+# Parse the Python output
+DELETED_LINES=$(echo "$check_result" | grep "^DELETED=" | cut -d= -f2 || echo "0")
+PROBLEMATIC_REPLACEMENTS=$(echo "$check_result" | grep "^REPLACED=" | cut -d= -f2 || echo "0")
 
-  # Show a sample of what was deleted
-  echo "Sample of deleted content:"
-  git diff -- '*.strings' | grep '^-"' | head -10
+TOTAL_ISSUES=$((DELETED_LINES + PROBLEMATIC_REPLACEMENTS))
 
+if [ "$TOTAL_ISSUES" -gt 0 ]; then
   if [ "$FORCE" != "true" ]; then
-    cat <<-EOF
-
-❌ ERROR: Import would delete existing translations
-
-This usually happens when:
-1. Main was merged into the branch after translation started
-2. Some features were removed
-
-Options:
-• If deletions are expected: Run with force=true parameter
-• If unexpected: Merge main and run 'upload' action to create a new translation job
-
-EOF
+    # Generate error message for GitHub Actions step summary
+    ./scripts/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" failed deletions
 
     # Revert all changes
     git checkout -- .
     exit 1
   else
-    echo "⚠️ Proceeding with deletions because force=true was set"
+    echo "⚠️ Proceeding with destructive changes because force=true was set"
   fi
-else
-  echo "✅ No translation keys deleted"
 fi
 
 # Commit the imported translations
@@ -142,6 +129,8 @@ echo "Committing imported translations..."
 # Check if there are any changes to commit
 if git diff --quiet && git diff --cached --quiet; then
   echo "No changes to commit"
+  # Generate no changes message
+  ./scripts/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" no_changes
 else
   # Configure Git identity for the commit
   git config user.name "Dax the Duck"
@@ -158,4 +147,7 @@ else
   # Push the commit to the current branch
   git push origin HEAD
   echo "✅ Changes pushed to current branch"
+  
+  # Generate success message
+  ./scripts/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" success
 fi

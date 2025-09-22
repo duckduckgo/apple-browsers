@@ -272,22 +272,3 @@ final class TestResultTests: XCTestCase {
 
 // MARK: - Test Error Definition (for testing purposes)
 
-enum TestError: LocalizedError, Codable, Equatable {
-    case timeout(duration: TimeInterval)
-    case networkError(message: String)
-    case invalidURL
-    case cancelled
-
-    var errorDescription: String? {
-        switch self {
-        case .timeout(let duration):
-            return "Test timed out after \(duration) seconds"
-        case .networkError(let message):
-            return "Network error: \(message)"
-        case .invalidURL:
-            return "Invalid URL"
-        case .cancelled:
-            return "Test was cancelled"
-        }
-    }
-}

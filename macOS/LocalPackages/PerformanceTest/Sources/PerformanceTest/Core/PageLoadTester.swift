@@ -30,26 +30,16 @@ public class PageLoadTester: NSObject {
         static let loggerCategory = "PageLoadTester"
         static let unknownURLString = "unknown"
 
-        enum MetricsKeys {
-            static let error = "error"
-            static let loadComplete = "loadComplete"
-            static let firstContentfulPaint = "firstContentfulPaint"
-            static let largestContentfulPaint = "largestContentfulPaint"
-            static let timeToFirstByte = "timeToFirstByte"
-        }
+        // Error Messages
+        static let javascriptMetricsError = "JavaScript metrics collection error: "
+        static let failedToCollectMetrics = "Failed to collect performance metrics: "
+        static let allRetryAttemptsFailed = "All retry attempts failed"
+        static let testAttemptFailed = "Test attempt %d failed: "
+        static let navigationFailed = "Navigation failed: "
 
-        enum ErrorMessages {
-            static let javascriptMetricsError = "JavaScript metrics collection error: "
-            static let failedToCollectMetrics = "Failed to collect performance metrics: "
-            static let allRetryAttemptsFailed = "All retry attempts failed"
-            static let testAttemptFailed = "Test attempt %d failed: "
-            static let navigationFailed = "Navigation failed: "
-        }
-
-        enum DebugMessages {
-            static let navigationStarted = "Navigation started for: "
-            static let navigationFinished = "Navigation finished for: "
-        }
+        // Debug Messages
+        static let navigationStarted = "Navigation started for: "
+        static let navigationFinished = "Navigation finished for: "
     }
 
     private let webView: WKWebView
@@ -91,7 +81,8 @@ public class PageLoadTester: NSObject {
                 return result
             } catch {
                 lastError = error
-                logger.warning("\(String(format: Constants.ErrorMessages.testAttemptFailed, attempts))\(error.localizedDescription)")
+                let attemptError = String(format: Constants.testAttemptFailed, attempts)
+                logger.warning("\(attemptError)\(error.localizedDescription)")
 
                 // Only retry on transient errors
                 if case PageLoadError.timeout = error {
@@ -104,7 +95,7 @@ public class PageLoadTester: NSObject {
             }
         }
 
-        throw lastError ?? PageLoadError.networkError(message: Constants.ErrorMessages.allRetryAttemptsFailed)
+        throw lastError ?? PageLoadError.networkError(message: Constants.allRetryAttemptsFailed)
     }
 
     private func performSingleTest(url: URL, timeout: TimeInterval) async throws -> TestResult {
@@ -140,46 +131,71 @@ public class PageLoadTester: NSObject {
     }
 
     private func collectPerformanceMetrics() async throws -> PerformanceMetrics? {
-        // Try to find the bundle containing our resources
-        let bundleName = "DuckDuckGo_PerformanceTest"
-        let candidates = [
-            // Bundle for Swift Package Manager resources
-            Bundle.main.bundleURL.appendingPathComponent("\(bundleName).bundle"),
-            // Bundle for the module itself
-            Bundle(for: type(of: self)).bundleURL.appendingPathComponent("Resources"),
-            // Direct resource in main bundle
-            Bundle.main.bundleURL
-        ]
+        // Use inline JavaScript instead of loading from file to avoid bundle issues
+        let scriptContent = """
+            (function() {
+                try {
+                    // Wait for page to be fully loaded
+                    if (document.readyState !== 'complete') {
+                        return { error: 'Page not fully loaded' };
+                    }
 
-        var scriptContent: String?
-        for candidate in candidates {
-            let url = candidate.appendingPathComponent("performanceMetrics.js")
-            if let content = try? String(contentsOf: url) {
-                scriptContent = content
-                break
-            }
-        }
+                    // Get navigation timing data
+                    const perfData = performance.getEntriesByType('navigation')[0];
+                    if (!perfData) {
+                        return { error: 'No navigation performance data available' };
+                    }
 
-        guard let scriptContent = scriptContent else {
-            logger.error("Failed to load performance metrics JavaScript from bundle")
-            return nil
-        }
+                    // Get paint timing data
+                    const paintEntries = performance.getEntriesByType('paint');
+                    let firstContentfulPaint = null;
+
+                    for (const entry of paintEntries) {
+                        if (entry.name === 'first-contentful-paint') {
+                            firstContentfulPaint = entry.startTime;
+                        }
+                    }
+
+                    // Get largest contentful paint if available
+                    let largestContentfulPaint = null;
+                    if (window.PerformanceObserver && PerformanceObserver.supportedEntryTypes &&
+                        PerformanceObserver.supportedEntryTypes.includes('largest-contentful-paint')) {
+                        const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
+                        if (lcpEntries.length > 0) {
+                            largestContentfulPaint = lcpEntries[lcpEntries.length - 1].startTime;
+                        }
+                    }
+
+                    // Calculate metrics
+                    const metrics = {
+                        loadComplete: perfData.loadEventEnd - perfData.fetchStart,
+                        firstContentfulPaint: firstContentfulPaint,
+                        largestContentfulPaint: largestContentfulPaint,
+                        timeToFirstByte: perfData.responseStart - perfData.fetchStart
+                    };
+
+                    return metrics;
+                } catch (e) {
+                    return { error: 'JavaScript execution error: ' + e.message };
+                }
+            })();
+            """
 
         do {
             let result = try await webView.evaluateJavaScript(scriptContent)
             guard let metrics = result as? [String: Any] else { return nil }
 
             // Check for errors from JavaScript
-            if let error = metrics[Constants.MetricsKeys.error] as? String {
-                logger.error("\(Constants.ErrorMessages.javascriptMetricsError)\(error)")
+            if let error = metrics["error"] as? String {
+                logger.error("\(Constants.javascriptMetricsError)\(error)")
                 return nil
             }
 
             // Convert milliseconds to seconds for time metrics
-            let loadComplete = (metrics[Constants.MetricsKeys.loadComplete] as? Double ?? 0) / 1000.0
-            let fcp = metrics[Constants.MetricsKeys.firstContentfulPaint] as? Double
-            let lcp = metrics[Constants.MetricsKeys.largestContentfulPaint] as? Double
-            let ttfb = metrics[Constants.MetricsKeys.timeToFirstByte] as? Double
+            let loadComplete = (metrics["loadComplete"] as? Double ?? 0) / 1000.0
+            let fcp = (metrics["firstContentfulPaint"] as? Double).map { $0 / 1000.0 }
+            let lcp = (metrics["largestContentfulPaint"] as? Double).map { $0 / 1000.0 }
+            let ttfb = (metrics["timeToFirstByte"] as? Double).map { $0 / 1000.0 }
 
             return PerformanceMetrics(
                 loadTime: loadComplete,
@@ -188,7 +204,7 @@ public class PageLoadTester: NSObject {
                 timeToFirstByte: ttfb
             )
         } catch {
-            logger.warning("\(Constants.ErrorMessages.failedToCollectMetrics)\(error)")
+            logger.warning("\(Constants.failedToCollectMetrics)\(error)")
             return nil
         }
     }
@@ -197,7 +213,8 @@ public class PageLoadTester: NSObject {
 extension PageLoadTester: WKNavigationDelegate {
 
     public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        logger.debug("\(Constants.DebugMessages.navigationStarted)\(self.currentURL?.absoluteString ?? Constants.unknownURLString)")
+        let urlString = self.currentURL?.absoluteString ?? Constants.unknownURLString
+        logger.debug("\(Constants.navigationStarted)\(urlString)")
         progressHandler?(0.1)
     }
 
@@ -206,7 +223,8 @@ extension PageLoadTester: WKNavigationDelegate {
     }
 
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        logger.debug("\(Constants.DebugMessages.navigationFinished)\(self.currentURL?.absoluteString ?? Constants.unknownURLString)")
+        let urlString = self.currentURL?.absoluteString ?? Constants.unknownURLString
+        logger.debug("\(Constants.navigationFinished)\(urlString)")
         progressHandler?(0.9)
 
         guard let startTime = navigationStartTime,
@@ -250,12 +268,16 @@ extension PageLoadTester: WKNavigationDelegate {
         handleNavigationError(error)
     }
 
-    public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+    public func webView(
+        _ webView: WKWebView,
+        didFailProvisionalNavigation navigation: WKNavigation!,
+        withError error: Error
+    ) {
         handleNavigationError(error)
     }
 
     private func handleNavigationError(_ error: Error) {
-        logger.error("\(Constants.ErrorMessages.navigationFailed)\(error.localizedDescription)")
+        logger.error("\(Constants.navigationFailed)\(error.localizedDescription)")
 
         guard let startTime = navigationStartTime,
               let url = currentURL else {

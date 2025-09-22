@@ -11,21 +11,15 @@ let package = Package(
     products: [
         .library(
             name: "PerformanceTest",
-            targets: ["PerformanceTest"]),
+            targets: ["PerformanceTest"])
     ],
     dependencies: [
         // Add NetworkQualityMonitor dependency
-        .package(path: "../NetworkQualityMonitor"),
+        .package(path: "../NetworkQualityMonitor")
     ],
     targets: [
         .target(
             name: "PerformanceTest",
-            dependencies: ["NetworkQualityMonitor"],
-            resources: [
-                .process("Resources")
-            ]),
-        .testTarget(
-            name: "PerformanceTestTests",
-            dependencies: ["PerformanceTest"]),
+            dependencies: ["NetworkQualityMonitor"])
     ]
 )

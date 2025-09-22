@@ -36,13 +36,14 @@ final class MetricsCollectionTests: XCTestCase {
     func testDetailedMetricsAppend() {
         var metrics = CollectedMetrics()
 
-        let detailed = SitePerformanceTester.DetailedMetrics(
+        let detailed = DetailedPerformanceMetrics(
             loadComplete: 2.5,
             domComplete: 2.3,
             domContentLoaded: 1.8,
             domInteractive: 1.2,
-            fcp: 0.8,
-            ttfb: 0.2,
+            firstContentfulPaint: 0.8,
+            largestContentfulPaint: nil,
+            timeToFirstByte: 0.2,
             responseTime: 0.15,
             serverTime: 0.1,
             transferSize: 5000,
@@ -50,7 +51,7 @@ final class MetricsCollectionTests: XCTestCase {
             decodedBodySize: 10000,
             resourceCount: 25,
             totalResourcesSize: 50000,
-            tti: 1.5
+            timeToInteractive: 1.5
         )
 
         metrics.append(detailed)

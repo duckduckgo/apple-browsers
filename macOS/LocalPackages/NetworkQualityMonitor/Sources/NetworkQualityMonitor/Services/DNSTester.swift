@@ -1,6 +1,5 @@
 //
 //  DNSTester.swift
-//  NetworkQualityMonitor
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -21,49 +20,54 @@ import Foundation
 
 /// Service responsible for DNS testing
 public final class DNSTester: DNSTesting {
-    
+
     // MARK: - Constants
-    
+
     private enum Constants {
         static let progressMessage = "Testing DNS resolution..."
         static let measurementDelay: UInt64 = 50_000_000  // 50ms between DNS queries
     }
-    
+
     public func performTest(configuration: TestConfiguration,
-                    progressCallback: ((String) -> Void)? = nil) async throws -> DNSResult {
+                            progressCallback: ((String) -> Void)? = nil) async throws -> DNSResult {
         progressCallback?(Constants.progressMessage)
-        
+
         var resolutionTimes: [Double] = []
         var failures = 0
         let totalTests = configuration.dnsTestDomains.count
-        
+
         for domain in configuration.dnsTestDomains {
-            let startTime = CFAbsoluteTimeGetCurrent()
-            
-            let host = CFHostCreateWithName(nil, domain as CFString).takeRetainedValue()
-            var error: CFStreamError = CFStreamError()
-            
-            if CFHostStartInfoResolution(host, .addresses, &error) {
+            // Use default priority to match CFHostStartInfoResolution's internal thread priority
+            let result = await Task(priority: .medium) {
+                let startTime = CFAbsoluteTimeGetCurrent()
+                let host = CFHostCreateWithName(nil, domain as CFString).takeRetainedValue()
+
+                let resolved = CFHostStartInfoResolution(host, .addresses, nil)
                 let endTime = CFAbsoluteTimeGetCurrent()
                 let resolutionTime = (endTime - startTime) * 1000 // Convert to ms
-                resolutionTimes.append(resolutionTime)
+
+                return (resolved: resolved, time: resolutionTime)
+            }.value
+
+            if result.resolved {
+                resolutionTimes.append(result.time)
             } else {
                 failures += 1
             }
-            
+
             // Small delay between DNS queries
             try? await Task.sleep(nanoseconds: Constants.measurementDelay)
         }
-        
+
         guard !resolutionTimes.isEmpty else {
             throw NetworkError.allTestsFailed
         }
-        
-        let averageTime = resolutionTimes.reduce(0, +) / Double(resolutionTimes.count)
+
+        let medianTime = NetworkTestConstants.median(of: resolutionTimes) ?? 0
         let failureRate = Double(failures) / Double(totalTests)
-        
+
         return DNSResult(
-            averageResolutionTime: averageTime,
+            averageResolutionTime: medianTime,
             failureRate: failureRate
         )
     }

@@ -1,3 +1,21 @@
+//
+//  NetworkTestResults.swift
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
 import Foundation
 
 // MARK: - Result Types
@@ -14,19 +32,24 @@ public struct NetworkTestResults {
 
 public struct HttpResponseResult {  // Renamed from LatencyResult
     public let averageResponseTime: Double  // Renamed from averageRTT
-    public let responseVariance: Double     // Renamed from jitter
+    public let responseVariance: Double     // Standard deviation in ms (not variance)
     public let failureRate: Double          // Renamed from packetLoss
     public let sampleCount: Int
     public let p50: Double?
     public let p95: Double?
-    
+
     // Computed property for P95-P50 spread (indicates consistency)
     public var latencySpread: Double? {
         guard let p50 = p50, let p95 = p95 else { return nil }
         return p95 - p50
     }
 
-    public init(averageResponseTime: Double, responseVariance: Double, failureRate: Double, sampleCount: Int, p50: Double? = nil, p95: Double? = nil) {
+    public init(averageResponseTime: Double,
+                responseVariance: Double,
+                failureRate: Double,
+                sampleCount: Int,
+                p50: Double? = nil,
+                p95: Double? = nil) {
         self.averageResponseTime = averageResponseTime
         self.responseVariance = responseVariance
         self.failureRate = failureRate
@@ -39,7 +62,7 @@ public struct HttpResponseResult {  // Renamed from LatencyResult
 public struct BandwidthResult {
     public let downloadSpeedMbps: Double
     public let uploadSpeedMbps: Double
-    
+
     public init(downloadSpeedMbps: Double, uploadSpeedMbps: Double) {
         self.downloadSpeedMbps = downloadSpeedMbps
         self.uploadSpeedMbps = uploadSpeedMbps
@@ -49,7 +72,7 @@ public struct BandwidthResult {
 public struct DNSResult {
     public let averageResolutionTime: Double
     public let failureRate: Double
-    
+
     public init(averageResolutionTime: Double, failureRate: Double) {
         self.averageResolutionTime = averageResolutionTime
         self.failureRate = failureRate
@@ -61,7 +84,7 @@ public struct BufferBloatResult {
     public let loadedLatency: Double
     public let increase: Double
     public let grade: String
-    
+
     public init(baselineLatency: Double, loadedLatency: Double, increase: Double, grade: String) {
         self.baselineLatency = baselineLatency
         self.loadedLatency = loadedLatency

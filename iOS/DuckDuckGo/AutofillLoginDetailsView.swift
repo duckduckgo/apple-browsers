@@ -74,8 +74,8 @@ struct AutofillLoginDetailsView: View {
                                      autoCapitalizationType: .words,
                                      disableAutoCorrection: false,
                                      inEditMode: viewModel.viewMode == .edit,
-                                     selectedCell: $viewModel.selectedCell)
-                .accessibilityIdentifier("Field_PasswordName")
+                                     selectedCell: $viewModel.selectedCell,
+                                     textFieldAccessibilityIdentifier: "Field_PasswordName")
             }
             
             Section {
@@ -84,8 +84,8 @@ struct AutofillLoginDetailsView: View {
                                      placeholderText: UserText.autofillLoginDetailsEditUsernamePlaceholder,
                                      keyboardType: .emailAddress,
                                      inEditMode: viewModel.viewMode == .edit,
-                                     selectedCell: $viewModel.selectedCell)
-                .accessibilityIdentifier("Field_Username")
+                                     selectedCell: $viewModel.selectedCell,
+                                     textFieldAccessibilityIdentifier: "Field_Username")
                 
                 if viewModel.viewMode == .new {
                     AutofillEditableCell(title: UserText.autofillLoginDetailsPassword,
@@ -93,16 +93,16 @@ struct AutofillLoginDetailsView: View {
                                          placeholderText: UserText.autofillLoginDetailsEditPasswordPlaceholder,
                                          secure: true,
                                          inEditMode: viewModel.viewMode == .edit,
-                                         selectedCell: $viewModel.selectedCell)
-                    .accessibilityIdentifier("Field_Password")
+                                         selectedCell: $viewModel.selectedCell,
+                                         textFieldAccessibilityIdentifier: "Field_Password")
                 } else {
                     AutofillEditableMaskedCell(title: UserText.autofillLoginDetailsPassword,
                                                placeholderText: UserText.autofillLoginDetailsEditPasswordPlaceholder,
                                                unmaskedString: $viewModel.password,
                                                maskedString: .constant(viewModel.userVisiblePassword),
                                                isMasked: $viewModel.isPasswordHidden,
-                                               selectedCell: $viewModel.selectedCell)
-                    .accessibilityIdentifier("Field_Password")
+                                               selectedCell: $viewModel.selectedCell,
+                                               textFieldAccessibilityIdentifier: "Field_Password")
                 }
             }
             
@@ -112,14 +112,14 @@ struct AutofillLoginDetailsView: View {
                                      placeholderText: UserText.autofillLoginDetailsEditURLPlaceholder,
                                      keyboardType: .URL,
                                      inEditMode: viewModel.viewMode == .edit,
-                                     selectedCell: $viewModel.selectedCell)
-                .accessibilityIdentifier("Field_Address")
+                                     selectedCell: $viewModel.selectedCell,
+                                     textFieldAccessibilityIdentifier: "Field_Address")
             }
             
             Section {
                 editableMultilineCell(UserText.autofillLoginDetailsNotes,
-                                      subtitle: $viewModel.notes)
-                .accessibilityIdentifier("Field_Notes")
+                                      subtitle: $viewModel.notes,
+                                      textFieldAccessibilityIdentifier: "Field_Notes")
             }
             
             if viewModel.viewMode == .edit {
@@ -234,13 +234,14 @@ struct AutofillLoginDetailsView: View {
                                        subtitle: Binding<String>,
                                        autoCapitalizationType: UITextAutocapitalizationType = .none,
                                        disableAutoCorrection: Bool = true,
-                                       keyboardType: UIKeyboardType = .default) -> some View {
-        
+                                       keyboardType: UIKeyboardType = .default,
+                                       textFieldAccessibilityIdentifier: String) -> some View {
+
         VStack(alignment: .leading, spacing: Constants.verticalPadding) {
             Text(title)
                 .label4Style()
             
-            MultilineTextEditor(text: subtitle)
+            MultilineTextEditor(text: subtitle).accessibilityIdentifier(textFieldAccessibilityIdentifier)
         }
         .frame(minHeight: Constants.minRowHeight)
         .padding(EdgeInsets(top: 6, leading: 0, bottom: 0, trailing: 0))

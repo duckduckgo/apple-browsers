@@ -68,6 +68,7 @@ public class DBPIOSInterface {
         func runScheduledJobs(type: JobType,
                               errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                               completionHandler: (() -> Void)?)
+        func runEmailConfirmationJobs() async throws
         func fireWeeklyPixels()
     }
 
@@ -86,6 +87,7 @@ public class DBPIOSInterface {
         func getAllDataBrokers() throws -> [DataBrokerProtectionCore.DataBroker]
         func getAllBrokerProfileQueryData() throws -> [DataBrokerProtectionCore.BrokerProfileQueryData]
         func getAllAttempts() throws -> [AttemptInformation]
+        func getAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData]
         func getBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent]
         func saveProfile(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile) async throws
         func deleteAllUserProfileData() throws
@@ -126,9 +128,9 @@ public final class DataBrokerProtectionIOSManager {
     private static let backgroundTaskIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
 
     private let database: DataBrokerProtectionRepository
-    private var queueManager: BrokerProfileJobQueueManaging
+    private var queueManager: JobQueueManaging
     private let jobDependencies: BrokerProfileJobDependencyProviding
-    private let emailConfirmationDataService: EmailConfirmationDataServiceProvider
+    public var emailConfirmationDataService: EmailConfirmationDataServiceProvider?
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let iOSPixelsHandler: EventMapping<IOSPixels>
@@ -159,7 +161,7 @@ public final class DataBrokerProtectionIOSManager {
                                        localBrokerProvider: localBrokerService)
     }()
 
-    init(queueManager: BrokerProfileJobQueueManaging,
+    init(queueManager: JobQueueManaging,
          jobDependencies: BrokerProfileJobDependencyProviding,
          emailConfirmationDataService: EmailConfirmationDataServiceProvider,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
@@ -207,7 +209,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
 
     public func appDidBecomeActive() {
         tryToFireWeeklyPixels()
-
+        
         Task {
             await checkForEmailConfirmationData()
         }
@@ -224,17 +226,21 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
     public func getUserProfile() throws -> DataBrokerProtectionCore.DataBrokerProtectionProfile? {
         try database.fetchProfile()
     }
-    
+
     public func getAllDataBrokers() throws -> [DataBrokerProtectionCore.DataBroker] {
         try database.fetchAllDataBrokers()
     }
-    
+
     public func getAllBrokerProfileQueryData() throws -> [DataBrokerProtectionCore.BrokerProfileQueryData] {
         try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
     }
 
     public func getAllAttempts() throws -> [AttemptInformation] {
         try database.fetchAllAttempts()
+    }
+
+    public func getAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData] {
+        try database.fetchAllOptOutEmailConfirmations()
     }
 
     public func getBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent] {
@@ -262,19 +268,19 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
             throw error
         }
     }
-    
+
     public func deleteAllUserProfileData() throws {
         try database.deleteProfileData()
         DataBrokerProtectionSettings(defaults: .dbp).resetBrokerDeliveryData()
     }
-    
+
     public func matchRemovedByUser(with id: Int64) throws {
         try database.matchRemovedByUser(id)
     }
 }
 
-extension DataBrokerProtectionIOSManager: BrokerProfileJobQueueManagerDelegate {
-    public func queueManagerWillEnqueueOperations(_ queueManager: BrokerProfileJobQueueManaging) {
+extension DataBrokerProtectionIOSManager: JobQueueManagerDelegate {
+    public func queueManagerWillEnqueueOperations(_ queueManager: JobQueueManaging) {
         Task {
             do {
                 try await brokerUpdater?.checkForUpdates()
@@ -339,6 +345,11 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         }
     }
 
+    public func runEmailConfirmationJobs() async throws {
+        try await emailConfirmationDataService?.checkForEmailConfirmationData()
+        queueManager.addEmailConfirmationJobs(showWebView: true, jobDependencies: jobDependencies)
+    }
+
     public func fireWeeklyPixels() {
         let eventPixels = DataBrokerProtectionEventPixels(
             database: jobDependencies.database,
@@ -395,7 +406,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.OptOutEmailConfirmationHandlingDelegate {
     func checkForEmailConfirmationData() async {
         do {
-            try await emailConfirmationDataService.checkForEmailConfirmationData()
+            try await emailConfirmationDataService?.checkForEmailConfirmationData()
         } catch {
             Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
         }

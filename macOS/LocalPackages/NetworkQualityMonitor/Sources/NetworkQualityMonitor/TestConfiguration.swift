@@ -1,3 +1,21 @@
+//
+//  TestConfiguration.swift
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
 import Foundation
 
 /// Configuration for network quality tests
@@ -59,15 +77,15 @@ public struct TestConfiguration {
             // Major platforms with global CDN presence
             URL(string: "https://www.youtube.com/")!,  // Google's global CDN
             URL(string: "https://www.facebook.com/")!,  // Meta's global CDN
-            URL(string: "https://api.github.com/")!,  // GitHub's API (Azure CDN)
+            URL(string: "https://api.github.com/")!  // GitHub's API (Azure CDN)
 
             // Note: These CDNs automatically serve from the nearest geographic location,
             // so users in Asia get Asian servers, Europeans get EU servers, etc.
         ],
         bandwidthTestURLs: [
             URL(string: "https://speed.cloudflare.com/__down?bytes=26214400")!,  // 25MB
-            URL(string: "https://proof.ovh.net/files/10Mb.dat")!,                // 10MB  
-            URL(string: "https://speed.hetzner.de/10MB.bin")!,                   // 10MB
+            URL(string: "https://proof.ovh.net/files/10Mb.dat")!,                // 10MB
+            URL(string: "https://speed.hetzner.de/10MB.bin")!                   // 10MB
             // Total: ~25MB for fast connections, less for slow (adaptive)
         ],
         uploadTestURLs: [
@@ -116,5 +134,107 @@ public struct TestConfiguration {
         self.bandwidthTestTimeout = bandwidthTestTimeout
         self.uploadTestTimeout = uploadTestTimeout
         self.connectivityCheckURL = connectivityCheckURL
+    }
+}
+
+// MARK: - Focused Configuration Types
+
+public struct HttpResponseConfig {
+    public let testURLs: [URL]
+    public let samplesPerEndpoint: Int
+    public let timeout: TimeInterval
+
+    public init(testURLs: [URL], samplesPerEndpoint: Int, timeout: TimeInterval) {
+        self.testURLs = testURLs
+        self.samplesPerEndpoint = samplesPerEndpoint
+        self.timeout = timeout
+    }
+}
+
+public struct BandwidthConfig {
+    public let downloadURLs: [URL]
+    public let uploadURLs: [URL]
+    public let runsPerServer: Int
+    public let uploadChunkSize: Int
+    public let uploadChunkCount: Int
+    public let downloadTimeout: TimeInterval
+    public let uploadTimeout: TimeInterval
+
+    public init(
+        downloadURLs: [URL],
+        uploadURLs: [URL],
+        runsPerServer: Int,
+        uploadChunkSize: Int,
+        uploadChunkCount: Int,
+        downloadTimeout: TimeInterval,
+        uploadTimeout: TimeInterval
+    ) {
+        self.downloadURLs = downloadURLs
+        self.uploadURLs = uploadURLs
+        self.runsPerServer = runsPerServer
+        self.uploadChunkSize = uploadChunkSize
+        self.uploadChunkCount = uploadChunkCount
+        self.downloadTimeout = downloadTimeout
+        self.uploadTimeout = uploadTimeout
+    }
+}
+
+public struct DNSConfig {
+    public let testDomains: [String]
+
+    public init(testDomains: [String]) {
+        self.testDomains = testDomains
+    }
+}
+public struct BufferBloatConfig {
+    public let downloadURL: URL?
+
+    public init(downloadURL: URL?) {
+        self.downloadURL = downloadURL
+    }
+}
+
+public struct ConnectivityConfig {
+    public let checkURL: URL
+
+    public init(checkURL: URL) {
+        self.checkURL = checkURL
+    }
+}
+
+// MARK: - Configuration Extraction Methods
+
+public extension TestConfiguration {
+
+    func httpResponseConfig() -> HttpResponseConfig {
+        HttpResponseConfig(
+            testURLs: latencyTestURLs,
+            samplesPerEndpoint: latencySamplesPerEndpoint,
+            timeout: latencyTestTimeout
+        )
+    }
+
+    func bandwidthConfig() -> BandwidthConfig {
+        BandwidthConfig(
+            downloadURLs: bandwidthTestURLs,
+            uploadURLs: uploadTestURLs,
+            runsPerServer: bandwidthRunsPerServer,
+            uploadChunkSize: uploadChunkSize,
+            uploadChunkCount: uploadChunkCount,
+            downloadTimeout: bandwidthTestTimeout,
+            uploadTimeout: uploadTestTimeout
+        )
+    }
+
+    func dnsConfig() -> DNSConfig {
+        DNSConfig(testDomains: dnsTestDomains)
+    }
+
+    func bufferBloatConfig() -> BufferBloatConfig {
+        BufferBloatConfig(downloadURL: bandwidthTestURLs.first)
+    }
+
+    func connectivityConfig() -> ConnectivityConfig {
+        ConnectivityConfig(checkURL: connectivityCheckURL)
     }
 }

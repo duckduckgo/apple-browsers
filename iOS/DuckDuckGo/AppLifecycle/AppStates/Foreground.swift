@@ -118,6 +118,7 @@ struct Foreground: ForegroundHandling {
         )
 
         services.vpnService.resume()
+        services.aiChatService.resume()
         services.configurationService.resume()
         services.reportingService.resume()
         services.subscriptionService.resume()
@@ -132,6 +133,9 @@ struct Foreground: ForegroundHandling {
         services.widePixelService.resume()
         appDependencies.launchSourceManager.handleAppAction(launchAction)
         appDependencies.mainCoordinator.onForeground()
+        
+        let switchBarRetentionMetrics = SwitchBarRetentionMetrics(aiChatSettings: appDependencies.aiChatSettings)
+        switchBarRetentionMetrics.checkDailyAndSendPixelIfApplicable()
     }
 
     private func configureAppearance() {

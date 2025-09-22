@@ -191,6 +191,14 @@ Fetches and updates certificates and provisioning profiles for DMG Review builds
 
 Fetches and updates certificates and provisioning profiles for CI builds
 
+### mac release_appstore
+
+```sh
+[bundle exec] fastlane mac release_appstore
+```
+
+Makes App Store release build and uploads it to App Store Connect
+
 ### mac release_testflight
 
 ```sh
@@ -215,6 +223,70 @@ Makes App Store Review build and uploads it to TestFlight
 
 Makes App Store Alpha build and uploads it to TestFlight
 
+### mac build_appstore
+
+```sh
+[bundle exec] fastlane mac build_appstore
+```
+
+Makes App Store release build
+
+### mac upload_appstore
+
+```sh
+[bundle exec] fastlane mac upload_appstore
+```
+
+Uploads App Store release build to App Store Connect
+
+### mac build_testflight
+
+```sh
+[bundle exec] fastlane mac build_testflight
+```
+
+Makes App Store release build
+
+### mac upload_testflight
+
+```sh
+[bundle exec] fastlane mac upload_testflight
+```
+
+Uploads App Store release build to TestFlight
+
+### mac build_testflight_review
+
+```sh
+[bundle exec] fastlane mac build_testflight_review
+```
+
+Makes App Store Review build
+
+### mac upload_testflight_review
+
+```sh
+[bundle exec] fastlane mac upload_testflight_review
+```
+
+Uploads App Store Review build to TestFlight
+
+### mac build_testflight_alpha
+
+```sh
+[bundle exec] fastlane mac build_testflight_alpha
+```
+
+Makes App Store Alpha build
+
+### mac upload_testflight_alpha
+
+```sh
+[bundle exec] fastlane mac upload_testflight_alpha
+```
+
+Uploads App Store Alpha build to TestFlight
+
 ### mac promote_latest_testflight_to_appstore
 
 ```sh
@@ -223,13 +295,13 @@ Makes App Store Alpha build and uploads it to TestFlight
 
 Promotes the latest TestFlight build to App Store without submitting for review
 
-### mac release_appstore
+### mac upload_appstore_version_metadata
 
 ```sh
-[bundle exec] fastlane mac release_appstore
+[bundle exec] fastlane mac upload_appstore_version_metadata
 ```
 
-Makes App Store release build and uploads it to App Store Connect
+Fetches latest App Store version and uploads metadata to CDN
 
 ### mac create_keychain_ui_tests
 

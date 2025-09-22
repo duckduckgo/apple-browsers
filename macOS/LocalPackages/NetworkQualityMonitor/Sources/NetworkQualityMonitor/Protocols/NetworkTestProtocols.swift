@@ -1,6 +1,5 @@
 //
 //  NetworkTestProtocols.swift
-//  NetworkQualityMonitor
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -29,35 +28,35 @@ public protocol NetworkQualityMonitoring {
 // MARK: - Test Component Protocols
 
 public protocol HttpResponseTesting {
-    func performTest(configuration: TestConfiguration, 
+    func performTest(configuration: TestConfiguration,
                      progressCallback: ((String) -> Void)?) async throws -> HttpResponseResult
 }
 
 public protocol BandwidthTesting {
     func performDownloadTest(configuration: TestConfiguration,
-                            progressCallback: ((String) -> Void)?) async throws -> Double
+                             progressCallback: ((String) -> Void)?) async throws -> Double
     func performUploadTest(configuration: TestConfiguration,
-                          progressCallback: ((String) -> Void)?) async throws -> Double
+                           progressCallback: ((String) -> Void)?) async throws -> Double
 }
 
 public protocol DNSTesting {
     func performTest(configuration: TestConfiguration,
-                    progressCallback: ((String) -> Void)?) async throws -> DNSResult
+                     progressCallback: ((String) -> Void)?) async throws -> DNSResult
 }
 
 public protocol BufferBloatTesting {
     func performTest(configuration: TestConfiguration,
-                    progressCallback: ((String) -> Void)?) async throws -> BufferBloatResult
+                     progressCallback: ((String) -> Void)?) async throws -> BufferBloatResult
 }
 
 // MARK: - Scoring Protocol
 
 public protocol NetworkScoreCalculating {
     func calculateOverallScore(httpResponse: HttpResponseResult,
-                              bandwidth: BandwidthResult,
-                              dns: DNSResult,
-                              bufferBloat: BufferBloatResult) -> NetworkScore
-    
+                               bandwidth: BandwidthResult,
+                               dns: DNSResult,
+                               bufferBloat: BufferBloatResult) -> NetworkScore
+
     func determineQuality(from score: Double) -> NetworkQuality
 }
 

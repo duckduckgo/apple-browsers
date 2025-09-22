@@ -1,6 +1,5 @@
 //
 //  HttpResponseTester.swift
-//  NetworkQualityMonitor
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -40,7 +39,7 @@ public final class HttpResponseTester: HttpResponseTesting {
     }
 
     public func performTest(configuration: TestConfiguration,
-                    progressCallback: ((String) -> Void)? = nil) async throws -> HttpResponseResult {
+                            progressCallback: ((String) -> Void)? = nil) async throws -> HttpResponseResult {
         progressCallback?(Constants.progressMessage)
 
         // WARM-UP PHASE: Perform one request to each endpoint
@@ -71,44 +70,42 @@ public final class HttpResponseTester: HttpResponseTesting {
             throw NetworkError.allTestsFailed
         }
 
-        return calculateResults(from: allMeasurements)
+        return calculateResults(from: allMeasurements, samplesPerEndpoint: configuration.latencySamplesPerEndpoint)
     }
 
     // MARK: - Private Methods
 
-    private func performInterleavedMeasurements(endpoints: [URL], 
-                                               samplesPerEndpoint: Int,
-                                               timeout: TimeInterval) async -> [EndpointMeasurement] {
+    private func performInterleavedMeasurements(endpoints: [URL],
+                                                samplesPerEndpoint: Int,
+                                                timeout: TimeInterval) async -> [EndpointMeasurement] {
         // Initialize storage for measurements
         var measurementsByEndpoint: [URL: [Double]] = [:]
         for endpoint in endpoints {
             measurementsByEndpoint[endpoint] = []
         }
-        
+
         // Perform measurements in rounds, hitting each endpoint once per round
         // This avoids consecutive requests to the same endpoint
-        for round in 0..<samplesPerEndpoint {
+        for _ in 0..<samplesPerEndpoint {
             // Shuffle endpoints for each round to avoid patterns
             let shuffledEndpoints = endpoints.shuffled()
-            
+
             for endpoint in shuffledEndpoints {
                 if let measurement = await measureSingleRequest(to: endpoint, timeout: timeout) {
                     measurementsByEndpoint[endpoint]?.append(measurement)
                 }
-                
+
                 // Small delay between different endpoints
                 try? await Task.sleep(nanoseconds: Constants.measurementDelay)
             }
         }
-        
+
         // Convert to EndpointMeasurement array
         var allMeasurements: [EndpointMeasurement] = []
-        for (endpoint, measurements) in measurementsByEndpoint {
-            if !measurements.isEmpty {
-                allMeasurements.append(EndpointMeasurement(endpoint: endpoint, measurements: measurements))
-            }
+        for (endpoint, measurements) in measurementsByEndpoint where !measurements.isEmpty {
+            allMeasurements.append(EndpointMeasurement(endpoint: endpoint, measurements: measurements))
         }
-        
+
         return allMeasurements
     }
 
@@ -135,7 +132,7 @@ public final class HttpResponseTester: HttpResponseTesting {
         return nil
     }
 
-    private func calculateResults(from allMeasurements: [EndpointMeasurement]) -> HttpResponseResult {
+    private func calculateResults(from allMeasurements: [EndpointMeasurement], samplesPerEndpoint: Int) -> HttpResponseResult {
         // Calculate per-site statistics
         let siteStatistics = allMeasurements.map { endpoint in
             calculateSiteStatistics(endpoint.measurements)
@@ -155,28 +152,24 @@ public final class HttpResponseTester: HttpResponseTesting {
         let allSortedMeasurements = allMeasurements.flatMap { $0.measurements }.sorted()
         let p50 = percentile(allSortedMeasurements, Constants.percentile50)
         let p95 = percentile(allSortedMeasurements, Constants.percentile95)
-        
-        // Calculate variance for EACH site, then take the median of those variances
-        // This gives us a representative measure of how consistent each site is
-        let siteVariances = allMeasurements.map { endpoint in
-            calculateVarianceForSite(endpoint.measurements)
-        }
-        
-        // Use median of site variances (not affected by outliers)
-        // Convert to standard deviation for more intuitive understanding
-        let medianVariance = NetworkTestConstants.median(of: siteVariances) ?? 0
-        let responseVariance = sqrt(medianVariance) // Standard deviation in ms
 
-        // Calculate failure rate
-        let totalAttempts = allMeasurements.reduce(0) { $0 + $1.measurements.count }
-        let expectedAttempts = allMeasurements.count * (allMeasurements.first?.measurements.count ?? 0)
-        let failureRate = Double(expectedAttempts - totalAttempts) / Double(expectedAttempts)
+        // Calculate the median of per-site standard deviations
+        // This represents the typical consistency within endpoints
+        // rather than variance across different geographic locations
+        let siteStdDevs = siteStatistics.map { $0.standardDeviation }
+        let responseVariance = NetworkTestConstants.median(of: siteStdDevs) ?? 0
+
+        // Calculate failure rate based on expected vs actual measurements
+        // Expected: number of endpoints × configured samples per endpoint
+        let totalSuccessfulMeasurements = allMeasurements.reduce(0) { $0 + $1.measurements.count }
+        let expectedAttempts = allMeasurements.count * samplesPerEndpoint
+        let failureRate = Double(expectedAttempts - totalSuccessfulMeasurements) / Double(expectedAttempts)
 
         return HttpResponseResult(
             averageResponseTime: adjustedResponseTime,
             responseVariance: responseVariance,
             failureRate: failureRate,
-            sampleCount: totalAttempts,
+            sampleCount: totalSuccessfulMeasurements,
             p50: p50,
             p95: p95
         )
@@ -192,18 +185,18 @@ public final class HttpResponseTester: HttpResponseTesting {
         let stdDev = sqrt(variance)
 
         // Coefficient of Variation
-        let cv = mean > 0 ? stdDev / mean : 0
+        let coefficientOfVariation = mean > 0 ? stdDev / mean : 0
 
         return SiteStatistics(
             median: median,
             mean: mean,
             standardDeviation: stdDev,
-            coefficientOfVariation: cv
+            coefficientOfVariation: coefficientOfVariation
         )
     }
 
     private func calculateAdjustedResponseTime(bestSiteStats: SiteStatistics,
-                                              allSiteStats: [SiteStatistics]) -> Double {
+                                               allSiteStats: [SiteStatistics]) -> Double {
         // Calculate the MEDIAN of all site medians
         // This properly reflects real-world latency expectations:
         // 
@@ -221,26 +214,40 @@ public final class HttpResponseTester: HttpResponseTesting {
         //
         // Using median ensures we get the "typical" latency experience
         // and naturally reflects geographic distance to servers
-        
+
         let allMedians = allSiteStats.map { $0.median }
         let overallMedian = NetworkTestConstants.median(of: allMedians) ?? bestSiteStats.median
-        
+
         return overallMedian
     }
 
-    private func percentile(_ sorted: [Double], _ p: Double) -> Double? {
+    private func percentile(_ sorted: [Double], _ percentileValue: Double) -> Double? {
         guard !sorted.isEmpty else { return nil }
-        let index = Int(Double(sorted.count - 1) * p)
+        let index = Int(Double(sorted.count - 1) * percentileValue)
         return sorted[index]
     }
-    
+
+    private func calculateVariance(_ measurements: [Double]) -> Double {
+        guard measurements.count > 1 else { return 0 }
+
+        let mean = measurements.reduce(0, +) / Double(measurements.count)
+        let squaredDifferences = measurements.map { pow($0 - mean, 2) }
+        let variance = squaredDifferences.reduce(0, +) / Double(measurements.count - 1)
+
+        return variance
+    }
+
+    private func calculateStandardDeviation(_ measurements: [Double]) -> Double {
+        return sqrt(calculateVariance(measurements))
+    }
+
     private func calculateVarianceForSite(_ measurements: [Double]) -> Double {
         guard measurements.count > 1 else { return 0 }
-        
+
         let mean = measurements.reduce(0, +) / Double(measurements.count)
         let squaredDifferences = measurements.map { pow($0 - mean, 2) }
         let variance = squaredDifferences.reduce(0, +) / Double(measurements.count)
-        
+
         return variance
     }
 }

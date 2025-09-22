@@ -151,7 +151,8 @@ struct SettingsRootView: View {
                                                                  privacyProDataReporter: viewModel.privacyProDataReporter,
                                                                  tld: AppDependencyProvider.shared.storageCache.tld,
                                                                  internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                                 dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider)
+                                                                 dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
+                                                                 widePixel: AppDependencyProvider.shared.widePixel)
         } else {
             SubscriptionContainerViewFactory.makeSubscribeFlow(redirectURLComponents: redirectURLComponents,
                                                                navigationCoordinator: subscriptionNavigationCoordinator,
@@ -172,6 +173,7 @@ struct SettingsRootView: View {
                                                              internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                              emailFlow: .restoreFlow,
                                                              dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
+                                                             widePixel: AppDependencyProvider.shared.widePixel,
                                                              onDisappear: {})
         } else {
             SubscriptionContainerViewFactory.makeEmailFlow(navigationCoordinator: subscriptionNavigationCoordinator,

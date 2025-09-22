@@ -1,5 +1,5 @@
 //
-//  BrokerProfileJobQueueManager.swift
+//  JobQueueManager.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -71,11 +71,12 @@ public enum DataBrokerProtectionQueueManagerDebugCommand {
                                completion: (() -> Void)?)
 }
 
-public protocol BrokerProfileJobQueueManaging {
-    var delegate: BrokerProfileJobQueueManagerDelegate? { get set }
+public protocol JobQueueManaging {
+    var delegate: JobQueueManagerDelegate? { get set }
 
     init(jobQueue: BrokerProfileJobQueue,
          jobProvider: BrokerProfileJobProviding,
+         emailConfirmationJobProvider: EmailConfirmationJobProviding,
          mismatchCalculator: MismatchCalculator,
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>)
 
@@ -91,21 +92,23 @@ public protocol BrokerProfileJobQueueManaging {
                                                  jobDependencies: BrokerProfileJobDependencyProviding,
                                                  errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                  completion: (() -> Void)?)
+    func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding)
     func stop()
 
     func execute(_ command: DataBrokerProtectionQueueManagerDebugCommand)
     var debugRunningStatusString: String { get }
 }
 
-public protocol BrokerProfileJobQueueManagerDelegate: AnyObject {
-    func queueManagerWillEnqueueOperations(_ queueManager: BrokerProfileJobQueueManaging)
+public protocol JobQueueManagerDelegate: AnyObject {
+    func queueManagerWillEnqueueOperations(_ queueManager: JobQueueManaging)
 }
 
-public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
-    public weak var delegate: BrokerProfileJobQueueManagerDelegate?
+public final class JobQueueManager: JobQueueManaging {
+    public weak var delegate: JobQueueManagerDelegate?
 
     private var jobQueue: BrokerProfileJobQueue
     private let jobProvider: BrokerProfileJobProviding
+    private let emailConfirmationJobProvider: EmailConfirmationJobProviding
     private let mismatchCalculator: MismatchCalculator
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 
@@ -124,11 +127,13 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
 
     public init(jobQueue: BrokerProfileJobQueue,
                 jobProvider: BrokerProfileJobProviding,
+                emailConfirmationJobProvider: EmailConfirmationJobProviding,
                 mismatchCalculator: MismatchCalculator,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
 
         self.jobQueue = jobQueue
         self.jobProvider = jobProvider
+        self.emailConfirmationJobProvider = emailConfirmationJobProvider
         self.mismatchCalculator = mismatchCalculator
         self.pixelHandler = pixelHandler
     }
@@ -180,6 +185,7 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
 
         cancelCurrentModeAndResetIfNeeded()
         mode = .immediate(errorHandler: nil, completion: nil)
+        addEmailConfirmationJobs(showWebView: showWebView, jobDependencies: operationDependencies)
         addJobs(for: .optOut,
                       showWebView: showWebView,
                       jobDependencies: operationDependencies,
@@ -187,12 +193,36 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
                       completion: completion)
     }
 
+    public func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding) {
+        guard jobDependencies.featureFlagger.isEmailConfirmationDecouplingFeatureOn else { return }
+
+        do {
+            let emailConfirmationDependencies = EmailConfirmationJobDependencies(from: jobDependencies)
+            let emailJobs = try emailConfirmationJobProvider.createEmailConfirmationJobs(
+                showWebView: showWebView,
+                errorDelegate: self,
+                jobDependencies: emailConfirmationDependencies
+            )
+            Logger.dataBrokerProtection.log("✉️ Adding \(emailJobs.count, privacy: .public) email confirmation jobs to queue")
+
+            for job in emailJobs {
+                jobQueue.addOperation(job)
+            }
+
+            if !emailJobs.isEmpty {
+                Logger.dataBrokerProtection.log("✉️ Email confirmation jobs enqueued successfully")
+            }
+        } catch {
+            Logger.dataBrokerProtection.error("✉️ Failed to create email confirmation jobs: \(error, privacy: .public)")
+        }
+    }
+
     public func stop() {
         cancelCurrentModeAndResetIfNeeded()
     }
 }
 
-private extension BrokerProfileJobQueueManager {
+private extension JobQueueManager {
 
     func startScheduledJobsIfPermitted(for jobType: JobType,
                                        showWebView: Bool,
@@ -233,6 +263,7 @@ private extension BrokerProfileJobQueueManager {
         cancelCurrentModeAndResetIfNeeded()
         mode = newMode
 
+        addEmailConfirmationJobs(showWebView: showWebView, jobDependencies: jobDependencies)
         addJobs(for: type,
                 priorityDate: mode.priorityDate,
                 showWebView: showWebView,
@@ -300,7 +331,7 @@ private extension BrokerProfileJobQueueManager {
     }
 }
 
-extension BrokerProfileJobQueueManager: BrokerProfileJobErrorDelegate {
+extension JobQueueManager: BrokerProfileJobErrorDelegate {
     public func dataBrokerOperationDidError(_ error: any Error, withBrokerName brokerName: String?, version: String?) {
         operationErrors.append(error)
 
@@ -314,5 +345,17 @@ extension BrokerProfileJobQueueManager: BrokerProfileJobErrorDelegate {
         default:
             pixelHandler.fire(.otherError(error: error, dataBroker: brokerName, version: version))
         }
+    }
+}
+
+extension JobQueueManager: EmailConfirmationErrorDelegate {
+    public func emailConfirmationOperationDidError(_ error: Error, withBrokerName brokerName: String?, version: String?) {
+        operationErrors.append(error)
+
+        guard let error = error as? DataBrokerProtectionError, let brokerName, let version else {
+            return
+        }
+
+        pixelHandler.fire(.otherError(error: error, dataBroker: brokerName, version: version))
     }
 }

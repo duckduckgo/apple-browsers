@@ -1,6 +1,5 @@
 //
 //  NetworkQualityView.swift
-//  NetworkQualityMonitor
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -161,7 +160,20 @@ public struct NetworkQualityView: View {
                         actualValue: results.httpResponse.averageResponseTime,
                         metricType: .httpResponse,
                         icon: "speedometer",
-                        infoText: "60% WEIGHT - Most critical for browser experience.\n\nTests multiple CDN endpoints globally with warm-up phase and interleaved sampling. Takes MEDIAN of all site medians to reflect geographic reality.\n\nIncludes penalties for variance (up to 60 pts) and P95-P50 spread (up to 20 pts).\n\nExcellent: <50ms (instantaneous)\nGood: 50-100ms (production target)\nFair: 100-200ms (noticeable delay)"
+                        infoText: """
+                            60% WEIGHT - Most critical for browser experience.
+
+                            Tests multiple CDN endpoints globally with warm-up phase and \
+                            interleaved sampling. Takes MEDIAN of all site medians to reflect \
+                            geographic reality.
+
+                            Includes penalties for variance (up to 60 pts) and P95-P50 spread \
+                            (up to 20 pts).
+
+                            Excellent: <50ms (instantaneous)
+                            Good: 50-100ms (production target)
+                            Fair: 100-200ms (noticeable delay)
+                            """
                     )
 
                     MetricCard(
@@ -170,7 +182,16 @@ public struct NetworkQualityView: View {
                         actualValue: results.bandwidth.downloadSpeedMbps,
                         metricType: .bandwidth,
                         icon: "arrow.down.circle",
-                        infoText: "25% WEIGHT - Sufficient bandwidth matters more than excess.\n\nAdaptive testing: Quick 10MB test first. Slow connections (<10 Mbps) stop there. Fast connections test up to 25MB for accuracy.\n\nExcellent: >100 Mbps (instant loads)\nGood: 25-100 Mbps (smooth browsing)\nFair: 10-25 Mbps (basic browsing OK)"
+                        infoText: """
+                            25% WEIGHT - Sufficient bandwidth matters more than excess.
+
+                            Adaptive testing: Quick 10MB test first. Slow connections \
+                            (<10 Mbps) stop there. Fast connections test up to 25MB for accuracy.
+
+                            Excellent: >100 Mbps (instant loads)
+                            Good: 25-100 Mbps (smooth browsing)
+                            Fair: 10-25 Mbps (basic browsing OK)
+                            """
                     )
 
                     MetricCard(
@@ -179,7 +200,15 @@ public struct NetworkQualityView: View {
                         actualValue: results.bandwidth.uploadSpeedMbps,
                         metricType: .bandwidth,
                         icon: "arrow.up.circle",
-                        infoText: "Part of bandwidth score (15% sub-weight).\n\nUploads 5MB to test servers. Early exit for slow connections (<2 Mbps) to save time.\n\nGood: >10 Mbps (HD video calls)\nFair: 5-10 Mbps (may reduce quality)"
+                        infoText: """
+                            Part of bandwidth score (15% sub-weight).
+
+                            Uploads 5MB to test servers. Early exit for slow connections \
+                            (<2 Mbps) to save time.
+
+                            Good: >10 Mbps (HD video calls)
+                            Fair: 5-10 Mbps (may reduce quality)
+                            """
                     )
 
                     MetricCard(
@@ -188,19 +217,41 @@ public struct NetworkQualityView: View {
                         actualValue: results.dns.averageResolutionTime,
                         metricType: .dns,
                         icon: "globe",
-                        infoText: "10% WEIGHT - Only affects first page visit (cached after).\n\nResolves popular domains using system DNS. Modern browsers cache DNS and use persistent DNS-over-HTTPS connections.\n\nMinimal impact on repeat visits."
+                        infoText: """
+                            10% WEIGHT - Only affects first page visit (cached after).
+
+                            Resolves popular domains using system DNS. Modern browsers cache \
+                            DNS and use persistent DNS-over-HTTPS connections.
+
+                            Minimal impact on repeat visits.
+                            """
                     )
 
                     MetricCard(
                         title: "Response Variance",
                         value: {
-                            let cv = (results.httpResponse.responseVariance / results.httpResponse.averageResponseTime) * 100
-                            return String(format: "%.1f ms (%.1f%%)", results.httpResponse.responseVariance, cv)
+                            let coefficientOfVariation = (results.httpResponse.responseVariance / results.httpResponse.averageResponseTime) * 100
+                            return String(format: "%.1f ms (%.1f%%)", results.httpResponse.responseVariance, coefficientOfVariation)
                         }(),
                         actualValue: results.httpResponse.responseVariance,
                         metricType: .responseVariance,
                         icon: "waveform",
-                        infoText: "CRITICAL FOR TESTING - Can deduct up to 80 points!\n\nMeasures standard deviation of response times. Scoring uses Coefficient of Variation (variance as % of mean) to fairly compare different latency ranges.\n\nA 10ms variance on 50ms latency (20% CV) scores worse than 10ms variance on 200ms latency (5% CV).\n\nImpact on test iterations:\n• <10% CV: ~30 iterations\n• 20% CV: ~100 iterations\n• 40% CV: ~400 iterations\n• >60% CV: 1000+ iterations",
+                        infoText: """
+                            CRITICAL FOR TESTING - Can deduct up to 80 points!
+
+                            Measures standard deviation of response times. Scoring uses \
+                            Coefficient of Variation (variance as % of mean) to fairly \
+                            compare different latency ranges.
+
+                            A 10ms variance on 50ms latency (20% CV) scores worse than \
+                            10ms variance on 200ms latency (5% CV).
+
+                            Impact on test iterations:
+                            • <10% CV: ~30 iterations
+                            • 20% CV: ~100 iterations
+                            • 40% CV: ~400 iterations
+                            • >60% CV: 1000+ iterations
+                            """,
                         averageResponseTime: results.httpResponse.averageResponseTime
                     )
 
@@ -210,7 +261,17 @@ public struct NetworkQualityView: View {
                         actualValue: 0,  // Not used for grade-based metric
                         metricType: .bufferBloat,
                         icon: "waveform.path.ecg",
-                        infoText: "5% WEIGHT - Minimal impact on browsing.\n\nMeasures latency increase under load. More relevant for video calls than web browsing.\n\nGrades: A (<50% increase), B (50-100%), C (100-200%), D (200-400%), F (>400%)\n\nMost browsing unaffected by buffer bloat."
+                        infoText: """
+                            5% WEIGHT - Minimal impact on browsing.
+
+                            Measures latency increase under load. More relevant for video \
+                            calls than web browsing.
+
+                            Grades: A (<50% increase), B (50-100%), C (100-200%), \
+                            D (200-400%), F (>400%)
+
+                            Most browsing unaffected by buffer bloat.
+                            """
                     )
                 }
 
@@ -379,10 +440,10 @@ struct MetricCard: View {
         case .responseVariance:
             // Use CV-based thresholds when average response time is available
             if let avgResponseTime = averageResponseTime, avgResponseTime > 0 {
-                let cv = (actualValue / avgResponseTime) * 100
-                if cv < 10 { return "Excellent" }      // <10% CV
-                else if cv < 20 { return "Good" }      // 10-20% CV
-                else if cv < 40 { return "Fair" }      // 20-40% CV
+                let coefficientOfVariation = (actualValue / avgResponseTime) * 100
+                if coefficientOfVariation < 10 { return "Excellent" }      // <10% CV
+                else if coefficientOfVariation < 20 { return "Good" }      // 10-20% CV
+                else if coefficientOfVariation < 40 { return "Fair" }      // 20-40% CV
                 else { return "Poor" }                 // >40% CV
             } else {
                 // Fallback to absolute thresholds if no average response time

@@ -30,7 +30,7 @@ final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTra
         let logoYOffset: CGFloat
     }
 
-    private func calculateOffsets(switchBarTextViewMinY: CGFloat) -> TransitionOffsets {
+    private func calculateOffsets(switchBarTextViewMinY: CGFloat, bottomSafeAreaInset: CGFloat) -> TransitionOffsets {
 
         let switcherMultiplier: CGFloat = isTopBarPosition ? 1 : -1
 
@@ -38,7 +38,11 @@ final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTra
         let contentYOffset: CGFloat = switchBarTextViewMinY * switcherMultiplier
         let barYOffset: CGFloat = isTopBarPosition ? switchBarTextViewMinY : 0
         let baseLogoOffset: CGFloat = isTopBarPosition ? 0 : -(DefaultOmniBarView.expectedHeight + Constants.toolbarHeight)
-        let logoYOffsetWithSwitcher = baseLogoOffset + switcherYOffset
+
+        // Temporary adjustment until there's new bottom position
+        // implemented for new editing state.
+        let bottomPositionVerticalOffset: CGFloat = 30
+        let logoYOffsetWithSwitcher = baseLogoOffset + (isTopBarPosition ? switcherYOffset : -bottomPositionVerticalOffset)
 
         return TransitionOffsets(
             switcherYOffset: switcherYOffset,
@@ -91,7 +95,7 @@ final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTra
         transitionContext.containerView.addSubview(toVC.view)
 
         let switchBarTextViewMinY = toVC.switchBarVC.textEntryViewController.view.frame.minY
-        let offsets = calculateOffsets(switchBarTextViewMinY: switchBarTextViewMinY)
+        let offsets = calculateOffsets(switchBarTextViewMinY: switchBarTextViewMinY, bottomSafeAreaInset: fromVC.view.safeAreaInsets.bottom)
 
         if !transitionContext.isAnimated {
             toVC.switchBarVC.textEntryViewController.isExpandable = true
@@ -111,6 +115,13 @@ final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTra
         toVC.view.layoutIfNeeded()
 
         let duration = transitionDuration(using: transitionContext)
+
+        let logoAnimator = UIViewPropertyAnimator(duration: 0.13, curve: .easeIn) {
+            if !self.isTopBarPosition {
+                fromVC.newTabView?.alpha = 0
+            }
+        }
+
         let animator = UIViewPropertyAnimator(duration: duration, dampingRatio: dampingRatio) {
 
             toVC.view.alpha = 1.0
@@ -131,6 +142,7 @@ final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTra
             transitionContext.completeTransition(position == .end)
         }
 
+        logoAnimator.startAnimation()
         animator.startAnimation()
     }
 
@@ -143,7 +155,7 @@ final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTra
         }
 
         let switchBarTextViewMinY = fromVC.switchBarVC.textEntryViewController.view.frame.minY
-        let offsets = calculateOffsets(switchBarTextViewMinY: switchBarTextViewMinY)
+        let offsets = calculateOffsets(switchBarTextViewMinY: switchBarTextViewMinY, bottomSafeAreaInset: fromVC.view.safeAreaInsets.bottom)
 
         // Dismissing animation
         let duration = transitionDuration(using: transitionContext)
@@ -158,6 +170,10 @@ final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTra
             toVC.show()
             toVC.view.layoutIfNeeded()
         }
+
+        animator.addAnimations({
+            toVC.newTabView?.alpha = 1.0
+        }, delayFactor: 0.07)
 
         animator.addCompletion { position in
             transitionContext.completeTransition(position == .end)

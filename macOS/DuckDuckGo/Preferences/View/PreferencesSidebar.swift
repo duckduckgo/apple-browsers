@@ -24,11 +24,10 @@ extension Preferences {
 
     struct SidebarSectionHeader: View {
         let section: PreferencesSectionIdentifier
-        let isSubscriptionRebrandingOn: Bool
 
         var body: some View {
             Group {
-                if let name = section.displayName(isSubscriptionRebrandingOn: isSubscriptionRebrandingOn) {
+                if let name = section.displayName {
                     Text(name)
                         .padding(.horizontal, 16)
                         .padding(.bottom, 3)
@@ -46,7 +45,6 @@ extension Preferences {
         let isEnabled: Bool
         let action: () -> Void
         let settingsIconProvider: SettingsIconsProviding
-        let isSubscriptionRebrandingOn: Bool
         let isNew: Bool
         @ObservedObject var protectionStatus: PrivacyProtectionStatus
 
@@ -55,7 +53,6 @@ extension Preferences {
              isEnabled: Bool = true,
              status: PrivacyProtectionStatus?,
              settingsIconProvider: SettingsIconsProviding,
-             isSubscriptionRebrandingOn: Bool,
              isNew: Bool = false,
              action: @escaping () -> Void) {
             self.pane = pane
@@ -64,20 +61,19 @@ extension Preferences {
             self.action = action
             self.protectionStatus = status ?? PrivacyProtectionStatus()
             self.settingsIconProvider = settingsIconProvider
-            self.isSubscriptionRebrandingOn = isSubscriptionRebrandingOn
             self.isNew = isNew
         }
 
         var body: some View {
             Button(action: action) {
                 HStack(alignment: .center, spacing: 6) {
-                    Image(nsImage: pane.preferenceIconName(for: settingsIconProvider, isSubscriptionRebrandingOn: isSubscriptionRebrandingOn))
+                    Image(nsImage: pane.preferenceIconName(for: settingsIconProvider))
                         .frame(width: 16, height: 16)
                         .if(!isEnabled) {
                             $0.grayscale(1.0).opacity(0.5)
                         }
 
-                    Text(pane.displayName(isSubscriptionRebrandingOn: isSubscriptionRebrandingOn)).font(PreferencesUI_macOS.Const.Fonts.sideBarItem)
+                    Text(pane.displayName).font(PreferencesUI_macOS.Const.Fonts.sideBarItem)
                         .if(!isEnabled) {
                             $0.opacity(0.5)
                         }
@@ -155,7 +151,7 @@ extension Preferences {
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(model.sections) { section in
-                            SidebarSectionHeader(section: section.id, isSubscriptionRebrandingOn: model.isSubscriptionRebrandingEnabled)
+                            SidebarSectionHeader(section: section.id)
                             sidebarSection(section, settingsIconProvider: model.settingsIconProvider)
                         }
                     }.padding(.bottom, 16)
@@ -178,7 +174,6 @@ extension Preferences {
                                 isEnabled: model.isSidebarItemEnabled(for: pane),
                                 status: model.protectionStatus(for: pane),
                                 settingsIconProvider: settingsIconProvider,
-                                isSubscriptionRebrandingOn: model.isSubscriptionRebrandingEnabled,
                                 isNew: model.isPaneNew(pane: pane),
                                 action: {
                                     model.selectPane(pane)

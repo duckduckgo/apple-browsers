@@ -31,10 +31,54 @@ enum UpdateFlowPixels: PixelKitEvent {
      */
     case checkForUpdate(source: Source)
 
+    /**
+     * Event Trigger: Update notification is shown to user
+     *
+     * Fired when the update notification popover appears after an update is detected.
+     * This tracks successful notification display to measure user awareness of available updates.
+     */
+    case updateNotificationShown
+
+    /**
+     * Event Trigger: User taps on update notification
+     *
+     * Fired when user interacts with the update notification popover (either button or clicking anywhere on it).
+     * This measures user engagement with update notifications.
+     */
+    case updateNotificationTapped
+    
+    /**
+     * Event Trigger: "Update DuckDuckGo" button pressed from Settings -> About
+     *
+     * Fired when user taps the "Update DuckDuckGo" button in the About preferences when 
+     * the appStoreCheckForUpdatesFlow feature flag is ON and an update is available.
+     * This tracks user engagement with the update button in preferences.
+     */
+    case updateDuckDuckGoButtonTapped
+
+    /**
+     * Event Trigger: Release metadata fetch fails
+     *
+     * Fired when the network request to fetch latest release information fails.
+     * Helps monitor the health of the update checking service.
+     *
+     * Parameters:
+     * - error: Type of error (network_error, decoding_error, invalid_url, unknown_error)
+     */
+    case releaseMetadataFetchFailed(error: String)
+
     var name: String {
         switch self {
         case .checkForUpdate:
             return "m_mac_app_store_check_for_update"
+        case .updateNotificationShown:
+            return "m_mac_update_notification_shown"
+        case .updateNotificationTapped:
+            return "m_mac_update_notification_tapped"
+        case .updateDuckDuckGoButtonTapped:
+            return "m_mac_update_duckduckgo_button_tapped"
+        case .releaseMetadataFetchFailed:
+            return "m_mac_release_metadata_fetch_failed"
         }
     }
 
@@ -42,6 +86,10 @@ enum UpdateFlowPixels: PixelKitEvent {
         switch self {
         case .checkForUpdate(let source):
             return ["source": source.rawValue]
+        case .updateNotificationShown, .updateNotificationTapped, .updateDuckDuckGoButtonTapped:
+            return nil
+        case .releaseMetadataFetchFailed(let error):
+            return ["error": error]
         }
     }
 

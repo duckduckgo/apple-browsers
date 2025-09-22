@@ -33,15 +33,6 @@
             'pixelSource',
         ],
     },
-    m_mac_update_available_menu_item_tapped: {
-        description: 'Fired when user taps the "Update Available" menu item in the More Options menu',
-        owners: ['jotaemepereira'],
-        triggers: ['other'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-        ],
-    },
     m_mac_update_duckduckgo_button_tapped: {
         description: 'Fired when user taps the "Update DuckDuckGo" button in the About preferences',
         owners: ['jotaemepereira'],

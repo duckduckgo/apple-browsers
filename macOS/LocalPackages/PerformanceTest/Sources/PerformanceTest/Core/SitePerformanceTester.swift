@@ -126,15 +126,25 @@ public class SitePerformanceTester: NSObject {
             let httpCookieStore = dataStore.httpCookieStore
             let cookies = await httpCookieStore.allCookies()
 
-            for cookie in cookies {
-                if cookie.domain.contains(domain) || domain.contains(cookie.domain) {
-                    await httpCookieStore.delete(cookie)
+            // Batch delete cookies for this domain
+            let domainCookies = cookies.filter { cookie in
+                cookie.domain.contains(domain) || domain.contains(cookie.domain)
+            }
+
+            // Use Task group for concurrent deletion if there are multiple cookies
+            if !domainCookies.isEmpty {
+                await withTaskGroup(of: Void.self) { group in
+                    for cookie in domainCookies {
+                        group.addTask {
+                            await httpCookieStore.delete(cookie)
+                        }
+                    }
                 }
             }
         }
     }
 
-    private func measurePageLoadAndCollectMetrics(url: URL, timeout: TimeInterval) async -> DetailedMetrics? {
+    private func measurePageLoadAndCollectMetrics(url: URL, timeout: TimeInterval) async -> DetailedPerformanceMetrics? {
         let delegate = NavigationDelegate()
         webView.navigationDelegate = delegate
 
@@ -164,7 +174,7 @@ public class SitePerformanceTester: NSObject {
         return nil
     }
 
-    private func collectPerformanceMetrics() async -> DetailedMetrics? {
+    private func collectPerformanceMetrics() async -> DetailedPerformanceMetrics? {
         let script = """
             (function() {
                 if (document.readyState !== 'complete') {
@@ -207,7 +217,12 @@ public class SitePerformanceTester: NSObject {
                         totalResourcesSize: totalResourceSize,
 
                         // TTI approximation
-                        tti: navigation.domInteractive - navigation.fetchStart
+                        tti: navigation.domInteractive - navigation.fetchStart,
+
+                        // Additional metadata
+                        protocol: navigation.nextHopProtocol || 'unknown',
+                        redirectCount: navigation.redirectCount || 0,
+                        navigationType: navigation.type || 'navigate'
                     };
                 }
 
@@ -220,13 +235,14 @@ public class SitePerformanceTester: NSObject {
             if let metrics = result as? [String: Any] {
                 logger.debug("Raw metrics collected: \(metrics)")
 
-                let detailedMetrics = DetailedMetrics(
+                let detailedMetrics = DetailedPerformanceMetrics(
                     loadComplete: (metrics["loadComplete"] as? Double ?? 0) / 1000.0,
                     domComplete: (metrics["domComplete"] as? Double ?? 0) / 1000.0,
                     domContentLoaded: (metrics["domContentLoaded"] as? Double ?? 0) / 1000.0,
                     domInteractive: (metrics["domInteractive"] as? Double ?? 0) / 1000.0,
-                    fcp: (metrics["fcp"] as? Double ?? 0) / 1000.0,
-                    ttfb: (metrics["ttfb"] as? Double ?? 0) / 1000.0,
+                    firstContentfulPaint: (metrics["fcp"] as? Double ?? 0) / 1000.0,
+                    largestContentfulPaint: nil, // LCP not available in this context
+                    timeToFirstByte: (metrics["ttfb"] as? Double ?? 0) / 1000.0,
                     responseTime: (metrics["responseTime"] as? Double ?? 0) / 1000.0,
                     serverTime: (metrics["serverTime"] as? Double ?? 0) / 1000.0,
                     transferSize: metrics["transferSize"] as? Double ?? 0,
@@ -234,10 +250,13 @@ public class SitePerformanceTester: NSObject {
                     decodedBodySize: metrics["decodedBodySize"] as? Double ?? 0,
                     resourceCount: metrics["resourceCount"] as? Int ?? 0,
                     totalResourcesSize: metrics["totalResourcesSize"] as? Double ?? 0,
-                    tti: (metrics["tti"] as? Double ?? 0) / 1000.0
+                    timeToInteractive: (metrics["tti"] as? Double ?? 0) / 1000.0,
+                    `protocol`: metrics["protocol"] as? String,
+                    redirectCount: metrics["redirectCount"] as? Int ?? 0,
+                    navigationType: metrics["navigationType"] as? String ?? "navigate"
                 )
 
-                logger.debug("Processed metrics - loadComplete: \(detailedMetrics.loadComplete), domComplete: \(detailedMetrics.domComplete), ttfb: \(detailedMetrics.ttfb)")
+                logger.debug("Processed metrics - loadComplete: \(detailedMetrics.loadComplete), domComplete: \(detailedMetrics.domComplete), ttfb: \(detailedMetrics.timeToFirstByte)")
                 return detailedMetrics
             } else {
                 logger.debug("Failed to cast result to metrics dictionary. Result type: \(type(of: result))")
@@ -249,22 +268,7 @@ public class SitePerformanceTester: NSObject {
         return nil
     }
 
-    struct DetailedMetrics {
-        let loadComplete: TimeInterval
-        let domComplete: TimeInterval
-        let domContentLoaded: TimeInterval
-        let domInteractive: TimeInterval
-        let fcp: TimeInterval
-        let ttfb: TimeInterval
-        let responseTime: TimeInterval
-        let serverTime: TimeInterval
-        let transferSize: Double
-        let encodedBodySize: Double
-        let decodedBodySize: Double
-        let resourceCount: Int
-        let totalResourcesSize: Double
-        let tti: TimeInterval
-    }
+    // DetailedMetrics struct removed - using DetailedPerformanceMetrics from Models
 }
 
 // MARK: - Navigation Delegate
@@ -318,13 +322,13 @@ public struct CollectedMetrics {
     var totalResourcesSize: [Double] = []
     var tti: [TimeInterval] = []
 
-    mutating func append(_ metrics: SitePerformanceTester.DetailedMetrics) {
+    mutating func append(_ metrics: DetailedPerformanceMetrics) {
         loadComplete.append(metrics.loadComplete)
         domComplete.append(metrics.domComplete)
         domContentLoaded.append(metrics.domContentLoaded)
         domInteractive.append(metrics.domInteractive)
-        fcp.append(metrics.fcp)
-        ttfb.append(metrics.ttfb)
+        fcp.append(metrics.firstContentfulPaint)
+        ttfb.append(metrics.timeToFirstByte)
         responseTime.append(metrics.responseTime)
         serverTime.append(metrics.serverTime)
         transferSize.append(metrics.transferSize)
@@ -332,7 +336,7 @@ public struct CollectedMetrics {
         decodedBodySize.append(metrics.decodedBodySize)
         resourceCount.append(metrics.resourceCount)
         totalResourcesSize.append(metrics.totalResourcesSize)
-        tti.append(metrics.tti)
+        tti.append(metrics.timeToInteractive ?? 0)
     }
 }
 

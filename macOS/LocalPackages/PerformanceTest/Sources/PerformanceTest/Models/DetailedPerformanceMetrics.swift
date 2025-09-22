@@ -18,118 +18,280 @@
 
 import Foundation
 
-/// Detailed performance metrics matching spec requirements
-public struct DetailedPerformanceMetrics: Codable {
+/// Extended performance metrics with detailed timing information
+public struct DetailedPerformanceMetrics: Codable, Equatable {
 
-    // Resource metrics
-    public let decodedBodySize: [TimeInterval]
-    public let encodedBodySize: [TimeInterval]
-    public let transferSize: [TimeInterval]
-    public let totalResourcesSize: [TimeInterval]
-    public let resourceCount: [Int]
+    // MARK: - Core Timing Properties
 
-    // DOM metrics
-    public let domComplete: [TimeInterval]
-    public let domContentLoaded: [TimeInterval]
-    public let domInteractive: [TimeInterval]
+    /// Total page load completion time in seconds
+    public let loadComplete: TimeInterval
 
-    // Timing metrics
-    public let fcp: [TimeInterval]  // First Contentful Paint
-    public let loadComplete: [TimeInterval]
-    public let responseTime: [TimeInterval]
-    public let serverTime: [TimeInterval]
-    public let ttfb: [TimeInterval]  // Time to First Byte
-    public let tti: [TimeInterval]   // Time to Interactive
+    /// DOM complete time in seconds
+    public let domComplete: TimeInterval
 
-    // Statistical aggregations for each metric
-    public enum StatisticalView: String, CaseIterable {
-        case mean = "Mean"
-        case median = "Median"
-        case min = "Min"
-        case max = "Max"
-        case p95 = "P95"
-        case stdDev = "StdDev"
-        case cv = "CV"
+    /// DOM content loaded time in seconds
+    public let domContentLoaded: TimeInterval
+
+    /// DOM interactive time in seconds
+    public let domInteractive: TimeInterval
+
+    // MARK: - Paint Metrics
+
+    /// First Contentful Paint (FCP) in seconds
+    public let firstContentfulPaint: TimeInterval
+
+    /// Largest Contentful Paint (LCP) in seconds (optional)
+    public let largestContentfulPaint: TimeInterval?
+
+    // MARK: - Network Timing
+
+    /// Time to First Byte (TTFB) in seconds
+    public let timeToFirstByte: TimeInterval
+
+    /// Response download time in seconds
+    public let responseTime: TimeInterval
+
+    /// Server processing time in seconds
+    public let serverTime: TimeInterval
+
+    /// DNS lookup time in seconds
+    public let dnsLookupTime: TimeInterval?
+
+    /// TCP connection time in seconds
+    public let tcpConnectionTime: TimeInterval?
+
+    /// Secure connection (TLS) time in seconds
+    public let secureConnectionTime: TimeInterval?
+
+    // MARK: - Size Metrics
+
+    /// Total transfer size in bytes
+    public let transferSize: Double
+
+    /// Encoded body size in bytes
+    public let encodedBodySize: Double
+
+    /// Decoded body size in bytes
+    public let decodedBodySize: Double
+
+    // MARK: - Resource Metrics
+
+    /// Number of resources loaded
+    public let resourceCount: Int
+
+    /// Total size of all resources in bytes
+    public let totalResourcesSize: Double
+
+    // MARK: - Interactivity Metrics
+
+    /// Time to Interactive (TTI) in seconds
+    public let timeToInteractive: TimeInterval?
+
+    /// First Input Delay (FID) in milliseconds
+    public let firstInputDelay: TimeInterval?
+
+    /// Cumulative Layout Shift (CLS) score
+    public let cumulativeLayoutShift: Double?
+
+    // MARK: - Additional Metadata
+
+    /// Network protocol used (e.g., "h2", "http/1.1")
+    public let `protocol`: String?
+
+    /// Number of redirects
+    public let redirectCount: Int
+
+    /// Navigation type (e.g., "navigate", "reload", "back_forward")
+    public let navigationType: String
+
+    // MARK: - Initialization
+
+    public init(
+        loadComplete: TimeInterval,
+        domComplete: TimeInterval,
+        domContentLoaded: TimeInterval,
+        domInteractive: TimeInterval,
+        firstContentfulPaint: TimeInterval,
+        largestContentfulPaint: TimeInterval? = nil,
+        timeToFirstByte: TimeInterval,
+        responseTime: TimeInterval,
+        serverTime: TimeInterval,
+        dnsLookupTime: TimeInterval? = nil,
+        tcpConnectionTime: TimeInterval? = nil,
+        secureConnectionTime: TimeInterval? = nil,
+        transferSize: Double,
+        encodedBodySize: Double,
+        decodedBodySize: Double,
+        resourceCount: Int,
+        totalResourcesSize: Double,
+        timeToInteractive: TimeInterval? = nil,
+        firstInputDelay: TimeInterval? = nil,
+        cumulativeLayoutShift: Double? = nil,
+        `protocol`: String? = nil,
+        redirectCount: Int = 0,
+        navigationType: String = "navigate"
+    ) {
+        self.loadComplete = max(0, loadComplete)
+        self.domComplete = max(0, domComplete)
+        self.domContentLoaded = max(0, domContentLoaded)
+        self.domInteractive = max(0, domInteractive)
+        self.firstContentfulPaint = max(0, firstContentfulPaint)
+        self.largestContentfulPaint = largestContentfulPaint
+        self.timeToFirstByte = max(0, timeToFirstByte)
+        self.responseTime = max(0, responseTime)
+        self.serverTime = max(0, serverTime)
+        self.dnsLookupTime = dnsLookupTime
+        self.tcpConnectionTime = tcpConnectionTime
+        self.secureConnectionTime = secureConnectionTime
+        self.transferSize = max(0, transferSize)
+        self.encodedBodySize = max(0, encodedBodySize)
+        self.decodedBodySize = max(0, decodedBodySize)
+        self.resourceCount = max(0, resourceCount)
+        self.totalResourcesSize = max(0, totalResourcesSize)
+        self.timeToInteractive = timeToInteractive
+        self.firstInputDelay = firstInputDelay
+        self.cumulativeLayoutShift = cumulativeLayoutShift
+        self.`protocol` = `protocol`
+        self.redirectCount = max(0, redirectCount)
+        self.navigationType = navigationType
     }
 
-    // MARK: - Statistical Methods
+    // MARK: - Computed Properties
 
-    public func getValue(for metric: MetricType, view: StatisticalView) -> Double? {
-        let values: [Double]
-
-        switch metric {
-        case .decodedBodySize: values = decodedBodySize
-        case .encodedBodySize: values = encodedBodySize
-        case .transferSize: values = transferSize
-        case .totalResourcesSize: values = totalResourcesSize
-        case .resourceCount: values = resourceCount.map { Double($0) }
-        case .domComplete: values = domComplete
-        case .domContentLoaded: values = domContentLoaded
-        case .domInteractive: values = domInteractive
-        case .fcp: values = fcp
-        case .loadComplete: values = loadComplete
-        case .responseTime: values = responseTime
-        case .serverTime: values = serverTime
-        case .ttfb: values = ttfb
-        case .tti: values = tti
-        }
-
-        guard !values.isEmpty else { return nil }
-
-        switch view {
-        case .mean:
-            return values.reduce(0, +) / Double(values.count)
-        case .median:
-            return percentile(values, 50)
-        case .min:
-            return values.min()
-        case .max:
-            return values.max()
-        case .p95:
-            return percentile(values, 95)
-        case .stdDev:
-            let mean = values.reduce(0, +) / Double(values.count)
-            let variance = values.reduce(0) { sum, value in
-                sum + pow(value - mean, 2)
-            } / Double(values.count)
-            return sqrt(variance)
-        case .cv:
-            let mean = values.reduce(0, +) / Double(values.count)
-            guard mean > 0 else { return nil }
-            let stdDev = getValue(for: metric, view: .stdDev) ?? 0
-            return (stdDev / mean) * 100
-        }
+    /// Compression ratio (encoded vs decoded size)
+    public var compressionRatio: Double? {
+        guard encodedBodySize > 0 && decodedBodySize > 0 else { return nil }
+        return 1.0 - (encodedBodySize / decodedBodySize)
     }
 
-    private func percentile(_ values: [Double], _ p: Double) -> Double? {
-        guard !values.isEmpty else { return nil }
-        let sorted = values.sorted()
-        let index = (p / 100.0) * Double(sorted.count - 1)
-        let lowerIndex = Int(floor(index))
-        let upperIndex = Int(ceil(index))
-
-        if lowerIndex == upperIndex {
-            return sorted[lowerIndex]
-        }
-
-        let weight = index - Double(lowerIndex)
-        return sorted[lowerIndex] + weight * (sorted[upperIndex] - sorted[lowerIndex])
+    /// Average resource size in bytes
+    public var averageResourceSize: Double? {
+        guard resourceCount > 0 else { return nil }
+        return totalResourcesSize / Double(resourceCount)
     }
 
-    public enum MetricType: String, CaseIterable {
-        case decodedBodySize = "Decoded Body Size"
-        case encodedBodySize = "Encoded Body Size"
-        case transferSize = "Transfer Size"
-        case totalResourcesSize = "Total Resources"
-        case resourceCount = "Resource Count"
-        case domComplete = "DOM Complete"
-        case domContentLoaded = "DOM Content Loaded"
-        case domInteractive = "DOM Interactive"
-        case fcp = "FCP"
-        case loadComplete = "Load Complete"
-        case responseTime = "Response Time"
-        case serverTime = "Server Time"
-        case ttfb = "TTFB"
-        case tti = "TTI"
+    /// Whether the page used HTTP/2 or newer
+    public var usesModernProtocol: Bool {
+        guard let proto = `protocol` else { return false }
+        return proto.contains("h2") || proto.contains("h3") || proto.contains("quic")
+    }
+
+    /// Core Web Vitals assessment
+    public var coreWebVitals: CoreWebVitalsAssessment {
+        CoreWebVitalsAssessment(
+            lcp: largestContentfulPaint ?? firstContentfulPaint,
+            fid: firstInputDelay,
+            cls: cumulativeLayoutShift
+        )
+    }
+
+    // MARK: - Performance Score
+
+    /// Overall performance score (0-100)
+    public var performanceScore: Int {
+        var score = 100.0
+
+        // Weight different metrics
+        // LCP/FCP: 25%
+        let paintMetric = largestContentfulPaint ?? firstContentfulPaint
+        if paintMetric > 4.0 {
+            score -= 25
+        } else if paintMetric > 2.5 {
+            score -= 12.5
+        }
+
+        // TTFB: 15%
+        if timeToFirstByte > 1.8 {
+            score -= 15
+        } else if timeToFirstByte > 0.8 {
+            score -= 7.5
+        }
+
+        // Load Complete: 20%
+        if loadComplete > 5.0 {
+            score -= 20
+        } else if loadComplete > 3.0 {
+            score -= 10
+        }
+
+        // DOM Interactive: 15%
+        if domInteractive > 3.5 {
+            score -= 15
+        } else if domInteractive > 2.0 {
+            score -= 7.5
+        }
+
+        // Resource optimization: 10%
+        if totalResourcesSize > 5_000_000 { // > 5MB
+            score -= 10
+        } else if totalResourcesSize > 2_000_000 { // > 2MB
+            score -= 5
+        }
+
+        // Protocol bonus: 5%
+        if !usesModernProtocol {
+            score -= 5
+        }
+
+        // Compression bonus: 5%
+        if let ratio = compressionRatio, ratio < 0.5 {
+            score -= 5
+        }
+
+        // CLS penalty: 5%
+        if let cls = cumulativeLayoutShift, cls > 0.25 {
+            score -= 5
+        }
+
+        return max(0, min(100, Int(score)))
+    }
+
+    /// Performance grade based on score
+    public var performanceGrade: String {
+        switch performanceScore {
+        case 90...100: return "A"
+        case 80..<90: return "B"
+        case 70..<80: return "C"
+        case 60..<70: return "D"
+        default: return "F"
+        }
+    }
+}
+
+// MARK: - Core Web Vitals Assessment
+
+public struct CoreWebVitalsAssessment: Codable, Equatable {
+    public let lcp: TimeInterval // Largest Contentful Paint
+    public let fid: TimeInterval? // First Input Delay
+    public let cls: Double? // Cumulative Layout Shift
+
+    public var lcpAssessment: String {
+        if lcp <= 2.5 { return "Good" }
+        else if lcp <= 4.0 { return "Needs Improvement" }
+        else { return "Poor" }
+    }
+
+    public var fidAssessment: String? {
+        guard let fid = fid else { return nil }
+        if fid <= 0.1 { return "Good" }
+        else if fid <= 0.3 { return "Needs Improvement" }
+        else { return "Poor" }
+    }
+
+    public var clsAssessment: String? {
+        guard let cls = cls else { return nil }
+        if cls <= 0.1 { return "Good" }
+        else if cls <= 0.25 { return "Needs Improvement" }
+        else { return "Poor" }
+    }
+
+    public var overallAssessment: String {
+        let assessments = [lcpAssessment, fidAssessment, clsAssessment].compactMap { $0 }
+        let poorCount = assessments.filter { $0 == "Poor" }.count
+        let needsImprovementCount = assessments.filter { $0 == "Needs Improvement" }.count
+
+        if poorCount > 0 { return "Poor" }
+        else if needsImprovementCount > 1 { return "Needs Improvement" }
+        else { return "Good" }
     }
 }

@@ -108,12 +108,14 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Icons
     private static let icons = DynamicColor(lightColor: x1F1F1F.opacity(0.84), darkColor: .tint(0.78))
+    private static let iconsPrimary = DynamicColor(lightColor: x000000D6, darkColor: xFFFFFFC6)
     private static let iconsSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.6), darkColor: .tint(0.48))
     private static let iconsTertiary = DynamicColor(lightColor: x000000.opacity(0.36), darkColor: xFFFFFF.opacity(0.24))
 
     // Text
     private static let textPrimary = DynamicColor(lightColor: x1F1F1F, darkColor: .tint(0.9))
     private static let textSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.72), darkColor: .tint(0.6))
+    private static let textTertiary = DynamicColor(lightColor: x0000005B, darkColor: xFFFFFF5B)
     private static let textPlaceholder = DynamicColor(lightColor: x1F1F1F.opacity(0.4), darkColor: .tint(0.4))
 
     // System
@@ -126,6 +128,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Highlight
     private static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))
+    private static let highlightPrimary = DynamicColor(lightColor: xFFFFFF3D, darkColor: xF9F9F91E)
 
     // Accents
     private static let accentContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
@@ -187,9 +190,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let buttonsDeleteGhostText = DynamicColor(lightColor: .alertRedOnLight, darkColor: .alertRedOnDark)
     private static let buttonsDeleteGhostTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
 
-    // Text
-    private static let textTertiary = DynamicColor(lightColor: x0000005B, darkColor: xFFFFFF5B)
-
     // Controls
     private static let controlsDecorationPrimary = DynamicColor(lightColor: x1F1F1F4C, darkColor: xF9F9F95B)
     private static let controlsDecorationSecondary = DynamicColor(lightColor: x1F1F1F7A, darkColor: xF9F9F9A3)
@@ -218,9 +218,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let accentAltTextSecondary = DynamicColor(lightColor: x14307E, darkColor: xADC2FC)
     private static let accentAltTextTertiary = DynamicColor(lightColor: x0B2059, darkColor: x8FABF9)
 
-    // Icons
-    private static let iconsPrimary = DynamicColor(lightColor: x000000D6, darkColor: xFFFFFFC6)
-
     // Destructive
     private static let destructiveContentPrimary = DynamicColor(lightColor: xFFFFFF, darkColor: x000000)
     private static let destructiveContentSecondary = DynamicColor(lightColor: xFFFFFFE5, darkColor: x000000E5)
@@ -232,9 +229,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let destructiveTextPrimary = DynamicColor(lightColor: xEE1025, darkColor: xEE1025)
     private static let destructiveTextSecondary = DynamicColor(lightColor: xD11527, darkColor: xD11527)
     private static let destructiveTextTertiary = DynamicColor(lightColor: xAA1926, darkColor: xAA1926)
-
-    // Highlight
-    private static let highlightPrimary = DynamicColor(lightColor: xFFFFFF3D, darkColor: xF9F9F91E)
 
     // Surfaces
     private static let surfaceBackdrop = DynamicColor(lightColor: xE0E0E0, darkColor: x070707)
@@ -277,6 +271,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .decorationSecondary: return decorationSecondary
         case .decorationTertiary: return decorationTertiary
         case .highlightDecoration: return highlightDecoration
+        case .highlightPrimary: return highlightPrimary
         case .accentContentPrimary: return accentContentPrimary
         case .accentContentSecondary: return accentContentSecondary
         case .accentContentTertiary: return accentContentTertiary
@@ -357,9 +352,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .destructiveTextPrimary: return destructiveTextPrimary
         case .destructiveTextSecondary: return destructiveTextSecondary
         case .destructiveTextTertiary: return destructiveTextTertiary
-
-            // Highlight
-        case .highlightPrimary: return highlightPrimary
 
             // Surfaces
         case .surfaceBackdrop: return surfaceBackdrop

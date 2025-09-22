@@ -25,6 +25,7 @@ import Common
 import AppKit
 import BrowserServicesKit
 import FeatureFlags
+import PixelKit
 
 final class AppStoreUpdateController: NSObject, UpdateController {
     @Published private(set) var latestUpdate: Update?
@@ -193,6 +194,25 @@ final class AppStoreUpdateController: NSObject, UpdateController {
         } catch {
             /// If we fail to fetch the latest version we do not want to show any messages to the user.
             updateProgress = .updateCycleDone(.finishedWithNoUpdateFound)
+
+            // Track release metadata fetch failures
+            let errorType: String
+            if let latestReleaseError = error as? LatestReleaseError {
+                switch latestReleaseError {
+                case .networkError:
+                    errorType = "network_error"
+                case .decodingError:
+                    errorType = "decoding_error"
+                case .invalidURL:
+                    errorType = "invalid_url"
+                case .metadataNotFound:
+                    errorType = "metadata_not_found"
+                }
+            } else {
+                errorType = "unknown_error"
+            }
+            PixelKit.fire(UpdateFlowPixels.releaseMetadataFetchFailed(error: errorType))
+
             Logger.updates.error("Failed to check for App Store updates: \(error.localizedDescription)")
 
             await MainActor.run {

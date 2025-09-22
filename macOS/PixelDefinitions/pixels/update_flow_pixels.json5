@@ -51,7 +51,7 @@
                 key: 'error',
                 type: 'string',
                 description: 'Type of error that occurred',
-                enum: ['network_error', 'decoding_error', 'invalid_url', 'unknown_error'],
+                enum: ['network_error', 'decoding_error', 'invalid_url', 'metadata_not_found', 'unknown_error'],
             },
             'appVersion',
             'pixelSource',

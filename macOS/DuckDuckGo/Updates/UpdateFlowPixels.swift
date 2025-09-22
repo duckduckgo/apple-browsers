@@ -63,7 +63,7 @@ enum UpdateFlowPixels: PixelKitEvent {
      * Helps monitor the health of the update checking service.
      *
      * Parameters:
-     * - error: Type of error (network_error, decoding_error, invalid_url, unknown_error)
+     * - error: Type of error (network_error, decoding_error, invalid_url, metadata_not_found, unknown_error)
      */
     case releaseMetadataFetchFailed(error: String)
 

@@ -22,7 +22,7 @@ let package = Package(
             name: "PerformanceTest",
             dependencies: ["NetworkQualityMonitor"],
             resources: [
-                .process("Resources/JavaScript")
+                .copy("Resources/performanceMetrics.js")
             ]),
     ]
 )

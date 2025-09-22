@@ -17,34 +17,33 @@
 //
 
 /**
- * Collects comprehensive performance metrics from the browser's Performance API
+ * Collects performance metrics from the browser's Performance API
  * @returns {Object} Performance metrics object with timing and resource information
  */
-function collectPerformanceMetrics() {
+(function() {
     // Get navigation timing data
     const navigationEntry = performance.getEntriesByType('navigation')[0];
     if (!navigationEntry) {
         return { error: 'No navigation timing data available' };
     }
 
-    // Get paint timing entries
+    // Paint timing
     const paintEntries = performance.getEntriesByType('paint');
-    const firstPaint = paintEntries.find(entry => entry.name === 'first-paint');
     const firstContentfulPaint = paintEntries.find(entry => entry.name === 'first-contentful-paint');
 
-    // Get largest contentful paint if available
+    // LCP (If available)
     const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
     const largestContentfulPaint = lcpEntries.length > 0 ? lcpEntries[lcpEntries.length - 1] : null;
 
-    // Calculate key metrics
-    const metrics = {
+    // Return metrics
+    return {
         // Time to First Byte
         timeToFirstByte: navigationEntry.responseStart - navigationEntry.fetchStart,
 
-        // First Contentful Paint
+        // FCP
         firstContentfulPaint: firstContentfulPaint ? firstContentfulPaint.startTime : null,
 
-        // Largest Contentful Paint
+        // LCP
         largestContentfulPaint: largestContentfulPaint ? largestContentfulPaint.startTime : null,
 
         // DOM metrics
@@ -55,7 +54,7 @@ function collectPerformanceMetrics() {
         // Load complete time
         loadComplete: navigationEntry.loadEventEnd - navigationEntry.fetchStart,
 
-        // Network timings
+        // Network times
         dnsLookupTime: navigationEntry.domainLookupEnd - navigationEntry.domainLookupStart,
         tcpConnectionTime: navigationEntry.connectEnd - navigationEntry.connectStart,
         secureConnectionTime: navigationEntry.secureConnectionStart > 0 ?
@@ -70,7 +69,9 @@ function collectPerformanceMetrics() {
         decodedBodySize: navigationEntry.decodedBodySize || 0,
 
         // Server timing
-        serverTiming: extractServerTiming(navigationEntry),
+        serverTiming: navigationEntry.serverTiming ?
+            navigationEntry.serverTiming.reduce((total, entry) => total + (entry.duration || 0), 0) :
+            (navigationEntry.responseStart - navigationEntry.requestStart),
 
         // Resource count
         resourceCount: performance.getEntriesByType('resource').length,
@@ -80,27 +81,4 @@ function collectPerformanceMetrics() {
         redirectCount: navigationEntry.redirectCount || 0,
         navigationType: navigationEntry.type || 'navigate'
     };
-
-    return metrics;
-}
-
-/**
- * Extracts server timing information from navigation entry
- * @param {PerformanceNavigationTiming} navigationEntry - The navigation timing entry
- * @returns {number} Server processing time in milliseconds
- */
-function extractServerTiming(navigationEntry) {
-    // If serverTiming is available, calculate total server time
-    if (navigationEntry.serverTiming && navigationEntry.serverTiming.length > 0) {
-        return navigationEntry.serverTiming.reduce((total, entry) => {
-            return total + (entry.duration || 0);
-        }, 0);
-    }
-
-    // Fallback: estimate server time from response timings
-    // This is the time between request sent and first byte received
-    return navigationEntry.responseStart - navigationEntry.requestStart;
-}
-
-// Export the main function for WebKit to call
-collectPerformanceMetrics();
+})()

@@ -221,6 +221,8 @@ public enum FeatureFlag: String, CaseIterable {
     case syncCreditCards
     case syncIdentities
 
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211185922947392?focus=true
+    case clearAIChatHistory
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -240,7 +242,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .subscriptionRestoreWidePixelMeasurement,
                 .authV2WideEventEnabled,
                 .syncCreditCards,
-                .syncIdentities:
+                .syncIdentities,
+                .clearAIChatHistory:
             true
         default:
             false
@@ -320,7 +323,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .fireDialog,
                 .winBackOffer,
                 .syncCreditCards,
-                .syncIdentities:
+                .syncIdentities,
+                .clearAIChatHistory:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -485,6 +489,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         case .winBackOffer:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
+        case .clearAIChatHistory:
+            return .internalOnly()
         }
     }
 }

@@ -18,30 +18,18 @@
 
 import Foundation
 
-/// Result of a single performance test
 public struct TestResult: Codable, Equatable {
-
-    // MARK: - Properties
-
-    /// URL that was tested
     public let url: URL
 
-    /// Performance metrics if test succeeded
     public let metrics: PerformanceMetrics?
 
-    /// Whether the test completed successfully
     public let success: Bool
 
-    /// Error if test failed
     public let error: TestError?
 
-    /// When the test started
     public let timestamp: Date
 
-    /// When the test ended (optional for duration calculation)
     public let endTime: Date?
-
-    // MARK: - Initialization
 
     public init(
         url: URL,
@@ -59,7 +47,6 @@ public struct TestResult: Codable, Equatable {
         self.endTime = endTime
     }
 
-    // Convenience initializer without error type for basic errors
     public init(
         url: URL,
         metrics: PerformanceMetrics?,
@@ -76,7 +63,6 @@ public struct TestResult: Codable, Equatable {
         self.endTime = endTime
     }
 
-    // MARK: - Computed Properties
 
     /// Duration of the test if endTime is available
     public var duration: TimeInterval? {

@@ -18,24 +18,14 @@
 
 import Foundation
 
-/// Core performance metrics for page load testing
 public struct PerformanceMetrics: Codable, Equatable {
-
-    // MARK: - Properties
-
-    /// Total page load time in seconds
     public let loadTime: TimeInterval
 
-    /// First Contentful Paint in milliseconds
     public let firstContentfulPaint: TimeInterval?
 
-    /// Largest Contentful Paint in milliseconds
     public let largestContentfulPaint: TimeInterval?
 
-    /// Time to First Byte in milliseconds
     public let timeToFirstByte: TimeInterval?
-
-    // MARK: - Initialization
 
     public init(
         loadTime: TimeInterval,
@@ -43,7 +33,7 @@ public struct PerformanceMetrics: Codable, Equatable {
         largestContentfulPaint: TimeInterval? = nil,
         timeToFirstByte: TimeInterval? = nil
     ) {
-        self.loadTime = max(0, loadTime) // Ensure non-negative
+        self.loadTime = max(0, loadTime)
         self.firstContentfulPaint = firstContentfulPaint
         self.largestContentfulPaint = largestContentfulPaint
         self.timeToFirstByte = timeToFirstByte

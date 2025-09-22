@@ -135,7 +135,7 @@ public class PageLoadTester: NSObject {
         let scriptContent: String
 
         // Try Bundle.module first (SPM standard)
-        if let url = Bundle.module.url(forResource: "performanceMetrics", withExtension: "js"),
+        if let url = Bundle(for: PageLoadTester.self).url(forResource: "performanceMetrics", withExtension: "js"),
            let content = try? String(contentsOf: url) {
             scriptContent = content
         } else {

@@ -517,7 +517,7 @@ final class SettingsViewModel: ObservableObject {
     }
 
     // Indicates if AI features are generally enabled
-    var isAIChatGenerallyEnabled: Bool {
+    var isAIChatEnabled: Bool {
         aiChatSettings.isAIChatEnabled
     }
 

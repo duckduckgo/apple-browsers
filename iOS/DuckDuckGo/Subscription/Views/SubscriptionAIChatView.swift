@@ -26,7 +26,7 @@ struct SubscriptionAIChatView: View {
     let viewModel: SettingsViewModel
 
     var body: some View {
-        let isAIFeaturesEnabled = viewModel.isAIChatGenerallyEnabled
+        let isAIFeaturesEnabled = viewModel.isAIChatEnabled
         let hasSubscription = viewModel.isPaidAIChatAvailable
         let shouldShowAsOn = hasSubscription && isAIFeaturesEnabled
         

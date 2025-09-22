@@ -86,8 +86,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         self.usesUnifiedFeedbackForm = subscriptionManager.isUserAuthenticated
         self.keyValueStorage = keyValueStorage
         let rebrandingMessageDismissed = keyValueStorage.object(forKey: bannerDismissedKey) as? Bool ?? false
-        let isRebrandingOn = featureFlagger.isFeatureOn(.subscriptionRebranding)
-        self.showRebrandingMessage = !rebrandingMessageDismissed && isRebrandingOn
+        self.showRebrandingMessage = !rebrandingMessageDismissed
         setupNotificationObservers()
     }
 

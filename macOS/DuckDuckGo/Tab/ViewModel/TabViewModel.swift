@@ -402,7 +402,7 @@ final class TabViewModel: NSObject {
         case .dataBrokerProtection:
                 .dbpTrustedIndicator
         case .subscription:
-            NSAttributedString.subscriptionTrustedIndicator(isSubscriptionRebrandingOn: featureFlagger.isFeatureOn(.subscriptionRebranding))
+            NSAttributedString.subscriptionTrustedIndicator
         case .identityTheftRestoration:
                 .identityTheftRestorationTrustedIndicator
         case .releaseNotes:
@@ -606,13 +606,8 @@ private extension NSAttributedString {
                                                                           title: UserText.mainMenuHistory)
     static let dbpTrustedIndicator = trustedIndicatorAttributedString(with: .personalInformationRemovalMulticolor16,
                                                                       title: UserText.tabDataBrokerProtectionTitle)
-    static func subscriptionTrustedIndicator(isSubscriptionRebrandingOn: Bool) -> NSAttributedString {
-        trustedIndicatorAttributedString(
-            with: .privacyPro,
-            title: UserText.subscriptionName(isSubscriptionRebrandingOn: isSubscriptionRebrandingOn)
-        )
-    }
-
+    static let subscriptionTrustedIndicator = trustedIndicatorAttributedString(with: .privacyPro,
+                                                                               title: UserText.subscriptionName)
     static let identityTheftRestorationTrustedIndicator = trustedIndicatorAttributedString(with: .identityTheftRestorationMulticolor16,
                                                                                            title: UserText.identityTheftRestorationOptionsMenuItem)
     static let duckPlayerTrustedIndicator = trustedIndicatorAttributedString(with: .duckPlayerSettings,

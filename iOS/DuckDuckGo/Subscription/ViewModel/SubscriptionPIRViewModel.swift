@@ -24,11 +24,6 @@ final class SubscriptionPIRViewModel: ObservableObject {
     
     var viewTitle = UserText.settingsPProDBPTitle
 
-    // It's provisory until we launch paid Duck.ai + subscription rebranding on Aug 27
-    var isSubscriptionRebrandingOn: Bool {
-        return AppDependencyProvider.shared.featureFlagger.isFeatureOn(.subscriptionRebranding)
-    }
-
     func onFirstAppear() {
         Pixel.fire(pixel: .privacyProPersonalInformationRemovalSettings)
     }

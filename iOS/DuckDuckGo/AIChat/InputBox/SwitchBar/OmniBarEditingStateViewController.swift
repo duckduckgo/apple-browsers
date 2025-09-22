@@ -51,12 +51,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
     var automaticallySelectsTextOnAppear = false
-    var adjustsLayoutInLandscape = false {
-        didSet {
-            adjustLayoutForViewSize(view.bounds.size)
-        }
-    }
-
+    
     // MARK: - Core Components
     private lazy var contentContainerView = UIView()
 
@@ -74,7 +69,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private var swipeContainerManager: SwipeContainerManager?
     private var navigationActionBarManager: NavigationActionBarManager?
     private var suggestionTrayManager: SuggestionTrayManager?
-    private let daxLogoManager = DaxLogoManager()
+    private let daxLogoManager: DaxLogoManager
     private var notificationCancellable: AnyCancellable?
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
 
@@ -84,6 +79,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                   switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics()) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
+        self.daxLogoManager = DaxLogoManager()
+        
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -144,7 +141,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func requiresHorizontallyCompactLayout(for size: CGSize) -> Bool {
         let isPhone = UIDevice.current.userInterfaceIdiom == .phone
-        return adjustsLayoutInLandscape && isPhone && size.width > size.height
+        return isPhone && size.width > size.height
     }
 
     private func adjustLayoutForViewSize(_ size: CGSize) {
@@ -313,7 +310,30 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     private func handleMicrophoneButtonTapped() {
-        delegate?.onVoiceSearchRequested(from: switchBarHandler.currentToggleState)
+        // Do not dismiss the OmniBar. Just dismiss the keyboard and present Voice Search above.
+        switchBarVC.unfocusTextField()
+        SpeechRecognizer.requestMicAccess { [weak self] permission in
+            guard let self = self else { return }
+            if permission {
+                let preferredTarget: VoiceSearchTarget? = (self.switchBarHandler.currentToggleState == .aiChat) ? .AIChat : .SERP
+                self.showVoiceSearch(preferredTarget: preferredTarget)
+            } else {
+                self.showNoMicrophonePermissionAlert()
+            }
+        }
+    }
+
+    private func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {
+        let voiceSearchController = VoiceSearchViewController(preferredTarget: preferredTarget)
+        voiceSearchController.delegate = self
+        voiceSearchController.modalTransitionStyle = .crossDissolve
+        voiceSearchController.modalPresentationStyle = .overFullScreen
+        present(voiceSearchController, animated: true)
+    }
+
+    private func showNoMicrophonePermissionAlert() {
+        let alertController = NoMicPermissionAlert.buildAlert()
+        present(alertController, animated: true)
     }
 
     private func updateDaxVisibility() {
@@ -383,6 +403,32 @@ extension OmniBarEditingStateViewController: NavigationActionBarManagerDelegate 
         let currentText = switchBarHandler.currentText
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             switchBarHandler.submitText(currentText)
+        }
+    }
+}
+
+// MARK: - VoiceSearchViewControllerDelegate
+
+extension OmniBarEditingStateViewController: VoiceSearchViewControllerDelegate {
+
+    func voiceSearchViewController(_ controller: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget) {
+        if let text = query {
+            switchBarHandler.updateCurrentText(text)
+        }
+
+        controller.dismiss(animated: true) { [weak self] in
+            guard let self = self, let query = query else { return }
+            self.handleVoiceSearchCompletion(with: query, for: target)
+        }
+    }
+
+    private func handleVoiceSearchCompletion(with query: String, for target: VoiceSearchTarget) {
+        switch target {
+        case .SERP:
+            delegate?.onQuerySubmitted(query)
+
+        case .AIChat:
+            delegate?.onPromptSubmitted(query, tools: nil)
         }
     }
 }

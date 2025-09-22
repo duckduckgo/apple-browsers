@@ -108,11 +108,11 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                            pixelHandler: sharedPixelsHandler)
 
         let emailConfirmationJobProvider = EmailConfirmationJobProvider()
-        let queueManager =  BrokerProfileJobQueueManager(jobQueue: jobQueue,
-                                                         jobProvider: jobProvider,
-                                                         emailConfirmationJobProvider: emailConfirmationJobProvider,
-                                                         mismatchCalculator: mismatchCalculator,
-                                                         pixelHandler: sharedPixelsHandler)
+        let queueManager = JobQueueManager(jobQueue: jobQueue,
+                                           jobProvider: jobProvider,
+                                           emailConfirmationJobProvider: emailConfirmationJobProvider,
+                                           mismatchCalculator: mismatchCalculator,
+                                           pixelHandler: sharedPixelsHandler)
 
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: sharedPixelsHandler,
                                                                                    settings: dbpSettings)
@@ -178,7 +178,7 @@ public final class DataBrokerProtectionAgentManager {
     private let eventsHandler: EventMapping<JobEvent>
     private var activityScheduler: DataBrokerProtectionBackgroundActivityScheduler
     private var ipcServer: DataBrokerProtectionIPCServer
-    private var queueManager: BrokerProfileJobQueueManaging
+    private var queueManager: JobQueueManaging
     private let dataManager: DataBrokerProtectionDataManaging
     public var emailConfirmationDataService: EmailConfirmationDataServiceProvider?
     private let jobDependencies: BrokerProfileJobDependencyProviding
@@ -199,7 +199,7 @@ public final class DataBrokerProtectionAgentManager {
     init(eventsHandler: EventMapping<JobEvent>,
          activityScheduler: DataBrokerProtectionBackgroundActivityScheduler,
          ipcServer: DataBrokerProtectionIPCServer,
-         queueManager: BrokerProfileJobQueueManaging,
+         queueManager: JobQueueManaging,
          dataManager: DataBrokerProtectionDataManaging,
          emailConfirmationDataService: EmailConfirmationDataServiceProvider,
          jobDependencies: BrokerProfileJobDependencyProviding,
@@ -339,9 +339,9 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
     }
 }
 
-extension DataBrokerProtectionAgentManager: BrokerProfileJobQueueManagerDelegate {
+extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
 
-    public func queueManagerWillEnqueueOperations(_ queueManager: BrokerProfileJobQueueManaging) {
+    public func queueManagerWillEnqueueOperations(_ queueManager: JobQueueManaging) {
         Task {
             do {
                 try await brokerUpdater.checkForUpdates()

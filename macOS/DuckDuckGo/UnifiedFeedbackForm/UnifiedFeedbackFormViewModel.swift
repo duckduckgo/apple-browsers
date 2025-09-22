@@ -202,10 +202,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         }
     }
 
-    var isSubscriptionRebrandingEnabled: Bool {
-        featureFlagger.isFeatureOn(.subscriptionRebranding)
-    }
-
     @MainActor
     func process(action: ViewAction) async {
         switch action {

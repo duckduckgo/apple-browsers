@@ -109,6 +109,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.openTranslationSourceLink
         case .getPageContext:
             return handler.getPageContext
+        case .reportMetric:
+            return handler.reportMetric
         case .togglePageContextTelemetry:
             return handler.togglePageContextTelemetry
         default:

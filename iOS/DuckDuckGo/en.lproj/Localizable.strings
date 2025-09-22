@@ -2002,9 +2002,6 @@ https://duckduckgo.com/mac";
 /* Finish editing bookmarks button */
 "navigation.title.done" = "Done";
 
-/* Test entry for E2E translation testing */
-"test.translation.entry" = "Welcome";
-
 /* Edit button */
 "navigation.title.edit" = "Edit";
 

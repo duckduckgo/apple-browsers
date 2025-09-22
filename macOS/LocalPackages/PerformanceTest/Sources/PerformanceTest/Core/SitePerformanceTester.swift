@@ -9,11 +9,8 @@ import Foundation
 import WebKit
 import os.log
 
-/// Manages site performance testing with cache clearing and multiple iterations
 @MainActor
 public class SitePerformanceTester: NSObject {
-
-    // MARK: - Properties
 
     private let webView: WKWebView
     private let logger = Logger(subsystem: "com.duckduckgo.macos.browser.performancetest", category: "SitePerformanceTester")
@@ -24,16 +21,11 @@ public class SitePerformanceTester: NSObject {
     /// Cancellation check
     public var isCancelled: () -> Bool = { false }
 
-    // MARK: - Initialization
-
     public init(webView: WKWebView) {
         self.webView = webView
         super.init()
     }
 
-    // MARK: - Public Methods
-
-    /// Run performance test with multiple iterations
     public func runPerformanceTest(
         url: URL,
         iterations: Int = 10,
@@ -103,8 +95,6 @@ public class SitePerformanceTester: NSObject {
             cancelled: false
         )
     }
-
-    // MARK: - Private Methods
 
     private func clearCacheForURL(_ url: URL) async {
         let dataStore = WKWebsiteDataStore.default()
@@ -271,8 +261,6 @@ public class SitePerformanceTester: NSObject {
     // DetailedMetrics struct removed - using DetailedPerformanceMetrics from Models
 }
 
-// MARK: - Navigation Delegate
-
 private class NavigationDelegate: NSObject, WKNavigationDelegate {
     private var startTime: Date?
     var loadTime: TimeInterval?
@@ -303,8 +291,6 @@ private class NavigationDelegate: NSObject, WKNavigationDelegate {
         isComplete = true
     }
 }
-
-// MARK: - Collected Metrics Structure
 
 public struct CollectedMetrics {
     var loadComplete: [TimeInterval] = []
@@ -339,8 +325,6 @@ public struct CollectedMetrics {
         tti.append(metrics.timeToInteractive ?? 0)
     }
 }
-
-// MARK: - Results Model
 
 public struct PerformanceTestResults {
     public let url: URL

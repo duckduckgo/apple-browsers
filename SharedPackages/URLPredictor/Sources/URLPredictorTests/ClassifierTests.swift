@@ -44,6 +44,7 @@ struct ClassifierTests {
         #expect(urlWithInternationalPath.absoluteString == "https://example.com/%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80/%E6%B5%8B%E8%AF%95")
     }
 
+    // swiftlint:disable:next identifier_name
     static let makeURL_from_addressBarString_args: [(String, Classifier.Decision, Int)] = [
         ("regular-domain.com/path/to/directory/", .navigate(url: URL(string: "http://regular-domain.com/path/to/directory/")!), #line),
         ("regular-domain.com", .navigate(url: URL(string: "http://regular-domain.com/")!), #line),
@@ -93,6 +94,7 @@ struct ClassifierTests {
         #expect(decision == expectation, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
 
+    // swiftlint:disable:next identifier_name
     static let windows_tests_args: [(String, Classifier.Decision, Int)] = [
         ("apple.com/mac/", .navigate(url: URL(string: "http://apple.com/mac/")!), #line),
         ("duckduckgo.com", .navigate(url: URL(string: "http://duckduckgo.com/")!), #line),
@@ -126,6 +128,7 @@ struct ClassifierTests {
         #expect(decision == expectation, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
 
+    // swiftlint:disable:next identifier_name
     static let whenOneSlashIsMissingAfterHypertextScheme_ThenItShouldBeAdded_args: [(String, Classifier.Decision, Int)] = [
         ("http:/duckduckgo.com", .navigate(url: URL(string: "http://duckduckgo.com/")!), #line),
         ("http://duckduckgo.com", .navigate(url: URL(string: "http://duckduckgo.com/")!), #line),

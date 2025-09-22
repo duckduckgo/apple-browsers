@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import BrowserServicesKitTestsUtils
 @testable import DuckDuckGo
 
 final class SwitchBarSubmissionMetricsTests: XCTestCase {

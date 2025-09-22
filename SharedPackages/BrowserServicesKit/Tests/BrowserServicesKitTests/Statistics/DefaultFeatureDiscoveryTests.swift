@@ -1,6 +1,5 @@
 //
-//  FeatureDiscoveryTests.swift
-//  DuckDuckGo
+//  DefaultFeatureDiscoveryTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,8 +16,7 @@
 //  limitations under the License.
 //
 import XCTest
-@testable import DuckDuckGo
-@testable import Core
+@testable import BrowserServicesKit
 import PersistenceTestingUtils
 
 final class DefaultFeatureDiscoveryTests: XCTestCase {
@@ -29,7 +27,6 @@ final class DefaultFeatureDiscoveryTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockStorage = MockKeyValueStore()
-        featureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: mockStorage)
     }
 
     override func tearDown() {

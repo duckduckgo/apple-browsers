@@ -29,6 +29,7 @@ class MockFireButtonPreferencesPersistor: FireButtonPreferencesPersistor {
     var warnBeforeClearingEnabled: Bool = false
     var loginDetectionEnabled: Bool = false
     var shouldOpenFireWindowByDefault: Bool = false
+    var autoClearAIChatHistoryEnabled: Bool = false
 }
 
 fileprivate extension DataClearingPreferences {

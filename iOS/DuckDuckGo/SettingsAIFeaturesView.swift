@@ -149,6 +149,7 @@ struct SettingsAIFeaturesView: View {
         }.applySettingsListModifiers(title: UserText.settingsAiFeatures,
                                      displayMode: .inline,
                                      viewModel: viewModel)
+        .navigationBarBackButtonHidden(viewModel.openedFromSERPSettingsButton)
         .navigationBarItems(trailing: viewModel.openedFromSERPSettingsButton ?
             AnyView(Button(UserText.navigationTitleDone) {
                 viewModel.onRequestDismissSettings?()

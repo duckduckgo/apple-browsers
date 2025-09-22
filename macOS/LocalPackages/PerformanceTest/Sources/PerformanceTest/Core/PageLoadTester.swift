@@ -30,13 +30,6 @@ public class PageLoadTester: NSObject {
         static let loggerCategory = "PageLoadTester"
         static let unknownURLString = "unknown"
 
-        // Metrics Keys
-        static let errorKey = "error"
-        static let loadCompleteKey = "loadComplete"
-        static let firstContentfulPaintKey = "firstContentfulPaint"
-        static let largestContentfulPaintKey = "largestContentfulPaint"
-        static let timeToFirstByteKey = "timeToFirstByte"
-
         // Error Messages
         static let javascriptMetricsError = "JavaScript metrics collection error: "
         static let failedToCollectMetrics = "Failed to collect performance metrics: "
@@ -138,46 +131,71 @@ public class PageLoadTester: NSObject {
     }
 
     private func collectPerformanceMetrics() async throws -> PerformanceMetrics? {
-        // Try to find the bundle containing our resources
-        let bundleName = "DuckDuckGo_PerformanceTest"
-        let candidates = [
-            // Bundle for Swift Package Manager resources
-            Bundle.main.bundleURL.appendingPathComponent("\(bundleName).bundle"),
-            // Bundle for the module itself
-            Bundle(for: type(of: self)).bundleURL.appendingPathComponent("Resources"),
-            // Direct resource in main bundle
-            Bundle.main.bundleURL
-        ]
+        // Use inline JavaScript instead of loading from file to avoid bundle issues
+        let scriptContent = """
+            (function() {
+                try {
+                    // Wait for page to be fully loaded
+                    if (document.readyState !== 'complete') {
+                        return { error: 'Page not fully loaded' };
+                    }
 
-        var scriptContent: String?
-        for candidate in candidates {
-            let url = candidate.appendingPathComponent("performanceMetrics.js")
-            if let content = try? String(contentsOf: url) {
-                scriptContent = content
-                break
-            }
-        }
+                    // Get navigation timing data
+                    const perfData = performance.getEntriesByType('navigation')[0];
+                    if (!perfData) {
+                        return { error: 'No navigation performance data available' };
+                    }
 
-        guard let scriptContent = scriptContent else {
-            logger.error("Failed to load performance metrics JavaScript from bundle")
-            return nil
-        }
+                    // Get paint timing data
+                    const paintEntries = performance.getEntriesByType('paint');
+                    let firstContentfulPaint = null;
+
+                    for (const entry of paintEntries) {
+                        if (entry.name === 'first-contentful-paint') {
+                            firstContentfulPaint = entry.startTime;
+                        }
+                    }
+
+                    // Get largest contentful paint if available
+                    let largestContentfulPaint = null;
+                    if (window.PerformanceObserver && PerformanceObserver.supportedEntryTypes &&
+                        PerformanceObserver.supportedEntryTypes.includes('largest-contentful-paint')) {
+                        const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
+                        if (lcpEntries.length > 0) {
+                            largestContentfulPaint = lcpEntries[lcpEntries.length - 1].startTime;
+                        }
+                    }
+
+                    // Calculate metrics
+                    const metrics = {
+                        loadComplete: perfData.loadEventEnd - perfData.fetchStart,
+                        firstContentfulPaint: firstContentfulPaint,
+                        largestContentfulPaint: largestContentfulPaint,
+                        timeToFirstByte: perfData.responseStart - perfData.fetchStart
+                    };
+
+                    return metrics;
+                } catch (e) {
+                    return { error: 'JavaScript execution error: ' + e.message };
+                }
+            })();
+            """
 
         do {
             let result = try await webView.evaluateJavaScript(scriptContent)
             guard let metrics = result as? [String: Any] else { return nil }
 
             // Check for errors from JavaScript
-            if let error = metrics[Constants.errorKey] as? String {
+            if let error = metrics["error"] as? String {
                 logger.error("\(Constants.javascriptMetricsError)\(error)")
                 return nil
             }
 
             // Convert milliseconds to seconds for time metrics
-            let loadComplete = (metrics[Constants.loadCompleteKey] as? Double ?? 0) / 1000.0
-            let fcp = metrics[Constants.firstContentfulPaintKey] as? Double
-            let lcp = metrics[Constants.largestContentfulPaintKey] as? Double
-            let ttfb = metrics[Constants.timeToFirstByteKey] as? Double
+            let loadComplete = (metrics["loadComplete"] as? Double ?? 0) / 1000.0
+            let fcp = (metrics["firstContentfulPaint"] as? Double).map { $0 / 1000.0 }
+            let lcp = (metrics["largestContentfulPaint"] as? Double).map { $0 / 1000.0 }
+            let ttfb = (metrics["timeToFirstByte"] as? Double).map { $0 / 1000.0 }
 
             return PerformanceMetrics(
                 loadTime: loadComplete,

@@ -1782,11 +1782,11 @@ public struct UserText {
     
     public static let aiChatSettingsBrowserShortcutsSectionTitle = NSLocalizedString("duckai.settings.browserShortcuts.section.title", value: "Browser shortcuts", comment: "Title for section that groups shortcuts related to browser")
     
-    public static let aiChatSettingsAllowFollowUpQuestionsSectionTitle = NSLocalizedString("duckai.settings.allowFollowUpQuestions.section.title", value: "Search results shortcuts", comment: "Title for section that groups settings related to search results")
+    public static let aiChatSettingsAllowFollowUpQuestionsSectionTitle = NSLocalizedString("duckai.settings.allowFollowUpQuestions.section.title", value: "Search shortcuts", comment: "Title for section that groups settings related to search results")
     
-    public static let aiChatSettingsAllowFollowUpQuestionsToggle = NSLocalizedString("duckai.settings.allowFollowUpQuestions.toggle", value: "Ask Follow-up Questions", comment: "Toggle text to enable/disable Duck.ai to ask follow-up questions")
+    public static let aiChatSettingsAllowFollowUpQuestionsToggle = NSLocalizedString("duckai.settings.allowFollowUpQuestions.toggle", value: "Ask Follow-Up Questions", comment: "Toggle text to enable/disable Duck.ai to ask follow-up questions")
     
-    public static let aiChatSettingsAllowFollowUpQuestionsDescription = NSLocalizedString("duckai.settings.allowFollowUpQuestions.section.description", value: "Turning this setting off will hide Duck.ai buttons and links on DuckDuckGo Search", comment: "Description text explaining what the 'Ask Follow-up Questions' toggle does")
+    public static let aiChatSettingsAllowFollowUpQuestionsDescription = NSLocalizedString("duckai.settings.allowFollowUpQuestions.section.description", value: "Show Duck.ai buttons and links in DuckDuckGo search results.", comment: "Description text explaining what the 'Ask Follow-up Questions' toggle does")
 
     public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask privately", comment: "Placeholder text for the duck.ai input field")
 

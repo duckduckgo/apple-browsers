@@ -30,7 +30,6 @@ public class PageLoadTester: NSObject {
     // MARK: - Constants
 
     private enum Constants {
-        static let defaultTimeout: TimeInterval = 30.0
         static let loggerSubsystem = "com.duckduckgo.macos.browser.performancetest"
         static let loggerCategory = "PageLoadTester"
         static let unknownURLString = "unknown"
@@ -280,7 +279,7 @@ extension PageLoadTester: WKNavigationDelegate {
 
         switch nsError.code {
         case NSURLErrorTimedOut:
-            testError = .timeout(duration: Constants.defaultTimeout)
+            testError = .timeout(duration: defaultPageLoadTimeout)
         case NSURLErrorCannotFindHost, NSURLErrorCannotConnectToHost:
             testError = .networkError(message: error.localizedDescription)
         case NSURLErrorCancelled:

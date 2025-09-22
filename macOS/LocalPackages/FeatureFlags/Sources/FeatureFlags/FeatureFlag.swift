@@ -213,6 +213,9 @@ public enum FeatureFlag: String, CaseIterable {
     case fireDialog
     /// Toggle for showing the "Manage individual sites" link in Fire dialog
     case fireDialogIndividualSitesLink
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211185922947392?focus=true
+    case clearAIChatHistory
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -230,7 +233,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .refactorOfSyncPreferences,
                 .subscriptionPurchaseWidePixelMeasurement,
                 .subscriptionRestoreWidePixelMeasurement,
-                .authV2WideEventEnabled:
+                .authV2WideEventEnabled,
+                .clearAIChatHistory:
             true
         default:
             false
@@ -307,7 +311,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .unifiedURLPredictorMetrics,
                 .authV2WideEventEnabled,
                 .webKitPerformanceReporting,
-                .fireDialog:
+                .fireDialog,
+                .clearAIChatHistory:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -466,6 +471,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webKitPerformanceReporting))
         case .subscriptionRestoreWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
+        case .clearAIChatHistory:
+            return .internalOnly()
         }
     }
 }

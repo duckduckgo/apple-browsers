@@ -75,7 +75,7 @@ public enum Classifier {
         )
     }
 
-    public enum Decision: Equatable, Sendable {
+    public enum Decision: Equatable, Sendable, Decodable {
         case navigate(url: URL)
         case search(query: String)
 
@@ -96,11 +96,39 @@ public enum Classifier {
                 return query
             }
         }
+
+        // MARK: - Decodable
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            if let navigation = try container.decodeIfPresent(Navigation.self, forKey: .navigate) {
+                self = .navigate(url: navigation.url)
+            } else if let search = try container.decodeIfPresent(Search.self, forKey: .search) {
+                self = .search(query: search.query)
+            } else {
+                throw DecodingError.dataCorruptedError(forKey: CodingKeys.navigate, in: container, debugDescription: "Couldn't decode Navigate nor Search from Decision")
+            }
+        }
+
+        // MARK: - Internal
+
+        enum CodingKeys: String, CodingKey {
+            case navigate = "Navigate"
+            case search = "Search"
+        }
+
+        struct Navigation: Equatable, Sendable, Decodable {
+            public let url: URL
+        }
+
+        struct Search: Equatable, Sendable, Decodable {
+            public let query: String
+        }
     }
 
     public enum Error: Swift.Error {
         case policyEncodingFailed
-        case nativeReturnedNull
+        case resultNil
         case resultNotUTF8
         case resultDecodingFailed(underlying: Swift.Error)
     }
@@ -120,7 +148,7 @@ public enum Classifier {
         let jsonString: String = try input.withCString { inputPtr in
             try policyJSON.withCString { policyPtr in
                 guard let raw = ddg_up_classify_json(inputPtr, policyPtr) else {
-                    throw Error.nativeReturnedNull
+                    throw Error.resultNil
                 }
                 defer { ddg_up_free_string(raw) }
                 guard let s = String(validatingUTF8: raw) else {
@@ -130,30 +158,5 @@ public enum Classifier {
             }
         }
         return jsonString
-    }
-
-}
-
-/// Codable for the externally tagged enum:
-///
-/// `{"Navigate":{"url":"..."}}`  or  `{"Search":{"query":"..."}}`
-extension Classifier.Decision: Decodable {
-    public init(from decoder: Decoder) throws {
-        // Try decoding as { "Navigate": { "url": "..." } } or { "Search": { "query": "..." } }
-        let container = try decoder.singleValueContainer()
-        let raw = try container.decode([String: [String: String]].self)
-
-        if let nav = raw["Navigate"], let urlStr = nav["url"], let url = URL(string: urlStr) {
-            self = .navigate(url: url)
-            return
-        }
-        if let sea = raw["Search"], let query = sea["query"] {
-            self = .search(query: query)
-            return
-        }
-        throw DecodingError.dataCorruptedError(
-            in: container,
-            debugDescription: "Unexpected decision contents: \(raw)"
-        )
     }
 }

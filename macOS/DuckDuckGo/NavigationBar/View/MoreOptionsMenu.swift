@@ -597,13 +597,13 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         if !subscriptionManager.isUserAuthenticated {
 
-            var privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: featureFlagger.isFeatureOn(.subscriptionRebranding)))
+            var privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
                 .withImage(moreOptionsMenuIconsProvider.privacyProIcon)
 
             // Check if user is eligible for Free Trial
             if featureFlagger.isFeatureOn(.privacyProFreeTrial) && subscriptionManager.isUserEligibleForFreeTrial() {
                 privacyProItem = NSMenuItem.createMenuItemWithBadge(
-                    title: UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: featureFlagger.isFeatureOn(.subscriptionRebranding)),
+                    title: UserText.subscriptionOptionsMenuItem,
                     badgeText: UserText.subscriptionOptionsMenuItemFreeTrialBadge,
                     action: #selector(openSubscriptionPurchasePage(_:)),
                     target: self,
@@ -620,7 +620,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                 addItem(privacyProItem)
             }
         } else {
-            let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: featureFlagger.isFeatureOn(.subscriptionRebranding)))
+            let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
                 .withImage(moreOptionsMenuIconsProvider.privacyProIcon)
 
             privacyProItem.submenu = SubscriptionSubMenu(targeting: self,
@@ -863,7 +863,7 @@ final class FeedbackSubMenu: NSMenu {
         if authenticationStateProvider.isUserAuthenticated {
             addItem(.separator())
 
-            let sendPProFeedbackItem = NSMenuItem(title: UserText.sendSubscriptionFeedback(isSubscriptionRebrandingOn: featureFlagger.isFeatureOn(.subscriptionRebranding)),
+            let sendPProFeedbackItem = NSMenuItem(title: UserText.sendSubscriptionFeedback,
                                                   action: #selector(sendPrivacyProFeedback(_:)),
                                                   keyEquivalent: "")
                 .targetting(self)

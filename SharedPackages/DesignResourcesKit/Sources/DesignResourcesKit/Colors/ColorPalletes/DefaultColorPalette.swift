@@ -32,6 +32,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x000000 = Color(0x000000)
     private static let xFFFFFF = Color(0xFFFFFF)
     private static let xFAFAFA = Color(0xFAFAFA)
+    private static let x3969EF = Color(0x3969EF)
 
     // New dark mode colors
     private static let x080808 = Color(0x080808)
@@ -39,6 +40,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x373737 = Color(0x373737)
     private static let x474747 = Color(0x474747)
     private static let x1C1C1C = Color(0x1C1C1C)
+    private static let x7295F6 = Color(0x7295F6)
 
     // URL bar
     private static let urlBar = DynamicColor(lightColor: .white, darkColor: x474747)
@@ -99,6 +101,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Brand
     private static let accent = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    private static let accentGlowSecondary = DynamicColor(lightColor: x3969EF.opacity(0.12), darkColor: x7295F6.opacity(0.12))
 
     // System
     private static let border = DynamicColor(lightColor: .gray30, darkColor: .gray40)
@@ -177,6 +180,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .surfaceCanvas: return surfaceCanvas
 
         case .accent: return accent
+        case .accentGlowSecondary: return accentGlowSecondary
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
         case .border: return border

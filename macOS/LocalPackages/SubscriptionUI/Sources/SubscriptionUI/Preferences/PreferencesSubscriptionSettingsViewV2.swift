@@ -29,12 +29,10 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
     @State private var showingInternalSubscriptionAlert = false
 
     @State private var manageSubscriptionSheet: ManageSubscriptionSheet?
-    private var isSubscriptionRebrandingOn: () -> Bool
     private var isPaidAIChatOn: () -> Bool
 
-    public init(model: PreferencesSubscriptionSettingsModelV2, isSubscriptionRebrandingOn: @escaping (() -> Bool), isPaidAIChatOn: @escaping (() -> Bool)) {
+    public init(model: PreferencesSubscriptionSettingsModelV2, isPaidAIChatOn: @escaping (() -> Bool)) {
         self.model = model
-        self.isSubscriptionRebrandingOn = isSubscriptionRebrandingOn
         self.isPaidAIChatOn = isPaidAIChatOn
     }
 
@@ -133,9 +131,9 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
     @ViewBuilder
     private var activateSection: some View {
         PreferencePaneSection {
-            TextMenuItemHeader(UserText.activateSectionTitle(isRebrandingOn: isSubscriptionRebrandingOn()), bottomPadding: 0)
+            TextMenuItemHeader(UserText.activateSectionTitle, bottomPadding: 0)
 
-            Text(UserText.activateSectionCaption(hasEmail: model.hasEmail, purchasePlatform: model.currentPurchasePlatform, isRebrandingOn: isSubscriptionRebrandingOn()))
+            Text(UserText.activateSectionCaption(hasEmail: model.hasEmail, purchasePlatform: model.currentPurchasePlatform))
                 .foregroundColor(Color(.textSecondary))
 
             TextButton(UserText.activateSectionLearnMoreButton) {
@@ -230,7 +228,7 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
     private var removeConfirmationDialog: some View {
         SubscriptionDialog(imageName: "Privacy-Pro-128",
                            title: UserText.removeSubscriptionDialogTitle,
-                           description: UserText.removeSubscriptionDialogDescription(isRebrandingOn: isSubscriptionRebrandingOn()),
+                           description: UserText.removeSubscriptionDialogDescription,
                            buttons: {
             Button(UserText.removeSubscriptionDialogCancel) { showingRemoveConfirmationDialog = false }
             Button(action: {

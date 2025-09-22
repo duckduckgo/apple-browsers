@@ -76,6 +76,14 @@ final class FireViewController: NSViewController {
 
     deinit {
         fireAnimationViewLoadingTask?.cancel()
+#if DEBUG
+        MainActor.assumeMainThread {
+            if isLazyVar(named: "fireDialogViewController", initializedIn: self) {
+                fireDialogViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            }
+            fireAnimationView?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+#endif
     }
 
     override func viewDidLoad() {

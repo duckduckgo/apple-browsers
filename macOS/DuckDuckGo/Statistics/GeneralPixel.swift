@@ -324,8 +324,6 @@ enum GeneralPixel: PixelKitEvent {
 
     // MARK: - Debug
 
-    case assertionFailure(message: String, file: StaticString, line: UInt)
-
     case keyValueFileStoreInitError
     case dbContainerInitializationError(error: Error)
     case dbInitializationError(error: Error)
@@ -521,6 +519,16 @@ enum GeneralPixel: PixelKitEvent {
 
     // Enhanced statistics
     case usageSegments
+
+    // UserScript
+    /**
+     * Event Trigger: BrowserServicesKit.UserScript.loadJS fails to load the contents of a JS file.
+     *
+     * Anomaly Investigation:
+     * - App crashes after this pixel is fired.
+     * - Useful for investigating the underlying error causing the failure.
+     */
+    case userScriptLoadJSFailed(jsFile: String, error: Error)
 
     var name: String {
         switch self {
@@ -927,9 +935,6 @@ enum GeneralPixel: PixelKitEvent {
         case .developerToolsOpened: return "m_mac_dev_tools_opened"
 
             // DEBUG
-        case .assertionFailure:
-            return "assertion_failure"
-
         case .keyValueFileStoreInitError:
             return "key_value_file_store_init_error"
         case .dbContainerInitializationError:
@@ -1231,6 +1236,9 @@ enum GeneralPixel: PixelKitEvent {
             // Enhanced statistics
         case .usageSegments: return "retention_segments"
 
+            // UserScript
+        case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
+
         }
     }
 
@@ -1403,6 +1411,12 @@ enum GeneralPixel: PixelKitEvent {
 
         case .updaterAborted(let reason):
             return ["reason": reason]
+
+        case let .userScriptLoadJSFailed(jsFile, error):
+            var params = error.pixelParameters
+            params[PixelKit.Parameters.jsFile] = jsFile
+            return params
+
         default: return nil
         }
     }

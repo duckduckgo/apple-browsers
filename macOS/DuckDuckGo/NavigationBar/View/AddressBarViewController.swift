@@ -115,6 +115,14 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
+    var isInPopUpWindow: Bool {
+        guard let navigationBarViewController = parent as? NavigationBarViewController else {
+            assert(view.window == nil, "AddressBarViewController is not a child of NavigationBarViewController")
+            return false
+        }
+        return navigationBarViewController.isInPopUpWindow
+    }
+
     private var accentColor: NSColor {
         return isBurner ? NSColor.burnerAccent : NSColor.controlAccentColor
     }
@@ -216,18 +224,20 @@ final class AddressBarViewController: NSViewController {
         activeBackgroundViewWithSuggestions.backgroundColor = visualStyle.colorsProvider.suggestionsBackgroundColor
     }
 
+    deinit {
+#if DEBUG
+        addressBarButtonsViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     override func viewWillAppear() {
-        guard let window = view.window else {
-            assert([.unitTests, .integrationTests].contains(AppVersion.runType),
-                   "AddressBarViewController.viewWillAppear: view.window is nil")
-            return
-        }
-        if window.isPopUpWindow == true {
+        if isInPopUpWindow {
             addressBarTextField.isHidden = true
             inactiveBackgroundView.isHidden = true
             activeBackgroundViewWithSuggestions.isHidden = true
             activeOuterBorderView.isHidden = true
             activeBackgroundView.isHidden = true
+
             shadowView.isHidden = true
             inactiveAddressBarShadowView.removeFromSuperview()
         } else {
@@ -260,7 +270,8 @@ final class AddressBarViewController: NSViewController {
 
     private func subscribeToAppearanceChanges() {
         guard let window = view.window else {
-            assertionFailure("AddressBarViewController.subscribeToAppearanceChanges: view.window is nil")
+            assert([.unitTests, .integrationTests].contains(AppVersion.runType),
+                   "AddressBarViewController.subscribeToAppearanceChanges: view.window is nil")
             return
         }
         NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification, object: window)
@@ -447,7 +458,8 @@ final class AddressBarViewController: NSViewController {
 
     private func subscribeToFirstResponder() {
         guard let window = view.window else {
-            assertionFailure("AddressBarViewController.subscribeToFirstResponder: view.window is nil")
+            assert([.unitTests, .integrationTests].contains(AppVersion.runType),
+                   "AddressBarViewController.subscribeToFirstResponder: view.window is nil")
             return
         }
         NotificationCenter.default.publisher(for: MainWindow.firstResponderDidChangeNotification, object: window)
@@ -550,7 +562,7 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func updateShadowViewPresence(_ isFirstResponder: Bool) {
-        guard isFirstResponder, view.window?.isPopUpWindow == false else {
+        guard isFirstResponder, !isInPopUpWindow else {
             shadowView.removeFromSuperview()
             return
         }

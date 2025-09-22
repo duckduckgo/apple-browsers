@@ -23,6 +23,7 @@ struct AppDependencies {
     let services: AppServices
     let launchTaskManager: LaunchTaskManager
     let launchSourceManager: LaunchSourceManaging
+    let aiChatSettings: AIChatSettings
 
 }
 
@@ -47,5 +48,6 @@ struct AppServices {
     let systemSettingsPiPTutorialService: SystemSettingsPiPTutorialService
     let inactivityNotificationSchedulerService: InactivityNotificationSchedulerService
     let widePixelService: WidePixelService
+    let aiChatService: AIChatService
 
 }

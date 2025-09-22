@@ -1,8 +1,7 @@
 {
   "name": "Veripages",
   "url": "veripages.com",
-  "version": "0.5.0",
-  "parent": "verecor.com",
+  "version": "0.6.0",
   "addedDatetime": 1691989200000,
   "optOutUrl": "https://veripages.com/inner/control/privacy",
   "steps": [
@@ -35,26 +34,29 @@
               "beforeText": ", "
             },
             "alternativeNamesList": {
-              "selector": "(.//dl)[1]//dd",
+              "selector": ".//dt[contains(text(), 'Also known as')]/following-sibling::dd",
               "findElements": true
             },
             "age": {
               "selector": ".search-item-title",
               "afterText": ", "
             },
+            "addressCityState": {
+              "selector": ".search-item-loc",
+              "findElements": true
+            },
             "addressCityStateList": {
-              "selector": ".//div[contains(@class, 'search-item')]//dt[text() = 'Has lived in']/following-sibling::dd/ul/li",
+              "selector": ".//dt[contains(text(), 'Has lived in')]/following-sibling::dd/a",
               "findElements": true
             },
             "relativesList": {
-              "selector": ".//li[@itemprop='relatedTo']",
-              "findElements": true,
-              "beforeText": ","
+              "selector": ".//dt[contains(text(), 'Related to')]/following-sibling::dd",
+              "findElements": true
             },
             "profileUrl": {
-              "selector": ".//div[@class='search-item-title']//a",
+              "selector": ".search-item-title-link",
               "identifierType": "path",
-              "identifier": "https://veripages.com/profile/${firstName}-${lastName}/${id}"
+              "identifier": "https://veriforia.com/view/${id}"
             }
           }
         }
@@ -62,8 +64,92 @@
     },
     {
       "stepType": "optOut",
-      "optOutType": "parentSiteOptOut",
-      "actions": []
+      "optOutType": "formOptOut",
+      "actions": [
+        {
+          "actionType": "navigate",
+          "url": "https://veripages.com/inner/control-privacy",
+          "id": "764853d2-0735-4348-a6c6-039388b25094"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//p[contains(text(), 'opt out')]",
+              "parent": ".container"
+            }
+          ],
+          "id": "837814e9-34b7-41d8-bd58-c670c1e07ccf"
+        },
+        {
+          "actionType": "fillForm",
+          "selector": ".ahm",
+          "elements": [
+            {
+              "type": "fullName",
+              "selector": "#name"
+            },
+            {
+              "type": "email",
+              "selector": "#email"
+            },
+            {
+              "type": "profileUrl",
+              "selector": "#url"
+            }
+          ],
+          "id": "08b36264-34fe-469e-bc28-e7ccf46ffcaa"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//input[@name='cf-turnstile-response' and @value and @value != '']",
+              "parent": "//form[@id='privacynew']"
+            }
+          ],
+          "id": "a403483f-8ee9-4a6a-92fb-b5bf8fc97df9"
+        },
+        {
+          "actionType": "click",
+          "elements": [
+            {
+              "type": "button",
+              "selector": ".//button[@type='submit']"
+            }
+          ],
+          "id": "e897bc2f-8460-4b7c-9ef4-979eda057f03"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "text",
+              "selector": "body",
+              "expect": "Your removal request has been received"
+            }
+          ],
+          "id": "bd99ed6f-bdfd-4c76-ba88-a3d068e8973d"
+        },
+        {
+          "actionType": "emailConfirmation",
+          "pollingTime": 30,
+          "id": "98b82794-4c5c-40fa-b3c5-7b429e701daf"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "text",
+              "selector": "body",
+              "expect": "Your information control request has been confirmed."
+            }
+          ],
+          "id": "4623cdb6-ad7e-474a-9bdd-2c759ac6e735"
+        }
+      ]
     }
   ],
   "schedulingConfig": {

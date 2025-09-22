@@ -114,6 +114,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1210012162616039?focus=true
     case aiChatTextSummarization
 
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210820085909882?focus=true
+    case aiChatTextTranslation
+
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210921598044116?focus=true
     case aiChatPageContext
 
@@ -143,8 +146,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1210625630564796?focus=true
     case newTabPageOmnibar
-
-    case subscriptionRebranding
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1210733970843912?focus=true
     case newFeedbackForm
@@ -179,6 +180,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1203822806345703/task/1211227407476981?focus=true
     case syncFeatureLevel3
+
+    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1208865987567163?focus=true
+    case themes
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -241,9 +245,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatGlobalSwitch,
 				.aiChatSidebar,
                 .aiChatTextSummarization,
+                .aiChatTextTranslation,
                 .aiChatPageContext,
                 .shortHistoryMenu,
-                .subscriptionRebranding,
                 .importChromeShortcuts,
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
@@ -259,8 +263,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .refactorOfSyncPreferences,
                 .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,
+                .dbpRemoteBrokerDelivery,
                 .subscriptionPurchaseWidePixelMeasurement,
-                .syncFeatureLevel3:
+                .syncFeatureLevel3,
+                .themes:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -269,7 +275,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .dbpRemoteBrokerDelivery,
                 .scheduledSetDefaultBrowserAndAddToDockPrompts:
             return false
         }
@@ -353,6 +358,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatTextSummarization:
             return .remoteReleasable(.subfeature(AIChatSubfeature.textSummarization))
+        case .aiChatTextTranslation:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.textTranslation))
         case .aiChatPageContext:
             return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
         case .osSupportForceUnsupportedMessage:
@@ -360,7 +367,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .osSupportForceWillSoonDropSupportMessage:
             return .disabled
         case .willSoonDropBigSurSupport:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.willSoonDropBigSurSupport))
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))
         case .importChromeShortcuts:
@@ -373,8 +380,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.omnibar))
-        case .subscriptionRebranding:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         case .newFeedbackForm:
             return .remoteReleasable(.feature(.feedbackForm))
         case .vpnToolbarUpsell:
@@ -397,6 +402,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.newSyncEntryPoints))
         case .syncFeatureLevel3:
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
+        case .themes:
+            return .internalOnly()
         }
     }
 }

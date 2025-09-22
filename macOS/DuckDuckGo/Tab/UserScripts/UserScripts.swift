@@ -69,7 +69,8 @@ final class UserScripts: UserScriptsProvider {
         let aiChatHandler = AIChatUserScriptHandler(
             storage: DefaultAIChatPreferencesStorage(),
             windowControllersManager: sourceProvider.windowControllersManager,
-            pixelFiring: PixelKit.shared
+            pixelFiring: PixelKit.shared,
+            statisticsLoader: StatisticsLoader.shared
         )
         aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
         subscriptionUserScript = SubscriptionUserScript(
@@ -88,10 +89,18 @@ final class UserScripts: UserScriptsProvider {
         let prefs = ContentScopeProperties(gpcEnabled: isGPCEnabled,
                                            sessionKey: sessionKey,
                                            messageSecret: messageSecret,
+                                           isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser,
                                            featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
                                            currentCohorts: currentCohorts)
-        contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
-        contentScopeUserScriptIsolated = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, isIsolated: true, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+        do {
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, allowedNonisolatedFeatures: [PageContextUserScript.featureName], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, isIsolated: true, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to initialize ContentScopeUserScript: \(error.localizedDescription)")
+        }
 
         autofillScript = WebsiteAutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider!)
 
@@ -153,7 +162,7 @@ final class UserScripts: UserScriptsProvider {
         }
 
         if let pageContextUserScript {
-            contentScopeUserScriptIsolated.registerSubfeature(delegate: pageContextUserScript)
+            contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
         }
 
         if let subscriptionUserScript {

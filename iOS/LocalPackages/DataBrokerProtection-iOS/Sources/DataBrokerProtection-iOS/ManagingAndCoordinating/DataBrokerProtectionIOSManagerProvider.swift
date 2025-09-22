@@ -114,16 +114,25 @@ public class DataBrokerProtectionIOSManagerProvider {
         let mismatchCalculator = DefaultMismatchCalculator(database: database,
                                                            pixelHandler: sharedPixelsHandler)
 
-        let queueManager =  BrokerProfileJobQueueManager(jobQueue: operationQueue,
-                                                         jobProvider: jobProvider,
-                                                         mismatchCalculator: mismatchCalculator,
-                                                         pixelHandler: sharedPixelsHandler)
+        let queueManager = JobQueueManager(jobQueue: operationQueue,
+                                           jobProvider: jobProvider,
+                                           emailConfirmationJobProvider: EmailConfirmationJobProvider(),
+                                           mismatchCalculator: mismatchCalculator,
+                                           pixelHandler: sharedPixelsHandler)
 
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: sharedPixelsHandler,
                                                                                    settings: dbpSettings)
         let emailService = EmailService(authenticationManager: authenticationManager,
                                         settings: dbpSettings,
                                         servicePixel: backendServicePixels)
+        let emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
+                                            settings: dbpSettings,
+                                            servicePixel: backendServicePixels)
+        let emailConfirmationDataService = EmailConfirmationDataService(database: database,
+                                                                        emailServiceV0: emailService,
+                                                                        emailServiceV1: emailServiceV1,
+                                                                        featureFlagger: featureFlagger,
+                                                                        pixelHandler: sharedPixelsHandler)
         let captchaService = CaptchaService(authenticationManager: authenticationManager, settings: dbpSettings, servicePixel: backendServicePixels)
         let executionConfig = BrokerJobExecutionConfig()
         let jobDependencies = BrokerProfileJobDependencies(
@@ -135,7 +144,7 @@ public class DataBrokerProtectionIOSManagerProvider {
             pixelHandler: sharedPixelsHandler,
             eventsHandler: eventsHandler,
             dataBrokerProtectionSettings: dbpSettings,
-            emailService: emailService,
+            emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: featureFlagger,
             vpnBypassService: nil,
@@ -145,6 +154,7 @@ public class DataBrokerProtectionIOSManagerProvider {
         return DataBrokerProtectionIOSManager(
             queueManager: queueManager,
             jobDependencies: jobDependencies,
+            emailConfirmationDataService: emailConfirmationDataService,
             authenticationManager: authenticationManager,
             sharedPixelsHandler: sharedPixelsHandler,
             iOSPixelsHandler: iOSPixelsHandler,

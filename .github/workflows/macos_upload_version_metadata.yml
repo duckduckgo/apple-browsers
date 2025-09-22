@@ -1,0 +1,75 @@
+name: macOS - Upload Version Metadata
+
+on:
+  workflow_dispatch:
+    inputs:
+      is_critical:
+        description: 'Mark this release as critical (for hotfixes)'
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      is_critical:
+        description: 'Mark this release as critical'
+        type: boolean
+        default: false
+    secrets:
+      AWS_ACCESS_KEY_ID_RELEASE_S3:
+        required: true
+      AWS_SECRET_ACCESS_KEY_RELEASE_S3:
+        required: true
+      APPLE_API_KEY_ID:
+        required: true
+      APPLE_API_KEY_ISSUER:
+        required: true
+      APPLE_API_KEY_BASE64:
+        required: true
+
+defaults:
+  run:
+    working-directory: macOS
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  upload-metadata:
+    name: Upload Release Metadata to CDN
+    runs-on: macos-15
+    timeout-minutes: 5
+
+    env:
+      S3_PATH: s3://${{ vars.RELEASE_BUCKET_NAME }}/${{ vars.RELEASE_BUCKET_PREFIX }}/
+      CDN_PATH: ${{ vars.DMG_URL_ROOT }}
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Ruby and Bundler
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: macOS
+          cache-key-prefix: macos-ruby
+
+      - name: Upload App Store version metadata to CDN
+        env:
+          # Apple API keys
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          # AWS S3 configuration
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
+          AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+          # S3 and CDN paths
+          RELEASE_BUCKET_NAME: ${{ vars.RELEASE_BUCKET_NAME }}
+          RELEASE_BUCKET_PREFIX: ${{ vars.RELEASE_BUCKET_PREFIX }}
+          CDN_PATH: ${{ vars.DMG_URL_ROOT }}
+        run: |
+          echo "Uploading App Store version metadata using fastlane..."
+          bundle exec fastlane upload_appstore_version_metadata \
+            is_critical:${{ inputs.is_critical || false }}

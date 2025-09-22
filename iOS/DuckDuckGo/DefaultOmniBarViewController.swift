@@ -198,7 +198,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
         editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
         editingStateViewController.automaticallySelectsTextOnAppear = shouldAutoSelectText
-        
+
         switchBarHandler.clearButtonTappedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in

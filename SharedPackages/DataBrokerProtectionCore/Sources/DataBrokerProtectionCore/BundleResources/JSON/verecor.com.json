@@ -1,7 +1,7 @@
 {
   "name": "Verecor",
   "url": "verecor.com",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "addedDatetime": 1677132000000,
   "optOutUrl": "https://verecor.com/ng/control/privacy",
   "steps": [
@@ -67,6 +67,17 @@
           "url": "https://verecor.com/ng/control/privacy"
         },
         {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//h1[contains(text(), 'Opt Out')]",
+              "parent": ".container"
+            }
+          ],
+          "id": "8a175360-6fc6-4a2d-b3df-d203cd4cacff"
+        },
+        {
           "actionType": "fillForm",
           "id": "5b8d015c-0f73-46c7-8faa-f5350000e312",
           "selector": ".ahm",
@@ -86,14 +97,15 @@
           ]
         },
         {
-          "actionType": "getCaptchaInfo",
-          "id": "fc5d8371-2449-4d82-8f33-f85daf92a2ca",
-          "selector": ".g-recaptcha"
-        },
-        {
-          "actionType": "solveCaptcha",
-          "id": "c1d7f88e-ae27-4ffc-a358-5ddb49eb602f",
-          "selector": ".g-recaptcha"
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//input[@name='cf_captcha_token' and @value and @value != '']",
+              "parent": "//form[@id='form-contact']"
+            }
+          ],
+          "id": "abcb6d7c-300b-4674-96b7-f980a6bde9ed"
         },
         {
           "actionType": "click",

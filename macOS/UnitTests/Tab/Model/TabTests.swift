@@ -76,6 +76,22 @@ final class TabTests: XCTestCase {
         XCTAssertEqual(tab.content, .url(.duckDuckGo, source: .link))
     }
 
+    @MainActor func testSpecialTabsCanBePinned() {
+        let tabs: [Tab.Content] = [
+            .subscription(.aboutDuckDuckGo),
+            .identityTheftRestoration(.aboutDuckDuckGo),
+            .dataBrokerProtection,
+            .history,
+            .settings(pane: .general),
+            .newtab,
+            .bookmarks
+        ]
+
+        for tab in tabs {
+            XCTAssertTrue(tab.canBePinned)
+        }
+    }
+
     // MARK: - Equality
 
     @MainActor func testWhenTabsAreIdenticalThenTheyAreEqual() {

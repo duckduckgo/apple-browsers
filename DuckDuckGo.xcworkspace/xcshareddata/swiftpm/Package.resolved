@@ -32,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "252082be808ece0ab91d60a27e18bfcf10dcec1b",
-        "version" : "18.3.0"
+        "revision" : "123b64c7c78f492a1a3e6f60a8f891557a23a2eb",
+        "version" : "18.3.1"
       }
     },
     {
@@ -149,8 +149,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-asn1.git",
       "state" : {
-        "revision" : "ae33e5941bb88d88538d0a6b19ca0b01e6c76dcf",
-        "version" : "1.3.1"
+        "revision" : "f70225981241859eb4aa1a18a75531d26637c8cc",
+        "version" : "1.4.0"
       }
     },
     {

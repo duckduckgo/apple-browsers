@@ -154,7 +154,7 @@ struct SettingsAIFeaturesView: View {
 
 private extension SettingsAIFeaturesView {
     var footerAttributedString: AttributedString {
-        var base = AttributedString(UserText.settingsAiExperimentalPickerFooterDescription + " ")
+        var base = AttributedString(UserText.settingsAIPickerFooterDescription + " ")
         var link = AttributedString(UserText.subscriptionFeedback)
         link.foregroundColor = Color(designSystemColor: .accent)
         link.link = FooterAction.shareFeedback.url

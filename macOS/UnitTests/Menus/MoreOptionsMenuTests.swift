@@ -171,7 +171,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         setupMoreOptionsMenu()
 
         XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
-        XCTAssertFalse(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false)))
+        XCTAssertFalse(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem))
     }
 
     @MainActor
@@ -182,7 +182,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         setupMoreOptionsMenu()
 
         XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
-        XCTAssertTrue(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false)))
+        XCTAssertTrue(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem))
     }
 
     @MainActor
@@ -193,7 +193,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         setupMoreOptionsMenu()
 
         XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
-        XCTAssertTrue(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false)))
+        XCTAssertTrue(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem))
     }
 
     @MainActor
@@ -225,7 +225,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(moreOptionsMenu.items[13].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[14].title, UserText.emailOptionsMenuItem)
         XCTAssertTrue(moreOptionsMenu.items[15].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[16].title, UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false))
+        XCTAssertEqual(moreOptionsMenu.items[16].title, UserText.subscriptionOptionsMenuItem)
         XCTAssertFalse(moreOptionsMenu.items[16].hasSubmenu)
         XCTAssertTrue(moreOptionsMenu.items[17].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[18].title, UserText.fireproofSite)
@@ -236,7 +236,13 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(moreOptionsMenu.items[23].title, UserText.printMenuItem)
         XCTAssertTrue(moreOptionsMenu.items[24].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[25].title, UserText.mainMenuHelp)
+
+#if APPSTORE
+        XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""))
+        XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.settings)
+#else
         XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.settings)
+#endif
     }
 
     @MainActor
@@ -268,7 +274,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(moreOptionsMenu.items[13].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[14].title, UserText.emailOptionsMenuItem)
         XCTAssertTrue(moreOptionsMenu.items[15].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[16].title, UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false))
+        XCTAssertEqual(moreOptionsMenu.items[16].title, UserText.subscriptionOptionsMenuItem)
         XCTAssertFalse(moreOptionsMenu.items[16].hasSubmenu)
         XCTAssertEqual(moreOptionsMenu.items[17].title, UserText.freemiumDBPOptionsMenuItem)
         XCTAssertTrue(moreOptionsMenu.items[18].isSeparatorItem)
@@ -280,7 +286,13 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(moreOptionsMenu.items[24].title, UserText.printMenuItem)
         XCTAssertTrue(moreOptionsMenu.items[25].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.mainMenuHelp)
+
+#if APPSTORE
+        XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""))
+        XCTAssertEqual(moreOptionsMenu.items[28].title, UserText.settings)
+#else
         XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.settings)
+#endif
     }
 
     @MainActor
@@ -335,7 +347,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         setupMoreOptionsMenu()
 
         // When
-        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false) })
+        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
         XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
 
         await waitForSubscriptionSubmenuBuilding()
@@ -354,7 +366,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         setupMoreOptionsMenu()
 
         // When
-        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false) })
+        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
         XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
 
         await waitForSubscriptionSubmenuBuilding()
@@ -374,7 +386,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         setupMoreOptionsMenu()
 
         // When
-        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false) })
+        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
         XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
 
         await waitForSubscriptionSubmenuBuilding()
@@ -393,7 +405,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
         moreOptionsMenu.actionDelegate = capturingActionDelegate
-        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false) })
+        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
         let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
 
         await waitForSubscriptionSubmenuBuilding()
@@ -717,7 +729,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
         XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
         XCTAssertEqual(sut.item(at: 2)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendSubscriptionFeedback(isSubscriptionRebrandingOn: false))
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendSubscriptionFeedback)
     }
 
     func testCorrectItemsAreShown_whenInternalUserAndNotPrivacyProUser() {
@@ -745,7 +757,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
         XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
         XCTAssertEqual(sut.item(at: 2)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendSubscriptionFeedback(isSubscriptionRebrandingOn: false))
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendSubscriptionFeedback)
         XCTAssertEqual(sut.item(at: 4)?.isSeparatorItem, true)
         XCTAssertEqual(sut.item(at: 5)?.title, "Copy Version")
     }
@@ -765,7 +777,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(sut.item(at: 2)?.title, "Report a Browser Problem")
         XCTAssertEqual(sut.item(at: 3)?.title, "Request a New Feature")
         XCTAssertEqual(sut.item(at: 4)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 5)?.title, UserText.sendSubscriptionFeedback(isSubscriptionRebrandingOn: false))
+        XCTAssertEqual(sut.item(at: 5)?.title, UserText.sendSubscriptionFeedback)
         XCTAssertEqual(sut.item(at: 6)?.isSeparatorItem, true)
         XCTAssertEqual(sut.item(at: 7)?.title, "Copy Version")
     }

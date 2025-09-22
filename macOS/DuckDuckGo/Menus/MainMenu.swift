@@ -189,10 +189,8 @@ final class MainMenu: NSMenu {
                 .submenu(servicesMenu)
             NSMenuItem.separator()
 
-#if SPARKLE
             NSMenuItem(title: UserText.mainMenuAppCheckforUpdates, action: #selector(AppDelegate.checkForUpdates))
             NSMenuItem.separator()
-#endif
 
             NSMenuItem(title: UserText.mainMenuAppHideDuckDuckGo, action: #selector(NSApplication.hide), keyEquivalent: "h")
             NSMenuItem(title: UserText.mainMenuAppHideOthers, action: #selector(NSApplication.hideOtherApplications), keyEquivalent: [.option, .command, "h"])
@@ -694,6 +692,8 @@ final class MainMenu: NSMenu {
             }
             NSMenuItem(title: "History")
                 .submenu(HistoryDebugMenu(historyCoordinator: historyCoordinator, featureFlagger: featureFlagger))
+            NSMenuItem(title: "Test Network Quality", action: #selector(MainViewController.testNetworkQuality))
+                .withAccessibilityIdentifier("MainMenu.testNetworkQuality")
             NSMenuItem(title: "Content Scopes Experiment") {
                 NSMenuItem(title: "Show Active Experiments", action: #selector(AppDelegate.showContentScopeExperiments))
             }

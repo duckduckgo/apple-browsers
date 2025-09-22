@@ -189,7 +189,8 @@ struct Launching: LaunchingHandling {
                                defaultBrowserPromptService: defaultBrowserPromptService,
                                systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
                                inactivityNotificationSchedulerService: inactivityNotificationSchedulerService,
-                               widePixelService: widePixelService
+                               widePixelService: widePixelService,
+                               aiChatService: AIChatService(aiChatSettings: aiChatSettings)
         )
 
         // Register background tasks that run after app is ready
@@ -228,12 +229,6 @@ struct Launching: LaunchingHandling {
         mainCoordinator.start()
     }
 
-    private func logAppLaunchTime() {
-        let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
-        Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
-                   withAdditionalParameters: [PixelParameters.time: String(launchTime)])
-    }
-
     // MARK: -
 
     private var appDependencies: AppDependencies {
@@ -241,10 +236,22 @@ struct Launching: LaunchingHandling {
             mainCoordinator: mainCoordinator,
             services: services,
             launchTaskManager: launchTaskManager,
-            launchSourceManager: launchSourceManager
+            launchSourceManager: launchSourceManager,
+            aiChatSettings: aiChatSettings
         )
     }
     
+}
+
+// MARK: - Logging
+
+private extension Launching {
+    
+    func logAppLaunchTime() {
+        let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
+        Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
+                   withAdditionalParameters: [PixelParameters.time: String(launchTime)])
+    }
 }
 
 extension Launching {

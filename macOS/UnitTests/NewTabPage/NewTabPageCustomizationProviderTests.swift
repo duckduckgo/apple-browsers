@@ -124,7 +124,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
                 theme: .light,
                 userColor: .init(hex: "#123abc"),
                 userImages: userBackgroundImagesManager.availableImages.map(NewTabPageDataModel.UserImage.init),
-                defaultStyles: .init(lightBackgroundColor: "#F2F2F2", darkBackgroundColor: "#262626")
+                defaultStyles: .init(lightBackgroundColor: "#FAFAFA", darkBackgroundColor: "#1C1C1C")
             )
         )
     }

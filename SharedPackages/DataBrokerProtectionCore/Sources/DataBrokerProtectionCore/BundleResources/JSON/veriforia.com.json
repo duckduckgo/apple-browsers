@@ -1,7 +1,7 @@
 {
   "name": "Veriforia",
   "url": "veriforia.com",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "addedDatetime": 1677736800000,
   "optOutUrl": "https://veriforia.com/ng/control/privacy",
   "steps": [
@@ -67,6 +67,17 @@
           "id": "943c387c-9cb2-42d6-afd5-a48cf4c2cf3d"
         },
         {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//h1[contains(text(), 'Opt Out')]",
+              "parent": ".container"
+            }
+          ],
+          "id": "68bb9203-fa24-4026-8f5d-0521bf4f8967"
+        },
+        {
           "actionType": "fillForm",
           "selector": ".ahm",
           "elements": [
@@ -86,14 +97,15 @@
           "id": "cf78bb16-b608-4a50-975b-844dad3db1db"
         },
         {
-          "actionType": "getCaptchaInfo",
-          "selector": ".g-recaptcha",
-          "id": "4c0b8064-1e2b-4598-92a9-e832e73726db"
-        },
-        {
-          "actionType": "solveCaptcha",
-          "selector": ".g-recaptcha",
-          "id": "c53bc12e-0cf6-4628-b99f-3219cb0f0c1a"
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//input[@name='cf_captcha_token' and @value and @value != '']",
+              "parent": "//form[@id='form-contact']"
+            }
+          ],
+          "id": "dc7fc97c-ba56-4f0f-843a-13a6db6378b6"
         },
         {
           "actionType": "click",

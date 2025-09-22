@@ -906,6 +906,16 @@ extension Pixel {
         case syncPromoConfirmed
         case syncPromoDismissed
 
+        case syncRecoveryPromptDisplayed
+        case syncRecoveryPromptSyncWithAnotherDeviceTapped
+        case syncRecoveryPromptShowAlternativesTapped
+        case syncRecoveryPromptDismissed
+
+        case syncRecoveryAlternativeDisplayed
+        case syncRecoveryAlternativeScanRecoveryCodeTapped
+        case syncRecoveryAlternativeBackupThisDeviceTapped
+        case syncRecoveryAlternativeDismissed
+
         case syncSetupBarcodeScreenShown
         case syncSetupBarcodeScannerSuccess
         case syncSetupBarcodeScannerFailed
@@ -954,6 +964,15 @@ extension Pixel {
 
         case siteNotWorkingShown
         case siteNotWorkingWebsiteIsBroken
+
+        /**
+         * Event Trigger: BrowserServicesKit.UserScript.loadJS fails to load the contents of a JS file.
+         *
+         * Anomaly Investigation:
+         * - App crashes after this pixel is fired.
+         * - Useful for investigating the underlying error causing the failure.
+         */
+        case userScriptLoadJSFailed
 
         // MARK: - Default Browser
 
@@ -1292,8 +1311,14 @@ extension Pixel {
         case aiChatMetricOpenHistory
         case aiChatMetricOpenMostRecentHistoryChat
         case aiChatMetricSentPromptOngoingChat
+        case aiChatMetricDuckAIKeyboardReturnPressed
         case aiChatInternalSwitchBarDisplayed
         case aiChatExperimentalAddressBarIsEnabledDaily
+
+        // MARK: New Address Bar Picker
+        case aiChatNewAddressBarPickerDisplayed
+        case aiChatNewAddressBarPickerConfirmed
+        case aiChatNewAddressBarPickerNotNow
         
         // MARK: Experimental Omnibar Metrics
         case aiChatExperimentalOmnibarShown
@@ -1314,6 +1339,7 @@ extension Pixel {
         case aiChatExperimentalOmnibarFloatingSubmitPressed
         case aiChatExperimentalOmnibarFloatingReturnPressed
         case aiChatExperimentalOmnibarSessionSummary
+        case aiChatExperimentalOmnibarDailyRetention
         case aiChatLegacyOmnibarShown
         case aiChatLegacyOmnibarQuerySubmitted
         case aiChatLegacyOmnibarAichatButtonPressed
@@ -1380,6 +1406,10 @@ extension Pixel {
         
         // MARK: - Push Notifications
         case inactiveUserProvisionalPushNotificationTapped
+        case userNotificationAuthorizationStatusDaily
+        
+        // MARK: - App Intent
+        case appIntentPerformed
     }
 
 }
@@ -2237,6 +2267,16 @@ extension Pixel.Event {
         case .syncPromoConfirmed: return "sync_promotion_confirmed"
         case .syncPromoDismissed: return "sync_promotion_dismissed"
 
+        case .syncRecoveryPromptDisplayed: return "sync_recovery_prompt_displayed"
+        case .syncRecoveryPromptSyncWithAnotherDeviceTapped: return "sync_recovery_prompt_sync_with_another_device_tapped"
+        case .syncRecoveryPromptShowAlternativesTapped: return "sync_recovery_prompt_show_alternatives_tapped"
+        case .syncRecoveryPromptDismissed: return "sync_recovery_prompt_dismissed"
+
+        case .syncRecoveryAlternativeDisplayed: return "sync_recovery_alternative_displayed"
+        case .syncRecoveryAlternativeScanRecoveryCodeTapped: return "sync_recovery_alternative_scan_recovery_code_tapped"
+        case .syncRecoveryAlternativeBackupThisDeviceTapped: return "sync_recovery_alternative_backup_this_device_tapped"
+        case .syncRecoveryAlternativeDismissed: return "sync_recovery_alternative_dismissed"
+
         case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
         case .syncSetupBarcodeScannerSuccess: return "sync_setup_barcode_scanner_success"
         case .syncSetupBarcodeScannerFailed: return "sync_setup_barcode_scanner_failed"
@@ -2555,8 +2595,14 @@ extension Pixel.Event {
         case .aiChatMetricOpenHistory: return "m_aichat_open_history"
         case .aiChatMetricOpenMostRecentHistoryChat: return "m_aichat_open_most_recent_history_chat"
         case .aiChatMetricSentPromptOngoingChat: return "m_aichat_sent_prompt_ongoing_chat"
+        case .aiChatMetricDuckAIKeyboardReturnPressed: return "m_aichat_duckai_keyboard_return_pressed"
         case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
         case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
+
+        // MARK: New Address Bar Picker
+        case .aiChatNewAddressBarPickerDisplayed: return "m_aichat_new_address_bar_picker_displayed"
+        case .aiChatNewAddressBarPickerConfirmed: return "m_aichat_new_address_bar_picker_confirmed"
+        case .aiChatNewAddressBarPickerNotNow: return "m_aichat_new_address_bar_picker_not_now"
         
         // MARK: Experimental Omnibar Metrics
         case .aiChatExperimentalOmnibarShown: return "m_aichat_experimental_omnibar_shown"
@@ -2577,6 +2623,7 @@ extension Pixel.Event {
         case .aiChatExperimentalOmnibarFloatingSubmitPressed: return "m_aichat_experimental_omnibar_floating_submit_pressed"
         case .aiChatExperimentalOmnibarFloatingReturnPressed: return "m_aichat_experimental_omnibar_floating_return_pressed"
         case .aiChatExperimentalOmnibarSessionSummary: return "m_aichat_experimental_omnibar_session_summary"
+        case .aiChatExperimentalOmnibarDailyRetention: return "m_aichat_experimental_omnibar_daily_retention"
         case .aiChatLegacyOmnibarShown: return "m_aichat_legacy_omnibar_shown"
         case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
         case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"
@@ -2689,9 +2736,16 @@ extension Pixel.Event {
         case .systemSettingsPiPTutorialFailedToLoadVideo: return "m_picture-in-picture-tutorial_failed-to-load-video"
 
         case .appDidTerminateWithUnhandledError: return "m_app-did-terminate-with-unhandled-error"
-            
+
+        // MARK: UserScript
+        case .userScriptLoadJSFailed: return "m_debug_user_script_load_js_failed"
+
         // MARK: Push Notification
         case .inactiveUserProvisionalPushNotificationTapped: return "m_push-notification_local-provisional_inactive-user-tap"
+        case .userNotificationAuthorizationStatusDaily: return "m_push-notification_user-notification-authorization-status"
+            
+        // MARK: App Intent
+        case .appIntentPerformed: return "m_app-intent_intent-performed"
         }
     }
 }

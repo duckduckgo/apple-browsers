@@ -115,6 +115,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Displays a restore session prompt after the app closes unexpectedly
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208994157946492?focus=true
     case restoreSessionPrompt
+
+    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
+    case willSoonDropBigSurSupport
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -222,6 +225,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Show AI Chat address bar choice screen
     case showAIChatAddressBarChoiceScreen
+
+    /// Adds context menu action for translating text selected on a website.
+    case textTranslation
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -282,6 +288,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncSetupBarcodeIsUrlBased
     case refactorOfSyncPreferences
     case newSyncEntryPoints
+    case newDeviceSyncPrompt
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {
@@ -304,7 +311,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProOnboardingPromotion
     case privacyProFreeTrial
     case paidAIChat
-    case subscriptionRebranding
     case vpnToolbarUpsell
     case supportsAlternateStripePaymentFlow
     case subscriptionPurchaseWidePixelMeasurement

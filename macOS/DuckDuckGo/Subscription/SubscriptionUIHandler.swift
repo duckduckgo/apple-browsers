@@ -66,8 +66,7 @@ final class SubscriptionUIHandler: SubscriptionUIHandling {
         })
 
         let newSubscriptionAccessViewController = SubscriptionAccessViewController(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
-                                                                                   actionHandlers: actionHandlers,
-                                                                                   isRebrandingOn: { Application.appDelegate.featureFlagger.isFeatureOn(.subscriptionRebranding) })
+                                                                                   actionHandlers: actionHandlers)
         currentMainViewController?.presentAsSheet(newSubscriptionAccessViewController)
     }
 

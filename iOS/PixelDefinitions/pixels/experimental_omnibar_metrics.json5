@@ -5,7 +5,7 @@
         description: 'Fires when the experimental omnibar with Duck.ai toggle is displayed to the user',
         owners: ['aataraxiaa'],
         triggers: ['other'],
-        suffixes: ['daily', 'platform', 'form_factor'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion', 'pixelSource'],
     },
     m_aichat_experimental_omnibar_prompt_submitted: {
@@ -88,7 +88,7 @@
         description: 'Fires when the legacy omnibar is displayed to the user (baseline comparison for experimental omnibar)',
         owners: ['aataraxiaa'],
         triggers: ['other'],
-        suffixes: ['daily', 'platform', 'form_factor'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion', 'pixelSource'],
     },
     m_aichat_legacy_omnibar_query_submitted: {
@@ -241,5 +241,27 @@
                 type: 'integer',
             },
         ],
+    },
+    m_aichat_experimental_omnibar_daily_retention: {
+        description: 'Fires for users who had the experimental omnibar enabled during their last app session (≥24 hours ago) and returned today - measures feature retention vs churn',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'still_enabled',
+                description: 'Whether user still has feature enabled on return: true=retention, false=churn',
+                type: 'string',
+            },
+        ],
+    },
+    m_aichat_duckai_keyboard_return_pressed: {
+        description: 'Fires when user presses return/enter key in full Duck AI interface',
+        owners: ['aataraxiaa'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion', 'pixelSource'],
     },
 }

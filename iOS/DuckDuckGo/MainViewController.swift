@@ -135,6 +135,7 @@ class MainViewController: UIViewController {
     private var feedbackCancellable: AnyCancellable?
     private var aiChatCancellables = Set<AnyCancellable>()
     private var refreshButtonCancellables = Set<AnyCancellable>()
+    private var syncRecoveryPromptService: SyncRecoveryPromptService?
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     let privacyProDataReporter: PrivacyProDataReporting
@@ -457,7 +458,9 @@ class MainViewController: UIViewController {
             showFireButtonPulse()
         }
 
-        presentNewAddressBarPickerIfNeeded()
+        if !presentSyncRecoveryPromptIfNeeded() {
+            presentNewAddressBarPickerIfNeeded()
+        }
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -634,6 +637,25 @@ class MainViewController: UIViewController {
         self.present(pickerViewController, animated: true)
     }
 
+    @discardableResult
+    func presentSyncRecoveryPromptIfNeeded() -> Bool {
+        syncRecoveryPromptService = SyncRecoveryPromptService(
+            featureFlagger: featureFlagger,
+            syncService: syncService,
+            keyValueStore: keyValueStore,
+            isOnboardingComplete: tutorialSettings.hasSeenOnboarding
+        )
+
+        guard let syncRecoveryPromptService = syncRecoveryPromptService else { return false }
+
+        return syncRecoveryPromptService.tryPresentSyncRecoveryPrompt(
+            from: self,
+            onSyncFlowSelected: { [weak self] source in
+                self?.segueToSettingsSync(with: source)
+            }
+        )
+    }
+
     func presentNetworkProtectionStatusSettingsModal() {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
@@ -680,6 +702,14 @@ class MainViewController: UIViewController {
     private func keyboardDidHide() {
         keyboardShowing = false
         didSendGestureDismissPixel = false
+
+        if #available(iOS 26, *) {
+            // Make sure the UI adjusts properly.
+            // Fix for a weird behavior on iOS 26, firing `keyboardWillChangeFrame` event
+            // with the same frame when keyboard is shown and hidden rapidly.
+            // https://app.asana.com/1/137249556945/project/414709148257752/task/1211140989378405
+            adjustUI(withKeyboardFrame: .zero)
+        }
     }
 
     private func setUpToolbarButtonsActions() {
@@ -690,6 +720,9 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarBookmarksButton.setCustomItemAction(on: self, action: #selector(onToolbarBookmarksPressed))
         viewCoordinator.menuToolbarButton.setCustomItemAction(on: self, action: #selector(onMenuPressed))
         viewCoordinator.toolbarFireBarButtonItem.setCustomItemAction(on: self, action: #selector(onFirePressed))
+
+        viewCoordinator.menuToolbarButton.customView?
+            .addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(onMenuLongPressed)))
     }
 
     private func registerForPageRefreshPatterns() {
@@ -829,6 +862,10 @@ class MainViewController: UIViewController {
         let animationCurveRaw = animationCurveRawNSN?.uintValue ?? UIView.AnimationOptions.curveEaseInOut.rawValue
         let animationCurve = UIView.AnimationOptions(rawValue: animationCurveRaw)
 
+        adjustUI(withKeyboardFrame: keyboardFrame, in: duration, animationCurve: animationCurve)
+    }
+
+    private func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
         var keyboardHeight = keyboardFrame.size.height
 
         let omniBarHeight = viewCoordinator.omniBar.barView.expectedHeight
@@ -879,7 +916,6 @@ class MainViewController: UIViewController {
                 self.currentTab?.borderView.layoutIfNeeded()
             }
         }
-
     }
 
     private func initTabButton() {
@@ -1029,6 +1065,8 @@ class MainViewController: UIViewController {
         tabModel.viewed = true
 
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
+        let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+
         let controller = NewTabPageViewController(tab: tabModel,
                                                   interactionModel: favoritesViewModel,
                                                   homePageMessagesConfiguration: homePageConfiguration,
@@ -1038,7 +1076,9 @@ class MainViewController: UIViewController {
                                                   faviconLoader: faviconLoader,
                                                   messageNavigationDelegate: self,
                                                   appSettings: appSettings,
-                                                  internalUserCommands: internalUserCommands)
+                                                  internalUserCommands: internalUserCommands,
+                                                  narrowLayoutInLandscape: narrowLayoutInLandscape
+        )
 
         controller.delegate = self
         controller.chromeDelegate = self
@@ -1787,6 +1827,7 @@ class MainViewController: UIViewController {
     private func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {
         // https://app.asana.com/0/0/1201408131067987
         UIMenuController.shared.hideMenu()
+        dismissOmniBar()
         viewCoordinator.omniBar.removeTextSelection()
         
         Pixel.fire(pixel: .openVoiceSearch)
@@ -2595,7 +2636,7 @@ extension MainViewController: OmniBarDelegate {
         segueToSettings()
     }
 
-    func onSettingsLongPressed() {
+    @objc func onMenuLongPressed() {
         if featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild {
             segueToDebugSettings()
         } else {
@@ -2722,14 +2763,6 @@ extension MainViewController: OmniBarDelegate {
     private func fireAIChatUsagePixelAndSetFeatureUsed(_ pixel: Pixel.Event) {
         Pixel.fire(pixel: pixel, withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
         featureDiscovery.setWasUsedBefore(.aiChat)
-    }
-
-    func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
-        if featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild {
-            segueToDebugSettings()
-        } else {
-            onAccessoryPressed(accessoryType: accessoryType)
-        }
     }
 
     func onVoiceSearchPressed() {
@@ -3170,10 +3203,19 @@ extension MainViewController: TabSwitcherDelegate {
         }
     }
 
+    private func deferNTPAppearance() {
+        newTabPageViewController?.view.alpha = 0.0
+        UIView.animate(withDuration: 0.2, delay: 0.2, options: [.curveEaseInOut, .beginFromCurrentState]) {
+            self.newTabPageViewController?.view.alpha = 1.0
+        }
+    }
+
     func tabSwitcherDidRequestNewTab(tabSwitcher: TabSwitcherViewController) {
         newTab()
         if newTabPageViewController?.isShowingLogo == true, !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             animateLogoAppearance()
+        } else if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            deferNTPAppearance()
         }
         themeColorManager.updateThemeColor()
     }
@@ -3716,6 +3758,10 @@ extension MainViewController: MainViewEditingStateTransitioning {
 
     private var isDaxLogoVisible: Bool {
         newTabPageViewController?.isShowingLogo == true
+    }
+
+    var newTabView: UIView? {
+        newTabPageViewController?.view
     }
 
     func hide(with barYOffset: CGFloat, contentYOffset: CGFloat) {

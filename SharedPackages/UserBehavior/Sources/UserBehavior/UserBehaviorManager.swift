@@ -103,7 +103,6 @@ public final class UserBehaviorManager {
     }
 
     public func process(trigger: Trigger) {
-
         guard isEnabled else { return }
 
         guard isLessThanSixMonths else {

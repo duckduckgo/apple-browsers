@@ -59,6 +59,7 @@ struct SettingsSubscriptionView: View {
                                                            subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
                                                            subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                           widePixel: AppDependencyProvider.shared.widePixel,
                                                            dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider)
     }
 
@@ -97,7 +98,7 @@ struct SettingsSubscriptionView: View {
             .disabled(true)
 
             // Get privacy pro
-            let getText = settingsViewModel.state.subscription.isEligibleForTrialOffer ? UserText.trySubscriptionButton(isSubscriptionRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled) : UserText.getSubscriptionButton(isSubscriptionRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)
+            let getText = settingsViewModel.state.subscription.isEligibleForTrialOffer ? UserText.trySubscriptionButton : UserText.getSubscriptionButton
             SettingsCustomCell(content: {
                 Text(getText)
                     .daxBodyRegular()
@@ -188,7 +189,7 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: settingsView) {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.settingsPProSubscriptionExpiredTitle(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled),
+                    subtitle: UserText.settingsPProSubscriptionExpiredTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
                     accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
@@ -203,7 +204,7 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: settingsView) {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.settingsPProSubscriptionExpiredTitle(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled),
+                    subtitle: UserText.settingsPProSubscriptionExpiredTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
                     accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
@@ -352,7 +353,7 @@ struct SettingsSubscriptionView: View {
                                       destination: ViewConstants.privacyPolicyURL)
                     .daxFootnoteRegular().accentColor(Color.init(designSystemColor: .accent))
 
-                Section(header: Text(UserText.settingsSubscriptionSection(isSubscriptionRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)),
+                Section(header: Text(UserText.settingsSubscriptionSection),
                         footer: !isSignedIn ? footerLink : nil
                 ) {
 

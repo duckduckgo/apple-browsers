@@ -477,7 +477,7 @@ struct UserText {
     // Misc
 
     static let aiChatShowOnNewTabPageBarToggle = NSLocalizedString("duckai.show-on-new-tab-page.toggle", value: "Show on New Tab Page", comment: "A checkbox to control AI Chat shortcut visibility on the New Tab Page")
-    static let aiChatShowInSearchBoxOnNewTabPageBarToggle = NSLocalizedString("duckai.show-in-search-box-on-new-tab-page.toggle", value: "Show in Search box on New Tab Page", comment: "A checkbox to control AI Chat shortcut visibility in a search box on the New Tab Page")
+    static let aiChatShowInSearchBoxOnNewTabPageBarToggle = NSLocalizedString("duckai.show-in-search-box-on-new-tab-page.toggle", value: "Show in search box on New Tab Page", comment: "A checkbox to control AI Chat shortcut visibility in a search box on the New Tab Page")
     static let aiChatShowInAddressBarToggle = NSLocalizedString("duckai.show-in-address-bar.toggle", value: "Show Duck.ai shortcut in the address bar", comment: "Show AI Chat in the address bar")
     static let aiChatShowInApplicationMenuToggle = NSLocalizedString("duckai.show-in-application-menu.toggle-setting", value: "Show Duck.ai shortcuts in menus", comment: "Show Duck.ai in application menus")
     static let aiChatOpenInSidebarToggle = NSLocalizedString("duckai.open-in-sidebar.toggle-setting", value: "Open Duck.ai in the sidebar", comment: "Settings option to open Duck.ai in the sidebar")
@@ -488,13 +488,14 @@ struct UserText {
     static let aiChatAddressBarTrustedIndicator = NSLocalizedString("aichat.address-bar.trusted-indicator", value: "Duck.ai", comment: "Label for the AI Chat displayed in the address bar")
 
     static let aiChatSummarize = NSLocalizedString("duckai.summarize.context-menu-action", value: "Summarize with Duck.ai", comment: "Context menu option that triggers Duck.ai-assisted summarization of selected text")
+    static let aiChatTranslate = NSLocalizedString("duckai.translate.context-menu-action", value: "Translate with Duck.ai", comment: "Context menu option that triggers Duck.ai-assisted translation of selected text")
 
     static let aiChatOpenNewTabButton = NSLocalizedString("aichat.address-bar.open-new-tab-button", value: "Open New Duck.ai Tab", comment: "Button to open Duck.ai in a new tab")
     static let aiChatToggleSidebarButton = NSLocalizedString("aichat.address-bar.toggle-sidebar-button", value: "Toggle Duck.ai Sidebar", comment: "Button to toggle Duck.ai sidebar")
     static let aiChatOpenSidebarButton = NSLocalizedString("aichat.address-bar.open-sidebar-button", value: "Open Duck.ai Sidebar", comment: "Button to open Duck.ai sidebar")
     static let aiChatCloseSidebarButton = NSLocalizedString("aichat.address-bar.close-sidebar-button", value: "Close Duck.ai Sidebar", comment: "Button to close Duck.ai sidebar")
     static let aiChatAddressBarHideButton = NSLocalizedString("aichat.address-bar.hide-button", value: "Hide Duck.ai Shortcut", comment: "Button to hide duck.ai shortcut in address bar")
-    static let aiChatOpenSettingsButton = NSLocalizedString("aichat.address-bar.open-settings-button", value: "Open Duck.ai Settings", comment: "Button to open Duck.ai settings")
+    static let aiChatOpenSettingsButton = NSLocalizedString("aichat.address-bar.open-settings-button", value: "Open AI Settings", comment: "Button to open AI settings")
     static let askAIChatButtonTitle = NSLocalizedString("aichat.address-bar.ask-button.title", value: "Ask Duck.ai", comment: "Title for button to ask Duck.ai")
 
     static let searchAssistSettings = NSLocalizedString("duckai.search-assist-settings", value: "Search Assist Settings", comment: "The section name in preferences for Search Assist Settings")
@@ -535,17 +536,6 @@ struct UserText {
     static let duckPlayerContingencyMessageTitle = NSLocalizedString("duck-player.contingency-title", value: "Duck Player Unavailable", comment: "Title for message explaining to the user that Duck Player is not available")
     static let duckPlayerContingencyMessageBody = NSLocalizedString("duck-player.video-contingency-message", value: "Duck Player's functionality has been affected by recent changes to YouTube. We’re working to fix these issues and appreciate your understanding.", comment: "Message explaining to the user that Duck Player is not available")
     static let duckPlayerContingencyMessageCTA = NSLocalizedString("duck-player.video-contingency-cta", value: "Learn More", comment: "Button for the message explaining to the user that Duck Player is not available so the user can learn more")
-
-    static let duckPlayerOnboardingChoiceModalTitleTop = NSLocalizedString("duck-player.onboarding-choice-modal-title-top", value: "Drowning in ads on YouTube?", comment: "Top title for a Duck Player onboarding modal screen")
-    static let duckPlayerOnboardingChoiceModalTitleBottom = NSLocalizedString("duck-player.onboarding-choice-modal-title-bottom", value: "Try Duck Player!", comment: "Bottom title for a Duck Player onboarding modal screen")
-
-    static let duckPlayerOnboardingChoiceModalMessage = NSLocalizedString("duck-player.onboarding-choice-modal-message-body", value: "Duck Player lets you watch YouTube without targeted ads in DuckDuckGo and what you watch won't influence your recommendations.", comment: "Message for a Duck Player onboarding modal screen")
-    static let duckPlayerOnboardingChoiceModalCTAConfirm = NSLocalizedString("duck-player.onboarding-choice-modal-CTA-confirm", value: "Turn on Duck Player", comment: "Confirm Button to enable Duck Player. -Duck Player- should not be translated")
-    static let duckPlayerOnboardingChoiceModalCTADeny = NSLocalizedString("duck-player.onboarding-choice-modal-CTA-deny", value: "Not Now", comment: "Deny Button to enable Duck Player")
-
-    static let duckPlayerOnboardingConfirmationModalTitle = NSLocalizedString("duck-player.onboarding-confirmation-modal-title", value: "All set!", comment: "Title for a Duck Player onboarding modal confirmation screen")
-    static let duckPlayerOnboardingConfirmationModalMessage = NSLocalizedString("duck-player.onboarding-confirmation-modal-message", value: "Pick a video to see Duck Player work its magic.", comment: "Message for a Duck Player onboarding modal confirmation screen")
-    static let duckPlayerOnboardingConfirmationModalCTAConfirm = NSLocalizedString("duck-player.onboarding-confirmation-modal-CTA-confirm", value: "Got it", comment: "Button to confirm on Duck Player onboarding modal confirmation screen")
 
     static let gpcCheckboxTitle = NSLocalizedString("gpc.checkbox.title", value: "Enable Global Privacy Control", comment: "GPC settings checkbox title")
     static let gpcExplanation = NSLocalizedString("gpc.explanation", value: "Tells participating websites not to sell or share your data.", comment: "GPC explanation in settings")
@@ -662,12 +652,7 @@ struct UserText {
     static let bookmarkImportedFromFolder = NSLocalizedString("bookmarks.imported.from.folder", value: "Imported from", comment: "Name of the folder the imported bookmarks are saved into")
 
     // MARK: Feedback
-    static func sendSubscriptionFeedback(isSubscriptionRebrandingOn: Bool) -> String {
-        if isSubscriptionRebrandingOn {
-            return NSLocalizedString("send.subscription.feedback", value: "Send Subscription Feedback", comment: "Menu with feedback commands")
-        }
-        return NSLocalizedString("send.ppro.feedback", value: "Send Privacy Pro Feedback", comment: "Menu with feedback commands")
-    }
+    static let sendSubscriptionFeedback = NSLocalizedString("send.subscription.feedback", value: "Send Subscription Feedback", comment: "Menu with feedback commands")
     static let reportBrokenSite = NSLocalizedString("report.broken.site", value: "Report Broken Site", comment: "Menu with feedback commands")
     static let reportBrowserProblem = NSLocalizedString("report.browser.problem", value: "Report a Browser Problem", comment: "Menu with feedback commands")
     static let requestNewFeature = NSLocalizedString("request.new.feature", value: "Request a New Feature", comment: "Menu with feedback commands")
@@ -893,12 +878,7 @@ struct UserText {
     static let credentialsLimitExceededAction = NSLocalizedString("prefrences.sync.credentials-limit-exceeded-action", value: "Manage passwords…", comment: "Button title for sync credentials limits exceeded warning to go to manage passwords")
 
     static let privacyProtections = NSLocalizedString("preferences.privacy-protections", value: "Privacy Protections", comment: "The section header in Preferences representing browser features related to privacy protection")
-    static func subscriptionSettingsHeader(isSubscriptionRebrandingOn: Bool) -> String {
-        if isSubscriptionRebrandingOn {
-            return NSLocalizedString("preferences.subscription.header", value: "DuckDuckGo Subscription", comment: "The section header in Preferences representing subscription features")
-        }
-        return "Privacy Pro"
-    }
+    static let subscriptionSettingsHeader = NSLocalizedString("preferences.subscription.header", value: "DuckDuckGo Subscription", comment: "The section header in Preferences representing subscription features")
     static let mainSettings = NSLocalizedString("preferences.main-settings", value: "Main Settings", comment: "Section header in Preferences for main settings")
     static let duckduckgoOnOtherPlatforms = NSLocalizedString("preferences.duckduckgo-on-other-platforms", value: "DuckDuckGo on Other Platforms", comment: "Button presented to users to navigate them to our product page which presents all other products for other platforms")
     static let defaultBrowser = NSLocalizedString("preferences.default-browser", value: "Default Browser", comment: "Title of the option to show the Default Browser Preferences")
@@ -1476,6 +1456,12 @@ struct UserText {
     static let newTabMenuItemShowContinuteSetUp = NSLocalizedString("newTab.menu.item.show.continue.setup", value: "Show Next Steps", comment: "Title of the menu item in the home page to show/hide continue setup section")
     static let newTabMenuItemShowRecentActivity = NSLocalizedString("newTab.menu.item.show.recent.activity", value: "Show Recent Activity", comment: "Title of the menu item in the home page to show/hide recent activity section")
 
+    static let newTabPageContextMenuSearch = NSLocalizedString("newtabpage.context.menu.search", value: "Search", comment: "Context menu item to manage Search section on the New Tab Page")
+    static let newTabPageContextMenuFavorites = NSLocalizedString("newtabpage.context.menu.favorites", value: "Favorites", comment: "Context menu item to manage Favorites section on the New Tab Page")
+    static let newTabPageContextMenuProtectionsReport = NSLocalizedString("newtabpage.context.menu.protections.report", value: "Protections Report", comment: "Context menu item to manage Protections Report section on the New Tab Page")
+    static let newTabPageContextMenuShowDuckAI = NSLocalizedString("newtabpage.context.menu.show.duckai", value: "Show Duck.ai in Search Box", comment: "Context menu item to manage Duck.ai on the New Tab Page")
+    static let newTabPageContextMenuOpenDuckAISettings = NSLocalizedString("newtabpage.context.menu.open.duckai.settings", value: "Open AI Settings", comment: "Context menu item to open AI Settings from the New Tab Page")
+
     // Favorites
     static let newTabFavoriteSectionTitle = NSLocalizedString("newTab.favorites.section.title", value: "Favorites", comment: "Title of the Favorites section in the home page")
     static let newTabOmnibarSectionTitle = NSLocalizedString("newTab.favorites.section.omnibar", value: "Search", comment: "Title of the Search section in the home page")
@@ -1730,12 +1716,7 @@ struct UserText {
 
     // Key: "subscription.menu.item"
     // Comment: "Title for Subscription item in the options menu"
-    static func subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: Bool) -> String {
-        if isSubscriptionRebrandingOn {
-            return NSLocalizedString("subscription.options.menu.item", value: "DuckDuckGo Subscription", comment: "Title for Subscription item in the options menu")
-        }
-        return "Privacy Pro"
-    }
+    static let subscriptionOptionsMenuItem = NSLocalizedString("subscription.options.menu.item", value: "DuckDuckGo Subscription", comment: "Title for Subscription item in the options menu")
     static let subscriptionOptionsMenuItemFreeTrialBadge = NSLocalizedString("subscription.free-trial.settings.menu.item", value: "TRY FOR FREE", comment: "Title for Subscription Free Trial promotion item in the options menu")
 
     static let identityTheftRestorationOptionsMenuItem = "Identity Theft Restoration"
@@ -1744,20 +1725,8 @@ struct UserText {
 
     // Key: "preferences.subscription"
     // Comment: "Show subscription preferences"
-    static let subscriptionDeprecated = "Privacy Pro"
-    static func subscriptionName(isSubscriptionRebrandingOn: Bool) -> String {
-        if isSubscriptionRebrandingOn {
-            return NSLocalizedString("subscription.general.name", value: "DuckDuckGo Subscription", comment: "Title for Subscription item in the options menu")
-        }
-        return "Privacy Pro"
-    }
-    static func purchaseSubscriptionPaneTitle(isSubscriptionRebrandingOn: Bool) -> String {
-        if isSubscriptionRebrandingOn {
-            return NSLocalizedString("subscription.side.pane.subscription.inactive", value: "Subscribe to DuckDuckGo", comment: "Settings Side Pane item for the DuckDuckGo Subscription")
-        }
-        return "Privacy Pro"
-    }
-
+    static let subscriptionName = NSLocalizedString("subscription.general.name", value: "DuckDuckGo Subscription", comment: "Title for Subscription item in the options menu")
+    static let purchaseSubscriptionPaneTitle = NSLocalizedString("subscription.side.pane.subscription.inactive", value: "Subscribe to DuckDuckGo", comment: "Settings Side Pane item for the DuckDuckGo Subscription")
     static let purchasingSubscriptionTitle = NSLocalizedString("subscription.progress.view.purchasing.subscription", value: "Purchase in progress...", comment: "Progress view title when starting the purchase")
     static let restoringSubscriptionTitle = NSLocalizedString("subscription.progress.view.restoring.subscription", value: "Restoring subscription...", comment: "Progress view title when restoring past subscription purchase")
     static let completingPurchaseTitle = NSLocalizedString("subscription.progress.view.completing.purchase", value: "Completing purchase...", comment: "Progress view title when completing the purchase")

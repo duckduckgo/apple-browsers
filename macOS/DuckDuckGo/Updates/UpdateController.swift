@@ -198,7 +198,7 @@ extension UpdateController {
         }
 
         lastUpdateNotificationShownDate = Date()
-        
+
         // Track update notification shown
         PixelKit.fire(UpdateFlowPixels.updateNotificationShown)
     }

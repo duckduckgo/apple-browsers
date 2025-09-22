@@ -46,7 +46,7 @@ enum UpdateFlowPixels: PixelKitEvent {
      * This measures user engagement with update notifications.
      */
     case updateNotificationTapped
-    
+
     /**
      * Event Trigger: "Update DuckDuckGo" button pressed from Settings -> About
      *

@@ -18,8 +18,43 @@
 
 import Foundation
 
+// MARK: - Constants
+
+private enum PerformanceConstants {
+    enum Protocols {
+        static let h2 = "h2"
+        static let h3 = "h3"
+        static let quic = "quic"
+        static let unknown = "unknown"
+    }
+
+    enum NavigationTypes {
+        static let navigate = "navigate"
+        static let reload = "reload"
+        static let backForward = "back_forward"
+    }
+
+    enum Grades {
+        static let a = "A"
+        static let b = "B"
+        static let c = "C"
+        static let d = "D"
+        static let f = "F"
+    }
+
+    enum Assessments {
+        static let good = "Good"
+        static let needsImprovement = "Needs Improvement"
+        static let poor = "Poor"
+    }
+}
+
 /// Extended performance metrics with detailed timing information
 public struct DetailedPerformanceMetrics: Codable, Equatable {
+
+    // MARK: - Constants
+
+    private typealias Constants = PerformanceConstants
 
     // MARK: - Core Timing Properties
 
@@ -129,7 +164,7 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
         cumulativeLayoutShift: Double? = nil,
         `protocol`: String? = nil,
         redirectCount: Int = 0,
-        navigationType: String = "navigate"
+        navigationType: String = Constants.NavigationTypes.navigate
     ) {
         self.loadComplete = max(0, loadComplete)
         self.domComplete = max(0, domComplete)
@@ -173,7 +208,9 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
     /// Whether the page used HTTP/2 or newer
     public var usesModernProtocol: Bool {
         guard let proto = `protocol` else { return false }
-        return proto.contains("h2") || proto.contains("h3") || proto.contains("quic")
+        return proto.contains(Constants.Protocols.h2) ||
+               proto.contains(Constants.Protocols.h3) ||
+               proto.contains(Constants.Protocols.quic)
     }
 
     /// Core Web Vitals assessment
@@ -249,11 +286,11 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
     /// Performance grade based on score
     public var performanceGrade: String {
         switch performanceScore {
-        case 90...100: return "A"
-        case 80..<90: return "B"
-        case 70..<80: return "C"
-        case 60..<70: return "D"
-        default: return "F"
+        case 90...100: return Constants.Grades.a
+        case 80..<90: return Constants.Grades.b
+        case 70..<80: return Constants.Grades.c
+        case 60..<70: return Constants.Grades.d
+        default: return Constants.Grades.f
         }
     }
 }
@@ -261,37 +298,39 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
 // MARK: - Core Web Vitals Assessment
 
 public struct CoreWebVitalsAssessment: Codable, Equatable {
+    private typealias Constants = PerformanceConstants
+
     public let lcp: TimeInterval // Largest Contentful Paint
     public let fid: TimeInterval? // First Input Delay
     public let cls: Double? // Cumulative Layout Shift
 
     public var lcpAssessment: String {
-        if lcp <= 2.5 { return "Good" }
-        else if lcp <= 4.0 { return "Needs Improvement" }
-        else { return "Poor" }
+        if lcp <= 2.5 { return Constants.Assessments.good }
+        else if lcp <= 4.0 { return Constants.Assessments.needsImprovement }
+        else { return Constants.Assessments.poor }
     }
 
     public var fidAssessment: String? {
         guard let fid = fid else { return nil }
-        if fid <= 0.1 { return "Good" }
-        else if fid <= 0.3 { return "Needs Improvement" }
-        else { return "Poor" }
+        if fid <= 0.1 { return Constants.Assessments.good }
+        else if fid <= 0.3 { return Constants.Assessments.needsImprovement }
+        else { return Constants.Assessments.poor }
     }
 
     public var clsAssessment: String? {
         guard let cls = cls else { return nil }
-        if cls <= 0.1 { return "Good" }
-        else if cls <= 0.25 { return "Needs Improvement" }
-        else { return "Poor" }
+        if cls <= 0.1 { return Constants.Assessments.good }
+        else if cls <= 0.25 { return Constants.Assessments.needsImprovement }
+        else { return Constants.Assessments.poor }
     }
 
     public var overallAssessment: String {
         let assessments = [lcpAssessment, fidAssessment, clsAssessment].compactMap { $0 }
-        let poorCount = assessments.filter { $0 == "Poor" }.count
-        let needsImprovementCount = assessments.filter { $0 == "Needs Improvement" }.count
+        let poorCount = assessments.filter { $0 == Constants.Assessments.poor }.count
+        let needsImprovementCount = assessments.filter { $0 == Constants.Assessments.needsImprovement }.count
 
-        if poorCount > 0 { return "Poor" }
-        else if needsImprovementCount > 1 { return "Needs Improvement" }
-        else { return "Good" }
+        if poorCount > 0 { return Constants.Assessments.poor }
+        else if needsImprovementCount > 1 { return Constants.Assessments.needsImprovement }
+        else { return Constants.Assessments.good }
     }
 }

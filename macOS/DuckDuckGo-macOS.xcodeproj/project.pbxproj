@@ -3631,6 +3631,7 @@
 		CD89DD622C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD89DD5D2C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift */; };
 		D65D0F9F2E7239680075A784 /* NetworkQualityMonitor in Frameworks */ = {isa = PBXBuildFile; productRef = D65D0F9E2E7239680075A784 /* NetworkQualityMonitor */; };
 		D65D0FA12E7239730075A784 /* NetworkQualityMonitor in Frameworks */ = {isa = PBXBuildFile; productRef = D65D0FA02E7239730075A784 /* NetworkQualityMonitor */; };
+		D65D0FA32E7239750075A784 /* PerformanceTest in Frameworks */ = {isa = PBXBuildFile; productRef = D65D0FA42E7239750075A784 /* PerformanceTest */; };
 		D6E0ACB12CE36DCA005D3486 /* DuckPlayerOverlayPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E0ACB02CE36DC4005D3486 /* DuckPlayerOverlayPixels.swift */; };
 		D6E0ACB22CE36DCA005D3486 /* DuckPlayerOverlayPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E0ACB02CE36DC4005D3486 /* DuckPlayerOverlayPixels.swift */; };
 		E231C3CD2E1BB72700B53914 /* NewTabPageSectionsAvailabilityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E231C3CC2E1BB72300B53914 /* NewTabPageSectionsAvailabilityProvider.swift */; };
@@ -5804,6 +5805,7 @@
 		CDE248A62C821FFE00F9399D /* phishingFilterSet.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = phishingFilterSet.json; sourceTree = "<group>"; };
 		CDE248A72C821FFE00F9399D /* MaliciousSiteProtectionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionState.swift; sourceTree = "<group>"; };
 		D65D0F9D2E7236D80075A784 /* NetworkQualityMonitor */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = NetworkQualityMonitor; sourceTree = "<group>"; };
+		D65D0FA22E7239740075A784 /* PerformanceTest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = PerformanceTest; sourceTree = "<group>"; };
 		D6E0ACB02CE36DC4005D3486 /* DuckPlayerOverlayPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerOverlayPixels.swift; sourceTree = "<group>"; };
 		E231C3CC2E1BB72300B53914 /* NewTabPageSectionsAvailabilityProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageSectionsAvailabilityProvider.swift; sourceTree = "<group>"; };
 		E274EFF22E1BD8B000373C41 /* NewTabPageSectionsAvailabilityProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageSectionsAvailabilityProviderTests.swift; sourceTree = "<group>"; };
@@ -6274,6 +6276,7 @@
 				9DB9800A2D96AD2B00B174B3 /* DataBrokerProtectionCore in Frameworks */,
 				4B94B7992D4731E80014AAB8 /* SyncUI-macOS in Frameworks */,
 				D65D0F9F2E7239680075A784 /* NetworkQualityMonitor in Frameworks */,
+				D65D0FA32E7239750075A784 /* PerformanceTest in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -6958,6 +6961,7 @@
 				7B25FE322AD12C990012AFAB /* NetworkProtectionMac */,
 				D65D0F9D2E7236D80075A784 /* NetworkQualityMonitor */,
 				374F18B32D006F940032EA4E /* NewTabPage */,
+				D65D0FA22E7239740075A784 /* PerformanceTest */,
 				84494D1F2E18207600C9E5E8 /* ObjCTestsExtensions */,
 				85B6ABB72DE5E4E4009C85C7 /* Onboarding */,
 				7BC5F7DF2D49044C0005B3D9 /* PreferencesUI-macOS */,
@@ -11889,6 +11893,7 @@
 				7BC26CA32DFC103D00E52480 /* VPN */,
 				846F4CDE2E048A0500266DB7 /* BWIntegration */,
 				D65D0F9E2E7239680075A784 /* NetworkQualityMonitor */,
+				D65D0FA42E7239750075A784 /* PerformanceTest */,
 			);
 			productName = DuckDuckGo;
 			productReference = AA585D7E248FD31100E9A3E2 /* DuckDuckGo.app */;
@@ -18661,6 +18666,10 @@
 		D65D0FA02E7239730075A784 /* NetworkQualityMonitor */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NetworkQualityMonitor;
+		};
+		D65D0FA42E7239750075A784 /* PerformanceTest */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PerformanceTest;
 		};
 		DC3F73D49B2D44464AFEFCD8 /* Subscription */ = {
 			isa = XCSwiftPackageProductDependency;

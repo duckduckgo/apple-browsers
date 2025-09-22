@@ -26,6 +26,7 @@ import History
 import NetworkProtectionIPC
 import NetworkQualityMonitor
 import os.log
+import PerformanceTest
 import PixelKit
 import SwiftUI
 import VPN

@@ -34,13 +34,13 @@ protocol ColorPalette {
     var iconsSecondary: NSColor { get }
     var iconsTertiary: NSColor { get }
 
-    var toneTint: NSColor { get }
-    var toneShade: NSColor { get }
+    var toneTintPrimary: NSColor { get }
+    var toneShadePrimary: NSColor { get }
 
     var accentPrimary: NSColor { get }
     var accentSecondary: NSColor { get }
     var accentTertiary: NSColor { get }
-    var accentGlow: NSColor { get }
+    var accentGlowPrimary: NSColor { get }
     var accentTextPrimary: NSColor { get }
     var accentTextSecondary: NSColor { get }
     var accentTextTertiary: NSColor { get }
@@ -51,7 +51,7 @@ protocol ColorPalette {
     var accentAltPrimary: NSColor { get }
     var accentAltSecondary: NSColor { get }
     var accentAltTertiary: NSColor { get }
-    var accentAltGlow: NSColor { get }
+    var accentAltGlowPrimary: NSColor { get }
     var accentAltTextPrimary: NSColor { get }
     var accentAltTextSecondary: NSColor { get }
     var accentAltTextTertiary: NSColor { get }
@@ -128,7 +128,7 @@ final class NewColorPalette: ColorPalette {
     let controlsDecorationPrimary: NSColor = .controlsDecorationPrimary
     let controlsDecorationSecondary: NSColor = .controlsDecorationSecondary
     let controlsDecorationTertiary: NSColor = .controlsDecorationTertiary
-    let highlightPrimary: NSColor = .highlightDecoration
+    let highlightDecoration: NSColor = .highlightDecoration
     let decorationPrimary: NSColor = .decorationPrimary
     let decorationSecondary: NSColor = .decorationSecondary
     let decorationTertiary: NSColor = .decorationTertiary

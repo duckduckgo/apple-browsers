@@ -33,11 +33,8 @@ on:
 
 jobs:
   smartling:
-    runs-on: macos-15-xlarge
+    runs-on: macos-15
     name: Smartling translation job
-
-    env:
-      RUNS_ON: macos-15-xlarge # keep this in sync with runs-on above
 
     steps:
 

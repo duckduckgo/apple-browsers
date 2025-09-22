@@ -99,35 +99,23 @@ public class SitePerformanceTester: NSObject {
     private func clearCacheForURL(_ url: URL) async {
         let dataStore = WKWebsiteDataStore.default()
         let dataTypes = WKWebsiteDataStore.allWebsiteDataTypes()
-        let records = await dataStore.dataRecords(ofTypes: dataTypes)
 
-        // Filter records for this specific domain
-        let domain = url.host ?? url.absoluteString
-        let recordsToDelete = records.filter { record in
-            record.displayName.lowercased().contains(domain.lowercased()) ||
-            record.displayName == domain
+        // Clear ALL website data to ensure clean test conditions
+        // This handles redirects, third-party resources, and cached data
+        let records = await dataStore.dataRecords(ofTypes: dataTypes)
+        if !records.isEmpty {
+            await dataStore.removeData(ofTypes: dataTypes, for: records)
         }
 
-        // Remove the data only for this specific domain
-        if !recordsToDelete.isEmpty {
-            await dataStore.removeData(ofTypes: dataTypes, for: recordsToDelete)
+        // Also clear all cookies to ensure complete cache clearing
+        let httpCookieStore = dataStore.httpCookieStore
+        let cookies = await httpCookieStore.allCookies()
 
-            // Also clear HTTP cache and cookies more aggressively
-            let httpCookieStore = dataStore.httpCookieStore
-            let cookies = await httpCookieStore.allCookies()
-
-            // Batch delete cookies for this domain
-            let domainCookies = cookies.filter { cookie in
-                cookie.domain.contains(domain) || domain.contains(cookie.domain)
-            }
-
-            // Use Task group for concurrent deletion if there are multiple cookies
-            if !domainCookies.isEmpty {
-                await withTaskGroup(of: Void.self) { group in
-                    for cookie in domainCookies {
-                        group.addTask {
-                            await httpCookieStore.delete(cookie)
-                        }
+        if !cookies.isEmpty {
+            await withTaskGroup(of: Void.self) { group in
+                for cookie in cookies {
+                    group.addTask {
+                        await httpCookieStore.delete(cookie)
                     }
                 }
             }

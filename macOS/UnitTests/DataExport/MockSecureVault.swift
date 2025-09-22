@@ -279,6 +279,26 @@ final class MockSecureVault<T: AutofillDatabaseProvider>: AutofillSecureVault {
     func storeSyncableCredentials(_ syncableCredentials: SecureVaultModels.SyncableCredentials, in database: Database, encryptedUsing l2Key: Data, hashedUsing salt: Data?) throws {
     }
 
+    // MARK: - Syncable Credit Cards
+
+    func modifiedSyncableCreditCards() throws -> [SecureVaultModels.SyncableCreditCard] {
+        []
+    }
+
+    func creditCardTitlesForSyncableCreditCards(modifiedBefore date: Date) throws -> [String] {
+        []
+    }
+
+    func deleteSyncableCreditCard(_ syncableCreditCard: SecureVaultModels.SyncableCreditCard, in database: Database) throws {
+    }
+
+    func storeSyncableCreditCard(_ syncableCreditCard: SecureVaultModels.SyncableCreditCard, in database: Database, encryptedUsing l2Key: Data) throws {
+    }
+
+    func syncableCreditCardsForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableCreditCard] {
+        []
+    }
+
 }
 
 extension MockSecureVault {
@@ -517,6 +537,26 @@ class MockDatabaseProvider: AutofillDatabaseProvider {
     }
 
     func updateSyncTimestamp(in database: Database, tableName: String, objectId: Int64, timestamp: Date?) throws {
+    }
+
+    // MARK: - Syncable Credit Cards
+
+    func modifiedSyncableCreditCards() throws -> [SecureVaultModels.SyncableCreditCard] {
+        []
+    }
+
+    func modifiedSyncableCreditCards(before date: Date) throws -> [SecureVaultModels.SyncableCreditCard] {
+        []
+    }
+
+    func syncableCreditCardsForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableCreditCard] {
+        []
+    }
+
+    func storeSyncableCreditCard(_ syncableCreditCard: SecureVaultModels.SyncableCreditCard, in database: Database) throws {
+    }
+
+    func deleteSyncableCreditCard(_ syncableCreditCard: SecureVaultModels.SyncableCreditCard, in database: Database) throws {
     }
 }
 

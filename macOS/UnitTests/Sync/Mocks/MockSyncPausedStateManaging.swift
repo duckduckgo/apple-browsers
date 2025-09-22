@@ -23,6 +23,7 @@ import Combine
 class MockSyncPausedStateManaging: SyncPausedStateManaging {
     static var syncBookmarksPausedData = SyncPausedMessageData(title: "Bookmarks Paused", description: "Something with bookmark is wrong", buttonTitle: "Manage Bookmarks", action: { print("something bookmarks") })
     static var syncCredentialsPausedData = SyncPausedMessageData(title: "Credentials Paused", description: "Something with Credentials is wrong", buttonTitle: "Manage Credentials", action: { print("something Credentials") })
+    static var syncCreditCardsPausedData = SyncPausedMessageData(title: "Credit Cards Paused", description: "Something with Credit Cards is wrong", buttonTitle: "Manage Credit Cards", action: { print("something Credit Cards") })
     static var syncIsPausedData = SyncPausedMessageData(title: "Paused", description: "Something is wrong", buttonTitle: "", action: nil)
 
     var isSyncPausedChangedPublisher = PassthroughSubject<Void, Never>()
@@ -32,6 +33,8 @@ class MockSyncPausedStateManaging: SyncPausedStateManaging {
     var isSyncBookmarksPaused: Bool = false
 
     var isSyncCredentialsPaused: Bool = false
+
+    var isSyncCreditCardsPaused: Bool = false
 
     var syncPausedChangedPublisher: AnyPublisher<Void, Never> {
         isSyncPausedChangedPublisher.eraseToAnyPublisher()
@@ -47,6 +50,10 @@ class MockSyncPausedStateManaging: SyncPausedStateManaging {
 
     var syncCredentialsPausedMessageData: SyncPausedMessageData? {
         return Self.syncCredentialsPausedData
+    }
+
+    var syncCreditCardsPausedMessageData: SyncPausedMessageData? {
+        return Self.syncCreditCardsPausedData
     }
 
     var syncDidTurnOffCalled = false

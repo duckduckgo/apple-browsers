@@ -4,6 +4,19 @@
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
 // swiftlint:disable file_length
 
 import Foundation
@@ -159,62 +172,16 @@ public class SitePerformanceTester: NSObject {
         return nil
     }
 
-    // swiftlint:disable:next function_body_length
     private func collectPerformanceMetrics() async -> DetailedPerformanceMetrics? {
-        let script = """
-            (function() {
-                if (document.readyState !== 'complete') {
-                    return null;
-                }
+        guard let url = Bundle(for: SitePerformanceTester.self).url(forResource: "performanceMetrics", withExtension: "js") else {
+            logger.error("Failed to find performanceMetrics.js in bundle")
+            return nil
+        }
 
-                const navigation = performance.getEntriesByType('navigation')[0];
-                const paint = performance.getEntriesByType('paint');
-                const resources = performance.getEntriesByType('resource');
-
-                // Find FCP
-                const fcp = paint.find(p => p.name === 'first-contentful-paint');
-
-                // Calculate total resource sizes
-                const totalResourceSize = resources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
-
-                if (navigation) {
-                    return {
-                        // Core timing metrics (in milliseconds)
-                        loadComplete: navigation.loadEventEnd - navigation.fetchStart,
-                        domComplete: navigation.domComplete - navigation.fetchStart,
-                        domContentLoaded: navigation.domContentLoadedEventEnd - navigation.fetchStart,
-                        domInteractive: navigation.domInteractive - navigation.fetchStart,
-
-                        // Paint metrics
-                        fcp: fcp ? fcp.startTime : 0,
-
-                        // Network metrics
-                        ttfb: navigation.responseStart - navigation.fetchStart,
-                        responseTime: navigation.responseEnd - navigation.responseStart,
-                        serverTime: navigation.responseStart - navigation.requestStart,
-
-                        // Size metrics (in bytes)
-                        transferSize: navigation.transferSize || 0,
-                        encodedBodySize: navigation.encodedBodySize || 0,
-                        decodedBodySize: navigation.decodedBodySize || 0,
-
-                        // Resource metrics
-                        resourceCount: resources.length,
-                        totalResourcesSize: totalResourceSize,
-
-                        // TTI approximation
-                        tti: navigation.domInteractive - navigation.fetchStart,
-
-                        // Additional metadata
-                        protocol: navigation.nextHopProtocol || 'unknown',
-                        redirectCount: navigation.redirectCount || 0,
-                        navigationType: navigation.type || 'navigate'
-                    };
-                }
-
-                return null;
-            })();
-        """
+        guard let script = try? String(contentsOf: url) else {
+            logger.error("Failed to read performanceMetrics.js from bundle")
+            return nil
+        }
 
         do {
             let result: Any? = try await webView.evaluateJavaScript(script)
@@ -237,7 +204,7 @@ public class SitePerformanceTester: NSObject {
                     resourceCount: metrics["resourceCount"] as? Int ?? 0,
                     totalResourcesSize: metrics["totalResourcesSize"] as? Double ?? 0,
                     timeToInteractive: (metrics["tti"] as? Double ?? 0) / 1000.0,
-                    `protocol`: metrics["protocol"] as? String,
+                    protocol: metrics["protocol"] as? String,
                     redirectCount: metrics["redirectCount"] as? Int ?? 0,
                     navigationType: metrics["navigationType"] as? String ?? "navigate"
                 )

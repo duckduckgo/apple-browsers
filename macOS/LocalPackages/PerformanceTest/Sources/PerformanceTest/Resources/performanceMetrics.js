@@ -18,46 +18,56 @@
 
 (function() {
     try {
-        // Wait for page to be fully loaded
         if (document.readyState !== 'complete') {
-            return { error: 'Page not fully loaded' };
+            return null;
         }
 
-        // Get navigation timing data
-        const perfData = performance.getEntriesByType('navigation')[0];
-        if (!perfData) {
-            return { error: 'No navigation performance data available' };
+        const navigation = performance.getEntriesByType('navigation')[0];
+        const paint = performance.getEntriesByType('paint');
+        const resources = performance.getEntriesByType('resource');
+
+        // Find FCP
+        const fcp = paint.find(p => p.name === 'first-contentful-paint');
+
+        // Calculate total resource sizes
+        const totalResourceSize = resources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
+
+        if (navigation) {
+            return {
+                // Core timing metrics (in milliseconds)
+                loadComplete: navigation.loadEventEnd - navigation.fetchStart,
+                domComplete: navigation.domComplete - navigation.fetchStart,
+                domContentLoaded: navigation.domContentLoadedEventEnd - navigation.fetchStart,
+                domInteractive: navigation.domInteractive - navigation.fetchStart,
+
+                // Paint metrics
+                fcp: fcp ? fcp.startTime : 0,
+
+                // Network metrics
+                ttfb: navigation.responseStart - navigation.fetchStart,
+                responseTime: navigation.responseEnd - navigation.responseStart,
+                serverTime: navigation.responseStart - navigation.requestStart,
+
+                // Size metrics (in bytes)
+                transferSize: navigation.transferSize || 0,
+                encodedBodySize: navigation.encodedBodySize || 0,
+                decodedBodySize: navigation.decodedBodySize || 0,
+
+                // Resource metrics
+                resourceCount: resources.length,
+                totalResourcesSize: totalResourceSize,
+
+                // TTI approximation
+                tti: navigation.domInteractive - navigation.fetchStart,
+
+                // Additional metadata
+                protocol: navigation.nextHopProtocol || 'unknown',
+                redirectCount: navigation.redirectCount || 0,
+                navigationType: navigation.type || 'navigate'
+            };
         }
 
-        // Get paint timing data
-        const paintEntries = performance.getEntriesByType('paint');
-        let firstContentfulPaint = null;
-
-        for (const entry of paintEntries) {
-            if (entry.name === 'first-contentful-paint') {
-                firstContentfulPaint = entry.startTime;
-            }
-        }
-
-        // Get largest contentful paint if available
-        let largestContentfulPaint = null;
-        if (window.PerformanceObserver && PerformanceObserver.supportedEntryTypes &&
-            PerformanceObserver.supportedEntryTypes.includes('largest-contentful-paint')) {
-            const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
-            if (lcpEntries.length > 0) {
-                largestContentfulPaint = lcpEntries[lcpEntries.length - 1].startTime;
-            }
-        }
-
-        // Calculate metrics
-        const metrics = {
-            loadComplete: perfData.loadEventEnd - perfData.fetchStart,
-            firstContentfulPaint: firstContentfulPaint,
-            largestContentfulPaint: largestContentfulPaint,
-            timeToFirstByte: perfData.responseStart - perfData.fetchStart
-        };
-
-        return metrics;
+        return null;
     } catch (e) {
         return { error: 'JavaScript execution error: ' + e.message };
     }

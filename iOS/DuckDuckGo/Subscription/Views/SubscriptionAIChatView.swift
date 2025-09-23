@@ -34,7 +34,6 @@ struct SubscriptionAIChatView: View {
                                                     title: UserText.aiChatSubscriptionTitle,
                                                     status: shouldShowAsOn ? .on : .off,
                                                     explanation: UserText.aiChatSubscriptionCaption)
-        let configureDuckAIFooterText = isAIFeaturesEnabled ? UserText.aiChatSubscriptionConfigureAIFooter : UserText.aiChatSubscriptionEnableAIFooter
 
         List {
             SettingsDescriptionView(content: currentDescription)
@@ -45,23 +44,25 @@ struct SubscriptionAIChatView: View {
                     }, webLinkIndicator: true, isButton: true
                     )
                 }
-            }
-
-            Section(footer: Text(configureDuckAIFooterText)) {
-                SettingsCustomCell(content: {
-                    Text(UserText.openAIFeaturesSettings)
-                        .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .accent))
-                }, action: {
-                    viewModel.openAIFeaturesSettings()
-                }, isButton: true)
-//                SettingsCellView(action: { viewModel.openAIFeaturesSettings() }) {
-//                    Text(UserText.openAIFeaturesSettings)
-//                }
-//                SettingsCellView(label: UserText.openAIFeaturesSettings, action: {
-//                    viewModel.openAIFeaturesSettings()
-//                }, webLinkIndicator: true, isButton: true
-//                )
+                Section(footer: Text(UserText.aiChatSubscriptionConfigureAIFooter)) {
+                    SettingsCustomCell(content: {
+                        Text(UserText.openAIFeaturesSettings)
+                            .daxBodyRegular()
+                            .foregroundColor(Color(designSystemColor: .accent))
+                    }, action: {
+                        viewModel.openAIFeaturesSettings()
+                    }, isButton: true)
+                }
+            } else {
+                Section {
+                    SettingsCustomCell(content: {
+                        Text(UserText.aiChatSubscriptionEnableAIFeatures)
+                            .daxBodyRegular()
+                            .foregroundColor(Color(designSystemColor: .accent))
+                    }, action: {
+                        viewModel.openAIFeaturesSettings()
+                    }, isButton: true)
+                }
             }
         }
         .applySettingsListModifiers(title: UserText.aiChatSubscriptionTitle,

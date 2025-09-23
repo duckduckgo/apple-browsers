@@ -3127,8 +3127,8 @@ Take back control of your personal information with the browser designed for dat
 /* Instruction to configure ai settings in AI Features settings */
 "subscription.duck.ai.configure.duck.ai.footer" = "Configure Duck.ai in AI Features settings.";
 
-/* Instruction to enable Duck.ai in AI Features settings */
-"subscription.duck.ai.enable.ai" = "Enable Duck.ai in AI Features settings.";
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Enable in AI Features Settings";
 
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Open Duck.ai";

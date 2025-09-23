@@ -62,7 +62,6 @@ public class PageLoadTester: NSObject {
         self.webView.navigationDelegate = self
     }
 
-
     public func measurePageLoad(
         url: URL,
         timeout: TimeInterval = defaultPageLoadTimeout,

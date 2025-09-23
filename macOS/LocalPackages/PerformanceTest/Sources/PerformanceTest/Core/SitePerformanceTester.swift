@@ -1,6 +1,5 @@
 //
 //  SitePerformanceTester.swift
-//  PerformanceTest
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -27,7 +26,10 @@ import os.log
 public class SitePerformanceTester: NSObject {
 
     private let webView: WKWebView
-    private let logger = Logger(subsystem: "com.duckduckgo.macos.browser.performancetest", category: "SitePerformanceTester")
+    private let logger = Logger(
+        subsystem: "com.duckduckgo.macos.browser.performancetest",
+        category: "SitePerformanceTester"
+    )
 
     /// Progress callback (iteration, total, status)
     public var progressHandler: ((Int, Int, String) -> Void)?
@@ -136,7 +138,10 @@ public class SitePerformanceTester: NSObject {
         }
     }
 
-    private func measurePageLoadAndCollectMetrics(url: URL, timeout: TimeInterval) async -> DetailedPerformanceMetrics? {
+    private func measurePageLoadAndCollectMetrics(
+        url: URL,
+        timeout: TimeInterval
+    ) async -> DetailedPerformanceMetrics? {
         let delegate = NavigationDelegate()
         webView.navigationDelegate = delegate
 
@@ -171,43 +176,24 @@ public class SitePerformanceTester: NSObject {
         let bundle: Bundle
         if let moduleBundle = Bundle(identifier: "PerformanceTest") {
             bundle = moduleBundle
-            print("🔍 DEBUG: Using Bundle(identifier: PerformanceTest)")
         } else {
             // Fallback to Bundle(for:) which points to main app bundle
             let mainBundle = Bundle(for: SitePerformanceTester.self)
-            print("🔍 DEBUG: Main bundle path: \(mainBundle.bundlePath)")
 
             // Look for the PerformanceTest_PerformanceTest.bundle inside main bundle
             guard let resourcePath = mainBundle.resourcePath,
                   let performanceBundle = Bundle(path: "\(resourcePath)/PerformanceTest_PerformanceTest.bundle") else {
-                print("❌ FAILED to find PerformanceTest_PerformanceTest.bundle")
                 logger.error("Failed to find PerformanceTest bundle")
                 return nil
             }
             bundle = performanceBundle
-            print("🔍 DEBUG: Using PerformanceTest_PerformanceTest.bundle")
         }
-
-        print("🔍 DEBUG: Bundle path: \(bundle.bundlePath)")
-        print("🔍 DEBUG: Bundle resources: \(bundle.resourcePath ?? "nil")")
 
         // Try to find the resource
         guard let url = bundle.url(forResource: "performanceMetrics", withExtension: "js") else {
-            print("❌ FAILED to find performanceMetrics.js in bundle")
-            print("❌ Bundle path: \(bundle.bundlePath)")
-            if let resourcePath = bundle.resourcePath {
-                do {
-                    let contents = try FileManager.default.contentsOfDirectory(atPath: resourcePath)
-                    print("❌ Resource path contents: \(contents)")
-                } catch {
-                    print("❌ Failed to read resource path contents: \(error)")
-                }
-            }
             logger.error("Failed to find performanceMetrics.js in bundle")
             return nil
         }
-
-        print("✅ Found performanceMetrics.js at: \(url)")
 
         guard let script = try? String(contentsOf: url) else {
             logger.error("Failed to read performanceMetrics.js from bundle")
@@ -364,9 +350,9 @@ public struct PerformanceTestResults {
         return percentile(95)
     }
 
-    public func percentile(_ p: Double) -> TimeInterval? {
+    public func percentile(_ percentile: Double) -> TimeInterval? {
         guard !loadTimes.isEmpty else { return nil }
-        guard p >= 0 && p <= 100 else { return nil }
+        guard percentile >= 0 && percentile <= 100 else { return nil }
 
         // Exclude first iteration (warm-up) for DNS resolution, connection establishment
         let relevantTimes = loadTimes.count > 1 ? Array(loadTimes.dropFirst(1)) : loadTimes
@@ -375,10 +361,10 @@ public struct PerformanceTestResults {
 
         guard count > 0 else { return nil }
 
-        if p == 0 { return sortedTimes.first }
-        if p == 100 { return sortedTimes.last }
+        if percentile == 0 { return sortedTimes.first }
+        if percentile == 100 { return sortedTimes.last }
 
-        let index = (p / 100.0) * (count - 1)
+        let index = (percentile / 100.0) * (count - 1)
         let lowerIndex = Int(floor(index))
         let upperIndex = Int(ceil(index))
 
@@ -401,14 +387,15 @@ public struct PerformanceTestResults {
     }
 
     public var reliabilityScore: String {
-        guard let cv = coefficientOfVariation, let ratio = p95ToP50Ratio else { return "Unknown" }
+        guard let coeffVariation = coefficientOfVariation,
+              let ratio = p95ToP50Ratio else { return "Unknown" }
 
         // Distinguish between test reliability and site reliability
-        if cv < 10 && ratio < 1.5 {
+        if coeffVariation < 10 && ratio < 1.5 {
             return "Excellent"
-        } else if cv < 20 && ratio < 2.0 {
+        } else if coeffVariation < 20 && ratio < 2.0 {
             return "Good"
-        } else if cv < 40 && ratio < 3.0 {
+        } else if coeffVariation < 40 && ratio < 3.0 {
             return "Fair"
         } else {
             // High variance could be site issue, not test issue
@@ -417,14 +404,15 @@ public struct PerformanceTestResults {
     }
 
     public var reliabilityType: String {
-        guard let cv = coefficientOfVariation, let ratio = p95ToP50Ratio else { return "Unknown" }
+        guard let coeffVariation = coefficientOfVariation,
+              let ratio = p95ToP50Ratio else { return "Unknown" }
 
         // If P95/P50 ratio is high but CV is relatively low, it's likely the site
-        if ratio > 3.0 && cv < 30 {
+        if ratio > 3.0 && coeffVariation < 30 {
             return "Site has inconsistent performance"
-        } else if ratio > 2.5 && cv < 20 {
+        } else if ratio > 2.5 && coeffVariation < 20 {
             return "Site shows performance variance"
-        } else if cv > 40 {
+        } else if coeffVariation > 40 {
             return "Test results vary - consider retesting"
         } else {
             return "Confidence: \(confidenceScore)%"
@@ -432,7 +420,7 @@ public struct PerformanceTestResults {
     }
 
     public var confidenceScore: Int {
-        guard let cv = coefficientOfVariation else { return 0 }
+        guard let coeffVariation = coefficientOfVariation else { return 0 }
 
         // Convert CV to confidence score (lower CV = higher confidence)
         // CV of 0-5% = 95-100% confidence
@@ -442,18 +430,18 @@ public struct PerformanceTestResults {
         // CV of 30-40% = 60-70% confidence
         // CV > 40% = < 60% confidence
 
-        if cv <= 5 {
-            return Int(100 - cv)
-        } else if cv <= 10 {
-            return Int(95 - (cv - 5))
-        } else if cv <= 20 {
-            return Int(90 - (cv - 10) * 0.5)
-        } else if cv <= 30 {
-            return Int(80 - (cv - 20) * 0.5)
-        } else if cv <= 40 {
-            return Int(70 - (cv - 30) * 0.5)
+        if coeffVariation <= 5 {
+            return Int(100 - coeffVariation)
+        } else if coeffVariation <= 10 {
+            return Int(95 - (coeffVariation - 5))
+        } else if coeffVariation <= 20 {
+            return Int(90 - (coeffVariation - 10) * 0.5)
+        } else if coeffVariation <= 30 {
+            return Int(80 - (coeffVariation - 20) * 0.5)
+        } else if coeffVariation <= 40 {
+            return Int(70 - (coeffVariation - 30) * 0.5)
         } else {
-            return max(50, Int(60 - (cv - 40) * 0.2))
+            return max(50, Int(60 - (coeffVariation - 40) * 0.2))
         }
     }
 
@@ -463,9 +451,9 @@ public struct PerformanceTestResults {
     }
 
     public var recommendedIterations: Int {
-        guard let cv = coefficientOfVariation else { return 20 }
+        guard let coeffVariation = coefficientOfVariation else { return 20 }
 
-        if cv > 30 { return 50 } else if cv > 15 { return 30 } else { return 20 }
+        if coeffVariation > 30 { return 50 } else if coeffVariation > 15 { return 30 } else { return 20 }
     }
 
     public var performanceScore: Int {

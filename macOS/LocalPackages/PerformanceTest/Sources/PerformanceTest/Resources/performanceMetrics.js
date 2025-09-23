@@ -29,6 +29,16 @@
         // Find FCP
         const fcp = paint.find(p => p.name === 'first-contentful-paint');
 
+        // Get largest contentful paint if available
+        let largestContentfulPaint = null;
+        if (window.PerformanceObserver && PerformanceObserver.supportedEntryTypes &&
+            PerformanceObserver.supportedEntryTypes.includes('largest-contentful-paint')) {
+            const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
+            if (lcpEntries.length > 0) {
+                largestContentfulPaint = lcpEntries[lcpEntries.length - 1].startTime;
+            }
+        }
+
         // Calculate total resource sizes
         const totalResourceSize = resources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
 
@@ -40,11 +50,14 @@
                 domContentLoaded: navigation.domContentLoadedEventEnd - navigation.fetchStart,
                 domInteractive: navigation.domInteractive - navigation.fetchStart,
 
-                // Paint metrics
+                // Paint metrics (both naming conventions for compatibility)
                 fcp: fcp ? fcp.startTime : 0,
+                firstContentfulPaint: fcp ? fcp.startTime : null,
+                largestContentfulPaint: largestContentfulPaint,
 
-                // Network metrics
+                // Network metrics (both naming conventions for compatibility)
                 ttfb: navigation.responseStart - navigation.fetchStart,
+                timeToFirstByte: navigation.responseStart - navigation.fetchStart,
                 responseTime: navigation.responseEnd - navigation.responseStart,
                 serverTime: navigation.responseStart - navigation.requestStart,
 

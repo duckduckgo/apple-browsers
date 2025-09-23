@@ -1313,10 +1313,10 @@
 "duckai.preferences.text.markdown" = "DuckDuckGo tehisintellekti funktsioonid on privaatsed ja valikulised. Sinu andmeid ei kasutata tehisintellekti treenimiseks.";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
-"duckai.settings.allowFollowUpQuestions.section.description" = "Selle seadistuse väljalülitamine peidab Duck.ai nupud ja lingid DuckDuckGo Search'ist.";
+"duckai.settings.allowFollowUpQuestions.section.description" = "Kuva Duck.ai nupud ja lingid DuckDuckGo otsingutulemustes.";
 
 /* Title for section that groups settings related to search results */
-"duckai.settings.allowFollowUpQuestions.section.title" = "Otsingutulemuste otseteed";
+"duckai.settings.allowFollowUpQuestions.section.title" = "Otsingu otseteed";
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Küsi lisaküsimusi";

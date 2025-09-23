@@ -1313,10 +1313,10 @@
 "duckai.preferences.text.markdown" = "DuckDuckGo-tekoälyominaisuudet ovat yksityisiä ja valinnaisia. Tietojasi ei käytetä tekoälyn kouluttamiseen.";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
-"duckai.settings.allowFollowUpQuestions.section.description" = "Tämän asetuksen poistaminen käytöstä piilottaa Duck.ai-painikkeet ja -linkit DuckDuckGo-hausta";
+"duckai.settings.allowFollowUpQuestions.section.description" = "Näytä Duck.ai-painikkeet ja -linkit DuckDuckGo-hakutuloksissa.";
 
 /* Title for section that groups settings related to search results */
-"duckai.settings.allowFollowUpQuestions.section.title" = "Hakutulosten pikanäppäimet";
+"duckai.settings.allowFollowUpQuestions.section.title" = "Haun pikanäppäimet";
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Esitä jatkokysymyksiä";

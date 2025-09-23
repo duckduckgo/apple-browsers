@@ -1313,10 +1313,10 @@
 "duckai.preferences.text.markdown" = "Funkcje sztucznej inteligencji DuckDuckGo są prywatne i opcjonalne. Twoje dane nie są używane do trenowania AI.";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
-"duckai.settings.allowFollowUpQuestions.section.description" = "Wyłączenie tego ustawienia spowoduje ukrycie przycisków i linków Duck.ai w DuckDuckGo Search";
+"duckai.settings.allowFollowUpQuestions.section.description" = "Show Duck.ai buttons and links in DuckDuckGo search results.";
 
 /* Title for section that groups settings related to search results */
-"duckai.settings.allowFollowUpQuestions.section.title" = "Skróty wyników wyszukiwania";
+"duckai.settings.allowFollowUpQuestions.section.title" = "Skróty wyszukiwania";
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Zadawaj pytania uzupełniające";

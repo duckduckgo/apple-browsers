@@ -1313,10 +1313,10 @@
 "duckai.preferences.text.markdown" = "AI-funksjonene i DuckDuckGo er private og valgfrie. Dataene dine brukes ikke til å trene AI.";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
-"duckai.settings.allowFollowUpQuestions.section.description" = "Hvis du slår av denne innstillingen, skjules Duck.ai-knapper og -lenker på DuckDuckGo Search";
+"duckai.settings.allowFollowUpQuestions.section.description" = "Vis Duck.ai-knapper og -lenker i søkeresultatene i DuckDuckGo.";
 
 /* Title for section that groups settings related to search results */
-"duckai.settings.allowFollowUpQuestions.section.title" = "Snarveier til søkeresultater";
+"duckai.settings.allowFollowUpQuestions.section.title" = "Søkesnarveier";
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Still oppfølgingsspørsmål";

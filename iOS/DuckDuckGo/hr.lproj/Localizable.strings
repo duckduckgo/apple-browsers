@@ -1313,10 +1313,10 @@
 "duckai.preferences.text.markdown" = "DuckDuckGo AI značajke privatne su i neobavezne. Tvoji podaci se ne koriste za obuku AI-a.";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
-"duckai.settings.allowFollowUpQuestions.section.description" = "Isključivanjem ove postavke sakrit ćeš gumbe i poveznice za Duck.ai na DuckDuckGo Searchu";
+"duckai.settings.allowFollowUpQuestions.section.description" = "Prikaži Duck.ai gumbe i poveznice u rezultatima pretraživanja s DuckDuckGoom.";
 
 /* Title for section that groups settings related to search results */
-"duckai.settings.allowFollowUpQuestions.section.title" = "Prečaci za rezultate pretraživanja";
+"duckai.settings.allowFollowUpQuestions.section.title" = "Pretraži prečace";
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Postavljaj naknadna pitanja";

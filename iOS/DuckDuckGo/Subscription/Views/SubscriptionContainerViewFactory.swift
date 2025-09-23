@@ -30,7 +30,7 @@ enum SubscriptionContainerViewFactory {
                                   navigationCoordinator: SubscriptionNavigationCoordinator,
                                   subscriptionManager: SubscriptionManager,
                                   subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                                  privacyProDataReporter: PrivacyProDataReporting?,
+                                  subscriptionDataReporter: SubscriptionDataReporting?,
                                   tld: TLD,
                                   internalUserDecider: InternalUserDecider,
                                   dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) -> some View {
@@ -65,7 +65,7 @@ enum SubscriptionContainerViewFactory {
                                                                        appStorePurchaseFlow: appStorePurchaseFlow,
                                                                        appStoreRestoreFlow: appStoreRestoreFlow,
                                                                        appStoreAccountManagementFlow: appStoreAccountManagementFlow,
-                                                                       privacyProDataReporter: privacyProDataReporter),
+                                                                       subscriptionDataReporter: subscriptionDataReporter),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
         )
         viewModel.email.setEmailFlowMode(.restoreFlow)
@@ -153,7 +153,7 @@ enum SubscriptionContainerViewFactory {
                                     navigationCoordinator: SubscriptionNavigationCoordinator,
                                     subscriptionManager: SubscriptionManagerV2,
                                     subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                                    privacyProDataReporter: PrivacyProDataReporting?,
+                                    subscriptionDataReporter: SubscriptionDataReporting?,
                                     tld: TLD,
                                     internalUserDecider: InternalUserDecider,
                                     dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
@@ -183,7 +183,7 @@ enum SubscriptionContainerViewFactory {
                                                                          subscriptionAttributionOrigin: origin,
                                                                          appStorePurchaseFlow: appStorePurchaseFlow,
                                                                          appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                         privacyProDataReporter: privacyProDataReporter,
+                                                                         subscriptionDataReporter: subscriptionDataReporter,
                                                                          internalUserDecider: internalUserDecider,
                                                                          widePixel: widePixel),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider

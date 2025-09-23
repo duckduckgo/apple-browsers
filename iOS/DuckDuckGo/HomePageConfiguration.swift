@@ -31,19 +31,19 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     
     private var homeMessageStorage: HomeMessageStorage
     private var remoteMessagingClient: RemoteMessagingClient
-    private let privacyProDataReporter: PrivacyProDataReporting
+    private let subscriptionDataReporter: SubscriptionDataReporting
     private let isStillOnboarding: () -> Bool
 
     var homeMessages: [HomeMessage] = []
 
     init(variantManager: VariantManager? = nil,
          remoteMessagingClient: RemoteMessagingClient,
-         privacyProDataReporter: PrivacyProDataReporting,
+         subscriptionDataReporter: SubscriptionDataReporting,
          isStillOnboarding: @escaping () -> Bool
     ) {
         homeMessageStorage = HomeMessageStorage(variantManager: variantManager)
         self.remoteMessagingClient = remoteMessagingClient
-        self.privacyProDataReporter = privacyProDataReporter
+        self.subscriptionDataReporter = subscriptionDataReporter
         self.isStillOnboarding = isStillOnboarding
         homeMessages = buildHomeMessages()
     }
@@ -115,7 +115,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     }
 
     private func additionalParameters(for messageID: String) -> [String: String] {
-        privacyProDataReporter.mergeRandomizedParameters(for: .messageID(messageID),
+        subscriptionDataReporter.mergeRandomizedParameters(for: .messageID(messageID),
                                                          with: [PixelParameters.message: "\(messageID)"])
     }
 }

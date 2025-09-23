@@ -46,7 +46,7 @@ final class SettingsViewModel: ObservableObject {
     private let syncPausedStateManager: any SyncPausedStateManaging
     var emailManager: EmailManager { EmailManager() }
     private let historyManager: HistoryManaging
-    let privacyProDataReporter: PrivacyProDataReporting?
+    let subscriptionDataReporter: SubscriptionDataReporting?
     let textZoomCoordinator: TextZoomCoordinating
     let aiChatSettings: AIChatSettingsProvider
     let serpSettings: SERPSettingsProviding
@@ -546,7 +546,7 @@ final class SettingsViewModel: ObservableObject {
          deepLink: SettingsDeepLinkSection? = nil,
          historyManager: HistoryManaging,
          syncPausedStateManager: any SyncPausedStateManaging,
-         privacyProDataReporter: PrivacyProDataReporting,
+         subscriptionDataReporter: SubscriptionDataReporting,
          textZoomCoordinator: TextZoomCoordinating,
          aiChatSettings: AIChatSettingsProvider,
          serpSettings: SERPSettingsProviding,
@@ -575,7 +575,7 @@ final class SettingsViewModel: ObservableObject {
         self.deepLinkTarget = deepLink
         self.historyManager = historyManager
         self.syncPausedStateManager = syncPausedStateManager
-        self.privacyProDataReporter = privacyProDataReporter
+        self.subscriptionDataReporter = subscriptionDataReporter
         self.textZoomCoordinator = textZoomCoordinator
         self.aiChatSettings = aiChatSettings
         self.serpSettings = serpSettings

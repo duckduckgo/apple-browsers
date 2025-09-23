@@ -170,12 +170,20 @@ class SmartlingClient:
 
     async def download_file(self, file_uri: str, locale: str) -> bytes:
         """Download translated file."""
+        # Ensure token is valid
+        if not self.token or datetime.now() >= self.token_expiry:
+            await self._authenticate()
+
         params = {'fileUri': file_uri}
         url = (
             f"{self.BASE_URL}/files-api/v2/projects/{self.creds.project_id}/"
             f"locales/{locale}/file?{urlencode(params)}"
         )
         async with self.session.get(url, headers={'Authorization': f'Bearer {self.token}'}) as resp:
+            if resp.status >= 400:
+                text = await resp.text()
+                error = json.loads(text).get('response', {}).get('errors', [{}])[0].get('message', 'API Error')
+                raise RuntimeError(f"HTTP {resp.status}: {error}")
             return await resp.read()
 
 

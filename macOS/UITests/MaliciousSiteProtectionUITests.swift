@@ -279,7 +279,11 @@ class MaliciousSiteProtectionUITests: UITestCase {
         // Test back navigation via keyboard shortcut for stability
         let window = app.windows.firstMatch
         _ = window.waitForExistence(timeout: UITests.Timeouts.elementExistence)
-        if window.exists { window.click() }
+        if window.exists {
+            // Click Bottom right corner to avoid hitting elements that breaks navigate back shortcuts. e.g Search/Duck.ai control
+            let bottomRight = window.coordinate(withNormalizedOffset: CGVector(dx: 1.0, dy: 1.0))
+            bottomRight.click()
+        }
         app.typeKey("[", modifierFlags: [.command])
 
         // Should navigate back to safe page

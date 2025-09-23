@@ -1837,61 +1837,61 @@
       }
     },
     "aichat.address-bar.open-settings-button" : {
-      "comment" : "Button to open Duck.ai settings",
+      "comment" : "Button to open AI settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duck.ai-Einstellungen öffnen"
+            "value" : "KI-Einstellungen öffnen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open Duck.ai Settings"
+            "value" : "Open AI Settings"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir ajustes de Duck.ai"
+            "value" : "Abrir ajustes de IA"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrir les paramètres Duck.ai"
+            "value" : "Ouvrir les réglages IA"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apri le impostazioni di Duck.ai"
+            "value" : "Apri le impostazioni AI"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duck.ai-instellingen openen"
+            "value" : "AI-instellingen openen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otwórz ustawienia Duck.ai"
+            "value" : "Otwórz ustawienia AI"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir as Definições do Duck.ai"
+            "value" : "Abrir definições de IA"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Открыть настройки Duck.ai"
+            "value" : "Открыть настройки ИИ"
           }
         }
       }
@@ -48911,61 +48911,61 @@
       }
     },
     "newtabpage.context.menu.open.duckai.settings" : {
-      "comment" : "Context menu item to open Duck.ai Settings from the New Tab Page",
+      "comment" : "Context menu item to open AI Settings from the New Tab Page",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duck.ai-Einstellungen öffnen"
+            "value" : "KI-Einstellungen öffnen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open Duck.ai Settings"
+            "value" : "Open AI Settings"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir ajustes de Duck.ai"
+            "value" : "Abrir ajustes de IA"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrir les paramètres Duck.ai"
+            "value" : "Ouvrir les réglages IA"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apri le impostazioni di Duck.ai"
+            "value" : "Apri le impostazioni AI"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duck.ai-instellingen openen"
+            "value" : "AI-instellingen openen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otwórz ustawienia Duck.ai"
+            "value" : "Otwórz ustawienia AI"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir as Definições do Duck.ai"
+            "value" : "Abrir definições de IA"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Открыть настройки Duck.ai"
+            "value" : "Открыть настройки ИИ"
           }
         }
       }
@@ -49096,7 +49096,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Duck.ai im Suchfeld anzeigen"
           }
         },
@@ -49108,43 +49108,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Muestra Duck.ai en el cuadro de búsqueda"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Afficher Duck.ai dans le champ de recherche"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Mostra Duck.ai nella casella di ricerca"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Toon Duck.ai in het zoekvak"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Pokaż Duck.ai w polu wyszukiwania"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Mostrar Duck.ai na caixa de pesquisa"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Показывать Duck.ai в поле поиска"
           }
         }

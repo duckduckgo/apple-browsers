@@ -3421,6 +3421,36 @@
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Synchronizuj i twórz kopie zapasowe haseł";
 
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Synchronizuj i utwórz kopię zapasową tego urządzenia";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Zapisanie kodu odzyskiwania pozwoli Ci z łatwością przywrócić hasła w przyszłości.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Zsynchronizowane hasła można przywrócić jedynie w przypadku dysponowania dostępem do innego urządzenia lub za pomocą kodu odzyskiwania podanego w ramach konfiguracji funkcji Sync & Backup.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Więcej informacji](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Skanuj kod odzyskiwania";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Inne urządzenie jest niedostępne? Zeskanuj kod odzyskiwania.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Nie masz innego urządzenia?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "Hasła DuckDuckGo nie są przesyłane przez iCloud, ponieważ są zaszyfrowane na Twoim urządzeniu. Wszystkie pozostałe dane już tu są.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Synchronizuj z innym urządzeniem";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Nowy %@? Zsynchronizujmy Twoje hasła.";
+
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Usuń";
 

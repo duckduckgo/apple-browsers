@@ -122,6 +122,7 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isAccountCreationAvailable: Bool = true
     @Published public var isAccountRecoveryAvailable: Bool = true
     @Published public var isAppVersionNotSupported: Bool = false
+    @Published public var isSyncWithSetUpSheetVisible: Bool = false
 
     @Published var shouldShowPasscodeRequiredAlert: Bool = false
 
@@ -207,6 +208,17 @@ public class SyncSettingsViewModel: ObservableObject {
             if await commonAuthenticate() {
                 delegate?.showSyncWithAnotherDevice()
             }
+        }
+    }
+
+    @MainActor
+    public func presentSyncWithSetUpSheetIfNeeded() async {
+        guard isAccountCreationAvailable else {
+            return
+        }
+
+        if await commonAuthenticate() {
+            isSyncWithSetUpSheetVisible = true
         }
     }
 

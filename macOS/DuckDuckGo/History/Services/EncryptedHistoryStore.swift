@@ -125,36 +125,80 @@ final class EncryptedHistoryStore: HistoryStoring {
     }
 
     private func clean(_ context: NSManagedObjectContext, until date: Date) -> Result<Void, Error> {
-        // Clean using batch delete requests
-        let deleteRequest = NSFetchRequest<NSManagedObject>(entityName: HistoryEntryManagedObject.className())
-        deleteRequest.predicate = NSPredicate(format: "lastVisit < %@", date as NSDate)
-        do {
-            let itemsToBeDeleted = try context.fetch(deleteRequest)
-            for item in itemsToBeDeleted {
-                context.delete(item)
-            }
-            try context.save()
-        } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.historyCleanEntriesFailed, error: error))
-            context.reset()
+        switch cleanEntries(context, until: date) {
+        case .success:
+            return cleanVisits(context, until: date)
+        case .failure(let error):
             return .failure(error)
         }
+    }
 
+    private func cleanEntries(_ context: NSManagedObjectContext, until date: Date, maxRetries: Int = 4) -> Result<Void, Error> {
+        let deleteRequest = NSFetchRequest<NSManagedObject>(entityName: HistoryEntryManagedObject.className())
+        deleteRequest.predicate = NSPredicate(format: "lastVisit < %@", date as NSDate)
+
+        var iteration = 0
+        var lastError: Error?
+
+        while iteration < maxRetries {
+            do {
+                let itemsToBeDeleted = try context.fetch(deleteRequest)
+                for item in itemsToBeDeleted {
+                    context.delete(item)
+                }
+                try context.save()
+                return .success(())
+            } catch {
+                lastError = error
+                let nsError = error as NSError
+                if nsError.code == NSManagedObjectMergeError || nsError.code == NSManagedObjectConstraintMergeError {
+                    iteration += 1
+                    context.reset()
+                } else {
+                    break
+                }
+            }
+        }
+
+        if let lastError {
+            PixelKit.fire(DebugEvent(GeneralPixel.historyCleanEntriesFailed, error: lastError))
+            return .failure(lastError)
+        }
+        return .success(())
+    }
+
+    private func cleanVisits(_ context: NSManagedObjectContext, until date: Date, maxRetries: Int = 4) -> Result<Void, Error> {
         let visitDeleteRequest = NSFetchRequest<VisitManagedObject>(entityName: VisitManagedObject.className())
         visitDeleteRequest.predicate = NSPredicate(format: "date < %@", date as NSDate)
 
-        do {
-            let itemsToBeDeleted = try context.fetch(visitDeleteRequest)
-            for item in itemsToBeDeleted {
-                context.delete(item)
+        var iteration = 0
+        var lastError: Error?
+
+        while iteration < maxRetries {
+            do {
+                let itemsToBeDeleted = try context.fetch(visitDeleteRequest)
+                for item in itemsToBeDeleted {
+                    context.delete(item)
+                }
+                try context.save()
+                return .success(())
+            } catch {
+                let nsError = error as NSError
+                lastError = error
+                if nsError.code == NSManagedObjectMergeError || nsError.code == NSManagedObjectConstraintMergeError {
+                    iteration += 1
+                    context.reset()
+                } else {
+                    break
+                }
             }
-            try context.save()
-            return .success(())
-        } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.historyCleanVisitsFailed, error: error))
-            context.reset()
-            return .failure(error)
         }
+
+        if let lastError {
+            PixelKit.fire(DebugEvent(GeneralPixel.historyCleanVisitsFailed, error: lastError))
+            return .failure(lastError)
+        }
+        return .success(())
     }
 
     func save(entry: HistoryEntry) -> Future<[(id: Visit.ID, date: Date)], Error> {

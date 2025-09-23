@@ -3421,6 +3421,36 @@
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sinkroniziraj i sigurnosno kopiraj svoje lozinke";
 
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sync & Backup ovog uređaja";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Spremanje kôda za oporavak može osigurati da ćeš u budućnosti moći lako vratiti svoje lozinke.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Sinkronizirane lozinke mogu se vratiti samo ako imaš pristup drugom uređaju ili pomoću koda za oporavak koji je predviđen kao dio postavke Sync & Backup.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Skeniraj kôd za oporavak";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Drugi uređaj nije dostupan? Skeniraj svoj kôd za oporavak.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Nemaš drugi uređaj?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "DuckDuckGo lozinke ne prenose se iCloudom jer su šifrirane na tvom uređaju. Sve ostalo je već ovdje.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Sinkronizacija s drugim uređajem";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Na novom uređaju %@? Sinkronizirajmo tvoje lozinke.";
+
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Ukloni";
 

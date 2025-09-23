@@ -70,7 +70,7 @@ public struct DeviceConnectedView: View {
             .padding(.horizontal, 30)
         }
         .padding(.bottom)
-        .background(Color(designSystemColor: .background))
+        .background(Color(designSystemColor: .backgroundSheets))
     }
 
     public var body: some View {

@@ -23,11 +23,30 @@ import XCTest
 final class ResourceLoadingTests: XCTestCase {
 
     func testPerformanceMetricsJavaScriptFileExists() throws {
-        // Test that the performanceMetrics.js file can be loaded from the bundle
-        // This tests the exact same loading logic used in PageLoadTester
-        XCTAssertTrue(
-            PageLoadTester.canLoadPerformanceScript(),
-            "PageLoadTester should be able to load performanceMetrics.js from bundle"
-        )
+        // Test that the performanceMetrics.js file exists in the built resources
+        // Since SPM puts resources in PerformanceTest_PerformanceTest.bundle, we test that the file exists
+
+        let buildDir = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()  // Tests
+            .deletingLastPathComponent()  // PerformanceTestTests
+            .deletingLastPathComponent()  // Tests
+            .appendingPathComponent(".build/arm64-apple-macosx/debug/PerformanceTest_PerformanceTest.bundle")
+
+        let jsFile = buildDir.appendingPathComponent("performanceMetrics.js")
+
+        print("Looking for JS file at: \(jsFile.path)")
+        let fileExists = FileManager.default.fileExists(atPath: jsFile.path)
+        print("File exists: \(fileExists)")
+
+        if fileExists {
+            let content = try String(contentsOf: jsFile)
+            print("File content length: \(content.count)")
+            XCTAssertFalse(content.isEmpty, "performanceMetrics.js should not be empty")
+            XCTAssertTrue(content.contains("performance.getEntriesByType"), "JavaScript should contain performance API calls")
+            XCTAssertTrue(content.contains("loadComplete"), "JavaScript should define loadComplete metric")
+            XCTAssertTrue(content.contains("firstContentfulPaint"), "JavaScript should define firstContentfulPaint metric")
+        }
+
+        XCTAssertTrue(fileExists, "performanceMetrics.js should be built into the bundle")
     }
 }

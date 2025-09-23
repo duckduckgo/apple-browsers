@@ -456,8 +456,6 @@ class MainViewController: UIViewController {
         if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
-
-        presentNewAddressBarPickerIfNeeded()
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -614,7 +612,7 @@ class MainViewController: UIViewController {
         segueToDaxOnboarding()
     }
     
-    private func presentNewAddressBarPickerIfNeeded() {
+    func presentNewAddressBarPickerIfNeeded() {
         let validator = NewAddressBarPickerDisplayValidator(
             aiChatSettings: aiChatSettings,
             tutorialSettings: tutorialSettings,

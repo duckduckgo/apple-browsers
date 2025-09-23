@@ -18,7 +18,6 @@ usage() {
 		$0 approve --job-id <id>
 		$0 status --job-id <id>
 		$0 download --job-id <id> [--out-dir <path>]
-		$0 import --import-dir <path> [--force]
 
 	Requires env:
 		SMARTLING_USER_ID, SMARTLING_USER_SECRET, SMARTLING_PROJECT_ID
@@ -115,28 +114,6 @@ case "$cmd" in
 		else
 			python3 "$PYTHON_TOOL" download --job-id "$JOB_ID"
 		fi
-		;;
-	import)
-		# Parse required --import-dir
-		if [ "${1:-}" != "--import-dir" ] || [ -z "${2:-}" ]; then
-			echo "Usage: $0 import --import-dir <path> [--force]" >&2
-			exit 1
-		fi
-		IMPORT_DIR="$2"
-		
-		# Check for --force flag
-		FORCE_FLAG=""
-		if [ "${3:-}" = "--force" ]; then
-			FORCE_FLAG="--force"
-		fi
-		
-		# Run import
-		if [ -n "$FORCE_FLAG" ]; then
-			CMD=("$TOOL_BIN" import --import-dir "$IMPORT_DIR" --force)
-		else
-			CMD=("$TOOL_BIN" import --import-dir "$IMPORT_DIR")
-		fi
-		run_in_directory "$TOOL_DIR" "${CMD[@]}"
 		;;
 	*)
 		usage; exit 1;;

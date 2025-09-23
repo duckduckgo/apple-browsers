@@ -62,11 +62,6 @@ public class PageLoadTester: NSObject {
         self.webView.navigationDelegate = self
     }
 
-    /// Test helper to verify performanceMetrics.js can be loaded
-    public static func canLoadPerformanceScript() -> Bool {
-        let bundle = Bundle(for: PageLoadTester.self)
-        return bundle.url(forResource: "performanceMetrics", withExtension: "js") != nil
-    }
 
     public func measurePageLoad(
         url: URL,

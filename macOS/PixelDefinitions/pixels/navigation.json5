@@ -13,7 +13,7 @@
         parameters: ['appVersion', 'pixelSource'],
     },
     m_mac_debug_unified_url_prediction_mismatch: {
-        description: 'Fires only for internal users when the unified URL prediction mechanism predicted the wrong URL than the pre-existing native logic.',
+        description: 'Only for internal users that have opted in to this pixel - fires when the unified URL prediction mechanism predicted the wrong URL than the pre-existing native logic.',
         owners: ['ayoy'],
         triggers: ['other'],
         parameters: [

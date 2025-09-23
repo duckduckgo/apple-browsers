@@ -648,8 +648,23 @@ extension PerformanceTestWindowView {
             return relevantValues.max()
         case PerformanceTestConstants.StatViews.p95:
             let sorted = relevantValues.sorted()
-            let index = Int(Double(sorted.count - 1) * 0.95)
-            return sorted[index]
+            let count = Double(sorted.count)
+
+            guard count > 0 else { return nil }
+
+            let index = 0.95 * (count - 1)
+            let lowerIndex = Int(floor(index))
+            let upperIndex = Int(ceil(index))
+
+            if lowerIndex == upperIndex {
+                return sorted[lowerIndex]
+            }
+
+            let weight = index - Double(lowerIndex)
+            let lowerValue = sorted[lowerIndex]
+            let upperValue = sorted[upperIndex]
+
+            return lowerValue + weight * (upperValue - lowerValue)
         case PerformanceTestConstants.StatViews.stdDev:
             let mean = relevantValues.reduce(0, +) / Double(relevantValues.count)
             let variance = relevantValues.reduce(0) { sum, value in

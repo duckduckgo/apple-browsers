@@ -132,8 +132,22 @@ public class PageLoadTester: NSObject {
     }
 
     private func collectPerformanceMetrics() async throws -> PerformanceMetrics? {
-        // Load JavaScript from bundle resources
-        guard let url = Bundle(for: PageLoadTester.self).url(forResource: "performanceMetrics", withExtension: "js") else {
+        // Load JavaScript from bundle resources - try correct bundle path
+        let bundle: Bundle
+        if let moduleBundle = Bundle(identifier: "PerformanceTest") {
+            bundle = moduleBundle
+        } else {
+            // Look for the PerformanceTest_PerformanceTest.bundle inside main bundle
+            let mainBundle = Bundle(for: PageLoadTester.self)
+            guard let resourcePath = mainBundle.resourcePath,
+                  let performanceBundle = Bundle(path: "\(resourcePath)/PerformanceTest_PerformanceTest.bundle") else {
+                logger.error("Failed to find PerformanceTest bundle")
+                throw PageLoadError.networkError(message: "PerformanceTest bundle not found")
+            }
+            bundle = performanceBundle
+        }
+
+        guard let url = bundle.url(forResource: "performanceMetrics", withExtension: "js") else {
             logger.error("Failed to find performanceMetrics.js in bundle")
             throw PageLoadError.networkError(message: "Performance metrics script not found in bundle")
         }

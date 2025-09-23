@@ -146,9 +146,24 @@ final public class HistoryStore: HistoryStoring {
                 context.delete(item)
             }
             try context.save()
-            return .success(())
         } catch {
             eventMapper.fire(.cleanEntriesFailed, error: error)
+            context.reset()
+            return .failure(error)
+        }
+
+        let visitDeleteRequest = PageVisitManagedObject.fetchRequest()
+        visitDeleteRequest.predicate = NSPredicate(format: "date < %@", date as NSDate)
+
+        do {
+            let itemsToBeDeleted = try context.fetch(visitDeleteRequest)
+            for item in itemsToBeDeleted {
+                context.delete(item)
+            }
+            try context.save()
+            return .success(())
+        } catch {
+            eventMapper.fire(.cleanVisitsFailed, error: error)
             context.reset()
             return .failure(error)
         }

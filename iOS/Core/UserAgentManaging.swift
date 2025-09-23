@@ -335,7 +335,7 @@ struct UserAgent {
         let osVersion = ProcessInfo.processInfo.operatingSystemVersion
         if osVersion.majorVersion >= 26 && shouldUseUpdatedSafariVersions() {
             // Use actual device iOS version major.minor components
-            return "\(osVersion.majorVersion)_\(osVersion.minorVersion)"
+            return "\(osVersion.majorVersion).\(osVersion.minorVersion)"
         }
 
         let regex = try? NSRegularExpression(pattern: Regex.osVersion)

@@ -173,25 +173,26 @@ public class SitePerformanceTester: NSObject {
 
     private func collectPerformanceMetrics() async -> DetailedPerformanceMetrics? {
         let bundle = Bundle(for: SitePerformanceTester.self)
-        logger.debug("Bundle path: \(bundle.bundlePath)")
-        logger.debug("Bundle resources: \(bundle.resourcePath ?? "nil")")
+        print("🔍 DEBUG: Bundle path: \(bundle.bundlePath)")
+        print("🔍 DEBUG: Bundle resources: \(bundle.resourcePath ?? "nil")")
 
         // Try to find the resource
         guard let url = bundle.url(forResource: "performanceMetrics", withExtension: "js") else {
-            logger.error("Failed to find performanceMetrics.js in bundle")
-            logger.error("Bundle(for:) path: \(bundle.bundlePath)")
+            print("❌ FAILED to find performanceMetrics.js in bundle")
+            print("❌ Bundle(for:) path: \(bundle.bundlePath)")
             if let resourcePath = bundle.resourcePath {
                 do {
                     let contents = try FileManager.default.contentsOfDirectory(atPath: resourcePath)
-                    logger.error("Resource path contents: \(contents)")
+                    print("❌ Resource path contents: \(contents)")
                 } catch {
-                    logger.error("Failed to read resource path contents: \(error)")
+                    print("❌ Failed to read resource path contents: \(error)")
                 }
             }
+            logger.error("Failed to find performanceMetrics.js in bundle")
             return nil
         }
 
-        logger.debug("Found performanceMetrics.js at: \(url)")
+        print("✅ Found performanceMetrics.js at: \(url)")
 
         guard let script = try? String(contentsOf: url) else {
             logger.error("Failed to read performanceMetrics.js from bundle")

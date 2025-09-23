@@ -63,7 +63,7 @@ public class PageLoadTester: NSObject {
     }
 
     /// Test helper to verify performanceMetrics.js can be loaded
-    public static func canLoadPerformanceScript() -> Bool {
+    public nonisolated static func canLoadPerformanceScript() -> Bool {
         let bundle = Bundle(for: PageLoadTester.self)
         return bundle.url(forResource: "performanceMetrics", withExtension: "js") != nil
     }

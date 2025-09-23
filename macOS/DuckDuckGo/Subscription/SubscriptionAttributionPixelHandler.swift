@@ -19,14 +19,14 @@
 import Foundation
 import Subscription
 
-protocol SubscriptionAttributionPixelHandler: AnyObject {
+protocol SubscriptionAttributionPixelHandling: AnyObject {
     var origin: String? { get set }
     func fireSuccessfulSubscriptionAttributionPixel()
 }
 
 // MARK: - SubscriptionAttributionPixelHandler
 
-final class DuckDuckGoSubscriptionAttributionPixelHandler: SubscriptionAttributionPixelHandler {
+final class SubscriptionAttributionPixelHandler: SubscriptionAttributionPixelHandling {
 
     var origin: String?
     private let decoratedAttributionPixelHandler: AttributionPixelHandler

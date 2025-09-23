@@ -65,7 +65,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     var subscriptionPlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
     let stripePurchaseFlow: any StripePurchaseFlowV2
     let subscriptionErrorReporter = DefaultSubscriptionErrorReporter()
-    let subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandler
+    let subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling
     let uiHandler: SubscriptionUIHandling
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
@@ -79,7 +79,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     private var widePixelData: SubscriptionPurchaseWidePixelData?
 
     public init(subscriptionManager: SubscriptionManagerV2,
-                subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandler = DuckDuckGoSubscriptionAttributionPixelHandler(),
+                subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling = SubscriptionAttributionPixelHandler(),
                 stripePurchaseFlow: StripePurchaseFlowV2,
                 uiHandler: SubscriptionUIHandling,
                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),

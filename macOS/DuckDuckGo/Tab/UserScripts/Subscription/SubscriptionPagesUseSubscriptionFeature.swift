@@ -49,7 +49,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
     let stripePurchaseFlow: StripePurchaseFlow
     let subscriptionErrorReporter = DefaultSubscriptionErrorReporter()
-    let subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandler
+    let subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling
     let uiHandler: SubscriptionUIHandling
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
@@ -63,7 +63,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     private let featureFlagger: FeatureFlagger
 
     public init(subscriptionManager: SubscriptionManager,
-                subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandler = DuckDuckGoSubscriptionAttributionPixelHandler(),
+                subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling = SubscriptionAttributionPixelHandler(),
                 stripePurchaseFlow: StripePurchaseFlow,
                 uiHandler: SubscriptionUIHandling,
                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),

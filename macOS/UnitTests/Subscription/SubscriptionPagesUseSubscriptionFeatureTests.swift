@@ -94,7 +94,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     var appStoreAccountManagementFlow: AppStoreAccountManagementFlow!
     var stripePurchaseFlow: StripePurchaseFlow!
 
-    var subscriptionAttributionPixelHandler: SubscriptionAttributionPixelHandler!
+    var subscriptionAttributionPixelHandler: SubscriptionAttributionPixelHandling!
 
     var subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
 
@@ -173,7 +173,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                        authEndpointService: authService,
                                                        accountManager: accountManager)
 
-        subscriptionAttributionPixelHandler = DuckDuckGoSubscriptionAttributionPixelHandler()
+        subscriptionAttributionPixelHandler = SubscriptionAttributionPixelHandler()
 
         subscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true, usesUnifiedFeedbackForm: false)
 

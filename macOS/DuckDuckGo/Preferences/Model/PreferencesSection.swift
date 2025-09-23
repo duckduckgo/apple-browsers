@@ -138,7 +138,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case sync
     case appearance
     case dataClearing
-    case subscription
+    case subscription = "privacyPro"
     case vpn
     case personalInformationRemoval
     case paidAIChat

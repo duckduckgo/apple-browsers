@@ -78,62 +78,9 @@ jobs:
 
       - name: Parse job details from PR comments
         if: steps.params.outputs.needs_comment_parsing == 'true'
-        uses: actions/github-script@v7
         id: parse_comment
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            // Fetch all PR comments
-            const comments = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number
-            });
-
-            // Look for the most recent upload comment with metadata
-            let jobId = null;
-            let platform = null;
-
-            // First try to find metadata in HTML comments
-            for (const comment of comments.data.reverse()) {
-              const metadataMatch = comment.body.match(/<!-- smartling-metadata:platform=([^,]+),job_id=([^,]+),action=upload -->/);
-              if (metadataMatch) {
-                platform = metadataMatch[1];
-                jobId = metadataMatch[2];
-                console.log(`Found metadata: platform=${platform}, job_id=${jobId}`);
-                break;
-              }
-            }
-
-            // Fallback: parse from message content if no metadata
-            if (!jobId || !platform) {
-              for (const comment of comments.data.reverse()) {
-                // Look for our standard message format
-                const jobIdMatch = comment.body.match(/\*\*Job ID:\*\* `([a-zA-Z0-9]+)`/);
-                const platformMatch = comment.body.match(/\*\*Platform:\*\* (iOS|macOS)/);
-
-                if (jobIdMatch && platformMatch) {
-                  jobId = jobIdMatch[1];
-                  platform = platformMatch[1];
-                  console.log(`Found from content: platform=${platform}, job_id=${jobId}`);
-                  break;
-                }
-              }
-            }
-
-            if (!jobId || !platform) {
-              throw new Error('Could not find Smartling job details in PR comments. Please ensure there is a comment with job ID and platform information.');
-            }
-
-            // Set outputs for use in later steps
-            core.setOutput('job_id', jobId);
-            core.setOutput('platform', platform);
-
-      - name: Update params with parsed values
-        if: steps.params.outputs.needs_comment_parsing == 'true'
         run: |
-          echo "job_id=${{ steps.parse_comment.outputs.job_id }}" >> $GITHUB_OUTPUT
-          echo "platform=${{ steps.parse_comment.outputs.platform }}" >> $GITHUB_OUTPUT
+          ./scripts/smartling/pr_comment_parser.sh "${{ github.event.pull_request.number }}"
 
       - name: Assert not main or release branch
         run: |
@@ -271,200 +218,39 @@ jobs:
       # PR-specific steps (comments and labels)
       - name: Post PR comment
         if: steps.params.outputs.is_pr_trigger == 'true'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            const action = '${{ steps.params.outputs.action }}';
-            const messageFile = action + '_message.txt';
+        run: |
+          ACTION="${{ steps.params.outputs.action }}"
+          MESSAGE_FILE="${ACTION}_message.txt"
+          PLATFORM="${{ steps.params.outputs.platform || steps.parse_comment.outputs.platform }}"
+          JOB_ID="${{ steps.upload.outputs.job_id || steps.params.outputs.job_id || steps.parse_comment.outputs.job_id }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
 
-            let message = '';
-            try {
-              message = fs.readFileSync(messageFile, 'utf8');
-            } catch (e) {
-              console.log('No message file found for action: ' + action);
-              return;
-            }
-
-            // Add metadata for future parsing
-            const platform = '${{ steps.params.outputs.platform }}' || '${{ steps.parse_comment.outputs.platform }}';
-            const jobId = '${{ steps.upload.outputs.job_id }}' || '${{ steps.params.outputs.job_id }}' || '${{ steps.parse_comment.outputs.job_id }}' || 'N/A';
-
-            const commentBody = message + '\n\n' +
-              '<!-- smartling-metadata:' +
-              'platform=' + platform +
-              ',job_id=' + jobId +
-              ',action=' + action +
-              ' -->';
-
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: commentBody
-            });
+          if [ -f "$MESSAGE_FILE" ]; then
+            ./scripts/smartling/pr_comment_poster.sh "$PR_NUMBER" "$MESSAGE_FILE" "$PLATFORM" "$JOB_ID" "$ACTION"
+          fi
 
       - name: Update PR labels after upload
         if: steps.params.outputs.is_pr_trigger == 'true' && steps.params.outputs.action == 'upload'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const uploadSuccess = '${{ steps.upload.outputs.upload_success }}' === 'true';
-            const labelToRemove = '${{ github.event.label.name }}';
+        run: |
+          STATUS="${{ steps.upload.outputs.upload_success == 'true' && 'success' || 'failed' }}"
+          TRIGGER_LABEL="${{ github.event.label.name }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
 
-            // Always remove the trigger label (l10n-iOS or l10n-macOS)
-            try {
-              await github.rest.issues.removeLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                name: labelToRemove
-              });
-            } catch (e) {
-              console.log('Could not remove label: ' + labelToRemove);
-            }
-
-            // Only add status label on success
-            if (uploadSuccess) {
-              const labelToAdd = 'l10n-awaiting-authorization';
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                labels: [labelToAdd]
-              });
-            }
+          ./scripts/smartling/pr_label_manager.sh after_upload "$PR_NUMBER" "$STATUS" "$TRIGGER_LABEL"
 
       - name: Update PR labels after approval
         if: steps.params.outputs.is_pr_trigger == 'true' && steps.params.outputs.action == 'approve'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const approveSuccess = '${{ steps.approve.outputs.approve_success }}' === 'true';
-            const labelToRemove = 'l10n-approve';
+        run: |
+          STATUS="${{ steps.approve.outputs.approve_success == 'true' && 'success' || 'failed' }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
 
-            // Always remove the trigger label
-            try {
-              await github.rest.issues.removeLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                name: labelToRemove
-              });
-            } catch (e) {
-              console.log('Could not remove label: ' + labelToRemove);
-            }
-
-            if (approveSuccess) {
-              // Success: remove awaiting-authorization, add in-progress
-              const oldStatusLabel = 'l10n-awaiting-authorization';
-              const labelToAdd = 'l10n-in-progress';
-
-              try {
-                await github.rest.issues.removeLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: context.issue.number,
-                  name: oldStatusLabel
-                });
-              } catch (e) {
-                console.log('Could not remove label: ' + oldStatusLabel);
-              }
-
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                labels: [labelToAdd]
-              });
-            } else {
-              // Failure: restore l10n-awaiting-authorization
-              const labelToRestore = 'l10n-awaiting-authorization';
-
-              // Check if label already exists
-              const labels = await github.rest.issues.listLabelsOnIssue({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number
-              });
-
-              const hasLabel = labels.data.some(l => l.name === labelToRestore);
-
-              if (!hasLabel) {
-                await github.rest.issues.addLabels({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: context.issue.number,
-                  labels: [labelToRestore]
-                });
-              }
-            }
+          ./scripts/smartling/pr_label_manager.sh after_approve "$PR_NUMBER" "$STATUS"
 
       - name: Update PR labels after download
         if: steps.params.outputs.is_pr_trigger == 'true' && steps.params.outputs.action == 'download'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const downloadResult = '${{ steps.download.outputs.download_result }}';
-            const labelToRemove = 'l10n-download';
+        run: |
+          RESULT="${{ steps.download.outputs.download_result }}"
+          STATUS="${RESULT:-failed}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
 
-            // Always remove the trigger label
-            try {
-              await github.rest.issues.removeLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                name: labelToRemove
-              });
-            } catch (e) {
-              console.log('Could not remove label: ' + labelToRemove);
-            }
-
-            if (downloadResult === 'success' || downloadResult === 'no_changes') {
-              // Success: remove in-progress, add completed
-              const oldStatusLabel = 'l10n-in-progress';
-              const labelToAdd = 'l10n-completed';
-
-              try {
-                await github.rest.issues.removeLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: context.issue.number,
-                  name: oldStatusLabel
-                });
-              } catch (e) {
-                console.log('Could not remove label: ' + oldStatusLabel);
-              }
-
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                labels: [labelToAdd]
-              });
-            } else {
-              // Failure: restore/keep l10n-in-progress
-              const labelToRestore = 'l10n-in-progress';
-
-              // Check if label already exists
-              const labels = await github.rest.issues.listLabelsOnIssue({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number
-              });
-
-              const hasLabel = labels.data.some(l => l.name === labelToRestore);
-
-              if (!hasLabel) {
-                await github.rest.issues.addLabels({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: context.issue.number,
-                  labels: [labelToRestore]
-                });
-              }
-            }
+          ./scripts/smartling/pr_label_manager.sh after_download "$PR_NUMBER" "$STATUS"

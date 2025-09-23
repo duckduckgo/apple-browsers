@@ -25,11 +25,32 @@ public struct DesignSystemPalette {
 
 public enum ColorPalette {
     case `default`
+    case desert
+    case figma
+    case green
+    case orange
+    case rose
+    case slateBlue
+    case violet
 
     var paletteDefinition: ColorPaletteDefinition.Type {
         switch self {
         case .default:
-            return DefaultColorPalette.self
+            DefaultColorPalette.self
+        case .desert:
+            DesertColorPalette.self
+        case .figma:
+            FigmaColorPalette.self
+        case .green:
+            GreenColorPalette.self
+        case .orange:
+            OrangeColorPalette.self
+        case .rose:
+            RoseColorPalette.self
+        case .slateBlue:
+            SlateBlueColorPalette.self
+        case .violet:
+            VioletColorPalette.self
         }
     }
 }

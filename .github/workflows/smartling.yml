@@ -38,7 +38,7 @@ jobs:
     # Only run for label triggers if it's one of our l10n labels
     if: |
       (github.event_name == 'workflow_dispatch') ||
-      (github.event_name == 'pull_request' && (github.event.label.name == 'l10n-iOS' || github.event.label.name == 'l10n-macOS' || github.event.label.name == 'l10n-approve'))
+      (github.event_name == 'pull_request' && (github.event.label.name == 'l10n-iOS' || github.event.label.name == 'l10n-macOS' || github.event.label.name == 'l10n-approve' || github.event.label.name == 'l10n-download'))
     runs-on: macos-15
     name: Smartling translation job
 
@@ -58,6 +58,10 @@ jobs:
             elif [[ "${{ github.event.label.name }}" == "l10n-approve" ]]; then
               # Will be set from comment parsing
               echo "action=approve" >> $GITHUB_OUTPUT
+              echo "needs_comment_parsing=true" >> $GITHUB_OUTPUT
+            elif [[ "${{ github.event.label.name }}" == "l10n-download" ]]; then
+              # Will be set from comment parsing
+              echo "action=download" >> $GITHUB_OUTPUT
               echo "needs_comment_parsing=true" >> $GITHUB_OUTPUT
             fi
             echo "is_pr_trigger=true" >> $GITHUB_OUTPUT
@@ -236,10 +240,32 @@ jobs:
 
       - name: Download from Smartling
         if: ${{ steps.params.outputs.action == 'download' }}
+        id: download
         run: |
           JOB_ID="${{ steps.params.outputs.job_id || steps.parse_comment.outputs.job_id }}"
           PLATFORM="${{ steps.params.outputs.platform || steps.parse_comment.outputs.platform }}"
-          ./scripts/smartling/smartling_download.sh "$JOB_ID" "${{ steps.params.outputs.force }}" "$PLATFORM"
+
+          # Try to download and capture result
+          if OUTPUT=$(./scripts/smartling/smartling_download.sh "$JOB_ID" "${{ steps.params.outputs.force }}" "$PLATFORM" 2>&1); then
+            echo "$OUTPUT"
+            # Check if there were no changes
+            if echo "$OUTPUT" | grep -q "No changes to import"; then
+              echo "download_result=no_changes" >> $GITHUB_OUTPUT
+              ./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "${{ env.SMARTLING_PROJECT_ID }}" no_changes
+            else
+              echo "download_result=success" >> $GITHUB_OUTPUT
+              ./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "${{ env.SMARTLING_PROJECT_ID }}" success
+            fi
+          else
+            echo "$OUTPUT"
+            echo "download_result=failed" >> $GITHUB_OUTPUT
+            # Check if it's a deletion error
+            if echo "$OUTPUT" | grep -q "would delete"; then
+              ./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "${{ env.SMARTLING_PROJECT_ID }}" failed deletions
+            else
+              ./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "${{ env.SMARTLING_PROJECT_ID }}" failed
+            fi
+          fi
           cat download_message.txt >> $GITHUB_STEP_SUMMARY
 
       # PR-specific steps (comments and labels)
@@ -280,15 +306,15 @@ jobs:
             });
 
       - name: Update PR labels after upload
-        if: steps.params.outputs.is_pr_trigger == 'true' && steps.params.outputs.action == 'upload' && steps.upload.outputs.upload_success == 'true'
+        if: steps.params.outputs.is_pr_trigger == 'true' && steps.params.outputs.action == 'upload'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const uploadSuccess = '${{ steps.upload.outputs.upload_success }}' === 'true';
             const labelToRemove = '${{ github.event.label.name }}';
-            const labelToAdd = 'l10n-awaiting-authorization';
 
-            // Remove the trigger label
+            // Always remove the trigger label (l10n-iOS or l10n-macOS)
             try {
               await github.rest.issues.removeLabel({
                 owner: context.repo.owner,
@@ -300,13 +326,16 @@ jobs:
               console.log('Could not remove label: ' + labelToRemove);
             }
 
-            // Add the status label
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              labels: [labelToAdd]
-            });
+            // Only add status label on success
+            if (uploadSuccess) {
+              const labelToAdd = 'l10n-awaiting-authorization';
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: [labelToAdd]
+              });
+            }
 
       - name: Update PR labels after approval
         if: steps.params.outputs.is_pr_trigger == 'true' && steps.params.outputs.action == 'approve'
@@ -354,6 +383,72 @@ jobs:
             } else {
               // Failure: restore l10n-awaiting-authorization
               const labelToRestore = 'l10n-awaiting-authorization';
+
+              // Check if label already exists
+              const labels = await github.rest.issues.listLabelsOnIssue({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number
+              });
+
+              const hasLabel = labels.data.some(l => l.name === labelToRestore);
+
+              if (!hasLabel) {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  labels: [labelToRestore]
+                });
+              }
+            }
+
+      - name: Update PR labels after download
+        if: steps.params.outputs.is_pr_trigger == 'true' && steps.params.outputs.action == 'download'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const downloadResult = '${{ steps.download.outputs.download_result }}';
+            const labelToRemove = 'l10n-download';
+
+            // Always remove the trigger label
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: labelToRemove
+              });
+            } catch (e) {
+              console.log('Could not remove label: ' + labelToRemove);
+            }
+
+            if (downloadResult === 'success' || downloadResult === 'no_changes') {
+              // Success: remove in-progress, add completed
+              const oldStatusLabel = 'l10n-in-progress';
+              const labelToAdd = 'l10n-completed';
+
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  name: oldStatusLabel
+                });
+              } catch (e) {
+                console.log('Could not remove label: ' + oldStatusLabel);
+              }
+
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: [labelToAdd]
+              });
+            } else {
+              // Failure: restore/keep l10n-in-progress
+              const labelToRestore = 'l10n-in-progress';
 
               // Check if label already exists
               const labels = await github.rest.issues.listLabelsOnIssue({

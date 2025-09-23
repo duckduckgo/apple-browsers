@@ -27,6 +27,9 @@ final class AIChatSidebar: NSObject {
 
     private let burnerMode: BurnerMode
 
+    /// The most recent AI chat URL that was active in the sidebar.
+    private(set)  var mostRecentAIChatURL: URL?
+
     /// The view controller that displays the sidebar contents.
     /// This property is set by the AIChatSidebarProvider when the view controller is created.
     var sidebarViewController: AIChatSidebarViewController?
@@ -37,7 +40,7 @@ final class AIChatSidebar: NSObject {
             if let sidebarViewController {
                 return sidebarViewController.currentAIChatURL
             } else {
-                return initialAIChatURL
+                return mostRecentAIChatURL ?? initialAIChatURL
             }
         }
     }
@@ -49,6 +52,21 @@ final class AIChatSidebar: NSObject {
     init(initialAIChatURL: URL? = nil, burnerMode: BurnerMode) {
         self.initialAIChatURL = initialAIChatURL ?? aiChatRemoteSettings.aiChatURL.forAIChatSidebar()
         self.burnerMode = burnerMode
+    }
+
+    /// Unloads the sidebar view controller after reading and updating the current AI chat URL.
+    /// This method ensures the current URL state is captured before the view controller is unloaded.
+    public func unloadViewController(){
+        if let sidebarViewController {
+            mostRecentAIChatURL = sidebarViewController.currentAIChatURL
+            sidebarViewController.stopLoading()
+            sidebarViewController.removeCompletely()
+            self.sidebarViewController = nil
+        }
+    }
+
+    override var debugDescription: String {
+        return "initialAIChatURL: \(initialAIChatURL), mostRecentAIChatURL: \(mostRecentAIChatURL?.absoluteString ?? "nil"), sidebarViewController: \(sidebarViewController != nil ? "YES" : "NO")"
     }
 }
 

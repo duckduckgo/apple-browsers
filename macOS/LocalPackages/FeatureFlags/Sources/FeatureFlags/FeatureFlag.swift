@@ -415,7 +415,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .unifiedURLPredictorMetrics:
-            return .internalOnly()
+            return .disabled
         }
     }
 }

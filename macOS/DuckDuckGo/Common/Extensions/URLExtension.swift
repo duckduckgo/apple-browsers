@@ -129,7 +129,7 @@ extension URL {
         }
         let url = makeURLUsingUnifiedPredictionLogic(from: addressBarString)
 
-        /// Return early if the metrics feature flag is disabled (which is the case for non-internal users).
+        /// Return early if the metrics feature flag is disabled (only internal users can opt in to metrics collection).
         guard enableMetrics, featureFlagger.isFeatureOn(.unifiedURLPredictorMetrics) else {
             return url
         }

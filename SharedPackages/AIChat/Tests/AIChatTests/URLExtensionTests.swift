@@ -32,7 +32,7 @@ final class URLExtensionTests: XCTestCase {
         static let duckDuckGoWithMissingQuery = "\(duckDuckGoDomain)/"
         static let duckDuckGoDifferentQuery = "\(duckDuckGoDomain)/?ia=search"
         static let duckDuckGoAdditionalQueryItems = "\(duckDuckGoDomain)/?ia=chat&other=param"
-        static let privacyPro = "\(duckDuckGoDomain)/privacypro"
+        static let duckDuckGoSubscription = "\(duckDuckGoDomain)/privacypro"
     }
 
     func testAddingQueryItemToEmptyURL() {
@@ -103,8 +103,8 @@ final class URLExtensionTests: XCTestCase {
         }
     }
 
-    func testPrivacyProURL() {
-        if let url = URL(string: TestURLs.privacyPro) {
+    func testSubscriptionURL() {
+        if let url = URL(string: TestURLs.duckDuckGoSubscription) {
             XCTAssertFalse(url.isDuckAIURL, "The URL should not be identified as a DuckDuckGo AI URL due to the domain.")
         } else {
             XCTFail("Failed to create URL from string.")

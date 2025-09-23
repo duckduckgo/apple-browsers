@@ -21,7 +21,7 @@ import Foundation
 import DDGSync
 @testable import DuckDuckGo
 
-final class MockPrivacyProDataReporter: PrivacyProDataReporting {
+final class MockSubscriptionDataReporter: SubscriptionDataReporting {
 
     func isReinstall() -> Bool {
         false
@@ -83,11 +83,11 @@ final class MockPrivacyProDataReporter: PrivacyProDataReporting {
 
     func saveSearchCount() {}
 
-    func randomizedParameters(for useCase: DuckDuckGo.PrivacyProDataReportingUseCase) -> [String: String] {
+    func randomizedParameters(for useCase: DuckDuckGo.SubscriptionDataReportingUseCase) -> [String: String] {
         [:]
     }
 
-    func mergeRandomizedParameters(for useCase: DuckDuckGo.PrivacyProDataReportingUseCase, with parameters: [String: String]) -> [String: String] {
+    func mergeRandomizedParameters(for useCase: DuckDuckGo.SubscriptionDataReportingUseCase, with parameters: [String: String]) -> [String: String] {
         [:]
     }
 }

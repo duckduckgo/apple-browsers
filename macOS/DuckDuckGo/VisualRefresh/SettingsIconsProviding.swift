@@ -75,7 +75,7 @@ final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var threatProtectionIcon: NSImage = DesignSystemImages.Color.Size16.radar
     var cookiePopUpProtectionIcon: NSImage = DesignSystemImages.Color.Size16.cookie
     var emailProtectionIcon: NSImage = DesignSystemImages.Color.Size16.emailProtection
-    var privacyProIcon: NSImage = DesignSystemImages.Color.Size16.privacyPro
+    var privacyProIcon: NSImage = DesignSystemImages.Color.Size16.subscription
     var vpnIcon: NSImage = DesignSystemImages.Color.Size16.vpn
     var personalInformationRemovalIcon: NSImage = DesignSystemImages.Color.Size16.identityBlockedPIR
     var identityTheftRestorationIcon: NSImage = DesignSystemImages.Color.Size16.identityTheftRestoration

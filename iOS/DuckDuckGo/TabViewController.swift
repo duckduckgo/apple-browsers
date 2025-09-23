@@ -180,7 +180,7 @@ class TabViewController: UIViewController {
         return false
     }
 
-    let privacyProDataReporter: PrivacyProDataReporting
+    let subscriptionDataReporter: SubscriptionDataReporting
 
     // Required to know when to disable autofill, see SaveLoginViewModel / SaveCreditCardViewModel for details
     // Stored in memory on TabViewController for privacy reasons
@@ -367,7 +367,7 @@ class TabViewController: UIViewController {
                                    historyManager: HistoryManaging,
                                    syncService: DDGSyncing,
                                    duckPlayer: DuckPlayerControlling?,
-                                   privacyProDataReporter: PrivacyProDataReporting,
+                                   subscriptionDataReporter: SubscriptionDataReporting,
                                    contextualOnboardingPresenter: ContextualOnboardingPresenting,
                                    contextualOnboardingLogic: ContextualOnboardingLogic,
                                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
@@ -390,7 +390,7 @@ class TabViewController: UIViewController {
                               historyManager: historyManager,
                               syncService: syncService,
                               duckPlayer: duckPlayer,
-                              privacyProDataReporter: privacyProDataReporter,
+                              subscriptionDataReporter: subscriptionDataReporter,
                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                               contextualOnboardingLogic: contextualOnboardingLogic,
                               onboardingPixelReporter: onboardingPixelReporter,
@@ -458,7 +458,7 @@ class TabViewController: UIViewController {
                    syncService: DDGSyncing,
                    certificateTrustEvaluator: CertificateTrustEvaluating = CertificateTrustEvaluator(),
                    duckPlayer: DuckPlayerControlling?,
-                   privacyProDataReporter: PrivacyProDataReporting,
+                   subscriptionDataReporter: SubscriptionDataReporting,
                    contextualOnboardingPresenter: ContextualOnboardingPresenting,
                    contextualOnboardingLogic: ContextualOnboardingLogic,
                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
@@ -483,7 +483,7 @@ class TabViewController: UIViewController {
         self.syncService = syncService
         self.certificateTrustEvaluator = certificateTrustEvaluator
         self.duckPlayer = duckPlayer
-        self.privacyProDataReporter = privacyProDataReporter
+        self.subscriptionDataReporter = subscriptionDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
@@ -2052,7 +2052,7 @@ extension TabViewController: WKNavigationDelegate {
                             backgroundAssertion.release()
                         }
                     }
-                    privacyProDataReporter.saveSearchCount()
+                    subscriptionDataReporter.saveSearchCount()
                 }
 
                 self.delegate?.closeFindInPage(tab: self)

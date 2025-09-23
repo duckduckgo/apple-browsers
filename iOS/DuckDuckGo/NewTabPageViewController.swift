@@ -51,7 +51,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     init(tab: Tab,
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
-         privacyProDataReporting: PrivacyProDataReporting? = nil,
+         subscriptionDataReporting: SubscriptionDataReporting? = nil,
          newTabDialogFactory: any NewTabDaxDialogProvider,
          daxDialogsManager: NewTabDialogSpecProvider & PrivacyProPromotionCoordinating,
          faviconLoader: FavoritesFaviconLoading,
@@ -73,7 +73,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         favoritesModel = FavoritesViewModel(favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader)
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
-                                                privacyProDataReporter: privacyProDataReporting,
+                                                subscriptionDataReporter: subscriptionDataReporting,
                                                 navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate))
 
         super.init(rootView: NewTabPageView(narrowLayoutInLandscape: narrowLayoutInLandscape,

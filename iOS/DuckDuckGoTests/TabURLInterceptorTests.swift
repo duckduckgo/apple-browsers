@@ -52,8 +52,8 @@ class TabURLInterceptorDefaultTests: XCTestCase {
     }
     
     func testNotificationForInterceptedPrivacyProPath() {
-        _ = self.expectation(forNotification: .urlInterceptPrivacyPro, object: nil, handler: nil)
-        
+        _ = self.expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
+
         let url = URL(string: "https://duckduckgo.com/pro")!
         let canNavigate = urlInterceptor.allowsNavigatingTo(url: url)
         
@@ -70,7 +70,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
     func testWhenURLIsPrivacyProAndHasOriginQueryParameterThenNotificationUserInfoHasOriginSet() throws {
         // GIVEN
         var capturedNotification: Notification?
-        _ = self.expectation(forNotification: .urlInterceptPrivacyPro, object: nil, handler: { notification in
+        _ = self.expectation(forNotification: .urlInterceptSubscription, object: nil, handler: { notification in
             capturedNotification = notification
             return true
         })
@@ -89,7 +89,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
     func testWhenURLIsPrivacyProAndDoesNotHaveOriginQueryParameterThenNotificationUserInfoDoesNotHaveOriginSet() throws {
         // GIVEN
         var capturedNotification: Notification?
-        _ = self.expectation(forNotification: .urlInterceptPrivacyPro, object: nil, handler: { notification in
+        _ = self.expectation(forNotification: .urlInterceptSubscription, object: nil, handler: { notification in
             capturedNotification = notification
             return true
         })
@@ -135,7 +135,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
     }
 
     func testWhenURLBelongsToTestDomainAndInternalModeIsDisabledThenNavigationIsNotIntercepted() async throws {
-        let notificationExpectation = expectation(forNotification: .urlInterceptPrivacyPro, object: nil, handler: nil)
+        let notificationExpectation = expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
         notificationExpectation.isInverted = true
 
         // GIVEN
@@ -151,7 +151,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
     }
 
     func testWhenURLBelongsToTestDomainAndInternalModeIsEnabledThenRedirectTriggers() async throws {
-        let notificationExpectation = expectation(forNotification: .urlInterceptPrivacyPro, object: nil, handler: nil)
+        let notificationExpectation = expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
 
         // GIVEN
         let url = URL(string: "https://duck.co/pro")!

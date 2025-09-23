@@ -53,6 +53,7 @@ public enum DesignSystemColor {
     case controlsDecorationPrimary
     case controlsDecorationSecondary
     case controlsDecorationTertiary
+    case controlsDecorationQuaternary
 
     // Brand
     case accent

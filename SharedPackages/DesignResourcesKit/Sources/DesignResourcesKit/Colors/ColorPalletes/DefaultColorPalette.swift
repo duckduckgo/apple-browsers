@@ -53,6 +53,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let xF9F9F9A3 = Color(0xF9F9F9A3)
     private static let x1F1F1F99 = Color(0x1F1F1F99)
     private static let xF9F9F9B7 = Color(0xF9F9F9B7)
+    private static let xF9F9F9CC = Color(0xF9F9F9CC)
+    private static let x1F1F1fB7 = Color(0x1F1F1fB7)
     private static let xCCDAFF = Color(0xCCDAFF)
     private static let x03091A = Color(0x03091A)
     private static let xADC2FC = Color(0xADC2FC)
@@ -194,6 +196,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let controlsDecorationPrimary = DynamicColor(lightColor: x1F1F1F4C, darkColor: xF9F9F95B)
     private static let controlsDecorationSecondary = DynamicColor(lightColor: x1F1F1F7A, darkColor: xF9F9F9A3)
     private static let controlsDecorationTertiary = DynamicColor(lightColor: x1F1F1F99, darkColor: xF9F9F9B7)
+    private static let controlsDecorationQuaternary = DynamicColor(lightColor: x1F1F1fB7, darkColor: xF9F9F9CC)
 
     // Accent
     private static let accentContentSecondary = DynamicColor(lightColor: xCCDAFF, darkColor: x03091A)
@@ -267,6 +270,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .controlsDecorationPrimary: return controlsDecorationPrimary
         case .controlsDecorationSecondary: return controlsDecorationSecondary
         case .controlsDecorationTertiary: return controlsDecorationTertiary
+        case .controlsDecorationQuaternary: return controlsDecorationQuaternary
         case .decorationPrimary: return decorationPrimary
         case .decorationSecondary: return decorationSecondary
         case .decorationTertiary: return decorationTertiary

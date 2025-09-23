@@ -409,7 +409,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .themes:
             return .internalOnly()
         case .unifiedURLPredictor:
-            return .disabled
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
         }
     }
 }

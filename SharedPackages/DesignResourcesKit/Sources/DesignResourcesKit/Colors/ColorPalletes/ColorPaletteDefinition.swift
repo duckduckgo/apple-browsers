@@ -62,6 +62,7 @@ protocol ColorPaletteDefinition {
     static var controlsDecorationPrimary: DynamicColor { get }
     static var controlsDecorationSecondary: DynamicColor { get }
     static var controlsDecorationTertiary: DynamicColor { get }
+    static var controlsDecorationQuaternary: DynamicColor { get }
 
     // Icons
     static var icons: DynamicColor { get }

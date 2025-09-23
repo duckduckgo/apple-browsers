@@ -47,6 +47,7 @@ extension ColorPaletteDefinition {
         case .controlsDecorationPrimary: return controlsDecorationPrimary
         case .controlsDecorationSecondary: return controlsDecorationSecondary
         case .controlsDecorationTertiary: return controlsDecorationTertiary
+        case .controlsDecorationQuaternary: return controlsDecorationQuaternary
         case .decorationPrimary: return decorationPrimary
         case .decorationSecondary: return decorationSecondary
         case .decorationTertiary: return decorationTertiary

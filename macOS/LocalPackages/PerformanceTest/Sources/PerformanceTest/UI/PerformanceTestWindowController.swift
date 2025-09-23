@@ -163,6 +163,7 @@ struct PerformanceTestWindowView: View {
         .padding(40)
     }
 
+    // swiftlint:disable:next cyclomatic_complexity function_body_length
     private func resultsView(_ results: PerformanceTestResults) -> some View {
         ScrollView {
             VStack(spacing: 24) {

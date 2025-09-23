@@ -31,11 +31,10 @@ public struct PreferencesPaidAIChatView: View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 4) {
                 TextMenuTitle(UserText.preferencesPaidAIChatTitle)
-
                 StatusIndicatorView(status: model.status, isLarge: true)
             }
-
             openFeatureSection
+            configureDuckAISection
             helpSection
         }
         .onAppear(perform: {
@@ -45,14 +44,23 @@ public struct PreferencesPaidAIChatView: View {
 
     @ViewBuilder
     private var openFeatureSection: some View {
-        PreferencePaneSection {
-            if model.isAIFeaturesEnabled {
+        if model.isAIFeaturesEnabled {
+            PreferencePaneSection {
                 Button(UserText.openPaidAIChatButton) { model.openPaidAIChat() }
                     .padding(.top, 4)
-                TextButton(UserText.disableDuckAILink, weight: .semibold) { model.openAIFeaturesSettings() }
-            } else {
-                TextButton(UserText.enableDuckAILink, weight: .semibold) { model.openAIFeaturesSettings() }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var configureDuckAISection: some View {
+        let title = model.isAIFeaturesEnabled ? UserText.configureDuckAIPaidAIChatTitle : UserText.enableDuckAIPaidAIChatTitle
+        let description = model.isAIFeaturesEnabled ? UserText.configureDuckAIPaidAIChatDescription : UserText.enableDuckAIPaidAIChatDescription
+        PreferencePaneSection {
+            TextMenuItemHeader(title, bottomPadding: 0)
+            TextMenuItemCaption(description)
+                .padding(.bottom, 8)
+            TextButton(UserText.paidDuckAILinkToAIFeatures, weight: .semibold) { model.openAIFeaturesSettings() }
         }
     }
 

@@ -2393,6 +2393,18 @@
         }
       }
     },
+    "subscription.preferences.paid.ai.chat.ai.features.link" : {
+      "comment" : "Link to the AI Features Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AI Features Settings"
+          }
+        }
+      }
+    },
     "subscription.preferences.paid.ai.chat.button" : {
       "comment" : "Title for the preferences pane button to open Duck.ai Pro",
       "extractionState" : "extracted_with_value",
@@ -2453,26 +2465,50 @@
         }
       }
     },
-    "subscription.preferences.paid.ai.chat.disable.link" : {
-      "comment" : "Text linking to the settings where it is possible to configure all AI features",
+    "subscription.preferences.paid.ai.chat.configure.duck.ai.description" : {
+      "comment" : "Description of the section of settings that allows user to configure Duck.ai",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Configure Duck.ai in AI Features settings."
+            "value" : "Customize Duck.ai and other AI Features of your browser in AI Features Settings"
           }
         }
       }
     },
-    "subscription.preferences.paid.ai.chat.enable.link" : {
-      "comment" : "Text linking to the settings where it is possible to enable all AI features",
+    "subscription.preferences.paid.ai.chat.configure.duck.ai.title" : {
+      "comment" : "Title of the section of settings that allows user to configure Duck.ai",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Enable Duck.ai in AI Features settings."
+            "value" : "Configure Duck.ai"
+          }
+        }
+      }
+    },
+    "subscription.preferences.paid.ai.chat.enable.duck.ai.description" : {
+      "comment" : "Title of the section of settings that allows user to configure Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Enable Duck.ai in AI Features Settings"
+          }
+        }
+      }
+    },
+    "subscription.preferences.paid.ai.chat.enable.duck.ai.title" : {
+      "comment" : "Title of the section of settings that allows user to configure Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get access to advanced AI models in Duck.ai"
           }
         }
       }

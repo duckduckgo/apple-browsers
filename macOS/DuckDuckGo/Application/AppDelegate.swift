@@ -536,11 +536,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             let subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags> = FeatureFlaggerMapping { feature in
                 switch feature {
-                case .usePrivacyProUSARegionOverride:
+                case .useSubscriptionUSARegionOverride:
                     return (featureFlagger.internalUserDecider.isInternalUser &&
                             subscriptionEnvironment.serviceEnvironment == .staging &&
                             subscriptionUserDefaults.storefrontRegionOverride == .usa)
-                case .usePrivacyProROWRegionOverride:
+                case .useSubscriptionROWRegionOverride:
                     return (featureFlagger.internalUserDecider.isInternalUser &&
                             subscriptionEnvironment.serviceEnvironment == .staging &&
                             subscriptionUserDefaults.storefrontRegionOverride == .restOfWorld)

@@ -110,7 +110,7 @@ class SuggestionTrayViewController: UIViewController {
     struct NewTabPageDependencies {
         let favoritesModel: FavoritesListInteracting
         let homePageMessagesConfiguration: HomePageMessagesConfiguration
-        let privacyProDataReporting: PrivacyProDataReporting?
+        let subscriptionDataReporting: SubscriptionDataReporting?
         let newTabDialogFactory: NewTabDaxDialogFactory
         let newTabDaxDialogManager: NewTabDialogSpecProvider & PrivacyProPromotionCoordinating
         let faviconLoader: FavoritesFaviconLoading
@@ -288,7 +288,7 @@ class SuggestionTrayViewController: UIViewController {
             tab: Tab(),
             interactionModel: dependencies.favoritesModel,
             homePageMessagesConfiguration: dependencies.homePageMessagesConfiguration,
-            privacyProDataReporting: dependencies.privacyProDataReporting,
+            subscriptionDataReporting: dependencies.subscriptionDataReporting,
             newTabDialogFactory: dependencies.newTabDialogFactory,
             daxDialogsManager: dependencies.newTabDaxDialogManager,
             faviconLoader: dependencies.faviconLoader,

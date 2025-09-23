@@ -148,7 +148,7 @@ struct SettingsRootView: View {
                                                                  navigationCoordinator: subscriptionNavigationCoordinator,
                                                                  subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
                                                                  subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                                 privacyProDataReporter: viewModel.privacyProDataReporter,
+                                                                 subscriptionDataReporter: viewModel.subscriptionDataReporter,
                                                                  tld: AppDependencyProvider.shared.storageCache.tld,
                                                                  internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                                  dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
@@ -158,7 +158,7 @@ struct SettingsRootView: View {
                                                                navigationCoordinator: subscriptionNavigationCoordinator,
                                                                subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
                                                                subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                               privacyProDataReporter: viewModel.privacyProDataReporter,
+                                                               subscriptionDataReporter: viewModel.subscriptionDataReporter,
                                                                tld: AppDependencyProvider.shared.storageCache.tld,
                                                                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                                dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider)

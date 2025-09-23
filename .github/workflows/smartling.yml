@@ -30,39 +30,69 @@ on:
         required: false
         type: boolean
         default: false
+  pull_request:
+    types: [labeled]
 
 jobs:
   smartling:
+    # Only run for label triggers if it's one of our l10n labels
+    if: |
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'pull_request' && (github.event.label.name == 'l10n-iOS' || github.event.label.name == 'l10n-macOS'))
     runs-on: macos-15
     name: Smartling translation job
 
     steps:
 
+      - name: Determine trigger and parameters
+        id: params
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # Label trigger - determine platform and set action to upload
+            if [[ "${{ github.event.label.name }}" == "l10n-iOS" ]]; then
+              echo "platform=iOS" >> $GITHUB_OUTPUT
+            elif [[ "${{ github.event.label.name }}" == "l10n-macOS" ]]; then
+              echo "platform=macOS" >> $GITHUB_OUTPUT
+            fi
+            echo "action=upload" >> $GITHUB_OUTPUT
+            echo "is_pr_trigger=true" >> $GITHUB_OUTPUT
+            echo "branch=${{ github.head_ref }}" >> $GITHUB_OUTPUT
+          else
+            # Manual workflow dispatch
+            echo "platform=${{ github.event.inputs.platform }}" >> $GITHUB_OUTPUT
+            echo "action=${{ github.event.inputs.action }}" >> $GITHUB_OUTPUT
+            echo "job_id=${{ github.event.inputs.job-id }}" >> $GITHUB_OUTPUT
+            echo "force=${{ github.event.inputs.force }}" >> $GITHUB_OUTPUT
+            echo "is_pr_trigger=false" >> $GITHUB_OUTPUT
+            echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Assert not main or release branch
         run: |
-          if [[ "${{ github.ref_name }}" == "main" ]] || [[ "${{ github.ref_name }}" == release/* ]]; then
+          BRANCH="${{ steps.params.outputs.branch }}"
+          if [[ "$BRANCH" == "main" ]] || [[ "$BRANCH" == release/* ]]; then
             echo "🚫 Smartling workflow should not run on main or release branches"
             echo "This workflow is for feature branches only"
             exit 1
           fi
-          echo "✅ Running on branch: ${{ github.ref_name }}"
+          echo "✅ Running on branch: $BRANCH"
 
       - name: Check out the code
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          ref: ${{ github.ref_name }}
+          ref: ${{ steps.params.outputs.branch }}
           persist-credentials: true
 
       - name: Set Smartling credentials (iOS)
-        if: ${{ github.event.inputs.platform == 'iOS' }}
+        if: ${{ steps.params.outputs.platform == 'iOS' }}
         run: |
           echo "SMARTLING_USER_ID=${{ secrets.IOS_SMARTLING_USER_ID }}" >> $GITHUB_ENV
           echo "SMARTLING_USER_SECRET=${{ secrets.IOS_SMARTLING_USER_SECRET }}" >> $GITHUB_ENV
           echo "SMARTLING_PROJECT_ID=${{ vars.IOS_SMARTLING_PROJECT_ID }}" >> $GITHUB_ENV
 
       - name: Set Smartling credentials (macOS)
-        if: ${{ github.event.inputs.platform == 'macOS' }}
+        if: ${{ steps.params.outputs.platform == 'macOS' }}
         run: |
           echo "SMARTLING_USER_ID=${{ secrets.MACOS_SMARTLING_USER_ID }}" >> $GITHUB_ENV
           echo "SMARTLING_USER_SECRET=${{ secrets.MACOS_SMARTLING_USER_SECRET }}" >> $GITHUB_ENV
@@ -81,38 +111,118 @@ jobs:
           pip install aiohttp
 
       - name: Install xmlstarlet (required for macOS export)
-        if: ${{ github.event.inputs.platform == 'macOS' && github.event.inputs.action == 'upload' }}
+        if: ${{ steps.params.outputs.platform == 'macOS' && steps.params.outputs.action == 'upload' }}
         run: |
           brew install xmlstarlet
 
       - name: Export
         id: export
-        if: ${{ github.event.inputs.action == 'upload' }}
+        if: ${{ steps.params.outputs.action == 'upload' }}
         run: |
           set -e -o pipefail
-          ./${{ github.event.inputs.platform }}/scripts/loc_export.sh | xcbeautify
+          ./${{ steps.params.outputs.platform }}/scripts/loc_export.sh | xcbeautify
 
       - name: Upload to Smartling
-        if: ${{ github.event.inputs.action == 'upload' }}
+        if: ${{ steps.params.outputs.action == 'upload' }}
         id: upload
         run: |
-          ./scripts/smartling/smartling_upload.sh "${{ github.event.inputs.platform }}" "${{ github.ref_name }}"
+          # Run upload and capture job ID
+          OUTPUT=$(./scripts/smartling/smartling_upload.sh "${{ steps.params.outputs.platform }}" "${{ steps.params.outputs.branch }}" 2>&1) || UPLOAD_FAILED=true
+          echo "$OUTPUT"
+
+          # Extract job ID from output
+          JOB_ID=$(echo "$OUTPUT" | grep -oE 'Job ID: [a-zA-Z0-9]+' | cut -d' ' -f3 || true)
+
+          if [ -z "$JOB_ID" ] || [ "$UPLOAD_FAILED" = "true" ]; then
+            echo "upload_success=false" >> $GITHUB_OUTPUT
+            ./scripts/smartling/smartling_messages.sh upload upload_message.txt "${{ steps.params.outputs.platform }}" "N/A" "${{ env.SMARTLING_PROJECT_ID }}" failed
+          else
+            echo "upload_success=true" >> $GITHUB_OUTPUT
+            echo "job_id=$JOB_ID" >> $GITHUB_OUTPUT
+            ./scripts/smartling/smartling_messages.sh upload upload_message.txt "${{ steps.params.outputs.platform }}" "$JOB_ID" "${{ env.SMARTLING_PROJECT_ID }}" success
+          fi
           cat upload_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Check Status
-        if: ${{ github.event.inputs.action == 'status' }}
+        if: ${{ steps.params.outputs.action == 'status' }}
         run: |
-          ./scripts/smartling/smartling_status.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.platform }}"
+          ./scripts/smartling/smartling_status.sh "${{ steps.params.outputs.job_id }}" "${{ steps.params.outputs.platform }}"
           cat status_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Approve Job
-        if: ${{ github.event.inputs.action == 'approve' }}
+        if: ${{ steps.params.outputs.action == 'approve' }}
         run: |
-          ./scripts/smartling/smartling_approve.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.platform }}"
+          ./scripts/smartling/smartling_approve.sh "${{ steps.params.outputs.job_id }}" "${{ steps.params.outputs.platform }}"
           cat approve_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Download from Smartling
-        if: ${{ github.event.inputs.action == 'download' }}
+        if: ${{ steps.params.outputs.action == 'download' }}
         run: |
-          ./scripts/smartling/smartling_download.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.force }}" "${{ github.event.inputs.platform }}"
+          ./scripts/smartling/smartling_download.sh "${{ steps.params.outputs.job_id }}" "${{ steps.params.outputs.force }}" "${{ steps.params.outputs.platform }}"
           cat download_message.txt >> $GITHUB_STEP_SUMMARY
+
+      # PR-specific steps (comments and labels)
+      - name: Post PR comment
+        if: steps.params.outputs.is_pr_trigger == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const action = '${{ steps.params.outputs.action }}';
+            const messageFile = action + '_message.txt';
+
+            let message = '';
+            try {
+              message = fs.readFileSync(messageFile, 'utf8');
+            } catch (e) {
+              console.log('No message file found for action: ' + action);
+              return;
+            }
+
+            // Add metadata for future parsing
+            const platform = '${{ steps.params.outputs.platform }}';
+            const jobId = '${{ steps.upload.outputs.job_id }}' || '${{ steps.params.outputs.job_id }}' || 'N/A';
+
+            const commentBody = message + '\n\n' +
+              '<!-- smartling-metadata:' +
+              'platform=' + platform +
+              ',job_id=' + jobId +
+              ',action=' + action +
+              ' -->';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: commentBody
+            });
+
+      - name: Update PR labels after upload
+        if: steps.params.outputs.is_pr_trigger == 'true' && steps.params.outputs.action == 'upload' && steps.upload.outputs.upload_success == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const labelToRemove = '${{ github.event.label.name }}';
+            const labelToAdd = 'l10n-awaiting-authorization';
+
+            // Remove the trigger label
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: labelToRemove
+              });
+            } catch (e) {
+              console.log('Could not remove label: ' + labelToRemove);
+            }
+
+            // Add the status label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: [labelToAdd]
+            });

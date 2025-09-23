@@ -139,7 +139,7 @@ final class CurrentMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     var syncIcon: NSImage = DesignSystemImages.Glyphs.Size16.sync
     let deleteBrowsingDataIcon: NSImage = DesignSystemImages.Glyphs.Size16.fire
     let emailProtectionIcon: NSImage = DesignSystemImages.Glyphs.Size16.email
-    let privacyProIcon: NSImage = DesignSystemImages.Glyphs.Size16.privacyPro
+    let privacyProIcon: NSImage = DesignSystemImages.Glyphs.Size16.subscription
     let fireproofSiteIcon: NSImage = DesignSystemImages.Glyphs.Size16.fireproof
     let removeFireproofIcon: NSImage = DesignSystemImages.Glyphs.Size16.fire
     let findInPageIcon: NSImage = DesignSystemImages.Glyphs.Size16.findSearch
@@ -149,7 +149,7 @@ final class CurrentMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let settingsIcon: NSImage = DesignSystemImages.Glyphs.Size16.settings
     let browserFeedbackIcon: NSImage = DesignSystemImages.Glyphs.Size16.browser
     let reportBrokenSiteIcon: NSImage = DesignSystemImages.Glyphs.Size16.siteBreakage
-    let sendPrivacyProFeedbackIcon: NSImage = DesignSystemImages.Glyphs.Size16.privacyPro
+    let sendPrivacyProFeedbackIcon: NSImage = DesignSystemImages.Glyphs.Size16.subscription
     let passwordsSubMenuIcon: NSImage = DesignSystemImages.Glyphs.Size16.keyLogin
     let identitiesIcon: NSImage = DesignSystemImages.Glyphs.Size16.profile
     let creditCardsIcon: NSImage = DesignSystemImages.Glyphs.Size16.creditCard

@@ -1,5 +1,5 @@
 //
-//  PrivacyProDataReporterTests.swift
+//  SubscriptionDataReporterTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -24,7 +24,7 @@ import XCTest
 @testable import DDGSync
 @testable import SecureStorage
 
-final class PrivacyProDataReporterTests: XCTestCase {
+final class SubscriptionDataReporterTests: XCTestCase {
     let testConfig = """
     {
         "readme": "https://github.com/duckduckgo/privacy-configuration",
@@ -50,18 +50,18 @@ final class PrivacyProDataReporterTests: XCTestCase {
                                                          localProtection: MockDomainsProtectionStore(),
                                                          internalUserDecider: MockInternalUserDecider())
 
-    let testSuiteName = "PrivacyProDataReporterTests"
+    let testSuiteName = "SubscriptionDataReporterTests"
     var testDefaults: UserDefaults!
     let mockCalendar = MockCalendar()
     lazy var statisticsStore = StatisticsUserDefaults(groupName: testSuiteName)
 
-    var reporter: PrivacyProDataReporter!
-    var anotherReporter: PrivacyProDataReporter!
+    var reporter: SubscriptionDataReporter!
+    var anotherReporter: SubscriptionDataReporter!
 
     override func setUp() {
         super.setUp()
         testDefaults = UserDefaults(suiteName: testSuiteName)
-        reporter = PrivacyProDataReporter(
+        reporter = SubscriptionDataReporter(
             configurationManager: configManager,
             variantManager: MockVariantManager(currentVariant: VariantIOS(name: "sc", weight: 0, isIncluded: VariantIOS.When.always, features: [])),
             userDefaults: testDefaults,
@@ -76,7 +76,7 @@ final class PrivacyProDataReporterTests: XCTestCase {
             fireproofing: MockFireproofing(),
             dateGenerator: mockCalendar.now
         )
-        anotherReporter = PrivacyProDataReporter(
+        anotherReporter = SubscriptionDataReporter(
             configurationManager: configManager,
             variantManager: MockVariantManager(currentVariant: VariantIOS(name: "ru", weight: 0, isIncluded: VariantIOS.When.always, features: [])),
             userDefaults: testDefaults,

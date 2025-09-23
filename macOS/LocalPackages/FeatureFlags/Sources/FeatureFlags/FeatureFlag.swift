@@ -367,7 +367,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatPageContext:
             return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
         case .aiChatImprovements:
-            return .disabled
+            return .remoteReleasable(.subfeature(AIChatSubfeature.improvements))
         case .osSupportForceUnsupportedMessage:
             return .disabled
         case .osSupportForceWillSoonDropSupportMessage:

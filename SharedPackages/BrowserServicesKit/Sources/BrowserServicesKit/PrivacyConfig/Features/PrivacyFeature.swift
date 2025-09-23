@@ -227,6 +227,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Adds context menu action for translating text selected on a website.
     case textTranslation
+
+    /// Rollout feature flag for entry point improvements
+    case improvements
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

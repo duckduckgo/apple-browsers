@@ -80,8 +80,8 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
         let swiftUIView = VPNUpsellPopoverView(viewModel: viewModel).fixedSize()
         let hostingController = NSHostingController(rootView: swiftUIView)
 
-        // Force layout and set frame explicitly to ensure proper positioning
-        hostingController.loadView()
+        // Access view to trigger loading, then force layout for proper sizing
+        _ = hostingController.view
         hostingController.view.layoutSubtreeIfNeeded()
         hostingController.view.frame = CGRect(origin: .zero, size: hostingController.view.intrinsicContentSize)
 

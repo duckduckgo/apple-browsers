@@ -34,29 +34,24 @@ struct SubscriptionAIChatView: View {
                                                     title: UserText.aiChatSubscriptionTitle,
                                                     status: shouldShowAsOn ? .on : .off,
                                                     explanation: UserText.aiChatSubscriptionCaption)
+        let configureDuckAIFooterText = isAIFeaturesEnabled ? UserText.aiChatSubscriptionConfigureAIFooter : UserText.aiChatSubscriptionEnableAIFooter
 
         List {
             SettingsDescriptionView(content: currentDescription)
             if isAIFeaturesEnabled {
-                Section(footer: Text(UserText.aiChatSubscriptionDisableAI)) {
+                Section {
                     SettingsCellView(label: UserText.openSubscriptionAIChat, action: {
                         viewModel.openAIChat()
                     }, webLinkIndicator: true, isButton: true
                     )
                 }
-            } else {
-                Section {
-                    VStack {
-                        Text(UserText.aiChatSubscriptionEnableAI)
-                            .foregroundStyle(.red)
-                            .font(
-                                Font(uiFont: UIFont.daxSubheadSemibold())
-                            )
-                    }
-                    .listRowInsets(EdgeInsets(top: -12, leading: -12, bottom: -12, trailing: -12))
-                    .listRowBackground(Color(designSystemColor: .background).edgesIgnoringSafeArea(.all))
-                    .frame(maxWidth: .infinity)
-                }
+            }
+
+            Section(footer: Text(configureDuckAIFooterText)) {
+                SettingsCellView(label: UserText.openAIFeaturesSettings, action: {
+                    viewModel.openAIFeaturesSettings()
+                }, webLinkIndicator: true, isButton: true
+                )
             }
         }
         .applySettingsListModifiers(title: UserText.aiChatSubscriptionTitle,

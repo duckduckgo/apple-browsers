@@ -882,7 +882,11 @@ extension SettingsViewModel {
     func openAIChat() {
         urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
     }
-    
+
+    func openAIFeaturesSettings() {
+        triggerDeepLinkNavigation(to: .aiChat)
+    }
+
     func openWebTrackingProtectionLearnMore() {
         urlOpener.open(URL.webTrackingProtection)
     }

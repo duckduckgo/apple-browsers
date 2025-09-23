@@ -172,14 +172,34 @@ public class SitePerformanceTester: NSObject {
     }
 
     private func collectPerformanceMetrics() async -> DetailedPerformanceMetrics? {
-        let bundle = Bundle(for: SitePerformanceTester.self)
+        // First try Bundle.module (SPM standard)
+        let bundle: Bundle
+        if let moduleBundle = Bundle(identifier: "PerformanceTest") {
+            bundle = moduleBundle
+            print("🔍 DEBUG: Using Bundle(identifier: PerformanceTest)")
+        } else {
+            // Fallback to Bundle(for:) which points to main app bundle
+            let mainBundle = Bundle(for: SitePerformanceTester.self)
+            print("🔍 DEBUG: Main bundle path: \(mainBundle.bundlePath)")
+
+            // Look for the PerformanceTest_PerformanceTest.bundle inside main bundle
+            guard let resourcePath = mainBundle.resourcePath,
+                  let performanceBundle = Bundle(path: "\(resourcePath)/PerformanceTest_PerformanceTest.bundle") else {
+                print("❌ FAILED to find PerformanceTest_PerformanceTest.bundle")
+                logger.error("Failed to find PerformanceTest bundle")
+                return nil
+            }
+            bundle = performanceBundle
+            print("🔍 DEBUG: Using PerformanceTest_PerformanceTest.bundle")
+        }
+
         print("🔍 DEBUG: Bundle path: \(bundle.bundlePath)")
         print("🔍 DEBUG: Bundle resources: \(bundle.resourcePath ?? "nil")")
 
         // Try to find the resource
         guard let url = bundle.url(forResource: "performanceMetrics", withExtension: "js") else {
             print("❌ FAILED to find performanceMetrics.js in bundle")
-            print("❌ Bundle(for:) path: \(bundle.bundlePath)")
+            print("❌ Bundle path: \(bundle.bundlePath)")
             if let resourcePath = bundle.resourcePath {
                 do {
                     let contents = try FileManager.default.contentsOfDirectory(atPath: resourcePath)

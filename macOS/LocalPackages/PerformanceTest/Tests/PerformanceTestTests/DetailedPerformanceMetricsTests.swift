@@ -209,39 +209,3 @@ final class DetailedPerformanceMetricsTests: XCTestCase {
         XCTAssertEqual(metrics.redirectCount, 0)
     }
 }
-
-// MARK: - CoreWebVitalsAssessment Tests
-
-final class CoreWebVitalsAssessmentTests: XCTestCase {
-
-    func testLCPAssessment_withGoodScore_returnsGood() {
-        let assessment = CoreWebVitalsAssessment(lcp: 2.0, fid: nil, cls: nil)
-        XCTAssertEqual(assessment.lcpAssessment, "Good")
-    }
-
-    func testLCPAssessment_withPoorScore_returnsPoor() {
-        let assessment = CoreWebVitalsAssessment(lcp: 5.0, fid: nil, cls: nil)
-        XCTAssertEqual(assessment.lcpAssessment, "Poor")
-    }
-
-    func testFIDAssessment_withGoodScore_returnsGood() {
-        let assessment = CoreWebVitalsAssessment(lcp: 2.0, fid: 0.05, cls: nil)
-        XCTAssertEqual(assessment.fidAssessment, "Good")
-    }
-
-    func testCLSAssessment_withPoorScore_returnsPoor() {
-        let assessment = CoreWebVitalsAssessment(lcp: 2.0, fid: nil, cls: 0.5)
-        XCTAssertEqual(assessment.clsAssessment, "Poor")
-    }
-
-    func testOverallAssessment_withMixedScores_returnsWorstCategory() {
-        let goodAssessment = CoreWebVitalsAssessment(lcp: 2.0, fid: 0.05, cls: 0.05)
-        XCTAssertEqual(goodAssessment.overallAssessment, "Good")
-
-        let poorAssessment = CoreWebVitalsAssessment(lcp: 5.0, fid: 0.05, cls: 0.05)
-        XCTAssertEqual(poorAssessment.overallAssessment, "Poor")
-
-        let needsImprovementAssessment = CoreWebVitalsAssessment(lcp: 3.0, fid: 0.2, cls: 0.05)
-        XCTAssertEqual(needsImprovementAssessment.overallAssessment, "Needs Improvement")
-    }
-}

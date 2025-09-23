@@ -3134,7 +3134,7 @@ Take back control of your personal information with the browser designed for dat
 "subscription.duck.ai.open" = "Open Duck.ai";
 
 /* Title of the setting item action to open AI Features Settings */
-"subscription.duck.ai.open.ai.features.settings" = "AI Features Settings";
+"subscription.duck.ai.open.ai.features.settings" = "Manage in AI Features Settings";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";

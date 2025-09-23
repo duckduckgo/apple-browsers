@@ -48,10 +48,20 @@ struct SubscriptionAIChatView: View {
             }
 
             Section(footer: Text(configureDuckAIFooterText)) {
-                SettingsCellView(label: UserText.openAIFeaturesSettings, action: {
+                SettingsCustomCell(content: {
+                    Text(UserText.openAIFeaturesSettings)
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .accent))
+                }, action: {
                     viewModel.openAIFeaturesSettings()
-                }, webLinkIndicator: true, isButton: true
-                )
+                }, isButton: true)
+//                SettingsCellView(action: { viewModel.openAIFeaturesSettings() }) {
+//                    Text(UserText.openAIFeaturesSettings)
+//                }
+//                SettingsCellView(label: UserText.openAIFeaturesSettings, action: {
+//                    viewModel.openAIFeaturesSettings()
+//                }, webLinkIndicator: true, isButton: true
+//                )
             }
         }
         .applySettingsListModifiers(title: UserText.aiChatSubscriptionTitle,

@@ -37,9 +37,15 @@ final class UserBehaviorManagerTests: XCTestCase {
         UserDefaults(suiteName: "testing_\(UUID().uuidString)")!
     }
 
+    func testDisabledFeatureFlag() {
+        
+    }
+
     func testRetentionPixel() {
 
-        // Setup PixelKit with callback to capture parameters
+        // Expectation
+
+        // Setup
         let pixelKit = PixelKit(
             dryRun: false,
             appVersion: "1.0.0",
@@ -47,25 +53,23 @@ final class UserBehaviorManagerTests: XCTestCase {
             dailyPixelCalendar: nil,
             defaults: userDefaults
         ) { pixelName, headers, parameters, _, _, _ in
-//            print("DEBUG: FireRequest called #\(callCount + 1) for pixel: \(pixelName) with parameters: \(parameters)")
-//            callCount += 1
-//            if ddgErrorParams == nil {
-//                ddgErrorParams = parameters
-//            } else {
-//                standardErrorParams = parameters
-//            }
+
         }
 
         let dataStorage = UserBehaviorDataStorage(userDefaults: userDefaults)
         let featureFlagger: any FeatureFlagger = MockFeatureFlagger()
         let originProvider: UserBehaviorOriginProvider = UserBehaviorOriginProviderMock()
+        let userBehaviorDefaultBrowserProvidingMock = UserBehaviorDefaultBrowserProvidingMock()
+        var attributionManager = UserBehaviorManager(pixelKit: pixelKit,
+                                                    dataStoring: dataStorage,
+                                                    featureFlagger: featureFlagger,
+                                                    originProvider: originProvider,
+                                                    defaultBrowserProviding: userBehaviorDefaultBrowserProvidingMock)
 
-//        var attributionManager = UserBehaviorManager(pixelKit: pixelKit,
-//                                                    dataStoring: dataStorage,
-//                                                    featureFlagger: featureFlagger,
-//                                                    originProvider: originProvider,
-//                                                    defaultBrowserProviding: <#any UserBehaviorDefaultBrowserProviding#>)
+        // Triggers
 
-        // >>>
+        // Check expected Pixel
+
+        
     }
 }

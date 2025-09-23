@@ -33,14 +33,14 @@ extension UserBehaviorManager {
         NotificationCenter.default
             .publisher(for: UIApplication.willEnterForegroundNotification)
             .sink { [weak self] _ in
-                self?.appDidStart()
+                self?.process(trigger: .appDidStart)
             }
             .store(in: &cancellables)
 #elseif os(macOS)
         NotificationCenter.default
             .publisher(for: NSApplication.didBecomeActiveNotification)
             .sink { [weak self] _ in
-                self?.appDidStart()
+                self?.process(trigger: .appDidStart)
             }
             .store(in: &cancellables)
 #endif

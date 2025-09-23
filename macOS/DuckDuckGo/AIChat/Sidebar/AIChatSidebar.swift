@@ -30,12 +30,17 @@ final class AIChatSidebar: NSObject {
     /// The most recent AI chat URL that was active in the sidebar.
     private(set)  var mostRecentAIChatURL: URL?
 
+    /// Indicates whether the sidebar is currently revealed/presented in the UI.
+    /// This is separate from whether a view controller exists, as view controllers can be created
+    /// during state restoration before the sidebar is actually shown.
+    private(set) var isRevealed: Bool = false
+
     /// The view controller that displays the sidebar contents.
     /// This property is set by the AIChatSidebarProvider when the view controller is created.
     var sidebarViewController: AIChatSidebarViewController?
 
     /// The current AI chat URL being displayed.
-    private var currentAIChatURL: URL {
+    public var currentAIChatURL: URL {
         get {
             if let sidebarViewController {
                 return sidebarViewController.currentAIChatURL
@@ -54,8 +59,21 @@ final class AIChatSidebar: NSObject {
         self.burnerMode = burnerMode
     }
 
+    /// Marks the sidebar as revealed/presented in the UI.
+    /// Call this when the sidebar is actually shown to the user.
+    public func setRevealed() {
+        isRevealed = true
+    }
+
+    /// Marks the sidebar as hidden/not presented in the UI.
+    /// Call this when the sidebar is hidden from the user.
+    public func setHidden() {
+        isRevealed = false
+    }
+
     /// Unloads the sidebar view controller after reading and updating the current AI chat URL.
     /// This method ensures the current URL state is captured before the view controller is unloaded.
+    /// Also marks the sidebar as hidden since the view controller is being unloaded.
     public func unloadViewController(){
         if let sidebarViewController {
             mostRecentAIChatURL = sidebarViewController.currentAIChatURL
@@ -63,10 +81,11 @@ final class AIChatSidebar: NSObject {
             sidebarViewController.removeCompletely()
             self.sidebarViewController = nil
         }
+        isRevealed = false
     }
 
     override var debugDescription: String {
-        return "initialAIChatURL: \(initialAIChatURL), mostRecentAIChatURL: \(mostRecentAIChatURL?.absoluteString ?? "nil"), sidebarViewController: \(sidebarViewController != nil ? "YES" : "NO")"
+        return "initialAIChatURL: \(initialAIChatURL), mostRecentAIChatURL: \(mostRecentAIChatURL?.absoluteString ?? "nil"), isRevealed: \(isRevealed), sidebarViewController: \(sidebarViewController != nil ? "YES" : "NO")"
     }
 }
 
@@ -76,15 +95,18 @@ extension AIChatSidebar: NSSecureCoding {
 
     private enum CodingKeys {
         static let initialAIChatURL = "initialAIChatURL"
+        static let isRevealed = "isRevealed"
     }
 
     convenience init?(coder: NSCoder) {
         let initialAIChatURL = coder.decodeObject(of: NSURL.self, forKey: CodingKeys.initialAIChatURL) as URL?
         self.init(initialAIChatURL: initialAIChatURL, burnerMode: .regular)
+        self.isRevealed = coder.decodeIfPresent(at: CodingKeys.isRevealed) ?? true
     }
 
     func encode(with coder: NSCoder) {
         coder.encode(currentAIChatURL as NSURL, forKey: CodingKeys.initialAIChatURL)
+        coder.encode(isRevealed, forKey: CodingKeys.isRevealed)
     }
 
     static var supportsSecureCoding: Bool {

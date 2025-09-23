@@ -96,9 +96,7 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
             return existingViewController
         }
 
-        let aiChatRemoteSettings = AIChatRemoteSettings()
-        let initialAIChatURL = sidebar.mostRecentAIChatURL ?? aiChatRemoteSettings.aiChatURL.forAIChatSidebar()
-        let sidebarViewController = AIChatSidebarViewController(currentAIChatURL: initialAIChatURL, burnerMode: burnerMode)
+        let sidebarViewController = AIChatSidebarViewController(currentAIChatURL: sidebar.currentAIChatURL, burnerMode: burnerMode)
         sidebar.sidebarViewController = sidebarViewController
 
         return sidebarViewController
@@ -111,15 +109,11 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
     }
 
     func isShowingSidebar(for tabID: TabIdentifier) -> Bool {
-        getSidebarViewController(for: tabID) != nil
+        sidebarsByTab[tabID]?.isRevealed ?? false
     }
 
     func handleSidebarDidClose(for tabID: TabIdentifier) {
-        guard let tabSidebar = sidebarsByTab[tabID] else {
-            return
-        }
-
-        tabSidebar.unloadViewController()
+        sidebarsByTab[tabID]?.unloadViewController() // This already calls setHidden() internally
     }
 
     func cleanUp(for currentTabIDs: [TabIdentifier]) {

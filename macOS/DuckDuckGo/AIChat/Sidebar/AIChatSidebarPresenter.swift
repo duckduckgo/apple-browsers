@@ -144,6 +144,12 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
             sidebarViewController.delegate = self
             sidebarHost.embedSidebarViewController(sidebarViewController)
+
+            // Mark sidebar as revealed when it's being shown
+            sidebarProvider.sidebarsByTab[tabID]?.setRevealed()
+        } else {
+            // Mark sidebar as hidden when it's being hidden
+            sidebarProvider.sidebarsByTab[tabID]?.setHidden()
         }
 
         let newConstraintValue = isShowingSidebar ? -self.sidebarProvider.sidebarWidth : 0.0
@@ -217,7 +223,8 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 extension AIChatSidebarPresenter: AIChatSidebarHostingDelegate {
 
     func sidebarHostDidSelectTab(with tabID: TabIdentifier) {
-        updateSidebarConstraints(for: tabID, isShowingSidebar: isSidebarOpen(for: tabID), withAnimation: false)
+        let shouldShowSidebar = isSidebarOpen(for: tabID)
+        updateSidebarConstraints(for: tabID, isShowingSidebar: shouldShowSidebar, withAnimation: false)
     }
 
     func sidebarHostDidUpdateTabs() {

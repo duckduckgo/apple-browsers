@@ -201,7 +201,7 @@ extension MainViewController {
         launchSettings()
     }
 
-    func segueToPrivacyPro() {
+    func segueToDuckDuckGoSubscription() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings {
@@ -329,7 +329,7 @@ extension MainViewController {
                                                   deepLink: deepLinkTarget,
                                                   historyManager: historyManager,
                                                   syncPausedStateManager: syncPausedStateManager,
-                                                  privacyProDataReporter: privacyProDataReporter,
+                                                  subscriptionDataReporter: subscriptionDataReporter,
                                                   textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,

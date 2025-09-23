@@ -112,8 +112,6 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
 
     private static func buildMessageOriginRules() -> [HostnameMatchingRule] {
         var rules: [HostnameMatchingRule] = []
-        #warning("TODO: remove before merging")
-        rules.append(.exact(hostname: "bhall.duck.co"))
         if let ddgDomain = URL.ddg.host {
             rules.append(.exact(hostname: ddgDomain))
         }

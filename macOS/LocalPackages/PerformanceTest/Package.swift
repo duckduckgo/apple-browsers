@@ -23,6 +23,9 @@ let package = Package(
             dependencies: ["NetworkQualityMonitor"],
             resources: [
                 .process("Resources")
-            ])
+            ]),
+        .testTarget(
+            name: "PerformanceTestTests",
+            dependencies: ["PerformanceTest"])
     ]
 )

@@ -88,7 +88,7 @@ final class DetailedPerformanceMetricsTests: XCTestCase {
             totalResourcesSize: 1000.0
         )
 
-        XCTAssertEqual(metrics.compressionRatio, 0.5, accuracy: 0.001)
+        XCTAssertEqual(metrics.compressionRatio!, 0.5, accuracy: 0.001)
     }
 
     func testCompressionRatio_withZeroSizes_returnsNil() {
@@ -128,7 +128,7 @@ final class DetailedPerformanceMetricsTests: XCTestCase {
             totalResourcesSize: 2500.0
         )
 
-        XCTAssertEqual(metrics.averageResourceSize, 500.0)
+        XCTAssertEqual(metrics.averageResourceSize!, 500.0)
     }
 
     func testUsesModernProtocol_withHTTP2_returnsTrue() {

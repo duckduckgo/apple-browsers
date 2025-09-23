@@ -168,7 +168,6 @@ struct PerformanceTestWindowView: View {
 
     // MARK: - Results View
 
-    // swiftlint:disable:next cyclomatic_complexity function_body_length
     private func resultsView(_ results: PerformanceTestResults) -> some View {
         ScrollView {
             VStack(spacing: PerformanceTestConstants.Layout.mainSpacing) {

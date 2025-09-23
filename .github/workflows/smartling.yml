@@ -38,7 +38,7 @@ jobs:
     # Only run for label triggers if it's one of our l10n labels
     if: |
       (github.event_name == 'workflow_dispatch') ||
-      (github.event_name == 'pull_request' && (github.event.label.name == 'l10n-iOS' || github.event.label.name == 'l10n-macOS'))
+      (github.event_name == 'pull_request' && (github.event.label.name == 'l10n-iOS' || github.event.label.name == 'l10n-macOS' || github.event.label.name == 'l10n-approve'))
     runs-on: macos-15
     name: Smartling translation job
 
@@ -48,13 +48,18 @@ jobs:
         id: params
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            # Label trigger - determine platform and set action to upload
+            # Label trigger
             if [[ "${{ github.event.label.name }}" == "l10n-iOS" ]]; then
               echo "platform=iOS" >> $GITHUB_OUTPUT
+              echo "action=upload" >> $GITHUB_OUTPUT
             elif [[ "${{ github.event.label.name }}" == "l10n-macOS" ]]; then
               echo "platform=macOS" >> $GITHUB_OUTPUT
+              echo "action=upload" >> $GITHUB_OUTPUT
+            elif [[ "${{ github.event.label.name }}" == "l10n-approve" ]]; then
+              # Will be set from comment parsing
+              echo "action=approve" >> $GITHUB_OUTPUT
+              echo "needs_comment_parsing=true" >> $GITHUB_OUTPUT
             fi
-            echo "action=upload" >> $GITHUB_OUTPUT
             echo "is_pr_trigger=true" >> $GITHUB_OUTPUT
             echo "branch=${{ github.head_ref }}" >> $GITHUB_OUTPUT
           else
@@ -66,6 +71,65 @@ jobs:
             echo "is_pr_trigger=false" >> $GITHUB_OUTPUT
             echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
+
+      - name: Parse job details from PR comments
+        if: steps.params.outputs.needs_comment_parsing == 'true'
+        uses: actions/github-script@v7
+        id: parse_comment
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Fetch all PR comments
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            // Look for the most recent upload comment with metadata
+            let jobId = null;
+            let platform = null;
+
+            // First try to find metadata in HTML comments
+            for (const comment of comments.data.reverse()) {
+              const metadataMatch = comment.body.match(/<!-- smartling-metadata:platform=([^,]+),job_id=([^,]+),action=upload -->/);
+              if (metadataMatch) {
+                platform = metadataMatch[1];
+                jobId = metadataMatch[2];
+                console.log(`Found metadata: platform=${platform}, job_id=${jobId}`);
+                break;
+              }
+            }
+
+            // Fallback: parse from message content if no metadata
+            if (!jobId || !platform) {
+              for (const comment of comments.data.reverse()) {
+                // Look for our standard message format
+                const jobIdMatch = comment.body.match(/\*\*Job ID:\*\* `([a-zA-Z0-9]+)`/);
+                const platformMatch = comment.body.match(/\*\*Platform:\*\* (iOS|macOS)/);
+
+                if (jobIdMatch && platformMatch) {
+                  jobId = jobIdMatch[1];
+                  platform = platformMatch[1];
+                  console.log(`Found from content: platform=${platform}, job_id=${jobId}`);
+                  break;
+                }
+              }
+            }
+
+            if (!jobId || !platform) {
+              throw new Error('Could not find Smartling job details in PR comments. Please ensure there is a comment with job ID and platform information.');
+            }
+
+            // Set outputs for use in later steps
+            core.setOutput('job_id', jobId);
+            core.setOutput('platform', platform);
+
+      - name: Update params with parsed values
+        if: steps.params.outputs.needs_comment_parsing == 'true'
+        run: |
+          echo "job_id=${{ steps.parse_comment.outputs.job_id }}" >> $GITHUB_OUTPUT
+          echo "platform=${{ steps.parse_comment.outputs.platform }}" >> $GITHUB_OUTPUT
 
       - name: Assert not main or release branch
         run: |
@@ -85,14 +149,14 @@ jobs:
           persist-credentials: true
 
       - name: Set Smartling credentials (iOS)
-        if: ${{ steps.params.outputs.platform == 'iOS' }}
+        if: ${{ steps.params.outputs.platform == 'iOS' || steps.parse_comment.outputs.platform == 'iOS' }}
         run: |
           echo "SMARTLING_USER_ID=${{ secrets.IOS_SMARTLING_USER_ID }}" >> $GITHUB_ENV
           echo "SMARTLING_USER_SECRET=${{ secrets.IOS_SMARTLING_USER_SECRET }}" >> $GITHUB_ENV
           echo "SMARTLING_PROJECT_ID=${{ vars.IOS_SMARTLING_PROJECT_ID }}" >> $GITHUB_ENV
 
       - name: Set Smartling credentials (macOS)
-        if: ${{ steps.params.outputs.platform == 'macOS' }}
+        if: ${{ steps.params.outputs.platform == 'macOS' || steps.parse_comment.outputs.platform == 'macOS' }}
         run: |
           echo "SMARTLING_USER_ID=${{ secrets.MACOS_SMARTLING_USER_ID }}" >> $GITHUB_ENV
           echo "SMARTLING_USER_SECRET=${{ secrets.MACOS_SMARTLING_USER_SECRET }}" >> $GITHUB_ENV
@@ -111,7 +175,7 @@ jobs:
           pip install aiohttp
 
       - name: Install xmlstarlet (required for macOS export)
-        if: ${{ steps.params.outputs.platform == 'macOS' && steps.params.outputs.action == 'upload' }}
+        if: ${{ (steps.params.outputs.platform == 'macOS' || steps.parse_comment.outputs.platform == 'macOS') && steps.params.outputs.action == 'upload' }}
         run: |
           brew install xmlstarlet
 
@@ -120,14 +184,16 @@ jobs:
         if: ${{ steps.params.outputs.action == 'upload' }}
         run: |
           set -e -o pipefail
-          ./${{ steps.params.outputs.platform }}/scripts/loc_export.sh | xcbeautify
+          PLATFORM="${{ steps.params.outputs.platform || steps.parse_comment.outputs.platform }}"
+          ./${PLATFORM}/scripts/loc_export.sh | xcbeautify
 
       - name: Upload to Smartling
         if: ${{ steps.params.outputs.action == 'upload' }}
         id: upload
         run: |
+          PLATFORM="${{ steps.params.outputs.platform || steps.parse_comment.outputs.platform }}"
           # Run upload and capture job ID
-          OUTPUT=$(./scripts/smartling/smartling_upload.sh "${{ steps.params.outputs.platform }}" "${{ steps.params.outputs.branch }}" 2>&1) || UPLOAD_FAILED=true
+          OUTPUT=$(./scripts/smartling/smartling_upload.sh "$PLATFORM" "${{ steps.params.outputs.branch }}" 2>&1) || UPLOAD_FAILED=true
           echo "$OUTPUT"
 
           # Extract job ID from output
@@ -135,30 +201,45 @@ jobs:
 
           if [ -z "$JOB_ID" ] || [ "$UPLOAD_FAILED" = "true" ]; then
             echo "upload_success=false" >> $GITHUB_OUTPUT
-            ./scripts/smartling/smartling_messages.sh upload upload_message.txt "${{ steps.params.outputs.platform }}" "N/A" "${{ env.SMARTLING_PROJECT_ID }}" failed
+            ./scripts/smartling/smartling_messages.sh upload upload_message.txt "$PLATFORM" "N/A" "${{ env.SMARTLING_PROJECT_ID }}" failed
           else
             echo "upload_success=true" >> $GITHUB_OUTPUT
             echo "job_id=$JOB_ID" >> $GITHUB_OUTPUT
-            ./scripts/smartling/smartling_messages.sh upload upload_message.txt "${{ steps.params.outputs.platform }}" "$JOB_ID" "${{ env.SMARTLING_PROJECT_ID }}" success
+            ./scripts/smartling/smartling_messages.sh upload upload_message.txt "$PLATFORM" "$JOB_ID" "${{ env.SMARTLING_PROJECT_ID }}" success
           fi
           cat upload_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Check Status
         if: ${{ steps.params.outputs.action == 'status' }}
         run: |
-          ./scripts/smartling/smartling_status.sh "${{ steps.params.outputs.job_id }}" "${{ steps.params.outputs.platform }}"
+          JOB_ID="${{ steps.params.outputs.job_id || steps.parse_comment.outputs.job_id }}"
+          PLATFORM="${{ steps.params.outputs.platform || steps.parse_comment.outputs.platform }}"
+          ./scripts/smartling/smartling_status.sh "$JOB_ID" "$PLATFORM"
           cat status_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Approve Job
         if: ${{ steps.params.outputs.action == 'approve' }}
+        id: approve
         run: |
-          ./scripts/smartling/smartling_approve.sh "${{ steps.params.outputs.job_id }}" "${{ steps.params.outputs.platform }}"
+          JOB_ID="${{ steps.params.outputs.job_id || steps.parse_comment.outputs.job_id }}"
+          PLATFORM="${{ steps.params.outputs.platform || steps.parse_comment.outputs.platform }}"
+
+          # Try to approve and capture result
+          if ./scripts/smartling/smartling_approve.sh "$JOB_ID" "$PLATFORM"; then
+            echo "approve_success=true" >> $GITHUB_OUTPUT
+            ./scripts/smartling/smartling_messages.sh approve approve_message.txt "$PLATFORM" "$JOB_ID" "${{ env.SMARTLING_PROJECT_ID }}" success
+          else
+            echo "approve_success=false" >> $GITHUB_OUTPUT
+            ./scripts/smartling/smartling_messages.sh approve approve_message.txt "$PLATFORM" "$JOB_ID" "${{ env.SMARTLING_PROJECT_ID }}" failed
+          fi
           cat approve_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Download from Smartling
         if: ${{ steps.params.outputs.action == 'download' }}
         run: |
-          ./scripts/smartling/smartling_download.sh "${{ steps.params.outputs.job_id }}" "${{ steps.params.outputs.force }}" "${{ steps.params.outputs.platform }}"
+          JOB_ID="${{ steps.params.outputs.job_id || steps.parse_comment.outputs.job_id }}"
+          PLATFORM="${{ steps.params.outputs.platform || steps.parse_comment.outputs.platform }}"
+          ./scripts/smartling/smartling_download.sh "$JOB_ID" "${{ steps.params.outputs.force }}" "$PLATFORM"
           cat download_message.txt >> $GITHUB_STEP_SUMMARY
 
       # PR-specific steps (comments and labels)
@@ -181,8 +262,8 @@ jobs:
             }
 
             // Add metadata for future parsing
-            const platform = '${{ steps.params.outputs.platform }}';
-            const jobId = '${{ steps.upload.outputs.job_id }}' || '${{ steps.params.outputs.job_id }}' || 'N/A';
+            const platform = '${{ steps.params.outputs.platform }}' || '${{ steps.parse_comment.outputs.platform }}';
+            const jobId = '${{ steps.upload.outputs.job_id }}' || '${{ steps.params.outputs.job_id }}' || '${{ steps.parse_comment.outputs.job_id }}' || 'N/A';
 
             const commentBody = message + '\n\n' +
               '<!-- smartling-metadata:' +
@@ -226,3 +307,69 @@ jobs:
               issue_number: context.issue.number,
               labels: [labelToAdd]
             });
+
+      - name: Update PR labels after approval
+        if: steps.params.outputs.is_pr_trigger == 'true' && steps.params.outputs.action == 'approve'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const approveSuccess = '${{ steps.approve.outputs.approve_success }}' === 'true';
+            const labelToRemove = 'l10n-approve';
+
+            // Always remove the trigger label
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: labelToRemove
+              });
+            } catch (e) {
+              console.log('Could not remove label: ' + labelToRemove);
+            }
+
+            if (approveSuccess) {
+              // Success: remove awaiting-authorization, add in-progress
+              const oldStatusLabel = 'l10n-awaiting-authorization';
+              const labelToAdd = 'l10n-in-progress';
+
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  name: oldStatusLabel
+                });
+              } catch (e) {
+                console.log('Could not remove label: ' + oldStatusLabel);
+              }
+
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: [labelToAdd]
+              });
+            } else {
+              // Failure: restore l10n-awaiting-authorization
+              const labelToRestore = 'l10n-awaiting-authorization';
+
+              // Check if label already exists
+              const labels = await github.rest.issues.listLabelsOnIssue({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number
+              });
+
+              const hasLabel = labels.data.some(l => l.name === labelToRestore);
+
+              if (!hasLabel) {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  labels: [labelToRestore]
+                });
+              }
+            }

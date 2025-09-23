@@ -62,6 +62,12 @@ public class PageLoadTester: NSObject {
         self.webView.navigationDelegate = self
     }
 
+    /// Test helper to verify performanceMetrics.js can be loaded
+    public static func canLoadPerformanceScript() -> Bool {
+        let bundle = Bundle(for: PageLoadTester.self)
+        return bundle.url(forResource: "performanceMetrics", withExtension: "js") != nil
+    }
+
     public func measurePageLoad(
         url: URL,
         timeout: TimeInterval = defaultPageLoadTimeout,
@@ -130,66 +136,16 @@ public class PageLoadTester: NSObject {
         }
     }
 
-    // swiftlint:disable:next function_body_length
     private func collectPerformanceMetrics() async throws -> PerformanceMetrics? {
         // Load JavaScript from bundle resources
-        let scriptContent: String
+        guard let url = Bundle(for: PageLoadTester.self).url(forResource: "performanceMetrics", withExtension: "js") else {
+            logger.error("Failed to find performanceMetrics.js in bundle")
+            throw PageLoadError.networkError(message: "Performance metrics script not found in bundle")
+        }
 
-        // Try Bundle.module first (SPM standard)
-        if let url = Bundle(for: PageLoadTester.self).url(forResource: "performanceMetrics", withExtension: "js"),
-           let content = try? String(contentsOf: url) {
-            scriptContent = content
-        } else {
-            // Fallback: if Bundle.module isn't available, use inline JavaScript
-            logger.warning("Failed to load performanceMetrics.js from bundle, using inline fallback")
-            scriptContent = """
-                (function() {
-                    try {
-                        // Wait for page to be fully loaded
-                        if (document.readyState !== 'complete') {
-                            return { error: 'Page not fully loaded' };
-                        }
-
-                        // Get navigation timing data
-                        const perfData = performance.getEntriesByType('navigation')[0];
-                        if (!perfData) {
-                            return { error: 'No navigation performance data available' };
-                        }
-
-                        // Get paint timing data
-                        const paintEntries = performance.getEntriesByType('paint');
-                        let firstContentfulPaint = null;
-
-                        for (const entry of paintEntries) {
-                            if (entry.name === 'first-contentful-paint') {
-                                firstContentfulPaint = entry.startTime;
-                            }
-                        }
-
-                        // Get largest contentful paint if available
-                        let largestContentfulPaint = null;
-                        if (window.PerformanceObserver && PerformanceObserver.supportedEntryTypes &&
-                            PerformanceObserver.supportedEntryTypes.includes('largest-contentful-paint')) {
-                            const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
-                            if (lcpEntries.length > 0) {
-                                largestContentfulPaint = lcpEntries[lcpEntries.length - 1].startTime;
-                            }
-                        }
-
-                        // Calculate metrics
-                        const metrics = {
-                            loadComplete: perfData.loadEventEnd - perfData.fetchStart,
-                            firstContentfulPaint: firstContentfulPaint,
-                            largestContentfulPaint: largestContentfulPaint,
-                            timeToFirstByte: perfData.responseStart - perfData.fetchStart
-                        };
-
-                        return metrics;
-                    } catch (e) {
-                        return { error: 'JavaScript execution error: ' + e.message };
-                    }
-                })();
-                """
+        guard let scriptContent = try? String(contentsOf: url) else {
+            logger.error("Failed to read performanceMetrics.js from bundle")
+            throw PageLoadError.networkError(message: "Failed to load performance metrics script")
         }
 
         do {

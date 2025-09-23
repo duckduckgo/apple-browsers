@@ -17,6 +17,7 @@
         parameters: [
             'appVersion',
             'pixelSource',
+            'isInternalUser',
             {
                 key: 'selection',
                 description: 'Selected option',

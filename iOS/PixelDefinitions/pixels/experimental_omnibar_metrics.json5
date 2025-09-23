@@ -5,7 +5,10 @@
         description: 'Fires when the experimental omnibar with Duck.ai toggle is displayed to the user',
         owners: ['aataraxiaa'],
         triggers: ['other'],
-        suffixes: ['first_daily_count', 'platform', 'form_factor'],
+        suffixes: [
+            ['first_daily_count', 'platform', 'form_factor'],
+            ['platform', 'form_factor']
+        ],
         parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
     },
     m_aichat_experimental_omnibar_prompt_submitted: {
@@ -91,7 +94,10 @@
         description: 'Fires when the legacy omnibar is displayed to the user (baseline comparison for experimental omnibar)',
         owners: ['aataraxiaa'],
         triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
+        suffixes: [
+            ['first_daily_count', 'platform', 'form_factor'],
+            ['platform', 'form_factor']
+        ],
         parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
     },
     m_aichat_legacy_omnibar_query_submitted: {
@@ -221,7 +227,7 @@
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
     },
     m_aichat_legacy_omnibar_back_button_pressed: {
         description: 'Fires when user presses the back/dismiss button in the legacy omnibar (baseline comparison for experimental omnibar back navigation)',
@@ -272,6 +278,6 @@
         owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
     },
 }

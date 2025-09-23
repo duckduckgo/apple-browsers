@@ -40,7 +40,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockSidebarHost = MockAIChatSidebarHosting()
-        mockSidebarProvider = MockAIChatSidebarProvider()
+        mockSidebarProvider = MockAIChatSidebarProvider(featureFlagger: MockFeatureFlagger())
         mockAIChatMenuConfig = DummyAIChatConfig()
         mockAIChatTabOpener = MockAIChatTabOpener()
         mockFeatureFlagger = MockFeatureFlagger()

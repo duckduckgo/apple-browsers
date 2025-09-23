@@ -25,7 +25,7 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        provider = AIChatSidebarProvider()
+        provider = AIChatSidebarProvider(featureFlagger: MockFeatureFlagger())
     }
 
     override func tearDown() {
@@ -37,7 +37,7 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
     func testInit_withDefaultParameters_setsEmptyDictionary() {
         // Given & When
-        let provider = AIChatSidebarProvider()
+        let provider = AIChatSidebarProvider(featureFlagger: MockFeatureFlagger())
 
         // Then
         XCTAssertTrue(provider.sidebarsByTab.isEmpty)
@@ -50,7 +50,7 @@ final class AIChatSidebarProviderTests: XCTestCase {
         let sidebarsByTab = ["tab1": testSidebar]
 
         // When
-        let provider = AIChatSidebarProvider(sidebarsByTab: sidebarsByTab)
+        let provider = AIChatSidebarProvider(sidebarsByTab: sidebarsByTab, featureFlagger: MockFeatureFlagger())
 
         // Then
         XCTAssertEqual(provider.sidebarsByTab.count, 1)
@@ -59,7 +59,7 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
     func testInit_withNilParameter_setsEmptyDictionary() {
         // Given & When
-        let provider = AIChatSidebarProvider(sidebarsByTab: nil)
+        let provider = AIChatSidebarProvider(sidebarsByTab: nil, featureFlagger: MockFeatureFlagger())
 
         // Then
         XCTAssertTrue(provider.sidebarsByTab.isEmpty)

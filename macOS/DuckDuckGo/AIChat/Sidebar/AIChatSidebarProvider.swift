@@ -18,6 +18,7 @@
 
 import Combine
 import Foundation
+import FeatureFlags
 import BrowserServicesKit
 
 typealias TabIdentifier = String
@@ -73,6 +74,8 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
         static let sidebarWidth: CGFloat = 400
     }
 
+    private let featureFlagger: FeatureFlagger
+
     var sidebarWidth: CGFloat { Constants.sidebarWidth }
 
     @Published private(set) var sidebarsByTab: AIChatSidebarsByTab
@@ -81,8 +84,10 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
         $sidebarsByTab.dropFirst().eraseToAnyPublisher()
     }
 
-    init(sidebarsByTab: AIChatSidebarsByTab? = nil) {
+    init(sidebarsByTab: AIChatSidebarsByTab? = nil,
+         featureFlagger: FeatureFlagger) {
         self.sidebarsByTab = sidebarsByTab ?? [:]
+        self.featureFlagger = featureFlagger
     }
 
     func getSidebarViewController(for tabID: TabIdentifier) -> AIChatSidebarViewController? {
@@ -114,6 +119,11 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
 
     func handleSidebarDidClose(for tabID: TabIdentifier) {
         sidebarsByTab[tabID]?.unloadViewController() // This already calls setHidden() internally
+
+        // Before rolling out improvements retain old logic to forget AIChat when sidebar is closed
+        if !featureFlagger.isFeatureOn(for: FeatureFlag.aiChatImprovements) {
+            sidebarsByTab.removeValue(forKey: tabID)
+        }
     }
 
     func cleanUp(for currentTabIDs: [TabIdentifier]) {

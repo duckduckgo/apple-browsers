@@ -74,7 +74,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
     init(
         sidebarHost: AIChatSidebarHosting,
-        sidebarProvider: AIChatSidebarProviding = AIChatSidebarProvider(),
+        sidebarProvider: AIChatSidebarProviding,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatTabOpener: AIChatTabOpening,
         featureFlagger: FeatureFlagger,

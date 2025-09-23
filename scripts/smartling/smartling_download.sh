@@ -10,16 +10,16 @@ FORCE="${2:-false}"
 PLATFORM="$3"
 
 if [ -z "$JOB_ID" ]; then
-		echo "Error: Job ID is required"
-		echo "Usage: $0 <job-id> [force] <platform>"
-		exit 1
+	echo "Error: Job ID is required"
+	echo "Usage: $0 <job-id> [force] <platform>"
+	exit 1
 fi
 
 if [ -z "$PLATFORM" ]; then
-		echo "Error: Platform is required"
-		echo "Usage: $0 <job-id> [force] <platform>"
-		echo "  platform: iOS or macOS"
-		exit 1
+	echo "Error: Platform is required"
+	echo "Usage: $0 <job-id> [force] <platform>"
+	echo "  platform: iOS or macOS"
+	exit 1
 fi
 
 echo "Downloading translations for platform: $PLATFORM"

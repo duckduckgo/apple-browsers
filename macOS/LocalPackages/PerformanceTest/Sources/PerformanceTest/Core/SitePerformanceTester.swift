@@ -176,43 +176,24 @@ public class SitePerformanceTester: NSObject {
         let bundle: Bundle
         if let moduleBundle = Bundle(identifier: "PerformanceTest") {
             bundle = moduleBundle
-            print("🔍 DEBUG: Using Bundle(identifier: PerformanceTest)")
         } else {
             // Fallback to Bundle(for:) which points to main app bundle
             let mainBundle = Bundle(for: SitePerformanceTester.self)
-            print("🔍 DEBUG: Main bundle path: \(mainBundle.bundlePath)")
 
             // Look for the PerformanceTest_PerformanceTest.bundle inside main bundle
             guard let resourcePath = mainBundle.resourcePath,
                   let performanceBundle = Bundle(path: "\(resourcePath)/PerformanceTest_PerformanceTest.bundle") else {
-                print("❌ FAILED to find PerformanceTest_PerformanceTest.bundle")
                 logger.error("Failed to find PerformanceTest bundle")
                 return nil
             }
             bundle = performanceBundle
-            print("🔍 DEBUG: Using PerformanceTest_PerformanceTest.bundle")
         }
-
-        print("🔍 DEBUG: Bundle path: \(bundle.bundlePath)")
-        print("🔍 DEBUG: Bundle resources: \(bundle.resourcePath ?? "nil")")
 
         // Try to find the resource
         guard let url = bundle.url(forResource: "performanceMetrics", withExtension: "js") else {
-            print("❌ FAILED to find performanceMetrics.js in bundle")
-            print("❌ Bundle path: \(bundle.bundlePath)")
-            if let resourcePath = bundle.resourcePath {
-                do {
-                    let contents = try FileManager.default.contentsOfDirectory(atPath: resourcePath)
-                    print("❌ Resource path contents: \(contents)")
-                } catch {
-                    print("❌ Failed to read resource path contents: \(error)")
-                }
-            }
             logger.error("Failed to find performanceMetrics.js in bundle")
             return nil
         }
-
-        print("✅ Found performanceMetrics.js at: \(url)")
 
         guard let script = try? String(contentsOf: url) else {
             logger.error("Failed to read performanceMetrics.js from bundle")

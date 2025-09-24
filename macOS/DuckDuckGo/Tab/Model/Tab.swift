@@ -1213,12 +1213,10 @@ extension Tab: PageObserverUserScriptDelegate {
 
 extension Tab: SERPSettingsUserScriptDelegate {
 
-    @MainActor
     func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
         delegate?.closeTab(self)
     }
 
-    @MainActor
     func serpSettingsUserScriptDidRequestToOpenDuckAISettings(_ userScript: SERPSettingsUserScript) {
         delegate?.closeTab(self)
     }

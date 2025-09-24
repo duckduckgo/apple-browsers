@@ -98,9 +98,15 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
     private func openNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
         guard let parameters = params as? [String: String] else { return nil }
         if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.privateSearch {
-            delegate?.serpSettingsUserScriptDidRequestToOpenPrivacySettings(self)
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.delegate?.serpSettingsUserScriptDidRequestToOpenPrivacySettings(self)
+            }
         } else if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.aiFeatures {
-            delegate?.serpSettingsUserScriptDidRequestToOpenDuckAISettings(self)
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.delegate?.serpSettingsUserScriptDidRequestToOpenDuckAISettings(self)
+            }
         }
         return nil
     }

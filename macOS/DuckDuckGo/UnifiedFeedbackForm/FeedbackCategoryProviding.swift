@@ -73,12 +73,12 @@ enum UnifiedFeedbackCategory: String, FeedbackCategoryProviding {
     }
 }
 
-enum PrivacyProFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackFAQProviding {
+enum SubscriptionFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackFAQProviding {
     case selectSubcategory
     case otp
     case somethingElse
 
-    static var prompt = PrivacyProFeedbackSubcategory.selectSubcategory
+    static var prompt = SubscriptionFeedbackSubcategory.selectSubcategory
 
     var displayName: String {
         switch self {

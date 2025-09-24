@@ -55,7 +55,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             subscriptionAttributionOrigin: "",
             appStorePurchaseFlow: AppStorePurchaseFlowMockV2(),
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
-            privacyProDataReporter: nil,
+            subscriptionDataReporter: nil,
             subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
             internalUserDecider: mockInternalUserDecider,
             widePixel: mockWidePixel)
@@ -203,7 +203,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
             appStorePurchaseFlow: purchaseFlow,
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
-            privacyProDataReporter: nil,
+            subscriptionDataReporter: nil,
             subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
             internalUserDecider: mockInternalUserDecider,
             widePixel: mockWidePixel
@@ -247,7 +247,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
             appStorePurchaseFlow: purchaseFlow,
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
-            privacyProDataReporter: nil,
+            subscriptionDataReporter: nil,
             subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
             internalUserDecider: mockInternalUserDecider,
             widePixel: mockWidePixel
@@ -279,7 +279,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
             appStorePurchaseFlow: purchaseFlow,
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
-            privacyProDataReporter: nil,
+            subscriptionDataReporter: nil,
             subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
             internalUserDecider: mockInternalUserDecider,
             widePixel: mockWidePixel

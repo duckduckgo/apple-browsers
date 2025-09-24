@@ -282,7 +282,7 @@ extension LoadingProgressView {
             ProgressEvent(progress: 0.65, interval: 15.0),
             ProgressEvent(progress: 0.80, interval: 5.0),
             ProgressEvent(progress: 0.85, interval: 3.0),
-            ProgressEvent(progress: 0.9, interval: 2.5)
+            ProgressEvent(progress: 1.00, interval: 2.5)
         ]
 
         static let initialValue = milestones[0].progress

@@ -35,7 +35,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
     private var mockStorePurchaseManager: StorePurchaseManagerMockV2!
     private var subscriptionManagerV2: SubscriptionManagerMockV2!
-    private var subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandler!
+    private var subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling!
     private var mockUIHandler: SubscriptionUIHandlerMock!
     private var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
@@ -65,7 +65,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         subscriptionManagerV2 = SubscriptionManagerMockV2()
         subscriptionManagerV2.resultStorePurchaseManager = mockStorePurchaseManager
         subscriptionManagerV2.resultURL = URL(string: "https://duckduckgo.com/subscription/feature")!
-        subscriptionSuccessPixelHandler = PrivacyProSubscriptionAttributionPixelHandler()
+        subscriptionSuccessPixelHandler = SubscriptionAttributionPixelHandler()
         let mockStripePurchaseFlowV2 = StripePurchaseFlowMockV2(subscriptionOptionsResult: .failure(.noProductsFound), prepareSubscriptionPurchaseResult: .failure(.noProductsFound))
         mockUIHandler = SubscriptionUIHandlerMock { _ in }
         mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true,

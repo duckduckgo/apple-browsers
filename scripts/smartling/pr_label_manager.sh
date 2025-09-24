@@ -24,8 +24,9 @@ fi
 # Function to remove a label (silent on failure)
 remove_label() {
 	local label="$1"
+	local encoded="${label// /%20}"
 	echo "  Removing label: $label"
-	gh api -X DELETE "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels/$label" 2>/dev/null || echo "  (Label not found or already removed)"
+	gh api -X DELETE "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels/$encoded" 2>/dev/null || echo "  (Label not found or already removed)"
 }
 
 # Function to add a label
@@ -49,14 +50,14 @@ case "$ACTION" in
 	after_upload)
 		echo "📤 Processing upload labels..."
 
-		# Always remove the trigger label (l10n-iOS or l10n-macOS)
+		# Always remove the trigger label
 		if [ -n "$TRIGGER_LABEL" ]; then
 			remove_label "$TRIGGER_LABEL"
 		fi
 
 		# Only add status label on success
 		if [ "$STATUS" == "success" ]; then
-			add_label "l10n-awaiting-authorization"
+			add_label "needs translation authorization"
 			echo "✅ Upload successful - added awaiting-authorization label"
 		else
 			echo "❌ Upload failed - no status label added"
@@ -67,17 +68,17 @@ case "$ACTION" in
 		echo "✅ Processing approval labels..."
 
 		# Always remove the trigger label
-		remove_label "l10n-approve"
+		remove_label "authorize translation"
 
 		if [ "$STATUS" == "success" ]; then
 			# Success: remove awaiting-authorization, add in-progress
-			remove_label "l10n-awaiting-authorization"
-			add_label "l10n-in-progress"
+			remove_label "needs translation authorization"
+			add_label "translation in progress"
 			echo "✅ Approval successful - moved to in-progress"
 		else
 			# Failure: ensure awaiting-authorization is present
-			if ! has_label "l10n-awaiting-authorization"; then
-				add_label "l10n-awaiting-authorization"
+			if ! has_label "needs translation authorization"; then
+				add_label "needs translation authorization"
 			fi
 			echo "❌ Approval failed - restored awaiting-authorization"
 		fi
@@ -87,17 +88,17 @@ case "$ACTION" in
 		echo "📥 Processing download labels..."
 
 		# Always remove the trigger label
-		remove_label "l10n-download"
+		remove_label "download translations"
 
 		if [ "$STATUS" == "success" ] || [ "$STATUS" == "no_changes" ]; then
 			# Success: remove in-progress, add completed
-			remove_label "l10n-in-progress"
-			add_label "l10n-completed"
+			remove_label "translation in progress"
+			add_label "translations ready"
 			echo "✅ Download successful - marked as completed"
 		else
 			# Failure: ensure in-progress is present
-			if ! has_label "l10n-in-progress"; then
-				add_label "l10n-in-progress"
+			if ! has_label "translation in progress"; then
+				add_label "translation in progress"
 			fi
 			echo "❌ Download failed - kept in-progress"
 		fi

@@ -38,7 +38,7 @@ jobs:
     # Only run for label triggers if it's one of our l10n labels
     if: |
       (github.event_name == 'workflow_dispatch') ||
-      (github.event_name == 'pull_request' && (github.event.label.name == 'l10n-iOS' || github.event.label.name == 'l10n-macOS' || github.event.label.name == 'l10n-approve' || github.event.label.name == 'l10n-download'))
+      (github.event_name == 'pull_request' && (github.event.label.name == 'start ios translation' || github.event.label.name == 'start macOS translation' || github.event.label.name == 'authorize translation' || github.event.label.name == 'download translations'))
     runs-on: macos-15
     name: Smartling translation job
 
@@ -49,17 +49,17 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             # Label trigger
-            if [[ "${{ github.event.label.name }}" == "l10n-iOS" ]]; then
+            if [[ "${{ github.event.label.name }}" == "start ios translation" ]]; then
               echo "platform=iOS" >> $GITHUB_OUTPUT
               echo "action=upload" >> $GITHUB_OUTPUT
-            elif [[ "${{ github.event.label.name }}" == "l10n-macOS" ]]; then
+            elif [[ "${{ github.event.label.name }}" == "start macOS translation" ]]; then
               echo "platform=macOS" >> $GITHUB_OUTPUT
               echo "action=upload" >> $GITHUB_OUTPUT
-            elif [[ "${{ github.event.label.name }}" == "l10n-approve" ]]; then
+            elif [[ "${{ github.event.label.name }}" == "authorize translation" ]]; then
               # Will be set from comment parsing
               echo "action=approve" >> $GITHUB_OUTPUT
               echo "needs_comment_parsing=true" >> $GITHUB_OUTPUT
-            elif [[ "${{ github.event.label.name }}" == "l10n-download" ]]; then
+            elif [[ "${{ github.event.label.name }}" == "download translations" ]]; then
               # Will be set from comment parsing
               echo "action=download" >> $GITHUB_OUTPUT
               echo "needs_comment_parsing=true" >> $GITHUB_OUTPUT

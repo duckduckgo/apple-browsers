@@ -24,8 +24,21 @@ import URLPredictorRust
 /// ```c
 /// char *ddg_up_classify_json(const char *input, const char *policy_json);
 /// void ddg_up_free_string(char *ptr);
+/// char *ddg_up_get_psl_data(void);
 /// ```
 public enum Classifier {
+
+    /// This function classifies `input` as either `Decision.navigate` or `Decision.search`.
+    public static func getPSLData() throws -> String {
+        guard let raw = ddg_up_get_psl_data() else {
+            throw Error.resultNil
+        }
+        defer { ddg_up_free_string(raw) }
+        guard let s = String(validatingUTF8: raw) else {
+            throw Error.resultNotUTF8
+        }
+        return s
+    }
 
     /// This function classifies `input` as either `Decision.navigate` or `Decision.search`.
     public static func classify(input: String, policy: Policy? = .default) throws -> Decision {

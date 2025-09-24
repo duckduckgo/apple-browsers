@@ -1,0 +1,118 @@
+name: Smartling
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Platform"
+        type: choice
+        required: true
+        default: 'iOS'
+        options:
+           - iOS
+           - macOS
+      action:
+        description: "Action"
+        type: choice
+        required: true
+        default: 'upload'
+        options:
+           - upload
+           - approve
+           - status
+           - download
+      job-id:
+        description: "Smartling job ID"
+        required: false
+        type: string
+      force:
+        description: "Force import even if it causes deletions"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  smartling:
+    runs-on: macos-15
+    name: Smartling translation job
+
+    steps:
+
+      - name: Assert not main or release branch
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]] || [[ "${{ github.ref_name }}" == release/* ]]; then
+            echo "🚫 Smartling workflow should not run on main or release branches"
+            echo "This workflow is for feature branches only"
+            exit 1
+          fi
+          echo "✅ Running on branch: ${{ github.ref_name }}"
+
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          ref: ${{ github.ref_name }}
+          persist-credentials: true
+
+      - name: Set Smartling credentials (iOS)
+        if: ${{ github.event.inputs.platform == 'iOS' }}
+        run: |
+          echo "SMARTLING_USER_ID=${{ secrets.IOS_SMARTLING_USER_ID }}" >> $GITHUB_ENV
+          echo "SMARTLING_USER_SECRET=${{ secrets.IOS_SMARTLING_USER_SECRET }}" >> $GITHUB_ENV
+          echo "SMARTLING_PROJECT_ID=${{ vars.IOS_SMARTLING_PROJECT_ID }}" >> $GITHUB_ENV
+
+      - name: Set Smartling credentials (macOS)
+        if: ${{ github.event.inputs.platform == 'macOS' }}
+        run: |
+          echo "SMARTLING_USER_ID=${{ secrets.MACOS_SMARTLING_USER_ID }}" >> $GITHUB_ENV
+          echo "SMARTLING_USER_SECRET=${{ secrets.MACOS_SMARTLING_USER_SECRET }}" >> $GITHUB_ENV
+          echo "SMARTLING_PROJECT_ID=${{ vars.MACOS_SMARTLING_PROJECT_ID }}" >> $GITHUB_ENV
+
+      - name: Select Xcode
+        uses: ./.github/actions/select-xcode-version
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install aiohttp
+
+      - name: Install xmlstarlet (required for macOS export)
+        if: ${{ github.event.inputs.platform == 'macOS' && github.event.inputs.action == 'upload' }}
+        run: |
+          brew install xmlstarlet
+
+      - name: Export
+        id: export
+        if: ${{ github.event.inputs.action == 'upload' }}
+        run: |
+          set -e -o pipefail
+          ./${{ github.event.inputs.platform }}/scripts/loc_export.sh | xcbeautify
+
+      - name: Upload to Smartling
+        if: ${{ github.event.inputs.action == 'upload' }}
+        id: upload
+        run: |
+          ./scripts/smartling/smartling_upload.sh "${{ github.event.inputs.platform }}" "${{ github.ref_name }}"
+          cat upload_message.txt >> $GITHUB_STEP_SUMMARY
+
+      - name: Check Status
+        if: ${{ github.event.inputs.action == 'status' }}
+        run: |
+          ./scripts/smartling/smartling_status.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.platform }}"
+          cat status_message.txt >> $GITHUB_STEP_SUMMARY
+
+      - name: Approve Job
+        if: ${{ github.event.inputs.action == 'approve' }}
+        run: |
+          ./scripts/smartling/smartling_approve.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.platform }}"
+          cat approve_message.txt >> $GITHUB_STEP_SUMMARY
+
+      - name: Download from Smartling
+        if: ${{ github.event.inputs.action == 'download' }}
+        run: |
+          ./scripts/smartling/smartling_download.sh "${{ github.event.inputs.job-id }}" "${{ github.event.inputs.force }}" "${{ github.event.inputs.platform }}"
+          cat download_message.txt >> $GITHUB_STEP_SUMMARY

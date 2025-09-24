@@ -116,7 +116,7 @@ enum SettingsPixel: PixelKitEvent {
             case .aiChat:
                 assertionFailure("This pixel is not in use and AIChatPixel.aiChatSettingsDisplayed should be used instead")
                 return "settings_duck_ai_opened"
-            case .privacyPro: return "settings_privacy_pro_opened"
+            case .subscription: return "settings_privacy_pro_opened"
             case .vpn: return "settings_vpn_opened"
             case .personalInformationRemoval: return "settings_pir_opened"
             case .identityTheftRestoration: return "settings_itr_opened"

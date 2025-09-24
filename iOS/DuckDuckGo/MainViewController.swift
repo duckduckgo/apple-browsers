@@ -624,12 +624,14 @@ class MainViewController: UIViewController {
         )
         guard validator.shouldDisplayNewAddressBarPicker() else { return }
 
-        let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: aiChatSettings)
-        pickerViewController.modalPresentationStyle = .pageSheet
-        pickerViewController.modalTransitionStyle = .coverVertical
-        pickerViewController.isModalInPresentation = true
-        validator.markPickerDisplayAsSeen()
-        self.present(pickerViewController, animated: true)
+        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
+            let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: aiChatSettings)
+            pickerViewController.modalPresentationStyle = .pageSheet
+            pickerViewController.modalTransitionStyle = .coverVertical
+            pickerViewController.isModalInPresentation = true
+            validator.markPickerDisplayAsSeen()
+            self.present(pickerViewController, animated: true)
+        }
     }
 
     func presentNetworkProtectionStatusSettingsModal() {

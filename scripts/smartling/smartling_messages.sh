@@ -15,7 +15,7 @@ usage() {
 		$0 upload <output_file> <platform> <job_id> <project_id> [success|failed]
 		$0 status <output_file> <platform> <job_id> <project_id> <status> <percent>
 		$0 approve <output_file> <platform> <job_id> <project_id> [success|failed]
-		$0 download <output_file> <platform> <job_id> <project_id> [success|no_changes|failed] [error_type]
+		$0 download <output_file> <platform> <job_id> <project_id> [success|no_changes|failed|deletions_pr_created] [error_type|branch_name]
 
 	Actions:
 		upload   - Generate upload result message
@@ -143,7 +143,7 @@ generate_download_message() {
 	local job_id="$2"
 	local project_id="$3"
 	local result="${4:-success}"
-	local error_type="${5:-}"
+	local extra_param="${5:-}"
 
 	case "$result" in
 		"success")
@@ -170,8 +170,40 @@ generate_download_message() {
 			No changes were found to import.
 			EOF
 			;;
+		"deletions_pr_created")
+			local branch_name="$extra_param"
+			local pr_info=""
+			if [ -f "deletions_pr_info.txt" ]; then
+				# Source the PR info
+				source deletions_pr_info.txt
+				pr_info="🔗 **[Review the changes in PR #$PR_NUMBER]($PR_URL)**"
+			fi
+
+			cat > "$OUTPUT_FILE" <<- EOF
+			## ⚠️ Translation PR Created for Review
+
+			**Job ID:** \`$job_id\`
+			**Platform:** $platform
+
+			🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
+
+			⚠️ **Translations contain deletions or significant changes** that could result in data loss.
+
+			Instead of applying these changes directly, a separate PR has been created for manual review:
+
+			$pr_info
+
+			**What to do next:**
+			1. Review the changes in the PR linked above
+			2. Verify that any deletions are intentional
+			3. Test the changes to ensure functionality is preserved
+			4. Merge the review PR if the changes are acceptable
+
+			The current branch remains unchanged to prevent data loss.
+			EOF
+			;;
 		"failed")
-			if [ "$error_type" = "deletions" ]; then
+			if [ "$extra_param" = "deletions" ]; then
 				cat > "$OUTPUT_FILE" <<- EOF
 				## ❌ Translation Download Failed
 
@@ -182,8 +214,8 @@ generate_download_message() {
 				🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
 
 				**Next steps:**
-				1. **Option A:** Force the import by running download with \`force=true\`
-				2. **Option B:** Merge main into your branch and create a new translation job
+				1. **Option A:** Merge main into your branch and create a new translation job
+				2. **Option B:** Review the changes manually to ensure they are correct
 				EOF
 			else
 				cat > "$OUTPUT_FILE" <<- EOF

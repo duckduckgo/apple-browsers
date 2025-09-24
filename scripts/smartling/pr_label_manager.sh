@@ -8,7 +8,7 @@ set -euo pipefail
 # Actions:
 #   after_upload <pr_number> <success|failed> <trigger_label>
 #   after_approve <pr_number> <success|failed>
-#   after_download <pr_number> <success|failed|no_changes>
+#   after_download <pr_number> <success|failed|no_changes|deletions_pr_created>
 
 ACTION="${1:-}"
 PR_NUMBER="${2:-}"
@@ -95,6 +95,8 @@ case "$ACTION" in
 			remove_label "translation in progress"
 			add_label "translations ready"
 			echo "✅ Download successful - marked as completed"
+		elif [ "$STATUS" == "deletions_pr_created" ]; then
+			echo "⚠️ Deletions detected - created review PR, marked for review"
 		else
 			# Failure: ensure in-progress is present
 			if ! has_label "translation in progress"; then

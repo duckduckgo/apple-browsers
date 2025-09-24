@@ -100,12 +100,14 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
     func registerForNotifications() {
         NotificationCenter.default.addObserver(forName: .serpSettingsChanged,
                                                object: nil,
-                                               queue: .main) { _ in
+                                               queue: .main) { [weak self] _ in
+            guard let self = self else { return }
             self.nativeSettingsDidChange()
         }
         NotificationCenter.default.addObserver(forName: .aiChatSettingsChanged,
                                                object: nil,
-                                               queue: .main) { _ in
+                                               queue: .main) { [weak self] _ in
+            guard let self = self else { return }
             self.nativeSettingsDidChange()
         }
     }

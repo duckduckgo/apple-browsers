@@ -1,5 +1,5 @@
 //
-//  FigmaColorPalette.swift
+//  DefaultColorPalette.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,7 +18,9 @@
 
 import SwiftUI
 
-struct FigmaColorPalette: ColorPaletteDefinition {
+#if canImport(AppKit)
+
+struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Accent Colors
     static let accentContentPrimary = DynamicColor(lightHex: 0xffffff, darkHex: 0x051133)
@@ -192,3 +194,5 @@ struct FigmaColorPalette: ColorPaletteDefinition {
         DefaultColorPalette.dynamicColor(for: singleUseColor)
     }
 }
+
+#endif

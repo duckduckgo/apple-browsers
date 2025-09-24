@@ -41,7 +41,7 @@ struct ResponsiveSearchFieldView: View {
         Link(destination: DeepLinks.newSearch) {
             ZStack {
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(designSystemColor: .backgroundTertiary))
+                    .liquidGlassCompatibleFill()
                     .frame(minHeight: fieldHeight, maxHeight: fieldHeight)
                     .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 12, x: 0, y: 8)
 
@@ -90,6 +90,35 @@ struct ResponsiveSearchFieldView: View {
 
             }
             .unredacted()
+        }
+    }
+
+}
+
+extension RoundedRectangle {
+
+    @ViewBuilder
+    func liquidGlassCompatibleFill() -> some View {
+        if #available(iOSApplicationExtension 26, *) {
+            modifier(LiquidGlassCompatibleFillModifier())
+        } else {
+            fill(Color(designSystemColor: .backgroundTertiary))
+        }
+    }
+
+}
+
+@available(iOSApplicationExtension 26, *)
+struct LiquidGlassCompatibleFillModifier: ViewModifier {
+
+    @Environment(\.widgetRenderingMode) var widgetRenderingMode
+
+    func body(content: Content) -> some View {
+        if widgetRenderingMode == .fullColor {
+            content.foregroundStyle(Color(designSystemColor: .backgroundTertiary))
+        } else {
+            // See https://www.figma.com/design/6bSIUkJP6bihfEApcidLS9/iOS-widgets-tinting?node-id=185-5961&t=MCToFbbAM3OtJCwN-0
+            content.foregroundStyle(Color(designSystemColor: .backgroundTertiary).opacity(0.3))
         }
     }
 

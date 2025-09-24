@@ -117,6 +117,5 @@ struct LockScreenWidgetView: View {
                 .resizable()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .widgetContainerBackground()
     }
 }

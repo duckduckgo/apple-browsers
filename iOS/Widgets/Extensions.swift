@@ -21,10 +21,26 @@ import SwiftUI
 
 extension Color {
 
-    static let widgetSearchFieldBackground = Color("WidgetSearchFieldBackgroundColor")
-
     static func forDomain(_ domain: String) -> Color {
         return Color(UIColor.forDomain(domain))
+    }
+
+}
+
+@available(iOSApplicationExtension 26, *)
+struct LiquidGlassCompatibleBackgroundColorModifier: ViewModifier {
+
+    @Environment(\.widgetRenderingMode) var widgetRenderingMode
+
+    func body(content: Content) -> some View {
+
+        if widgetRenderingMode == .fullColor {
+            content.background(Color(designSystemColor: .background))
+        } else {
+            content.containerBackground(for: .widget) {
+                Color(designSystemColor: .background)
+            }
+        }
     }
 
 }
@@ -32,16 +48,16 @@ extension Color {
 // See https://stackoverflow.com/a/59228385/73479
 extension View {
 
-    @ViewBuilder func widgetContainerBackground(color: Color = .clear) -> some View {
+    @ViewBuilder func widgetContainerBackground() -> some View {
         if #available(iOSApplicationExtension 26.0, *) {
-            background(color)
+            modifier(LiquidGlassCompatibleBackgroundColorModifier())
         } else
         if #available(iOSApplicationExtension 17.0, *) {
             containerBackground(for: .widget) {
-                color
+                Color(designSystemColor: .background)
             }
         } else {
-            background(color)
+            background(Color(designSystemColor: .background))
         }
     }
 

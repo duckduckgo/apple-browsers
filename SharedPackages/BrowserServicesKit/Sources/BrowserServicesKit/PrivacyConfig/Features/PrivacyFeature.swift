@@ -118,6 +118,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case willSoonDropBigSurSupport
 
+    /// Hang reporting feature flag
+    case hangReporting
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211260578559159?focus=true
     case unifiedURLPredictor
 }

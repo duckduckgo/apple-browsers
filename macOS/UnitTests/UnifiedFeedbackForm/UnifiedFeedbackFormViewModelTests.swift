@@ -334,8 +334,8 @@ private class MockVPNMetadataCollector: UnifiedMetadataCollector {
             notificationsAgentIsRunning: true
         )
 
-        let privacyProInfo = VPNMetadata.PrivacyProInfo(
-            hasPrivacyProAccount: true,
+        let subscriptionInfo = VPNMetadata.SubscriptionInfo(
+            hasSubscriptionAccount: true,
             isVPNFeatureIncludedInSubscription: true,
             isVPNFeatureEnabled: true
         )
@@ -347,7 +347,7 @@ private class MockVPNMetadataCollector: UnifiedMetadataCollector {
             vpnState: vpnState,
             vpnSettingsState: vpnSettingsState,
             loginItemState: loginItemState,
-            privacyProInfo: privacyProInfo
+            subscriptionInfo: subscriptionInfo
         )
     }
 

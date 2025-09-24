@@ -18,10 +18,10 @@
 
 import Foundation
 
-final class AttributedMetricOriginProviderMock: AttributedMetricOriginProvider {
-    let origin: String?
+public final class AttributedMetricOriginProviderMock: AttributedMetricOriginProvider {
+    public let origin: String?
 
-    init(origin: String? = nil) {
+    public init(origin: String? = nil) {
         self.origin = origin
     }
 }

@@ -157,11 +157,11 @@ final class AppDependencyProvider: DependencyProvider {
         let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
         let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
 
-            let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-                              PixelParameters.privacyProKeychainError: error.localizedDescription,
+            let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
+                              PixelParameters.subscriptionKeychainError: error.localizedDescription,
                               PixelParameters.source: KeychainErrorSource.browser.rawValue,
                               PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
-            DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainAccessError,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
                                          withAdditionalParameters: parameters)
         }

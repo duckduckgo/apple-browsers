@@ -21,7 +21,11 @@ import BrowserServicesKit
 import Common
 import Foundation
 import AppKitExtensions
+import URLPredictor
 import os.log
+#if !SANDBOX_TEST_TOOL
+import PixelKit
+#endif
 
 extension URL.NavigationalScheme {
 
@@ -118,8 +122,54 @@ extension URL {
         return url
     }
 
-    static func makeURL(from addressBarString: String) -> URL? {
+    static func makeURL(from addressBarString: String, enableMetrics: Bool = true) -> URL? {
+        let featureFlagger = Application.appDelegate.featureFlagger
+        guard featureFlagger.isFeatureOn(.unifiedURLPredictor) else {
+            return makeURLUsingNativePredictionLogic(from: addressBarString)
+        }
+        let url = makeURLUsingUnifiedPredictionLogic(from: addressBarString)
 
+        /// Return early if the metrics feature flag is disabled (only internal users can opt in to metrics collection).
+        guard enableMetrics, featureFlagger.isFeatureOn(.unifiedURLPredictorMetrics) else {
+            return url
+        }
+
+        /// Verify unified prediction logic against native one and fire a pixel when the output (wrt search/navigate/error) differs.
+        let expectedURL = makeURLUsingNativePredictionLogic(from: addressBarString)
+        switch (url?.isDuckDuckGoSearch, expectedURL?.isDuckDuckGoSearch) {
+        case (true, false):
+            PixelKit.fire(DebugEvent(GeneralPixel.unifiedURLPredictionMismatch(prediction: "search", input: addressBarString)))
+        case (false, true):
+            PixelKit.fire(DebugEvent(GeneralPixel.unifiedURLPredictionMismatch(prediction: "navigate", input: addressBarString)))
+        case (nil, nil):
+            break
+        case (nil, _):
+            PixelKit.fire(DebugEvent(GeneralPixel.unifiedURLPredictionMismatch(prediction: "error", input: addressBarString)))
+        default:
+            break
+        }
+
+        return url
+    }
+
+    static func makeURLUsingUnifiedPredictionLogic(from addressBarString: String) -> URL? {
+        do {
+            switch try Classifier.classify(input: addressBarString) {
+            case .navigate(let url):
+                return url
+            case .search(let query):
+                return URL.makeSearchUrl(from: query)
+            }
+        } catch let error as Classifier.Error {
+            Logger.general.error("Failed to classify \"\(addressBarString)\" as URL or search phrase: \(error)")
+            return nil
+        } catch {
+            Logger.general.error("URL extension: Making URL from \(addressBarString) failed")
+            return nil
+        }
+    }
+
+    static func makeURLUsingNativePredictionLogic(from addressBarString: String) -> URL? {
         let trimmed = addressBarString.trimmingWhitespace()
 
         if let addressBarUrl = URL(trimmedAddressBarString: trimmed), addressBarUrl.isValid {
@@ -452,7 +502,7 @@ extension URL {
         return URL(string: "https://duckduckgo.com/privacy")!
     }
 
-    static var privacyPro: URL {
+    static var subscription: URL {
         return URL(string: "https://duckduckgo.com/pro")!
     }
 

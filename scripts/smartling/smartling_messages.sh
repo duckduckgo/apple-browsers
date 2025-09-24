@@ -128,10 +128,12 @@ generate_approve_message() {
 		**Platform:** $platform
 		**Error:** Approval failed - check workflow logs
 
+		🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
+
 		**Next steps:**
 		• Run workflow with \`status\` action to check current job status
 		• Verify the job ID is correct
-		• Check Smartling dashboard for job details
+		• Check if job has content to translate
 		EOF
 	fi
 }
@@ -151,6 +153,8 @@ generate_download_message() {
 			**Job ID:** \`$job_id\`
 			**Platform:** $platform
 
+			🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
+
 			Translations have been imported and committed to this branch.
 			EOF
 			;;
@@ -160,6 +164,8 @@ generate_download_message() {
 
 			**Job ID:** \`$job_id\`
 			**Platform:** $platform
+
+			🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
 
 			No changes were found to import.
 			EOF
@@ -173,6 +179,8 @@ generate_download_message() {
 				**Platform:** $platform
 				**Error:** Translation import would delete existing keys. This usually happens when the main branch was merged after translation started.
 
+				🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
+
 				**Next steps:**
 				1. **Option A:** Force the import by running download with \`force=true\`
 				2. **Option B:** Merge main into your branch and create a new translation job
@@ -184,6 +192,8 @@ generate_download_message() {
 				**Job ID:** \`$job_id\`
 				**Platform:** $platform
 				**Error:** Download failed - check workflow logs
+
+				🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
 
 				**Next steps:**
 				• Verify the job ID is correct

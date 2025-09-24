@@ -99,9 +99,9 @@ final class SyncRecoveryPromptService {
     @discardableResult
     func tryPresentSyncRecoveryPrompt(from viewController: UIViewController,
                                       onSyncFlowSelected: @escaping (String) -> Void) -> Bool {
-//        guard shouldShowPrompt() else {
-//            return false
-//        }
+        guard shouldShowPrompt() else {
+            return false
+        }
 
         presenter.presentSyncRecoveryPrompt(
             from: viewController,

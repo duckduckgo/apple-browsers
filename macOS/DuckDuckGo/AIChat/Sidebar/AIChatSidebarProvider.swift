@@ -95,20 +95,7 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
     }
 
     func makeSidebarViewController(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebarViewController {
-        var currentSidebar = sidebarsByTab[tabID]
-
-        // Check if sidebar exists and was hidden more than 10 seconds ago
-        if let existingSidebar = currentSidebar,
-           let dateHidden = existingSidebar.dateHidden,
-           Date().timeIntervalSince(dateHidden) > 10 {
-            // Remove the old sidebar and create a new one
-            existingSidebar.unloadViewController()
-            sidebarsByTab.removeValue(forKey: tabID)
-
-            currentSidebar = nil
-        }
-
-        let sidebar = currentSidebar ?? makeSidebar(for: tabID, burnerMode: burnerMode)
+        let sidebar = getCurrentSidebar(for: tabID, burnerMode: burnerMode)
 
         if let existingViewController = sidebar.sidebarViewController {
             return existingViewController
@@ -118,6 +105,22 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
         sidebar.sidebarViewController = sidebarViewController
 
         return sidebarViewController
+    }
+
+    private func getCurrentSidebar(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebar {
+        var currentSidebar = sidebarsByTab[tabID]
+
+        if let existingSidebar = currentSidebar,
+           let dateHidden = existingSidebar.dateHidden,
+           Date().timeIntervalSince(dateHidden) > 5 {
+            // Remove the old sidebar and create a new one
+            existingSidebar.unloadViewController()
+            sidebarsByTab.removeValue(forKey: tabID)
+
+            currentSidebar = nil
+        }
+
+        return currentSidebar ?? makeSidebar(for: tabID, burnerMode: burnerMode)
     }
 
     private func makeSidebar(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebar {

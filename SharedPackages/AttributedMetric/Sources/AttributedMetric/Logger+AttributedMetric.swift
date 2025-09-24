@@ -1,5 +1,5 @@
 //
-//  UserBehaviorOriginProviderMock.swift
+//  Logger+AttributedMetric.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,11 +17,8 @@
 //
 
 import Foundation
+import os.log
 
-final class UserBehaviorOriginProviderMock: UserBehaviorOriginProvider {
-    let origin: String?
-
-    init(origin: String? = nil) {
-        self.origin = origin
-    }
+public extension Logger {
+    static let attributedMetric = { Logger(subsystem: "AttributedMetric", category: "") }()
 }

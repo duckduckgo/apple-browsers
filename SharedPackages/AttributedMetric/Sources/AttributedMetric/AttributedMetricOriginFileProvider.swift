@@ -1,5 +1,5 @@
 //
-//  UserBehaviorOriginFileProvider.swift
+//  AttributedMetricOriginFileProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,12 +19,12 @@
 import Foundation
 
 /// A type that provides the `origin` used to anonymously track installations without tracking retention.
-public protocol UserBehaviorOriginProvider: AnyObject {
+public protocol AttributedMetricOriginProvider: AnyObject {
     /// A string representing the acquisition funnel.
     var origin: String? { get }
 }
 
-public final class UserBehaviorOriginFileProvider: UserBehaviorOriginProvider {
+public final class AttributedMetricOriginFileProvider: AttributedMetricOriginProvider {
     public let origin: String?
 
     /// Creates an instance with the given file name and `Bundle`.

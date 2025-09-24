@@ -1,5 +1,5 @@
 //
-//  UserBehaviorDataStorage.swift
+//  AttributedMetricDataStorage.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,7 +18,7 @@
 
 import Foundation
 
-public protocol UserBehaviorDataStoring {
+public protocol AttributedMetricDataStoring {
 
     var installDate: Date? { get set }
     var lastRetentionThreshold: TimePast? { get set }
@@ -32,7 +32,7 @@ public protocol UserBehaviorDataStoring {
     func removeAll()
 }
 
-class UserBehaviorDataStorage: UserBehaviorDataStoring {
+class AttributedMetricDataStorage: AttributedMetricDataStoring {
 
     private let userDefaults: UserDefaults
 

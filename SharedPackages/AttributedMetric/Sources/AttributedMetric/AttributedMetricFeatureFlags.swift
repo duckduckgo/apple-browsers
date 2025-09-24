@@ -1,5 +1,5 @@
 //
-//  UserBehaviorFeatureFlags.swift
+//  AttributedMetricFeatureFlags.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import Foundation
 import BrowserServicesKit
 
-public enum UserBehaviorFeatureFlags: String, FeatureFlagDescribing {
+public enum AttributedMetricFeatureFlags: String, FeatureFlagDescribing {
     case behaviorMetricsEnabled
 
     public var defaultValue: Bool {

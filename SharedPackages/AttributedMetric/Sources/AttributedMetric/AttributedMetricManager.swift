@@ -1,5 +1,5 @@
 //
-//  UserBehaviorManager.swift
+//  AttributedMetricManager.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -25,12 +25,12 @@ import os.log
 
 /// macOS: `SystemDefaultBrowserProvider`
 /// iOS: `DefaultBrowserManager` limited to 4 times p/y, cached value
-public protocol UserBehaviorDefaultBrowserProviding {
+public protocol AttributedMetricDefaultBrowserProviding {
     var isDefaultBrowser: Bool { get }
 }
 
 /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053?focus=true
-public final class UserBehaviorManager {
+public final class AttributedMetricManager {
 
     struct Constants {
         static let monthTimeInterval: TimeInterval = Double(Constants.daysInAMonth) * .day
@@ -38,17 +38,17 @@ public final class UserBehaviorManager {
     }
 
     private let pixelKit: PixelKit
-    private var dataStorage: UserBehaviorDataStoring
-    private let originProvider: (any UserBehaviorOriginProvider)?
+    private var dataStorage: AttributedMetricDataStoring
+    private let originProvider: (any AttributedMetricOriginProvider)?
     private let featureFlagger: FeatureFlagger
-    private let defaultBrowserProviding: UserBehaviorDefaultBrowserProviding
+    private let defaultBrowserProviding: AttributedMetricDefaultBrowserProviding
     var cancellables = Set<AnyCancellable>()
 
     public init(pixelKit: PixelKit,
-                dataStoring: UserBehaviorDataStoring,
+                dataStoring: AttributedMetricDataStoring,
                 featureFlagger: FeatureFlagger,
-                originProvider: (any UserBehaviorOriginProvider)?,
-                defaultBrowserProviding: UserBehaviorDefaultBrowserProviding) {
+                originProvider: (any AttributedMetricOriginProvider)?,
+                defaultBrowserProviding: AttributedMetricDefaultBrowserProviding) {
         self.pixelKit = pixelKit
         self.dataStorage = dataStoring
         self.originProvider = originProvider
@@ -67,7 +67,7 @@ public final class UserBehaviorManager {
     // MARK: -
 
     var isEnabled: Bool {
-        featureFlagger.isFeatureOn(for: UserBehaviorFeatureFlags.behaviorMetricsEnabled)
+        featureFlagger.isFeatureOn(for: AttributedMetricFeatureFlags.behaviorMetricsEnabled)
     }
 
     lazy var originOrInstall: (origin: String?, installDate: String?) = {
@@ -138,7 +138,7 @@ public final class UserBehaviorManager {
     func processRetention() {
 
         guard let installDate = dataStorage.installDate else {
-            Logger.userBehavior.error("Install date missing")
+            Logger.attributedMetric.error("Install date missing")
             return
         }
         let now = Date()
@@ -146,22 +146,22 @@ public final class UserBehaviorManager {
         let timePastFromInstall = TimePast.timePastFrom(date: now, andInstallationDate: installDate)
         let lastRetentionThreshold = dataStorage.lastRetentionThreshold
         guard lastRetentionThreshold != timePastFromInstall else {
-            Logger.userBehavior.error("Threshold not changed")
+            Logger.attributedMetric.error("Threshold not changed")
             return
         }
 
         switch timePastFromInstall {
         case .none:
-            Logger.userBehavior.debug("Less than a week from installation")
+            Logger.attributedMetric.debug("Less than a week from installation")
         case .weeks(let week):
-            Logger.userBehavior.debug("\(week) week(s) from installation")
+            Logger.attributedMetric.debug("\(week) week(s) from installation")
             let bucketedWeek = String(week) // TODO: implement
-            pixelKit.fire(UserBehaviorPixel.userRetentionWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucketedWeek), frequency: .legacyDailyNoSuffix)
+            pixelKit.fire(AttributedMetricPixel.userRetentionWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucketedWeek), frequency: .legacyDailyNoSuffix)
             dataStorage.lastRetentionThreshold = timePastFromInstall
         case .months(let month):
-            Logger.userBehavior.debug("\(month) month(s) from installation")
+            Logger.attributedMetric.debug("\(month) month(s) from installation")
             let bucketedMonth = String(month) // TODO: implement
-            pixelKit.fire(UserBehaviorPixel.userRetentionMonth(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucketedMonth), frequency: .legacyDailyNoSuffix)
+            pixelKit.fire(AttributedMetricPixel.userRetentionMonth(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucketedMonth), frequency: .legacyDailyNoSuffix)
             dataStorage.lastRetentionThreshold = timePastFromInstall
         }
     }
@@ -179,9 +179,9 @@ public final class UserBehaviorManager {
         let search8Days = dataStorage.search8Days
         let searchCount = search8Days.countPast7Days
         guard searchCount > 0 else { return }
-        Logger.userBehavior.debug("\(searchCount) searches performed in the last week")
+        Logger.attributedMetric.debug("\(searchCount) searches performed in the last week")
         let bucketedSearchCount = searchCount // TODO: implement
-        pixelKit.fire(UserBehaviorPixel.userActivePastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, days: bucketedSearchCount), frequency: .legacyDailyNoSuffix)
+        pixelKit.fire(AttributedMetricPixel.userActivePastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, days: bucketedSearchCount), frequency: .legacyDailyNoSuffix)
     }
 
     // MARK: - Average searches
@@ -192,8 +192,8 @@ public final class UserBehaviorManager {
         guard search8Days.countPast7Days > 1 else { return }
         let average = search8Days.past7DaysAverage
         let bucketedAverage = String(average) // TODO: implement
-        Logger.userBehavior.debug("Average search count in the last week: \(bucketedAverage)")
-        pixelKit.fire(UserBehaviorPixel.userAverageSearchesPastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .legacyDailyNoSuffix)
+        Logger.attributedMetric.debug("Average search count in the last week: \(bucketedAverage)")
+        pixelKit.fire(AttributedMetricPixel.userAverageSearchesPastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .legacyDailyNoSuffix)
     }
 
     // MARK: - Average AD clicks
@@ -210,8 +210,8 @@ public final class UserBehaviorManager {
         guard adClick8Days.countPast7Days > 1 else { return }
         let average = adClick8Days.past7DaysAverage
         let bucketedAverage = String(average) // TODO: implement
-        Logger.userBehavior.debug("Average AD click count in the last week: \(bucketedAverage)")
-        pixelKit.fire(UserBehaviorPixel.userAverageAdClicksPastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .legacyDailyNoSuffix)
+        Logger.attributedMetric.debug("Average AD click count in the last week: \(bucketedAverage)")
+        pixelKit.fire(AttributedMetricPixel.userAverageAdClicksPastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .legacyDailyNoSuffix)
     }
 
     // MARK: - Average Duck.ai chats
@@ -228,8 +228,8 @@ public final class UserBehaviorManager {
         guard duckAIChat8Days.countPast7Days > 1 else { return }
         let average = duckAIChat8Days.past7DaysAverage
         let bucketedAverage = String(average) // TODO: implement
-        Logger.userBehavior.debug("Average Duck.AI chats count in the last week: \(bucketedAverage)")
-        pixelKit.fire(UserBehaviorPixel.userAverageDuckAiUsagePastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .legacyDailyNoSuffix)
+        Logger.attributedMetric.debug("Average Duck.AI chats count in the last week: \(bucketedAverage)")
+        pixelKit.fire(AttributedMetricPixel.userAverageDuckAiUsagePastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .legacyDailyNoSuffix)
     }
 
     // MARK: - Subscription
@@ -239,19 +239,19 @@ public final class UserBehaviorManager {
     }
 
     func processSubscriptionDay() {
-        Logger.userBehavior.debug("Subscription purchased today")
-        pixelKit.fire(UserBehaviorPixel.userSubscribed(origin: originOrInstall.origin, installDate: originOrInstall.installDate, length: "1"), frequency: .legacyDailyNoSuffix)
+        Logger.attributedMetric.debug("Subscription purchased today")
+        pixelKit.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin, installDate: originOrInstall.installDate, length: "1"), frequency: .legacyDailyNoSuffix)
     }
 
     func processSubscriptionCheck() {
         guard let subscriptionDate = dataStorage.subscriptionDate else {
-            Logger.userBehavior.error("Missing subscription date")
+            Logger.attributedMetric.error("Missing subscription date")
             return
         }
         let now = Date()
         if TimePast.daysBetween(from: subscriptionDate, to: now) >= Constants.daysInAMonth {
-            Logger.userBehavior.debug("Subscription purchased more than 1 month ago")
-            pixelKit.fire(UserBehaviorPixel.userSubscribed(origin: originOrInstall.origin, installDate: originOrInstall.installDate, length: "2+"), frequency: .legacyDailyNoSuffix)
+            Logger.attributedMetric.debug("Subscription purchased more than 1 month ago")
+            pixelKit.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin, installDate: originOrInstall.installDate, length: "2+"), frequency: .legacyDailyNoSuffix)
         }
     }
 
@@ -259,9 +259,9 @@ public final class UserBehaviorManager {
     // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211301604929616?focus=true
 
     func processSyncCheck(devices: Int) {
-        Logger.userBehavior.debug("Device Sync")
+        Logger.attributedMetric.debug("Device Sync")
         // TODO: specs not clear: https://app.asana.com/1/137249556945/task/1211301604929616/comment/1211362907479310?focus=true
-        pixelKit.fire(UserBehaviorPixel.userSyncedDevice(origin: originOrInstall.origin, installDate: originOrInstall.installDate, devices: devices == 1 ? "1" : "2+"), frequency: .standard)
+        pixelKit.fire(AttributedMetricPixel.userSyncedDevice(origin: originOrInstall.origin, installDate: originOrInstall.installDate, devices: devices == 1 ? "1" : "2+"), frequency: .standard)
     }
 }
 

@@ -18,7 +18,7 @@
 
 import Foundation
 import PixelKit
-import UserBehavior
+import AttributedMetric
 
 /// A type that handles Pixels for acquisition attributions.
 protocol InstallationAttributionsPixelHandler: AnyObject {
@@ -27,11 +27,11 @@ protocol InstallationAttributionsPixelHandler: AnyObject {
 }
 
 final class AppInstallationAttributionPixelHandler: InstallationAttributionsPixelHandler {
-    private let originProvider: UserBehaviorOriginProvider
+    private let originProvider: AttributedMetricOriginProvider
     private let decoratedAttributionPixelHandler: AttributionPixelHandler
 
     init(
-        originProvider: UserBehaviorOriginProvider = UserBehaviorOriginFileProvider(),
+        originProvider: AttributedMetricOriginProvider = AttributedMetricOriginFileProvider(),
         attributionPixelHandler: AttributionPixelHandler = GenericAttributionPixelHandler()
     ) {
         self.originProvider = originProvider

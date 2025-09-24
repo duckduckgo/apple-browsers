@@ -1,5 +1,5 @@
 //
-//  Logger+UserBehavior.swift
+//  AttributedMetricDefaultBrowserProvidingMock.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,8 +17,8 @@
 //
 
 import Foundation
-import os.log
+import AttributedMetric
 
-public extension Logger {
-    static let userBehavior = { Logger(subsystem: "UserBehavior", category: "") }()
+class AttributedMetricDefaultBrowserProvidingMock: AttributedMetricDefaultBrowserProviding {
+    var isDefaultBrowser: Bool = false
 }

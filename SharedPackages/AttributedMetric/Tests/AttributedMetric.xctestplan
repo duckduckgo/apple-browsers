@@ -12,13 +12,7 @@
 
   },
   "testTargets" : [
-    {
-      "target" : {
-        "containerPath" : "container:",
-        "identifier" : "UserBehaviorTests",
-        "name" : "UserBehaviorTests"
-      }
-    }
+
   ],
   "version" : 1
 }

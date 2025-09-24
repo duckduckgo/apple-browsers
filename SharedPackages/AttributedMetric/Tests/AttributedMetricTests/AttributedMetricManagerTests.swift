@@ -1,5 +1,5 @@
 //
-//  UserBehaviorManagerTests.swift
+//  AttributedMetricManagerTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,11 +18,11 @@
 //
 
 import XCTest
-@testable import UserBehavior
+@testable import AttributedMetric
 import PixelKit
 import BrowserServicesKit
 
-final class UserBehaviorManagerTests: XCTestCase {
+final class AttributedMetricManagerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
@@ -68,16 +68,16 @@ final class UserBehaviorManagerTests: XCTestCase {
             }
         }
 
-        let dataStorage = UserBehaviorDataStorage(userDefaults: userDefaults)
+        let dataStorage = AttributedMetricDataStorage(userDefaults: userDefaults)
         let featureFlagger: any FeatureFlagger = MockFeatureFlagger(featuresStub:
-                                                                        [UserBehavior.UserBehaviorFeatureFlags.behaviorMetricsEnabled.rawValue: true]) // override FF
-        let originProvider: UserBehaviorOriginProvider = UserBehaviorOriginProviderMock()
-        let userBehaviorDefaultBrowserProvidingMock = UserBehaviorDefaultBrowserProvidingMock()
-        let attributionManager = UserBehaviorManager(pixelKit: pixelKit,
+                                                                        [AttributedMetric.AttributedMetricFeatureFlags.behaviorMetricsEnabled.rawValue: true]) // override FF
+        let originProvider: AttributedMetricOriginProvider = AttributedMetricOriginProviderMock()
+        let attributedMetricDefaultBrowserProvidingMock = AttributedMetricDefaultBrowserProvidingMock()
+        let attributionManager = AttributedMetricManager(pixelKit: pixelKit,
                                                      dataStoring: dataStorage,
                                                      featureFlagger: featureFlagger,
                                                      originProvider: originProvider,
-                                                     defaultBrowserProviding: userBehaviorDefaultBrowserProvidingMock)
+                                                     defaultBrowserProviding: attributedMetricDefaultBrowserProvidingMock)
 
         /*
          Install day is day 0

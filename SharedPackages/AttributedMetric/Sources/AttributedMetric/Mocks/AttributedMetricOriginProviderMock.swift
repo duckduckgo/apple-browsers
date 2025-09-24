@@ -1,5 +1,5 @@
 //
-//  UserBehaviorDefaultBrowserProvidingMock.swift
+//  AttributedMetricOriginProviderMock.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,8 +17,11 @@
 //
 
 import Foundation
-import UserBehavior
 
-class UserBehaviorDefaultBrowserProvidingMock: UserBehaviorDefaultBrowserProviding {
-    var isDefaultBrowser: Bool = false
+final class AttributedMetricOriginProviderMock: AttributedMetricOriginProvider {
+    let origin: String?
+
+    init(origin: String? = nil) {
+        self.origin = origin
+    }
 }

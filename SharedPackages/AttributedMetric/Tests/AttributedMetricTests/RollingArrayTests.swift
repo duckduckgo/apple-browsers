@@ -17,7 +17,7 @@
 //
 
 import XCTest
-@testable import UserBehavior
+@testable import AttributedMetric
 
 final class RollingArrayTests: XCTestCase {
     

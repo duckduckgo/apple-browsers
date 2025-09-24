@@ -1,5 +1,5 @@
 //
-//  UserBehaviorNotifications.swift
+//  AttributedMetricNotifications.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -24,7 +24,7 @@ import AppKit
 #endif
 
 
-extension UserBehaviorManager {
+extension AttributedMetricManager {
     
     func registerNotifications() {
 

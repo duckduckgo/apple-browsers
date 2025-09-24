@@ -38,7 +38,7 @@ jobs:
     # Only run for label triggers if it's one of our l10n labels
     if: |
       (github.event_name == 'workflow_dispatch') ||
-      (github.event_name == 'pull_request' && (github.event.label.name == 'start ios translation' || github.event.label.name == 'start macOS translation' || github.event.label.name == 'authorize translation' || github.event.label.name == 'download translations'))
+      (github.event_name == 'pull_request' && (github.event.label.name == 'start ios translation' || github.event.label.name == 'start macos translation' || github.event.label.name == 'authorize translation' || github.event.label.name == 'download translations'))
     runs-on: macos-15
     name: Smartling translation job
     permissions:
@@ -109,6 +109,9 @@ jobs:
       - name: Parse job details from PR comments
         if: steps.params.outputs.needs_comment_parsing == 'true'
         id: parse_comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           ./scripts/smartling/pr_comment_parser.sh "${{ github.event.pull_request.number }}"
 

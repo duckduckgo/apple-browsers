@@ -19,7 +19,12 @@
 import Foundation
 import PixelKit
 
-enum AttributedMetricPixel: PixelKitEvent { // TODO: check special pixel extension requirements
+/// Note: These pixels will need to be sent with a custom PixelKit instance that is not sending ATB, app version as specified in https://app.asana.com/1/137249556945/project/72649045549333/task/1210849966244847?focus=true
+/// All pixels below will not
+/// - Send any default parameters such as app version and ATB
+/// - Appending app/OS version in the User-Agent header
+/// - Send default suffixes such as [phone|tablet]  or [store|direct]
+enum AttributedMetricPixel: PixelKitEvent {
     case userRetentionWeek(origin: String?, installDate: String?, defaultBrowser: Bool, count: String)
     case userRetentionMonth(origin: String?, installDate: String?, defaultBrowser: Bool, count: String)
     case userActivePastWeek(origin: String?, installDate: String?, days: Int)

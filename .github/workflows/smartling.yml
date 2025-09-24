@@ -68,7 +68,7 @@ jobs:
             if [[ "$LABEL_NAME" == "start ios translation" ]]; then
               echo "platform=iOS" >> $GITHUB_OUTPUT
               echo "action=upload" >> $GITHUB_OUTPUT
-            elif [[ "$LABEL_NAME" == "start macOS translation" ]]; then
+            elif [[ "$LABEL_NAME" == "start macos translation" ]]; then
               echo "platform=macOS" >> $GITHUB_OUTPUT
               echo "action=upload" >> $GITHUB_OUTPUT
             elif [[ "$LABEL_NAME" == "authorize translation" ]]; then

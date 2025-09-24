@@ -1,0 +1,55 @@
+// See https://app.asana.com/0/72649045549333/1208001118995887/f.
+{
+    m_mac_ui_hang: {
+        description: 'Sent when UI is frozen for more than 1 second.',
+        owners: ['frosty'],
+        triggers: ['other'],
+        suffixes: [
+            'daily',
+            'count',
+            {
+                description: 'Whether the UI is still frozen at the time of reporting, or whether we\'ve detected a deadlock.',
+                enum: ['recovered', 'not-recovered', 'deadlock'],
+            },
+        ],
+        parameters: [
+            'appVersion',
+            {
+                key: 'seconds',
+                type: 'number',
+                description: 'Freeze duration in seconds, bucketed from 1 to 10 (we detect freezes up to 10 seconds).'
+            },
+            {
+                key: 'in_foreground',
+                type: 'boolean',
+                description: 'Optional. Indicates whether the browser is currently a foreground app.'
+            },
+            {
+                key: 'any_window_visible',
+                type: 'boolean',
+                description: 'Optional. Indicates whether any browser windows are visible (not minimized, not hidden).'
+            },              
+            {
+                key: 'free_memory_percent',
+                type: 'number',
+                description: 'Optional. The percentage of free memory available.',
+            },
+            {
+                key: 'battery_power',
+                type: 'string',
+                description: 'Optional. Whether the computer is running on battery power or plugged in.',
+                enum: ['on-battery', 'plugged-in']
+            },
+            {
+                key: 'open_browser_windows',
+                type: 'number',
+                description: 'Optional. The number of open DDG browser windows at the time of the hang.'
+            },
+            {
+                key: 'open_browser_tabs',
+                type: 'number',
+                description: 'Optional. The number of open DDG browser tabs at the time of the hang.'
+            }
+        ],
+    },
+}

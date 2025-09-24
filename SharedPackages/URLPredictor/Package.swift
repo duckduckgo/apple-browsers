@@ -16,8 +16,8 @@ let package = Package(
         .target(name: "URLPredictor", dependencies: ["URLPredictorRust"]),
         .binaryTarget(
             name: "URLPredictorRust",
-            url: "https://github.com/duckduckgo/url_predictor/releases/download/0.2.2/URLPredictorRust.xcframework.zip",
-            checksum: "135dea7943bd40b2ee157dbc3c77aa6b2baf4c28e8cc15170c5067a807c34c79"
+            url: "https://github.com/duckduckgo/url_predictor/releases/download/0.2.4/URLPredictorRust.xcframework.zip",
+            checksum: "3dfaa0c6dbba4d694ef16efb7a089ce00520385a8c8db3cfb3b81a2d265f898f"
         ),
         .testTarget(name: "URLPredictorTests", dependencies: ["URLPredictor"])
     ]

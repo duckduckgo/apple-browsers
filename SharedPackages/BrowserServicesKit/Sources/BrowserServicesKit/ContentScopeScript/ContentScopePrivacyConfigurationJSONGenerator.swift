@@ -41,7 +41,12 @@ public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyCo
         guard let config = try? PrivacyConfigurationData(data: privacyConfigurationManager.currentConfig) else { return nil }
 
         let newConfig = PrivacyConfigurationData(features: config.features, unprotectedTemporary: config.unprotectedTemporary, trackerAllowlist: config.trackerAllowlist, version: config.version)
-        return try? newConfig.toJSONData()
+        return try? newConfig.toJSONData(
+            excludeFeatures: [
+                PrivacyConfigurationData.CodingKeys.trackerAllowlist.rawValue,
+                PrivacyFeature.autoconsent.rawValue
+            ]
+        )
     }
 
 }

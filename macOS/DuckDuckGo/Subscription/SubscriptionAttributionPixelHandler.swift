@@ -19,14 +19,14 @@
 import Foundation
 import Subscription
 
-protocol SubscriptionAttributionPixelHandler: AnyObject {
+protocol SubscriptionAttributionPixelHandling: AnyObject {
     var origin: String? { get set }
     func fireSuccessfulSubscriptionAttributionPixel()
 }
 
 // MARK: - SubscriptionAttributionPixelHandler
 
-final class PrivacyProSubscriptionAttributionPixelHandler: SubscriptionAttributionPixelHandler {
+final class SubscriptionAttributionPixelHandler: SubscriptionAttributionPixelHandling {
 
     var origin: String?
     private let decoratedAttributionPixelHandler: AttributionPixelHandler
@@ -37,7 +37,7 @@ final class PrivacyProSubscriptionAttributionPixelHandler: SubscriptionAttributi
 
     func fireSuccessfulSubscriptionAttributionPixel() {
         decoratedAttributionPixelHandler.fireAttributionPixel(
-            event: PrivacyProPixel.privacyProSuccessfulSubscriptionAttribution,
+            event: SubscriptionPixel.subscriptionSuccessfulSubscriptionAttribution,
             frequency: .standard,
             origin: origin,
             additionalParameters: nil

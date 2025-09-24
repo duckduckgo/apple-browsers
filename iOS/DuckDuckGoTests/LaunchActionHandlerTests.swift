@@ -63,6 +63,17 @@ final class MockKeyboardPresenter: KeyboardPresenting {
 
 }
 
+final class MockNewAddressBarPickerPresenter: NewAddressBarPickerPresenting {
+
+    var addressBarPickerPresented = false
+    var lastBackgroundDate: Date?
+
+    func presentNewAddressBarPickerIfNeeded() {
+        addressBarPickerPresented = true
+    }
+
+}
+
 final class MockLaunchSourceManager: LaunchSourceManaging {
     
     var source: LaunchSource = .standard
@@ -88,12 +99,14 @@ final class LaunchActionHandlerTests {
     let shortcutItemHandler = MockShortcutItemHandler()
     let keyboardPresenter = MockKeyboardPresenter()
     let launchSourceManager = MockLaunchSourceManager()
+    let newAddressBarPickerPresenter = MockNewAddressBarPickerPresenter()
     let pixelFiringMock = PixelFiringMock.self
     lazy var launchActionHandler = LaunchActionHandler(
         urlHandler: urlHandler,
         shortcutItemHandler: shortcutItemHandler,
         keyboardPresenter: keyboardPresenter,
         launchSourceService: launchSourceManager,
+        newAddressBarPickerPresenter: newAddressBarPickerPresenter,
         pixelFiring: pixelFiringMock
     )
 
@@ -287,6 +300,44 @@ final class LaunchActionHandlerTests {
             #expect(launchSourceManager.lastSetSource == expectedSource, "Failed at index \(index) for action \(action)")
             #expect(launchSourceManager.setSourceCallCount == index + 1, "Failed at index \(index) for action \(action)")
         }
+    }
+
+    // MARK: - NewAddressBarPickerPresenter Integration Tests
+
+    @Test("NewAddressBarPickerPresenter is called when LaunchAction is .showKeyboard")
+    func newAddressBarPickerPresenterCalledWhenShowingKeyboard() {
+        let date = Date()
+        let action = LaunchAction.showKeyboard(date)
+
+        #expect(!newAddressBarPickerPresenter.addressBarPickerPresented)
+
+        launchActionHandler.handleLaunchAction(action)
+
+        #expect(newAddressBarPickerPresenter.addressBarPickerPresented)
+    }
+
+    @Test("NewAddressBarPickerPresenter is not called when LaunchAction is .openURL")
+    func newAddressBarPickerPresenterNotCalledWhenOpeningURL() {
+        let url = URL(string: "https://example.com")!
+        let action = LaunchAction.openURL(url)
+
+        #expect(!newAddressBarPickerPresenter.addressBarPickerPresented)
+
+        launchActionHandler.handleLaunchAction(action)
+
+        #expect(!newAddressBarPickerPresenter.addressBarPickerPresented)
+    }
+
+    @Test("NewAddressBarPickerPresenter is not called when LaunchAction is .handleShortcutItem")
+    func newAddressBarPickerPresenterNotCalledWhenHandlingShortcutItem() {
+        let shortcutItem = UIApplicationShortcutItem(type: "TestType", localizedTitle: "Test")
+        let action = LaunchAction.handleShortcutItem(shortcutItem)
+
+        #expect(!newAddressBarPickerPresenter.addressBarPickerPresented)
+
+        launchActionHandler.handleLaunchAction(action)
+
+        #expect(!newAddressBarPickerPresenter.addressBarPickerPresented)
     }
 
 }

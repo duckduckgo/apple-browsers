@@ -40,7 +40,7 @@ class TabManager {
     private var previewsSource: TabPreviewsSource
     private let interactionStateSource: TabInteractionStateSource?
     private var duckPlayer: DuckPlayerControlling
-    private var privacyProDataReporter: PrivacyProDataReporting
+    private var subscriptionDataReporter: SubscriptionDataReporting
     private let contextualOnboardingPresenter: ContextualOnboardingPresenting
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let onboardingPixelReporter: OnboardingPixelReporting
@@ -70,7 +70,7 @@ class TabManager {
          historyManager: HistoryManaging,
          syncService: DDGSyncing,
          duckPlayer: DuckPlayer = DuckPlayer(),
-         privacyProDataReporter: PrivacyProDataReporting,
+         subscriptionDataReporter: SubscriptionDataReporting,
          contextualOnboardingPresenter: ContextualOnboardingPresenting,
          contextualOnboardingLogic: ContextualOnboardingLogic,
          onboardingPixelReporter: OnboardingPixelReporting,
@@ -94,7 +94,7 @@ class TabManager {
         self.historyManager = historyManager
         self.syncService = syncService
         self.duckPlayer = duckPlayer
-        self.privacyProDataReporter = privacyProDataReporter
+        self.subscriptionDataReporter = subscriptionDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
@@ -136,7 +136,7 @@ class TabManager {
                                                               historyManager: historyManager,
                                                               syncService: syncService,
                                                               duckPlayer: duckPlayer,
-                                                              privacyProDataReporter: privacyProDataReporter,
+                                                              subscriptionDataReporter: subscriptionDataReporter,
                                                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
                                                               onboardingPixelReporter: onboardingPixelReporter,
@@ -230,7 +230,7 @@ class TabManager {
                                                               historyManager: historyManager,
                                                               syncService: syncService,
                                                               duckPlayer: duckPlayer,
-                                                              privacyProDataReporter: privacyProDataReporter,
+                                                              subscriptionDataReporter: subscriptionDataReporter,
                                                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
                                                               onboardingPixelReporter: onboardingPixelReporter,

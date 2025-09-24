@@ -27,7 +27,7 @@ public struct GetSubscriptionFeaturesResponse: Decodable {
 public struct ConfirmPurchaseResponse: Decodable {
     public let email: String?
     public let entitlements: [Entitlement]
-    public let subscription: PrivacyProSubscription
+    public let subscription: DuckDuckGoSubscription
 }
 
 public enum SubscriptionServiceError: DDGError {
@@ -76,8 +76,8 @@ public enum SubscriptionServiceError: DDGError {
 }
 
 public protocol SubscriptionEndpointService {
-    func updateCache(with subscription: PrivacyProSubscription)
-    func getSubscription(accessToken: String, cachePolicy: APICachePolicy) async -> Result<PrivacyProSubscription, SubscriptionServiceError>
+    func updateCache(with subscription: DuckDuckGoSubscription)
+    func getSubscription(accessToken: String, cachePolicy: APICachePolicy) async -> Result<DuckDuckGoSubscription, SubscriptionServiceError>
     func signOut()
     func getProducts() async -> Result<[GetProductsItem], APIServiceError>
     func getSubscriptionFeatures(for subscriptionID: String) async -> Result<GetSubscriptionFeaturesResponse, APIServiceError>
@@ -102,7 +102,7 @@ public protocol SubscriptionEndpointService {
 
 extension SubscriptionEndpointService {
 
-    public func getSubscription(accessToken: String) async -> Result<PrivacyProSubscription, SubscriptionServiceError> {
+    public func getSubscription(accessToken: String) async -> Result<DuckDuckGoSubscription, SubscriptionServiceError> {
         await getSubscription(accessToken: accessToken, cachePolicy: .returnCacheDataElseLoad)
     }
 }
@@ -111,7 +111,7 @@ extension SubscriptionEndpointService {
 public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
     private let currentServiceEnvironment: SubscriptionEnvironment.ServiceEnvironment
     private let apiService: SubscriptionAPIService
-    private let subscriptionCache = UserDefaultsCache<PrivacyProSubscription>(key: UserDefaultsCacheKey.subscription,
+    private let subscriptionCache = UserDefaultsCache<DuckDuckGoSubscription>(key: UserDefaultsCacheKey.subscription,
                                                                               settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
 
     public init(currentServiceEnvironment: SubscriptionEnvironment.ServiceEnvironment, apiService: SubscriptionAPIService) {
@@ -128,9 +128,9 @@ public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
 
     // MARK: - Subscription fetching with caching
 
-    private func getRemoteSubscription(accessToken: String) async -> Result<PrivacyProSubscription, SubscriptionServiceError> {
+    private func getRemoteSubscription(accessToken: String) async -> Result<DuckDuckGoSubscription, SubscriptionServiceError> {
 
-        let result: Result<PrivacyProSubscription, APIServiceError> = await apiService.executeAPICall(method: "GET", endpoint: "subscription", headers: apiService.makeAuthorizationHeader(for: accessToken), body: nil)
+        let result: Result<DuckDuckGoSubscription, APIServiceError> = await apiService.executeAPICall(method: "GET", endpoint: "subscription", headers: apiService.makeAuthorizationHeader(for: accessToken), body: nil)
         switch result {
         case .success(let subscriptionResponse):
             updateCache(with: subscriptionResponse)
@@ -140,7 +140,7 @@ public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
         }
     }
 
-    public func updateCache(with subscription: PrivacyProSubscription) {
+    public func updateCache(with subscription: DuckDuckGoSubscription) {
 
         let cachedSubscription = subscriptionCache.get()
         if subscription != cachedSubscription {
@@ -154,7 +154,7 @@ public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
         NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: nil)
     }
 
-    public func getSubscription(accessToken: String, cachePolicy: APICachePolicy = .returnCacheDataElseLoad) async -> Result<PrivacyProSubscription, SubscriptionServiceError> {
+    public func getSubscription(accessToken: String, cachePolicy: APICachePolicy = .returnCacheDataElseLoad) async -> Result<DuckDuckGoSubscription, SubscriptionServiceError> {
 
         switch cachePolicy {
         case .reloadIgnoringLocalCacheData:

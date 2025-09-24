@@ -98,7 +98,7 @@ enum UserText {
     static let preferencesSubscriptionFeedbackButton = NSLocalizedString("subscription.preferences.feedback.button", bundle: Bundle.module, value: "Send Feedback", comment: "Title for the subscription feedback button")
     static let preferencesPrivacyPolicyButton = NSLocalizedString("subscription.preferences.privacypolicy.button", bundle: Bundle.module, value: "Privacy Policy and Terms of Service", comment: "Title for the privacy policy button")
 
-    static func preferencesSubscriptionRenewingCaption(billingPeriod: PrivacyProSubscription.BillingPeriod, formattedDate: String) -> String {
+    static func preferencesSubscriptionRenewingCaption(billingPeriod: DuckDuckGoSubscription.BillingPeriod, formattedDate: String) -> String {
         let localized: String
 
         switch billingPeriod {
@@ -122,7 +122,7 @@ enum UserText {
         return String(format: localized, formattedDate)
     }
 
-    static func preferencesSubscriptionExpiringCaption(billingPeriod: PrivacyProSubscription.BillingPeriod, formattedDate: String) -> String {
+    static func preferencesSubscriptionExpiringCaption(billingPeriod: DuckDuckGoSubscription.BillingPeriod, formattedDate: String) -> String {
         let localized: String
 
         switch billingPeriod {
@@ -151,7 +151,7 @@ enum UserText {
         return String(format: localized, formattedDate)
     }
 
-    static func preferencesTrialSubscriptionRenewingCaption(billingPeriod: PrivacyProSubscription.BillingPeriod, formattedDate: String) -> String {
+    static func preferencesTrialSubscriptionRenewingCaption(billingPeriod: DuckDuckGoSubscription.BillingPeriod, formattedDate: String) -> String {
         let localized: String
 
         switch billingPeriod {
@@ -268,5 +268,5 @@ enum UserText {
     static let subscriptionAppleIDSyncFailedAlertTitle = NSLocalizedString("subscription.alert.subscription.apple-id.sync-failed.title", bundle: Bundle.module, value: "Something Went Wrong When Syncing Your Apple Account", comment: "Alert message when the subscription failed to restore")
 
     // MARK: - Rebranding Message
-    static let preferencesSubscriptionRebrandingMessage = NSLocalizedString("subscription.preferences.subscription.rebranding.message", bundle: Bundle.module, value: "Privacy Pro is now just called the DuckDuckGo subscription", comment: "Message informing users that Privacy Pro is now called the DuckDuckGo subscription")
+    static let preferencesSubscriptionRebrandingMessage = NSLocalizedString("subscription.preferences.subscription.rebranding.message", bundle: Bundle.module, value: "Privacy Pro is now just called the DuckDuckGo subscription", comment: "Message informing users that Subscription is now called the DuckDuckGo subscription")
 }

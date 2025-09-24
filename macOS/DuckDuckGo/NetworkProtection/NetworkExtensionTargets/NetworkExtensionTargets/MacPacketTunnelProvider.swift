@@ -758,7 +758,7 @@ extension MacPacketTunnelProvider: AccountManagerKeychainAccessDelegate {
             return
         }
 
-        PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
+        PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                          accessError: expectedError,
                                                                          source: KeychainErrorSource.vpn,
                                                                          authVersion: KeychainErrorAuthVersion.v1),

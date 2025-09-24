@@ -23,8 +23,8 @@ fi
 
 echo "Checking translation status for job: $JOB_ID (Platform: $PLATFORM)"
 
-# Use the existing status script to check job status
-./scripts/smartling/smartling_status.sh "$JOB_ID" "$PLATFORM"
+# Use the existing status script to check job status and write the uniform message file
+./scripts/smartling/smartling_status.sh "$JOB_ID" "$PLATFORM" check_status_message.txt
 
 # Parse the status from the output (the status script creates status_message.txt)
 if [ ! -f "status_message.txt" ]; then
@@ -58,8 +58,5 @@ fi
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
 	echo "status_result=$LABEL_STATUS" >> "$GITHUB_OUTPUT"
 fi
-
-# Create a message for the PR comment (copy the status message)
-cp status_message.txt check_status_message.txt
 
 exit 0

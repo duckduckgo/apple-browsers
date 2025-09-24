@@ -231,6 +231,9 @@ jobs:
       # PR-specific steps (comments and labels)
       - name: Post PR comment
         if: steps.params.outputs.is_pr_trigger == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           ACTION="${{ steps.params.outputs.action }}"
           MESSAGE_FILE="${ACTION}_message.txt"
@@ -244,6 +247,8 @@ jobs:
 
       - name: Update PR labels after upload
         if: steps.params.outputs.is_pr_trigger == 'true' && steps.params.outputs.action == 'upload'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           STATUS="${{ steps.upload.outputs.upload_success == 'true' && 'success' || 'failed' }}"
           TRIGGER_LABEL="${{ github.event.label.name }}"
@@ -253,6 +258,8 @@ jobs:
 
       - name: Update PR labels after approval
         if: steps.params.outputs.is_pr_trigger == 'true' && steps.params.outputs.action == 'approve'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           STATUS="${{ steps.approve.outputs.approve_success == 'true' && 'success' || 'failed' }}"
           PR_NUMBER="${{ github.event.pull_request.number }}"
@@ -261,6 +268,8 @@ jobs:
 
       - name: Update PR labels after download
         if: steps.params.outputs.is_pr_trigger == 'true' && steps.params.outputs.action == 'download'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           RESULT="${{ steps.download.outputs.download_result }}"
           STATUS="${RESULT:-failed}"

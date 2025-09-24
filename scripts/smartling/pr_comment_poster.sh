@@ -39,13 +39,12 @@ fi
 COMMENT_BODY="$MESSAGE$METADATA_COMMENT"
 
 # Post the comment using gh CLI with stdin to prevent injection
-if echo "$COMMENT_BODY" | gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
-	--field body=@- \
-	>/dev/null 2>&1; then
-	echo "✅ Comment posted successfully to PR #$PR_NUMBER"
-else
+if ! echo "$COMMENT_BODY" | gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
+	--field body=@- 2>&1; then
 	echo "❌ Failed to post comment to PR #$PR_NUMBER"
 	exit 1
 fi
+
+echo "✅ Comment posted successfully to PR #$PR_NUMBER"
 
 exit 0

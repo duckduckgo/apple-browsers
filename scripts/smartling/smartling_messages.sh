@@ -40,10 +40,9 @@ generate_upload_message() {
 
 		🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
 
-		**Next:** Run workflow with:
-		• Platform: \`$platform\`
-		• Action: \`approve\`
-		• Job ID: \`$job_id\`
+		**Next:** 
+		* Review translation job
+		* Authorize translation by adding the \`authorize translation\` label
 		EOF
 	else
 		cat > "$OUTPUT_FILE" <<- EOF
@@ -54,7 +53,7 @@ generate_upload_message() {
 
 		**Next steps:**
 		1. Check that export files exist by running the export locally
-		2. Ensure Smartling credentials are configured
+		2. Ensure that there is no existing translation job for this platform and branch
 		3. Re-run the workflow with \`upload\` action
 		EOF
 	fi
@@ -131,7 +130,6 @@ generate_approve_message() {
 		🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
 
 		**Next steps:**
-		• Run workflow with \`status\` action to check current job status
 		• Verify the job ID is correct
 		• Check if job has content to translate
 		EOF

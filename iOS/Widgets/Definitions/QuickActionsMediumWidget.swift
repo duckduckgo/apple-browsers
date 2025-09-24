@@ -63,5 +63,3 @@ struct QuickActionsMediumProvider: TimelineProvider {
 struct QuickActionsMediumEntry: TimelineEntry {
     let date: Date
 }
-
-

@@ -104,6 +104,3 @@ struct AIChatLockScreenWidget: LockScreenWidget {
     let displayName = UserText.lockScreenAIChatTitle
     let description = UserText.lockScreenAIChatDescription
 }
-
-// MARK: - Widget View
-

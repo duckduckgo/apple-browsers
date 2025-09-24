@@ -122,5 +122,3 @@ struct QuickActionsSmallWidget: Widget {
         .contentMarginsDisabled()
     }
 }
-
-

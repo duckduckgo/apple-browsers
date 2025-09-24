@@ -136,7 +136,6 @@ extension NEVPNStatus {
 }
 
 
-
 @available(iOSApplicationExtension 17.0, *)
 struct VPNStatusWidget: Widget {
     var body: some WidgetConfiguration {

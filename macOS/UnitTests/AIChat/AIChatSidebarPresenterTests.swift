@@ -408,7 +408,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         XCTAssertTrue(mockAIChatTabOpener.openAIChatTabCalled)
         XCTAssertEqual(mockAIChatTabOpener.lastURL, testURL)
         // Verify it was called with .url content type
-        if case .url(let url) = mockAIChatTabOpener.lastContent {
+        if case .url(let url) = mockAIChatTabOpener.lastTrigger {
             XCTAssertEqual(url, testURL)
         } else {
             XCTFail("Expected .url content type")
@@ -429,7 +429,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         XCTAssertTrue(mockAIChatTabOpener.openAIChatTabCalled)
         XCTAssertEqual(mockAIChatTabOpener.lastRestorationData, restorationData)
         // Verify it was called with .restoration content type
-        if case .restoration(let data) = mockAIChatTabOpener.lastContent {
+        if case .restoration(let data) = mockAIChatTabOpener.lastTrigger {
             XCTAssertEqual(data, restorationData)
         } else {
             XCTFail("Expected .restoration content type")
@@ -545,7 +545,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         XCTAssertTrue(mockAIChatTabOpener.openAIChatTabCalled)
         XCTAssertEqual(mockAIChatTabOpener.lastPayload as? NSDictionary, payload as NSDictionary)
         // Verify it was called with .payload content type
-        if case .payload(let receivedPayload) = mockAIChatTabOpener.lastContent {
+        if case .payload(let receivedPayload) = mockAIChatTabOpener.lastTrigger {
             XCTAssertEqual(receivedPayload as NSDictionary, payload as NSDictionary)
         } else {
             XCTFail("Expected .payload content type")

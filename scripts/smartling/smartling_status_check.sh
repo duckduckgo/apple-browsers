@@ -60,6 +60,6 @@ if [ -n "${GITHUB_OUTPUT:-}" ]; then
 fi
 
 # Create a message for the PR comment (copy the status message)
-cp status_message.txt status_check_message.txt
+cp status_message.txt check_status_message.txt
 
 exit 0

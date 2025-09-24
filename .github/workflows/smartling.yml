@@ -192,7 +192,7 @@ jobs:
         id: check_status
         run: |
           ./scripts/smartling/smartling_status_check.sh "$JOB_ID" "$PLATFORM"
-          cat status_check_message.txt >> $GITHUB_STEP_SUMMARY
+          cat check_status_message.txt >> $GITHUB_STEP_SUMMARY
 
       # PR-specific steps (comments and labels)
       - name: Post PR comment

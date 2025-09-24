@@ -30,10 +30,9 @@ struct PasswordsWidgetView: View {
         DesignSystemWidgetContainerView {
             HStack {
                 VStack(alignment: .leading, spacing: 0) {
-                    Image(.widgetPasswordIllustration)
-                            .useFullColorRendering()
-                            .isHidden(false)
-                            .accessibilityHidden(true)
+                    TintableImage(fullColor: UIImage(resource: .widgetPasswordIllustration),
+                                  tintable: UIImage(resource: .widgetPasswordIllustrationTinted)) { $0 }
+                        .accessibilityHidden(true)
 
                     Spacer()
 
@@ -42,6 +41,7 @@ struct PasswordsWidgetView: View {
                             .foregroundColor(Color(designSystemColor: .textPrimary))
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
+                            .makeAccentable()
 
                     HStack { Spacer() }
                 }

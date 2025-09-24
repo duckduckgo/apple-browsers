@@ -670,6 +670,8 @@
 		855ED50A2E841F0B00047A88 /* QuickActionsMediumWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855ED5092E841F0B00047A88 /* QuickActionsMediumWidgetView.swift */; };
 		855ED50C2E841F2800047A88 /* LockScreenWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855ED50B2E841F2800047A88 /* LockScreenWidgetView.swift */; };
 		855ED5102E841FCA00047A88 /* VPNStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855ED50F2E841FCA00047A88 /* VPNStatusView.swift */; };
+		855ED5132E84226000047A88 /* SharedWidgetAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 855ED5122E84226000047A88 /* SharedWidgetAssets.xcassets */; };
+		855ED5142E84226000047A88 /* SharedWidgetAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 855ED5122E84226000047A88 /* SharedWidgetAssets.xcassets */; };
 		856086612DE47E5600AA3DC7 /* DesignResourcesKitIcons in Frameworks */ = {isa = PBXBuildFile; productRef = 856086602DE47E5600AA3DC7 /* DesignResourcesKitIcons */; };
 		856086632DE47E7700AA3DC7 /* DesignResourcesKitIcons in Frameworks */ = {isa = PBXBuildFile; productRef = 856086622DE47E7700AA3DC7 /* DesignResourcesKitIcons */; };
 		8562CE152B9B645C00E1D399 /* CachedBookmarkSuggestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8562CE142B9B645C00E1D399 /* CachedBookmarkSuggestions.swift */; };
@@ -2603,6 +2605,7 @@
 		855ED5092E841F0B00047A88 /* QuickActionsMediumWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionsMediumWidgetView.swift; sourceTree = "<group>"; };
 		855ED50B2E841F2800047A88 /* LockScreenWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockScreenWidgetView.swift; sourceTree = "<group>"; };
 		855ED50F2E841FCA00047A88 /* VPNStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNStatusView.swift; sourceTree = "<group>"; };
+		855ED5122E84226000047A88 /* SharedWidgetAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = SharedWidgetAssets.xcassets; sourceTree = "<group>"; };
 		8562CE142B9B645C00E1D399 /* CachedBookmarkSuggestions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedBookmarkSuggestions.swift; sourceTree = "<group>"; };
 		8563A03B1F9288D600F04442 /* BrowserChromeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserChromeManager.swift; sourceTree = "<group>"; };
 		8565A34A1FC8D96B00239327 /* LaunchTabNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchTabNotification.swift; sourceTree = "<group>"; };
@@ -5999,6 +6002,7 @@
 				855ED50E2E841F8900047A88 /* Intents */,
 				98B001A8251EABB40090EC07 /* Localizable.strings */,
 				4BCBE45D2BA7E81F00FC75A1 /* PrivacyInfo.xcprivacy */,
+				855ED5122E84226000047A88 /* SharedWidgetAssets.xcassets */,
 				855ED5112E84203300047A88 /* Support */,
 				855ED5062E841EB800047A88 /* Views */,
 				853273AF24FEFE4600E3C778 /* WidgetsExtension.entitlements */,
@@ -9657,6 +9661,7 @@
 				6FE3AF462D9ECF6B001AE6B8 /* shield-dot.json in Resources */,
 				6FE3AF472D9ECF6B001AE6B8 /* dark-shield-dot.json in Resources */,
 				8548D96825262C33005AAE49 /* view_highlight.json in Resources */,
+				855ED5142E84226000047A88 /* SharedWidgetAssets.xcassets in Resources */,
 				85F0E97329952D7A003D5181 /* DuckDuckGo Recovery Document.pdf in Resources */,
 				9880723725FA4E450039EF4B /* menu_dark.json in Resources */,
 				1E162615296D910F0004127F /* cookie-icon-animated-40-dark.json in Resources */,
@@ -9753,6 +9758,7 @@
 				8512EA9D24EEA6820073EE19 /* Assets.xcassets in Resources */,
 				98B001AA251EABB40090EC07 /* Localizable.strings in Resources */,
 				98B001A4251EABB40090EC07 /* InfoPlist.strings in Resources */,
+				855ED5132E84226000047A88 /* SharedWidgetAssets.xcassets in Resources */,
 				4BCBE45E2BA7E81F00FC75A1 /* PrivacyInfo.xcprivacy in Resources */,
 				8512EA5724ED30D30073EE19 /* Assets.xcassets in Resources */,
 			);

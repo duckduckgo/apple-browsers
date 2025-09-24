@@ -54,6 +54,7 @@ private struct RenderingAwareImage<Content: View>: View {
             imageModifier(Image(uiImage: fullColor))
         } else {
             imageModifier(Image(uiImage: tintable))
+                .makeAccentable()
         }
     }
 

@@ -95,7 +95,20 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
     }
 
     func makeSidebarViewController(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebarViewController {
-        let sidebar = sidebarsByTab[tabID] ?? makeSidebar(for: tabID, burnerMode: burnerMode)
+        var currentSidebar = sidebarsByTab[tabID]
+
+        // Check if sidebar exists and was hidden more than 10 seconds ago
+        if let existingSidebar = currentSidebar,
+           let dateHidden = existingSidebar.dateHidden,
+           Date().timeIntervalSince(dateHidden) > 10 {
+            // Remove the old sidebar and create a new one
+            existingSidebar.unloadViewController()
+            sidebarsByTab.removeValue(forKey: tabID)
+
+            currentSidebar = nil
+        }
+
+        let sidebar = currentSidebar ?? makeSidebar(for: tabID, burnerMode: burnerMode)
 
         if let existingViewController = sidebar.sidebarViewController {
             return existingViewController

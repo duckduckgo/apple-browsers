@@ -21,9 +21,13 @@ import Combine
 
 final class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     @Published
-    var shouldDisplayCleanAIChatHistoryOption: Bool = false
+    var shouldDisplayCleanAIChatHistoryOption: Bool
 
     var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> {
         $shouldDisplayCleanAIChatHistoryOption.eraseToAnyPublisher()
+    }
+
+    init(showCleanOption: Bool = false) {
+        shouldDisplayCleanAIChatHistoryOption = showCleanOption
     }
 }

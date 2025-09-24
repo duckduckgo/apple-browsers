@@ -202,6 +202,9 @@ extension FireCoordinator {
             fireViewModel: self.fireViewModel,
             tabCollectionViewModel: tabCollectionViewModel,
             historyCoordinating: self.historyCoordinating,
+            aiChatHistoryCleaner: AIChatHistoryCleaner(featureFlagger: Application.appDelegate.featureFlagger,
+                                                       aiChatMenuConfiguration: Application.appDelegate.aiChatMenuConfiguration,
+                                                       featureDiscovery: DefaultFeatureDiscovery()),
             fireproofDomains: self.fireproofDomains,
             faviconManagement: self.faviconManagement,
             clearingOption: mode.shouldShowSegmentedControl ? nil /* last selected */ : .allData,
@@ -262,6 +265,8 @@ extension FireCoordinator {
 
     @MainActor
     func handleDialogResult(_ result: FireDialogResult, tabCollectionViewModel: TabCollectionViewModel?, isAllHistorySelected: Bool) async {
+
+        // TODO: Handle result for chat history selection
 
         // If specific visits are provided (e.g., deleting for a day or a selection), burn only those visits
         if result.clearingOption == .allData /* not Current Tab or Window */,

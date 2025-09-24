@@ -29,6 +29,8 @@ final class MockAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplayTranslationMenuItem = false
     var shouldAutomaticallySendPageContext = false
     var shouldAutomaticallySendPageContextTelemetryValue: Bool?
+    var shouldDisplayAddressBarShortcutWhenTyping: Bool = false
+    var shouldShowSettingsImprovements: Bool = false
 
     var valuesChangedPublisher: PassthroughSubject<Void, Never> {
         return PassthroughSubject<Void, Never>()

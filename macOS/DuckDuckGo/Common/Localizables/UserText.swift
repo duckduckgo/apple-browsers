@@ -73,6 +73,11 @@ struct UserText {
         )
         return String.localizedStringWithFormat(template, count)
     }
+
+    // Strings to be translated: https://app.asana.com/1/137249556945/project/72649045549333/task/1211370814674975?focus=true
+    static let fireDialogChatHistoryTitle = "Duck.ai Chats"
+    static let fireDialogChatHistorySubtitle = "Delete all chats."
+
     static let notNow = NSLocalizedString("notnow", value: "Not Now", comment: "Not Now button")
     static let remove = NSLocalizedString("generic.remove.button", value: "Remove", comment: "Label of a button that allows the user to remove an item")
     static let delete = NSLocalizedString("generic.delete.button", value: "Delete", comment: "Label of a button that allows the user to delete an item")

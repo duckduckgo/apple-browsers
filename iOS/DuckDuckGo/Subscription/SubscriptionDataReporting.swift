@@ -1,5 +1,5 @@
 //
-//  PrivacyProDataReporting.swift
+//  SubscriptionDataReporting.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -24,7 +24,7 @@ import DDGSync
 
 /// The additional parameters being collected only apply to a single promotion about a DuckDuckGo product.
 /// The parameters are temporary, collected in aggregate, and anonymous.
-enum PrivacyProPromoParameters: String, CaseIterable {
+enum SubscriptionPromoParameters: String, CaseIterable {
     case isReinstall
     case fireButtonUser = "fireButtonUsed"
     case syncUsed
@@ -39,19 +39,19 @@ enum PrivacyProPromoParameters: String, CaseIterable {
     case searchUser
 
     /// Pick a randomized subset of parameters each time they are attached to a pixel
-    static func randomizedSubset(excluding excludedParameters: [PrivacyProPromoParameters] = []) -> [PrivacyProPromoParameters] {
+    static func randomizedSubset(excluding excludedParameters: [SubscriptionPromoParameters] = []) -> [SubscriptionPromoParameters] {
         let allParameters = Set(allCases).subtracting(Set(excludedParameters))
         return Array(allParameters.shuffled().prefix(Int(allCases.count * 2/3)))
     }
 }
 
-enum PrivacyProDataReportingUseCase {
+enum SubscriptionDataReportingUseCase {
     case messageID(String)
     case origin(String?)
     case debug
 }
 
-protocol PrivacyProDataReporting {
+protocol SubscriptionDataReporting {
     func isReinstall() -> Bool
     func isFireButtonUser() -> Bool
     func isSyncUsed() -> Bool
@@ -72,12 +72,12 @@ protocol PrivacyProDataReporting {
     func saveApplicationLastSessionEnded()
     func saveSearchCount()
 
-    func randomizedParameters(for useCase: PrivacyProDataReportingUseCase) -> [String: String]
-    func mergeRandomizedParameters(for useCase: PrivacyProDataReportingUseCase, with parameters: [String: String]) -> [String: String]
+    func randomizedParameters(for useCase: SubscriptionDataReportingUseCase) -> [String: String]
+    func mergeRandomizedParameters(for useCase: SubscriptionDataReportingUseCase, with parameters: [String: String]) -> [String: String]
 }
 
 // swiftlint:disable identifier_name
-final class PrivacyProDataReporter: PrivacyProDataReporting {
+final class SubscriptionDataReporter: SubscriptionDataReporting {
     enum Key {
         static let fireCountKey = "com.duckduckgo.ios.privacypropromo.FireCount"
         static let isWidgetAddedKey = "com.duckduckgo.ios.privacypropromo.WidgetAdded"
@@ -157,7 +157,7 @@ final class PrivacyProDataReporter: PrivacyProDataReporting {
 
     /// Collect a randomized subset of parameters iff the Privacy Pro impression/conversion pixels
     /// or the Origin Attribution subscription pixel are being fired
-    func randomizedParameters(for useCase: PrivacyProDataReportingUseCase) -> [String: String] {
+    func randomizedParameters(for useCase: SubscriptionDataReportingUseCase) -> [String: String] {
         switch useCase {
         case .messageID(let messageID):
             guard let includedOrigins, includedOrigins.contains(messageID) else { return [:] }
@@ -170,7 +170,7 @@ final class PrivacyProDataReporter: PrivacyProDataReporting {
         var additionalParameters = [String: String]()
 
         /// Exclude certain parameters in case the dependencies aren't ready by the time the pixel is fired
-        var excludedParameters = [PrivacyProPromoParameters]()
+        var excludedParameters = [SubscriptionPromoParameters]()
         if syncService == nil {
             excludedParameters.append(.syncUsed)
         }
@@ -178,7 +178,7 @@ final class PrivacyProDataReporter: PrivacyProDataReporting {
             excludedParameters.append(.validOpenTabsCount)
         }
 
-        let randomizedParameters = PrivacyProPromoParameters.randomizedSubset(excluding: excludedParameters)
+        let randomizedParameters = SubscriptionPromoParameters.randomizedSubset(excluding: excludedParameters)
         for parameter in randomizedParameters {
             let value: Bool
             switch parameter {
@@ -201,7 +201,7 @@ final class PrivacyProDataReporter: PrivacyProDataReporting {
         return additionalParameters
     }
 
-    func mergeRandomizedParameters(for useCase: PrivacyProDataReportingUseCase,
+    func mergeRandomizedParameters(for useCase: SubscriptionDataReportingUseCase,
                                    with parameters: [String: String]) -> [String: String] {
         randomizedParameters(for: useCase).merging(parameters) { $1 }
     }

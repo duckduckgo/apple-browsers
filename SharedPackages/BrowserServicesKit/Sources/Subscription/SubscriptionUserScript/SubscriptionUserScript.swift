@@ -296,7 +296,7 @@ extension SubscriptionUserScript {
 
             static let notSubscribed: Self = .init(isSubscribed: false, billingPeriod: nil, startedAt: nil, expiresOrRenewsAt: nil, paymentPlatform: nil, status: nil)
 
-            init(_ subscription: PrivacyProSubscription) {
+            init(_ subscription: DuckDuckGoSubscription) {
                 isSubscribed = true
                 billingPeriod = subscription.billingPeriod.rawValue
                 startedAt = Int(subscription.startedAt.timeIntervalSince1970 * 1000)

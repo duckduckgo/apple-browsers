@@ -27,13 +27,13 @@ import os.log
 public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     @Published var subscriptionDetails: String?
-    @Published var subscriptionStatus: PrivacyProSubscription.Status?
+    @Published var subscriptionStatus: DuckDuckGoSubscription.Status?
     @Published private var hasActiveTrialOffer: Bool = false
 
     @Published var email: String?
     var hasEmail: Bool { !(email?.isEmpty ?? true) }
 
-    private var subscriptionPlatform: PrivacyProSubscription.Platform?
+    private var subscriptionPlatform: DuckDuckGoSubscription.Platform?
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
     private let subscriptionManager: SubscriptionManager
@@ -309,7 +309,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
     }
 
     @MainActor
-    func updateDescription(for subscription: PrivacyProSubscription) {
+    func updateDescription(for subscription: DuckDuckGoSubscription) {
 
         let hasActiveTrialOffer = subscription.hasActiveTrialOffer
         let status = subscription.status

@@ -190,7 +190,7 @@ class CommonUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
-    // MARK: - Privacy Pro
+    // MARK: - Subscription
 
     func testWhenDaysSinceNetPEnabledMatchesThenReturnMatch() throws {
         XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceNetPEnabledMatchingAttribute(min: 1, fallback: nil)),

@@ -27,14 +27,14 @@ import PixelKit
 final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
     private let promptHandler: AIChatPromptHandler
-    private let windowControllersManager: WindowControllersManagerProtocol
+    private let windowControllersManager: WindowControllersManagerProtocol & AIChatTabManaging
     private let tabsPreferences: TabsPreferences
     private let isShiftPressed: () -> Bool
     private let isCommandPressed: () -> Bool
     private let firePixel: (PixelKitEvent) -> Void
 
     init(promptHandler: AIChatPromptHandler = AIChatPromptHandler.shared,
-         windowControllersManager: WindowControllersManagerProtocol,
+         windowControllersManager: WindowControllersManagerProtocol & AIChatTabManaging,
          tabsPreferences: TabsPreferences,
          isShiftPressed: @escaping () -> Bool = { NSApp?.isShiftPressed ?? false },
          isCommandPressed: @escaping () -> Bool = { NSApp?.isCommandPressed ?? false },
@@ -126,8 +126,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
         let tabOpener = AIChatTabOpener(
             promptHandler: promptHandler,
-            addressBarQueryExtractor: AIChatAddressBarPromptExtractor(),
-            windowControllersManager: windowControllersManager
+            aiChatTabManaging: windowControllersManager
         )
 
         var behavior = linkOpenBehavior(for: target, using: tabsPreferences)
@@ -136,7 +135,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             behavior = .newTab(selected: isShiftPressed())
         }
 
-        tabOpener.openAIChatTab(chat, with: behavior)
+        tabOpener.openAIChatTab(with: .query(chat), behavior: behavior)
     }
 
     private func linkOpenBehavior(for target: NewTabPageDataModel.OpenTarget, using tabsPreferences: TabsPreferences) -> LinkOpenBehavior {

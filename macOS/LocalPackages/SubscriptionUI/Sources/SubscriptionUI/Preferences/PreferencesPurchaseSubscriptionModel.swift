@@ -93,7 +93,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
 
     /// Updates the user's eligibility for a free trial based on feature flag status and subscription manager checks.
     ///
-    /// This method checks if the Privacy Pro free trial feature flag is enabled. If the flag is active,
+    /// This method checks if the Subscription free trial feature flag is enabled. If the flag is active,
     /// it queries the subscription manager to determine if the user is eligible for a free trial.
     /// If the feature flag is disabled, the user is marked as ineligible for the free trial.
     ///

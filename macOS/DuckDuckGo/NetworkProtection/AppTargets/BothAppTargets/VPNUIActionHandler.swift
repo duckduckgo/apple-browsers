@@ -87,8 +87,8 @@ extension VPNUIActionHandler: VPNUIActionHandling {
         await vpnURLEventHandler.showLocations()
     }
 
-    func showPrivacyPro() async {
-        await vpnURLEventHandler.showPrivacyPro()
+    func showSubscription() async {
+        await vpnURLEventHandler.showSubscription()
     }
 
     @MainActor

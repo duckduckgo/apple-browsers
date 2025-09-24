@@ -1,5 +1,5 @@
 //
-//  OnboardingPrivacyProPromotionHelpingTests.swift
+//  OnboardingSubscriptionPromotionHelpingTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -22,9 +22,9 @@ import Core
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 
-final class OnboardingPrivacyProPromotionHelpingTests: XCTestCase {
+final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
 
-    private var sut: OnboardingPrivacyProPromotionHelping!
+    private var sut: OnboardingSubscriptionPromotionHelping!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockSubscriptionAuthV1toV2Bridge: SubscriptionAuthV1toV2BridgeMock!
     private var mockPixelFiring: PixelFiringMock!
@@ -33,7 +33,7 @@ final class OnboardingPrivacyProPromotionHelpingTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         mockSubscriptionAuthV1toV2Bridge = SubscriptionAuthV1toV2BridgeMock()
         
-        sut = OnboardingPrivacyProPromotionHelper(
+        sut = OnboardingSubscriptionPromotionHelper(
             featureFlagger: mockFeatureFlagger,
             subscriptionManager: mockSubscriptionAuthV1toV2Bridge,
             pixelFiring: PixelFiringMock.self
@@ -119,7 +119,7 @@ final class OnboardingPrivacyProPromotionHelpingTests: XCTestCase {
 
         // Then
         XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.privacyProOnboardingPromotionImpression.name)
+        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.subscriptionOnboardingPromotionImpression.name)
     }
 
     func testFireTapPixel() {
@@ -128,7 +128,7 @@ final class OnboardingPrivacyProPromotionHelpingTests: XCTestCase {
 
         // Then
         XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.privacyProOnboardingPromotionTap.name)
+        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.subscriptionOnboardingPromotionTap.name)
     }
 
     func testFireDismissPixel() {
@@ -137,7 +137,7 @@ final class OnboardingPrivacyProPromotionHelpingTests: XCTestCase {
 
         // Then
         XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.privacyProOnboardingPromotionDismiss.name)
+        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.subscriptionOnboardingPromotionDismiss.name)
     }
 
     // MARK: - Redirect URL Tests
@@ -148,6 +148,6 @@ final class OnboardingPrivacyProPromotionHelpingTests: XCTestCase {
 
         // Then
         XCTAssertNotNil(components)
-        XCTAssertEqual(components?.queryItems?.first(where: { $0.name == "origin" })?.value, OnboardingPrivacyProPromotionHelper.Constants.origin)
+        XCTAssertEqual(components?.queryItems?.first(where: { $0.name == "origin" })?.value, OnboardingSubscriptionPromotionHelper.Constants.origin)
     }
 }

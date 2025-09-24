@@ -91,7 +91,7 @@ final class URLExtensionTests {
     ]
     @Test("Creating URLs from address bar strings", arguments: makeURL_from_addressBarString_args)
     func makeURL_from_addressBarString(string: String, expectation: String, line: Int) {
-        let url = URL.makeURL(from: string)!
+        let url = URL.makeURLUsingNativePredictionLogic(from: string)!
         #expect(expectation == url.absoluteString, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
 
@@ -125,7 +125,7 @@ final class URLExtensionTests {
     ]
     @Test("Adding missing slash after hypertext scheme", arguments: whenOneSlashIsMissingAfterHypertextScheme_ThenItShouldBeAdded_args)
     func whenOneSlashIsMissingAfterHypertextScheme_ThenItShouldBeAdded(string: String, expectation: String, line: Int) {
-        let url = URL.makeURL(from: string)
+        let url = URL.makeURLUsingNativePredictionLogic(from: string)
         #expect(url?.absoluteString == expectation, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
 
@@ -294,12 +294,12 @@ final class URLExtensionTests {
     @Test("Creating URLs with international characters")
     func creatingURLsWithInternationalCharacters() throws {
         // URL with international characters in domain
-        let urlWithInternationalDomain = URL.makeURL(from: "https://例子.测试")
+        let urlWithInternationalDomain = URL.makeURLUsingNativePredictionLogic(from: "https://例子.测试")
         #expect(urlWithInternationalDomain?.host == "xn--fsqu00a.xn--0zwm56d")
         #expect(urlWithInternationalDomain?.absoluteString == "https://xn--fsqu00a.xn--0zwm56d")
 
         // URL with international characters in path
-        let urlWithInternationalPath = URL.makeURL(from: "https://example.com/пример/测试")
+        let urlWithInternationalPath = URL.makeURLUsingNativePredictionLogic(from: "https://example.com/пример/测试")
         #expect(urlWithInternationalPath?.absoluteString == "https://example.com/%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80/%E6%B5%8B%E8%AF%95")
     }
 

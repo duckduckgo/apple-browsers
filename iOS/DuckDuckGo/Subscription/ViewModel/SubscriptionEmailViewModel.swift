@@ -165,9 +165,9 @@ final class SubscriptionEmailViewModel: ObservableObject {
         
         // Feature Callback
         subFeature.onSetSubscription = {
-            DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseEmailSuccess,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseEmailSuccess,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-            UniquePixel.fire(pixel: .privacyProSubscriptionActivated)
+            UniquePixel.fire(pixel: .subscriptionActivated)
             DispatchQueue.main.async {
                 self.state.subscriptionActive = true
             }
@@ -187,16 +187,16 @@ final class SubscriptionEmailViewModel: ObservableObject {
             DispatchQueue.main.async {
                 switch feature {
                 case .networkProtection:
-                    UniquePixel.fire(pixel: .privacyProWelcomeVPN)
+                    UniquePixel.fire(pixel: .subscriptionWelcomeVPN)
                     self.state.selectedFeature = .netP
                 case .dataBrokerProtection:
-                    UniquePixel.fire(pixel: .privacyProWelcomePersonalInformationRemoval)
+                    UniquePixel.fire(pixel: .subscriptionWelcomePersonalInformationRemoval)
                     self.state.selectedFeature = .dbp
                 case .identityTheftRestoration, .identityTheftRestorationGlobal:
-                    UniquePixel.fire(pixel: .privacyProWelcomeIdentityRestoration)
+                    UniquePixel.fire(pixel: .subscriptionWelcomeIdentityRestoration)
                     self.state.selectedFeature = .itr
                 case .paidAIChat:
-                    UniquePixel.fire(pixel: .privacyProWelcomeAIChat)
+                    UniquePixel.fire(pixel: .subscriptionWelcomeAIChat)
                     self.urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
                 case .unknown:
                     break

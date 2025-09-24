@@ -147,7 +147,7 @@ extension TabViewController {
             historyManager: MockHistoryManager(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: true, historyFeatureEnabled: true),
             syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false),
             duckPlayer: MockDuckPlayer(settings: MockDuckPlayerSettings(appSettings: AppSettingsMock(), privacyConfigManager: PrivacyConfigurationManagerMock(), featureFlagger: MockDuckPlayerFeatureFlagger(), internalUserDecider: MockInternalUserDecider()), featureFlagger: featureFlagger),
-            privacyProDataReporter: MockPrivacyProDataReporter(),
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
             contextualOnboardingPresenter: contextualOnboardingPresenter,
             contextualOnboardingLogic: contextualOnboardingLogic,
             onboardingPixelReporter: contextualOnboardingPixelReporter,

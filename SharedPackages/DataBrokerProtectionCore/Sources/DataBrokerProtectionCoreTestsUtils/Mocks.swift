@@ -527,16 +527,21 @@ public final class BrokerUpdaterRepositoryMock: BrokerUpdaterRepository {
 public final class ResourcesRepositoryMock: ResourcesRepository {
     public var wasFetchBrokerFromResourcesFilesCalled = false
     public var brokersList: [DataBroker]?
+    public var shouldThrowOnFetch = false
 
     public init() {}
 
-    public func fetchBrokerFromResourceFiles() -> [DataBroker]? {
+    public func fetchBrokerFromResourceFiles() throws -> [DataBroker]? {
         wasFetchBrokerFromResourcesFilesCalled = true
+        if shouldThrowOnFetch {
+            throw DataBrokerProtectionError.unknown("Mock fetch error")
+        }
         return brokersList
     }
 
     public func reset() {
         wasFetchBrokerFromResourcesFilesCalled = false
+        shouldThrowOnFetch = false
         brokersList?.removeAll()
         brokersList = nil
     }
@@ -583,6 +588,7 @@ public final class SecureStorageDatabaseProviderMock: SecureStorageDatabaseProvi
 public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecureVault {
     public var shouldReturnOldVersionBroker = false
     public var shouldReturnNewVersionBroker = false
+    public var shouldThrowOnUpdate = false
     public var wasBrokerUpdateCalled = false
     public var wasBrokerSavedCalled = false
     public var wasUpdateProfileQueryCalled = false
@@ -610,6 +616,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public func reset() {
         shouldReturnOldVersionBroker = false
         shouldReturnNewVersionBroker = false
+        shouldThrowOnUpdate = false
         wasBrokerUpdateCalled = false
         wasBrokerSavedCalled = false
         wasUpdateProfileQueryCalled = false
@@ -642,6 +649,9 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
     public func update(_ broker: DataBroker, with id: Int64) throws {
         wasBrokerUpdateCalled = true
+        if shouldThrowOnUpdate {
+            throw DataBrokerProtectionError.unknown("Mock update error")
+        }
     }
 
     public func fetchBroker(with id: Int64) throws -> DataBroker? {

@@ -85,9 +85,9 @@ import Core
     // MARK: - Debug
     /// These are public to allow access via Debug menu. Otherwise they shouldn't be called from outside.
     /// Avoid abusing this pattern. Inject dependencies where needed instead of relying on global access.
-    var debugPrivacyProDataReporter: PrivacyProDataReporting? {
+    var debugSubscriptionDataReporter: SubscriptionDataReporting? {
         if case .foreground(let foregroundHandling) = appStateMachine.currentState {
-            return (foregroundHandling as? Foreground)?.services.reportingService.privacyProDataReporter
+            return (foregroundHandling as? Foreground)?.services.reportingService.subscriptionDataReporter
         }
         return nil
     }

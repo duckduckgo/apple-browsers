@@ -23,11 +23,14 @@ import DataBrokerProtectionCore
 struct LogMonitorToolbarView: View {
     let isMonitoring: Bool
     let logCount: Int
+    let subsystemDisplayName: String
 
     let onStartStop: () -> Void
     let onClear: () -> Void
 
     @Binding var retentionLimit: String
+    @Binding var shouldUseCustomSubsystem: Bool
+    @Binding var customSubsystem: String
 
     var body: some View {
         HStack(spacing: 12) {
@@ -61,6 +64,27 @@ struct LogMonitorToolbarView: View {
 
             Divider()
 
+            // Subsystem selection
+            HStack(spacing: 4) {
+                Toggle("Custom Subsystem", isOn: $shouldUseCustomSubsystem)
+                    .font(.caption)
+                    .disabled(isMonitoring)
+
+                if shouldUseCustomSubsystem {
+                    TextField("Enter subsystem (e.g. \"PixelKit\" for pixels", text: $customSubsystem)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(width: 120)
+                        .disabled(isMonitoring)
+                } else {
+                    Text(subsystemDisplayName)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(width: 120, alignment: .leading)
+                }
+            }
+
+            Divider()
+
             HStack(spacing: 8) {
                 Text("\(logCount) logs")
                     .font(.caption)
@@ -86,6 +110,8 @@ struct LogMonitorToolbarView: View {
 
 struct LogFilterControlsView: View {
     @Binding var filterSettings: LogFilterSettings
+    @Binding var shouldUseCustomCategory: Bool
+    @Binding var customCategory: String
 
     var body: some View {
         VStack(spacing: 8) {
@@ -94,19 +120,28 @@ struct LogFilterControlsView: View {
                     .font(.caption)
                     .fontWeight(.medium)
 
-                ForEach(DataBrokerProtectionLoggerCategory.allCases) { category in
-                    Toggle(category.rawValue, isOn: Binding(
-                        get: { filterSettings.categories.contains(category) },
-                        set: { isOn in
-                            if isOn {
-                                filterSettings.categories.insert(category)
-                            } else {
-                                filterSettings.categories.remove(category)
-                            }
-                        }
-                    ))
-                    .toggleStyle(CheckboxToggleStyle())
+                Toggle("Custom Category", isOn: $shouldUseCustomCategory)
                     .font(.caption)
+
+                if shouldUseCustomCategory {
+                    TextField("Enter category (e.g. \"PixelKit\" for pixels)", text: $customCategory)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(width: 200)
+                } else {
+                    ForEach(DataBrokerProtectionLoggerCategory.allCases) { category in
+                        Toggle(category.rawValue, isOn: Binding(
+                            get: { filterSettings.categories.contains(category) },
+                            set: { isOn in
+                                if isOn {
+                                    filterSettings.categories.insert(category)
+                                } else {
+                                    filterSettings.categories.remove(category)
+                                }
+                            }
+                        ))
+                        .toggleStyle(CheckboxToggleStyle())
+                        .font(.caption)
+                    }
                 }
 
                 Spacer()
@@ -237,7 +272,7 @@ struct LogEntryRowView: View {
             }
             .frame(width: 80, alignment: .leading)
 
-            Text(log.category.rawValue)
+            Text(log.rawCategory)
                 .font(.caption)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)

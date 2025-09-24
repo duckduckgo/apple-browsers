@@ -71,12 +71,12 @@ struct SettingsCellDemoDebugView: View {
 
                 SettingsCellView(label: "Subtitle image cell with disclosure",
                                  subtitle: "This is the subtitle",
-                                 accessory: .image(Image(uiImage: DesignSystemImages.Color.Size24.privacyPro)),
+                                 accessory: .image(Image(uiImage: DesignSystemImages.Color.Size24.subscription)),
                                  disclosureIndicator: true)
 
                 SettingsCellView(label: "Greyed out cell",
                                  subtitle: "This is the subtitle",
-                                 image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.subscription),
                                  accessory: .image(Image(uiImage: DesignSystemImages.Color.Size24.exclamation)),
                                  disclosureIndicator: true,
                                  isGreyedOut: true)

@@ -285,9 +285,9 @@ extension Pixel {
         /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
         case onboardingEndOfJourneyDialogDismissButtonTapped
 
-        /// Event Trigger: Triggered when the users dismiss the "Privacy Pro" dialog prompted from a new tab.
+        /// Event Trigger: Triggered when the users dismiss the "Subscription" dialog prompted from a new tab.
         /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
-        case onboardingPrivacyPromoDialogDismissButtonTapped
+        case onboardingSubscriptionDialogDismissButtonTapped
 
         // MARK: - Onboarding Add To Dock
 
@@ -1050,86 +1050,86 @@ extension Pixel {
         case historyInsertVisitFailed
         case historyRemoveVisitsFailed
 
-        // MARK: Privacy pro
-        case privacyProSubscriptionActive
-        case privacyProOfferScreenImpression
-        case privacyProPurchaseAttempt
-        case privacyProPurchaseFailureOther
-        case privacyProPurchaseFailureStoreError
-        case privacyProPurchaseFailureBackendError
-        case privacyProPurchaseFailureAccountNotCreated
-        case privacyProPurchaseSuccess
-        case privacyProRestorePurchaseOfferPageEntry
-        case privacyProRestorePurchaseClick
-        case privacyProRestorePurchaseEmailStart
-        case privacyProRestorePurchaseStoreStart
-        case privacyProRestorePurchaseEmailSuccess
-        case privacyProRestorePurchaseStoreSuccess
-        case privacyProRestorePurchaseStoreFailureNotFound
-        case privacyProRestorePurchaseStoreFailureOther
-        case privacyProRestoreAfterPurchaseAttempt
-        case privacyProSubscriptionActivated
-        case privacyProWelcomeAddDevice
-        case privacyProWelcomeVPN
-        case privacyProWelcomePersonalInformationRemoval
-        case privacyProWelcomeAIChat
-        case privacyProWelcomeIdentityRestoration
-        case privacyProSubscriptionSettings
-        case privacyProVPNSettings
-        case privacyProPersonalInformationRemovalSettings
-        case privacyProIdentityRestorationSettings
-        case privacyProSubscriptionManagementEmail
-        case privacyProSubscriptionManagementPlanBilling
-        case privacyProSubscriptionManagementRemoval
-        case privacyProSuccessfulSubscriptionAttribution
-        case privacyProKeychainAccessError
+        // MARK: Subscription
+        case subscriptionActive
+        case subscriptionOfferScreenImpression
+        case subscriptionPurchaseAttempt
+        case subscriptionPurchaseFailureOther
+        case subscriptionPurchaseFailureStoreError
+        case subscriptionPurchaseFailureBackendError
+        case subscriptionPurchaseFailureAccountNotCreated
+        case subscriptionPurchaseSuccess
+        case subscriptionRestorePurchaseOfferPageEntry
+        case subscriptionRestorePurchaseClick
+        case subscriptionRestorePurchaseEmailStart
+        case subscriptionRestorePurchaseStoreStart
+        case subscriptionRestorePurchaseEmailSuccess
+        case subscriptionRestorePurchaseStoreSuccess
+        case subscriptionRestorePurchaseStoreFailureNotFound
+        case subscriptionRestorePurchaseStoreFailureOther
+        case subscriptionRestoreAfterPurchaseAttempt
+        case subscriptionActivated
+        case subscriptionWelcomeAddDevice
+        case subscriptionWelcomeVPN
+        case subscriptionWelcomePersonalInformationRemoval
+        case subscriptionWelcomeAIChat
+        case subscriptionWelcomeIdentityRestoration
+        case ddgSubscriptionSettings
+        case subscriptionVPNSettings
+        case subscriptionPersonalInformationRemovalSettings
+        case subscriptionIdentityRestorationSettings
+        case ddgSubscriptionManagementEmail
+        case ddgSubscriptionManagementPlanBilling
+        case ddgSubscriptionManagementRemoval
+        case subscriptionSuccessfulSubscriptionAttribution
+        case subscriptionKeychainAccessError
         // Subscription KeychainManager
-        case privacyProKeychainManagerDataAddedToTheBacklog
-        case privacyProKeychainManagerDeallocatedWithBacklog
-        case privacyProKeychainManagerDataWroteFromBacklog
-        case privacyProKeychainManagerFailedToWriteDataFromBacklog
+        case subscriptionKeychainManagerDataAddedToTheBacklog
+        case subscriptionKeychainManagerDeallocatedWithBacklog
+        case subscriptionKeychainManagerDataWroteFromBacklog
+        case subscriptionKeychainManagerFailedToWriteDataFromBacklog
         // AUth V2
-        case privacyProInvalidRefreshTokenDetected
-        case privacyProInvalidRefreshTokenSignedOut
-        case privacyProInvalidRefreshTokenRecovered
-        case privacyProAuthV2MigrationFailed
-        case privacyProAuthV2MigrationFailed2
-        case privacyProAuthV2MigrationSucceeded
-        case privacyProAuthV2GetTokensError
-        case privacyProAuthV2GetTokensError2
+        case subscriptionInvalidRefreshTokenDetected
+        case subscriptionInvalidRefreshTokenSignedOut
+        case subscriptionInvalidRefreshTokenRecovered
+        case subscriptionAuthV2MigrationFailed
+        case subscriptionAuthV2MigrationFailed2
+        case subscriptionAuthV2MigrationSucceeded
+        case subscriptionAuthV2GetTokensError
+        case subscriptionAuthV2GetTokensError2
 
-        case settingsPrivacyProAccountWithNoSubscriptionFound
+        case settingsSubscriptionAccountWithNoSubscriptionFound
 
-        case privacyProActivatingRestoreErrorMissingAccountOrTransactions
-        case privacyProActivatingRestoreErrorPastTransactionAuthenticationError
-        case privacyProActivatingRestoreErrorFailedToObtainAccessToken
-        case privacyProActivatingRestoreErrorFailedToFetchAccountDetails
-        case privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails
-        case privacyProActivatingRestoreErrorSubscriptionExpired
-
-        /**
-         * Event Trigger: The Privacy Pro onboarding promotion is displayed to the user
-         *
-         * Anomaly Investigation:
-         * - This should only be fired during app onboarding. See `OnboardingPrivacyProPromotionHelper`
-         */
-        case privacyProOnboardingPromotionImpression
+        case subscriptionActivatingRestoreErrorMissingAccountOrTransactions
+        case subscriptionActivatingRestoreErrorPastTransactionAuthenticationError
+        case subscriptionActivatingRestoreErrorFailedToObtainAccessToken
+        case subscriptionActivatingRestoreErrorFailedToFetchAccountDetails
+        case subscriptionActivatingRestoreErrorFailedToFetchSubscriptionDetails
+        case subscriptionActivatingRestoreErrorSubscriptionExpired
 
         /**
-         * Event Trigger: The user tapped the 'Learn More' button on the Privacy Pro onboarding promotion
+         * Event Trigger: The Subscription onboarding promotion is displayed to the user
          *
          * Anomaly Investigation:
-         * - This should only be fired during app onboarding. See `OnboardingPrivacyProPromotionHelper`
+         * - This should only be fired during app onboarding. See `OnboardingSubscriptionPromotionHelper`
          */
-        case privacyProOnboardingPromotionTap
+        case subscriptionOnboardingPromotionImpression
 
         /**
-         * Event Trigger: The user tapped the 'Skip' button on the Privacy Pro onboarding promotion
+         * Event Trigger: The user tapped the 'Learn More' button on the Subscription onboarding promotion
          *
          * Anomaly Investigation:
-         * - This should only be fired during app onboarding. See `OnboardingPrivacyProPromotionHelper`
+         * - This should only be fired during app onboarding. See `OnboardingSubscriptionPromotionHelper`
          */
-        case privacyProOnboardingPromotionDismiss
+        case subscriptionOnboardingPromotionTap
+
+        /**
+         * Event Trigger: The user tapped the 'Skip' button on the Subscription onboarding promotion
+         *
+         * Anomaly Investigation:
+         * - This should only be fired during app onboarding. See `OnboardingSubscriptionPromotionHelper`
+         */
+        case subscriptionOnboardingPromotionDismiss
 
         // MARK: Pixel Experiment
         case pixelExperimentEnrollment
@@ -1181,10 +1181,10 @@ extension Pixel {
         case settingsPresentedFromMenu
 
         // Web pixels
-        case privacyProOfferMonthlyPriceClick
-        case privacyProOfferYearlyPriceClick
-        case privacyProAddEmailSuccess
-        case privacyProWelcomeFAQClick
+        case subscriptionOfferMonthlyPriceClick
+        case subscriptionOfferYearlyPriceClick
+        case subscriptionAddEmailSuccess
+        case subscriptionWelcomeFAQClick
 
         // MARK: Apple Ad Attribution
         case appleAdAttribution
@@ -1633,7 +1633,7 @@ extension Pixel.Event {
         case .onboardingFireDialogDismissButtonTapped: return "m_onboarding_fire-dialog_dismiss-button-tapped"
         case .onboardingEndOfJourneyDialogNewTabDismissButtonTapped: return "m_onboarding_end-dialog-new-tab_dismiss-button-tapped"
         case .onboardingEndOfJourneyDialogDismissButtonTapped: return "m_onboarding_end-dialog_dismiss-button-tapped"
-        case .onboardingPrivacyPromoDialogDismissButtonTapped: return "m_onboarding_privacy-promo-dialog_dismiss-button-tapped"
+        case .onboardingSubscriptionDialogDismissButtonTapped: return "m_onboarding_privacy-promo-dialog_dismiss-button-tapped"
 
         case .onboardingAddToDockPromoImpressionsUnique: return "m_onboarding_add_to_dock_promo_impressions_unique"
         case .onboardingAddToDockPromoShowTutorialCTATapped: return "m_onboarding_add_to_dock_promo_show_tutorial_button_tapped"
@@ -2345,68 +2345,68 @@ extension Pixel.Event {
         case .historyInsertVisitFailed: return "m_debug_history-insert-visit-failed"
         case .historyRemoveVisitsFailed: return "m_debug_history-remove-visits-failed"
 
-        // MARK: Privacy Pro
-        case .privacyProSubscriptionActive: return "m_privacy-pro_app_subscription_active"
-        case .privacyProOfferScreenImpression: return "m_privacy-pro_offer_screen_impression"
-        case .privacyProPurchaseAttempt: return "m_privacy-pro_terms-conditions_subscribe_click"
-        case .privacyProPurchaseFailureOther: return "m_privacy-pro_app_subscription-purchase_failure_other"
-        case .privacyProPurchaseFailureStoreError: return "m_privacy-pro_app_subscription-purchase_failure_store"
-        case .privacyProPurchaseFailureAccountNotCreated: return "m_privacy-pro_app_subscription-purchase_failure_account-creation"
-        case .privacyProPurchaseFailureBackendError: return "m_privacy-pro_app_subscription-purchase_failure_backend"
-        case .privacyProPurchaseSuccess: return "m_privacy-pro_app_subscription-purchase_success"
-        case .privacyProRestorePurchaseOfferPageEntry: return "m_privacy-pro_offer_restore-purchase_click"
-        case .privacyProRestorePurchaseClick: return "m_privacy-pro_app-settings_restore-purchase_click"
-        case .privacyProRestorePurchaseEmailStart: return "m_privacy-pro_activate-subscription_enter-email_click"
-        case .privacyProRestorePurchaseStoreStart: return "m_privacy-pro_activate-subscription_restore-purchase_click"
-        case .privacyProRestorePurchaseEmailSuccess: return "m_privacy-pro_app_subscription-restore-using-email_success"
-        case .privacyProRestorePurchaseStoreSuccess: return "m_privacy-pro_app_subscription-restore-using-store_success"
-        case .privacyProRestorePurchaseStoreFailureNotFound: return "m_privacy-pro_app_subscription-restore-using-store_failure_not-found"
-        case .privacyProRestorePurchaseStoreFailureOther: return "m_privacy-pro_app_subscription-restore-using-store_failure_other"
-        case .privacyProRestoreAfterPurchaseAttempt: return "m_privacy-pro_app_subscription-restore-after-purchase-attempt_success"
-        case .privacyProSubscriptionActivated: return "m_privacy-pro_app_subscription_activated_u"
-        case .privacyProWelcomeAddDevice: return "m_privacy-pro_welcome_add-device_click_u"
-        case .privacyProWelcomeVPN: return "m_privacy-pro_welcome_vpn_click_u"
-        case .privacyProWelcomePersonalInformationRemoval: return "m_privacy-pro_welcome_personal-information-removal_click_u"
-        case .privacyProWelcomeAIChat: return "m_privacy-pro_welcome_ai-chat_click_u"
-        case .privacyProWelcomeIdentityRestoration: return "m_privacy-pro_welcome_identity-theft-restoration_click_u"
-        case .privacyProSubscriptionSettings: return "m_privacy-pro_settings_screen_impression"
-        case .privacyProVPNSettings: return "m_privacy-pro_app-settings_vpn_click"
-        case .privacyProPersonalInformationRemovalSettings: return "m_privacy-pro_app-settings_personal-information-removal_click"
-        case .privacyProIdentityRestorationSettings: return "m_privacy-pro_app-settings_identity-theft-restoration_click"
-        case .privacyProSubscriptionManagementEmail: return "m_privacy-pro_manage-email_edit_click"
-        case .privacyProSubscriptionManagementPlanBilling: return "m_privacy-pro_settings_change-plan-or-billing_click"
-        case .privacyProSubscriptionManagementRemoval: return "m_privacy-pro_settings_remove-from-device_click"
-        case .privacyProSuccessfulSubscriptionAttribution: return "m_subscribe"
-        case .privacyProKeychainAccessError: return "m_privacy-pro_keychain_access_error"
+        // MARK: Subscription
+        case .subscriptionActive: return "m_privacy-pro_app_subscription_active"
+        case .subscriptionOfferScreenImpression: return "m_privacy-pro_offer_screen_impression"
+        case .subscriptionPurchaseAttempt: return "m_privacy-pro_terms-conditions_subscribe_click"
+        case .subscriptionPurchaseFailureOther: return "m_privacy-pro_app_subscription-purchase_failure_other"
+        case .subscriptionPurchaseFailureStoreError: return "m_privacy-pro_app_subscription-purchase_failure_store"
+        case .subscriptionPurchaseFailureAccountNotCreated: return "m_privacy-pro_app_subscription-purchase_failure_account-creation"
+        case .subscriptionPurchaseFailureBackendError: return "m_privacy-pro_app_subscription-purchase_failure_backend"
+        case .subscriptionPurchaseSuccess: return "m_privacy-pro_app_subscription-purchase_success"
+        case .subscriptionRestorePurchaseOfferPageEntry: return "m_privacy-pro_offer_restore-purchase_click"
+        case .subscriptionRestorePurchaseClick: return "m_privacy-pro_app-settings_restore-purchase_click"
+        case .subscriptionRestorePurchaseEmailStart: return "m_privacy-pro_activate-subscription_enter-email_click"
+        case .subscriptionRestorePurchaseStoreStart: return "m_privacy-pro_activate-subscription_restore-purchase_click"
+        case .subscriptionRestorePurchaseEmailSuccess: return "m_privacy-pro_app_subscription-restore-using-email_success"
+        case .subscriptionRestorePurchaseStoreSuccess: return "m_privacy-pro_app_subscription-restore-using-store_success"
+        case .subscriptionRestorePurchaseStoreFailureNotFound: return "m_privacy-pro_app_subscription-restore-using-store_failure_not-found"
+        case .subscriptionRestorePurchaseStoreFailureOther: return "m_privacy-pro_app_subscription-restore-using-store_failure_other"
+        case .subscriptionRestoreAfterPurchaseAttempt: return "m_privacy-pro_app_subscription-restore-after-purchase-attempt_success"
+        case .subscriptionActivated: return "m_privacy-pro_app_subscription_activated_u"
+        case .subscriptionWelcomeAddDevice: return "m_privacy-pro_welcome_add-device_click_u"
+        case .subscriptionWelcomeVPN: return "m_privacy-pro_welcome_vpn_click_u"
+        case .subscriptionWelcomePersonalInformationRemoval: return "m_privacy-pro_welcome_personal-information-removal_click_u"
+        case .subscriptionWelcomeAIChat: return "m_privacy-pro_welcome_ai-chat_click_u"
+        case .subscriptionWelcomeIdentityRestoration: return "m_privacy-pro_welcome_identity-theft-restoration_click_u"
+        case .ddgSubscriptionSettings: return "m_privacy-pro_settings_screen_impression"
+        case .subscriptionVPNSettings: return "m_privacy-pro_app-settings_vpn_click"
+        case .subscriptionPersonalInformationRemovalSettings: return "m_privacy-pro_app-settings_personal-information-removal_click"
+        case .subscriptionIdentityRestorationSettings: return "m_privacy-pro_app-settings_identity-theft-restoration_click"
+        case .ddgSubscriptionManagementEmail: return "m_privacy-pro_manage-email_edit_click"
+        case .ddgSubscriptionManagementPlanBilling: return "m_privacy-pro_settings_change-plan-or-billing_click"
+        case .ddgSubscriptionManagementRemoval: return "m_privacy-pro_settings_remove-from-device_click"
+        case .subscriptionSuccessfulSubscriptionAttribution: return "m_subscribe"
+        case .subscriptionKeychainAccessError: return "m_privacy-pro_keychain_access_error"
             // Subscription KeychainManager
-        case .privacyProKeychainManagerDataAddedToTheBacklog: return "m_privacy-pro_keychain_manager_data_added_to_backlog"
-        case .privacyProKeychainManagerDeallocatedWithBacklog: return "m_privacy-pro_keychain_manager_deallocated_with_backlog"
-        case .privacyProKeychainManagerDataWroteFromBacklog: return "m_privacy-pro_keychain_manager_data_wrote_from_backlog"
-        case .privacyProKeychainManagerFailedToWriteDataFromBacklog: return "m_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
+        case .subscriptionKeychainManagerDataAddedToTheBacklog: return "m_privacy-pro_keychain_manager_data_added_to_backlog"
+        case .subscriptionKeychainManagerDeallocatedWithBacklog: return "m_privacy-pro_keychain_manager_deallocated_with_backlog"
+        case .subscriptionKeychainManagerDataWroteFromBacklog: return "m_privacy-pro_keychain_manager_data_wrote_from_backlog"
+        case .subscriptionKeychainManagerFailedToWriteDataFromBacklog: return "m_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
             // Auth V2
-        case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
-        case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
-        case .privacyProInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
-        case .privacyProAuthV2MigrationFailed: return "m_privacy-pro_auth_v2_migration_failure"
-        case .privacyProAuthV2MigrationFailed2: return "m_privacy-pro_auth_v2_migration_failure2"
-        case .privacyProAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
-        case .privacyProAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"
-        case .privacyProAuthV2GetTokensError2: return "m_privacy-pro_auth_v2_get_tokens_error2"
+        case .subscriptionInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
+        case .subscriptionInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
+        case .subscriptionInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
+        case .subscriptionAuthV2MigrationFailed: return "m_privacy-pro_auth_v2_migration_failure"
+        case .subscriptionAuthV2MigrationFailed2: return "m_privacy-pro_auth_v2_migration_failure2"
+        case .subscriptionAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
+        case .subscriptionAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"
+        case .subscriptionAuthV2GetTokensError2: return "m_privacy-pro_auth_v2_get_tokens_error2"
 
-        case .settingsPrivacyProAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
+        case .settingsSubscriptionAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
 
-        case .privacyProActivatingRestoreErrorMissingAccountOrTransactions: return "m_privacy-pro_activating_restore_error_missing_account_or_transactions"
-        case .privacyProActivatingRestoreErrorPastTransactionAuthenticationError: return "m_privacy-pro_activating_restore_error_past_transaction_authentication_error"
-        case .privacyProActivatingRestoreErrorFailedToObtainAccessToken: return "m_privacy-pro_activating_restore_error_failed_to_obtain_access_token"
-        case .privacyProActivatingRestoreErrorFailedToFetchAccountDetails: return "m_privacy-pro_activating_restore_error_failed_to_fetch_account_details"
-        case .privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails: return "m_privacy-pro_activating_restore_error_failed_to_fetch_subscription_details"
-        case .privacyProActivatingRestoreErrorSubscriptionExpired: return "m_privacy-pro_activating_restore_error_subscription_expired"
+        case .subscriptionActivatingRestoreErrorMissingAccountOrTransactions: return "m_privacy-pro_activating_restore_error_missing_account_or_transactions"
+        case .subscriptionActivatingRestoreErrorPastTransactionAuthenticationError: return "m_privacy-pro_activating_restore_error_past_transaction_authentication_error"
+        case .subscriptionActivatingRestoreErrorFailedToObtainAccessToken: return "m_privacy-pro_activating_restore_error_failed_to_obtain_access_token"
+        case .subscriptionActivatingRestoreErrorFailedToFetchAccountDetails: return "m_privacy-pro_activating_restore_error_failed_to_fetch_account_details"
+        case .subscriptionActivatingRestoreErrorFailedToFetchSubscriptionDetails: return "m_privacy-pro_activating_restore_error_failed_to_fetch_subscription_details"
+        case .subscriptionActivatingRestoreErrorSubscriptionExpired: return "m_privacy-pro_activating_restore_error_subscription_expired"
 
-        case .privacyProOnboardingPromotionImpression: return "m_privacy-pro_onboarding_promotion_impression"
+        case .subscriptionOnboardingPromotionImpression: return "m_privacy-pro_onboarding_promotion_impression"
 
-        case .privacyProOnboardingPromotionTap: return "m_privacy-pro_onboarding_promotion_tap"
+        case .subscriptionOnboardingPromotionTap: return "m_privacy-pro_onboarding_promotion_tap"
 
-        case .privacyProOnboardingPromotionDismiss: return "m_privacy-pro_onboarding_promotion_dismiss"
+        case .subscriptionOnboardingPromotionDismiss: return "m_privacy-pro_onboarding_promotion_dismiss"
 
         // MARK: Pixel Experiment
         case .pixelExperimentEnrollment: return "pixel_experiment_enrollment"
@@ -2433,10 +2433,10 @@ extension Pixel.Event {
         case .settingsAccessiblityTextZoom: return "m_settings_accessiblity_text_size"
 
         // Web
-        case .privacyProOfferMonthlyPriceClick: return "m_privacy-pro_offer_monthly-price_click"
-        case .privacyProOfferYearlyPriceClick: return "m_privacy-pro_offer_yearly-price_click"
-        case .privacyProAddEmailSuccess: return "m_privacy-pro_app_add-email_success_u"
-        case .privacyProWelcomeFAQClick: return "m_privacy-pro_welcome_faq_click_u"
+        case .subscriptionOfferMonthlyPriceClick: return "m_privacy-pro_offer_monthly-price_click"
+        case .subscriptionOfferYearlyPriceClick: return "m_privacy-pro_offer_yearly-price_click"
+        case .subscriptionAddEmailSuccess: return "m_privacy-pro_app_add-email_success_u"
+        case .subscriptionWelcomeFAQClick: return "m_privacy-pro_welcome_faq_click_u"
         case .networkProtectionFailureRecoveryStarted: return "m_netp_ev_failure_recovery_started"
         case .networkProtectionFailureRecoveryFailed: return "m_netp_ev_failure_recovery_failed"
         case .networkProtectionFailureRecoveryCompletedHealthy: return "m_netp_ev_failure_recovery_completed_server_healthy"

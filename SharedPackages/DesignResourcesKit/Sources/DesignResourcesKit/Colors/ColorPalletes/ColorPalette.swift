@@ -26,7 +26,6 @@ public struct DesignSystemPalette {
 public enum ColorPalette {
     case `default`
     case desert
-    case figma
     case green
     case orange
     case rose
@@ -39,8 +38,6 @@ public enum ColorPalette {
             DefaultColorPalette.self
         case .desert:
             DesertColorPalette.self
-        case .figma:
-            FigmaColorPalette.self
         case .green:
             GreenColorPalette.self
         case .orange:

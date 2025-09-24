@@ -28,7 +28,7 @@ import Persistence
 public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
     @Published var subscriptionDetails: String?
-    @Published var subscriptionStatus: PrivacyProSubscription.Status = .unknown
+    @Published var subscriptionStatus: DuckDuckGoSubscription.Status = .unknown
     @Published private var hasActiveTrialOffer: Bool = false
 
     @Published var email: String?
@@ -40,7 +40,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
         return !rebrandingMessageDismissed
     }
 
-    private var subscriptionPlatform: PrivacyProSubscription.Platform?
+    private var subscriptionPlatform: DuckDuckGoSubscription.Platform?
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
     private let subscriptionManager: SubscriptionManagerV2
@@ -306,7 +306,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
     }
 
     @MainActor
-    func updateDescription(for subscription: PrivacyProSubscription) {
+    func updateDescription(for subscription: DuckDuckGoSubscription) {
         let hasActiveTrialOffer = subscription.hasActiveTrialOffer
         let status = subscription.status
         let period = subscription.billingPeriod

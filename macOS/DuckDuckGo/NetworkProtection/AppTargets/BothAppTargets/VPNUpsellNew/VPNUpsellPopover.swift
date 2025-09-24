@@ -41,7 +41,7 @@ private enum Constants {
     static let horizontalPadding: CGFloat = 16
     static let bottomPadding: CGFloat = 24
     static let sparkleSize: CGSize = CGSize(width: 250, height: 100)
-    static let privacyProSize: CGSize = CGSize(width: 256, height: 96)
+    static let subscriptionSize: CGSize = CGSize(width: 256, height: 96)
     static let plusRowHorizontalSpacing: CGFloat = 12
     static let plusRowVerticalSpacing: CGFloat = 4
     static let actionButtonHorizontalSpacing: CGFloat = 8
@@ -94,7 +94,7 @@ struct VPNUpsellPopoverView: View {
                 .clipped()
             LottieView(animation: .named("privacypro_devices"))
                 .playing(loopMode: .playOnce)
-                .frame(width: Constants.privacyProSize.width, height: Constants.privacyProSize.height)
+                .frame(width: Constants.subscriptionSize.width, height: Constants.subscriptionSize.height)
                 .clipped()
             }
     }

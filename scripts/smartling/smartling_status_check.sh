@@ -26,8 +26,8 @@ echo "Checking translation status for job: $JOB_ID (Platform: $PLATFORM)"
 # Use the existing status script to check job status and write the uniform message file
 ./scripts/smartling/smartling_status.sh "$JOB_ID" "$PLATFORM" check_status_message.txt
 
-# Parse the status from the output (the status script creates status_message.txt)
-if [ ! -f "status_message.txt" ]; then
+# Parse the status from the output (the status script creates check_status_message.txt)
+if [ ! -f "check_status_message.txt" ]; then
 	echo "❌ Failed to get status information"
 	if [ -n "${GITHUB_OUTPUT:-}" ]; then
 		echo "status_result=failed" >> "$GITHUB_OUTPUT"
@@ -37,7 +37,7 @@ if [ ! -f "status_message.txt" ]; then
 fi
 
 # Extract the status from the message file
-STATUS_INFO=$(cat status_message.txt)
+STATUS_INFO=$(cat check_status_message.txt)
 
 # Determine the job status for label management
 if echo "$STATUS_INFO" | grep -q "Status.*COMPLETED"; then

@@ -51,7 +51,8 @@ struct ResponsiveSearchFieldView: View {
                     if showLogo {
                         TintableImage(fullColor: DesignSystemImages.Color.Size24.duckDuckGo,
                                       tintable: UIImage(resource: .widgetDaxLogoTinted)) { image in
-                                image.resizable()
+                                image
+                                    .resizable()
                                     .frame(width: 30, height: 30, alignment: .leading)
                                     .padding(.leading, 12)
                         }
@@ -61,6 +62,7 @@ struct ResponsiveSearchFieldView: View {
                         .daxBodyRegular()
                         .foregroundStyle(Color(designSystemColor: .textSecondary))
                         .padding(.leading, showLogo ? 8 : 12)
+                        .makeAccentable()
 
                     Spacer()
 

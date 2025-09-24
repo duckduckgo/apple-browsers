@@ -64,14 +64,16 @@ struct VPNStatusView: View {
 
     private func connectionView(with status: NEVPNStatus) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Image(headerImageName(with: status))
-                .useFullColorRendering()
+
+            TintableImage(fullColor: UIImage(resource: headerImage(with: status)),
+                          tintable: UIImage(resource: headerImage(with: status, tinted: true))) { $0 }
                 .padding(.bottom, 6)
                 .accessibilityHidden(true)
 
             Text(title(with: status))
                 .daxSubheadSemibold()
                 .foregroundStyle(Color(designSystemColor: .textPrimary))
+                .makeAccentable()
 
             Group {
                 if status == .connected {
@@ -83,6 +85,7 @@ struct VPNStatusView: View {
             .daxCaption()
             .foregroundStyle(Color(designSystemColor: .textPrimary))
             .opacity(status.isConnected ? 0.8 : 0.6)
+            .makeAccentable()
 
             //  Should be padding of 7 here but use max space to ensure button's bottom padding looks right.
             Spacer()
@@ -166,18 +169,18 @@ struct VPNStatusView: View {
         return isDisabled ? disabledForegroundColor : defaultForegroundColor
     }
 
-    private func headerImageName(with status: NEVPNStatus) -> String {
+    private func headerImage(with status: NEVPNStatus, tinted: Bool = false) -> ImageResource {
         switch status {
         case .connected:
             if snoozeTimingStore.isSnoozing {
-                return "vpn-off"
+                return tinted ? .vpnOffTinted : .vpnOff
             } else {
-                return "vpn-on"
+                return tinted ? .vpnOnTinted : .vpnOn
             }
-        case .connecting, .reasserting: return "vpn-on"
-        case .disconnecting, .disconnected: return "vpn-off"
-        case .invalid: return "vpn-off"
-        @unknown default: return "vpn-off"
+        case .connecting, .reasserting: return tinted ? .vpnOnTinted : .vpnOn
+        case .disconnecting, .disconnected: return tinted ? .vpnOffTinted : .vpnOff
+        case .invalid: return tinted ? .vpnOffTinted : .vpnOff
+        @unknown default: return tinted ? .vpnOffTinted : .vpnOff
         }
     }
 

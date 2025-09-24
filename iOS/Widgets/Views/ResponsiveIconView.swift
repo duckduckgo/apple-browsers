@@ -38,6 +38,8 @@ struct ResponsiveIconView: View {
         ZStack {
             RoundedRectangle(cornerRadius: 16)
                 .renderAwareBackgroundFill()
+                .makeAccentable()
+
             image
                 .resizable()
                 .scaledToFit()

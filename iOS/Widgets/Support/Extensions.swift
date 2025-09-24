@@ -27,32 +27,21 @@ extension Color {
 
 }
 
-@available(iOSApplicationExtension 17, *)
-struct RenderingAwareWidgetBackground: ViewModifier {
-
-    @Environment(\.widgetRenderingMode) var widgetRenderingMode
-
-    func body(content: Content) -> some View {
-
-        if widgetRenderingMode == .fullColor {
-            content.background(Color(designSystemColor: .background))
-        } else {
-            content.containerBackground(for: .widget) {
-                Color(designSystemColor: .background)
-            }
-        }
-    }
-
-}
-
 // See https://stackoverflow.com/a/59228385/73479
 extension View {
 
     @ViewBuilder func widgetContainerBackground() -> some View {
-        if #available(iOSApplicationExtension 17.0, *) {
-            modifier(RenderingAwareWidgetBackground())
+        let color = Color(designSystemColor: .background)
+        if #available(iOSApplicationExtension 26.0, *) {
+            containerBackground(for: .widget) {
+                color
+            }
+        } else if #available(iOSApplicationExtension 17.0, *) {
+            containerBackground(for: .widget) {
+                color
+            }
         } else {
-            background(Color(designSystemColor: .background))
+            background(color)
         }
     }
 

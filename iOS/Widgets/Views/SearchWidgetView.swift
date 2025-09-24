@@ -30,17 +30,17 @@ struct SearchWidgetView: View {
         DesignSystemWidgetContainerView {
             VStack(alignment: .center) {
 
-                Image(.logo)
-                    .resizable()
-                    .useFullColorRendering()
-                    .frame(width: 64, height: 64, alignment: .center)
-                    .accessibilityHidden(true)
+                TintableImage(fullColor: DesignSystemImages.Color.Size24.duckDuckGo,
+                              tintable: UIImage(resource: .widgetDaxLogoTinted)) { image in
+                        image.resizable()
+                }
+                .frame(width: 64, height: 64, alignment: .center)
 
                 Spacer()
 
                 ResponsiveSearchFieldView(isAIChatEnabled: false, showLogo: false, isRightIconEnabled: true)
             }
-            .accessibilityLabel (Text(UserText.searchDuckDuckGo))
+            .accessibilityLabel(Text(UserText.searchDuckDuckGo))
             .padding(0)
         }
     }

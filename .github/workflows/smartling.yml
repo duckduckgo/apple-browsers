@@ -46,34 +46,43 @@ jobs:
 
       - name: Determine trigger and parameters
         id: params
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          LABEL_NAME: ${{ github.event.label.name }}
+          HEAD_REF: ${{ github.head_ref }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_PLATFORM: ${{ github.event.inputs.platform }}
+          INPUT_ACTION: ${{ github.event.inputs.action }}
+          INPUT_JOB_ID: ${{ github.event.inputs['job-id'] }}
+          INPUT_FORCE: ${{ github.event.inputs.force }}
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
             # Label trigger
-            if [[ "${{ github.event.label.name }}" == "start ios translation" ]]; then
+            if [[ "$LABEL_NAME" == "start ios translation" ]]; then
               echo "platform=iOS" >> $GITHUB_OUTPUT
               echo "action=upload" >> $GITHUB_OUTPUT
-            elif [[ "${{ github.event.label.name }}" == "start macOS translation" ]]; then
+            elif [[ "$LABEL_NAME" == "start macOS translation" ]]; then
               echo "platform=macOS" >> $GITHUB_OUTPUT
               echo "action=upload" >> $GITHUB_OUTPUT
-            elif [[ "${{ github.event.label.name }}" == "authorize translation" ]]; then
+            elif [[ "$LABEL_NAME" == "authorize translation" ]]; then
               # Will be set from comment parsing
               echo "action=approve" >> $GITHUB_OUTPUT
               echo "needs_comment_parsing=true" >> $GITHUB_OUTPUT
-            elif [[ "${{ github.event.label.name }}" == "download translations" ]]; then
+            elif [[ "$LABEL_NAME" == "download translations" ]]; then
               # Will be set from comment parsing
               echo "action=download" >> $GITHUB_OUTPUT
               echo "needs_comment_parsing=true" >> $GITHUB_OUTPUT
             fi
             echo "is_pr_trigger=true" >> $GITHUB_OUTPUT
-            echo "branch=${{ github.head_ref }}" >> $GITHUB_OUTPUT
+            echo "branch=$HEAD_REF" >> $GITHUB_OUTPUT
           else
             # Manual workflow dispatch
-            echo "platform=${{ github.event.inputs.platform }}" >> $GITHUB_OUTPUT
-            echo "action=${{ github.event.inputs.action }}" >> $GITHUB_OUTPUT
-            echo "job_id=${{ github.event.inputs.job-id }}" >> $GITHUB_OUTPUT
-            echo "force=${{ github.event.inputs.force }}" >> $GITHUB_OUTPUT
+            echo "platform=$INPUT_PLATFORM" >> $GITHUB_OUTPUT
+            echo "action=$INPUT_ACTION" >> $GITHUB_OUTPUT
+            echo "job_id=$INPUT_JOB_ID" >> $GITHUB_OUTPUT
+            echo "force=$INPUT_FORCE" >> $GITHUB_OUTPUT
             echo "is_pr_trigger=false" >> $GITHUB_OUTPUT
-            echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "branch=$REF_NAME" >> $GITHUB_OUTPUT
           fi
 
       - name: Assert not main or release branch

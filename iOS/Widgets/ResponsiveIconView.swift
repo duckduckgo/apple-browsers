@@ -37,7 +37,7 @@ struct ResponsiveIconView: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 16)
-                .liquidGlassCompatibleFill()
+                .renderAwareBackgroundFill()
             image
                 .resizable()
                 .scaledToFit()

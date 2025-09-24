@@ -38,10 +38,12 @@ struct FavoritesWidgetView: View {
                 .foregroundStyle(Color(designSystemColor: .textSecondary))
                 .padding(.horizontal)
                 .accessibilityHidden(true)
+                .makeAccentable()
 
             Text(UserText.noFavoritesCTA)
                 .daxSubheadSemibold()
                 .foregroundColor(Color(designSystemColor: .accent))
+                .makeAccentable()
         }
     }
 

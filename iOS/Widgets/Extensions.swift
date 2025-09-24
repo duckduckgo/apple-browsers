@@ -27,8 +27,8 @@ extension Color {
 
 }
 
-@available(iOSApplicationExtension 26, *)
-struct LiquidGlassCompatibleBackgroundColorModifier: ViewModifier {
+@available(iOSApplicationExtension 17, *)
+struct RenderingAwareWidgetBackground: ViewModifier {
 
     @Environment(\.widgetRenderingMode) var widgetRenderingMode
 
@@ -49,13 +49,8 @@ struct LiquidGlassCompatibleBackgroundColorModifier: ViewModifier {
 extension View {
 
     @ViewBuilder func widgetContainerBackground() -> some View {
-        if #available(iOSApplicationExtension 26.0, *) {
-            modifier(LiquidGlassCompatibleBackgroundColorModifier())
-        } else
         if #available(iOSApplicationExtension 17.0, *) {
-            containerBackground(for: .widget) {
-                Color(designSystemColor: .background)
-            }
+            modifier(RenderingAwareWidgetBackground())
         } else {
             background(Color(designSystemColor: .background))
         }
@@ -111,6 +106,35 @@ extension Image {
             self.widgetAccentedRenderingMode(.fullColor)
         } else {
             self
+        }
+    }
+
+}
+
+extension RoundedRectangle {
+
+    @ViewBuilder
+    func renderAwareBackgroundFill() -> some View {
+        if #available(iOSApplicationExtension 17, *) {
+            modifier(RenderingAwareFieldFillColor())
+        } else {
+            fill(Color(designSystemColor: .backgroundTertiary))
+        }
+    }
+
+}
+
+@available(iOSApplicationExtension 17, *)
+private struct RenderingAwareFieldFillColor: ViewModifier {
+
+    @Environment(\.widgetRenderingMode) var widgetRenderingMode
+
+    func body(content: Content) -> some View {
+        if widgetRenderingMode == .fullColor {
+            content.foregroundStyle(Color(designSystemColor: .backgroundTertiary))
+        } else {
+            // See https://www.figma.com/design/6bSIUkJP6bihfEApcidLS9/iOS-widgets-tinting?node-id=185-5961&t=MCToFbbAM3OtJCwN-0
+            content.foregroundStyle(Color(designSystemColor: .backgroundTertiary).opacity(0.3))
         }
     }
 

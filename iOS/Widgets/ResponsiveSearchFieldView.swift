@@ -41,23 +41,25 @@ struct ResponsiveSearchFieldView: View {
         Link(destination: DeepLinks.newSearch) {
             ZStack {
                 RoundedRectangle(cornerRadius: 16)
-                    .liquidGlassCompatibleFill()
+                    .renderAwareBackgroundFill()
                     .frame(minHeight: fieldHeight, maxHeight: fieldHeight)
                     .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 12, x: 0, y: 8)
+                    .makeAccentable()
 
                 HStack(spacing: 0) {
 
                     if showLogo {
-                        Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
-                            .resizable()
-                            .useFullColorRendering()
-                            .frame(width: 30, height: 30, alignment: .leading)
-                            .padding(.leading, 12)
+                        TintableImage(fullColor: DesignSystemImages.Color.Size24.duckDuckGo,
+                                      tintable: UIImage(resource: .tintableDaxLogo)) { image in
+                                image.resizable()
+                                    .makeAccentable()
+                                    .frame(width: 30, height: 30, alignment: .leading)
+                                    .padding(.leading, 12)
+                        }
                     }
 
                     Text(prompt)
                         .daxBodyRegular()
-                        .makeAccentable()
                         .foregroundStyle(Color(designSystemColor: .textSecondary))
                         .padding(.leading, showLogo ? 8 : 12)
 
@@ -69,14 +71,14 @@ struct ResponsiveSearchFieldView: View {
                                 Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
                                     Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat)
                                         .resizable()
-                                        .useFullColorRendering()
+                                        .makeAccentable()
                                         .frame(width: 24, height: 24, alignment: .leading)
                                         .foregroundStyle(Color(designSystemColor: .icons))
                                 }
                             } else  {
                                 Image(.widgetSearchLoupe)
                                     .resizable()
-                                    .useFullColorRendering()
+                                    .makeAccentable()
                                     .frame(width: 24, height: 24, alignment: .leading)
                                     .foregroundStyle(Color(designSystemColor: .icons))
                             }
@@ -90,35 +92,6 @@ struct ResponsiveSearchFieldView: View {
 
             }
             .unredacted()
-        }
-    }
-
-}
-
-extension RoundedRectangle {
-
-    @ViewBuilder
-    func liquidGlassCompatibleFill() -> some View {
-        if #available(iOSApplicationExtension 26, *) {
-            modifier(LiquidGlassCompatibleFillModifier())
-        } else {
-            fill(Color(designSystemColor: .backgroundTertiary))
-        }
-    }
-
-}
-
-@available(iOSApplicationExtension 26, *)
-struct LiquidGlassCompatibleFillModifier: ViewModifier {
-
-    @Environment(\.widgetRenderingMode) var widgetRenderingMode
-
-    func body(content: Content) -> some View {
-        if widgetRenderingMode == .fullColor {
-            content.foregroundStyle(Color(designSystemColor: .backgroundTertiary))
-        } else {
-            // See https://www.figma.com/design/6bSIUkJP6bihfEApcidLS9/iOS-widgets-tinting?node-id=185-5961&t=MCToFbbAM3OtJCwN-0
-            content.foregroundStyle(Color(designSystemColor: .backgroundTertiary).opacity(0.3))
         }
     }
 

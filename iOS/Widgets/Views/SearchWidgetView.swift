@@ -30,11 +30,11 @@ struct SearchWidgetView: View {
         DesignSystemWidgetContainerView {
             VStack(alignment: .center) {
 
-                TintableImage(fullColor: DesignSystemImages.Color.Size24.duckDuckGo,
+                TintableImage(fullColor: UIImage(resource: .widgetDaxLogo),
                               tintable: UIImage(resource: .widgetDaxLogoTinted)) { image in
                         image.resizable()
                 }
-                .frame(width: 64, height: 64, alignment: .center)
+                .frame(width: 72, height: 72, alignment: .center)
 
                 Spacer()
 

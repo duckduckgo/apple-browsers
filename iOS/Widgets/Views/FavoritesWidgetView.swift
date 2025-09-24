@@ -55,12 +55,14 @@ struct FavoritesWidgetView: View {
 
                 if entry.favorites.isEmpty, !entry.isPreview {
                     // The whole thing needs to be a link because the user could click anywhere
-                    VStack{
+                    VStack {
                         Link(destination: DeepLinks.addFavorite) {
                             addFavoritesPrompt()
                         }
+                        .padding(0)
                         Spacer()
                     }
+                    .padding(0)
                     .padding(.top, 8)
                     .frame(maxHeight: .infinity)
                 } else {
@@ -78,7 +80,7 @@ struct FavoriteView: View {
     var favorite: Favorite?
     var isPreview: Bool
 
-    private let cornerRadius: CGFloat = 14
+    private let cornerRadius: CGFloat = 16
 
     var body: some View {
 
@@ -93,7 +95,8 @@ struct FavoriteView: View {
                 Link(destination: favorite.url) {
                     ZStack {
                         RoundedRectangle(cornerRadius: cornerRadius)
-                            .fill(favorite.needsColorBackground ? Color.forDomain(favorite.domain) : Color(designSystemColor: .controlsFillPrimary))
+                            .renderAwareBackgroundFill(favorite.needsColorBackground ? Color.forDomain(favorite.domain) : Color(designSystemColor: .surface))
+                            .makeAccentable()
                             .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 2)
 
                         if let image = favorite.favicon {
@@ -102,7 +105,7 @@ struct FavoriteView: View {
                                     .resizable()
                                     .useFullColorRendering()
                                     .aspectRatio(contentMode: .fit)
-                                    .cornerRadius(10)
+                                    .cornerRadius(cornerRadius)
                             } else {
                                 Image(uiImage: image)
                                     .useFullColorRendering()

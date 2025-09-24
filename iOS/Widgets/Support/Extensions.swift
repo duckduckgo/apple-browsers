@@ -34,7 +34,6 @@ extension View {
         let color = Color(designSystemColor: .background)
         if #available(iOSApplicationExtension 26.0, *) {
             containerBackground(for: .widget) {
-                
             }
         } else if #available(iOSApplicationExtension 17.0, *) {
             containerBackground(for: .widget) {
@@ -103,11 +102,11 @@ extension Image {
 extension RoundedRectangle {
 
     @ViewBuilder
-    func renderAwareBackgroundFill() -> some View {
+    func renderAwareBackgroundFill(_ color: Color = Color(designSystemColor: .backgroundTertiary)) -> some View {
         if #available(iOSApplicationExtension 17, *) {
-            modifier(RenderingAwareFieldFillColor())
+            modifier(RenderingAwareFieldFillColor(color: color))
         } else {
-            fill(Color(designSystemColor: .backgroundTertiary))
+            fill(color)
         }
     }
 
@@ -118,12 +117,14 @@ private struct RenderingAwareFieldFillColor: ViewModifier {
 
     @Environment(\.widgetRenderingMode) var widgetRenderingMode
 
+    let color: Color
+
     func body(content: Content) -> some View {
         if widgetRenderingMode == .fullColor {
-            content.foregroundStyle(Color(designSystemColor: .backgroundTertiary))
+            content.foregroundStyle(color)
         } else {
             // See https://www.figma.com/design/6bSIUkJP6bihfEApcidLS9/iOS-widgets-tinting?node-id=185-5961&t=MCToFbbAM3OtJCwN-0
-            content.foregroundStyle(Color(designSystemColor: .backgroundTertiary).opacity(0.3))
+            content.foregroundStyle(color.opacity(0.3))
         }
     }
 

@@ -34,6 +34,7 @@ struct DesignSystemWidgetContainerView<Content: View>: View {
             // Adding a color background here can help debug
             content()
         }
+        .background(.red)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(16)
         // Adding a different color background here in addition to the container backgrund can help debug

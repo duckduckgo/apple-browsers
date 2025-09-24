@@ -18,9 +18,14 @@
 
 import Foundation
 
+/// Represents time intervals since app installation for metrics attribution.
+/// Quantises durations into weeks (up to 4) then months for privacy-preserving analytics.
 public enum TimePast: Equatable, Codable {
+    /// No time has passed or invalid date range
     case none
+    /// Duration measured in weeks (1-4 weeks)
     case weeks(Int)
+    /// Duration measured in months (1+ months, 28-day approximation)
     case months(Int)
 
     public static func == (lhs: TimePast, rhs: TimePast) -> Bool {
@@ -36,6 +41,8 @@ public enum TimePast: Equatable, Codable {
         }
     }
 
+    /// Calculates quantised time interval between installation and given date.
+    /// Returns weeks for 0-4 week periods, months thereafter using 28-day approximation.
     static func timePastFrom(date: Date, andInstallationDate installationDate: Date) -> TimePast {
         let days = daysBetween(from: installationDate, to: date)
 
@@ -54,6 +61,7 @@ public enum TimePast: Equatable, Codable {
         }
     }
 
+    /// Calculates whole days between two dates using time intervals.
     static func daysBetween(from startDate: Date, to endDate: Date) -> Int {
         let timeInterval = endDate.timeIntervalSince(startDate)
         return Int(timeInterval / .day)

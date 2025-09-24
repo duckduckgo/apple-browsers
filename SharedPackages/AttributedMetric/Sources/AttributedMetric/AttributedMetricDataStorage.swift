@@ -18,20 +18,29 @@
 
 import Foundation
 
+/// Protocol for storing attributed metric data with rolling daily counters.
 public protocol AttributedMetricDataStoring {
 
+    /// App installation date for attribution calculations.
     var installDate: Date? { get set }
+    /// Last calculated retention threshold for privacy-preserving metrics.
     var lastRetentionThreshold: TimePast? { get set }
 
+    /// Rolling 8-day counter for search events.
     var search8Days: RollingEightDaysInt { get set }
+    /// Rolling 8-day counter for ad click events.
     var adClick8Days: RollingEightDaysInt { get set }
+    /// Rolling 8-day counter for Duck AI chat events.
     var duckAIChat8Days: RollingEightDaysInt { get set }
 
+    /// Date when user purchased the Subscription
     var subscriptionDate: Date? { get set }
 
+    /// Removes all stored metric data.
     func removeAll()
 }
 
+/// UserDefaults-backed implementation for storing attributed metric data.
 class AttributedMetricDataStorage: AttributedMetricDataStoring {
 
     private let userDefaults: UserDefaults
@@ -40,6 +49,7 @@ class AttributedMetricDataStorage: AttributedMetricDataStoring {
         self.userDefaults = userDefaults
     }
 
+    /// UserDefaults keys for storing metric data.
     enum StorageKey: String, CaseIterable {
 
         case installDate
@@ -54,6 +64,7 @@ class AttributedMetricDataStorage: AttributedMetricDataStoring {
 
     // MARK: - Utilities
 
+    /// Remove all data stored in UserDefaults
     public func removeAll() {
         for key in StorageKey.allCases {
             userDefaults.removeObject(forKey: key.rawValue)
@@ -62,11 +73,13 @@ class AttributedMetricDataStorage: AttributedMetricDataStoring {
 
     // MARK: - Coding
 
+    /// JSON encodes and stores a Codable object to UserDefaults.
     func encode(_ object: Codable, to userDefaults: UserDefaults, key: StorageKey) {
         guard let data = try? JSONEncoder().encode(object) else { return }
         userDefaults.set(data, forKey: key.rawValue)
     }
 
+    /// Retrieves and JSON decodes a Codable object from UserDefaults.
     func decode<T: Codable>(from userDefaults: UserDefaults, key: StorageKey) -> T? {
         guard let data = userDefaults.data(forKey: key.rawValue),
               let object = try? JSONDecoder().decode(T.self, from: data) else {

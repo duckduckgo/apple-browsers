@@ -18,14 +18,14 @@
 
 import Foundation
 
-/// A specialized rolling data structure that maintains exactly 7 values for tracking weekly data.
+/// A specialised rolling data structure that maintains exactly 8 values for tracking weekly data.
 public class RollingEightDays<T: Codable & Equatable>: RollingArray<T> {
 
     var lastDay: Date?
 
     /// Creates a new `RollingEightDays` instance with 8 empty slots.
     ///
-    /// The rolling seven-day structure is initialized with a fixed capacity of 7 slots,
+    /// The rolling eight-day structure is initialized with a fixed capacity of 8 slots,
     /// all initially empty and ready to receive daily data values.
     public init() {
         super.init(capacity: 8)
@@ -33,7 +33,7 @@ public class RollingEightDays<T: Codable & Equatable>: RollingArray<T> {
 
     /// Creates a new `RollingEightDays` instance from a decoder.
     ///
-    /// This initializer allows the rolling seven-day structure to be decoded from
+    /// This initialiser allows the rolling eight-day structure to be decoded from
     /// persistent storage or network data while maintaining the seven-day capacity.
     ///
     /// - Parameter decoder: The decoder to read data from.
@@ -42,6 +42,7 @@ public class RollingEightDays<T: Codable & Equatable>: RollingArray<T> {
         try super.init(from: decoder)
     }
 
+    /// Checks if the given date is the same calendar day as the last recorded day.
     public func isSameDay(_ date: Date) -> Bool {
         guard let lastDay else { return false }
         return Calendar.current.isDate(date, inSameDayAs: lastDay)
@@ -50,9 +51,10 @@ public class RollingEightDays<T: Codable & Equatable>: RollingArray<T> {
 
 // MARK: -
 
+/// Specialized rolling eight-day structure for boolean values with daily aggregation.
 public class RollingEightDaysBool: RollingEightDays<Bool> {
 
-    /// Set the last value to `true` if in the same day, creates a new one otherwise
+    /// Sets the last value to `true` if in the same day, creates a new one otherwise.
     public func setTodayToTrue() {
         let now = Date()
         if lastDay == nil {
@@ -66,9 +68,10 @@ public class RollingEightDaysBool: RollingEightDays<Bool> {
     }
 }
 
+/// Specialized rolling eight-day structure for integer values with daily aggregation and averaging.
 public class RollingEightDaysInt: RollingEightDays<Int> {
 
-    /// Increment the last value if in the same day, creates a new one otherwise
+    /// Increments the last value if in the same day, creates a new one otherwise.
     public func increment() {
         let now = Date()
         if lastDay == nil {
@@ -86,7 +89,7 @@ public class RollingEightDaysInt: RollingEightDays<Int> {
         }
     }
 
-    /// The average
+    /// Calculates the rounded average of the past 7 days, excluding today and unknown values.
     public var past7DaysAverage: Int {
         var sum = 0
         for value in values.dropLast() {
@@ -100,7 +103,7 @@ public class RollingEightDaysInt: RollingEightDays<Int> {
         return Int((Float(sum) / Float(values.count - 1)).rounded(.toNearestOrAwayFromZero)) // E.g. 6.4 = 6, 6.5 = 7, 6.6 = 7
     }
 
-    /// The number of not `.unknown` items in the past 7 days
+    /// Counts non-unknown values in the past 7 days, excluding today.
     public var countPast7Days: Int {
         return values.dropLast().count(where: { $0 != .unknown })
     }

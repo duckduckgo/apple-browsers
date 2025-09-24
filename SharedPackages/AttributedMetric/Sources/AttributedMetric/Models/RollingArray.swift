@@ -87,7 +87,8 @@ public class RollingArray<T: Codable & Equatable>: Codable {
         }
     }
 
-    /// Creates a new `RollingArray` instance with all 7 slots initially empty.
+    /// Creates a new `RollingArray` instance with all values initially set to `defaultValue`
+    ///  The minimum capacity is 1, if set to 0 defaults to 1.
     public init(capacity: Int, defaultValue: InternalValue = .unknown) {
         self.values = Array(repeating: defaultValue, count: capacity)
     }

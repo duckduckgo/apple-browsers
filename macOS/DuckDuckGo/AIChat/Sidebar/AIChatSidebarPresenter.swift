@@ -210,7 +210,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
             )
         } else {
             // If sidebar is open then pass the payload to a new AIChat tab
-            aiChatTabOpener.openNewAIChatTab(withPayload: payload)
+            aiChatTabOpener.openAIChatTab(with: .payload(payload), behavior: .newTab(selected: true))
         }
     }
 }
@@ -237,9 +237,9 @@ extension AIChatSidebarPresenter: AIChatSidebarViewControllerDelegate {
 
         Task { @MainActor in
             if let data = aiChatRestorationData {
-                aiChatTabOpener.openNewAIChatTab(withChatRestorationData: data)
+                aiChatTabOpener.openAIChatTab(with: .restoration(data), behavior: .newTab(selected: true))
             } else {
-                aiChatTabOpener.openNewAIChatTab(currentAIChatURL, with: .newTab(selected: true))
+                aiChatTabOpener.openAIChatTab(with: .url(currentAIChatURL), behavior: .newTab(selected: true))
             }
         }
     }

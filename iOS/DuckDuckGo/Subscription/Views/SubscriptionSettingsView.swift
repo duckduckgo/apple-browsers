@@ -55,7 +55,7 @@ struct SubscriptionSettingsView: View {
     var body: some View {
         optionsView
             .onFirstAppear {
-                Pixel.fire(pixel: .privacyProSubscriptionSettings, debounce: 1)
+                Pixel.fire(pixel: .ddgSubscriptionSettings, debounce: 1)
             }
             .navigationBarTitleDisplayMode(.inline)
             .onChange(of: settingsViewModel.state.subscription.shouldDisplayRestoreSubscriptionError) { value in
@@ -167,7 +167,7 @@ struct SubscriptionSettingsView: View {
                         Task {
                             if active {
                                 viewModel.manageSubscription()
-                                Pixel.fire(pixel: .privacyProSubscriptionManagementPlanBilling, debounce: 1)
+                                Pixel.fire(pixel: .ddgSubscriptionManagementPlanBilling, debounce: 1)
                             } else {
                                 viewPlans?()
                             }
@@ -211,7 +211,7 @@ struct SubscriptionSettingsView: View {
                 message: Text(UserText.subscriptionRemoveFromDeviceConfirmText),
                 primaryButton: .cancel(Text(UserText.subscriptionRemoveCancel)) {},
                 secondaryButton: .destructive(Text(UserText.subscriptionRemove)) {
-                    Pixel.fire(pixel: .privacyProSubscriptionManagementRemoval)
+                    Pixel.fire(pixel: .ddgSubscriptionManagementRemoval)
                     viewModel.removeSubscription()
                     dismiss()
                 }
@@ -400,7 +400,7 @@ struct SubscriptionSettingsView: View {
         .onChange(of: isShowingManageEmailView) { value in
             if value {
                 if let email = viewModel.state.subscriptionEmail, !email.isEmpty {
-                    Pixel.fire(pixel: .privacyProSubscriptionManagementEmail, debounce: 1)
+                    Pixel.fire(pixel: .ddgSubscriptionManagementEmail, debounce: 1)
                 }
             }
         }
@@ -469,7 +469,7 @@ struct SubscriptionSettingsViewV2: View {
     var body: some View {
         optionsView
             .onFirstAppear {
-                Pixel.fire(pixel: .privacyProSubscriptionSettings, debounce: 1)
+                Pixel.fire(pixel: .ddgSubscriptionSettings, debounce: 1)
             }
             .navigationBarTitleDisplayMode(.inline)
             .onChange(of: settingsViewModel.state.subscription.shouldDisplayRestoreSubscriptionError) { value in
@@ -557,7 +557,7 @@ struct SubscriptionSettingsViewV2: View {
                         Task {
                             if active {
                                 viewModel.manageSubscription()
-                                Pixel.fire(pixel: .privacyProSubscriptionManagementPlanBilling, debounce: 1)
+                                Pixel.fire(pixel: .ddgSubscriptionManagementPlanBilling, debounce: 1)
                             } else {
                                 viewPlans?()
                             }
@@ -601,7 +601,7 @@ struct SubscriptionSettingsViewV2: View {
                 message: Text(UserText.subscriptionRemoveFromDeviceConfirmText),
                 primaryButton: .cancel(Text(UserText.subscriptionRemoveCancel)) {},
                 secondaryButton: .destructive(Text(UserText.subscriptionRemove)) {
-                    Pixel.fire(pixel: .privacyProSubscriptionManagementRemoval)
+                    Pixel.fire(pixel: .ddgSubscriptionManagementRemoval)
                     viewModel.removeSubscription()
                     dismiss()
                 }
@@ -848,7 +848,7 @@ struct SubscriptionSettingsViewV2: View {
         .onChange(of: isShowingManageEmailView) { value in
             if value {
                 if let email = viewModel.state.subscriptionEmail, !email.isEmpty {
-                    Pixel.fire(pixel: .privacyProSubscriptionManagementEmail, debounce: 1)
+                    Pixel.fire(pixel: .ddgSubscriptionManagementEmail, debounce: 1)
                 }
             }
         }

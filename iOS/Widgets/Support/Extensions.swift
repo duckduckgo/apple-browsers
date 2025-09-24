@@ -34,7 +34,7 @@ extension View {
         let color = Color(designSystemColor: .background)
         if #available(iOSApplicationExtension 26.0, *) {
             containerBackground(for: .widget) {
-                color
+                
             }
         } else if #available(iOSApplicationExtension 17.0, *) {
             containerBackground(for: .widget) {

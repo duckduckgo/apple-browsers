@@ -168,21 +168,7 @@ jobs:
         if: ${{ env.ACTION == 'upload' }}
         id: upload
         run: |
-          # Run upload and capture job ID
-          OUTPUT=$(./scripts/smartling/smartling_upload.sh "$PLATFORM" "$BRANCH" 2>&1) || UPLOAD_FAILED=true
-          echo "$OUTPUT"
-
-          # Extract job ID from output
-          JOB_ID=$(echo "$OUTPUT" | grep -oE 'Job ID: [a-zA-Z0-9]+' | cut -d' ' -f3 || true)
-
-          if [ -z "$JOB_ID" ] || [ "$UPLOAD_FAILED" = "true" ]; then
-            echo "upload_success=false" >> $GITHUB_OUTPUT
-            ./scripts/smartling/smartling_messages.sh upload upload_message.txt "$PLATFORM" "N/A" "${{ env.SMARTLING_PROJECT_ID }}" failed
-          else
-            echo "upload_success=true" >> $GITHUB_OUTPUT
-            echo "job_id=$JOB_ID" >> $GITHUB_OUTPUT
-            ./scripts/smartling/smartling_messages.sh upload upload_message.txt "$PLATFORM" "$JOB_ID" "${{ env.SMARTLING_PROJECT_ID }}" success
-          fi
+          ./scripts/smartling/smartling_upload.sh "$PLATFORM" "$BRANCH"
           cat upload_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Check Status

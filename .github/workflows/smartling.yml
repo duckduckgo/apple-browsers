@@ -181,14 +181,7 @@ jobs:
         if: ${{ env.ACTION == 'approve' }}
         id: approve
         run: |
-          # Try to approve and capture result
-          if ./scripts/smartling/smartling_approve.sh "$JOB_ID" "$PLATFORM"; then
-            echo "approve_success=true" >> $GITHUB_OUTPUT
-            ./scripts/smartling/smartling_messages.sh approve approve_message.txt "$PLATFORM" "$JOB_ID" "${{ env.SMARTLING_PROJECT_ID }}" success
-          else
-            echo "approve_success=false" >> $GITHUB_OUTPUT
-            ./scripts/smartling/smartling_messages.sh approve approve_message.txt "$PLATFORM" "$JOB_ID" "${{ env.SMARTLING_PROJECT_ID }}" failed
-          fi
+          ./scripts/smartling/smartling_approve.sh "$JOB_ID" "$PLATFORM"
           cat approve_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Download from Smartling

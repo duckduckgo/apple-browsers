@@ -9,6 +9,7 @@ set -euo pipefail
 #   after_upload <pr_number> <success|failed> <trigger_label>
 #   after_approve <pr_number> <success|failed>
 #   after_download <pr_number> <success|failed|no_changes|deletions_pr_created>
+#   check_status <pr_number> <ready|in_progress|awaiting_authorization|unknown>
 
 ACTION="${1:-}"
 PR_NUMBER="${2:-}"
@@ -91,10 +92,9 @@ case "$ACTION" in
 		remove_label "download translations"
 
 		if [ "$STATUS" == "success" ] || [ "$STATUS" == "no_changes" ]; then
-			# Success: remove in-progress, add completed
+			# Success: remove in-progress, no additional labels
 			remove_label "translation in progress"
-			add_label "translations ready"
-			echo "✅ Download successful - marked as completed"
+			echo "✅ Download successful - removed in-progress label"
 		elif [ "$STATUS" == "deletions_pr_created" ]; then
 			echo "⚠️ Deletions detected - created review PR, marked for review"
 		else
@@ -106,9 +106,44 @@ case "$ACTION" in
 		fi
 		;;
 
+	check_status)
+		echo "🔍 Processing status check labels..."
+
+		# Always remove the trigger label
+		remove_label "check translation status"
+
+		# Set labels based on current job status
+		case "$STATUS" in
+			"ready")
+				# Translation is complete
+				remove_label "needs translation authorization"
+				remove_label "translation in progress"
+				add_label "translations ready"
+				echo "✅ Status check: translations are ready"
+				;;
+			"in_progress")
+				# Translation is in progress
+				remove_label "needs translation authorization"
+				remove_label "translations ready"
+				add_label "translation in progress"
+				echo "⏳ Status check: translation in progress"
+				;;
+			"awaiting_authorization")
+				# Translation needs authorization
+				remove_label "translation in progress"
+				remove_label "translations ready"
+				add_label "needs translation authorization"
+				echo "⏸️ Status check: needs authorization"
+				;;
+			*)
+				echo "❓ Status check: unknown status, no label changes"
+				;;
+		esac
+		;;
+
 	*)
 		echo "❌ Error: Unknown action '$ACTION'"
-		echo "Valid actions: after_upload, after_approve, after_download"
+		echo "Valid actions: after_upload, after_approve, after_download, check_status"
 		exit 1
 		;;
 esac

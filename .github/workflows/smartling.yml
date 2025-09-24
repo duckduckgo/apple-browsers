@@ -33,7 +33,7 @@ jobs:
     # Only run for Smartling-specific label triggers
     if: |
       (github.event_name == 'workflow_dispatch') ||
-      (github.event_name == 'pull_request' && (github.event.label.name == 'start ios translation' || github.event.label.name == 'start macos translation' || github.event.label.name == 'authorize translation' || github.event.label.name == 'download translations'))
+      (github.event_name == 'pull_request' && (github.event.label.name == 'start ios translation' || github.event.label.name == 'start macos translation' || github.event.label.name == 'authorize translation' || github.event.label.name == 'download translations' || github.event.label.name == 'check translation status'))
     runs-on: macos-15
     name: Smartling translation job
     permissions:
@@ -72,6 +72,10 @@ jobs:
             elif [[ "$LABEL_NAME" == "download translations" ]]; then
               # Will be set from comment parsing
               echo "action=download" >> $GITHUB_OUTPUT
+              echo "needs_comment_parsing=true" >> $GITHUB_OUTPUT
+            elif [[ "$LABEL_NAME" == "check translation status" ]]; then
+              # Will be set from comment parsing
+              echo "action=check_status" >> $GITHUB_OUTPUT
               echo "needs_comment_parsing=true" >> $GITHUB_OUTPUT
             fi
             echo "is_pr_trigger=true" >> $GITHUB_OUTPUT
@@ -183,6 +187,13 @@ jobs:
           ./scripts/smartling/smartling_download.sh "$JOB_ID" "$PLATFORM"
           cat download_message.txt >> $GITHUB_STEP_SUMMARY
 
+      - name: Check Status and Update Labels
+        if: ${{ env.ACTION == 'check_status' }}
+        id: check_status
+        run: |
+          ./scripts/smartling/smartling_status_check.sh "$JOB_ID" "$PLATFORM"
+          cat status_check_message.txt >> $GITHUB_STEP_SUMMARY
+
       # PR-specific steps (comments and labels)
       - name: Post PR comment
         if: ${{ env.IS_PR_TRIGGER == 'true' }}
@@ -222,3 +233,11 @@ jobs:
           PR_NUMBER="${{ github.event.pull_request.number }}"
 
           ./scripts/smartling/pr_label_manager.sh after_download "$PR_NUMBER" "$STATUS"
+
+      - name: Update PR labels after status check
+        if: ${{ env.IS_PR_TRIGGER == 'true' && env.ACTION == 'check_status' }}
+        run: |
+          STATUS="${{ steps.check_status.outputs.status_result }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          ./scripts/smartling/pr_label_manager.sh check_status "$PR_NUMBER" "$STATUS"

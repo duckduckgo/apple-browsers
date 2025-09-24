@@ -36,10 +36,11 @@ struct QuickActionsWidgetView: View {
                 }
                 .padding(.bottom, 15)
 
-                HStack(spacing: 12) {
+                HStack {
                     Link(destination: entry.configuration.leftShortcut.destination) {
                         ResponsiveIconView(image: entry.configuration.leftShortcut.icon)
                     }
+                    Spacer()
                     Link(destination: entry.configuration.rightShortcut.destination) {
                         ResponsiveIconView(image: entry.configuration.rightShortcut.icon)
                     }

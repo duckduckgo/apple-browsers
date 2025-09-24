@@ -1,5 +1,5 @@
 //
-//  QuickActionsMediumWidget.swift
+//  QuickActionsMediumWidgetView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -17,52 +17,12 @@
 //  limitations under the License.
 //
 
+
 import SwiftUI
 import WidgetKit
 import AppIntents
 import DesignResourcesKit
 import DesignResourcesKitIcons
-
-@available(iOS 17.0, *)
-struct QuickActionsMediumWidget: Widget {
-    let kind: String = "QuickActionsMediumWidget"
-
-    var body: some WidgetConfiguration {
-        StaticConfiguration(
-            kind: kind,
-            provider: QuickActionsMediumProvider()
-        ) { entry in
-            QuickActionsMediumWidgetView(entry: entry)
-        }
-        .configurationDisplayName(UserText.quickActionsMediumWidgetGalleryDisplayName)
-        .description(UserText.quickActionsMediumWidgetGalleryDescription)
-        .supportedFamilies([.systemMedium])
-        .contentMarginsDisabled()
-    }
-}
-
-@available(iOS 17.0, *)
-struct QuickActionsMediumProvider: TimelineProvider {
-    func placeholder(in context: Context) -> QuickActionsMediumEntry {
-        QuickActionsMediumEntry(date: Date())
-    }
-
-    func getSnapshot(in context: Context, completion: @escaping (QuickActionsMediumEntry) -> Void) {
-        let entry = QuickActionsMediumEntry(date: Date())
-        completion(entry)
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<QuickActionsMediumEntry>) -> Void) {
-        let entry = QuickActionsMediumEntry(date: Date())
-        let timeline = Timeline(entries: [entry], policy: .never)
-        completion(timeline)
-    }
-}
-
-@available(iOS 17.0, *)
-struct QuickActionsMediumEntry: TimelineEntry {
-    let date: Date
-}
 
 @available(iOS 17.0, *)
 struct QuickActionsMediumWidgetView: View {

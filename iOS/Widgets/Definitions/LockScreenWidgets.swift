@@ -106,16 +106,4 @@ struct AIChatLockScreenWidget: LockScreenWidget {
 }
 
 // MARK: - Widget View
-@available(iOSApplicationExtension 16.0, *)
-struct LockScreenWidgetView: View {
-    let image: Image
 
-    var body: some View {
-        ZStack {
-            AccessoryWidgetBackground()
-            image
-                .resizable()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}

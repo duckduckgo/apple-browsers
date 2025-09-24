@@ -522,8 +522,6 @@
 		7B059F112D0387E900371ED0 /* WidgetEducationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B059F0D2D0387E900371ED0 /* WidgetEducationViewController.swift */; };
 		7B059F122D0387E900371ED0 /* WidgetEducationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B059F0C2D0387E900371ED0 /* WidgetEducationView.swift */; };
 		7B059F142D03881000371ED0 /* ControlCenterWidgetEducationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B059F132D03881000371ED0 /* ControlCenterWidgetEducationView.swift */; };
-		7B059F1D2D03A7E400371ED0 /* WidgetsShared.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7B059F1C2D03A7E400371ED0 /* WidgetsShared.xcassets */; };
-		7B059F1E2D03A7E400371ED0 /* WidgetsShared.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7B059F1C2D03A7E400371ED0 /* WidgetsShared.xcassets */; };
 		7B10FF242D11A56300F36BF2 /* ControlWidgetVPNIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B10FF232D11A56300F36BF2 /* ControlWidgetVPNIntents.swift */; };
 		7B10FF252D11A56300F36BF2 /* ControlWidgetVPNIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B10FF232D11A56300F36BF2 /* ControlWidgetVPNIntents.swift */; };
 		7B1604E82CB685B400A44EC6 /* Logger+TipKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1604E72CB685B400A44EC6 /* Logger+TipKit.swift */; };
@@ -668,6 +666,10 @@
 		85514FFD2372DA0100DBC528 /* ios13-home-row.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 85514FFC2372DA0000DBC528 /* ios13-home-row.mp4 */; };
 		85582E0029D7409700E9AE35 /* SyncSettingsViewController+PDFRendering.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85582DFF29D7409700E9AE35 /* SyncSettingsViewController+PDFRendering.swift */; };
 		855D914D2063EF6A00C4B448 /* TabSwitcherTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855D914C2063EF6A00C4B448 /* TabSwitcherTransition.swift */; };
+		855ED5082E841EFE00047A88 /* QuickActionsWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855ED5072E841EFE00047A88 /* QuickActionsWidgetView.swift */; };
+		855ED50A2E841F0B00047A88 /* QuickActionsMediumWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855ED5092E841F0B00047A88 /* QuickActionsMediumWidgetView.swift */; };
+		855ED50C2E841F2800047A88 /* LockScreenWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855ED50B2E841F2800047A88 /* LockScreenWidgetView.swift */; };
+		855ED5102E841FCA00047A88 /* VPNStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855ED50F2E841FCA00047A88 /* VPNStatusView.swift */; };
 		856086612DE47E5600AA3DC7 /* DesignResourcesKitIcons in Frameworks */ = {isa = PBXBuildFile; productRef = 856086602DE47E5600AA3DC7 /* DesignResourcesKitIcons */; };
 		856086632DE47E7700AA3DC7 /* DesignResourcesKitIcons in Frameworks */ = {isa = PBXBuildFile; productRef = 856086622DE47E7700AA3DC7 /* DesignResourcesKitIcons */; };
 		8562CE152B9B645C00E1D399 /* CachedBookmarkSuggestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8562CE142B9B645C00E1D399 /* CachedBookmarkSuggestions.swift */; };
@@ -2454,7 +2456,6 @@
 		7B059F0C2D0387E900371ED0 /* WidgetEducationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetEducationView.swift; sourceTree = "<group>"; };
 		7B059F0D2D0387E900371ED0 /* WidgetEducationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetEducationViewController.swift; sourceTree = "<group>"; };
 		7B059F132D03881000371ED0 /* ControlCenterWidgetEducationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlCenterWidgetEducationView.swift; sourceTree = "<group>"; };
-		7B059F1C2D03A7E400371ED0 /* WidgetsShared.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = WidgetsShared.xcassets; sourceTree = "<group>"; };
 		7B10FF232D11A56300F36BF2 /* ControlWidgetVPNIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlWidgetVPNIntents.swift; sourceTree = "<group>"; };
 		7B10FF282D11AA0D00F36BF2 /* VPNiOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = VPNiOS; sourceTree = "<group>"; };
 		7B1604E72CB685B400A44EC6 /* Logger+TipKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+TipKit.swift"; sourceTree = "<group>"; };
@@ -2598,6 +2599,10 @@
 		8551912624746EDC0010FDD0 /* SnapshotHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SnapshotHelper.swift; path = fastlane/SnapshotHelper.swift; sourceTree = SOURCE_ROOT; };
 		85582DFF29D7409700E9AE35 /* SyncSettingsViewController+PDFRendering.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "SyncSettingsViewController+PDFRendering.swift"; sourceTree = "<group>"; };
 		855D914C2063EF6A00C4B448 /* TabSwitcherTransition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherTransition.swift; sourceTree = "<group>"; };
+		855ED5072E841EFE00047A88 /* QuickActionsWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionsWidgetView.swift; sourceTree = "<group>"; };
+		855ED5092E841F0B00047A88 /* QuickActionsMediumWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionsMediumWidgetView.swift; sourceTree = "<group>"; };
+		855ED50B2E841F2800047A88 /* LockScreenWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockScreenWidgetView.swift; sourceTree = "<group>"; };
+		855ED50F2E841FCA00047A88 /* VPNStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNStatusView.swift; sourceTree = "<group>"; };
 		8562CE142B9B645C00E1D399 /* CachedBookmarkSuggestions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedBookmarkSuggestions.swift; sourceTree = "<group>"; };
 		8563A03B1F9288D600F04442 /* BrowserChromeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserChromeManager.swift; sourceTree = "<group>"; };
 		8565A34A1FC8D96B00239327 /* LaunchTabNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchTabNotification.swift; sourceTree = "<group>"; };
@@ -5988,34 +5993,15 @@
 			isa = PBXGroup;
 			children = (
 				8512EA5624ED30D30073EE19 /* Assets.xcassets */,
-				31BB23A32D3A661A00809ABF /* ControlWidgetConfigurable.swift */,
-				7B10FF232D11A56300F36BF2 /* ControlWidgetVPNIntents.swift */,
-				853273B124FF114700E3C778 /* DeepLinks.swift */,
-				858544382E7C3AE300B0AABE /* DesignSystemWidgetContainerView.swift */,
-				853273AC24FEF49600E3C778 /* Extensions.swift */,
-				8585443A2E7C4D0A00B0AABE /* FavoritesWidgetView.swift */,
+				855ED50D2E841F5B00047A88 /* Definitions */,
 				8512EA5824ED30D30073EE19 /* Info.plist */,
 				98B001A2251EABB40090EC07 /* InfoPlist.strings */,
+				855ED50E2E841F8900047A88 /* Intents */,
 				98B001A8251EABB40090EC07 /* Localizable.strings */,
-				85DB12EA2A1FE2A4000A4A72 /* LockScreenWidgets.swift */,
-				8585443E2E7C4D8E00B0AABE /* PasswordsWidgetView.swift */,
 				4BCBE45D2BA7E81F00FC75A1 /* PrivacyInfo.xcprivacy */,
-				310669BF2D70EB7E005369E2 /* QuickActionsMediumWidget.swift */,
-				31B0B2BE2D390CF000A702D4 /* QuickActionsSmallWidget.swift */,
-				858544402E7D6A0F00B0AABE /* ResponsiveIconView.swift */,
-				310669C42D70EC08005369E2 /* ResponsiveSearchFieldView.swift */,
-				8585443C2E7C4D8400B0AABE /* SearchWidgetView.swift */,
-				857448222E84183D00516EAB /* TintableImage.swift */,
-				8544C37A250B823600A0FE73 /* UserText.swift */,
-				7B1681002D106CB4005EAE24 /* UserTextShared.swift */,
-				7B4DC5BF2CB2A4A500EE5CC2 /* VPNControlStatusValueProvider.swift */,
-				7BFC32AF2CB291BB007A8E17 /* VPNControlWidget.swift */,
-				4BB7CBAF2AF59C310014A35F /* VPNWidget.swift */,
-				7B4DC5C12CB2AE4600EE5CC2 /* WidgetKind.swift */,
-				8512EA5324ED30D20073EE19 /* Widgets.swift */,
+				855ED5112E84203300047A88 /* Support */,
+				855ED5062E841EB800047A88 /* Views */,
 				853273AF24FEFE4600E3C778 /* WidgetsExtension.entitlements */,
-				7B059F1C2D03A7E400371ED0 /* WidgetsShared.xcassets */,
-				7B16810B2D10CF44005EAE24 /* WidgetVPNIntents.swift */,
 			);
 			path = Widgets;
 			sourceTree = "<group>";
@@ -6086,6 +6072,60 @@
 				85482D982462F1C600EDEDD1 /* ActionIcons.xcassets */,
 			);
 			path = OpenAction;
+			sourceTree = "<group>";
+		};
+		855ED5062E841EB800047A88 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				858544382E7C3AE300B0AABE /* DesignSystemWidgetContainerView.swift */,
+				8585443A2E7C4D0A00B0AABE /* FavoritesWidgetView.swift */,
+				855ED50B2E841F2800047A88 /* LockScreenWidgetView.swift */,
+				8585443E2E7C4D8E00B0AABE /* PasswordsWidgetView.swift */,
+				855ED5092E841F0B00047A88 /* QuickActionsMediumWidgetView.swift */,
+				855ED5072E841EFE00047A88 /* QuickActionsWidgetView.swift */,
+				858544402E7D6A0F00B0AABE /* ResponsiveIconView.swift */,
+				310669C42D70EC08005369E2 /* ResponsiveSearchFieldView.swift */,
+				8585443C2E7C4D8400B0AABE /* SearchWidgetView.swift */,
+				857448222E84183D00516EAB /* TintableImage.swift */,
+				855ED50F2E841FCA00047A88 /* VPNStatusView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		855ED50D2E841F5B00047A88 /* Definitions */ = {
+			isa = PBXGroup;
+			children = (
+				7B4DC5C12CB2AE4600EE5CC2 /* WidgetKind.swift */,
+				31BB23A32D3A661A00809ABF /* ControlWidgetConfigurable.swift */,
+				85DB12EA2A1FE2A4000A4A72 /* LockScreenWidgets.swift */,
+				310669BF2D70EB7E005369E2 /* QuickActionsMediumWidget.swift */,
+				31B0B2BE2D390CF000A702D4 /* QuickActionsSmallWidget.swift */,
+				7BFC32AF2CB291BB007A8E17 /* VPNControlWidget.swift */,
+				7B4DC5BF2CB2A4A500EE5CC2 /* VPNControlStatusValueProvider.swift */,
+				4BB7CBAF2AF59C310014A35F /* VPNWidget.swift */,
+				8512EA5324ED30D20073EE19 /* Widgets.swift */,
+			);
+			path = Definitions;
+			sourceTree = "<group>";
+		};
+		855ED50E2E841F8900047A88 /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				7B10FF232D11A56300F36BF2 /* ControlWidgetVPNIntents.swift */,
+				7B16810B2D10CF44005EAE24 /* WidgetVPNIntents.swift */,
+			);
+			path = Intents;
+			sourceTree = "<group>";
+		};
+		855ED5112E84203300047A88 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				853273B124FF114700E3C778 /* DeepLinks.swift */,
+				853273AC24FEF49600E3C778 /* Extensions.swift */,
+				8544C37A250B823600A0FE73 /* UserText.swift */,
+				7B1681002D106CB4005EAE24 /* UserTextShared.swift */,
+			);
+			path = Support;
 			sourceTree = "<group>";
 		};
 		856C5F2D2E0467EB00D64AF1 /* Transitions */ = {
@@ -9687,7 +9727,6 @@
 				6F33F3942E786888002E95B1 /* duckduckgo-ai-transition.json in Resources */,
 				9830A06325ED0DB900DB64DE /* BrowsingMenu.xcassets in Resources */,
 				98EF177D21837E35006750C1 /* new_tab_dark.json in Resources */,
-				7B059F1E2D03A7E400371ED0 /* WidgetsShared.xcassets in Resources */,
 				7B4F87EC2D07396A0010B18F /* SiriEducation.xcassets in Resources */,
 				85C2970A247EB7AA0063A335 /* Text.xcassets in Resources */,
 				98788E9A2521DA1E00D55218 /* Localizable.stringsdict in Resources */,
@@ -9715,7 +9754,6 @@
 				98B001AA251EABB40090EC07 /* Localizable.strings in Resources */,
 				98B001A4251EABB40090EC07 /* InfoPlist.strings in Resources */,
 				4BCBE45E2BA7E81F00FC75A1 /* PrivacyInfo.xcprivacy in Resources */,
-				7B059F1D2D03A7E400371ED0 /* WidgetsShared.xcassets in Resources */,
 				8512EA5724ED30D30073EE19 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -11172,6 +11210,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				853273AE24FEF49600E3C778 /* Extensions.swift in Sources */,
+				855ED5102E841FCA00047A88 /* VPNStatusView.swift in Sources */,
 				4BD96E0F2C4DCFEB003BC32C /* VPNSnoozeActivityAttributes.swift in Sources */,
 				7B1681012D106CB9005EAE24 /* UserTextShared.swift in Sources */,
 				7B10FF242D11A56300F36BF2 /* ControlWidgetVPNIntents.swift in Sources */,
@@ -11180,14 +11219,17 @@
 				4BD96E102C4DF329003BC32C /* VPNSnoozeLiveActivityManager.swift in Sources */,
 				7B16810A2D10C680005EAE24 /* VPNControlWidget.swift in Sources */,
 				853273B324FF114700E3C778 /* DeepLinks.swift in Sources */,
+				855ED50A2E841F0B00047A88 /* QuickActionsMediumWidgetView.swift in Sources */,
 				7B4DC5C22CB2AE4600EE5CC2 /* WidgetKind.swift in Sources */,
 				853273B424FFB36100E3C778 /* UIColorExtension.swift in Sources */,
 				310669C02D70EB7E005369E2 /* QuickActionsMediumWidget.swift in Sources */,
 				310669C52D70EC08005369E2 /* ResponsiveSearchFieldView.swift in Sources */,
+				855ED50C2E841F2800047A88 /* LockScreenWidgetView.swift in Sources */,
 				858544412E7D6A0F00B0AABE /* ResponsiveIconView.swift in Sources */,
 				31B0B2BF2D390CF400A702D4 /* QuickActionsSmallWidget.swift in Sources */,
 				31D2D2A52D40F99100549D12 /* WidgetSourceType.swift in Sources */,
 				7B1681092D10C678005EAE24 /* VPNControlStatusValueProvider.swift in Sources */,
+				855ED5082E841EFE00047A88 /* QuickActionsWidgetView.swift in Sources */,
 				858544392E7C3B4700B0AABE /* DesignSystemWidgetContainerView.swift in Sources */,
 				7B16810D2D10CF44005EAE24 /* WidgetVPNIntents.swift in Sources */,
 				8585443D2E7C4D8400B0AABE /* SearchWidgetView.swift in Sources */,

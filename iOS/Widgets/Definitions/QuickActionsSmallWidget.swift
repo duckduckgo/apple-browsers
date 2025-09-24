@@ -123,27 +123,4 @@ struct QuickActionsSmallWidget: Widget {
     }
 }
 
-@available(iOS 17.0, *)
-struct QuickActionsWidgetView: View {
-    var entry: QuickActionsEntry
 
-    var body: some View {
-        DesignSystemWidgetContainerView {
-            VStack(spacing: 0) {
-                Link(destination: DeepLinks.newSearch) {
-                    ResponsiveSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled, showLogo: true, isRightIconEnabled: false)
-                }
-                .padding(.bottom, 15)
-
-                HStack(spacing: 12) {
-                    Link(destination: entry.configuration.leftShortcut.destination) {
-                        ResponsiveIconView(image: entry.configuration.leftShortcut.icon)
-                    }
-                    Link(destination: entry.configuration.rightShortcut.destination) {
-                        ResponsiveIconView(image: entry.configuration.rightShortcut.icon)
-                    }
-                }
-            }
-        }
-    }
-}

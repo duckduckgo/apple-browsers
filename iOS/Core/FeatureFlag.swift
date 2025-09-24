@@ -179,7 +179,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211394727337421?focus=true
     case newDeviceSyncPrompt
     
-    /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211025661991697?focus=true
+    /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211245201777978?focus=true
     case serpSettingsFollowUpQuestions
 }
 
@@ -445,7 +445,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .newDeviceSyncPrompt:
             return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
         case .serpSettingsFollowUpQuestions:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.serpSettingsFollowUpQuestions))
+            return .remoteReleasable(.subfeature(AIChatSubfeature.serpSettingsFollowUpQuestions))
         }
     }
 }

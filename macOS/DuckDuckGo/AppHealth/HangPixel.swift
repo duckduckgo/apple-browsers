@@ -19,18 +19,18 @@
 import PixelKit
 
 enum HangPixel: PixelKitEvent {
-    
+
     case uiHangRecovered(seconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, freeMemoryPercent: Double?, batteryPower: BatteryPower?, openBrowserWindows: Int?, openBrowserTabs: Int?)
     case uiHangNotRecovered(seconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, freeMemoryPercent: Double?, batteryPower: BatteryPower?, openBrowserWindows: Int?, openBrowserTabs: Int?)
     case uiHangDeadlock(seconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, freeMemoryPercent: Double?, batteryPower: BatteryPower?, openBrowserWindows: Int?, openBrowserTabs: Int?)
-    
+
     enum BatteryPower: String, CustomStringConvertible {
         var description: String { rawValue }
-        
+
         case onBattery = "on-battery"
         case pluggedIn = "plugged-in"
     }
-    
+
     var name: String {
         switch self {
         case .uiHangRecovered:
@@ -41,41 +41,41 @@ enum HangPixel: PixelKitEvent {
             return "m_mac_ui_hang_deadlock"
         }
     }
-    
+
     var parameters: [String: String]? {
         switch self {
         case .uiHangRecovered(let seconds, let inForeground, let anyWindowVisible, let freeMemoryPercent, let batteryPower, let openBrowserWindows, let openBrowserTabs),
              .uiHangNotRecovered(let seconds, let inForeground, let anyWindowVisible, let freeMemoryPercent, let batteryPower, let openBrowserWindows, let openBrowserTabs),
              .uiHangDeadlock(let seconds, let inForeground, let anyWindowVisible, let freeMemoryPercent, let batteryPower, let openBrowserWindows, let openBrowserTabs):
-            
+
             var params: [String: String] = [:]
-            
+
             params["seconds"] = "\(seconds)"
-            
+
             if let inForeground = inForeground {
                 params["in_foreground"] = inForeground ? "true" : "false"
             }
-            
+
             if let anyWindowVisible = anyWindowVisible {
                 params["any_window_visible"] = anyWindowVisible ? "true" : "false"
             }
-            
+
             if let freeMemoryPercent = freeMemoryPercent {
                 params["free_memory_percent"] = String(format: "%.1f", freeMemoryPercent)
             }
-            
+
             if let batteryPower = batteryPower {
                 params["battery_power"] = batteryPower.rawValue
             }
-            
+
             if let openBrowserWindows = openBrowserWindows {
                 params["open_browser_windows"] = "\(openBrowserWindows)"
             }
-            
+
             if let openBrowserTabs = openBrowserTabs {
                 params["open_browser_tabs"] = "\(openBrowserTabs)"
             }
-            
+
             return params
         }
     }

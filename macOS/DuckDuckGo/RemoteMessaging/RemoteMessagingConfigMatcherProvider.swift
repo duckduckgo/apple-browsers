@@ -189,7 +189,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        variantManager: variantManager(),
                                                        bookmarksCount: bookmarksCount,
                                                        favoritesCount: favoritesCount,
-                                                       appTheme: appearancePreferences.currentThemeName.rawValue,
+                                                       appTheme: appearancePreferences.themeAppearance.rawValue,
                                                        daysSinceNetPEnabled: daysSinceNetworkProtectionEnabled,
                                                        isSubscriptionEligibleUser: isSubscriptionEligibleUser,
                                                        isDuckDuckGoSubscriber: isDuckDuckGoSubscriber,

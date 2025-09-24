@@ -188,27 +188,7 @@ jobs:
         if: ${{ env.ACTION == 'download' }}
         id: download
         run: |
-          # Try to download and capture result
-          if OUTPUT=$(./scripts/smartling/smartling_download.sh "$JOB_ID" "$FORCE" "$PLATFORM" 2>&1); then
-            echo "$OUTPUT"
-            # Check if there were no changes
-            if echo "$OUTPUT" | grep -q "No changes to import"; then
-              echo "download_result=no_changes" >> $GITHUB_OUTPUT
-              ./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "${{ env.SMARTLING_PROJECT_ID }}" no_changes
-            else
-              echo "download_result=success" >> $GITHUB_OUTPUT
-              ./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "${{ env.SMARTLING_PROJECT_ID }}" success
-            fi
-          else
-            echo "$OUTPUT"
-            echo "download_result=failed" >> $GITHUB_OUTPUT
-            # Check if it's a deletion error
-            if echo "$OUTPUT" | grep -q "would delete"; then
-              ./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "${{ env.SMARTLING_PROJECT_ID }}" failed deletions
-            else
-              ./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "${{ env.SMARTLING_PROJECT_ID }}" failed
-            fi
-          fi
+          ./scripts/smartling/smartling_download.sh "$JOB_ID" "$FORCE" "$PLATFORM"
           cat download_message.txt >> $GITHUB_STEP_SUMMARY
 
       # PR-specific steps (comments and labels)

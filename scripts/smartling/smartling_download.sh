@@ -30,7 +30,16 @@ mkdir -p "$DOWNLOAD_DIR"
 
 # Download translated files
 echo "Downloading translations from Smartling job $JOB_ID..."
-./scripts/smartling/loc_tool.sh download --job-id "$JOB_ID" --out-dir "$DOWNLOAD_DIR"
+./scripts/smartling/loc_tool.sh download --job-id "$JOB_ID" --out-dir "$DOWNLOAD_DIR" || download_failed=1
+
+# Handle download failure gracefully and set step outputs
+if [ "${download_failed:-0}" = "1" ]; then
+	./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" failed
+	if [ -n "${GITHUB_OUTPUT:-}" ]; then
+		echo "download_result=failed" >> "$GITHUB_OUTPUT"
+	fi
+	exit 0
+fi
 
 # Reorganize files into locale folders as expected by loc_import.sh
 # Files are downloaded as: name_locale.extension
@@ -106,7 +115,11 @@ if ! ./scripts/smartling/check_translation_integrity.py; then
 	if [ "$FORCE" != "true" ]; then
 		./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" failed deletions
 		git checkout -- .
-		exit 1
+		if [ -n "${GITHUB_OUTPUT:-}" ]; then
+			echo "download_result=failed" >> "$GITHUB_OUTPUT"
+		fi
+		# Stop further processing
+		exit 0
 	else
 		echo "⚠️ Proceeding with destructive changes because force=true was set"
 	fi
@@ -120,6 +133,10 @@ if git diff --quiet && git diff --cached --quiet; then
 	echo "No changes to commit"
 	# Generate no changes message
 	./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" no_changes
+	if [ -n "${GITHUB_OUTPUT:-}" ]; then
+		echo "download_result=no_changes" >> "$GITHUB_OUTPUT"
+	fi
+	exit 0
 else
 	# Configure Git identity for the commit
 	git config user.name "Dax the Duck"
@@ -139,4 +156,8 @@ else
 	
 	# Generate success message
 	./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" success
+	if [ -n "${GITHUB_OUTPUT:-}" ]; then
+		echo "download_result=success" >> "$GITHUB_OUTPUT"
+	fi
+	exit 0
 fi

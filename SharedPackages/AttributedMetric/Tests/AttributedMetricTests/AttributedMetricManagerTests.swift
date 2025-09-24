@@ -60,9 +60,10 @@ final class AttributedMetricManagerTests: XCTestCase {
             case "m_mac_user_retention_week":
                 guard let countString = parameters["count"] else {
                     XCTFail("Missing count parameter for pixel: \(pixelName)")
+                    return
                 }
-                let count = Int()
-                if
+//                let count = Int()
+//                if
             default:
                 XCTFail("Unknown pixel fired: \(pixelName)")
             }

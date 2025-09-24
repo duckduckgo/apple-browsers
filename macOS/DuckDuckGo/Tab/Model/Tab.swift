@@ -1197,6 +1197,7 @@ extension Tab: UserContentControllerDelegate {
         userScripts.debugScript.instrumentation = instrumentation
         userScripts.pageObserverScript.delegate = self
         userScripts.printingUserScript.delegate = self
+        userScripts.serpSettingsUserScript?.delegate = self
         specialPagesUserScript = nil
     }
 
@@ -1206,6 +1207,20 @@ extension Tab: PageObserverUserScriptDelegate {
 
     func pageDOMLoaded() {
         self.delegate?.tabPageDOMLoaded(self)
+    }
+
+}
+
+extension Tab: SERPSettingsUserScriptDelegate {
+
+    @MainActor
+    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
+        // TODO
+    }
+
+    @MainActor
+    func serpSettingsUserScriptDidRequestToOpenDuckAISettings(_ userScript: SERPSettingsUserScript) {
+        // TODO
     }
 
 }

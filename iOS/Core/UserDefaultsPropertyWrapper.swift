@@ -154,8 +154,8 @@ public struct UserDefaultsWrapper<T> {
         case appleAdAttributionReportCompleted = "com.duckduckgo.ios.appleAdAttributionReport.completed"
 
         case refreshTimestamps = "com.duckduckgo.ios.pageRefreshMonitor.refreshTimestamps"
-        case lastBrokenSiteToastShownDate = "com.duckduckgo.ios.attributedMetric.lastBrokenSiteToastShownDate"
-        case toastDismissStreakCounter = "com.duckduckgo.ios.attributedMetric.toastDismissStreakCounter"
+        case lastBrokenSiteToastShownDate = "com.duckduckgo.ios.userBehavior.lastBrokenSiteToastShownDate"
+        case toastDismissStreakCounter = "com.duckduckgo.ios.userBehavior.toastDismissStreakCounter"
 
         case pixelExperimentInstalled = "com.duckduckgo.ios.pixel.experiment.installed"
         case pixelExperimentCohort = "com.duckduckgo.ios.pixel.experiment.cohort"

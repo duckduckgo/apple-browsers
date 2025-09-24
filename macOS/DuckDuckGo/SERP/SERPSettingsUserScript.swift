@@ -45,7 +45,7 @@ enum SERPSettingsConstants {
 
 }
 
-// MARK: - AIChatUserScript Class
+// MARK: - SERPSettingsUserScript Class
 
 final class SERPSettingsUserScript: NSObject, Subfeature {
 

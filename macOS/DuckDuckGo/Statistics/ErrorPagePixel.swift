@@ -23,7 +23,7 @@ import WebKit
 enum ErrorPagePixel: PixelKitEvent {
     case errorPageShownOther(error: WKError)
     case errorPageShownWebkitTermination
-    
+
     var name: String {
         switch self {
         case .errorPageShownOther:
@@ -32,11 +32,11 @@ enum ErrorPagePixel: PixelKitEvent {
             return "m_mac_errorpageshown_webkittermination"
         }
     }
-    
+
     var parameters: [String: String]? {
         return nil
     }
-    
+
     var error: NSError? {
         switch self {
         case .errorPageShownOther(let error):

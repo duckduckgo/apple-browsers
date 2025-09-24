@@ -216,8 +216,6 @@ final class TabCollectionViewModel: NSObject {
 #endif
     }
 
-
-
     func setUpLazyLoadingIfNeeded() {
         guard !isTabLazyLoadingRequested else {
             Logger.tabLazyLoading.debug("Lazy loading already requested in this session, skipping.")

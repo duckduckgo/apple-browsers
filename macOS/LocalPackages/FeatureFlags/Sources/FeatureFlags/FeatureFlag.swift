@@ -186,6 +186,12 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1208865987567163?focus=true
     case themes
+
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1211260578559159?focus=true
+    case unifiedURLPredictor
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211396583578252?focus=true
+    case unifiedURLPredictorMetrics
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -270,7 +276,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dbpRemoteBrokerDelivery,
                 .subscriptionPurchaseWidePixelMeasurement,
                 .syncFeatureLevel3,
-                .themes:
+                .themes,
+                .unifiedURLPredictor,
+                .unifiedURLPredictorMetrics:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -410,6 +418,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
         case .themes:
             return .internalOnly()
+        case .unifiedURLPredictor:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
+        case .unifiedURLPredictorMetrics:
+            return .disabled
         }
     }
 }

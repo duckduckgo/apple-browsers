@@ -100,7 +100,7 @@ extension TabURLInterceptorDefault {
                 }
 
                 NotificationCenter.default.post(
-                    name: .urlInterceptPrivacyPro,
+                    name: .urlInterceptSubscription,
                     object: nil,
                     userInfo: userInfo
                 )
@@ -119,7 +119,7 @@ extension TabURLInterceptorDefault {
 }
 
 extension NSNotification.Name {
-    static let urlInterceptPrivacyPro: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.urlInterceptPrivacyPro")
+    static let urlInterceptSubscription: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.urlInterceptSubscription")
     static let urlInterceptAIChat: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.urlInterceptAIChat")
 }
 

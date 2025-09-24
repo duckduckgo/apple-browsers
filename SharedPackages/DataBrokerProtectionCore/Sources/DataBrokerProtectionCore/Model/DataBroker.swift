@@ -302,4 +302,9 @@ extension DataBroker {
         return optOutStep.actions.contains { $0 is EmailConfirmationAction }
     }
 
+    /// Returns the removedAt timestamp in milliseconds
+    var removedAtTimestamp: Int64? {
+        guard let removedAt = removedAt else { return nil }
+        return Int64(removedAt.timeIntervalSince1970 * 1000)
+    }
 }

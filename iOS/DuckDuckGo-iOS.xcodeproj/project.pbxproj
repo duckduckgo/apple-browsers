@@ -1346,8 +1346,8 @@
 		BDAA7F492E413DB7003A0833 /* DBPMetadataCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAA7F482E413DB7003A0833 /* DBPMetadataCollector.swift */; };
 		BDC234F72B27F51100D3C798 /* UniquePixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDC234F62B27F51100D3C798 /* UniquePixel.swift */; };
 		BDD3B3552B8EF8DB005857A8 /* NetworkProtectionUNNotificationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE3766DD2AC5945500AAB575 /* NetworkProtectionUNNotificationPresenter.swift */; };
-		BDE219E62C406D19005D5884 /* PrivacyProDataReporting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE219E52C406D19005D5884 /* PrivacyProDataReporting.swift */; };
-		BDE219EA2C457B46005D5884 /* PrivacyProDataReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE219E92C457B46005D5884 /* PrivacyProDataReporterTests.swift */; };
+		BDE219E62C406D19005D5884 /* SubscriptionDataReporting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE219E52C406D19005D5884 /* SubscriptionDataReporting.swift */; };
+		BDE219EA2C457B46005D5884 /* SubscriptionDataReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE219E92C457B46005D5884 /* SubscriptionDataReporterTests.swift */; };
 		BDE91CD62C6294020005CB74 /* FeedbackCategoryProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE91CD52C6294020005CB74 /* FeedbackCategoryProviding.swift */; };
 		BDE91CD82C629A910005CB74 /* UnifiedFeedbackSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE91CD72C629A910005CB74 /* UnifiedFeedbackSender.swift */; };
 		BDE91CDA2C62A70B0005CB74 /* UnifiedMetadataCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE91CD92C62A70B0005CB74 /* UnifiedMetadataCollector.swift */; };
@@ -3521,8 +3521,8 @@
 		BD862E082B30F63E0073E2EE /* VPNMetadataCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNMetadataCollector.swift; sourceTree = "<group>"; };
 		BDAA7F482E413DB7003A0833 /* DBPMetadataCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DBPMetadataCollector.swift; sourceTree = "<group>"; };
 		BDC234F62B27F51100D3C798 /* UniquePixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UniquePixel.swift; sourceTree = "<group>"; };
-		BDE219E52C406D19005D5884 /* PrivacyProDataReporting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyProDataReporting.swift; sourceTree = "<group>"; };
-		BDE219E92C457B46005D5884 /* PrivacyProDataReporterTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrivacyProDataReporterTests.swift; sourceTree = "<group>"; };
+		BDE219E52C406D19005D5884 /* SubscriptionDataReporting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionDataReporting.swift; sourceTree = "<group>"; };
+		BDE219E92C457B46005D5884 /* SubscriptionDataReporterTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SubscriptionDataReporterTests.swift; sourceTree = "<group>"; };
 		BDE91CD52C6294020005CB74 /* FeedbackCategoryProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackCategoryProviding.swift; sourceTree = "<group>"; };
 		BDE91CD72C629A910005CB74 /* UnifiedFeedbackSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedFeedbackSender.swift; sourceTree = "<group>"; };
 		BDE91CD92C62A70B0005CB74 /* UnifiedMetadataCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedMetadataCollector.swift; sourceTree = "<group>"; };
@@ -7841,7 +7841,7 @@
 				D664C7962B289AA000CBFA76 /* Extensions */,
 				BDE91CD42C6292BF0005CB74 /* Feedback */,
 				C15CDF3B2DD2247C00A67F63 /* FreeTrials */,
-				BDE219E52C406D19005D5884 /* PrivacyProDataReporting.swift */,
+				BDE219E52C406D19005D5884 /* SubscriptionDataReporting.swift */,
 				D60170BB2BA32DD6001911B5 /* Subscription.swift */,
 				D65CEA6F2B6AC6C9008A759B /* Subscription.xcassets */,
 				F1FDC92F2BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift */,
@@ -8657,7 +8657,7 @@
 				7B6586382DB7F51000D12BE3 /* SimplifiedPaywall */,
 				C1106F2F2D0EFD6F0054A221 /* FreeTrials */,
 				D664C7952B289AA000CBFA76 /* Subscription.storekit */,
-				BDE219E92C457B46005D5884 /* PrivacyProDataReporterTests.swift */,
+				BDE219E92C457B46005D5884 /* SubscriptionDataReporterTests.swift */,
 				F1BDDBF92C340D9C00459306 /* SubscriptionContainerViewModelTests.swift */,
 				F1BDDBFB2C340D9C00459306 /* SubscriptionPagesUseSubscriptionFeatureTests.swift */,
 				1E4E6C562C78B8540059C0FA /* StorePurchaseManagerTests.swift */,
@@ -10625,7 +10625,7 @@
 				85058369219F424500ED4EDB /* UIColorExtension.swift in Sources */,
 				CB14D5832E269A7F002E897E /* UserAgentConfiguration.swift in Sources */,
 				9F74B7922D49E43A00A7F174 /* MaliciousSiteProtection+Pixel.swift in Sources */,
-				BDE219E62C406D19005D5884 /* PrivacyProDataReporting.swift in Sources */,
+				BDE219E62C406D19005D5884 /* SubscriptionDataReporting.swift in Sources */,
 				D6E83C312B1EA309006C8AFB /* SettingsCell.swift in Sources */,
 				1DEAADEE2BA45DFE00E25A97 /* SettingsDataClearingView.swift in Sources */,
 				CBF259BB2D4D020200AC63E4 /* AutoClearService.swift in Sources */,
@@ -10884,7 +10884,7 @@
 				652CEDE62D89B71300235B4C /* FaviconsHelperTests.swift in Sources */,
 				C1E0D8692DD496A700D5DF25 /* SubscriptionFreeTrialsHelperTests.swift in Sources */,
 				31C138AC27A403CB00FFD4B2 /* DownloadManagerTests.swift in Sources */,
-				BDE219EA2C457B46005D5884 /* PrivacyProDataReporterTests.swift in Sources */,
+				BDE219EA2C457B46005D5884 /* SubscriptionDataReporterTests.swift in Sources */,
 				EEFE9C732A603CE9005B0A26 /* NetworkProtectionStatusViewModelTests.swift in Sources */,
 				F13B4BF91F18CA0600814661 /* TabsModelTests.swift in Sources */,
 				F1BDDBFD2C340D9C00459306 /* SubscriptionContainerViewModelTests.swift in Sources */,

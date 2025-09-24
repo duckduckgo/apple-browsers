@@ -120,6 +120,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Hang reporting feature flag
     case hangReporting
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211260578559159?focus=true
+    case unifiedURLPredictor
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

@@ -66,7 +66,7 @@ struct SettingsSubscriptionView: View {
     private var manageSubscriptionView: some View {
         SettingsCellView(
             label: UserText.settingsPProManageSubscription,
-            image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro)
+            image: Image(uiImage: DesignSystemImages.Color.Size24.subscription)
         )
     }
 
@@ -94,7 +94,7 @@ struct SettingsSubscriptionView: View {
 
             SettingsCellView(label: titleText,
                              subtitle: subtitleText,
-                             image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro))
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.subscription))
             .disabled(true)
 
             // Get privacy pro
@@ -190,7 +190,7 @@ struct SettingsSubscriptionView: View {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
                     subtitle: UserText.settingsPProSubscriptionExpiredTitle,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription),
                     accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
             }
@@ -205,7 +205,7 @@ struct SettingsSubscriptionView: View {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
                     subtitle: UserText.settingsPProSubscriptionExpiredTitle,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription),
                     accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
             }
@@ -228,7 +228,7 @@ struct SettingsSubscriptionView: View {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
                     subtitle: UserText.settingsPProActivating,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro)
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription)
                 )
             }
         } else {
@@ -242,7 +242,7 @@ struct SettingsSubscriptionView: View {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
                     subtitle: UserText.settingsPProActivating,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro)
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription)
                 )
             }
         }

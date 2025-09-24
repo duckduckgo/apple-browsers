@@ -41,8 +41,8 @@ final class SubscriptionFeatureFlagMappingTests: XCTestCase {
                                                                             subscriptionUserDefaults: userDefaults)
 
         // Then
-        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.usePrivacyProUSARegionOverride))
-        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.usePrivacyProROWRegionOverride))
+        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionUSARegionOverride))
+        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionROWRegionOverride))
     }
 
     func testWhenInternalUserOnSandboxAndOverrideSetToUSAThenItIsUsed() {
@@ -57,8 +57,8 @@ final class SubscriptionFeatureFlagMappingTests: XCTestCase {
                                                                             subscriptionUserDefaults: userDefaults)
 
         // Then
-        XCTAssertTrue(subscriptionFeatureFlagMapping.isFeatureOn(.usePrivacyProUSARegionOverride))
-        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.usePrivacyProROWRegionOverride))
+        XCTAssertTrue(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionUSARegionOverride))
+        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionROWRegionOverride))
     }
 
     func testWhenInternalUserOnSandboxAndOverrideSetToROWThenItIsUsed() {
@@ -73,8 +73,8 @@ final class SubscriptionFeatureFlagMappingTests: XCTestCase {
                                                                             subscriptionUserDefaults: userDefaults)
 
         // Then
-        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.usePrivacyProUSARegionOverride))
-        XCTAssertTrue(subscriptionFeatureFlagMapping.isFeatureOn(.usePrivacyProROWRegionOverride))
+        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionUSARegionOverride))
+        XCTAssertTrue(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionROWRegionOverride))
     }
 
     func testWhenOnSandboxAndWithOverrideSetButInternalUserDisabledThenOverrideIsNotUsed() {
@@ -89,8 +89,8 @@ final class SubscriptionFeatureFlagMappingTests: XCTestCase {
                                                                             subscriptionUserDefaults: userDefaults)
 
         // Then
-        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.usePrivacyProUSARegionOverride))
-        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.usePrivacyProROWRegionOverride))
+        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionUSARegionOverride))
+        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionROWRegionOverride))
     }
 
     func testWhenInternalUserAndOverrideSetButOnProductionThenOverrideIsNotUsed() {
@@ -105,7 +105,7 @@ final class SubscriptionFeatureFlagMappingTests: XCTestCase {
                                                                             subscriptionUserDefaults: userDefaults)
 
         // Then
-        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.usePrivacyProUSARegionOverride))
-        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.usePrivacyProROWRegionOverride))
+        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionUSARegionOverride))
+        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionROWRegionOverride))
     }
 }

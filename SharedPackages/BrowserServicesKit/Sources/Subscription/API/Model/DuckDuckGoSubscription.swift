@@ -1,5 +1,5 @@
 //
-//  PrivacyProSubscription.swift
+//  DuckDuckGoSubscription.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import Foundation
 import Networking
 
-public struct PrivacyProSubscription: Codable, Equatable, CustomDebugStringConvertible {
+public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConvertible {
     public let productId: String
     public let name: String
     public let billingPeriod: BillingPeriod
@@ -122,7 +122,7 @@ public struct PrivacyProSubscription: Codable, Equatable, CustomDebugStringConve
 
     // MARK: - Equatable
 
-    public static func == (lhs: PrivacyProSubscription, rhs: PrivacyProSubscription) -> Bool {
+    public static func == (lhs: DuckDuckGoSubscription, rhs: DuckDuckGoSubscription) -> Bool {
         return lhs.productId == rhs.productId &&
         lhs.name == rhs.name &&
         lhs.billingPeriod == rhs.billingPeriod &&

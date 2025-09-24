@@ -18,7 +18,7 @@
 
 import Foundation
 import PixelKit
-import Attribution
+import UserBehavior
 
 /// A type that handles Pixels for acquisition attributions.
 protocol InstallationAttributionsPixelHandler: AnyObject {
@@ -27,11 +27,11 @@ protocol InstallationAttributionsPixelHandler: AnyObject {
 }
 
 final class AppInstallationAttributionPixelHandler: InstallationAttributionsPixelHandler {
-    private let originProvider: AttributionOriginProvider
+    private let originProvider: UserBehaviorOriginProvider
     private let decoratedAttributionPixelHandler: AttributionPixelHandler
 
     init(
-        originProvider: AttributionOriginProvider = AttributionOriginFileProvider(),
+        originProvider: UserBehaviorOriginProvider = UserBehaviorOriginFileProvider(),
         attributionPixelHandler: AttributionPixelHandler = GenericAttributionPixelHandler()
     ) {
         self.originProvider = originProvider

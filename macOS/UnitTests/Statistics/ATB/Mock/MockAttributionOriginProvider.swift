@@ -18,7 +18,7 @@
 
 import Foundation
 import Subscription
-import Attribution
+import UserBehavior
 
 final class MockAttributionOriginProvider: AttributionOriginProvider {
     let origin: String?

@@ -153,18 +153,17 @@ public final class UserBehaviorManager {
         switch timePastFromInstall {
         case .none:
             Logger.userBehavior.debug("Less than a week from installation")
-            return
         case .weeks(let week):
             Logger.userBehavior.debug("\(week) week(s) from installation")
             let bucketedWeek = String(week) // TODO: implement
             pixelKit.fire(UserBehaviorPixel.userRetentionWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucketedWeek), frequency: .legacyDailyNoSuffix)
+            dataStorage.lastRetentionThreshold = timePastFromInstall
         case .months(let month):
             Logger.userBehavior.debug("\(month) month(s) from installation")
             let bucketedMonth = String(month) // TODO: implement
             pixelKit.fire(UserBehaviorPixel.userRetentionMonth(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucketedMonth), frequency: .legacyDailyNoSuffix)
+            dataStorage.lastRetentionThreshold = timePastFromInstall
         }
-
-        dataStorage.lastRetentionThreshold = timePastFromInstall
     }
 
     // MARK: - Active search days
@@ -247,7 +246,6 @@ public final class UserBehaviorManager {
     func processSubscriptionCheck() {
         guard let subscriptionDate = dataStorage.subscriptionDate else {
             Logger.userBehavior.error("Missing subscription date")
-            assertionFailure("Missing subscription date")
             return
         }
         let now = Date()
@@ -271,6 +269,7 @@ private extension Date {
 
     func ISO8601Format() -> String {
         let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withYear, .withMonth, .withDay, .withDashSeparatorInDate]
         return formatter.string(from: self)
     }
 }

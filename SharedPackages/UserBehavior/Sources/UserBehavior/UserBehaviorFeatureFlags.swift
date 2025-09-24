@@ -25,7 +25,7 @@ public enum UserBehaviorFeatureFlags: String, FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
         case .behaviorMetricsEnabled:
-            return true // TODO: change to false
+            return false
         }
     }
 

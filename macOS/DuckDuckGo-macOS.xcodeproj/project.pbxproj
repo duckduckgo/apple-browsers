@@ -3745,8 +3745,7 @@
 		F124E0ED2D6E123A0035C7BA /* PersistenceTestingUtils in Frameworks */ = {isa = PBXBuildFile; productRef = F124E0EC2D6E123A0035C7BA /* PersistenceTestingUtils */; };
 		F124E0EF2D6E123A0035C7BA /* PixelKitTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = F124E0EE2D6E123A0035C7BA /* PixelKitTestingUtilities */; };
 		F124E0F12D6E123A0035C7BA /* SubscriptionTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = F124E0F02D6E123A0035C7BA /* SubscriptionTestingUtilities */; };
-		F126D0C12E71AC9400093D9A /* UserBehavior in Frameworks */ = {isa = PBXBuildFile; productRef = F126D0C02E71AC9400093D9A /* Attribution */; };
-		F126D0C32E71AC9C00093D9A /* UserBehavior in Frameworks */ = {isa = PBXBuildFile; productRef = F126D0C22E71AC9C00093D9A /* Attribution */; };
+		F126D0C32E71AC9C00093D9A /* Attribution in Frameworks */ = {isa = PBXBuildFile; productRef = F126D0C22E71AC9C00093D9A /* Attribution */; };
 		F1476FC02C1359FB00EAE46A /* SubscriptionUIHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1476FBF2C1359FB00EAE46A /* SubscriptionUIHandler.swift */; };
 		F1476FC12C1359FB00EAE46A /* SubscriptionUIHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1476FBF2C1359FB00EAE46A /* SubscriptionUIHandler.swift */; };
 		F1664A682D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1664A672D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift */; };
@@ -3778,6 +3777,7 @@
 		F198C7202BD18D92000BF24D /* SwiftLintTool in Frameworks */ = {isa = PBXBuildFile; productRef = F198C71F2BD18D92000BF24D /* SwiftLintTool */; };
 		F1A2E11F2DCB9FB00086F538 /* LogExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2E11D2DCB9FB00086F538 /* LogExporter.swift */; };
 		F1A2E1202DCB9FB00086F538 /* LogExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2E11D2DCB9FB00086F538 /* LogExporter.swift */; };
+		F1A72C122E82EA78008553FC /* UserBehavior in Frameworks */ = {isa = PBXBuildFile; productRef = F1A72C112E82EA78008553FC /* UserBehavior */; };
 		F1AFDBD22C231B7A00710F2C /* SubscriptionAppStoreRestorerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1AFDBD12C231B7A00710F2C /* SubscriptionAppStoreRestorerTests.swift */; };
 		F1AFDBD42C231B9700710F2C /* SubscriptionErrorReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1AFDBD32C231B9700710F2C /* SubscriptionErrorReporterTests.swift */; };
 		F1AFDBD72C23221700710F2C /* SubscriptionErrorReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1AFDBD32C231B9700710F2C /* SubscriptionErrorReporterTests.swift */; };
@@ -6222,6 +6222,7 @@
 				4B9EE32C2D76C87100DDC75C /* Onboarding in Frameworks */,
 				1EA7B8D32B7E078C000330A4 /* SubscriptionUI in Frameworks */,
 				4B9EE3182D76C80800DDC75C /* BrowserServicesKit in Frameworks */,
+				F1A72C122E82EA78008553FC /* UserBehavior in Frameworks */,
 				4B9EE31C2D76C81600DDC75C /* Configuration in Frameworks */,
 				BB7D100C2DE0D9430027222A /* DesignResourcesKitIcons in Frameworks */,
 				4B9EE3222D76C83900DDC75C /* DuckPlayer in Frameworks */,
@@ -6273,7 +6274,6 @@
 				371BBC572D00C891008FA0C7 /* NewTabPage in Frameworks */,
 				9DB9800A2D96AD2B00B174B3 /* DataBrokerProtectionCore in Frameworks */,
 				4B94B7992D4731E80014AAB8 /* SyncUI-macOS in Frameworks */,
-				F126D0C12E71AC9400093D9A /* UserBehaviour in Frameworks */,
 				D65D0F9F2E7239680075A784 /* NetworkQualityMonitor in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -11370,7 +11370,7 @@
 				85F592DD2DE1E9FE00117D5E /* DesignResourcesKitIcons */,
 				84C1763A2DF02567001DEEC7 /* CommonObjCExtensions */,
 				7BC26CA92DFC11D800E52480 /* VPN */,
-				F126D0C22E71AC9C00093D9A /* UserBehavior */,
+				F126D0C22E71AC9C00093D9A /* Attribution */,
 				D65D0FA02E7239730075A784 /* NetworkQualityMonitor */,
 			);
 			productName = DuckDuckGo;
@@ -11889,8 +11889,8 @@
 				84C1764F2DF0462F001DEEC7 /* LetsMove */,
 				7BC26CA32DFC103D00E52480 /* VPN */,
 				846F4CDE2E048A0500266DB7 /* BWIntegration */,
-				F126D0C02E71AC9400093D9A /* UserBehavior */,
 				D65D0F9E2E7239680075A784 /* NetworkQualityMonitor */,
+				F1A72C112E82EA78008553FC /* UserBehavior */,
 			);
 			productName = DuckDuckGo;
 			productReference = AA585D7E248FD31100E9A3E2 /* DuckDuckGo.app */;
@@ -18711,10 +18711,6 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = SubscriptionTestingUtilities;
 		};
-		F126D0C02E71AC9400093D9A /* Attribution */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Attribution;
-		};
 		F126D0C22E71AC9C00093D9A /* Attribution */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Attribution;
@@ -18728,6 +18724,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B6F997B92B8F352500476735 /* XCRemoteSwiftPackageReference "apple-toolbox" */;
 			productName = SwiftLintTool;
+		};
+		F1A72C112E82EA78008553FC /* UserBehavior */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = UserBehavior;
 		};
 		F1D43AF22B98E47800BAB743 /* BareBonesBrowserKit */ = {
 			isa = XCSwiftPackageProductDependency;

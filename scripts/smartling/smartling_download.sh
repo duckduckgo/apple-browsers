@@ -125,10 +125,7 @@ if ! ./scripts/smartling/check_translation_integrity.py; then
 	git config user.name "Dax the Duck"
 	git config user.email "dax@duckduckgo.com"
 	git add -A
-	git commit -m "Smartling translations with deletions/replacements from job $JOB_ID
-
-These translations contain deletions or significant changes that require review.
-This PR was automatically created to prevent data loss."
+	git commit -m "Smartling translations with deletions/replacements from job $JOB_ID"
 
 	# Push the new branch
 	git push origin "$NEW_BRANCH_NAME"

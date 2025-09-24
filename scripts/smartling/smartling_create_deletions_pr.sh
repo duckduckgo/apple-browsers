@@ -36,17 +36,15 @@ This PR contains Smartling translations that include **deletions or significant 
 ### What happened?
 The translation import process detected one or more of the following issues:
 - Deleted translation keys that existed in the previous version
-- Significantly shortened translation values (>50% reduction)
+- Significantly shortened translation values for existing keys
 - Empty translation values where content previously existed
 
-### Next Steps
-1. **Review** the changes carefully in this PR
-2. **Verify** that any deletions are intentional
-3. **Test** the app to ensure no functionality is broken
-4. **Merge** this PR into \`$BASE_BRANCH\` if the changes are acceptable
+More details can be found [here](https://app.asana.com/0/0/1210223145394340)
 
-### Automatic PR Creation
-This PR was automatically created to prevent accidental data loss. The original branch \`$BASE_BRANCH\` remains unchanged.
+### Next Steps
+1. **Review** the changesin this PR
+2. **Verify** that any deletions are intentional
+3. **Merge** this PR into \`$BASE_BRANCH\` if the changes are acceptable, or close the PR otherwise.
 
 ---
 *Created automatically by Smartling translation workflow*"

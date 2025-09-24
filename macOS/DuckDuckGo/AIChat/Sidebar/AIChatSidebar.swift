@@ -30,6 +30,9 @@ final class AIChatSidebar: NSObject {
     /// The most recent AI chat URL that was active in the sidebar.
     private(set)  var mostRecentAIChatURL: URL?
 
+    /// The most recent AI chat restoration data that was active in the sidebar.
+    private(set) var mostRecentRestorationData: AIChatRestorationData?
+
     /// Indicates whether the sidebar is currently revealed/presented in the UI.
     /// This is separate from whether a view controller exists, as view controllers can be created
     /// during state restoration before the sidebar is actually shown.
@@ -76,12 +79,13 @@ final class AIChatSidebar: NSObject {
         dateHidden = Date()
     }
 
-    /// Unloads the sidebar view controller after reading and updating the current AI chat URL.
-    /// This method ensures the current URL state is captured before the view controller is unloaded.
+    /// Unloads the sidebar view controller after reading and updating the current AI chat URL and restoration data.
+    /// This method ensures the current URL state and restoration data are captured before the view controller is unloaded.
     /// Also marks the sidebar as hidden since the view controller is being unloaded.
     public func unloadViewController(){
         if let sidebarViewController {
             mostRecentAIChatURL = sidebarViewController.currentAIChatURL
+            mostRecentRestorationData = sidebarViewController.currentAIChatRestorationData
             sidebarViewController.stopLoading()
             sidebarViewController.removeCompletely()
             self.sidebarViewController = nil
@@ -90,7 +94,7 @@ final class AIChatSidebar: NSObject {
     }
 
     override var debugDescription: String {
-        return "initialAIChatURL: \(initialAIChatURL), mostRecentAIChatURL: \(mostRecentAIChatURL?.absoluteString ?? "nil"), isRevealed: \(isRevealed), dateHidden: \(dateHidden?.description ?? "nil"), sidebarViewController: \(sidebarViewController != nil ? "YES" : "NO")"
+        return "initialAIChatURL: \(initialAIChatURL), mostRecentAIChatURL: \(mostRecentAIChatURL?.absoluteString ?? "nil"), mostRecentRestorationData: \(mostRecentRestorationData != nil ? "YES" : "NO"), isRevealed: \(isRevealed), dateHidden: \(dateHidden?.description ?? "nil"), sidebarViewController: \(sidebarViewController != nil ? "YES" : "NO")"
     }
 }
 

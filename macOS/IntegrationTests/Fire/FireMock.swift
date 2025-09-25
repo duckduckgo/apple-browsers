@@ -65,7 +65,7 @@ final class FireMock: FireProtocol {
     }
 
     @MainActor
-    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool = true, completion: (() -> Void)? = nil) {
+    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool = true, includingChatHistory: Bool = false, completion: (() -> Void)? = nil) {
         burnEntityCalls.append(.init(entity: entity, includingHistory: includingHistory))
         completion?()
     }

@@ -266,8 +266,6 @@ extension FireCoordinator {
     @MainActor
     func handleDialogResult(_ result: FireDialogResult, tabCollectionViewModel: TabCollectionViewModel?, isAllHistorySelected: Bool) async {
 
-        // TODO: Handle result for chat history selection
-
         // If specific visits are provided (e.g., deleting for a day or a selection), burn only those visits
         if result.clearingOption == .allData /* not Current Tab or Window */,
            result.includeHistory, !isAllHistorySelected,
@@ -294,7 +292,7 @@ extension FireCoordinator {
                                                 selectedDomains: result.selectedCookieDomains ?? [],
                                                 parentTabCollectionViewModel: tabCollectionViewModel,
                                                 close: result.includeTabsAndWindows)
-            await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory)
+            await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory, includingChatHistory: result.includeChatHistory)
 
         case .currentWindow:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .window))
@@ -305,19 +303,19 @@ extension FireCoordinator {
             let entity = Fire.BurningEntity.window(tabCollectionViewModel: tabCollectionViewModel,
                                                    selectedDomains: result.selectedCookieDomains ?? [],
                                                    close: result.includeTabsAndWindows)
-            await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory)
+            await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory, includingChatHistory: result.includeChatHistory)
 
         case .allData:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
-            // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
-            if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory {
+            // "All" implies history and chat history too; respect includeHistory and includeChatHistory by routing via burnAll or burnEntity
+            if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory && result.includeChatHistory {
                 await fireViewModel.fire.burnAll(isBurnOnExit: false, opening: .newtab)
             } else {
                 let entity = Fire.BurningEntity.allWindows(mainWindowControllers: windowControllersManager.mainWindowControllers,
                                                            selectedDomains: result.selectedCookieDomains ?? [],
                                                            customURLToOpen: nil,
                                                            close: result.includeTabsAndWindows)
-                await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory)
+                await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory, includingChatHistory: result.includeChatHistory)
             }
         }
     }

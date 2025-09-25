@@ -39,7 +39,10 @@ protocol FireProtocol: AnyObject {
     func fireAnimationDidFinish()
 
     @MainActor func burnAll(isBurnOnExit: Bool, opening url: URL, completion: (() -> Void)?)
-    @MainActor func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool, completion: (() -> Void)?)
+    @MainActor func burnEntity(_ entity: Fire.BurningEntity,
+                               includingHistory: Bool,
+                               includingChatHistory: Bool,
+                               completion: (() -> Void)?)
     @MainActor func burnVisits(_ visits: [Visit],
                                except fireproofDomains: DomainFireproofStatusProviding,
                                isToday: Bool,
@@ -70,7 +73,7 @@ extension FireProtocol {
 
     @MainActor
     func burnEntity(_ entity: Fire.BurningEntity, completion: (() -> Void)? = nil) {
-        burnEntity(entity, includingHistory: true, completion: completion)
+        burnEntity(entity, includingHistory: true, includingChatHistory: false, completion: completion)
     }
 
     @MainActor
@@ -98,9 +101,9 @@ extension FireProtocol {
     }
 
     @MainActor
-    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool) async {
+    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool, includingChatHistory: Bool) async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            self.burnEntity(entity, includingHistory: includingHistory) {
+            self.burnEntity(entity, includingHistory: includingHistory, includingChatHistory: includingChatHistory) {
                 continuation.resume()
             }
         }
@@ -257,7 +260,10 @@ final class Fire: FireProtocol {
     }
 
     @MainActor
-    func burnEntity(_ entity: BurningEntity, includingHistory: Bool, completion: (() -> Void)?) {
+    func burnEntity(_ entity: BurningEntity,
+                    includingHistory: Bool,
+                    includingChatHistory: Bool,
+                    completion: (() -> Void)?) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -302,6 +308,9 @@ final class Fire: FireProtocol {
             self.burnRecentlyClosed(baseDomains: domains)
             self.burnAutoconsentCache()
             self.burnZoomLevels(of: domains)
+            if includingChatHistory {
+                self.burnChatHistory()
+            }
 
             group.notify(queue: .main) {
                 self.dispatchGroup = nil
@@ -363,6 +372,7 @@ final class Fire: FireProtocol {
             self.burnRecentlyClosed()
             self.burnAutoconsentCache()
             self.burnZoomLevels()
+            self.burnChatHistory()
 
             group.notify(queue: .main) {
                 self.dispatchGroup = nil
@@ -422,7 +432,7 @@ final class Fire: FireProtocol {
                 entity = .none(selectedDomains: domains)
             }
 
-            self.burnEntity(entity, includingHistory: false, completion: completion)
+            self.burnEntity(entity, includingHistory: false, includingChatHistory: false, completion: completion)
         }
     }
 
@@ -784,6 +794,14 @@ final class Fire: FireProtocol {
         if syncService?.authState == .inactive {
             syncDataProviders?.bookmarksAdapter.databaseCleaner.cleanUpDatabaseNow()
         }
+    }
+
+    // MARK: - Duck.ai Chat History
+
+    private func burnChatHistory() {
+        guard Application.appDelegate.featureFlagger.isFeatureOn(.clearAIChatHistory) else { return }
+        // To implement: Burn chat history - https://app.asana.com/1/137249556945/task/1211370814674973
+        print("Burning chat history")
     }
 }
 

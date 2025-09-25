@@ -1182,6 +1182,43 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.includeChatHistory)
     }
 
+    @MainActor func testClearingOption_UpdatesIncludeChatHistory_AndPersistsUserSelection() {
+        // Scenario: Changing scope updates when chat history is cleared while persisting the user selection.
+        // Action: Set clearingOption from .allData to .currentWindow and back.
+        // Expectation: includeChatHistory only true when scope is .allData and persists user choice.
+        let historyCoordinator = HistoryCoordinatingMock()
+        let faviconManager = FaviconManagerMock()
+        let fire = Fire(historyCoordinating: historyCoordinator,
+                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        faviconManagement: faviconManager,
+                        tld: Application.appDelegate.tld)
+        let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())
+        let aiChatHistoryCleaner = MockAIChatHistoryCleaner(showCleanOption: true)
+
+        let viewModel = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: faviconManager,
+            clearingOption: .allData,
+            tld: Application.appDelegate.tld,
+        )
+
+        // User makes selection to clear chat history.
+        viewModel.includeChatHistorySetting = true
+        XCTAssertTrue(viewModel.includeChatHistory)
+
+        // User changes scope to .currentWindow, which disables chat history clearing.
+        viewModel.clearingOption = .currentWindow
+        XCTAssertFalse(viewModel.includeChatHistory)
+
+        // User changes scope to .allData, which re-enables chat history clearing with previous selection.
+        viewModel.clearingOption = .allData
+        XCTAssertTrue(viewModel.includeChatHistory)
+    }
+
     @MainActor func testHistoryCleaner_UpdatesChatHistoryToggleVisibility() {
         // Scenario: ViewModel initialized with History Cleaner not showing clean history option.
         // Action: History Cleaner enabled clean history option.

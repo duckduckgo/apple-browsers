@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import Combine
 import DesignResourcesKitIcons
+import DesignResourcesKit
 import UIComponents
 
 class SwitchBarViewController: UIViewController {
@@ -31,11 +32,20 @@ class SwitchBarViewController: UIViewController {
         static let textEntryViewSidePadding: CGFloat = 16
         static let backButtonHorizontalPadding: CGFloat = 16
         static let backButtonSize: CGFloat = 44
+        static let separatorHeight: CGFloat = 0.5
+        static let separatorTopPadding: CGFloat = 8
     }
 
     private var segmentedPickerHostingController: UIHostingController<PickerWrapper>?
     let textEntryViewController: SwitchBarTextEntryViewController
     let backButton = BrowserChromeButton()
+    private lazy var topSeparatorView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(designSystemColor: .shadowTertiary)
+        return view
+    }()
+
+    private let showsSeparator: Bool
 
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
@@ -59,9 +69,10 @@ class SwitchBarViewController: UIViewController {
     private var pickerViewModel: ImageSegmentedPickerViewModel!
 
     // MARK: - Initialization
-    init(switchBarHandler: SwitchBarHandling) {
+    init(switchBarHandler: SwitchBarHandling, showsSeparator: Bool) {
         self.switchBarHandler = switchBarHandler
         self.textEntryViewController = SwitchBarTextEntryViewController(handler: switchBarHandler)
+        self.showsSeparator = showsSeparator
         super.init(nibName: nil, bundle: nil)
         
         let currentToggleState = switchBarHandler.currentToggleState
@@ -144,6 +155,11 @@ class SwitchBarViewController: UIViewController {
         view.addSubview(textEntryViewController.view)
         textEntryViewController.didMove(toParent: self)
 
+        if showsSeparator {
+            view.addSubview(topSeparatorView)
+            topSeparatorView.translatesAutoresizingMaskIntoConstraints = false
+        }
+
         backButton.translatesAutoresizingMaskIntoConstraints = false
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         textEntryViewController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -155,8 +171,20 @@ class SwitchBarViewController: UIViewController {
 
         guard let segmentedPickerView = segmentedPickerHostingController?.view else { return }
 
+        if showsSeparator {
+            NSLayoutConstraint.activate([
+                topSeparatorView.heightAnchor.constraint(equalToConstant: Constants.separatorHeight),
+                topSeparatorView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+                topSeparatorView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                topSeparatorView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+                segmentedPickerView.topAnchor.constraint(equalTo: topSeparatorView.bottomAnchor, constant: Constants.separatorTopPadding),
+            ])
+        } else {
+            segmentedPickerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
+        }
+
         NSLayoutConstraint.activate([
-            segmentedPickerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+
             segmentedPickerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             segmentedPickerView.heightAnchor.constraint(equalToConstant: Constants.segmentedControlHeight),
 

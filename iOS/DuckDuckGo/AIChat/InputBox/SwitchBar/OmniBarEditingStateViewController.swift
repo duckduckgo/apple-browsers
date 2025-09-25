@@ -58,8 +58,10 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
 
-    lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
-    lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
+    private var isUsingTopBarPosition: Bool {
+        AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top || !featureFlagger.isFeatureOn(.aiSearchBottomBarSupport)
+    }
+    lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler, showsSeparator: !isUsingTopBarPosition)
 
     private weak var contentContainerViewLeadingConstraint: NSLayoutConstraint?
     private weak var contentContainerViewTrailingConstraint: NSLayoutConstraint?
@@ -157,7 +159,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         self.contentContainerViewTrailingConstraint?.constant = -horizontalMargin
         self.updateDaxVisibility()
 
-        self.navigationActionBarManager?.navigationActionBarViewController?.isShowingGradient = !isHorizontallyCompactLayoutEnabled
+        self.navigationActionBarManager?.navigationActionBarViewController?.isShowingGradient = !isHorizontallyCompactLayoutEnabled && isUsingTopBarPosition
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -208,11 +210,19 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         switchBarVC.view.translatesAutoresizingMaskIntoConstraints = false
         switchBarVC.view.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
+        // Prevent showing scrollable content under the switcher
+        switchBarVC.view.backgroundColor = UIColor(designSystemColor: .background)
+
         NSLayoutConstraint.activate([
-            switchBarVC.view.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 8),
             switchBarVC.view.leadingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.leadingAnchor),
             switchBarVC.view.trailingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.trailingAnchor)
         ])
+
+        if isUsingTopBarPosition {
+            switchBarVC.view.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 8).isActive = true
+        } else {
+            switchBarVC.view.bottomAnchor.constraint(equalTo: container.keyboardLayoutGuide.topAnchor, constant: -8).isActive = true
+        }
 
         switchBarVC.didMove(toParent: self)
         switchBarVC.backButton.addTarget(self, action: #selector(dismissButtonTapped), for: .touchUpInside)
@@ -220,7 +230,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func installSwipeContainer() {
         let manager = SwipeContainerManager(switchBarHandler: switchBarHandler)
-        manager.installInViewController(self, asSubviewOf: contentContainerView, belowView: switchBarVC.view)
+        manager.installInViewController(self, asSubviewOf: contentContainerView, barView: switchBarVC.view, isTopBarPosition: isUsingTopBarPosition)
         manager.delegate = self
         swipeContainerManager = manager
     }
@@ -238,15 +248,19 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func installDaxLogoView() {
         if let view = switchBarVC.segmentedPickerView {
-            daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, belowView: view)
+            daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, barView: view, isTopBarPosition: isUsingTopBarPosition)
         }
     }
 
     private func installNavigationActionBar() {
         let manager = NavigationActionBarManager(switchBarHandler: switchBarHandler)
         manager.delegate = self
-        // Note this is not installed in contentContainerView - this is floating over content.
-        manager.installInViewController(self)
+        if isUsingTopBarPosition {
+            // Note this is not installed in contentContainerView - this is floating over content.
+            manager.installInViewController(self)
+        } else {
+            manager.installInViewController(switchBarVC.textEntryViewController, inView: switchBarVC.textEntryViewController.buttonsContainerView)
+        }
         navigationActionBarManager = manager
     }
 

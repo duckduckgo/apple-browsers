@@ -316,6 +316,9 @@ struct UserText {
     static let deleteCookiesAndSiteData = NSLocalizedString("history.delete.dialog.burn.checkbox.caption", value: "Also delete cookies and site data", comment: "Caption for a checkbox to optionally delete cookies and website data alongside removing browser history entries")
     static let deleteCookiesAndSiteDataExplanation = NSLocalizedString("history.delete.dialog.burn.checkbox.explanation.message", value: "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted.", comment: "Explanation of what deleting site data means.")
     static let deleteCookiesAndSiteDataExplanationWithClosingTabs = NSLocalizedString("history.delete.dialog.burn.checkbox.explanation.with.closing.tabs", value: "This will close all tabs, log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted.", comment: "Explanation of what deleting site data means.")
+    // Strings to be translated: https://app.asana.com/1/137249556945/project/72649045549333/task/1211370814674975?focus=true
+    static let deleteChatHistory = "Also delete Duck.ai chats"
+    static let deleteChatHistoryExplanation = "This will delete all chats in Duck.ai chat history."
 
     static func openMultipleTabsAlertTitle(count: Int) -> String {
         let localized = NSLocalizedString("open.multiple.tabs.alert.title",

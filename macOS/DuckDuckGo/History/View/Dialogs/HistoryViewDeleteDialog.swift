@@ -49,6 +49,19 @@ struct HistoryViewDeleteDialog: ModalView {
                         .foregroundColor(.blackWhite60)
                         .font(.system(size: 11))
                         .padding(.leading, 19)
+
+                    if model.canBurnChat {
+                        Toggle(UserText.deleteChatHistory, isOn: $model.shouldBurnChat)
+                            .font(.system(size: 13))
+                            .fixMultilineScrollableText()
+                            .toggleStyle(.checkbox)
+
+                        Text(UserText.deleteChatHistoryExplanation)
+                            .fixMultilineScrollableText()
+                            .foregroundColor(.blackWhite60)
+                            .font(.system(size: 11))
+                            .padding(.leading, 19)
+                    }
                 }
                 .padding(.init(top: 16, leading: 12, bottom: 16, trailing: 12))
                 .background(RoundedRectangle(cornerRadius: 8.0).stroke(.blackWhite5))

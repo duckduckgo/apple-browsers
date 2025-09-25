@@ -1312,6 +1312,18 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI-functies zijn privé en optioneel. Je gegevens worden niet gebruikt om AI te trainen.";
 
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "Toon Duck.ai-knoppen en -links in de zoekresultaten van DuckDuckGo.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Sneltoetsen zoeken";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Stel vervolgvragen";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Browsersnelkoppelingen";
+
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adresbalk";
 

@@ -51,14 +51,17 @@ public class RollingEightDays<T: Codable & Equatable>: RollingArray<T> {
 
 // MARK: -
 
-/// Specialized rolling eight-day structure for boolean values with daily aggregation.
+/// Specialised rolling eight-day structure for boolean values with daily aggregation.
 public class RollingEightDaysBool: RollingEightDays<Bool> {
 
     /// Sets the last value to `true` if in the same day, creates a new one otherwise.
     public func setTodayToTrue() {
         let now = Date()
+
         if lastDay == nil {
             lastDay = now
+            append(true)
+            return
         }
 
         if !isSameDay(now) {
@@ -68,7 +71,7 @@ public class RollingEightDaysBool: RollingEightDays<Bool> {
     }
 }
 
-/// Specialized rolling eight-day structure for integer values with daily aggregation and averaging.
+/// Specialised rolling eight-day structure for integer values with daily aggregation and averaging.
 public class RollingEightDaysInt: RollingEightDays<Int> {
 
     /// Increments the last value if in the same day, creates a new one otherwise.

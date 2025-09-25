@@ -21,13 +21,15 @@ import Foundation
 public struct RemoteMessageModel: Equatable, Codable {
 
     public let id: String
+    public let surfaces: RemoteMessageSurfaceType
     public var content: RemoteMessageModelType?
     public let matchingRules: [Int]
     public let exclusionRules: [Int]
     public let isMetricsEnabled: Bool
 
-    public init(id: String, content: RemoteMessageModelType?, matchingRules: [Int], exclusionRules: [Int], isMetricsEnabled: Bool) {
+    public init(id: String, surfaces: RemoteMessageSurfaceType, content: RemoteMessageModelType?, matchingRules: [Int], exclusionRules: [Int], isMetricsEnabled: Bool) {
         self.id = id
+        self.surfaces = surfaces
         self.content = content
         self.matchingRules = matchingRules
         self.exclusionRules = exclusionRules
@@ -36,6 +38,7 @@ public struct RemoteMessageModel: Equatable, Codable {
 
     enum CodingKeys: CodingKey {
         case id
+        case surfaces
         case content
         case matchingRules
         case exclusionRules
@@ -45,6 +48,7 @@ public struct RemoteMessageModel: Equatable, Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = try container.decode(String.self, forKey: .id)
+        self.surfaces = try container.decode(RemoteMessageSurfaceType.self, forKey: .surfaces)
         self.content = try container.decodeIfPresent(RemoteMessageModelType.self, forKey: .content)
         self.matchingRules = try container.decode([Int].self, forKey: .matchingRules)
         self.exclusionRules = try container.decode([Int].self, forKey: .exclusionRules)
@@ -88,6 +92,20 @@ public struct RemoteMessageModel: Equatable, Codable {
 
         }
     }
+}
+
+public struct RemoteMessageSurfaceType: OptionSet, Codable, Equatable {
+    public var rawValue: Int16
+
+    public init(rawValue: Int16) {
+        self.rawValue = rawValue
+    }
+
+    public static let newTabPage = RemoteMessageSurfaceType(rawValue: 1 << 0)
+    public static let modal = RemoteMessageSurfaceType(rawValue: 1 << 1)
+    public static let dedicatedTab = RemoteMessageSurfaceType(rawValue: 1 << 2)
+
+    public static let allCases: RemoteMessageSurfaceType = [.newTabPage, .modal, .dedicatedTab]
 }
 
 public enum RemoteMessageModelType: Codable, Equatable {

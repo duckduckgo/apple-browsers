@@ -93,7 +93,7 @@ class RemoteMessagingStoreTests: XCTestCase {
         XCTAssertEqual(config?.version, processorResult.version)
         guard let remoteMessage = store.fetchScheduledRemoteMessage() else {
             XCTFail("No remote message found")
-            return RemoteMessageModel(id: "", content: nil, matchingRules: [], exclusionRules: [], isMetricsEnabled: true)
+            return RemoteMessageModel(id: "", surfaces: .newTabPage, content: nil, matchingRules: [], exclusionRules: [], isMetricsEnabled: true)
         }
 
         XCTAssertNotNil(remoteMessage)

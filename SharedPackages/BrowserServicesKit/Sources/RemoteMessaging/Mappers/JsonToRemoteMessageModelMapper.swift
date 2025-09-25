@@ -108,8 +108,11 @@ struct JsonToRemoteMessageModelMapper {
                 return
             }
 
+            let surfaces = mapToSurfaces(surfaces: message.surfaces)
+
             var remoteMessage = RemoteMessageModel(
                 id: message.id,
+                surfaces: surfaces,
                 content: content,
                 matchingRules: message.matchingRules ?? [],
                 exclusionRules: message.exclusionRules ?? [],
@@ -123,6 +126,27 @@ struct JsonToRemoteMessageModelMapper {
             remoteMessages.append(remoteMessage)
         }
         return remoteMessages
+    }
+
+    static func mapToSurfaces(surfaces: [String]?) -> RemoteMessageSurfaceType {
+        guard let surfaces else { return .newTabPage }
+
+        return surfaces.reduce(into: RemoteMessageSurfaceType()) { flags, rawSurface in
+            // If a surface is not supported default it to new tab page
+            guard let jsonSurface = RemoteMessageResponse.JsonSurface(rawValue: rawSurface) else {
+                flags.insert(.newTabPage)
+                return
+            }
+
+            switch jsonSurface {
+            case .newTabPage:
+                flags.insert(.newTabPage)
+            case .modal:
+                flags.insert(.modal)
+            case .dedicatedTab:
+                flags.insert(.dedicatedTab)
+            }
+        }
     }
 
     static func mapToContent(content: RemoteMessageResponse.JsonContent,

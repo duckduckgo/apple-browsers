@@ -662,6 +662,7 @@ let package = Package(
                 .copy("Resources/remote-messaging-config-metrics.json"),
                 .copy("Resources/remote-messaging-config-unsupported-items.json"),
                 .copy("Resources/remote-messaging-config.json"),
+                .copy("Resources/remote-messaging-config-surfaces-items.json"),
             ]
         ),
         .testTarget(

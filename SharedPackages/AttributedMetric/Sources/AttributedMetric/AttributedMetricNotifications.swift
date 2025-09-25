@@ -29,6 +29,7 @@ extension AttributedMetricManager {
 
         // App start
 #if os(iOS)
+        // NOTE: Remove this and use ForegroundHandling in iOS
         NotificationCenter.default
             .publisher(for: UIApplication.willEnterForegroundNotification)
             .sink { [weak self] _ in

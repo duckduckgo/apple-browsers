@@ -1734,6 +1734,8 @@
 		F11595D12E854C7400CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D02E854C7400CC0481 /* AttributedMetric */; };
 		F11595D32E856FC400CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D22E856FC400CC0481 /* AttributedMetric */; };
 		F11595D52E856FCE00CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D42E856FCE00CC0481 /* AttributedMetric */; };
+		F11595D72E8570AF00CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D62E8570AF00CC0481 /* AttributedMetric */; };
+		F11595D92E8570B500CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D82E8570B500CC0481 /* AttributedMetric */; };
 		F130D73A1E5776C500C45811 /* OmniBarDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F130D7391E5776C500C45811 /* OmniBarDelegate.swift */; };
 		F132D6A52C62239B00D85426 /* SubscriptionSettingsHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F132D6A42C62239B00D85426 /* SubscriptionSettingsHeaderView.swift */; };
 		F1386BA41E6846C40062FC3C /* TabDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1386BA31E6846C40062FC3C /* TabDelegate.swift */; };
@@ -4258,6 +4260,7 @@
 				98424A962CED4F430071C7DB /* OHHTTPStubs in Frameworks */,
 				98424A972CED4F430071C7DB /* OHHTTPStubsSwift in Frameworks */,
 				4BC95EB32D7417CC002FAB32 /* BrowserServicesKit in Frameworks */,
+				F11595D72E8570AF00CC0481 /* AttributedMetric in Frameworks */,
 				98424A982CED4F430071C7DB /* ContentBlocking in Frameworks */,
 				986CD5392DE8F50400AFA98A /* Configuration in Frameworks */,
 				98424A992CED4F430071C7DB /* SubscriptionTestingUtilities in Frameworks */,
@@ -4276,6 +4279,7 @@
 				7BC26CB42DFC155E00E52480 /* VPNTestUtils in Frameworks */,
 				98E5648E2DE8DE6600E6E75F /* BrowserServicesKit in Frameworks */,
 				98E564882DE8DE5A00E6E75F /* Bookmarks in Frameworks */,
+				F11595D92E8570B500CC0481 /* AttributedMetric in Frameworks */,
 				986CD5422DE8FBCA00AFA98A /* PersistenceTestingUtils in Frameworks */,
 				98E564962DE8DE8100E6E75F /* Subscription in Frameworks */,
 				98E564942DE8DE7D00E6E75F /* SubscriptionTestingUtilities in Frameworks */,
@@ -9313,6 +9317,7 @@
 				986CD5362DE8F50100AFA98A /* RemoteMessaging */,
 				986CD5382DE8F50400AFA98A /* Configuration */,
 				7BC26CB52DFC156A00E52480 /* VPNTestUtils */,
+				F11595D62E8570AF00CC0481 /* AttributedMetric */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = 98424AA92CED4F430071C7DB /* WebViewUnitTests.xctest */;
@@ -9361,6 +9366,7 @@
 				986CD5412DE8FBCA00AFA98A /* PersistenceTestingUtils */,
 				7BC26CB32DFC155E00E52480 /* VPNTestUtils */,
 				9FE59CD72E3097B200C4B65D /* SystemSettingsPiPTutorialTestSupport */,
+				F11595D82E8570B500CC0481 /* AttributedMetric */,
 			);
 			productName = SharedStateTests;
 			productReference = 98E5643E2DE8DDA200E6E75F /* SharedStateTests.xctest */;
@@ -15110,6 +15116,14 @@
 			productName = AttributedMetric;
 		};
 		F11595D42E856FCE00CC0481 /* AttributedMetric */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AttributedMetric;
+		};
+		F11595D62E8570AF00CC0481 /* AttributedMetric */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AttributedMetric;
+		};
+		F11595D82E8570B500CC0481 /* AttributedMetric */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AttributedMetric;
 		};

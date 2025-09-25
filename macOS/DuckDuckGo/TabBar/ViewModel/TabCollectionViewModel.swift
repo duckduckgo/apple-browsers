@@ -305,17 +305,16 @@ final class TabCollectionViewModel: NSObject {
             return true
         }
 
-        guard let index = tabCollection.tabs.firstIndex(where: { $0.content.matchesDisplayableTab(content) })
+        guard let index = indexInAllTabs(where: { $0.content.matchesDisplayableTab(content) }),
+              let tab = tab(at: index),
+              select(at: index)
         else {
             return false
         }
 
-        if selectUnpinnedTab(at: index) {
-            tabCollection.tabs[index].setContent(content)
-            delegate?.tabCollectionViewModel(self, didSelectAt: index)
-            return true
-        }
-        return false
+        tab.setContent(content)
+
+        return true
     }
 
     func selectNext() {

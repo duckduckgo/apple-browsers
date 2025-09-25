@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import RemoteMessaging
 import AIChat
+import OSLog
 
 protocol AIChatMetricReportingHandling {
     func didReportMetric(_ metric: AIChatMetric)
@@ -81,7 +82,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 let metric = try decoder.decode(AIChatMetric.self, from: jsonData)
                 metricReportingHandler?.didReportMetric(metric)
             } catch {
-                print("Failed to decode JSON: \(error)")
+                Logger.aiChat.debug("Failed to decode metric JSON in AIChatUserScript: \(error)")
             }
         }
         return nil

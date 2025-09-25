@@ -145,6 +145,19 @@ final class TabCollectionViewModelTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenPreferencesTabIsPinnedThenSelectDisplayableTabIfPresentSelectsPreferencesTab() throws {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        tabCollectionViewModel.tabCollection.removeAll(andAppend: .init(content: .anySettingsPane))
+        tabCollectionViewModel.tabCollection.append(tab: .init(content: .newtab))
+
+        tabCollectionViewModel.pinTab(at: 0)
+        tabCollectionViewModel.select(at: .unpinned(0))
+
+        XCTAssertTrue(tabCollectionViewModel.selectDisplayableTabIfPresent(.anySettingsPane))
+        XCTAssert(tabCollectionViewModel.selectedTabViewModel === tabCollectionViewModel.tabViewModel(at: .pinned(0)))
+    }
+
+    @MainActor
     func testWhenPreferencesTabIsPresentThenOpeningPreferencesWithDifferentPaneUpdatesPaneOnExistingTab() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         tabCollectionViewModel.tabCollection.append(tab: .init(content: .settings(pane: .appearance)))

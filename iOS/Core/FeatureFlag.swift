@@ -134,8 +134,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1210716028790591?focus=true
     case scheduledSetDefaultBrowserPromptsForInactiveUsers
 
-    case subscriptionRebranding
-
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210259429792293?focus=true
     case canPromoteImportPasswordsInPasswordManagement
     case canPromoteImportPasswordsInBrowser
@@ -177,6 +175,12 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1210947754188321/task/1210869716452616?focus=true
     case refreshButtonPosition
+
+    /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211394727337421?focus=true
+    case newDeviceSyncPrompt
+    
+    /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211245201777978?focus=true
+    case serpSettingsFollowUpQuestions
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -193,7 +197,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .daxEasterEggLogos,
              .subscriptionPurchaseWidePixelMeasurement,
              .askAIChatSuggestion,
-             .refreshButtonPosition:
+             .refreshButtonPosition,
+             .newDeviceSyncPrompt:
             true
         default:
             false
@@ -228,7 +233,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .paidAIChat,
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice,
-             .subscriptionRebranding,
              .widgetReporting,
              .canPromoteImportPasswordsInPasswordManagement,
              .canPromoteImportPasswordsInBrowser,
@@ -246,7 +250,9 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dbpRemoteBrokerDelivery,
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
-             .refreshButtonPosition:
+             .refreshButtonPosition,
+             .newDeviceSyncPrompt,
+             .serpSettingsFollowUpQuestions:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -414,8 +420,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPrompts))
         case .scheduledSetDefaultBrowserPromptsForInactiveUsers:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPromptsInactiveUser))
-        case .subscriptionRebranding:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .personalInformationRemoval:
@@ -438,6 +442,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.refreshButtonPosition))
         case .showAIChatAddressBarChoiceScreen:
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
+        case .newDeviceSyncPrompt:
+            return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
+        case .serpSettingsFollowUpQuestions:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.serpSettingsFollowUpQuestions))
         }
     }
 }

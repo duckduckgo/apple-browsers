@@ -28,7 +28,7 @@ final class AIChatPreferences: ObservableObject {
     private var storage: AIChatPreferencesStorage
     private var cancellables = Set<AnyCancellable>()
     private let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/duckai/approach-to-ai")!
-    private let searchAssistSettingsURL = URL(string: "https://duckduckgo.com/settings#aifeatures")!
+    private let searchAssistSettingsURL = URL(string: "https://duckduckgo.com/settings?return=aiFeatures#aifeatures")!
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     private var windowControllersManager: WindowControllersManager
     private let featureFlagger: FeatureFlagger
@@ -137,7 +137,7 @@ final class AIChatPreferences: ObservableObject {
     }
 
     @MainActor func openAIChatLink() {
-        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab()
+        NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: .currentTab)
     }
 
     @MainActor func openSearchAssistSettings() {

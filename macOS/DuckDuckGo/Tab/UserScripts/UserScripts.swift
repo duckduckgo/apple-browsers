@@ -58,6 +58,7 @@ final class UserScripts: UserScriptsProvider {
     let subscriptionUserScript: SubscriptionUserScript?
     let historyViewUserScript: HistoryViewUserScript?
     let newTabPageUserScript: NewTabPageUserScript?
+    let serpSettingsUserScript: SERPSettingsUserScript?
     let faviconScript = FaviconUserScript()
 
     // swiftlint:disable:next cyclomatic_complexity
@@ -69,7 +70,8 @@ final class UserScripts: UserScriptsProvider {
         let aiChatHandler = AIChatUserScriptHandler(
             storage: DefaultAIChatPreferencesStorage(),
             windowControllersManager: sourceProvider.windowControllersManager,
-            pixelFiring: PixelKit.shared
+            pixelFiring: PixelKit.shared,
+            statisticsLoader: StatisticsLoader.shared
         )
         aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
         subscriptionUserScript = SubscriptionUserScript(
@@ -79,6 +81,7 @@ final class UserScripts: UserScriptsProvider {
             navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
             debugHost: aiChatDebugURLSettings.customURLHostname
         )
+        serpSettingsUserScript = SERPSettingsUserScript()
 
         let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig
@@ -170,6 +173,10 @@ final class UserScripts: UserScriptsProvider {
 
         if let youtubeOverlayScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: youtubeOverlayScript)
+        }
+
+        if let serpSettingsUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
         }
 
         if let specialPages = specialPages {

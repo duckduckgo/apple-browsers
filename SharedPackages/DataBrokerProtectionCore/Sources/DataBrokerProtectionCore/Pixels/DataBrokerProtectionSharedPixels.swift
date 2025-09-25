@@ -43,7 +43,10 @@ public enum ErrorCategory: Equatable {
 public enum DataBrokerProtectionSharedPixels {
 
     public struct Consts {
+
+        @available(*, deprecated, message: "Use dataBrokerURL instead")
         public static let dataBrokerParamKey = "data_broker"
+
         public static let dataBrokerVersionKey = "broker_version"
         public static let appVersionParamKey = "app_version"
         public static let attemptIdParamKey = "attempt_id"
@@ -73,6 +76,11 @@ public enum DataBrokerProtectionSharedPixels {
         public static let profileQueries = "profile_queries"
         public static let hasError = "has_error"
         public static let brokerURL = "broker_url"
+        public static let dataBrokerURL = "data_broker_url"
+        public static let attemptNumber = "attempt_number"
+        public static let linkAgeMs = "link_age_ms"
+        public static let status = "status"
+        public static let errorCode = "error_code"
         public static let numberOfRecordsFound = "num_found"
         public static let numberOfOptOutsInProgress = "num_inprogress"
         public static let numberOfSucessfulOptOuts = "num_optoutsuccess"
@@ -98,7 +106,8 @@ public enum DataBrokerProtectionSharedPixels {
         public static let totalByBroker = "total_by_broker"
         public static let stalledByBroker = "stalled_by_broker"
         public static let jsFile = "jsFile"
-
+        public static let dataBrokerJsonFileKey = "data_broker_json_file"
+        public static let removedAtParamKey = "removed_at"
     }
 
     case httpError(error: Error, code: Int, dataBroker: String, version: String)
@@ -193,6 +202,20 @@ public enum DataBrokerProtectionSharedPixels {
 
     // UserScript
     case userScriptLoadJSFailed(jsFile: String, error: Error)
+
+    // Email confirmation decoupling
+    case serviceEmailConfirmationLinkClientReceived(dataBrokerURL: String, brokerVersion: String, linkAgeMs: Double)
+    case serviceEmailConfirmationLinkBackendStatusError(dataBrokerURL: String, brokerVersion: String, status: String, errorCode: String?)
+    case optOutStageSubmitAwaitingEmailConfirmation(dataBrokerURL: String, brokerVersion: String, attemptId: UUID, actionId: String, duration: Double, tries: Int)
+    case serviceEmailConfirmationAttemptStart(dataBrokerURL: String, brokerVersion: String, attemptNumber: Int, attemptId: UUID, actionId: String?)
+    case serviceEmailConfirmationAttemptSuccess(dataBrokerURL: String, brokerVersion: String, attemptNumber: Int, duration: Double, attemptId: UUID, actionId: String?)
+    case serviceEmailConfirmationAttemptFailure(dataBrokerURL: String, brokerVersion: String, attemptNumber: Int, duration: Double, attemptId: UUID, actionId: String?)
+    case serviceEmailConfirmationMaxRetriesExceeded(dataBrokerURL: String, brokerVersion: String, attemptId: UUID, actionId: String?)
+    case serviceEmailConfirmationJobSuccess(dataBrokerURL: String, brokerVersion: String)
+
+    // Broker update pixels
+    case updateDataBrokersSuccess(dataBrokerFileName: String, removedAt: Int64?)
+    case updateDataBrokersFailure(dataBrokerFileName: String, removedAt: Int64?, error: Error)
 }
 
 extension DataBrokerProtectionSharedPixels: PixelKitEvent {
@@ -286,6 +309,20 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
 
             // UserScript
         case .userScriptLoadJSFailed: return "debug_user_script_load_js_failed"
+
+            // Email confirmation decoupling
+        case .serviceEmailConfirmationLinkClientReceived: return "dbp_service_email-confirmation-link_client-received"
+        case .serviceEmailConfirmationLinkBackendStatusError: return "dbp_service_email-confirmation-link_backend-status_error"
+        case .optOutStageSubmitAwaitingEmailConfirmation: return "dbp_optout_stage_submit-awaiting-email-confirmation"
+        case .serviceEmailConfirmationAttemptStart: return "dbp_service_email-confirmation_attempt-start"
+        case .serviceEmailConfirmationAttemptSuccess: return "dbp_service_email-confirmation_attempt-success"
+        case .serviceEmailConfirmationAttemptFailure: return "dbp_service_email-confirmation_attempt-failure"
+        case .serviceEmailConfirmationMaxRetriesExceeded: return "dbp_service_email-confirmation_max-retries-exceeded"
+        case .serviceEmailConfirmationJobSuccess: return "dbp_service_email-confirmation_job-success"
+
+            // Broker update pixels
+        case .updateDataBrokersSuccess: return "dbp_update_databrokers_success"
+        case .updateDataBrokersFailure: return "dbp_update_databrokers_failure"
         }
     }
 
@@ -468,6 +505,62 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.calculatedOrphanedRecords: String(calculatedOrphanedRecords)]
         case .userScriptLoadJSFailed(let jsFile, _):
             return [Consts.jsFile: jsFile]
+        case .serviceEmailConfirmationLinkClientReceived(let dataBrokerURL, let brokerVersion, let linkAgeMs):
+            return [Consts.dataBrokerURL: dataBrokerURL,
+                    Consts.dataBrokerVersionKey: brokerVersion,
+                    Consts.linkAgeMs: String(linkAgeMs.rounded(.towardZero))]
+        case .serviceEmailConfirmationLinkBackendStatusError(let dataBrokerURL, let brokerVersion, let status, let errorCode):
+            return [Consts.dataBrokerURL: dataBrokerURL,
+                    Consts.dataBrokerVersionKey: brokerVersion,
+                    Consts.status: status,
+                    Consts.errorCode: errorCode ?? "unknown"]
+        case .optOutStageSubmitAwaitingEmailConfirmation(let dataBrokerURL, let brokerVersion, let attemptId, let actionId, let duration, let tries):
+            return [Consts.dataBrokerURL: dataBrokerURL,
+                    Consts.dataBrokerVersionKey: brokerVersion,
+                    Consts.attemptIdParamKey: attemptId.uuidString,
+                    Consts.actionIDKey: actionId,
+                    Consts.durationParamKey: String(duration.rounded(.towardZero)),
+                    Consts.triesKey: String(tries)]
+        case .serviceEmailConfirmationAttemptStart(let dataBrokerURL, let brokerVersion, let attemptNumber, let attemptId, let actionId):
+            return [Consts.dataBrokerURL: dataBrokerURL,
+                    Consts.dataBrokerVersionKey: brokerVersion,
+                    Consts.attemptNumber: String(attemptNumber),
+                    Consts.attemptIdParamKey: attemptId.uuidString,
+                    Consts.actionIDKey: actionId ?? "unknown"]
+        case .serviceEmailConfirmationAttemptSuccess(let dataBrokerURL, let brokerVersion, let attemptNumber, let duration, let attemptId, let actionId):
+            return [Consts.dataBrokerURL: dataBrokerURL,
+                    Consts.dataBrokerVersionKey: brokerVersion,
+                    Consts.attemptNumber: String(attemptNumber),
+                    Consts.durationParamKey: String(duration.rounded(.towardZero)),
+                    Consts.attemptIdParamKey: attemptId.uuidString,
+                    Consts.actionIDKey: actionId ?? "unknown"]
+        case .serviceEmailConfirmationAttemptFailure(let dataBrokerURL, let brokerVersion, let attemptNumber, let duration, let attemptId, let actionId):
+            return [Consts.dataBrokerURL: dataBrokerURL,
+                    Consts.dataBrokerVersionKey: brokerVersion,
+                    Consts.attemptNumber: String(attemptNumber),
+                    Consts.durationParamKey: String(duration.rounded(.towardZero)),
+                    Consts.attemptIdParamKey: attemptId.uuidString,
+                    Consts.actionIDKey: actionId ?? "unknown"]
+        case .serviceEmailConfirmationMaxRetriesExceeded(let dataBrokerURL, let brokerVersion, let attemptId, let actionId):
+            return [Consts.dataBrokerURL: dataBrokerURL,
+                    Consts.dataBrokerVersionKey: brokerVersion,
+                    Consts.attemptIdParamKey: attemptId.uuidString,
+                    Consts.actionIDKey: actionId ?? "unknown"]
+        case .serviceEmailConfirmationJobSuccess(let dataBrokerURL, let brokerVersion):
+            return [Consts.dataBrokerURL: dataBrokerURL,
+                    Consts.dataBrokerVersionKey: brokerVersion]
+        case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt):
+            var params = [Consts.dataBrokerJsonFileKey: dataBrokerFileName]
+            if let removedAt = removedAt {
+                params[Consts.removedAtParamKey] = String(removedAt)
+            }
+            return params
+        case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, _):
+            var params = [Consts.dataBrokerJsonFileKey: dataBrokerFileName]
+            if let removedAt = removedAt {
+                params[Consts.removedAtParamKey] = String(removedAt)
+            }
+            return params
         }
     }
 }
@@ -565,9 +658,20 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .dataBrokerMetricsMonthlyStats,
                     .customDataBrokerStatsOptoutSubmit,
                     .customGlobalStatsOptoutSubmit,
-                    .weeklyChildBrokerOrphanedOptOuts:
+                    .weeklyChildBrokerOrphanedOptOuts,
+                    .serviceEmailConfirmationLinkClientReceived,
+                    .serviceEmailConfirmationLinkBackendStatusError,
+                    .optOutStageSubmitAwaitingEmailConfirmation,
+                    .serviceEmailConfirmationAttemptStart,
+                    .serviceEmailConfirmationAttemptSuccess,
+                    .serviceEmailConfirmationAttemptFailure,
+                    .serviceEmailConfirmationMaxRetriesExceeded,
+                    .serviceEmailConfirmationJobSuccess,
+                    .updateDataBrokersSuccess:
 
                 self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
+            case .updateDataBrokersFailure(_, _, let error):
+                self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
 #if os(iOS)
             case .scanStarted:
                 self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)

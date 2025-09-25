@@ -139,7 +139,7 @@ final class SubscriptionITPViewModel: ObservableObject {
     func onFirstAppear() {
         webViewModel.navigationCoordinator.navigateTo(url: manageITPURL )
         Task { await setupSubscribers() }
-        Pixel.fire(pixel: .privacyProIdentityRestorationSettings)
+        Pixel.fire(pixel: .subscriptionIdentityRestorationSettings)
     }
     
     private func cleanUp() {

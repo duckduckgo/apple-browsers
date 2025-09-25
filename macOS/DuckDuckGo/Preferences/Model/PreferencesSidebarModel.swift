@@ -67,9 +67,6 @@ final class PreferencesSidebarModel: ObservableObject {
     private let pixelFiring: PixelFiring?
     private var isInitialSelectedPanePixelFired = false
     private let featureFlagger: FeatureFlagger
-    var isSubscriptionRebrandingEnabled: Bool {
-        featureFlagger.isFeatureOn(.subscriptionRebranding)
-    }
 
     var selectedTabContent: AnyPublisher<Tab.TabContent, Never> {
         $selectedTabIndex.map { [tabSwitcherTabs] in tabSwitcherTabs[$0] }.eraseToAnyPublisher()
@@ -359,10 +356,10 @@ final class PreferencesSidebarModel: ObservableObject {
                 return
             }
 
-            // Adjust Privacy Pro selection when subscribed/unsubscribed state changes
-            if selectedPane == .subscriptionSettings, allPanes.contains(.privacyPro) {
-                selectedPane = .privacyPro
-            } else if selectedPane == .privacyPro, allPanes.contains(.subscriptionSettings) {
+            // Adjust Subscription selection when subscribed/unsubscribed state changes
+            if selectedPane == .subscriptionSettings, allPanes.contains(.subscription) {
+                selectedPane = .subscription
+            } else if selectedPane == .subscription, allPanes.contains(.subscriptionSettings) {
                 selectedPane = .subscriptionSettings
             } else if let firstPane = sections.first?.panes.first {
                 selectedPane = firstPane
@@ -373,7 +370,7 @@ final class PreferencesSidebarModel: ObservableObject {
             (selectedPane == .personalInformationRemoval && !currentSubscriptionState.isPersonalInformationRemovalEnabled) ||
             (selectedPane == .identityTheftRestoration && !currentSubscriptionState.isIdentityTheftRestorationEnabled) ||
             (selectedPane == .paidAIChat && !currentSubscriptionState.isPaidAIChatEnabled) {
-            selectedPane = currentSubscriptionState.hasSubscription ? .subscriptionSettings : .privacyPro
+            selectedPane = currentSubscriptionState.hasSubscription ? .subscriptionSettings : .subscription
         }
     }
 

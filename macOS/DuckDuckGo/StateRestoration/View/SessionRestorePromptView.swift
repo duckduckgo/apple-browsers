@@ -26,7 +26,7 @@ struct SessionRestorePromptView: View {
     }
 
     @ObservedObject var model: SessionRestorePromptViewModel
-    @Environment(\.dismiss) var dismiss
+    var dismiss: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {

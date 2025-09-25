@@ -73,7 +73,8 @@ struct Foreground: ForegroundHandling {
             urlHandler: appDependencies.mainCoordinator,
             shortcutItemHandler: appDependencies.mainCoordinator,
             keyboardPresenter: KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller),
-            launchSourceService: appDependencies.launchSourceManager
+            launchSourceService: appDependencies.launchSourceManager,
+            newAddressBarPickerPresenter: NewAddressBarPickerPresenter(mainViewController: appDependencies.mainCoordinator.controller)
         )
         interactionManager = UIInteractionManager(
             authenticationService: appDependencies.services.authenticationService,
@@ -118,6 +119,7 @@ struct Foreground: ForegroundHandling {
         )
 
         services.vpnService.resume()
+        services.aiChatService.resume()
         services.configurationService.resume()
         services.reportingService.resume()
         services.subscriptionService.resume()

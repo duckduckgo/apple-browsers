@@ -209,13 +209,13 @@ struct UnifiedFeedbackFormViewModelTests {
     // MARK: - Subcategory Tests
 
     @Test func testSubscriptionSubcategories_HaveCorrectDisplayNames() {
-        #expect(PrivacyProFeedbackSubcategory.otp.displayName == UserText.pproFeedbackFormCategoryOTP)
-        #expect(PrivacyProFeedbackSubcategory.somethingElse.displayName == UserText.pproFeedbackFormCategoryOther)
+        #expect(SubscriptionFeedbackSubcategory.otp.displayName == UserText.pproFeedbackFormCategoryOTP)
+        #expect(SubscriptionFeedbackSubcategory.somethingElse.displayName == UserText.pproFeedbackFormCategoryOther)
     }
 
     @Test func testSubscriptionSubcategories_HaveCorrectFAQUrls() {
-        #expect(PrivacyProFeedbackSubcategory.otp.url.absoluteString.contains("payments") == true)
-        #expect(PrivacyProFeedbackSubcategory.somethingElse.url.absoluteString.contains("payments") == true)
+        #expect(SubscriptionFeedbackSubcategory.otp.url.absoluteString.contains("payments") == true)
+        #expect(SubscriptionFeedbackSubcategory.somethingElse.url.absoluteString.contains("payments") == true)
     }
 
     @Test func testVPNSubcategories_HaveCorrectDisplayNames() {
@@ -301,7 +301,7 @@ struct UnifiedFeedbackFormViewModelTests {
 
         // Set initial category and subcategory
         viewModel.selectedCategory = UnifiedFeedbackCategory.subscription.rawValue
-        viewModel.selectedSubcategory = PrivacyProFeedbackSubcategory.otp.rawValue
+        viewModel.selectedSubcategory = SubscriptionFeedbackSubcategory.otp.rawValue
 
         #expect(viewModel.selectedSubcategory == "otp")
 
@@ -319,7 +319,7 @@ struct UnifiedFeedbackFormViewModelTests {
         #expect(viewModel.feedbackFormText == "Some feedback text")
 
         // Change subcategory should reset feedback text
-        viewModel.selectedSubcategory = PrivacyProFeedbackSubcategory.otp.rawValue
+        viewModel.selectedSubcategory = SubscriptionFeedbackSubcategory.otp.rawValue
 
         #expect(viewModel.feedbackFormText.isEmpty)
     }
@@ -408,7 +408,7 @@ struct UnifiedFeedbackFormViewModelTests {
 
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         viewModel.selectedCategory = UnifiedFeedbackCategory.subscription.rawValue
-        viewModel.selectedSubcategory = PrivacyProFeedbackSubcategory.otp.rawValue
+        viewModel.selectedSubcategory = SubscriptionFeedbackSubcategory.otp.rawValue
         viewModel.feedbackFormText = "Issue report text"
 
         await viewModel.process(action: .submit)
@@ -515,7 +515,7 @@ struct UnifiedFeedbackFormViewModelTests {
 
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         viewModel.selectedCategory = UnifiedFeedbackCategory.subscription.rawValue
-        viewModel.selectedSubcategory = PrivacyProFeedbackSubcategory.otp.rawValue
+        viewModel.selectedSubcategory = SubscriptionFeedbackSubcategory.otp.rawValue
 
         await viewModel.process(action: .reportSubmitShow)
 
@@ -528,7 +528,7 @@ struct UnifiedFeedbackFormViewModelTests {
 
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         viewModel.selectedCategory = UnifiedFeedbackCategory.subscription.rawValue
-        viewModel.selectedSubcategory = PrivacyProFeedbackSubcategory.otp.rawValue
+        viewModel.selectedSubcategory = SubscriptionFeedbackSubcategory.otp.rawValue
 
         await viewModel.process(action: .reportFAQClick)
 

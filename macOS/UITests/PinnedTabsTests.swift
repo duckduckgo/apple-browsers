@@ -46,6 +46,36 @@ class PinnedTabsTests: UITestCase {
         assertPinnedTabsRestoredState()
     }
 
+    func testSettingsCanBePinned() {
+        app.openSettings()
+        pinCurrentPage()
+        assertCurrentPageCanBeUnpinned()
+    }
+
+    func testBookmarksCanBePinned() {
+        app.openBookmarksManager()
+        pinCurrentPage()
+        assertCurrentPageCanBeUnpinned()
+    }
+
+    func testHistoryCanBePinned() {
+        app.openHistory()
+        pinCurrentPage()
+        assertCurrentPageCanBeUnpinned()
+    }
+
+    func testNewTabPageCanBePinned() {
+        app.openNewTab()
+        pinCurrentPage()
+        assertCurrentPageCanBeUnpinned()
+    }
+
+    func testReleaseNotesCannotBePinned() {
+        app.openHelp()
+        app.openReleaseNotes()
+        assertCurrentPageCannotBePinned()
+    }
+
     // MARK: - Utilities
 
     private func openThreeSitesOnSameWindow() {
@@ -74,11 +104,15 @@ class PinnedTabsTests: UITestCase {
     private func pinsPageOne() {
         app.typeKey("[", modifierFlags: [.command, .shift])
         app.typeKey("[", modifierFlags: [.command, .shift])
-        app.menuItems["Pin Tab"].tap()
+        pinCurrentPage()
     }
 
     private func pinsPageTwo() {
         app.typeKey("]", modifierFlags: [.command, .shift])
+        pinCurrentPage()
+    }
+
+    private func pinCurrentPage() {
         app.menuItems["Pin Tab"].tap()
     }
 
@@ -151,6 +185,22 @@ class PinnedTabsTests: UITestCase {
         /// Goes to Page #1 to check the state
         newApp.typeKey("]", modifierFlags: [.command, .shift])
         XCTAssertTrue(newApp.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    }
+
+    private func assertCurrentPageCanBeUnpinned() {
+        XCTAssertTrue(
+            app.menuItems["Unpin Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence)
+        )
+    }
+
+    private func assertCurrentPageCannotBePinned() {
+        let pinItem = app.menuItems["Pin Tab"]
+
+        XCTAssertTrue(
+            pinItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Pin Tab menu item didn't become available in a reasonable timeframe."
+        )
+        XCTAssertFalse(pinItem.isHittable)
     }
 
     private func waitForSite(pageTitle: String) {

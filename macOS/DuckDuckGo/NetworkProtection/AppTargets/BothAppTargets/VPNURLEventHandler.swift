@@ -51,8 +51,8 @@ final class VPNURLEventHandler {
             showMainWindow()
         case VPNAppLaunchCommand.showVPNLocations.launchURL:
             showLocations()
-        case VPNAppLaunchCommand.showPrivacyPro.launchURL:
-            showPrivacyPro()
+        case VPNAppLaunchCommand.showSubscription.launchURL:
+            showSubscription()
 #if !APPSTORE && !DEBUG
         case VPNAppLaunchCommand.moveAppToApplications.launchURL:
             moveAppToApplicationsFolder()
@@ -87,11 +87,11 @@ final class VPNURLEventHandler {
         windowControllerManager.showLocationPickerSheet()
     }
 
-    func showPrivacyPro() {
+    func showSubscription() {
         let url = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .purchase)
         windowControllerManager.showTab(with: .subscription(url))
 
-        PixelKit.fire(PrivacyProPixel.privacyProOfferScreenImpression)
+        PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression)
     }
 
     func showVPNAppExclusions() {

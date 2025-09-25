@@ -85,13 +85,13 @@ final class MainCoordinator {
 
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
-                                                          privacyProDataReporter: reportingService.privacyProDataReporter,
+                                                          subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()
         let historyManager = try Self.makeHistoryManager()
         let tabsPersistence = try TabsModelPersistence()
         let tabsModel = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
-        reportingService.privacyProDataReporter.injectTabsModel(tabsModel)
+        reportingService.subscriptionDataReporter.injectTabsModel(tabsModel)
         let daxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: daxDialogs,
                                                                       contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
@@ -107,7 +107,7 @@ final class MainCoordinator {
                                 bookmarksDatabase: bookmarksDatabase,
                                 historyManager: historyManager,
                                 syncService: syncService.sync,
-                                privacyProDataReporter: reportingService.privacyProDataReporter,
+                                subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                 contextualOnboardingPresenter: contextualOnboardingPresenter,
                                 contextualOnboardingLogic: daxDialogs,
                                 onboardingPixelReporter: reportingService.onboardingPixelReporter,
@@ -132,7 +132,7 @@ final class MainCoordinator {
                                         previewsSource: previewsSource,
                                         tabManager: tabManager,
                                         syncPausedStateManager: syncService.syncErrorHandler,
-                                        privacyProDataReporter: reportingService.privacyProDataReporter,
+                                        subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                         contextualOnboardingLogic: daxDialogs,
                                         contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter,
                                         subscriptionFeatureAvailability: subscriptionService.subscriptionFeatureAvailability,
@@ -205,8 +205,8 @@ final class MainCoordinator {
 
     // MARK: - Public API
 
-    func segueToPrivacyPro() {
-        controller.segueToPrivacyPro()
+    func segueToDuckDuckGoSubscription() {
+        controller.segueToDuckDuckGoSubscription()
     }
 
     func presentNetworkProtectionStatusSettingsModal() {
@@ -215,7 +215,7 @@ final class MainCoordinator {
                canShowVPNInUI {
                 controller.segueToVPN()
             } else {
-                controller.segueToPrivacyPro()
+                controller.segueToDuckDuckGoSubscription()
             }
         }
     }

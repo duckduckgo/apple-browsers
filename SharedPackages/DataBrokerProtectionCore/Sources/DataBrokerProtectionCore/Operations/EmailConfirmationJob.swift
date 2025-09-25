@@ -133,17 +133,60 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             vpnConnectionState: jobDependencies.vpnBypassService?.connectionStatus ?? "unknown",
             vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
         )
+        stageDurationCalculator.setStage(.emailConfirmDecoupled)
 
         let attemptNumber = Int(jobData.emailConfirmationAttemptCount) + 1
         Logger.dataBrokerProtection.log("✉️ Email confirmation attempt \(attemptNumber) of \(Self.maxRetries)")
 
+        let pixelHandler = jobDependencies.pixelHandler
+
         do {
+            pixelHandler.fire(
+                .serviceEmailConfirmationAttemptStart(
+                    dataBrokerURL: broker.url,
+                    brokerVersion: broker.version,
+                    attemptNumber: attemptNumber,
+                    attemptId: stageDurationCalculator.attemptId,
+                    actionId: stageDurationCalculator.actionID
+                )
+            )
             try await incrementAttemptCount()
             try await executeEmailConfirmation(with: confirmationURL, broker: broker, extractedProfile: extractedProfile, stageDurationCalculator: stageDurationCalculator)
+            pixelHandler.fire(
+                .serviceEmailConfirmationAttemptSuccess(
+                    dataBrokerURL: broker.url,
+                    brokerVersion: broker.version,
+                    attemptNumber: attemptNumber,
+                    duration: stageDurationCalculator.durationSinceStartTime(),
+                    attemptId: stageDurationCalculator.attemptId,
+                    actionId: stageDurationCalculator.actionID
+                )
+            )
             try await markAsSuccessful(stageDurationCalculator: stageDurationCalculator, broker: broker)
             Logger.dataBrokerProtection.log("✉️ Email confirmation completed successfully")
         } catch {
             Logger.dataBrokerProtection.error("✉️ Email confirmation attempt \(attemptNumber) failed: \(error)")
+            if attemptNumber == Self.maxRetries {
+                pixelHandler.fire(
+                    .serviceEmailConfirmationMaxRetriesExceeded(
+                        dataBrokerURL: broker.url,
+                        brokerVersion: broker.version,
+                        attemptId: stageDurationCalculator.attemptId,
+                        actionId: stageDurationCalculator.actionID
+                    )
+                )
+            } else {
+                pixelHandler.fire(
+                    .serviceEmailConfirmationAttemptFailure(
+                        dataBrokerURL: broker.url,
+                        brokerVersion: broker.version,
+                        attemptNumber: attemptNumber,
+                        duration: stageDurationCalculator.durationSinceStartTime(),
+                        attemptId: stageDurationCalculator.attemptId,
+                        actionId: stageDurationCalculator.actionID
+                    )
+                )
+            }
             await handleAttemptFailure(error,
                                        broker: broker,
                                        attemptNumber: attemptNumber,
@@ -259,6 +302,13 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             brokerId: jobData.brokerId,
             profileQueryId: jobData.profileQueryId,
             extractedProfileId: jobData.extractedProfileId
+        )
+
+        jobDependencies.pixelHandler.fire(
+            .serviceEmailConfirmationJobSuccess(
+                dataBrokerURL: broker.url,
+                brokerVersion: broker.version
+            )
         )
     }
 

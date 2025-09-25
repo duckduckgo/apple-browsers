@@ -44,7 +44,7 @@ struct SettingsSubscriptionView: View {
     @State var isShowingRestoreFlow = false
     @State var isShowingGoogleView = false
     @State var isShowingStripeView = false
-    @State var isShowingPrivacyPro = false
+    @State var isShowingSubscription = false
 
     var subscriptionRestoreView: some View {
         SubscriptionContainerViewFactory.makeRestoreFlow(navigationCoordinator: subscriptionNavigationCoordinator,
@@ -66,7 +66,7 @@ struct SettingsSubscriptionView: View {
     private var manageSubscriptionView: some View {
         SettingsCellView(
             label: UserText.settingsPProManageSubscription,
-            image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro)
+            image: Image(uiImage: DesignSystemImages.Color.Size24.subscription)
         )
     }
 
@@ -94,11 +94,11 @@ struct SettingsSubscriptionView: View {
 
             SettingsCellView(label: titleText,
                              subtitle: subtitleText,
-                             image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro))
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.subscription))
             .disabled(true)
 
-            // Get privacy pro
-            let getText = settingsViewModel.state.subscription.isEligibleForTrialOffer ? UserText.trySubscriptionButton(isSubscriptionRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled) : UserText.getSubscriptionButton(isSubscriptionRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)
+            // Get Subscription
+            let getText = settingsViewModel.state.subscription.isEligibleForTrialOffer ? UserText.trySubscriptionButton : UserText.getSubscriptionButton
             SettingsCustomCell(content: {
                 Text(getText)
                     .daxBodyRegular()
@@ -113,7 +113,7 @@ struct SettingsSubscriptionView: View {
                 let restoreView = subscriptionRestoreView
                     .navigationViewStyle(.stack)
                     .onFirstAppear {
-                        Pixel.fire(pixel: .privacyProRestorePurchaseClick)
+                        Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
                     }
                 NavigationLink(destination: restoreView,
                                isActive: $isShowingRestoreFlow) {
@@ -123,7 +123,7 @@ struct SettingsSubscriptionView: View {
                 let restoreView = subscriptionRestoreViewV2
                     .navigationViewStyle(.stack)
                     .onFirstAppear {
-                        Pixel.fire(pixel: .privacyProRestorePurchaseClick)
+                        Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
                     }
                 NavigationLink(destination: restoreView,
                                isActive: $isShowingRestoreFlow) {
@@ -189,8 +189,8 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: settingsView) {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.settingsPProSubscriptionExpiredTitle(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled),
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
+                    subtitle: UserText.settingsPProSubscriptionExpiredTitle,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription),
                     accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
             }
@@ -204,8 +204,8 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: settingsView) {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.settingsPProSubscriptionExpiredTitle(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled),
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
+                    subtitle: UserText.settingsPProSubscriptionExpiredTitle,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription),
                     accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
             }
@@ -228,7 +228,7 @@ struct SettingsSubscriptionView: View {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
                     subtitle: UserText.settingsPProActivating,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro)
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription)
                 )
             }
         } else {
@@ -242,7 +242,7 @@ struct SettingsSubscriptionView: View {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
                     subtitle: UserText.settingsPProActivating,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro)
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription)
                 )
             }
         }
@@ -342,7 +342,7 @@ struct SettingsSubscriptionView: View {
         
     var body: some View {
         Group {
-            if isShowingPrivacyPro {
+            if isShowingSubscription {
 
                 let isSignedIn = settingsViewModel.state.subscription.isSignedIn
                 let hasSubscription = settingsViewModel.state.subscription.hasSubscription
@@ -353,7 +353,7 @@ struct SettingsSubscriptionView: View {
                                       destination: ViewConstants.privacyPolicyURL)
                     .daxFootnoteRegular().accentColor(Color.init(designSystemColor: .accent))
 
-                Section(header: Text(UserText.settingsSubscriptionSection(isSubscriptionRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)),
+                Section(header: Text(UserText.settingsSubscriptionSection),
                         footer: !isSignedIn ? footerLink : nil
                 ) {
 
@@ -389,7 +389,7 @@ struct SettingsSubscriptionView: View {
             }
         }
         .onReceive(settingsViewModel.$state) { state in
-            isShowingPrivacyPro = (state.subscription.isSignedIn || state.subscription.canPurchase)
+            isShowingSubscription = (state.subscription.isSignedIn || state.subscription.canPurchase)
         }
     }
 }

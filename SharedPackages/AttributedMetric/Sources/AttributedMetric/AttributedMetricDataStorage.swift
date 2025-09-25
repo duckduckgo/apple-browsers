@@ -119,17 +119,21 @@ class AttributedMetricDataStorage: AttributedMetricDataStoring {
             let data = try JSONEncoder().encode(object)
             userDefaults.set(data, forKey: key.rawValue)
         } catch {
-
+            errorHandler.fire(DataStorageError.encodingFailed(error))
         }
     }
 
     /// Retrieves and JSON decodes a Codable object from UserDefaults.
     func decode<T: Codable>(from userDefaults: UserDefaults, key: StorageKey) -> T? {
-        guard let data = userDefaults.data(forKey: key.rawValue),
-              let object = try? JSONDecoder().decode(T.self, from: data) else {
+        guard let data = userDefaults.data(forKey: key.rawValue) else {
             return nil
         }
-        return object
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            errorHandler.fire(DataStorageError.decodingFailed(error))
+            return nil
+        }
     }
 
     // MARK: - Retention

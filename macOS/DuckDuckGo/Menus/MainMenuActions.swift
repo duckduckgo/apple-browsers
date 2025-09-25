@@ -175,26 +175,34 @@ extension AppDelegate {
             await historyViewDataProvider.refreshData()
             let visits = await historyViewDataProvider.visits(matching: .rangeFilter(.all))
 
+            @MainActor func reloadHistoryTabs() {
+                // History View doesn't currently support having new data pushed to it
+                // so we need to instruct all open history tabs to reload themselves.
+                let historyTabs = self.windowControllersManager.mainWindowControllers
+                    .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
+                    .filter { $0.content.isHistory }
+                historyTabs.forEach { $0.reload() }
+            }
+
             let presenter = DefaultHistoryViewDialogPresenter()
             switch await presenter.showDeleteDialog(for: .rangeFilter(.all), visits: visits, in: window) {
-            case .burn:
+            case .burn(let includeChats):
                 guard !featureFlagger.isFeatureOn(.fireDialog) /* FireCoordinator handles burning for Fire Dialog View */ else { break }
-                await fireCoordinator.fireViewModel.fire.burnAll()
-            case .delete:
-                @MainActor func reloadHistoryTabs() {
-                    // History View doesn't currently support having new data pushed to it
-                    // so we need to instruct all open history tabs to reload themselves.
-                    let historyTabs = self.windowControllersManager.mainWindowControllers
-                        .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
-                        .filter { $0.content.isHistory }
-                    historyTabs.forEach { $0.reload() }
-                }
+                let entity = Fire.BurningEntity.allWindows(mainWindowControllers: Application.appDelegate.windowControllersManager.mainWindowControllers,
+                                                           selectedDomains: [],
+                                                           customURLToOpen: nil,
+                                                           close: true)
+                await fireCoordinator.fireViewModel.fire.burnEntity(entity, includingHistory: true, includingChatHistory: includeChats)
+            case .delete(let burnChats):
                 // FireCoordinator handles burning for Fire Dialog View
                 if featureFlagger.isFeatureOn(.fireDialog) {
                     reloadHistoryTabs()
                 } else {
                     historyCoordinator.burnAll {
                         reloadHistoryTabs()
+                    }
+                    if burnChats {
+                        fireCoordinator.fireViewModel.fire.burnChatHistory()
                     }
                 }
             case .noAction:
@@ -1113,7 +1121,7 @@ extension MainViewController {
                 }
                 switch result {
                 case .burn:
-                    self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: sender.historyTimeWindow == .today)
+                    self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: sender.historyTimeWindow == .today, clearChatHistory: false)
                 case .delete:
                     historyCoordinator.burnVisits(visits) {}
                 default:
@@ -1127,7 +1135,7 @@ extension MainViewController {
                     return
                 }
                 Task {
-                    await self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: self.fireproofDomains, isToday: sender.historyTimeWindow.isToday, closeWindows: true, clearSiteData: true)
+                    await self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: self.fireproofDomains, isToday: sender.historyTimeWindow.isToday, closeWindows: true, clearSiteData: true, clearChatHistory: false)
                 }
             })
         }

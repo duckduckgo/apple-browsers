@@ -19,7 +19,7 @@
 import History
 
 protocol HistoryBurning {
-    func burn(_ visits: [Visit], animated: Bool) async
+    func burn(_ visits: [Visit], and burnChats: Bool, animated: Bool) async
     func burnAll() async
 }
 
@@ -39,7 +39,7 @@ struct FireHistoryBurner: HistoryBurning {
         self.fire = fire
     }
 
-    func burn(_ visits: [Visit], animated: Bool) async {
+    func burn(_ visits: [Visit], and burnChats: Bool, animated: Bool) async {
         guard !visits.isEmpty else {
             return
         }
@@ -51,6 +51,7 @@ struct FireHistoryBurner: HistoryBurning {
                                         isToday: animated,
                                         closeWindows: false,
                                         clearSiteData: true,
+                                        clearChatHistory: burnChats,
                                         urlToOpenIfWindowsAreClosed: .history) {
                     continuation.resume()
                 }

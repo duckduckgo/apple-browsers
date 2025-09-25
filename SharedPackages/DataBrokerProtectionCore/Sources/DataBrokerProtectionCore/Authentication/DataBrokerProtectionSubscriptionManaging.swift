@@ -36,7 +36,7 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
     let isAuthV2Enabled: Bool
 
     public func accessToken() async -> String? {
-        // We use a staging token for privacy pro supplied through a github secret/action
+        // We use a staging token for DuckDuckGo subscription supplied through a github secret/action
         // for PIR end to end tests. This is also stored in bitwarden if you want to run
         // the tests locally
 

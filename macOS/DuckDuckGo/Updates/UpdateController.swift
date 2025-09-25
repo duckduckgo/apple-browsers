@@ -86,16 +86,16 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         let build: String
         let date: Date
         let releaseNotes: [String]
-        let releaseNotesPrivacyPro: [String]
+        let releaseNotesSubscription: [String]
         let isCritical: Bool
 
         init(from item: SUAppcastItem) {
             self.version = item.displayVersionString
             self.build = item.versionString
             self.date = item.date ?? Date()
-            let (notes, notesPro) = ReleaseNotesParser.parseReleaseNotes(from: item.itemDescription)
+            let (notes, notesSubscription) = ReleaseNotesParser.parseReleaseNotes(from: item.itemDescription)
             self.releaseNotes = notes
-            self.releaseNotesPrivacyPro = notesPro
+            self.releaseNotesSubscription = notesSubscription
             self.isCritical = item.isCriticalUpdate
         }
     }

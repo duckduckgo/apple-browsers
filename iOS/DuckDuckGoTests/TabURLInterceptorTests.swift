@@ -51,7 +51,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         XCTAssertTrue(urlInterceptor.allowsNavigatingTo(url: url))
     }
     
-    func testNotificationForInterceptedPrivacyProPath() {
+    func testNotificationForInterceptedSubscriptionPath() {
         _ = self.expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
 
         let url = URL(string: "https://duckduckgo.com/pro")!
@@ -67,7 +67,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         }
     }
 
-    func testWhenURLIsPrivacyProAndHasOriginQueryParameterThenNotificationUserInfoHasOriginSet() throws {
+    func testWhenURLIsSubscriptionAndHasOriginQueryParameterThenNotificationUserInfoHasOriginSet() throws {
         // GIVEN
         var capturedNotification: Notification?
         _ = self.expectation(forNotification: .urlInterceptSubscription, object: nil, handler: { notification in
@@ -86,7 +86,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         XCTAssertEqual(originQueryItem.value, "test_origin")
     }
 
-    func testWhenURLIsPrivacyProAndDoesNotHaveOriginQueryParameterThenNotificationUserInfoDoesNotHaveOriginSet() throws {
+    func testWhenURLIsSubscriptionAndDoesNotHaveOriginQueryParameterThenNotificationUserInfoDoesNotHaveOriginSet() throws {
         // GIVEN
         var capturedNotification: Notification?
         _ = self.expectation(forNotification: .urlInterceptSubscription, object: nil, handler: { notification in

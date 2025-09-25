@@ -140,7 +140,7 @@ struct SubscriptionRestoreView: View {
                         image: Image(uiImage: DesignSystemImages.Glyphs.Size16.email),
                         buttonTitle: UserText.subscriptionActivateViaEmailButton,
                         buttonAction: {
-            DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseEmailStart,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseEmailStart,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             viewModel.showActivationFlow(true)
         })

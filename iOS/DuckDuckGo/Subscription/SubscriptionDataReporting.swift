@@ -155,7 +155,7 @@ final class SubscriptionDataReporter: SubscriptionDataReporting {
         tabsModel = model
     }
 
-    /// Collect a randomized subset of parameters iff the Privacy Pro impression/conversion pixels
+    /// Collect a randomized subset of parameters iff the Subscription impression/conversion pixels
     /// or the Origin Attribution subscription pixel are being fired
     func randomizedParameters(for useCase: SubscriptionDataReportingUseCase) -> [String: String] {
         switch useCase {

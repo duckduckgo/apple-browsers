@@ -99,7 +99,7 @@ private struct FeedbackFormBodyView: View {
             case .selectFeature, nil:
                 EmptyView()
             case .subscription:
-                CategoryPicker(options: PrivacyProFeedbackSubcategory.allCases, selection: $viewModel.selectedSubcategory) {
+                CategoryPicker(options: SubscriptionFeedbackSubcategory.allCases, selection: $viewModel.selectedSubcategory) {
                     issueDescriptionView()
                 }
             case .vpn:

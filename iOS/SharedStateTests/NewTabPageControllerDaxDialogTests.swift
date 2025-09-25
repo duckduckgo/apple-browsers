@@ -161,13 +161,13 @@ class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProvider {
 }
 
 
-class MockNewTabDialogSpecProvider: NewTabDialogSpecProvider, PrivacyProPromotionCoordinating {
+class MockNewTabDialogSpecProvider: NewTabDialogSpecProvider, SubscriptionPromotionCoordinating {
     var nextHomeScreenMessageCalled = false
     var nextHomeScreenMessageNewCalled = false
     var dismissCalled = false
     var specToReturn: DaxDialogs.HomeScreenSpec?
-    var isShowingPrivacyProPromotion = false
-    var privacyProPromotionDialogSeen = false
+    var isShowingSubscriptionPromotion = false
+    var subscriptionPromotionDialogSeen = false
 
     func nextHomeScreenMessage() -> DaxDialogs.HomeScreenSpec? {
         nextHomeScreenMessageCalled = true

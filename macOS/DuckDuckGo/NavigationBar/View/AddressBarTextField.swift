@@ -653,7 +653,7 @@ final class AddressBarTextField: NSTextField {
 
     @objc func pasteAndGo(_ menuItem: NSMenuItem) {
         guard let pasteboardString = NSPasteboard.general.string(forType: .string)?.trimmingWhitespace(),
-              let url = URL(trimmedAddressBarString: pasteboardString) else {
+              let url = URL(trimmedAddressBarString: pasteboardString, useUnifiedLogic: Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)) else {
             assertionFailure("Pasteboard doesn't contain URL")
             return
         }
@@ -754,7 +754,8 @@ extension AddressBarTextField {
         case suggestion(_ suggestionViewModel: SuggestionViewModel)
 
         init(stringValue: String, userTyped: Bool, isSearch: Bool = false) {
-            if let url = URL(trimmedAddressBarString: stringValue), url.isValid {
+            let shouldUseUnifiedLogic = Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)
+            if let url = URL(trimmedAddressBarString: stringValue, useUnifiedLogic: shouldUseUnifiedLogic), url.isValid || shouldUseUnifiedLogic {
                 var stringValue = stringValue
                 // display punycoded url in readable form when editing
                 if !userTyped,
@@ -1211,7 +1212,7 @@ private extension NSMenuItem {
     static func makePasteAndGoMenuItem() -> NSMenuItem? {
         if let trimmedPasteboardString = NSPasteboard.general.string(forType: .string)?.trimmingWhitespace(),
            trimmedPasteboardString.count > 0 {
-            if URL(trimmedAddressBarString: trimmedPasteboardString) != nil {
+            if URL(trimmedAddressBarString: trimmedPasteboardString, useUnifiedLogic: Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)) != nil {
                 return Self.pasteAndGoMenuItem
             } else {
                 return Self.pasteAndSearchMenuItem

@@ -2861,6 +2861,8 @@
 		B313C0502E1FD91200C34AE6 /* AutoconsentPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B313C04E2E1FD91200C34AE6 /* AutoconsentPixels.swift */; };
 		B541A3542E858041004AEAAD /* ThemeColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B541A3532E858041004AEAAD /* ThemeColors.swift */; };
 		B541A3552E858041004AEAAD /* ThemeColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B541A3532E858041004AEAAD /* ThemeColors.swift */; };
+		B541A3572E85826E004AEAAD /* ThemeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B541A3562E85826E004AEAAD /* ThemeManagerTests.swift */; };
+		B541A3582E85826E004AEAAD /* ThemeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B541A3562E85826E004AEAAD /* ThemeManagerTests.swift */; };
 		B55C8F742E81A8730024B421 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B55C8F732E81A8730024B421 /* ThemeManager.swift */; };
 		B55C8F752E81A8730024B421 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B55C8F732E81A8730024B421 /* ThemeManager.swift */; };
 		B5AE99532E84A5D900F45912 /* ThemeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5AE99522E84A5D900F45912 /* ThemeName.swift */; };
@@ -5358,6 +5360,7 @@
 		B31055C327A1BA1D001AC618 /* autoconsent-bundle.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "autoconsent-bundle.js"; sourceTree = "<group>"; };
 		B313C04E2E1FD91200C34AE6 /* AutoconsentPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentPixels.swift; sourceTree = "<group>"; };
 		B541A3532E858041004AEAAD /* ThemeColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeColors.swift; sourceTree = "<group>"; };
+		B541A3562E85826E004AEAAD /* ThemeManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManagerTests.swift; sourceTree = "<group>"; };
 		B55C8F732E81A8730024B421 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		B5AE99522E84A5D900F45912 /* ThemeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeName.swift; sourceTree = "<group>"; };
 		B602E7CE2A93A5FF00F12201 /* WKBackForwardListExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKBackForwardListExtension.swift; sourceTree = "<group>"; };
@@ -10887,6 +10890,7 @@
 		BBC0001C2DF743CC0003E9F5 /* VisualRefresh */ = {
 			isa = PBXGroup;
 			children = (
+				B541A3562E85826E004AEAAD /* ThemeManagerTests.swift */,
 			);
 			path = VisualRefresh;
 			sourceTree = "<group>";
@@ -14300,6 +14304,7 @@
 				56A214B02CB583BF00E5BC0E /* TrackerMessageProviderTests.swift in Sources */,
 				3706FE82293F661700E42796 /* MockStatisticsStore.swift in Sources */,
 				9FBD84712BB3DD8400220859 /* MockAttributionsPixelHandler.swift in Sources */,
+				B541A3582E85826E004AEAAD /* ThemeManagerTests.swift in Sources */,
 				3706FE83293F661700E42796 /* AutofillPreferencesModelTests.swift in Sources */,
 				3706FE84293F661700E42796 /* TabCollectionViewModelTests+PinnedTabs.swift in Sources */,
 				B603975229C1FFAD00902A34 /* ExpectedNavigationExtension.swift in Sources */,
@@ -16204,6 +16209,7 @@
 				4B70C00227B0793D000386ED /* CrashReportTests.swift in Sources */,
 				B6656E0D2B29C733008798A1 /* FileImportViewLocalizationTests.swift in Sources */,
 				37D23787287F5C2900BCE03B /* PinnedTabsViewModelTests.swift in Sources */,
+				B541A3572E85826E004AEAAD /* ThemeManagerTests.swift in Sources */,
 				4B9DB0542A983B55000927DB /* MockWaitlistStorage.swift in Sources */,
 				4BF4EA5027C71F26004E57C4 /* PasswordManagementListSectionTests.swift in Sources */,
 				AA7E9176286DB05D00AB6B62 /* RecentlyClosedCoordinatorMock.swift in Sources */,

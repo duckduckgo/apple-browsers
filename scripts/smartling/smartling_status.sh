@@ -18,7 +18,7 @@ fi
 
 if [ -z "$PLATFORM" ]; then
 	echo "Error: Platform is required"
-    echo "Usage: $0 <job-id> <platform> [message-file]"
+	echo "Usage: $0 <job-id> <platform> [message-file]"
 	exit 1
 fi
 
@@ -38,8 +38,8 @@ if [ "${status_failed:-0}" = "0" ]; then
 	echo "STATUS=$status"
 	echo "PERCENT=$percent"
 	
-    # Generate status message
-    ./scripts/smartling/smartling_messages.sh status "$OUTPUT_FILE" "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" "$status" "$percent"
+	# Generate status message
+	./scripts/smartling/smartling_messages.sh status "$OUTPUT_FILE" "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" "$status" "$percent"
 	echo "✅ Status check complete"
 	exit 0
 else

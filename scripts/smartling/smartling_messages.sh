@@ -30,6 +30,7 @@ generate_upload_message() {
 	local job_id="$2"
 	local project_id="$3"
 	local result="${4:-success}"
+	local workflow_url="${WORKFLOW_URL:-}"
 
 	if [ "$result" = "success" ]; then
 		cat > "$OUTPUT_FILE" <<- EOF
@@ -39,6 +40,8 @@ generate_upload_message() {
 		**Platform:** $platform
 
 		🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
+
+		${workflow_url:+🔧 **[View Workflow Run]($workflow_url)**}
 
 		**Next:** 
 		* Review translation job
@@ -50,6 +53,8 @@ generate_upload_message() {
 
 		**Platform:** $platform
 		**Error:** Upload failed - check workflow logs
+
+		${workflow_url:+🔧 **[View Workflow Run]($workflow_url)**}
 
 		**Next steps:**
 		1. Check that export files exist by running the export locally
@@ -65,6 +70,7 @@ generate_status_message() {
 	local project_id="$3"
 	local status="$4"
 	local percent="$5"
+	local workflow_url="${WORKFLOW_URL:-}"
 
 	# Choose emoji based on status
 	local emoji="🔄"
@@ -83,6 +89,7 @@ generate_status_message() {
 	**Progress:** $percent%
 
 	🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
+	${workflow_url:+\n  🔧 **[View Workflow Run]($workflow_url)**}
 	EOF
 
 	# Add download suggestion if completed
@@ -102,6 +109,7 @@ generate_approve_message() {
 	local job_id="$2"
 	local project_id="$3"
 	local result="${4:-success}"
+	local workflow_url="${WORKFLOW_URL:-}"
 
 	if [ "$result" = "success" ]; then
 		cat > "$OUTPUT_FILE" <<- EOF
@@ -113,6 +121,8 @@ generate_approve_message() {
 		Translation has been authorized and is now in progress.
 
 		🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
+
+		${workflow_url:+🔧 **[View Workflow Run]($workflow_url)**}
 
 		**Next:** Check status with:
 		• Platform: \`$platform\`
@@ -129,6 +139,8 @@ generate_approve_message() {
 
 		🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
 
+		${workflow_url:+🔧 **[View Workflow Run]($workflow_url)**}
+
 		**Next steps:**
 		• Verify the job ID is correct
 		• Check if job has content to translate
@@ -142,6 +154,7 @@ generate_download_message() {
 	local project_id="$3"
 	local result="${4:-success}"
 	local extra_param="${5:-}"
+	local workflow_url="${WORKFLOW_URL:-}"
 
 	case "$result" in
 		"success")
@@ -152,6 +165,8 @@ generate_download_message() {
 			**Platform:** $platform
 
 			🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
+
+			${workflow_url:+🔧 **[View Workflow Run]($workflow_url)**}
 
 			Translations have been imported and committed to this branch.
 			EOF
@@ -164,6 +179,8 @@ generate_download_message() {
 			**Platform:** $platform
 
 			🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
+
+			${workflow_url:+🔧 **[View Workflow Run]($workflow_url)**}
 
 			No changes were found to import.
 			EOF
@@ -184,6 +201,8 @@ generate_download_message() {
 			**Platform:** $platform
 
 			🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
+
+			${workflow_url:+🔧 **[View Workflow Run]($workflow_url)**}
 
 			⚠️ **Translations contain deletions or significant changes** that could result in data loss.
 
@@ -211,6 +230,8 @@ generate_download_message() {
 
 				🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
 
+				${workflow_url:+🔧 **[View Workflow Run]($workflow_url)**}
+
 				**Next steps:**
 				1. **Option A:** Merge main into your branch and create a new translation job
 				2. **Option B:** Review the changes manually to ensure they are correct
@@ -224,6 +245,8 @@ generate_download_message() {
 				**Error:** Download failed - check workflow logs
 
 				🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
+
+				${workflow_url:+🔧 **[View Workflow Run]($workflow_url)**}
 
 				**Next steps:**
 				• Verify the job ID is correct

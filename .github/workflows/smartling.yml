@@ -119,6 +119,7 @@ jobs:
           echo "PLATFORM=${{ steps.params.outputs.platform || steps.parse_comment.outputs.platform }}" >> $GITHUB_ENV
           echo "JOB_ID=${{ steps.params.outputs.job_id || steps.parse_comment.outputs.job_id }}" >> $GITHUB_ENV
           echo "BRANCH=${{ steps.params.outputs.branch }}" >> $GITHUB_ENV
+          echo "WORKFLOW_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}" >> $GITHUB_ENV
 
       - name: Set Smartling credentials
         if: ${{ env.PLATFORM == 'iOS' || env.PLATFORM == 'macOS' }}

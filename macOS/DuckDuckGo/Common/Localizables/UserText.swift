@@ -440,7 +440,13 @@ struct UserText {
     static let fireInfoDialogDescription = NSLocalizedString("fire.info.dialog.description", value: "Data, browsing history, and cookies can build up in your browser over time. Use the Fire Button to clear it all away.", comment: "Description in the dialog that explains the Fire feature.")
     static let fireDialogFireWindowTitle = NSLocalizedString("fire.dialog.fire-window.title", value: "Open New Fire Window", comment: "Title of the part of the dialog where the user can open a fire window.")
     static let fireDialogFireWindowDescription = NSLocalizedString("fire.dialog.fire-window.description", value: "An isolated window that doesn’t save any data", comment: "Explanation of what a fire window is.")
-    static let fireDialogCloseTabs = NSLocalizedString("fire.dialog.fire-window.close-tabs", value: "Close Tabs and Clear Data", comment: "Title of the dialog where the user can close browser tabs and clear data.")
+    public static func fireDialogCloseTabs(includeChats: Bool) -> String {
+        if includeChats {
+            return "Close Tabs and Clear Data and Chats"
+        } else {
+            return NSLocalizedString("fire.dialog.fire-window.close-tabs", value: "Close Tabs and Clear Data", comment: "Title of the dialog where the user can close browser tabs and clear data.")
+        }
+    }
     static let fireDialogBurnWindowButton = NSLocalizedString("fire.dialog.close-burner-window", value: "Close and Burn This Window", comment: "Button that allows the user to close and burn the browser burner window")
     static let allData = NSLocalizedString("fire.all-sites", value: "All sites", comment: "Configuration option for fire button")
     static let currentTab = NSLocalizedString("fire.currentTab", value: "All sites visited in current tab", comment: "Configuration option for fire button")
@@ -448,10 +454,15 @@ struct UserText {
     static let allDataDescription = NSLocalizedString("fire.all-data.description", value: "Clear all tabs and related site data", comment: "Description of the 'All Data' configuration option for the fire button")
     static let currentWindowDescription = NSLocalizedString("fire.current-window.description", value: "Clear current window and related site data", comment: "Description of the 'Current Window' configuration option for the fire button")
     static let selectSiteToClear = NSLocalizedString("fire.select-site-to-clear", value: "Select a site to clear its data.", comment: "Info label in the fire button popover")
-    static func activeTabsInfo(tabs: Int, sites: Int) -> String {
-        let localized = NSLocalizedString("fire.active-tabs-info",
+    static func activeTabsInfo(tabs: Int, sites: Int, includeChats: Bool) -> String {
+        let localized: String
+        if includeChats {
+            localized = "Close active tabs (%d) and clear all browsing history and cookies (sites: %d), and clear Duck.ai chat history."
+        } else {
+            localized = NSLocalizedString("fire.active-tabs-info",
                                           value: "Close active tabs (%d) and clear all browsing history and cookies (sites: %d).",
                                           comment: "Info in the Fire Button popover")
+        }
         return String(format: localized, tabs, sites)
     }
     static func oneTabInfo(sites: Int) -> String {

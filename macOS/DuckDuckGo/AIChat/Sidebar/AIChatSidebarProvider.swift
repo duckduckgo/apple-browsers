@@ -106,7 +106,7 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
         }
 
         let sidebarViewController = AIChatSidebarViewController(currentAIChatURL: sidebar.currentAIChatURL, burnerMode: burnerMode)
-        if let restorationData = sidebar.mostRecentRestorationData {
+        if let restorationData = sidebar.restorationData {
             sidebarViewController.setAIChatRestorationData(restorationData)
         }
         sidebar.sidebarViewController = sidebarViewController
@@ -119,8 +119,8 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
         var currentSidebar = sidebarsByTab[tabID]
 
         if let existingSidebar = currentSidebar,
-           let dateHidden = existingSidebar.dateHidden,
-           dateHidden.minutesSinceNow() > aiChatRemoteSettings.sessionTimeoutMinutes {
+           let hiddenAt = existingSidebar.hiddenAt,
+           hiddenAt.minutesSinceNow() > aiChatRemoteSettings.sessionTimeoutMinutes {
             // If the sidebar was hidden past the session timeout setting unload it and create a new one
             existingSidebar.unloadViewController(persistingState: shouldKeepSession)
             sidebarsByTab.removeValue(forKey: tabID)
@@ -138,7 +138,7 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
     }
 
     func isShowingSidebar(for tabID: TabIdentifier) -> Bool {
-        sidebarsByTab[tabID]?.isRevealed ?? false
+        sidebarsByTab[tabID]?.isPresented ?? false
     }
 
     func handleSidebarDidClose(for tabID: TabIdentifier) {

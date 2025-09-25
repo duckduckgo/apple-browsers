@@ -28,19 +28,19 @@ final class AIChatSidebar: NSObject {
 
     private let burnerMode: BurnerMode
 
-    /// The most recent AI chat URL that was active in the sidebar.
-    private(set)  var mostRecentAIChatURL: URL?
+    /// The AI chat URL that was active in the sidebar.
+    private(set)  var aiChatURL: URL?
 
-    /// The most recent AI chat restoration data that was active in the sidebar.
-    private(set) var mostRecentRestorationData: AIChatRestorationData?
+    /// The AI chat restoration data that was active in the sidebar.
+    private(set) var restorationData: AIChatRestorationData?
 
-    /// Indicates whether the sidebar is currently revealed/presented in the UI.
+    /// Indicates whether the sidebar is currently presented in the UI.
     /// This is separate from whether a view controller exists, as view controllers can be created
     /// during state restoration before the sidebar is actually shown.
-    private(set) var isRevealed: Bool = false
+    private(set) var isPresented: Bool = false
 
     /// The date when the sidebar was last hidden, if applicable.
-    private(set) var dateHidden: Date?
+    private(set) var hiddenAt: Date?
 
     /// The view controller that displays the sidebar contents.
     /// This property is set by the AIChatSidebarProvider when the view controller is created.
@@ -52,7 +52,7 @@ final class AIChatSidebar: NSObject {
             if let sidebarViewController {
                 return sidebarViewController.currentAIChatURL
             } else {
-                return mostRecentAIChatURL ?? initialAIChatURL
+                return aiChatURL ?? initialAIChatURL
             }
         }
     }
@@ -66,18 +66,18 @@ final class AIChatSidebar: NSObject {
         self.burnerMode = burnerMode
     }
 
-    /// Marks the sidebar as revealed/presented in the UI.
+    /// Marks the sidebar as presented in the UI.
     /// Call this when the sidebar is actually shown to the user.
     public func setRevealed() {
-        isRevealed = true
-        dateHidden = nil
+        isPresented = true
+        hiddenAt = nil
     }
 
     /// Marks the sidebar as hidden/not presented in the UI.
     /// Call this when the sidebar is hidden from the user.
     public func setHidden(at date: Date = Date()) {
-        isRevealed = false
-        dateHidden = date
+        isPresented = false
+        hiddenAt = date
     }
 
     /// Unloads the sidebar view controller after reading and updating the current AI chat URL and restoration data.
@@ -86,9 +86,9 @@ final class AIChatSidebar: NSObject {
     public func unloadViewController(persistingState: Bool) {
         if let sidebarViewController {
             if persistingState {
-                mostRecentAIChatURL = sidebarViewController.currentAIChatURL
+                aiChatURL = sidebarViewController.currentAIChatURL
                 if let restorationData = sidebarViewController.currentAIChatRestorationData {
-                    mostRecentRestorationData = restorationData
+                    self.restorationData = restorationData
                 }
             }
             sidebarViewController.stopLoading()
@@ -106,18 +106,18 @@ extension AIChatSidebar: NSSecureCoding {
 
     private enum CodingKeys {
         static let initialAIChatURL = "initialAIChatURL"
-        static let isRevealed = "isRevealed"
+        static let isPresented = "isPresented"
     }
 
     convenience init?(coder: NSCoder) {
         let initialAIChatURL = coder.decodeObject(of: NSURL.self, forKey: CodingKeys.initialAIChatURL) as URL?
         self.init(initialAIChatURL: initialAIChatURL, burnerMode: .regular)
-        self.isRevealed = coder.decodeIfPresent(at: CodingKeys.isRevealed) ?? true
+        self.isPresented = coder.decodeIfPresent(at: CodingKeys.isPresented) ?? true
     }
 
     func encode(with coder: NSCoder) {
         coder.encode(currentAIChatURL as NSURL, forKey: CodingKeys.initialAIChatURL)
-        coder.encode(isRevealed, forKey: CodingKeys.isRevealed)
+        coder.encode(isPresented, forKey: CodingKeys.isPresented)
     }
 
     static var supportsSecureCoding: Bool {

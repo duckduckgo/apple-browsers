@@ -226,7 +226,7 @@ final class AIChatSidebarProviderTests: XCTestCase {
         XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID])
         XCTAssertFalse(keepSessionProvider.isShowingSidebar(for: tabID))
         XCTAssertNil(keepSessionProvider.sidebarsByTab[tabID]?.sidebarViewController)
-        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID]?.dateHidden)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID]?.hiddenAt)
     }
 
     func testHandleSidebarDidClose_withKeepSessionDisabled_removesSidebarData() {
@@ -419,9 +419,9 @@ final class AIChatSidebarProviderTests: XCTestCase {
         // Simulate the sidebar being hidden and closed
         keepSessionProvider.handleSidebarDidClose(for: tabID)
         XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID])
-        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID]?.dateHidden)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID]?.hiddenAt)
 
-        // Manually set the dateHidden to simulate a very old session (more than 60 minutes ago)
+        // Manually set the hiddenAt to simulate a very old session (more than 60 minutes ago)
         let oldDate = Date().addingTimeInterval(-4000) // ~67 minutes ago, exceeds default 60 minute timeout
         keepSessionProvider.sidebarsByTab[tabID]?.setHidden(at: oldDate)
 
@@ -431,8 +431,8 @@ final class AIChatSidebarProviderTests: XCTestCase {
         // Then - Should have created a fresh sidebar since the session expired
         XCTAssertNotNil(newViewController)
         XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID])
-        // The dateHidden should be nil for a fresh sidebar
-        XCTAssertNil(keepSessionProvider.sidebarsByTab[tabID]?.dateHidden)
+        // The hiddenAt should be nil for a fresh sidebar
+        XCTAssertNil(keepSessionProvider.sidebarsByTab[tabID]?.hiddenAt)
     }
 
     func testMakeSidebarViewController_withValidSession_returnsExistingSidebar() {
@@ -448,9 +448,9 @@ final class AIChatSidebarProviderTests: XCTestCase {
         // Simulate the sidebar being hidden and closed recently
         keepSessionProvider.handleSidebarDidClose(for: tabID)
         XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID])
-        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID]?.dateHidden)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID]?.hiddenAt)
 
-        // Manually set the dateHidden to simulate a recent session (within timeout)
+        // Manually set the hiddenAt to simulate a recent session (within timeout)
         let recentDate = Date().addingTimeInterval(-1800) // 30 minutes ago, within default 60 minute timeout
         keepSessionProvider.sidebarsByTab[tabID]?.setHidden(at: recentDate)
 
@@ -460,8 +460,8 @@ final class AIChatSidebarProviderTests: XCTestCase {
         // Then - Should reuse the existing sidebar since session is still valid
         XCTAssertNotNil(newViewController)
         XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID])
-        // The dateHidden should still be the recent date (session not expired)
-        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID]?.dateHidden)
+        // The hiddenAt should still be the recent date (session not expired)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID]?.hiddenAt)
     }
 
     // MARK: - State Management Tests
@@ -477,7 +477,7 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
         // Then
         XCTAssertTrue(provider.isShowingSidebar(for: tabID))
-        XCTAssertNil(provider.sidebarsByTab[tabID]?.dateHidden) // dateHidden should be cleared
+        XCTAssertNil(provider.sidebarsByTab[tabID]?.hiddenAt) // hiddenAt should be cleared
     }
 
     func testSetHidden_updatesIsRevealedState() {
@@ -492,7 +492,7 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
         // Then
         XCTAssertFalse(provider.isShowingSidebar(for: tabID))
-        XCTAssertNotNil(provider.sidebarsByTab[tabID]?.dateHidden) // dateHidden should be set
+        XCTAssertNotNil(provider.sidebarsByTab[tabID]?.hiddenAt) // hiddenAt should be set
     }
 
 }

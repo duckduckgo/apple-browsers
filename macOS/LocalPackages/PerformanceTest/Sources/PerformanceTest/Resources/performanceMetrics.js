@@ -56,10 +56,11 @@ function collectPerformanceMetrics() {
                 largestContentfulPaint: largestContentfulPaint,
 
                 // Network metrics (both naming conventions for compatibility)
-                ttfb: navigation.responseStart - navigation.fetchStart,
-                timeToFirstByte: navigation.responseStart - navigation.fetchStart,
+                // Safari WebDriver doesn't provide fetchStart/requestStart properly, so these will be 0
+                ttfb: (navigation.responseStart - navigation.fetchStart) || 'N/A',
+                timeToFirstByte: (navigation.responseStart - navigation.fetchStart) || 'N/A',
                 responseTime: navigation.responseEnd - navigation.responseStart,
-                serverTime: navigation.responseStart - navigation.requestStart,
+                serverTime: (navigation.responseStart - navigation.requestStart) || 'N/A',
 
                 // Size metrics (in bytes)
                 transferSize: navigation.transferSize || 0,
@@ -74,7 +75,7 @@ function collectPerformanceMetrics() {
                 tti: navigation.domInteractive - navigation.fetchStart,
 
                 // Additional metadata
-                protocol: navigation.nextHopProtocol || 'unknown',
+                protocol: navigation.nextHopProtocol || 'N/A',
                 redirectCount: navigation.redirectCount || 0,
                 navigationType: navigation.type || 'navigate'
             };

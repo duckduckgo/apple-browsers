@@ -134,41 +134,34 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.metricReportingHandler = metricHandler
     }
 
-    /// Handle openKeyboard messages from content-scope-scripts
-    /// This is a notify-type handler that focuses a specific element using a CSS selector
-    /// Following security guidelines, it validates and sanitizes the CSS selector
+    // Workaround for WKWebView: see https://app.asana.com/1/137249556945/task/1211361207345641/comment/1211365575147531?focus=true
     func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable? {
         Logger.aiChat.debug("openKeyboard received")
 
-        // Validate input parameters following security guidelines
         guard let paramsDict = params as? [String: Any] else {
             Logger.aiChat.error("Invalid params format for openKeyboard")
             return nil
         }
 
-        // Extract CSS selector with validation
         guard let cssSelector = paramsDict["selector"] as? String,
               !cssSelector.isEmpty else {
             Logger.aiChat.error("Missing or empty CSS selector for openKeyboard")
             return nil
         }
 
-        // Sanitize CSS selector to prevent JavaScript injection
+        // Sanitize CSS selector to prevent XSS
         let sanitizedSelector = sanitizeCSSSelector(cssSelector)
-
-        // Validate that the sanitized selector is safe to use
         guard !sanitizedSelector.isEmpty else {
             Logger.aiChat.error("CSS selector failed validation for openKeyboard")
             return nil
         }
 
-        // Get the webView from the parameter
         guard let webView = webView else {
             Logger.aiChat.error("WebView not available for openKeyboard")
             return nil
         }
 
-        // Workaround for WKWebView: bring up the keyboard and scroll to the bottom of the page without an explicit user gesture
+        // Bring up the keyboard and scroll to the bottom of the page without an explicit user gesture
         DispatchQueue.main.async {
             let javascript = """
             (function() {
@@ -193,14 +186,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             }
         }
 
-        // Notify-type handlers return nil (no response needed)
         return nil
     }
 
     // MARK: - Private Helper Methods
 
-    /// Sanitize CSS selector to prevent JavaScript injection
-    /// Following security guidelines to validate all external inputs
     private func sanitizeCSSSelector(_ selector: String) -> String {
         // Remove any potentially dangerous characters that could be used for injection
         let allowedCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_#.[]():,>+~*= \"")

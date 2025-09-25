@@ -84,6 +84,10 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
         $sidebarsByTab.dropFirst().eraseToAnyPublisher()
     }
 
+    private var shouldKeepSession: Bool {
+        featureFlagger.isFeatureOn(.aiChatKeepSession)
+    }
+
     init(sidebarsByTab: AIChatSidebarsByTab? = nil,
          featureFlagger: FeatureFlagger) {
         self.sidebarsByTab = sidebarsByTab ?? [:]
@@ -118,7 +122,7 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
            let dateHidden = existingSidebar.dateHidden,
            dateHidden.minutesSinceNow() > aiChatRemoteSettings.sessionTimeoutMinutes {
             // If the sidebar was hidden past the session timeout setting unload it and create a new one
-            existingSidebar.unloadViewController()
+            existingSidebar.unloadViewController(persistingState: shouldKeepSession)
             sidebarsByTab.removeValue(forKey: tabID)
 
             currentSidebar = nil
@@ -138,10 +142,10 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
     }
 
     func handleSidebarDidClose(for tabID: TabIdentifier) {
-        sidebarsByTab[tabID]?.unloadViewController() // This already calls setHidden() internally
+        sidebarsByTab[tabID]?.unloadViewController(persistingState: shouldKeepSession) // This already calls setHidden() internally
 
-        // Before rolling out improvements retain old logic to forget AIChat when sidebar is closed
-        if !featureFlagger.isFeatureOn(for: FeatureFlag.aiChatImprovements) {
+        // If keep session is disables always remove sidebar data model
+        if !shouldKeepSession {
             sidebarsByTab.removeValue(forKey: tabID)
         }
     }

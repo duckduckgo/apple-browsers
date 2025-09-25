@@ -52,7 +52,8 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .aiChatTextTranslation,
                 .aiChatPageContext,
                 .duckAISearchParameter,
-                .aiChatImprovements:
+                .aiChatImprovements,
+                .aiChatKeepSession:
             return .duckAI
         case .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage,

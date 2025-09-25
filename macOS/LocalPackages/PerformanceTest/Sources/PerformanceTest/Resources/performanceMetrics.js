@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-(function() {
+function collectPerformanceMetrics() {
     try {
         if (document.readyState !== 'complete') {
             return null;
@@ -84,4 +84,4 @@
     } catch (e) {
         return { error: 'JavaScript execution error: ' + e.message };
     }
-})();
+}

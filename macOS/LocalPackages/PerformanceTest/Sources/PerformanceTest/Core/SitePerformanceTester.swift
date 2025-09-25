@@ -201,7 +201,9 @@ public class SitePerformanceTester: NSObject {
         }
 
         do {
-            let result: Any? = try await webView.evaluateJavaScript(script)
+            // Load the function definition and then call it
+            let fullScript = script + "; collectPerformanceMetrics();"
+            let result: Any? = try await webView.evaluateJavaScript(fullScript)
             if let metrics = result as? [String: Any] {
                 logger.debug("Raw metrics collected: \(metrics)")
 

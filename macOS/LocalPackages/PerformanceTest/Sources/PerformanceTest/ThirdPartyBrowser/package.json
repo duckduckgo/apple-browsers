@@ -1,0 +1,15 @@
+{
+  "name": "safari-performance-test",
+  "version": "1.0.0",
+  "description": "Simplified Safari performance testing tool",
+  "main": "safari-performance-test.js",
+  "scripts": {
+    "test": "node safari-performance-test.js"
+  },
+  "dependencies": {
+    "selenium-webdriver": "^4.17.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

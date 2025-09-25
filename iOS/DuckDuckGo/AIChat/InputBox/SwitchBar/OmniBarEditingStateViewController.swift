@@ -59,7 +59,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private var cancellables = Set<AnyCancellable>()
 
     private var isUsingTopBarPosition: Bool {
-        AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top || !featureFlagger.isFeatureOn(.aiSearchBottomBarSupport)
+        appSettings.currentAddressBarPosition == .top || !featureFlagger.isFeatureOn(.aiSearchBottomBarSupport)
     }
     lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler, showsSeparator: !isUsingTopBarPosition)
 
@@ -67,6 +67,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private weak var contentContainerViewTrailingConstraint: NSLayoutConstraint?
 
     let featureFlagger: FeatureFlagger
+    let appSettings: AppSettings
 
     // MARK: - Manager Components
 
@@ -81,10 +82,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     internal init(switchBarHandler: any SwitchBarHandling,
                   switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
+                  appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
                   featureFlagger: FeatureFlagger) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.daxLogoManager = DaxLogoManager()
+        self.appSettings = appSettings
         self.featureFlagger = featureFlagger
 
         super.init(nibName: nil, bundle: nil)

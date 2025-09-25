@@ -168,13 +168,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return nil
         }
 
-        // Focus the element using the CSS selector on the main queue
+        // Workaround for WKWebView: bring up the keyboard and scroll to the bottom of the page without an explicit user gesture
         DispatchQueue.main.async {
             let javascript = """
             (function() {
                 try {
                     const element = document.querySelector('\(sanitizedSelector)');
-                    element?.focus?();
+                    element?.focus?.();
+                    setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 50);
                     return true;
                 } catch (error) {
                     console.error('Error focusing element:', error);

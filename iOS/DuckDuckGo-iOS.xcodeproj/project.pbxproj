@@ -1732,6 +1732,8 @@
 		F11595CD2E854C6200CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595CC2E854C6200CC0481 /* AttributedMetric */; };
 		F11595CF2E854C6C00CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595CE2E854C6C00CC0481 /* AttributedMetric */; };
 		F11595D12E854C7400CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D02E854C7400CC0481 /* AttributedMetric */; };
+		F11595D32E856FC400CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D22E856FC400CC0481 /* AttributedMetric */; };
+		F11595D52E856FCE00CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D42E856FCE00CC0481 /* AttributedMetric */; };
 		F130D73A1E5776C500C45811 /* OmniBarDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F130D7391E5776C500C45811 /* OmniBarDelegate.swift */; };
 		F132D6A52C62239B00D85426 /* SubscriptionSettingsHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F132D6A42C62239B00D85426 /* SubscriptionSettingsHeaderView.swift */; };
 		F1386BA41E6846C40062FC3C /* TabDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1386BA31E6846C40062FC3C /* TabDelegate.swift */; };
@@ -1810,7 +1812,6 @@
 		F1EFB0062C5B8B8E009AB44B /* StatusIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EFB0052C5B8B8E009AB44B /* StatusIndicatorView.swift */; };
 		F1F5337C1F26A9EF00D80D4F /* UserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F5337B1F26A9EF00D80D4F /* UserText.swift */; };
 		F1F533841F26ABAC00D80D4F /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = F1F533861F26ABAC00D80D4F /* Localizable.strings */; };
-		F1F76BB22E840353004E0AE6 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F1F76BB12E840353004E0AE6 /* AttributedMetric */; };
 		F1FDC9302BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FDC92F2BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift */; };
 		F1FDC9312BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FDC92F2BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift */; };
 		F1FDC9352BF51E41006B1435 /* VPNSettings+Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FDC9342BF51E41006B1435 /* VPNSettings+Environment.swift */; };
@@ -4141,7 +4142,7 @@
 				9F8FE9492BAE50E50071E372 /* Lottie in Frameworks */,
 				9F0727882E2F2967005894C8 /* SystemSettingsPiPTutorial in Frameworks */,
 				7BC26CA02DFC0CAC00E52480 /* VPN in Frameworks */,
-				F1F76BB22E840353004E0AE6 /* AttributedMetric in Frameworks */,
+				F11595D32E856FC400CC0481 /* AttributedMetric in Frameworks */,
 				316AC7872DC28DD1003D9770 /* UIComponents in Frameworks */,
 				4BC95E7D2D7416B2002FAB32 /* Onboarding in Frameworks */,
 				853273B624FFE0BB00E3C778 /* WidgetKit.framework in Frameworks */,
@@ -4326,6 +4327,7 @@
 				4BC95E992D74174F002FAB32 /* Suggestions in Frameworks */,
 				4BC95E8D2D741700002FAB32 /* DuckPlayer in Frameworks */,
 				C14882ED27F211A000D59F0C /* SwiftSoup in Frameworks */,
+				F11595D52E856FCE00CC0481 /* AttributedMetric in Frameworks */,
 				4BC95E8B2D7416F9002FAB32 /* DDGSync in Frameworks */,
 				4BC95E892D7416F2002FAB32 /* ContentBlocking in Frameworks */,
 				4BC95E852D7416E4002FAB32 /* Common in Frameworks */,
@@ -9129,7 +9131,7 @@
 				9FB6272D2E08251D00CBDEED /* SetDefaultBrowserUI */,
 				9F0727872E2F2967005894C8 /* SystemSettingsPiPTutorial */,
 				9F82BC1D2E20A51200943D44 /* MetricBuilder */,
-				F1F76BB12E840353004E0AE6 /* AttributedMetric */,
+				F11595D22E856FC400CC0481 /* AttributedMetric */,
 			);
 			productName = DuckDuckGo;
 			productReference = 84E341921E2F7EFB00BDBA6F /* DuckDuckGo.app */;
@@ -9439,6 +9441,7 @@
 				4BC95EA02D741767002FAB32 /* PixelKit */,
 				4BC95EA22D74176D002FAB32 /* PixelExperimentKit */,
 				857074D12E2A57F800099511 /* WKAbstractions */,
+				F11595D42E856FCE00CC0481 /* AttributedMetric */,
 			);
 			productName = Core;
 			productReference = F143C2E41E4A4CD400CFDE3A /* Core.framework */;
@@ -15102,14 +15105,18 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = AttributedMetric;
 		};
+		F11595D22E856FC400CC0481 /* AttributedMetric */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AttributedMetric;
+		};
+		F11595D42E856FCE00CC0481 /* AttributedMetric */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AttributedMetric;
+		};
 		F1D43AF92B99C1D300BAB743 /* BareBonesBrowserKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F1D43AF82B99C1D300BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */;
 			productName = BareBonesBrowserKit;
-		};
-		F1F76BB12E840353004E0AE6 /* AttributedMetric */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = AttributedMetric;
 		};
 		F486D31C2506980E002D07D7 /* Swifter */ = {
 			isa = XCSwiftPackageProductDependency;

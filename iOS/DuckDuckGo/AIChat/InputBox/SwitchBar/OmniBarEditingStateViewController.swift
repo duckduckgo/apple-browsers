@@ -51,7 +51,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
     var automaticallySelectsTextOnAppear = false
-    
+
     // MARK: - Core Components
     private lazy var contentContainerView = UIView()
 
@@ -63,6 +63,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private weak var contentContainerViewLeadingConstraint: NSLayoutConstraint?
     private weak var contentContainerViewTrailingConstraint: NSLayoutConstraint?
+
+    let featureFlagger: FeatureFlagger
 
     // MARK: - Manager Components
 
@@ -76,11 +78,13 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     // MARK: - Initialization
 
     internal init(switchBarHandler: any SwitchBarHandling,
-                  switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics()) {
+                  switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
+                  featureFlagger: FeatureFlagger) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.daxLogoManager = DaxLogoManager()
-        
+        self.featureFlagger = featureFlagger
+
         super.init(nibName: nil, bundle: nil)
     }
 

@@ -4,8 +4,6 @@
  * @module core/TestExecutor
  */
 
-const SafariCacheCleaner = require('../services/SafariCacheCleaner');
-
 /**
  * Executor for individual performance test iterations
  */
@@ -15,7 +13,6 @@ class TestExecutor {
         this.metricsCollector = metricsCollector;
         this.config = configuration;
         this.logger = logger;
-        this.cacheCleaner = new SafariCacheCleaner(logger.child('CacheCleaner'));
     }
 
     /**
@@ -31,7 +28,8 @@ class TestExecutor {
         try {
             executionLogger.debug('Starting test execution');
 
-            // Restart WebDriver session for complete cache clearing (new sandbox)
+            // Restart WebDriver session for complete cache clearing
+            // Each new session gets a fresh ephemeral sandbox with clean cache
             if (restartSession) {
                 executionLogger.debug('Restarting WebDriver session for clean cache');
 
@@ -44,7 +42,7 @@ class TestExecutor {
                 // Initialize new session (creates fresh sandbox with clean cache)
                 await this.webDriver.initialize();
 
-                executionLogger.debug('Fresh WebDriver session started');
+                executionLogger.debug('Fresh WebDriver session started with clean cache');
             }
 
             // Navigate to URL

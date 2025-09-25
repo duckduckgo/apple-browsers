@@ -28,7 +28,7 @@ final class AppearancePreferencesTests: XCTestCase {
         var model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(
                 showFullURL: false,
-                currentThemeName: ThemeName.systemDefault.rawValue,
+                themeAppearance: ThemeAppearance.systemDefault.rawValue,
                 favoritesDisplayMode: FavoritesDisplayMode.displayNative(.desktop).description,
                 isContinueSetUpVisible: true,
                 isFavoriteVisible: true,
@@ -43,7 +43,7 @@ final class AppearancePreferencesTests: XCTestCase {
         )
 
         XCTAssertEqual(model.showFullURL, false)
-        XCTAssertEqual(model.currentThemeName, ThemeName.systemDefault)
+        XCTAssertEqual(model.themeAppearance, ThemeAppearance.systemDefault)
         XCTAssertEqual(model.favoritesDisplayMode, .displayNative(.desktop))
         XCTAssertEqual(model.isFavoriteVisible, true)
         XCTAssertEqual(model.isProtectionsReportVisible, true)
@@ -56,7 +56,7 @@ final class AppearancePreferencesTests: XCTestCase {
         model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(
                 showFullURL: true,
-                currentThemeName: ThemeName.light.rawValue,
+                themeAppearance: ThemeAppearance.light.rawValue,
                 favoritesDisplayMode: FavoritesDisplayMode.displayUnified(native: .desktop).description,
                 isContinueSetUpVisible: false,
                 isFavoriteVisible: false,
@@ -71,7 +71,7 @@ final class AppearancePreferencesTests: XCTestCase {
             featureFlagger: MockFeatureFlagger()
         )
         XCTAssertEqual(model.showFullURL, true)
-        XCTAssertEqual(model.currentThemeName, ThemeName.light)
+        XCTAssertEqual(model.themeAppearance, ThemeAppearance.light)
         XCTAssertEqual(model.favoritesDisplayMode, .displayUnified(native: .desktop))
         XCTAssertEqual(model.isFavoriteVisible, false)
         XCTAssertEqual(model.isProtectionsReportVisible, false)
@@ -85,35 +85,35 @@ final class AppearancePreferencesTests: XCTestCase {
     func testWhenInitializedWithGarbageThenThemeIsSetToSystemDefault() throws {
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(
-                currentThemeName: "garbage"
+                themeAppearance: "garbage"
             ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger()
         )
 
-        XCTAssertEqual(model.currentThemeName, ThemeName.systemDefault)
+        XCTAssertEqual(model.themeAppearance, ThemeAppearance.systemDefault)
     }
 
-    func testThemeNameReturnsCorrectAppearanceObject() throws {
-        XCTAssertEqual(ThemeName.systemDefault.appearance, nil)
-        XCTAssertEqual(ThemeName.light.appearance, NSAppearance(named: .aqua))
-        XCTAssertEqual(ThemeName.dark.appearance, NSAppearance(named: .darkAqua))
+    func testThemeAppearanceReturnsCorrectAppearanceObject() throws {
+        XCTAssertEqual(ThemeAppearance.systemDefault.appearance, nil)
+        XCTAssertEqual(ThemeAppearance.light.appearance, NSAppearance(named: .aqua))
+        XCTAssertEqual(ThemeAppearance.dark.appearance, NSAppearance(named: .darkAqua))
     }
 
-    func testWhenThemeNameIsUpdatedThenApplicationAppearanceIsUpdated() throws {
+    func testWhenThemeAppearanceIsUpdatedThenApplicationAppearanceIsUpdated() throws {
         let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
 
-        model.currentThemeName = ThemeName.systemDefault
-        XCTAssertEqual(NSApp.appearance?.name, ThemeName.systemDefault.appearance?.name)
+        model.themeAppearance = ThemeAppearance.systemDefault
+        XCTAssertEqual(NSApp.appearance?.name, ThemeAppearance.systemDefault.appearance?.name)
 
-        model.currentThemeName = ThemeName.light
-        XCTAssertEqual(NSApp.appearance?.name, ThemeName.light.appearance?.name)
+        model.themeAppearance = ThemeAppearance.light
+        XCTAssertEqual(NSApp.appearance?.name, ThemeAppearance.light.appearance?.name)
 
-        model.currentThemeName = ThemeName.dark
-        XCTAssertEqual(NSApp.appearance?.name, ThemeName.dark.appearance?.name)
+        model.themeAppearance = ThemeAppearance.dark
+        XCTAssertEqual(NSApp.appearance?.name, ThemeAppearance.dark.appearance?.name)
 
-        model.currentThemeName = ThemeName.systemDefault
-        XCTAssertEqual(NSApp.appearance?.name, ThemeName.systemDefault.appearance?.name)
+        model.themeAppearance = ThemeAppearance.systemDefault
+        XCTAssertEqual(NSApp.appearance?.name, ThemeAppearance.systemDefault.appearance?.name)
     }
 
     func testWhenNewTabPreferencesAreUpdatedThenPersistedValuesAreUpdated() throws {
@@ -238,10 +238,10 @@ final class AppearancePreferencesTests: XCTestCase {
             featureFlagger: MockFeatureFlagger()
         )
 
-        model.currentThemeName = ThemeName.systemDefault
-        model.currentThemeName = ThemeName.light
-        model.currentThemeName = ThemeName.dark
-        model.currentThemeName = ThemeName.systemDefault
+        model.themeAppearance = ThemeAppearance.systemDefault
+        model.themeAppearance = ThemeAppearance.light
+        model.themeAppearance = ThemeAppearance.dark
+        model.themeAppearance = ThemeAppearance.systemDefault
 
         pixelFiringMock.expectedFireCalls = [
             .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),

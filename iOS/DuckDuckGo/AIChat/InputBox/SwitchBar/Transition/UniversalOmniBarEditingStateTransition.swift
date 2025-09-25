@@ -91,7 +91,7 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
 
         transitionContext.containerView.addSubview(toVC.view)
 
-        // Let the VC adjust to the initial size size of the textView
+        // Let the VC adjust to the initial size of the textView
         toVC.switchBarVC.view.layoutIfNeeded()
         let switchBarTextViewHeight = toVC.switchBarVC.textEntryViewController.view.frame.height
         let offsets = calculateOffsets(switchBarTextViewHeight: switchBarTextViewHeight)

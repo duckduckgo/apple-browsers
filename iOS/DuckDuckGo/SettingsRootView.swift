@@ -34,7 +34,7 @@ struct SettingsRootView: View {
     @State var deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection?
     @State var isShowingSubscribeFlow = false
 
-    private var settingPrivacyProRedirectURLComponents: URLComponents? {
+    private var settingSubscriptionRedirectURLComponents: URLComponents? {
         SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.appSettings.rawValue)
     }
 
@@ -61,7 +61,7 @@ struct SettingsRootView: View {
             }
         }
 
-        NavigationLink(destination: navigationDestinationView(for: .subscriptionFlow(redirectURLComponents: settingPrivacyProRedirectURLComponents)),
+        NavigationLink(destination: navigationDestinationView(for: .subscriptionFlow(redirectURLComponents: settingSubscriptionRedirectURLComponents)),
                        isActive: $isShowingSubscribeFlow) { EmptyView() }
 
         List {

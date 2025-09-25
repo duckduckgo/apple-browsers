@@ -405,8 +405,14 @@ final class AIChatSidebarPresenterTests: XCTestCase {
 
         // Then
         waitForExpectations(timeout: 3)
-        XCTAssertTrue(mockAIChatTabOpener.openNewAIChatTabCalled)
+        XCTAssertTrue(mockAIChatTabOpener.openAIChatTabCalled)
         XCTAssertEqual(mockAIChatTabOpener.lastURL, testURL)
+        // Verify it was called with .url content type
+        if case .url(let url) = mockAIChatTabOpener.lastTrigger {
+            XCTAssertEqual(url, testURL)
+        } else {
+            XCTFail("Expected .url content type")
+        }
     }
 
     func testDidClickOpenInNewTabButton_withRestorationData() {
@@ -420,8 +426,14 @@ final class AIChatSidebarPresenterTests: XCTestCase {
 
         // Then
         waitForExpectations(timeout: 3)
-        XCTAssertTrue(mockAIChatTabOpener.openNewAIChatTabWithRestorationDataCalled)
+        XCTAssertTrue(mockAIChatTabOpener.openAIChatTabCalled)
         XCTAssertEqual(mockAIChatTabOpener.lastRestorationData, restorationData)
+        // Verify it was called with .restoration content type
+        if case .restoration(let data) = mockAIChatTabOpener.lastTrigger {
+            XCTAssertEqual(data, restorationData)
+        } else {
+            XCTFail("Expected .restoration content type")
+        }
     }
 
     func testDidClickCloseButton_firesPixelAndTogglesSidebar() {
@@ -464,7 +476,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         NotificationCenter.default.post(notification)
 
         // Then
-        XCTAssertFalse(mockAIChatTabOpener.openNewAIChatTabWithPayloadCalled)
+        XCTAssertFalse(mockAIChatTabOpener.openAIChatTabCalled)
     }
 
     func testHandleAIChatHandoff_notInKeyWindow_doesNothing() {
@@ -480,7 +492,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         NotificationCenter.default.post(notification)
 
         // Then
-        XCTAssertFalse(mockAIChatTabOpener.openNewAIChatTabWithPayloadCalled)
+        XCTAssertFalse(mockAIChatTabOpener.openAIChatTabCalled)
     }
 
     func testHandleAIChatHandoff_withoutSidebar_createsSidebar() {
@@ -530,7 +542,14 @@ final class AIChatSidebarPresenterTests: XCTestCase {
 
         // Then
         waitForExpectations(timeout: 3)
-        XCTAssertTrue(mockAIChatTabOpener.openNewAIChatTabWithPayloadCalled)
+        XCTAssertTrue(mockAIChatTabOpener.openAIChatTabCalled)
+        XCTAssertEqual(mockAIChatTabOpener.lastPayload as? NSDictionary, payload as NSDictionary)
+        // Verify it was called with .payload content type
+        if case .payload(let receivedPayload) = mockAIChatTabOpener.lastTrigger {
+            XCTAssertEqual(receivedPayload as NSDictionary, payload as NSDictionary)
+        } else {
+            XCTFail("Expected .payload content type")
+        }
     }
 
     // MARK: - Integration Tests
@@ -710,17 +729,19 @@ class MockAIChatSidebarProvider: AIChatSidebarProviding {
 }
 
 class MockAIChatTabOpener: AIChatTabOpening {
-    var openNewAIChatTabCalled = false
-    var openNewAIChatTabWithPayloadCalled = false
-    var openNewAIChatTabWithRestorationDataCalled = false
-    var openAIChatTabWithQueryCalled = false
-    var openAIChatTabWithValueCalled = false
+    var openAIChatTabCalled = false
+    var lastTrigger: AIChatOpenTrigger?
+    var lastBehavior: LinkOpenBehavior?
+
+    var openNewAIChatCalled = false
+    var lastNewAIChatBehavior: LinkOpenBehavior?
+
+    // Specific tracking for different content types
     var lastURL: URL?
     var lastPayload: AIChatPayload?
     var lastRestorationData: AIChatRestorationData?
     var lastQuery: String?
-    var lastValue: AddressBarTextField.Value?
-    var lastLinkOpenBehavior: LinkOpenBehavior?
+    var lastShouldAutoSubmit: Bool?
 
     var openMethodCalledExpectation: XCTestExpectation?
 
@@ -729,60 +750,50 @@ class MockAIChatTabOpener: AIChatTabOpening {
     }
 
     @MainActor
-    func openAIChatTab(_ query: String?, with linkOpenBehavior: LinkOpenBehavior) {
-        openAIChatTabWithQueryCalled = true
-        lastQuery = query
-        lastLinkOpenBehavior = linkOpenBehavior
+    func openAIChatTab(with trigger: AIChatOpenTrigger, behavior: LinkOpenBehavior) {
+        openAIChatTabCalled = true
+        lastTrigger = trigger
+        lastBehavior = behavior
+
+        // Extract specific data based on content type
+        switch trigger {
+        case .newChat:
+            break
+        case .query(let query, let shouldAutoSubmit):
+            lastQuery = query
+            lastShouldAutoSubmit = shouldAutoSubmit
+        case .url(let url):
+            lastURL = url
+        case .payload(let payload):
+            lastPayload = payload
+        case .restoration(let data):
+            lastRestorationData = data
+        }
+
         openMethodCalledExpectation?.fulfill()
         openMethodCalledExpectation = nil
     }
 
     @MainActor
-    func openAIChatTab(_ value: AddressBarTextField.Value, with linkOpenBehavior: LinkOpenBehavior) {
-        openAIChatTabWithValueCalled = true
-        lastValue = value
-        lastLinkOpenBehavior = linkOpenBehavior
-        openMethodCalledExpectation?.fulfill()
-        openMethodCalledExpectation = nil
-    }
+    func openNewAIChat(in linkOpenBehavior: LinkOpenBehavior) {
+        openNewAIChatCalled = true
+        lastNewAIChatBehavior = linkOpenBehavior
 
-    @MainActor
-    func openNewAIChatTab(_ aiChatURL: URL, with linkOpenBehavior: LinkOpenBehavior) {
-        openNewAIChatTabCalled = true
-        lastURL = aiChatURL
-        lastLinkOpenBehavior = linkOpenBehavior
-        openMethodCalledExpectation?.fulfill()
-        openMethodCalledExpectation = nil
-    }
-
-    @MainActor
-    func openNewAIChatTab(withPayload payload: AIChatPayload) {
-        openNewAIChatTabWithPayloadCalled = true
-        lastPayload = payload
-        openMethodCalledExpectation?.fulfill()
-        openMethodCalledExpectation = nil
-    }
-
-    @MainActor
-    func openNewAIChatTab(withChatRestorationData data: AIChatRestorationData) {
-        openNewAIChatTabWithRestorationDataCalled = true
-        lastRestorationData = data
         openMethodCalledExpectation?.fulfill()
         openMethodCalledExpectation = nil
     }
 
     func reset() {
-        openNewAIChatTabCalled = false
-        openNewAIChatTabWithPayloadCalled = false
-        openNewAIChatTabWithRestorationDataCalled = false
-        openAIChatTabWithQueryCalled = false
-        openAIChatTabWithValueCalled = false
+        openAIChatTabCalled = false
+        lastTrigger = nil
+        lastBehavior = nil
+        openNewAIChatCalled = false
+        lastNewAIChatBehavior = nil
         lastURL = nil
         lastPayload = nil
         lastRestorationData = nil
         lastQuery = nil
-        lastValue = nil
-        lastLinkOpenBehavior = nil
+        lastShouldAutoSubmit = nil
         openMethodCalledExpectation = nil
     }
 }

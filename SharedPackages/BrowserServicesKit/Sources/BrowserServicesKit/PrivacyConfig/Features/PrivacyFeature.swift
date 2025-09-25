@@ -117,6 +117,12 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case willSoonDropBigSurSupport
+
+    /// Hang reporting feature flag
+    case hangReporting
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211260578559159?focus=true
+    case unifiedURLPredictor
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -227,6 +233,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Adds context menu action for translating text selected on a website.
     case textTranslation
+
+    /// Adds toggle for controlling  'Ask Follow-Up Questions' setting.
+    case serpSettingsFollowUpQuestions
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

@@ -1312,6 +1312,18 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo MI funkcijas ir privātas un nav obligātas. Tavi dati netiek izmantoti mākslīgā intelekta apmācībai.";
 
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "Rādīt Duck.ai pogas un saites DuckDuckGo meklēšanas rezultātos.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Meklēšanas saīsnes";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Uzdot papildjautājumus";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Pārlūkprogrammas īsinājumtaustiņi";
+
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adreses josla";
 

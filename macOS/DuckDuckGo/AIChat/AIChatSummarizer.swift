@@ -93,7 +93,7 @@ final class AIChatSummarizer: AIChatSummarizing {
             aiChatSidebarPresenter.presentSidebar(for: prompt)
         } else {
             AIChatPromptHandler.shared.setData(prompt)
-            aiChatTabOpener.openAIChatTab(nil, with: .newTab(selected: true))
+            aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
         }
     }
 }

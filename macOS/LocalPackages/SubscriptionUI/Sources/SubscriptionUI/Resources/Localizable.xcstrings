@@ -5100,12 +5100,12 @@
       }
     },
     "subscription.preferences.subscription.rebranding.message" : {
-      "comment" : "Message informing users that Privacy Pro is now called the DuckDuckGo subscription",
+      "comment" : "Message informing users that Subscription is now called the DuckDuckGo subscription",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro heißt jetzt einfach DuckDuckGo-Abo"
           }
         },
@@ -5117,43 +5117,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro ahora se llama simplemente suscripción a DuckDuckGo"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro s'appelle désormais simplement l'abonnement DuckDuckGo"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro ora si chiama semplicemente abbonamento DuckDuckGo"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro heet nu gewoon het DuckDuckGo-abonnement"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro obecnie nazywa się po prostu subskrypcją DuckDuckGo"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "O Privacy Pro chama-se agora subscrição da DuckDuckGo"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Пакет Privacy Pro теперь называется просто подпиской DuckDuckGo."
           }
         }

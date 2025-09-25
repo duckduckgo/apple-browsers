@@ -208,9 +208,9 @@ extension NetworkProtectionStatusView {
             }
         }
 
-        func openPrivacyPro() {
+        func openSubscription() {
             Task {
-                await uiActionHandler.showPrivacyPro()
+                await uiActionHandler.showSubscription()
             }
         }
 

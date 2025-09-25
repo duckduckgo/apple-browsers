@@ -51,7 +51,7 @@ final class SubscriptionService {
     func resume() {
         subscriptionManagerV1?.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in // only for v1
             if isSubscriptionActive {
-                DailyPixel.fire(pixel: .privacyProSubscriptionActive, withAdditionalParameters: [AuthVersion.key: AuthVersion.v1.rawValue])
+                DailyPixel.fire(pixel: .subscriptionActive, withAdditionalParameters: [AuthVersion.key: AuthVersion.v1.rawValue])
             }
         }
         Task {

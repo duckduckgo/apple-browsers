@@ -91,21 +91,21 @@ struct PreferencesSection: Hashable, Identifiable {
             }
 
             subscriptionPanes.append(.subscriptionSettings)
-            return PreferencesSection(id: .privacyPro, panes: subscriptionPanes)
+            return PreferencesSection(id: .subscription, panes: subscriptionPanes)
         } else if subscriptionState.shouldHideSubscriptionPurchase {
             // No active subscription and no option to purchase
             return nil
         } else {
             // No active subscription
-            return PreferencesSection(id: .purchasePrivacyPro, panes: [.privacyPro])
+            return PreferencesSection(id: .purchaseSubscription, panes: [.subscription])
         }
     }
 }
 
 enum PreferencesSectionIdentifier: Hashable, CaseIterable {
     case privacyProtections
-    case purchasePrivacyPro
-    case privacyPro
+    case purchaseSubscription
+    case subscription
     case regularPreferencePanes
     case about
 
@@ -113,9 +113,9 @@ enum PreferencesSectionIdentifier: Hashable, CaseIterable {
         switch self {
         case .privacyProtections:
             return UserText.privacyProtections
-        case .purchasePrivacyPro:
+        case .purchaseSubscription:
             return nil
-        case .privacyPro:
+        case .subscription:
             return UserText.subscriptionSettingsHeader
         case .regularPreferencePanes:
             return UserText.mainSettings
@@ -138,7 +138,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case sync
     case appearance
     case dataClearing
-    case privacyPro
+    case subscription = "privacyPro"
     case vpn
     case personalInformationRemoval
     case paidAIChat
@@ -199,7 +199,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.appearance
         case .dataClearing:
             return UserText.dataClearing
-        case .privacyPro:
+        case .subscription:
             return UserText.purchaseSubscriptionPaneTitle
         case .vpn:
             return UserText.vpn
@@ -248,8 +248,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return settingsIconProvider.appearanceIcon
         case .dataClearing:
             return settingsIconProvider.dataClearingIcon
-        case .privacyPro:
-            return settingsIconProvider.privacyProIcon
+        case .subscription:
+            return settingsIconProvider.subscriptionIcon
         case .vpn:
             return settingsIconProvider.vpnIcon
         case .personalInformationRemoval:
@@ -259,7 +259,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         case .identityTheftRestoration:
             return settingsIconProvider.identityTheftRestorationIcon
         case .subscriptionSettings:
-            return settingsIconProvider.privacyProIcon
+            return settingsIconProvider.subscriptionIcon
         case .autofill:
             return settingsIconProvider.passwordsAndAutoFillIcon
         case .accessibility:

@@ -63,7 +63,7 @@ struct UnifiedFeedbackRootView: View {
                         EmptyView()
                     case .subscription:
                         UnifiedFeedbackCategoryView(UserText.pproFeedbackFormReportPProProblemTitle,
-                                                    options: PrivacyProFeedbackSubcategory.allCases,
+                                                    options: SubscriptionFeedbackSubcategory.allCases,
                                                     selection: $viewModel.selectedSubcategory) {
                             IssueDescriptionFormView(viewModel: viewModel,
                                                      placeholder: UserText.pproFeedbackFormReportProblemPlaceholder)

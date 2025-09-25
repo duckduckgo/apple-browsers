@@ -404,7 +404,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             case .loading: cell.textLabel?.text = "Loading..."
             case .runPrerequisitesNotMet(let hasAccount, let hasEntitlement, let hasProfile):
                 if indexPath.row == 0 {
-                    cell.textLabel?.text = "Privacy Pro Account"
+                    cell.textLabel?.text = "Subscription Account"
                     cell.detailTextLabel?.text = hasAccount ? "✅" :"❌"
                 } else if indexPath.row == 1 {
                     cell.textLabel?.text = "PIR Entitlement"

@@ -21,9 +21,9 @@ import Foundation
 
 struct RedirectNavigationResponder: NavigationResponder {
 
-    private let redirectManager: SubscriptionRedirectManager
+    private let redirectManager: SubscriptionRedirectManaging
 
-    init(redirectManager: SubscriptionRedirectManager) {
+    init(redirectManager: SubscriptionRedirectManaging) {
         self.redirectManager = redirectManager
     }
 

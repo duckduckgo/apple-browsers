@@ -30,7 +30,7 @@ public class TLD {
             guard !trimmed.isEmpty, !trimmed.hasPrefix("//") else {
                 return
             }
-            tlds.append(line)
+            tlds.append(trimmed)
         }
         return Set(tlds)
     }()

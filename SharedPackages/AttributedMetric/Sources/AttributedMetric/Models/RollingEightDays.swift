@@ -93,6 +93,7 @@ public class RollingEightDaysInt: RollingEightDays<Int> {
     }
 
     /// Calculates the rounded average of the past 7 days, excluding today and unknown values.
+    /// WARNING: still pending logic decision: https://app.asana.com/1/137249556945/task/1211313432282643/comment/1211464184465774?focus=true
     public var past7DaysAverage: Int {
         var sum = 0
         for value in values.dropLast() {

@@ -209,6 +209,7 @@ extension FireCoordinator {
             faviconManagement: self.faviconManagement,
             clearingOption: mode.shouldShowSegmentedControl ? nil /* last selected */ : .allData,
             includeTabsAndWindows: mode.shouldShowCloseTabsToggle ? nil /* last selected */ : false,
+            includeChatHistory: mode.shouldShowChatHistoryToggle ? nil /* last selected */ : false,
             mode: mode,
             scopeCookieDomains: scopeCookieDomains,
             scopeVisits: scopeVisits,

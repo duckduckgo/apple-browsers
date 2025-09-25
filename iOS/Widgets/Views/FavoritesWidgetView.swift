@@ -113,7 +113,7 @@ struct FavoriteView: View {
                             }
 
                         } else if favorite.isDuckDuckGo {
-                            Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
+                            Image(uiImage: UIImage(resource: .widgetDaxLogo))
                                 .resizable()
                                 .useFullColorRendering()
                                 .frame(width: 46, height: 46, alignment: .center)

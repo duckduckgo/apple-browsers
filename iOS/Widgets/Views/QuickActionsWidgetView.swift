@@ -31,10 +31,9 @@ struct QuickActionsWidgetView: View {
     var body: some View {
         DesignSystemWidgetContainerView {
             VStack(spacing: 0) {
-                Link(destination: DeepLinks.newSearch) {
-                    ResponsiveSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled, showLogo: true, isRightIconEnabled: false)
-                }
-                .padding(.bottom, 15)
+                ResponsiveSearchFieldView(isAIChatEnabled: false, showLogo: true, isRightIconEnabled: false)
+
+                Spacer()
 
                 HStack {
                     Link(destination: entry.configuration.leftShortcut.destination) {

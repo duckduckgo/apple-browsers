@@ -32,6 +32,7 @@ struct ResizableTintableImage: View {
         } else {
             Image(uiImage: fullColor)
                 .resizable()
+                .useFullColorRendering()
         }
     }
 
@@ -48,6 +49,7 @@ private struct RenderingAwareImage: View {
         if widgetRenderingMode == .fullColor {
             Image(uiImage: fullColor)
                 .resizable()
+                .useFullColorRendering()
         } else {
             Image(uiImage: tintable)
                 .resizable()

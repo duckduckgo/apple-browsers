@@ -49,9 +49,9 @@ struct ResponsiveSearchFieldView: View {
                 HStack(spacing: 0) {
 
                     if showLogo {
-                        ResizableTintableImage(fullColor: DesignSystemImages.Color.Size24.duckDuckGo,
+                        ResizableTintableImage(fullColor: UIImage(resource: .widgetDaxLogo),
                                       tintable: UIImage(resource: .widgetDaxLogoTinted))
-                                      .frame(width: 30, height: 30, alignment: .leading)
+                                      .frame(width: 24, height: 24, alignment: .leading)
                                       .padding(.leading, 12)
                     }
 

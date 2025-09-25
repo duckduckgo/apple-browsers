@@ -33,7 +33,7 @@ struct PasswordsWidgetView: View {
                     ResizableTintableImage(fullColor: UIImage(resource: .widgetPasswordIllustration),
                                   tintable: UIImage(resource: .widgetPasswordIllustrationTinted))
                         .accessibilityHidden(true)
-                        .frame(width: 64, height: 64)
+                        .frame(width: 71, height: 64)
 
                     Spacer()
 

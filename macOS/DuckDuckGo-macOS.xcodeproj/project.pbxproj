@@ -3740,6 +3740,7 @@
 		F11595E52E8571A000CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595E42E8571A000CC0481 /* AttributedMetric */; };
 		F11595E72E8571A600CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595E62E8571A600CC0481 /* AttributedMetric */; };
 		F11595E92E8571AB00CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595E82E8571AB00CC0481 /* AttributedMetric */; };
+		F11595EB2E85895A00CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595EA2E85895A00CC0481 /* AttributedMetric */; };
 		F118EA7D2BEA2B8700F77634 /* DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F118EA7C2BEA2B8700F77634 /* DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift */; };
 		F118EA7E2BEA2B8700F77634 /* DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F118EA7C2BEA2B8700F77634 /* DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift */; };
 		F118EA852BEACC7000F77634 /* NonStandardPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F118EA842BEACC7000F77634 /* NonStandardPixel.swift */; };
@@ -3852,7 +3853,6 @@
 		F1DF95E42BD1807C0045E591 /* Crashes in Frameworks */ = {isa = PBXBuildFile; productRef = 537FC71EA5115A983FAF3170 /* Crashes */; };
 		F1DF95E52BD1807C0045E591 /* Subscription in Frameworks */ = {isa = PBXBuildFile; productRef = DC3F73D49B2D44464AFEFCD8 /* Subscription */; };
 		F1DF95E72BD188B60045E591 /* LoginItems in Frameworks */ = {isa = PBXBuildFile; productRef = F1DF95E62BD188B60045E591 /* LoginItems */; };
-		F1F76BAE2E840325004E0AE6 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F1F76BAD2E840325004E0AE6 /* AttributedMetric */; };
 		F1F76BB02E840331004E0AE6 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F1F76BAF2E840331004E0AE6 /* AttributedMetric */; };
 		F1F861152C1B25D4005DB446 /* SubscriptionUIHandlerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F861142C1B25D4005DB446 /* SubscriptionUIHandlerMock.swift */; };
 		F1F861172C1B25D4005DB446 /* SubscriptionUIHandlerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F861142C1B25D4005DB446 /* SubscriptionUIHandlerMock.swift */; };
@@ -6250,7 +6250,6 @@
 				7BECF1A92D4905DA00C1D691 /* PreferencesUI-macOS in Frameworks */,
 				4B9EE3142D76C7F900DDC75C /* Bookmarks in Frameworks */,
 				7B8FDD242CDD88D300720907 /* FeatureFlags in Frameworks */,
-				F1F76BAE2E840325004E0AE6 /* AttributedMetric in Frameworks */,
 				4B9EE3382D76C8B200DDC75C /* Suggestions in Frameworks */,
 				84C176502DF0462F001DEEC7 /* LetsMove in Frameworks */,
 				4B9EE31E2D76C81E00DDC75C /* ContentBlocking in Frameworks */,
@@ -6292,6 +6291,7 @@
 				4B4D60B12A0C83B900BCD287 /* NetworkProtectionUI in Frameworks */,
 				4B9EE3362D76C8A600DDC75C /* Subscription in Frameworks */,
 				371BBC572D00C891008FA0C7 /* NewTabPage in Frameworks */,
+				F11595EB2E85895A00CC0481 /* AttributedMetric in Frameworks */,
 				9DB9800A2D96AD2B00B174B3 /* DataBrokerProtectionCore in Frameworks */,
 				4B94B7992D4731E80014AAB8 /* SyncUI-macOS in Frameworks */,
 				D65D0F9F2E7239680075A784 /* NetworkQualityMonitor in Frameworks */,
@@ -11926,8 +11926,8 @@
 				7BC26CA32DFC103D00E52480 /* VPN */,
 				846F4CDE2E048A0500266DB7 /* BWIntegration */,
 				D65D0F9E2E7239680075A784 /* NetworkQualityMonitor */,
-				F1F76BAD2E840325004E0AE6 /* AttributedMetric */,
 				379C3E4D2E7238E100058C52 /* URLPredictor */,
+				F11595EA2E85895A00CC0481 /* AttributedMetric */,
 			);
 			productName = DuckDuckGo;
 			productReference = AA585D7E248FD31100E9A3E2 /* DuckDuckGo.app */;
@@ -18745,6 +18745,10 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = AttributedMetric;
 		};
+		F11595EA2E85895A00CC0481 /* AttributedMetric */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AttributedMetric;
+		};
 		F124E0DC2D6E12190035C7BA /* NetworkingTestingUtils */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NetworkingTestingUtils;
@@ -18812,10 +18816,6 @@
 		F1DF95E62BD188B60045E591 /* LoginItems */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LoginItems;
-		};
-		F1F76BAD2E840325004E0AE6 /* AttributedMetric */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = AttributedMetric;
 		};
 		F1F76BAF2E840331004E0AE6 /* AttributedMetric */ = {
 			isa = XCSwiftPackageProductDependency;

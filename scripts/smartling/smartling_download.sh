@@ -6,18 +6,17 @@ set -euo pipefail
 # Supports both iOS and macOS platforms
 
 JOB_ID="$1"
-FORCE="${2:-false}"
-PLATFORM="$3"
+PLATFORM="$2"
 
 if [ -z "$JOB_ID" ]; then
 	echo "Error: Job ID is required"
-	echo "Usage: $0 <job-id> [force] <platform>"
+	echo "Usage: $0 <job-id> <platform>"
 	exit 1
 fi
 
 if [ -z "$PLATFORM" ]; then
 	echo "Error: Platform is required"
-	echo "Usage: $0 <job-id> [force] <platform>"
+	echo "Usage: $0 <job-id> <platform>"
 	echo "  platform: iOS or macOS"
 	exit 1
 fi
@@ -30,7 +29,16 @@ mkdir -p "$DOWNLOAD_DIR"
 
 # Download translated files
 echo "Downloading translations from Smartling job $JOB_ID..."
-./scripts/smartling/loc_tool.sh download --job-id "$JOB_ID" --out-dir "$DOWNLOAD_DIR"
+./scripts/smartling/loc_tool.sh download --job-id "$JOB_ID" --out-dir "$DOWNLOAD_DIR" || download_failed=1
+
+# Handle download failure gracefully and set step outputs
+if [ "${download_failed:-0}" = "1" ]; then
+	./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" failed
+	if [ -n "${GITHUB_OUTPUT:-}" ]; then
+		echo "download_result=failed" >> "$GITHUB_OUTPUT"
+	fi
+	exit 0
+fi
 
 # Reorganize files into locale folders as expected by loc_import.sh
 # Files are downloaded as: name_locale.extension
@@ -103,13 +111,41 @@ echo "Checking for deleted translation keys and value replacements..."
 
 # Run integrity check. Non-zero exit means issues detected
 if ! ./scripts/smartling/check_translation_integrity.py; then
-	if [ "$FORCE" != "true" ]; then
-		./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" failed deletions
-		git checkout -- .
-		exit 1
-	else
-		echo "⚠️ Proceeding with destructive changes because force=true was set"
+	echo "⚠️ Detected deletions or problematic replacements in translations"
+	echo "Creating a new PR with these changes instead of applying them directly"
+
+	# Create a new branch for the changes
+	CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+	NEW_BRANCH_NAME="smartling-deletions-${JOB_ID}-$(date +%Y%m%d-%H%M%S)"
+
+	echo "Creating new branch: $NEW_BRANCH_NAME"
+	git checkout -b "$NEW_BRANCH_NAME"
+
+	# Commit the changes to the new branch
+	git config user.name "Dax the Duck"
+	git config user.email "dax@duckduckgo.com"
+	git add -A
+	git commit -m "Smartling translations with deletions/replacements from job $JOB_ID"
+
+	# Push the new branch
+	git push origin "$NEW_BRANCH_NAME"
+
+	# Create the PR using the new script
+	./scripts/smartling/smartling_create_deletions_pr.sh "$NEW_BRANCH_NAME" "$CURRENT_BRANCH" "$JOB_ID" "$PLATFORM" "$SMARTLING_PROJECT_ID"
+
+	# Switch back to original branch and clean up working directory
+	git checkout "$CURRENT_BRANCH"
+	git checkout -- .
+
+	if [ -n "${GITHUB_OUTPUT:-}" ]; then
+		echo "download_result=deletions_pr_created" >> "$GITHUB_OUTPUT"
+		echo "new_branch_name=$NEW_BRANCH_NAME" >> "$GITHUB_OUTPUT"
 	fi
+
+	# Generate message about PR creation
+	./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" deletions_pr_created "$NEW_BRANCH_NAME"
+
+	exit 0
 fi
 
 # Commit the imported translations
@@ -120,6 +156,10 @@ if git diff --quiet && git diff --cached --quiet; then
 	echo "No changes to commit"
 	# Generate no changes message
 	./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" no_changes
+	if [ -n "${GITHUB_OUTPUT:-}" ]; then
+		echo "download_result=no_changes" >> "$GITHUB_OUTPUT"
+	fi
+	exit 0
 else
 	# Configure Git identity for the commit
 	git config user.name "Dax the Duck"
@@ -139,4 +179,8 @@ else
 	
 	# Generate success message
 	./scripts/smartling/smartling_messages.sh download download_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" success
+	if [ -n "${GITHUB_OUTPUT:-}" ]; then
+		echo "download_result=success" >> "$GITHUB_OUTPUT"
+	fi
+	exit 0
 fi

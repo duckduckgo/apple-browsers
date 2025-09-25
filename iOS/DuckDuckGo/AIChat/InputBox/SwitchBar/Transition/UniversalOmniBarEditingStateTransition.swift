@@ -39,10 +39,7 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         let barYOffset: CGFloat = isTopBarPosition ? switchBarTextViewHeight : 0
         let baseLogoOffset: CGFloat = isTopBarPosition ? 0 : -DefaultOmniBarView.expectedHeight
 
-        // Temporary adjustment until there's new bottom position
-        // implemented for new editing state.
-        let bottomPositionVerticalOffset: CGFloat = 0 // 30
-        let logoYOffsetWithSwitcher = baseLogoOffset + (isTopBarPosition ? switcherYOffset : -bottomPositionVerticalOffset)
+        let logoYOffsetWithSwitcher = baseLogoOffset + (isTopBarPosition ? switcherYOffset : 0)
 
         return TransitionOffsets(
             switcherYOffset: switcherYOffset,

@@ -48,7 +48,7 @@ public struct RemoteMessageModel: Equatable, Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = try container.decode(String.self, forKey: .id)
-        self.surfaces = try container.decode(RemoteMessageSurfaceType.self, forKey: .surfaces)
+        self.surfaces = try container.decodeIfPresent(RemoteMessageSurfaceType.self, forKey: .surfaces) ?? .newTabPage
         self.content = try container.decodeIfPresent(RemoteMessageModelType.self, forKey: .content)
         self.matchingRules = try container.decode([Int].self, forKey: .matchingRules)
         self.exclusionRules = try container.decode([Int].self, forKey: .exclusionRules)

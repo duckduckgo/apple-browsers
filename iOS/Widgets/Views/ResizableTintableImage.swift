@@ -1,5 +1,5 @@
 //
-//  TintableImage.swift
+//  ResizableTintableImage.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -20,40 +20,37 @@
 
 import SwiftUI
 
-struct TintableImage<Content: View>: View {
+struct ResizableTintableImage: View {
 
     // Design system images are UIImage (would prefer to use ImageResource)
     let fullColor: UIImage
     let tintable: UIImage
 
-    @ViewBuilder
-    let imageModifier: (Image) -> Content
-
     var body: some View {
         if #available(iOS 16, *) {
-            RenderingAwareImage(fullColor: fullColor, tintable: tintable, imageModifier: imageModifier)
+            RenderingAwareImage(fullColor: fullColor, tintable: tintable)
         } else {
-            imageModifier(Image(uiImage: fullColor))
+            Image(uiImage: fullColor)
+                .resizable()
         }
     }
 
 }
 
 @available(iOSApplicationExtension 16, *)
-private struct RenderingAwareImage<Content: View>: View {
+private struct RenderingAwareImage: View {
 
     @Environment(\.widgetRenderingMode) var widgetRenderingMode
     let fullColor: UIImage
     let tintable: UIImage
 
-    @ViewBuilder
-    let imageModifier: (Image) -> Content
-
     var body: some View {
         if widgetRenderingMode == .fullColor {
-            imageModifier(Image(uiImage: fullColor))
+            Image(uiImage: fullColor)
+                .resizable()
         } else {
-            imageModifier(Image(uiImage: tintable))
+            Image(uiImage: tintable)
+                .resizable()
                 .makeAccentable()
         }
     }

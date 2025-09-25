@@ -65,10 +65,11 @@ struct VPNStatusView: View {
     private func connectionView(with status: NEVPNStatus) -> some View {
         VStack(alignment: .leading, spacing: 0) {
 
-            TintableImage(fullColor: UIImage(resource: headerImage(with: status)),
-                          tintable: UIImage(resource: headerImage(with: status, tinted: true))) { $0 }
+            ResizableTintableImage(fullColor: UIImage(resource: headerImage(with: status)),
+                          tintable: UIImage(resource: headerImage(with: status, tinted: true)))
                 .padding(.bottom, 6)
                 .accessibilityHidden(true)
+                .frame(width: 64, height: 64)
 
             Text(title(with: status))
                 .daxSubheadSemibold()

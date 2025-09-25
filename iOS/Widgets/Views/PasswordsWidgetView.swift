@@ -30,9 +30,10 @@ struct PasswordsWidgetView: View {
         DesignSystemWidgetContainerView {
             HStack {
                 VStack(alignment: .leading, spacing: 0) {
-                    TintableImage(fullColor: UIImage(resource: .widgetPasswordIllustration),
-                                  tintable: UIImage(resource: .widgetPasswordIllustrationTinted)) { $0 }
+                    ResizableTintableImage(fullColor: UIImage(resource: .widgetPasswordIllustration),
+                                  tintable: UIImage(resource: .widgetPasswordIllustrationTinted))
                         .accessibilityHidden(true)
+                        .frame(width: 64, height: 64)
 
                     Spacer()
 

@@ -49,13 +49,10 @@ struct ResponsiveSearchFieldView: View {
                 HStack(spacing: 0) {
 
                     if showLogo {
-                        TintableImage(fullColor: DesignSystemImages.Color.Size24.duckDuckGo,
-                                      tintable: UIImage(resource: .widgetDaxLogoTinted)) { image in
-                                image
-                                    .resizable()
-                                    .frame(width: 30, height: 30, alignment: .leading)
-                                    .padding(.leading, 12)
-                        }
+                        ResizableTintableImage(fullColor: DesignSystemImages.Color.Size24.duckDuckGo,
+                                      tintable: UIImage(resource: .widgetDaxLogoTinted))
+                                      .frame(width: 30, height: 30, alignment: .leading)
+                                      .padding(.leading, 12)
                     }
 
                     Text(prompt)

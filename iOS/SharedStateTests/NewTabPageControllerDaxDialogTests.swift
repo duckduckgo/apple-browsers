@@ -57,7 +57,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             duckPlayerStorage: MockDuckPlayerStorage(),
             configurationURLProvider: MockConfigurationURLProvider(),
             syncService: MockDDGSyncing())
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter(), isStillOnboarding: { true })
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { true })
         hvc = NewTabPageViewController(
             tab: Tab(),
             interactionModel: MockFavoritesListInteracting(),
@@ -161,13 +161,13 @@ class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProvider {
 }
 
 
-class MockNewTabDialogSpecProvider: NewTabDialogSpecProvider, PrivacyProPromotionCoordinating {
+class MockNewTabDialogSpecProvider: NewTabDialogSpecProvider, SubscriptionPromotionCoordinating {
     var nextHomeScreenMessageCalled = false
     var nextHomeScreenMessageNewCalled = false
     var dismissCalled = false
     var specToReturn: DaxDialogs.HomeScreenSpec?
-    var isShowingPrivacyProPromotion = false
-    var privacyProPromotionDialogSeen = false
+    var isShowingSubscriptionPromotion = false
+    var subscriptionPromotionDialogSeen = false
 
     func nextHomeScreenMessage() -> DaxDialogs.HomeScreenSpec? {
         nextHomeScreenMessageCalled = true

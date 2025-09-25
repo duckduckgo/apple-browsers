@@ -117,6 +117,7 @@ struct UserAgent {
 
         static let closestUserAgentConfigKey = "closestUserAgent"
         static let ddgFixedUserAgentConfigKey = "ddgFixedUserAgent"
+        static let useUpdatedSafariVersionsKey = "useUpdatedSafariVersions"
 
         static let uaVersionsKey = "versions"
         static let uaStateKey = "state"
@@ -130,7 +131,6 @@ struct UserAgent {
 
     private let baseAgent: String
     private let baseDesktopAgent: String
-    private let version: String
     private let versionComponent: String
     private let safariComponent: String
     private let brandComponent: String
@@ -139,13 +139,21 @@ struct UserAgent {
     private let isTesting: Bool = ProcessInfo().arguments.contains("testing")
 
     init(defaultAgent: String = Constants.fallbackDefaultAgent, statistics: StatisticsStore = StatisticsUserDefaults()) {
-        version = UserAgent.getVersion(fromAgent: defaultAgent)
+        let defaultAgent: String = UserAgent.shouldUseUpdatedSafariVersions() ? defaultAgent.replacingOccurrences(of: "OS 19_0", with: "OS 18_6") : defaultAgent
+        let version = UserAgent.getVersion(fromAgent: defaultAgent)
         versionComponent = UserAgent.createVersionComponent(withVersion: version)
         baseAgent = UserAgent.createBaseAgent(fromAgent: defaultAgent, versionComponent: versionComponent)
         baseDesktopAgent = UserAgent.createBaseDesktopAgent(fromAgent: defaultAgent, versionComponent: versionComponent)
         safariComponent = UserAgent.createSafariComponent(fromAgent: baseAgent)
         brandComponent = UserAgent.createBrandComponent(withVersion: version)
         self.statistics = statistics
+    }
+
+    private static func shouldUseUpdatedSafariVersions() -> Bool {
+        // Enable iOS 26 Safari UA quirks
+        let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
+        let uaSettings = config.settings(for: .customUserAgent)
+        return uaSettings[Constants.useUpdatedSafariVersionsKey] as? Bool ?? false
     }
 
     private func omitApplicationSites(forConfig config: PrivacyConfiguration) -> [String] {
@@ -324,6 +332,12 @@ struct UserAgent {
     }
 
     private static func getVersion(fromAgent agent: String) -> String {
+        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
+        if osVersion.majorVersion >= 26 && shouldUseUpdatedSafariVersions() {
+            // Use actual device iOS version major.minor components
+            return "\(osVersion.majorVersion).\(osVersion.minorVersion)"
+        }
+
         let regex = try? NSRegularExpression(pattern: Regex.osVersion)
         let match = regex?.firstMatch(in: agent, options: [], range: NSRange(location: 0, length: agent.count))
 

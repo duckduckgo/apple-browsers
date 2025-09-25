@@ -37,6 +37,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
         repository.reset()
         resources.reset()
         vault?.reset()
+        pixelHandler.clear()
     }
 
     func testWhenNoVersionIsStored_thenWeTryToUpdateBrokers() async throws {
@@ -197,6 +198,157 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
         } else {
             XCTFail("Mock vault issue")
         }
+    }
+
+    func testWhenBrokerUpdateSucceeds_thenSuccessPixelIsFired() async throws {
+        guard let vault = self.vault else {
+            XCTFail("Mock vault issue")
+            return
+        }
+
+        let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
+        repository.lastCheckedVersion = nil
+        resources.brokersList = [
+            .init(id: 1,
+                  name: "Broker",
+                  url: "broker.com",
+                  steps: [Step](),
+                  version: "1.0.0",
+                  schedulingConfig: .mock,
+                  optOutUrl: "",
+                  eTag: "",
+                  removedAt: nil
+                 )
+        ]
+        vault.profileQueries = [.mock]
+
+        try await sut.checkForUpdates()
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let successPixels = firedPixels.compactMap { pixel in
+            switch pixel {
+            case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt):
+                return (dataBrokerFileName, removedAt)
+            default:
+                return nil
+            }
+        }
+
+        XCTAssertFalse(successPixels.isEmpty, "updateDataBrokersSuccess pixel should be fired")
+        let (dataBroker, removedAt) = successPixels.first!
+        XCTAssertEqual(dataBroker, "broker.com.json")
+        XCTAssertNil(removedAt, "removedAt should be nil for broker without removal date")
+    }
+
+    func testWhenBrokerWithRemovedAtUpdateSucceeds_thenSuccessPixelIsFiredWithTimestamp() async throws {
+        guard let vault = self.vault else {
+            XCTFail("Mock vault issue")
+            return
+        }
+
+        let removedDate = Date(timeIntervalSince1970: 1693526400)
+        let expectedTimestamp: Int64 = 1693526400000
+
+        let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
+        repository.lastCheckedVersion = nil
+        resources.brokersList = [
+            .init(id: 1,
+                  name: "RemovedBroker",
+                  url: "removedbroker.com",
+                  steps: [Step](),
+                  version: "1.0.0",
+                  schedulingConfig: .mock,
+                  optOutUrl: "",
+                  eTag: "",
+                  removedAt: removedDate
+                 )
+        ]
+        vault.profileQueries = [.mock]
+
+        try await sut.checkForUpdates()
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let successPixels = firedPixels.compactMap { pixel in
+            switch pixel {
+            case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt):
+                return (dataBrokerFileName, removedAt)
+            default:
+                return nil
+            }
+        }
+
+        XCTAssertFalse(successPixels.isEmpty, "updateDataBrokersSuccess pixel should be fired")
+        let (dataBroker, removedAt) = successPixels.first!
+        XCTAssertEqual(dataBroker, "removedbroker.com.json")
+        XCTAssertEqual(removedAt, expectedTimestamp, "removedAt should be converted to milliseconds timestamp")
+    }
+
+    func testWhenBrokerUpdateFails_thenFailurePixelIsFired() async throws {
+        guard let vault = self.vault else {
+            XCTFail("Mock vault issue")
+            return
+        }
+
+        let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
+        repository.lastCheckedVersion = nil
+        resources.brokersList = [
+            .init(id: 1,
+                  name: "Broker",
+                  url: "broker.com",
+                  steps: [Step](),
+                  version: "1.0.1", // Newer than mock's "1.0.0" to trigger update
+                  schedulingConfig: .mock,
+                  optOutUrl: "",
+                  eTag: "",
+                  removedAt: nil
+                 )
+        ]
+        vault.profileQueries = [.mock]
+        vault.shouldReturnOldVersionBroker = true // Ensure broker exists so update path is taken  
+        vault.shouldThrowOnUpdate = true // Force update to fail
+
+        try await sut.checkForUpdates()
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let failurePixels = firedPixels.compactMap { pixel in
+            switch pixel {
+            case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, _):
+                return (dataBrokerFileName, removedAt)
+            default:
+                return nil
+            }
+        }
+
+        XCTAssertFalse(failurePixels.isEmpty, "updateDataBrokersFailure pixel should be fired")
+        let (dataBroker, removedAt) = failurePixels.first!
+        XCTAssertEqual(dataBroker, "broker.com.json")
+        XCTAssertNil(removedAt, "removedAt should be nil for broker without removal date")
+    }
+
+    func testWhenResourcesFetchFails_thenOldCocoaErrorPixelIsFired() async throws {
+        // This test verifies we didn't change the behavior for resource fetch failures
+        guard let vault = self.vault else {
+            XCTFail("Mock vault issue")
+            return
+        }
+
+        let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
+        repository.lastCheckedVersion = nil
+        resources.shouldThrowOnFetch = true // Force fetch to fail
+
+        try await sut.checkForUpdates()
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let cocoaErrorPixels = firedPixels.filter { pixel in
+            switch pixel {
+            case .cocoaError:
+                return true
+            default:
+                return false
+            }
+        }
+
+        XCTAssertFalse(cocoaErrorPixels.isEmpty, "cocoaError pixel should still be fired for resource fetch failures")
     }
 
 }

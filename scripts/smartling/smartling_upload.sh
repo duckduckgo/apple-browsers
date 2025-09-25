@@ -43,18 +43,31 @@ fi
 
 echo "$output"
 
-# Generate the message based on success/failure
+# Generate the message based on success/failure and set step outputs
 if [ "${upload_failed:-0}" = "0" ] && echo "$output" | grep -q "JOB_ID="; then
 	# Extract job ID and generate success message
 	job_id=$(echo "$output" | grep -o 'JOB_ID=[^[:space:]]*' | cut -d= -f2)
 	echo "JOB_ID=$job_id"  # Still output for any other consumers
-	
+
+	# Step outputs for GitHub Actions
+	if [ -n "${GITHUB_OUTPUT:-}" ]; then
+		echo "upload_success=true" >> "$GITHUB_OUTPUT"
+		echo "job_id=$job_id" >> "$GITHUB_OUTPUT"
+	fi
+
 	./scripts/smartling/smartling_messages.sh upload upload_message.txt "$PLATFORM" "$job_id" "$SMARTLING_PROJECT_ID" success
 	echo "✅ Upload complete"
-	exit 0
 else
+	# Step outputs for GitHub Actions (failure)
+	if [ -n "${GITHUB_OUTPUT:-}" ]; then
+		echo "upload_success=false" >> "$GITHUB_OUTPUT"
+		echo "job_id=" >> "$GITHUB_OUTPUT"
+	fi
+
 	# Generate error message
 	./scripts/smartling/smartling_messages.sh upload upload_message.txt "$PLATFORM" "" "$SMARTLING_PROJECT_ID" failed
 	echo "❌ Upload failed"
-	exit 1
 fi
+
+# Always succeed the step; downstream logic branches on outputs
+exit 0

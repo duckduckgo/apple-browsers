@@ -61,6 +61,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.4"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
+        .package(path: "../URLPredictor"),
     ],
     targets: [
         .binaryTarget(
@@ -220,9 +221,7 @@ let package = Package(
             name: "Common",
             dependencies: [
                 .product(name: "Punycode", package: "PunycodeSwift"),
-            ],
-            resources: [
-                .process("TLD/tlds.json")
+                .product(name: "URLPredictor", package: "URLPredictor"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

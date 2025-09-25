@@ -1312,6 +1312,18 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Le funzionalità AI di DuckDuckGo sono private e opzionali. I tuoi dati non vengono usati per addestrare l'IA.";
 
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "Mostra i pulsanti e i link di Duck.ai nei risultati di ricerca di DuckDuckGo.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Scorciatoie di ricerca";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Fai domande di follow-up";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Scorciatoie del browser";
+
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Barra degli indirizzi";
 
@@ -3232,8 +3244,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Chatta privatamente con modelli AI esclusivi per abbonati.\n[Scopri di più](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "Configura Duck.ai nelle impostazioni delle funzionalità AI.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Abilita nelle impostazioni delle funzionalità AI";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Apri Duck.ai";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "Gestisci nelle impostazioni delle funzionalità AI";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";

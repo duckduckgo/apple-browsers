@@ -20,11 +20,11 @@ import Foundation
 import AppKit
 import Common
 import LoginItems
-import VPN
 import NetworkExtension
 import NetworkProtectionIPC
 import NetworkProtectionUI
 import Subscription
+import VPN
 
 struct VPNMetadata: Encodable {
 
@@ -72,8 +72,6 @@ struct VPNMetadata: Encodable {
     struct LoginItemState: Encodable {
         let vpnMenuState: String
         let vpnMenuIsRunning: Bool
-        let notificationsAgentState: String
-        let notificationsAgentIsRunning: Bool
     }
 
     struct SubscriptionInfo: Encodable {
@@ -288,23 +286,9 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
         let vpnMenuState = String(describing: LoginItem.vpnMenu.status)
         let vpnMenuIsRunning = !NSRunningApplication.runningApplications(withBundleIdentifier: LoginItem.vpnMenu.agentBundleID).isEmpty
 
-#if NETP_SYSTEM_EXTENSION
-        let notificationsAgentState = String(describing: LoginItem.notificationsAgent.status)
-        let notificationsAgentIsRunning = !NSRunningApplication.runningApplications(withBundleIdentifier: LoginItem.notificationsAgent.agentBundleID).isEmpty
-
         return .init(
             vpnMenuState: vpnMenuState,
-            vpnMenuIsRunning: vpnMenuIsRunning,
-            notificationsAgentState: notificationsAgentState,
-            notificationsAgentIsRunning: notificationsAgentIsRunning)
-#else
-        return .init(
-            vpnMenuState: vpnMenuState,
-            vpnMenuIsRunning: vpnMenuIsRunning,
-            notificationsAgentState: "not-required",
-            notificationsAgentIsRunning: false
-        )
-#endif
+            vpnMenuIsRunning: vpnMenuIsRunning)
     }
 
     func collectVPNSettingsState() -> VPNMetadata.VPNSettingsState {

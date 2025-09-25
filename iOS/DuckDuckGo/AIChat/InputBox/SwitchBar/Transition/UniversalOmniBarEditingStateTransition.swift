@@ -1,5 +1,5 @@
 //
-//  NewOmniBarEditingStateTransition.swift
+//  UniversalOmniBarEditingStateTransition.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -19,7 +19,7 @@
 
 import UIKit
 
-final class NewOmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitioning {
+final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitioning {
     private let isPresenting: Bool
     private let isTopBarPosition: Bool
 

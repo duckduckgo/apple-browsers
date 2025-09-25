@@ -17,30 +17,25 @@
 //
 
 import Foundation
+import URLPredictor
 
 public class TLD {
 
-    private(set) var tlds: Set<String> = []
+    static let tlds: Set<String> = {
+        guard let pslString = try? Classifier.getPSLData() else { return [] }
 
-    var json: String {
-        guard let data = try? JSONEncoder().encode(tlds) else { return "[]" }
-        guard let json = String(data: data, encoding: .utf8) else { return "[]" }
-        return json
-    }
+        var tlds: [String] = []
+        pslString.enumerateLines { line, _ in
+            let trimmed = line.trimmingWhitespace()
+            guard !trimmed.isEmpty, !trimmed.hasPrefix("//") else {
+                return
+            }
+            tlds.append(trimmed)
+        }
+        return Set(tlds)
+    }()
 
-    public init() {
-        guard let url = Bundle.module.url(forResource: "tlds", withExtension: "json") else { return }
-        guard let data = try? Data(contentsOf: url),
-              let asString = data.utf8String() else { return }
-
-        let asStringWithoutComments = asString.replacingOccurrences(of: "(?m)^//.*",
-                                                                    with: "",
-                                                                    options: .regularExpression)
-        guard let cleanedData: Data = asStringWithoutComments.data(using: .utf8) else { return }
-
-        guard let tlds = try? JSONDecoder().decode([String].self, from: cleanedData) else { return }
-        self.tlds = Set(tlds)
-    }
+    public init() {}
 
     /// Return valid domain, stripping subdomains of given entity if possible.
     ///
@@ -58,7 +53,7 @@ public class TLD {
         for part in parts {
             stack = !stack.isEmpty ? part + "." + stack : part
 
-            if tlds.contains(stack) {
+            if Self.tlds.contains(stack) {
                 knownTLDFound = true
             } else if knownTLDFound {
                 break
@@ -92,7 +87,7 @@ public class TLD {
         for part in parts {
             stack = !stack.isEmpty ? part + "." + stack : part
 
-            if tlds.contains(stack) {
+            if Self.tlds.contains(stack) {
                 lastKnownTLD = stack
             } else if !lastKnownTLD.isEmpty {
                 break
@@ -115,7 +110,7 @@ public class TLD {
     /// 'example.co.uk' -> 'example.co.uk'
     /// 'co.uk' -> nil
     public func eTLDplus1(_ host: String?) -> String? {
-        guard let domain = domain(host), !tlds.contains(domain) else { return nil }
+        guard let domain = domain(host), !Self.tlds.contains(domain) else { return nil }
         return domain
     }
 

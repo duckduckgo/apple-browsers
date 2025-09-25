@@ -38,7 +38,7 @@ public struct AutofillDomainNameUrlSort: AutofillUrlSort {
         } else {
             guard let domain = account.domain,
                   let urlComponents = autofillDomainNameUrlMatcher.normalizeSchemeForAutofill(domain),
-                  /// eTLDplus1 is nil if the domain is exact match to a domain in tlds.json in which case we default to host
+                  /// eTLDplus1 is nil if the domain is exact match to a domain in TLD in which case we default to host
                   let host = urlComponents.eTLDplus1(tld: tld) ?? urlComponents.host,
                   let firstChar = host.first
             else {

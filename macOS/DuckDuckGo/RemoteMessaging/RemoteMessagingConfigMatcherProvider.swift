@@ -105,38 +105,38 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             favoritesCount = BookmarkUtils.numberOfFavorites(for: appearancePreferences.favoritesDisplayMode, in: context)
         }
 
-        let isPrivacyProSubscriber = subscriptionManager.isUserAuthenticated
-        let isPrivacyProEligibleUser = subscriptionManager.canPurchase
+        let isDuckDuckGoSubscriber = subscriptionManager.isUserAuthenticated
+        let isSubscriptionEligibleUser = subscriptionManager.canPurchase
 
         let activationDateStore = DefaultWaitlistActivationDateStore(source: .netP)
         let daysSinceNetworkProtectionEnabled = activationDateStore.daysSinceActivation() ?? -1
 
         let autofillUsageStore = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
 
-        var privacyProDaysSinceSubscribed = -1
-        var privacyProDaysUntilExpiry = -1
-        var isPrivacyProSubscriptionActive = false
-        var isPrivacyProSubscriptionExpiring = false
-        var isPrivacyProSubscriptionExpired = false
-        var privacyProPurchasePlatform: String?
+        var subscriptionDaysSinceSubscribed = -1
+        var subscriptionDaysUntilExpiry = -1
+        var isSubscriptionActive = false
+        var isSubscriptionExpiring = false
+        var isSubscriptionExpired = false
+        var subscriptionPurchasePlatform: String?
         let surveyActionMapper: RemoteMessagingSurveyActionMapping
 
         let statisticsStore = self.statisticsStore()
 
         do {
             let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
-            privacyProDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
-            privacyProDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
-            privacyProPurchasePlatform = subscription.platform.rawValue
+            subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
+            subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
+            subscriptionPurchasePlatform = subscription.platform.rawValue
 
             switch subscription.status {
             case .autoRenewable, .gracePeriod:
-                isPrivacyProSubscriptionActive = true
+                isSubscriptionActive = true
             case .notAutoRenewable:
-                isPrivacyProSubscriptionActive = true
-                isPrivacyProSubscriptionExpiring = true
+                isSubscriptionActive = true
+                isSubscriptionExpiring = true
             case .expired, .inactive:
-                isPrivacyProSubscriptionExpired = true
+                isSubscriptionExpired = true
             case .unknown:
                 break // Not supported in RMF
             }
@@ -191,14 +191,14 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        favoritesCount: favoritesCount,
                                                        appTheme: appearancePreferences.currentThemeName.rawValue,
                                                        daysSinceNetPEnabled: daysSinceNetworkProtectionEnabled,
-                                                       isPrivacyProEligibleUser: isPrivacyProEligibleUser,
-                                                       isPrivacyProSubscriber: isPrivacyProSubscriber,
-                                                       privacyProDaysSinceSubscribed: privacyProDaysSinceSubscribed,
-                                                       privacyProDaysUntilExpiry: privacyProDaysUntilExpiry,
-                                                       privacyProPurchasePlatform: privacyProPurchasePlatform,
-                                                       isPrivacyProSubscriptionActive: isPrivacyProSubscriptionActive,
-                                                       isPrivacyProSubscriptionExpiring: isPrivacyProSubscriptionExpiring,
-                                                       isPrivacyProSubscriptionExpired: isPrivacyProSubscriptionExpired,
+                                                       isSubscriptionEligibleUser: isSubscriptionEligibleUser,
+                                                       isDuckDuckGoSubscriber: isDuckDuckGoSubscriber,
+                                                       subscriptionDaysSinceSubscribed: subscriptionDaysSinceSubscribed,
+                                                       subscriptionDaysUntilExpiry: subscriptionDaysUntilExpiry,
+                                                       subscriptionPurchasePlatform: subscriptionPurchasePlatform,
+                                                       isSubscriptionActive: isSubscriptionActive,
+                                                       isSubscriptionExpiring: isSubscriptionExpiring,
+                                                       isSubscriptionExpired: isSubscriptionExpired,
                                                        dismissedMessageIds: dismissedMessageIds,
                                                        shownMessageIds: shownMessageIds,
                                                        pinnedTabsCount: pinnedTabsCount,

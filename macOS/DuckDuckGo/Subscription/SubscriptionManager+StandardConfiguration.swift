@@ -58,11 +58,11 @@ extension DefaultSubscriptionManager {
             }
 
             switch feature {
-            case .usePrivacyProUSARegionOverride:
+            case .useSubscriptionUSARegionOverride:
                 return (featureFlagger.internalUserDecider.isInternalUser &&
                         subscriptionEnvironment.serviceEnvironment == .staging &&
                         subscriptionUserDefaults.storefrontRegionOverride == .usa)
-            case .usePrivacyProROWRegionOverride:
+            case .useSubscriptionROWRegionOverride:
                 return (featureFlagger.internalUserDecider.isInternalUser &&
                         subscriptionEnvironment.serviceEnvironment == .staging &&
                         subscriptionUserDefaults.storefrontRegionOverride == .restOfWorld)
@@ -169,11 +169,11 @@ extension DefaultSubscriptionManagerV2 {
             }
 
             switch feature {
-            case .usePrivacyProUSARegionOverride:
+            case .useSubscriptionUSARegionOverride:
                 return (featureFlagger.internalUserDecider.isInternalUser &&
                         environment.serviceEnvironment == .staging &&
                         userDefaults.storefrontRegionOverride == .usa)
-            case .usePrivacyProROWRegionOverride:
+            case .useSubscriptionROWRegionOverride:
                 return (featureFlagger.internalUserDecider.isInternalUser &&
                         environment.serviceEnvironment == .staging &&
                         userDefaults.storefrontRegionOverride == .restOfWorld)

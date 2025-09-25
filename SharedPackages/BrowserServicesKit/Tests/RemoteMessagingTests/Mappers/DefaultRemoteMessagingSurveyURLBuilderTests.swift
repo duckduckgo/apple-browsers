@@ -66,10 +66,10 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?locale=en-NZ")
     }
 
-    func testAddingPrivacyProParameters() {
+    func testAddingSubscriptionParameters() {
         let builder = buildRemoteMessagingSurveyURLBuilder()
         let baseURL = URL(string: "https://duckduckgo.com")!
-        let finalURL = builder.add(parameters: [.privacyProStatus, .privacyProPlatform, .privacyProPlatform], to: baseURL)
+        let finalURL = builder.add(parameters: [.subscriptionStatus, .subscriptionPlatform, .subscriptionPlatform], to: baseURL)
 
         XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?ppro_status=auto_renewable&ppro_platform=apple&ppro_platform=apple")
     }
@@ -172,7 +172,7 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
             daysSinceLastActive: vpnDaysSinceLastActive
         )
 
-        let subscription = PrivacyProSubscription(productId: "product-id",
+        let subscription = DuckDuckGoSubscription(productId: "product-id",
                                            name: "product-name",
                                            billingPeriod: .monthly,
                                            startedAt: Date(timeIntervalSince1970: 1000),

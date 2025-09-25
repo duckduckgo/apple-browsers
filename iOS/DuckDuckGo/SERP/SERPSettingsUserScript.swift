@@ -21,11 +21,13 @@ import Common
 import UserScript
 import Foundation
 import WebKit
+import BrowserServicesKit
 
 public enum SERPSettingsUserScriptMessages: String, CaseIterable {
-
     case openNativeSettings
-
+    case updateNativeSettings
+    case getNativeSettings
+    case nativeSettingsDidChange
 }
 
 
@@ -33,17 +35,38 @@ public enum SERPSettingsUserScriptMessages: String, CaseIterable {
 
 protocol SERPSettingsUserScriptDelegate: AnyObject {
 
-    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript)
-    func serpSettingsUserScriptDidRequestToOpenDuckAISettings(_ userScript: SERPSettingsUserScript)
+    func serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(_ userScript: SERPSettingsUserScript)
+    func serpSettingsUserScriptDidRequestToCloseTabAndOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript)
+    func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript)
 
 }
 
-enum SERPSettingsConstants {
+public struct SERPSettingsSnapshot: Codable {
+    public let aiChat: Bool
+    public let allowFollowUpQuestion: Bool?
+    
+    public init(provider: SERPSettingsProviding) {
+        self.aiChat = provider.isAIChatEnabled
+        self.allowFollowUpQuestion = provider.isAllowFollowUpQuestionsEnabled
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(aiChat, forKey: .aiChat)
+        try container.encodeIfPresent(allowFollowUpQuestion, forKey: .allowFollowUpQuestion)
+    }
+    
+    private enum CodingKeys: String, CodingKey {
+        case aiChat = "duckai"
+        case allowFollowUpQuestion = "kbg"
+    }
+}
 
+enum SERPSettingsConstants {
     static let returnParameterKey = "return"
+    static let screenParameterKey = "screen"
     static let privateSearch = "privateSearch"
     static let aiFeatures = "aiFeatures"
-
 }
 
 // MARK: - AIChatUserScript Class
@@ -59,21 +82,41 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
     private(set) var messageOriginPolicy: MessageOriginPolicy
 
     let featureName: String = "serpSettings"
+    private let serpSettingsProvider: SERPSettingsProviding
+    private let featureFlagger: FeatureFlagger
 
     // MARK: - Initialization
 
-    override init() {
-        self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules())
+    init(serpSettingsProvider: SERPSettingsProviding,
+         featureFlagger: FeatureFlagger) {
+        self.serpSettingsProvider = serpSettingsProvider
+        messageOriginPolicy = .only(rules: Self.buildMessageOriginRules())
+        self.featureFlagger = featureFlagger
         super.init()
+
+        registerForNotifications()
+    }
+
+    func registerForNotifications() {
+        NotificationCenter.default.addObserver(forName: .serpSettingsChanged,
+                                               object: nil,
+                                               queue: .main) { [weak self] _ in
+            guard let self = self else { return }
+            self.nativeSettingsDidChange()
+        }
+        NotificationCenter.default.addObserver(forName: .aiChatSettingsChanged,
+                                               object: nil,
+                                               queue: .main) { [weak self] _ in
+            guard let self = self else { return }
+            self.nativeSettingsDidChange()
+        }
     }
 
     private static func buildMessageOriginRules() -> [HostnameMatchingRule] {
         var rules: [HostnameMatchingRule] = []
-
         if let ddgDomain = URL.ddg.host {
             rules.append(.exact(hostname: ddgDomain))
         }
-
         return rules
     }
 
@@ -92,18 +135,57 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
         switch message {
         case .openNativeSettings:
             return openNativeSettings
+        case .updateNativeSettings:
+            return updateNativeSettings
+        case .getNativeSettings:
+            return getNativeSettings
+        case .nativeSettingsDidChange: // Never called by SERP — returning nil.
+            return nil
         }
+    }
+    
+    @MainActor
+    func getNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) else {
+            return nil
+        }
+        return SERPSettingsSnapshot(provider: serpSettingsProvider)
     }
 
     @MainActor
     private func openNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
         guard let parameters = params as? [String: String] else { return nil }
         if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.privateSearch {
-            delegate?.serpSettingsUserScriptDidRequestToOpenPrivacySettings(self)
+            delegate?.serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(self)
         } else if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.aiFeatures {
-            delegate?.serpSettingsUserScriptDidRequestToOpenDuckAISettings(self)
+            delegate?.serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(self)
+        } else if parameters[SERPSettingsConstants.screenParameterKey] == SERPSettingsConstants.aiFeatures {
+            delegate?.serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(self)
         }
         return nil
     }
+    
+    @MainActor
+    private func updateNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard let parameters = params as? [String: Any] else { return nil }
 
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: parameters),
+              let serpSettingsSnapshot = try? JSONDecoder().decode(SERPSettingsSnapshot.self, from: jsonData),
+              let allowFollowUpQuestionsSetting = serpSettingsSnapshot.allowFollowUpQuestion else {
+            return nil
+        }
+        
+        serpSettingsProvider.migrateAllowFollowUpQuestions(enable: allowFollowUpQuestionsSetting)
+        return nil
+    }
+    
+    private func nativeSettingsDidChange() {
+        guard let webView else {
+            return
+        }
+        broker?.push(method: SERPSettingsUserScriptMessages.nativeSettingsDidChange.rawValue,
+                     params: SERPSettingsSnapshot(provider: serpSettingsProvider),
+                     for: self,
+                     into: webView)
+    }
 }

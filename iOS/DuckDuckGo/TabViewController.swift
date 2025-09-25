@@ -968,26 +968,33 @@ class TabViewController: UIViewController {
         load(url: url.applyingSearchHeaderParams())
     }
     
-        private func shouldReissueSearch(for url: URL) -> Bool {
+    private func shouldReissueSearch(for url: URL) -> Bool {
         guard url.isDuckDuckGoSearch else { return false }
         
         var shouldReissue = !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
         
-        // Only check DuckAI params if the feature flag is enabled
-        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-            shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
+        // SerpSettingsFollowUpQuestions takes precedence over duckAISearchParameter
+        // If it's enabled, don't evaluate shouldReissue
+        if !featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) {
+            // Only check DuckAI params if the feature flag is enabled
+            if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+                let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+                shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
+            }
         }
-        
         return shouldReissue
     }
     
     private func reissueSearchWithRequiredParams(for url: URL) {
         var mobileSearch = url.applyingStatsParams()
         
-        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-            mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
+        // SerpSettingsFollowUpQuestions takes precedence over duckAISearchParameter
+        // If it's enabled, don't evaluate shouldReissue
+        if !featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) {
+            if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+                let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+                mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
+            }
         }
         
         reissueNavigationWithSearchHeaderParams(for: mobileSearch)
@@ -3838,8 +3845,9 @@ extension TabViewController {
 }
 
 extension TabViewController: SERPSettingsUserScriptDelegate {
+    
 
-    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
+    func serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
         guard let mainVC = parent as? MainViewController else { return }
         mainVC.segueToSettingsPrivateSearch {
             mainVC.closeTab(self.tabModel)
@@ -3847,12 +3855,17 @@ extension TabViewController: SERPSettingsUserScriptDelegate {
         }
     }
     
-    func serpSettingsUserScriptDidRequestToOpenDuckAISettings(_ userScript: SERPSettingsUserScript) {
+    func serpSettingsUserScriptDidRequestToCloseTabAndOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
         guard let mainVC = parent as? MainViewController else { return }
-        mainVC.segueToSettingsAIChat {
+        mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: false) { // false because we're reopening previously closed settings
             mainVC.closeTab(self.tabModel)
             mainVC.showBars()
         }
+    }
+
+    func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
+        guard let mainVC = parent as? MainViewController else { return }
+        mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: true)
     }
 
 }

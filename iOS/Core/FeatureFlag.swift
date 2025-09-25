@@ -178,6 +178,12 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211394727337421?focus=true
     case newDeviceSyncPrompt
+
+    /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1211302776234329?focus=true
+    case aiSearchBottomBarSupport
+    
+    /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211245201777978?focus=true
+    case serpSettingsFollowUpQuestions
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -248,7 +254,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
              .refreshButtonPosition,
-             .newDeviceSyncPrompt:
+             .newDeviceSyncPrompt,
+             .serpSettingsFollowUpQuestions:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -291,7 +298,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                .failsafeExamplePlatformSpecificSubfeature,
                .experimentalAddressBar,
                .aiChatKeepSession,
-               .aiFeaturesSettingsUpdate:
+               .aiFeaturesSettingsUpdate,
+               .aiSearchBottomBarSupport:
             return false
         }
     }
@@ -440,6 +448,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
         case .newDeviceSyncPrompt:
             return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
+        case .aiSearchBottomBarSupport:
+            return .internalOnly()
+        case .serpSettingsFollowUpQuestions:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.serpSettingsFollowUpQuestions))
         }
     }
 }

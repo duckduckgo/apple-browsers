@@ -29,7 +29,7 @@ protocol MessageNavigator {
 
 protocol MessageNavigationDelegate: AnyObject {
 
-    func segueToSettingsAIChat(completion: (() -> Void)?)
+    func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, completion: (() -> Void)?)
     func segueToSettings()
     func segueToFeedback()
     func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?)
@@ -48,7 +48,8 @@ class DefaultMessageNavigator: MessageNavigator {
         assert(delegate != nil)
         switch target {
         case .duckAISettings:
-            delegate?.segueToSettingsAIChat(completion: nil)
+            delegate?.segueToSettingsAIChat(openedFromSERPSettingsButton: false,
+                                            completion: nil)
         case .settings:
             delegate?.segueToSettings()
         case .feedback:

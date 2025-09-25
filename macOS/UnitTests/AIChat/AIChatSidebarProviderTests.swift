@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import AIChat
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AIChatSidebarProviderTests: XCTestCase {
@@ -137,16 +138,30 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
     // MARK: - Is Showing Sidebar Tests
 
-    func testIsShowingSidebar_withExistingSidebar_returnsTrue() {
+    func testIsShowingSidebar_withRevealedSidebar_returnsTrue() {
         // Given
         let tabID = "test-tab"
         _ = provider.makeSidebarViewController(for: tabID, burnerMode: .regular)
+        provider.sidebarsByTab[tabID]?.setRevealed()
 
         // When
         let isShowing = provider.isShowingSidebar(for: tabID)
 
         // Then
         XCTAssertTrue(isShowing)
+    }
+
+    func testIsShowingSidebar_withUnrevealedSidebar_returnsFalse() {
+        // Given
+        let tabID = "test-tab"
+        _ = provider.makeSidebarViewController(for: tabID, burnerMode: .regular)
+        // Note: sidebar starts as not revealed by default
+
+        // When
+        let isShowing = provider.isShowingSidebar(for: tabID)
+
+        // Then
+        XCTAssertFalse(isShowing)
     }
 
     func testIsShowingSidebar_withNonExistentSidebar_returnsFalse() {
@@ -189,6 +204,48 @@ final class AIChatSidebarProviderTests: XCTestCase {
         // Then
         XCTAssertEqual(provider.sidebarsByTab.count, initialCount)
         XCTAssertNotNil(provider.sidebarsByTab[existingTabID])
+    }
+
+    func testHandleSidebarDidClose_withKeepSessionEnabled_preservesSidebarData() {
+        // Given
+        let mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatKeepSession]
+        let keepSessionProvider = AIChatSidebarProvider(featureFlagger: mockFeatureFlagger)
+
+        let tabID = "keep-session-tab"
+        _ = keepSessionProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
+        keepSessionProvider.sidebarsByTab[tabID]?.setRevealed()
+        XCTAssertEqual(keepSessionProvider.sidebarsByTab.count, 1)
+        XCTAssertTrue(keepSessionProvider.isShowingSidebar(for: tabID))
+
+        // When
+        keepSessionProvider.handleSidebarDidClose(for: tabID)
+
+        // Then - sidebar data is preserved but marked as hidden
+        XCTAssertEqual(keepSessionProvider.sidebarsByTab.count, 1)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID])
+        XCTAssertFalse(keepSessionProvider.isShowingSidebar(for: tabID))
+        XCTAssertNil(keepSessionProvider.sidebarsByTab[tabID]?.sidebarViewController)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID]?.dateHidden)
+    }
+
+    func testHandleSidebarDidClose_withKeepSessionDisabled_removesSidebarData() {
+        // Given
+        let mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enabledFeatureFlags = [] // aiChatKeepSession disabled
+        let noKeepSessionProvider = AIChatSidebarProvider(featureFlagger: mockFeatureFlagger)
+
+        let tabID = "no-keep-session-tab"
+        _ = noKeepSessionProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
+        noKeepSessionProvider.sidebarsByTab[tabID]?.setRevealed()
+        XCTAssertEqual(noKeepSessionProvider.sidebarsByTab.count, 1)
+
+        // When
+        noKeepSessionProvider.handleSidebarDidClose(for: tabID)
+
+        // Then - sidebar data is completely removed
+        XCTAssertEqual(noKeepSessionProvider.sidebarsByTab.count, 0)
+        XCTAssertNil(noKeepSessionProvider.sidebarsByTab[tabID])
     }
 
     // MARK: - Clean Up Tests
@@ -345,6 +402,97 @@ final class AIChatSidebarProviderTests: XCTestCase {
         XCTAssertNotNil(provider.getSidebarViewController(for: tab1))
         XCTAssertNil(provider.getSidebarViewController(for: tab2))
         XCTAssertNil(provider.getSidebarViewController(for: tab3))
+    }
+
+    // MARK: - Session Timeout Tests
+
+    func testMakeSidebarViewController_withExpiredSession_createsNewSidebar() {
+        // Given - Create provider with keep session enabled
+        let mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatKeepSession]
+        let keepSessionProvider = AIChatSidebarProvider(featureFlagger: mockFeatureFlagger)
+
+        let tabID = "session-timeout-tab"
+        _ = keepSessionProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
+        keepSessionProvider.sidebarsByTab[tabID]?.setRevealed()
+
+        // Simulate the sidebar being hidden and closed
+        keepSessionProvider.handleSidebarDidClose(for: tabID)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID])
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID]?.dateHidden)
+
+        // Manually set the dateHidden to simulate a very old session (more than 60 minutes ago)
+        let oldDate = Date().addingTimeInterval(-4000) // ~67 minutes ago, exceeds default 60 minute timeout
+        keepSessionProvider.sidebarsByTab[tabID]?.setHidden(at: oldDate)
+
+        // When - Create a new view controller (which calls getCurrentSidebar internally)
+        let newViewController = keepSessionProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
+
+        // Then - Should have created a fresh sidebar since the session expired
+        XCTAssertNotNil(newViewController)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID])
+        // The dateHidden should be nil for a fresh sidebar
+        XCTAssertNil(keepSessionProvider.sidebarsByTab[tabID]?.dateHidden)
+    }
+
+    func testMakeSidebarViewController_withValidSession_returnsExistingSidebar() {
+        // Given - Create provider with keep session enabled
+        let mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatKeepSession]
+        let keepSessionProvider = AIChatSidebarProvider(featureFlagger: mockFeatureFlagger)
+
+        let tabID = "valid-session-tab"
+        _ = keepSessionProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
+        keepSessionProvider.sidebarsByTab[tabID]?.setRevealed()
+
+        // Simulate the sidebar being hidden and closed recently
+        keepSessionProvider.handleSidebarDidClose(for: tabID)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID])
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID]?.dateHidden)
+
+        // Manually set the dateHidden to simulate a recent session (within timeout)
+        let recentDate = Date().addingTimeInterval(-1800) // 30 minutes ago, within default 60 minute timeout
+        keepSessionProvider.sidebarsByTab[tabID]?.setHidden(at: recentDate)
+
+        // When - Create a new view controller (which calls getCurrentSidebar internally)
+        let newViewController = keepSessionProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
+
+        // Then - Should reuse the existing sidebar since session is still valid
+        XCTAssertNotNil(newViewController)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID])
+        // The dateHidden should still be the recent date (session not expired)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID]?.dateHidden)
+    }
+
+    // MARK: - State Management Tests
+
+    func testSetRevealed_updatesIsRevealedState() {
+        // Given
+        let tabID = "revealed-tab"
+        _ = provider.makeSidebarViewController(for: tabID, burnerMode: .regular)
+        XCTAssertFalse(provider.isShowingSidebar(for: tabID)) // starts as not revealed
+
+        // When
+        provider.sidebarsByTab[tabID]?.setRevealed()
+
+        // Then
+        XCTAssertTrue(provider.isShowingSidebar(for: tabID))
+        XCTAssertNil(provider.sidebarsByTab[tabID]?.dateHidden) // dateHidden should be cleared
+    }
+
+    func testSetHidden_updatesIsRevealedState() {
+        // Given
+        let tabID = "hidden-tab"
+        _ = provider.makeSidebarViewController(for: tabID, burnerMode: .regular)
+        provider.sidebarsByTab[tabID]?.setRevealed()
+        XCTAssertTrue(provider.isShowingSidebar(for: tabID))
+
+        // When
+        provider.sidebarsByTab[tabID]?.setHidden()
+
+        // Then
+        XCTAssertFalse(provider.isShowingSidebar(for: tabID))
+        XCTAssertNotNil(provider.sidebarsByTab[tabID]?.dateHidden) // dateHidden should be set
     }
 
 }

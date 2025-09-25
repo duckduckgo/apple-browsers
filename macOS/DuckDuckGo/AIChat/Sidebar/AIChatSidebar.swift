@@ -75,9 +75,9 @@ final class AIChatSidebar: NSObject {
 
     /// Marks the sidebar as hidden/not presented in the UI.
     /// Call this when the sidebar is hidden from the user.
-    public func setHidden() {
+    public func setHidden(at date: Date = Date()) {
         isRevealed = false
-        dateHidden = Date()
+        dateHidden = date
     }
 
     /// Unloads the sidebar view controller after reading and updating the current AI chat URL and restoration data.
@@ -96,11 +96,7 @@ final class AIChatSidebar: NSObject {
             self.sidebarViewController = nil
         }
 
-        isRevealed = false
-    }
-
-    override var debugDescription: String {
-        return "initialAIChatURL: \(initialAIChatURL), mostRecentAIChatURL: \(mostRecentAIChatURL?.absoluteString ?? "nil"), mostRecentRestorationData: \(mostRecentRestorationData != nil ? "YES" : "NO"), isRevealed: \(isRevealed), dateHidden: \(dateHidden?.description ?? "nil"), sidebarViewController: \(sidebarViewController != nil ? "YES" : "NO")"
+        setHidden()
     }
 }
 

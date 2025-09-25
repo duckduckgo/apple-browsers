@@ -155,12 +155,12 @@ public final class AttributedMetricManager {
             Logger.attributedMetric.debug("Less than a week from installation")
         case .weeks(let week):
             Logger.attributedMetric.debug("\(week) week(s) from installation")
-            let bucketedWeek = String(week) // TODO: implement
+            let bucketedWeek = String(week) // implement
             pixelKit.fire(AttributedMetricPixel.userRetentionWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucketedWeek), frequency: .legacyDailyNoSuffix)
             dataStorage.lastRetentionThreshold = timePastFromInstall
         case .months(let month):
             Logger.attributedMetric.debug("\(month) month(s) from installation")
-            let bucketedMonth = String(month) // TODO: implement
+            let bucketedMonth = String(month) // implement
             pixelKit.fire(AttributedMetricPixel.userRetentionMonth(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucketedMonth), frequency: .legacyDailyNoSuffix)
             dataStorage.lastRetentionThreshold = timePastFromInstall
         }
@@ -180,7 +180,7 @@ public final class AttributedMetricManager {
         let searchCount = search8Days.countPast7Days
         guard searchCount > 0 else { return }
         Logger.attributedMetric.debug("\(searchCount) searches performed in the last week")
-        let bucketedSearchCount = searchCount // TODO: implement
+        let bucketedSearchCount = searchCount // implement
         pixelKit.fire(AttributedMetricPixel.userActivePastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, days: bucketedSearchCount), frequency: .legacyDailyNoSuffix)
     }
 
@@ -191,7 +191,7 @@ public final class AttributedMetricManager {
         let search8Days = dataStorage.search8Days
         guard search8Days.countPast7Days > 1 else { return }
         let average = search8Days.past7DaysAverage
-        let bucketedAverage = String(average) // TODO: implement
+        let bucketedAverage = String(average) // implement
         Logger.attributedMetric.debug("Average search count in the last week: \(bucketedAverage)")
         pixelKit.fire(AttributedMetricPixel.userAverageSearchesPastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .legacyDailyNoSuffix)
     }
@@ -209,7 +209,7 @@ public final class AttributedMetricManager {
         let adClick8Days = dataStorage.adClick8Days
         guard adClick8Days.countPast7Days > 1 else { return }
         let average = adClick8Days.past7DaysAverage
-        let bucketedAverage = String(average) // TODO: implement
+        let bucketedAverage = String(average) // implement
         Logger.attributedMetric.debug("Average AD click count in the last week: \(bucketedAverage)")
         pixelKit.fire(AttributedMetricPixel.userAverageAdClicksPastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .legacyDailyNoSuffix)
     }
@@ -227,7 +227,7 @@ public final class AttributedMetricManager {
         let duckAIChat8Days = dataStorage.duckAIChat8Days
         guard duckAIChat8Days.countPast7Days > 1 else { return }
         let average = duckAIChat8Days.past7DaysAverage
-        let bucketedAverage = String(average) // TODO: implement
+        let bucketedAverage = String(average) // implement
         Logger.attributedMetric.debug("Average Duck.AI chats count in the last week: \(bucketedAverage)")
         pixelKit.fire(AttributedMetricPixel.userAverageDuckAiUsagePastWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, count: bucketedAverage), frequency: .legacyDailyNoSuffix)
     }
@@ -260,7 +260,7 @@ public final class AttributedMetricManager {
 
     func processSyncCheck(devices: Int) {
         Logger.attributedMetric.debug("Device Sync")
-        // TODO: specs not clear: https://app.asana.com/1/137249556945/task/1211301604929616/comment/1211362907479310?focus=true
+        // specs not clear: https://app.asana.com/1/137249556945/task/1211301604929616/comment/1211362907479310?focus=true
         pixelKit.fire(AttributedMetricPixel.userSyncedDevice(origin: originOrInstall.origin, installDate: originOrInstall.installDate, devices: devices == 1 ? "1" : "2+"), frequency: .standard)
     }
 }

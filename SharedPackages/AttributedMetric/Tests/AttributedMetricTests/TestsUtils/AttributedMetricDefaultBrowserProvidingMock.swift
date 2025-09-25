@@ -19,6 +19,6 @@
 import Foundation
 import AttributedMetric
 
-class AttributedMetricDefaultBrowserProvidingMock: AttributedMetricDefaultBrowserProviding {
-    var isDefaultBrowser: Bool = false
+public final class AttributedMetricDefaultBrowserProvidingMock: AttributedMetricDefaultBrowserProviding {
+    public var isDefaultBrowser: Bool = false
 }

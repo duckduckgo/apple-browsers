@@ -215,4 +215,3 @@ final class RollingEightDaysIntTests: XCTestCase {
         XCTAssertFalse(rollingInt.isSameDay(differentDay))
     }
 }
-

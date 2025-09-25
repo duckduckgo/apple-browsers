@@ -22,7 +22,7 @@ protocol BucketModifier {
     func bucketedValue(value: Int, pixelName: String) -> String
 }
 
-class PrivacyConfigurationBucketModifier: BucketModifier {
+final class PrivacyConfigurationBucketModifier: BucketModifier {
 
     func bucketedValue(value: Int, pixelName: String) -> String {
         return ""

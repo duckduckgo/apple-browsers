@@ -153,7 +153,7 @@ final class RollingArrayTests: XCTestCase {
 
     func testDifferentCapacities() {
         // Test capacity 3
-        var rolling3 = RollingArray<Int>(capacity: 3)
+        let rolling3 = RollingArray<Int>(capacity: 3)
         XCTAssertEqual(rolling3.count, 0)
 
         rolling3.append(1)

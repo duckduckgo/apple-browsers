@@ -79,7 +79,7 @@ public enum DataStorageError: DDGError {
 }
 
 /// UserDefaults-backed implementation for storing attributed metric data.
-class AttributedMetricDataStorage: AttributedMetricDataStoring {
+final class AttributedMetricDataStorage: AttributedMetricDataStoring {
 
     private let userDefaults: UserDefaults
     private let errorHandler: AttributedMetricErrorHandler
@@ -139,32 +139,32 @@ class AttributedMetricDataStorage: AttributedMetricDataStoring {
     // MARK: - Retention
 
     var installDate: Date? {
-        set { encode(newValue, to: userDefaults, key: .installDate) }
         get { return decode(from: userDefaults, key: .installDate) }
+        set { encode(newValue, to: userDefaults, key: .installDate) }
     }
 
     var lastRetentionThreshold: QuantisedTimePast? {
-        set { encode(newValue, to: userDefaults, key: .lastRetentionThreshold) }
         get { return decode(from: userDefaults, key: .lastRetentionThreshold)}
+        set { encode(newValue, to: userDefaults, key: .lastRetentionThreshold) }
     }
 
     var search8Days: RollingEightDaysInt {
-        set { encode(newValue, to: userDefaults, key: .search8Days) }
         get { return decode(from: userDefaults, key: .search8Days) ?? RollingEightDaysInt() }
+        set { encode(newValue, to: userDefaults, key: .search8Days) }
     }
 
     var adClick8Days: RollingEightDaysInt {
-        set { encode(newValue, to: userDefaults, key: .adClick8Days) }
         get { return decode(from: userDefaults, key: .adClick8Days) ?? RollingEightDaysInt() }
+        set { encode(newValue, to: userDefaults, key: .adClick8Days) }
     }
 
     var duckAIChat8Days: RollingEightDaysInt {
-        set { encode(newValue, to: userDefaults, key: .duckAIChat8Days) }
         get { return decode(from: userDefaults, key: .duckAIChat8Days) ?? RollingEightDaysInt() }
+        set { encode(newValue, to: userDefaults, key: .duckAIChat8Days) }
     }
 
     var subscriptionDate: Date? {
-        set { encode(newValue, to: userDefaults, key: .subscriptionDate) }
         get { return decode(from: userDefaults, key: .subscriptionDate) }
+        set { encode(newValue, to: userDefaults, key: .subscriptionDate) }
     }
 }

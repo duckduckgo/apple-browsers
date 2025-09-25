@@ -20,9 +20,9 @@ import PixelKit
 
 enum HangPixel: PixelKitEvent {
 
-    case uiHangRecovered(seconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, freeMemoryPercent: Double?, batteryPower: BatteryPower?, openBrowserWindows: Int?, openBrowserTabs: Int?)
-    case uiHangNotRecovered(seconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, freeMemoryPercent: Double?, batteryPower: BatteryPower?, openBrowserWindows: Int?, openBrowserTabs: Int?)
-    case uiHangDeadlock(seconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, freeMemoryPercent: Double?, batteryPower: BatteryPower?, openBrowserWindows: Int?, openBrowserTabs: Int?)
+    case uiHangRecovered(durationSeconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, freeMemoryPercent: Double?, batteryPower: BatteryPower?, openBrowserWindowCount: Int?, openBrowserTabCount: Int?, stackTrace: String?)
+    case uiHangNotRecovered(durationSeconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, freeMemoryPercent: Double?, batteryPower: BatteryPower?, openBrowserWindowCount: Int?, openBrowserTabCount: Int?, stackTrace: String?)
+    case uiHangDeadlock(durationSeconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, freeMemoryPercent: Double?, batteryPower: BatteryPower?, openBrowserWindowCount: Int?, openBrowserTabCount: Int?, stackTrace: String?)
 
     enum BatteryPower: String, CustomStringConvertible {
         var description: String { rawValue }
@@ -44,36 +44,40 @@ enum HangPixel: PixelKitEvent {
 
     var parameters: [String: String]? {
         switch self {
-        case .uiHangRecovered(let seconds, let inForeground, let anyWindowVisible, let freeMemoryPercent, let batteryPower, let openBrowserWindows, let openBrowserTabs),
-             .uiHangNotRecovered(let seconds, let inForeground, let anyWindowVisible, let freeMemoryPercent, let batteryPower, let openBrowserWindows, let openBrowserTabs),
-             .uiHangDeadlock(let seconds, let inForeground, let anyWindowVisible, let freeMemoryPercent, let batteryPower, let openBrowserWindows, let openBrowserTabs):
+        case .uiHangRecovered(let durationSeconds, let inForeground, let anyWindowVisible, let freeMemoryPercent, let batteryPower, let openBrowserWindowCount, let openBrowserTabCount, let stackTrace),
+             .uiHangNotRecovered(let durationSeconds, let inForeground, let anyWindowVisible, let freeMemoryPercent, let batteryPower, let openBrowserWindowCount, let openBrowserTabCount, let stackTrace),
+             .uiHangDeadlock(let durationSeconds, let inForeground, let anyWindowVisible, let freeMemoryPercent, let batteryPower, let openBrowserWindowCount, let openBrowserTabCount, let stackTrace):
 
             var params: [String: String] = [:]
 
-            params["seconds"] = "\(seconds)"
+            params["duration_seconds"] = "\(durationSeconds)"
 
-            if let inForeground = inForeground {
+            if let inForeground {
                 params["in_foreground"] = inForeground ? "true" : "false"
             }
 
-            if let anyWindowVisible = anyWindowVisible {
+            if let anyWindowVisible {
                 params["any_window_visible"] = anyWindowVisible ? "true" : "false"
             }
 
-            if let freeMemoryPercent = freeMemoryPercent {
+            if let freeMemoryPercent {
                 params["free_memory_percent"] = String(format: "%.1f", freeMemoryPercent)
             }
 
-            if let batteryPower = batteryPower {
+            if let batteryPower {
                 params["battery_power"] = batteryPower.rawValue
             }
 
-            if let openBrowserWindows = openBrowserWindows {
-                params["open_browser_windows"] = "\(openBrowserWindows)"
+            if let openBrowserWindowCount {
+                params["open_browser_window_count"] = "\(openBrowserWindowCount)"
             }
 
-            if let openBrowserTabs = openBrowserTabs {
-                params["open_browser_tabs"] = "\(openBrowserTabs)"
+            if let openBrowserTabCount {
+                params["open_browser_tab_count"] = "\(openBrowserTabCount)"
+            }
+
+            if let stackTrace {
+                params["stack_trace"] = "\(stackTrace)"
             }
 
             return params

@@ -17,18 +17,15 @@
 //
 
 import Foundation
-import AppKit
 import DesignResourcesKit
-
 
 enum ThemeName: String, CaseIterable {
     case `default`
 
-    var colorPalette: DesignResourcesKit.ColorPalette {
+    var designColorPalette: DesignResourcesKit.ColorPalette {
         switch self {
         case .default:
             return .default
         }
     }
 }
-

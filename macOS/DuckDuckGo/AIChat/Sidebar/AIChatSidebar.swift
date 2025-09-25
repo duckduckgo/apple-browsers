@@ -83,7 +83,7 @@ final class AIChatSidebar: NSObject {
     /// Unloads the sidebar view controller after reading and updating the current AI chat URL and restoration data.
     /// This method ensures the current URL state and restoration data are captured before the view controller is unloaded.
     /// Also marks the sidebar as hidden since the view controller is being unloaded.
-    public func unloadViewController(persistingState: Bool){
+    public func unloadViewController(persistingState: Bool) {
         if let sidebarViewController {
             if persistingState {
                 mostRecentAIChatURL = sidebarViewController.currentAIChatURL

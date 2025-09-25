@@ -75,16 +75,25 @@ struct VisualStyle: VisualStyleProviding {
 
     static var current: VisualStyleProviding {
         let palette = NewColorPalette()
-        return VisualStyle(toolbarButtonsCornerRadius: 9,
-                           fireWindowGraphic: .burnerWindowGraphicNew,
-                           areNavigationBarCornersRound: true,
-                           addressBarStyleProvider: CurrentAddressBarStyleProvider(),
-                           tabStyleProvider: NewlineTabStyleProvider(palette: palette),
-                           colorsProvider: NewColorsProviding(palette: palette),
-                           iconsProvider: CurrentIconsProvider(),
-                           fireButtonSize: 32,
-                           navigationToolbarButtonsSpacing: 2,
-                           tabBarButtonSize: 28,
-                           addToolbarShadow: true)
+        return buildVisualStyle(palette: palette)
+    }
+
+    static func buildVisualStyle(themeName: ThemeName) -> VisualStyle {
+        let palette = ThemeColors(themeName: themeName)
+        return buildVisualStyle(palette: palette)
+    }
+
+    static func buildVisualStyle(palette: ColorPalette) -> VisualStyle {
+        VisualStyle(toolbarButtonsCornerRadius: 9,
+                    fireWindowGraphic: .burnerWindowGraphicNew,
+                    areNavigationBarCornersRound: true,
+                    addressBarStyleProvider: CurrentAddressBarStyleProvider(),
+                    tabStyleProvider: NewlineTabStyleProvider(palette: palette),
+                    colorsProvider: NewColorsProviding(palette: palette),
+                    iconsProvider: CurrentIconsProvider(),
+                    fireButtonSize: 32,
+                    navigationToolbarButtonsSpacing: 2,
+                    tabBarButtonSize: 28,
+                    addToolbarShadow: true)
     }
 }

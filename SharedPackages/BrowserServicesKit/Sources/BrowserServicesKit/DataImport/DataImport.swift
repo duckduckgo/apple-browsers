@@ -22,6 +22,11 @@ import Foundation
 
 public enum DataImport {
 
+    public enum TypeSelection: Hashable {
+        case single(DataType)
+        case multiple(Set<DataType>)
+    }
+
     public enum Source: String, RawRepresentable, CaseIterable, Equatable {
         case brave
         case chrome

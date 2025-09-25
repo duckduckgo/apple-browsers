@@ -64,7 +64,7 @@ struct DataImportViewModel {
         case profileAndDataTypesPicker
         case moreInfo
         case getReadPermission(URL)
-        case fileImport(dataType: DataType, summary: Set<DataType> = [])
+        case fileImport(dataTypeSelection: DataImport.TypeSelection, summary: Set<DataType> = [])
         case summary(Set<DataType>, isFileImport: Bool = false)
         case feedback
         case shortcuts(Set<DataType>)
@@ -79,7 +79,7 @@ struct DataImportViewModel {
 
         var fileImportDataType: DataType? {
             switch self {
-            case .fileImport(dataType: let dataType, summary: _):
+            case .fileImport(.single(let dataType), _):
                 return dataType
             default:
                 return nil
@@ -268,7 +268,7 @@ struct DataImportViewModel {
             case .success(let dataTypeSummary):
                 // if a data type can‘t be imported (Yandex/Passwords) - switch to its file import displaying successful import results
                 if dataTypeSummary.isEmpty, !(screen.isFileImport && screen.fileImportDataType == dataType), nextScreen == nil {
-                    nextScreen = .fileImport(dataType: dataType, summary: Set(summary.filter({ $0.value.isSuccess }).keys))
+                    nextScreen = .fileImport(dataTypeSelection: .single(dataType), summary: Set(summary.filter({ $0.value.isSuccess }).keys))
                 }
                 PixelKit.fire(GeneralPixel.dataImportSucceeded(action: .init(dataType), source: importSource.pixelSourceParameterName, sourceVersion: sourceVersion), frequency: .dailyAndStandard)
             case .failure(let error):
@@ -278,7 +278,7 @@ struct DataImportViewModel {
                 // show file import screen when import fails or no bookmarks|passwords found
                 if !(screen.isFileImport && screen.fileImportDataType == dataType), nextScreen == nil {
                     // switch to file import of the failed data type displaying successful import results
-                    nextScreen = .fileImport(dataType: dataType, summary: Set(summary.filter({ $0.value.isSuccess }).keys))
+                    nextScreen = .fileImport(dataTypeSelection: .single(dataType), summary: Set(summary.filter({ $0.value.isSuccess }).keys))
                 }
                 PixelKit.fire(GeneralPixel.dataImportFailed(source: importSource.pixelSourceParameterName, sourceVersion: sourceVersion, error: error), frequency: .dailyAndStandard)
             }
@@ -468,12 +468,14 @@ extension DataImport.Source {
     var initialScreen: DataImportViewModel.Screen {
         switch self {
         case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera,
-             .operaGX, .safari, .safariTechnologyPreview, .tor, .vivaldi, .yandex:
+             .operaGX, .tor, .vivaldi, .yandex:
             return .profileAndDataTypesPicker
+        case .safari, .safariTechnologyPreview:
+            return .fileImport(dataTypeSelection: .multiple([.bookmarks, .passwords]))
         case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv:
-            return .fileImport(dataType: .passwords)
+            return .fileImport(dataTypeSelection: .single(.passwords))
         case .bookmarksHTML:
-            return .fileImport(dataType: .bookmarks)
+            return .fileImport(dataTypeSelection: .single(.bookmarks))
         }
     }
 
@@ -504,6 +506,17 @@ extension DataImport.DataType {
 
 }
 
+extension DataImport.TypeSelection {
+    var allowedFileTypes: [UTType] {
+        switch self {
+        case .single(let dataType):
+            return dataType.allowedFileTypes
+        case .multiple(let dataTypes):
+            return dataTypes.flatMap { $0.allowedFileTypes }
+        }
+    }
+}
+
 extension DataImportViewModel {
 
     private var areAllSelectedDataTypesSuccessfullyImported: Bool {
@@ -527,11 +540,11 @@ extension DataImportViewModel {
             // if some of selected data types failed to import or not imported yet
             switch summary.last(where: { $0.dataType == dataType })?.result {
             case .success(let summary) where summary.isEmpty:
-                return .fileImport(dataType: dataType)
+                return .fileImport(dataTypeSelection: .single(dataType))
             case .failure(let error) where error.errorType == .noData:
-                return .fileImport(dataType: dataType)
+                return .fileImport(dataTypeSelection: .single(dataType))
             case .failure, .none:
-                return .fileImport(dataType: dataType)
+                return .fileImport(dataTypeSelection: .single(dataType))
             case .success:
                 continue
             }
@@ -641,16 +654,16 @@ extension DataImportViewModel {
                                     /* dataType: */ nil,
                                     /* profileURL: */ $0.profileURL,
                                     /* primaryPassword: */ nil)
-            }),
-                  selectedDataTypes.intersects(importer.importableTypes) else {
+            }), selectedDataTypes.intersects(importer.importableTypes) else {
                 // no profiles found
                 // or selected data type not supported by selected browser data importer
                 guard let type = DataType.allCases.filter(selectedDataTypes.contains).first else {
                     // disabled Import button
                     return initiateImport()
                 }
+
                 // use CSV/HTML file import
-                return .next(.fileImport(dataType: type))
+                return .next(.fileImport(dataTypeSelection: .single(type)))
             }
 
             if importer.requiresKeychainPassword(for: selectedDataTypes) {
@@ -667,7 +680,7 @@ extension DataImportViewModel {
         case .fileImport where screen == importSource.initialScreen:
             // no default action for File Import sources
             return nil
-        case .fileImport(dataType: let dataType, summary: _)
+        case .fileImport(.single(let dataType), summary: _)
             // exlude all skipped datatypes that are ordered before
             where selectedDataTypes.subtracting(DataType.dataTypes(before: dataType, inclusive: true)).isEmpty
             // and no failures recorded - otherwise will skip to Feedback

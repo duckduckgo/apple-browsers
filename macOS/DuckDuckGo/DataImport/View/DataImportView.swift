@@ -19,7 +19,6 @@
 import AppKit
 import SwiftUI
 import BrowserServicesKit
-import Common
 import PixelKit
 
 @MainActor
@@ -180,7 +179,11 @@ struct DataImportView: ModalView {
             case .getReadPermission(let url):
                 // give request to Safari folder, select Bookmarks.plist using open panel
                 getReadPermissionBody(url: url)
-            case .fileImport(let dataType, let summaryTypes):
+            case .fileImport(.multiple, let summaryTypes):
+                fileImportBody(dataType: .bookmarks, summaryTypes: summaryTypes).onAppear {
+                    assert(false, "Multiple file imports are not supported yet")
+                }
+            case .fileImport(.single(let dataType), let summaryTypes):
                 fileImportBody(dataType: dataType, summaryTypes: summaryTypes)
             case .summary(let dataTypes, let isFileImport):
                 DataImportSummaryView(model, dataTypes: dataTypes, isFileImport: isFileImport)

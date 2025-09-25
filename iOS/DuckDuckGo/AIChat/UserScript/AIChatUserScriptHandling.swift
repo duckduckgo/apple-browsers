@@ -203,7 +203,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// Following security guidelines to validate all external inputs
     private func sanitizeCSSSelector(_ selector: String) -> String {
         // Remove any potentially dangerous characters that could be used for injection
-        let allowedCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_#.[]():,>+~*= ")
+        let allowedCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_#.[]():,>+~*= \"")
 
         // Filter out any characters not in the allowed set
         let sanitized = selector.components(separatedBy: allowedCharacters.inverted).joined()

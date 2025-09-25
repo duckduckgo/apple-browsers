@@ -46,9 +46,10 @@ final class SettingsViewModel: ObservableObject {
     private let syncPausedStateManager: any SyncPausedStateManaging
     var emailManager: EmailManager { EmailManager() }
     private let historyManager: HistoryManaging
-    let privacyProDataReporter: PrivacyProDataReporting?
+    let subscriptionDataReporter: SubscriptionDataReporting?
     let textZoomCoordinator: TextZoomCoordinating
     let aiChatSettings: AIChatSettingsProvider
+    let serpSettings: SERPSettingsProviding
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     let themeManager: ThemeManaging
     var experimentalAIChatManager: ExperimentalAIChatManager
@@ -111,6 +112,10 @@ final class SettingsViewModel: ObservableObject {
         case networkProtection
     }
 
+    // When true, indicates the AI Features settings was opened from the SERP settings button
+    // This affects UI: shows Done button and hides Search Assist link
+    var openedFromSERPSettingsButton: Bool = false
+
     // Indicates if the Paid AI Chat feature flag is enabled for the current user/session.
     var isPaidAIChatEnabled: Bool {
         featureFlagger.isFeatureOn(.paidAIChat)
@@ -132,6 +137,18 @@ final class SettingsViewModel: ObservableObject {
     
     var isRefreshButtonPositionEnabled: Bool {
         featureFlagger.isFeatureOn(.refreshButtonPosition)
+    }
+    
+    var firstSectionTitle: String {
+        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) ? UserText.aiChatSettingsBrowserShortcutsSectionTitle : ""
+    }
+    
+    var secondSectionTitle: String {
+        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) ? UserText.aiChatSettingsAllowFollowUpQuestionsSectionTitle : ""
+    }
+    
+    var shouldShowSERPSettingsFollowUpQuestions: Bool {
+        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) && serpSettings.didMigrate
     }
 
     var shouldShowNoMicrophonePermissionAlert: Bool = false
@@ -516,6 +533,11 @@ final class SettingsViewModel: ObservableObject {
         state.subscription.subscriptionFeatures.contains(Entitlement.ProductName.paidAIChat)
     }
 
+    // Indicates if AI features are generally enabled
+    var isAIChatEnabled: Bool {
+        aiChatSettings.isAIChatEnabled
+    }
+
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,
@@ -529,9 +551,10 @@ final class SettingsViewModel: ObservableObject {
          deepLink: SettingsDeepLinkSection? = nil,
          historyManager: HistoryManaging,
          syncPausedStateManager: any SyncPausedStateManaging,
-         privacyProDataReporter: PrivacyProDataReporting,
+         subscriptionDataReporter: SubscriptionDataReporting,
          textZoomCoordinator: TextZoomCoordinating,
          aiChatSettings: AIChatSettingsProvider,
+         serpSettings: SERPSettingsProviding,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
          themeManager: ThemeManaging = ThemeManager.shared,
          experimentalAIChatManager: ExperimentalAIChatManager,
@@ -557,9 +580,10 @@ final class SettingsViewModel: ObservableObject {
         self.deepLinkTarget = deepLink
         self.historyManager = historyManager
         self.syncPausedStateManager = syncPausedStateManager
-        self.privacyProDataReporter = privacyProDataReporter
+        self.subscriptionDataReporter = subscriptionDataReporter
         self.textZoomCoordinator = textZoomCoordinator
         self.aiChatSettings = aiChatSettings
+        self.serpSettings = serpSettings
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.themeManager = themeManager
         self.experimentalAIChatManager = experimentalAIChatManager
@@ -877,7 +901,11 @@ extension SettingsViewModel {
     func openAIChat() {
         urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
     }
-    
+
+    func openAIFeaturesSettings() {
+        triggerDeepLinkNavigation(to: .aiChat)
+    }
+
     func openWebTrackingProtectionLearnMore() {
         urlOpener.open(URL.webTrackingProtection)
     }
@@ -1116,7 +1144,7 @@ extension SettingsViewModel {
             updatedSubscription.platform = .unknown
             updatedSubscription.isActiveTrialOffer = false
 
-            DailyPixel.fireDailyAndCount(pixel: .settingsPrivacyProAccountWithNoSubscriptionFound)
+            DailyPixel.fireDailyAndCount(pixel: .settingsSubscriptionAccountWithNoSubscriptionFound)
         } catch {
             Logger.subscription.error("Failed to fetch Subscription: \(error, privacy: .public)")
         }
@@ -1203,17 +1231,17 @@ extension SettingsViewModel {
 
             switch restoreFlowError {
             case .missingAccountOrTransactions:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorMissingAccountOrTransactions)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorMissingAccountOrTransactions)
             case .pastTransactionAuthenticationError:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorPastTransactionAuthenticationError)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorPastTransactionAuthenticationError)
             case .failedToObtainAccessToken:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToObtainAccessToken)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToObtainAccessToken)
             case .failedToFetchAccountDetails:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToFetchAccountDetails)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToFetchAccountDetails)
             case .failedToFetchSubscriptionDetails:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToFetchSubscriptionDetails)
             case .subscriptionExpired:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorSubscriptionExpired)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorSubscriptionExpired)
             }
         }
     }
@@ -1249,17 +1277,17 @@ extension SettingsViewModel {
 
             switch restoreFlowError {
             case .missingAccountOrTransactions:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorMissingAccountOrTransactions)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorMissingAccountOrTransactions)
             case .pastTransactionAuthenticationError:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorPastTransactionAuthenticationError)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorPastTransactionAuthenticationError)
             case .failedToObtainAccessToken:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToObtainAccessToken)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToObtainAccessToken)
             case .failedToFetchAccountDetails:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToFetchAccountDetails)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToFetchAccountDetails)
             case .failedToFetchSubscriptionDetails:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToFetchSubscriptionDetails)
             case .subscriptionExpired:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorSubscriptionExpired)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorSubscriptionExpired)
             }
         }
     }
@@ -1340,6 +1368,16 @@ extension SettingsViewModel {
             get: { self.aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled },
             set: { newValue in
                 self.aiChatSettings.enableAIChatTabSwitcherUserSettings(enable: newValue)
+            }
+        )
+    }
+    
+    var serpSettingsFollowUpQuestionsBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                self.serpSettings.isAllowFollowUpQuestionsEnabled ?? true },
+            set: { newValue in
+                self.serpSettings.enableAllowFollowUpQuestions(enable: newValue)
             }
         )
     }

@@ -225,6 +225,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private let aiChatTabOpener: AIChatTabOpening
+    private let aiChatAddressBarPromptExtractor: AIChatAddressBarPromptExtractor
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
 
@@ -238,6 +239,7 @@ final class AddressBarButtonsViewController: NSViewController {
           popovers: NavigationBarPopovers?,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatTabOpener: AIChatTabOpening,
+          aiChatAddressBarPromptExtractor: AIChatAddressBarPromptExtractor = AIChatAddressBarPromptExtractor(),
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
           aiChatSidebarPresenter: AIChatSidebarPresenting,
           visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
@@ -249,6 +251,7 @@ final class AddressBarButtonsViewController: NSViewController {
         self.popovers = popovers
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatTabOpener = aiChatTabOpener
+        self.aiChatAddressBarPromptExtractor = aiChatAddressBarPromptExtractor
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
         self.visualStyle = visualStyle
@@ -796,10 +799,11 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if let value = textFieldValue, !value.isEmpty {
             PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .tabWithPrompt), frequency: .dailyAndStandard)
-            aiChatTabOpener.openAIChatTab(value, with: behavior)
+            let query = aiChatAddressBarPromptExtractor.extractAIChatQuery(for: value)
+            aiChatTabOpener.openAIChatTab(with: query, behavior: behavior)
         } else {
             PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .tab), frequency: .dailyAndStandard)
-            aiChatTabOpener.openAIChatTab(nil, with: behavior)
+            aiChatTabOpener.openNewAIChat(in: behavior)
         }
     }
 
@@ -1072,9 +1076,10 @@ final class AddressBarButtonsViewController: NSViewController {
             )
 
             if let value = textFieldValue {
-                aiChatTabOpener.openAIChatTab(value, with: behavior)
+                let query = aiChatAddressBarPromptExtractor.extractAIChatQuery(for: value)
+                aiChatTabOpener.openAIChatTab(with: query, behavior: behavior)
             } else {
-                aiChatTabOpener.openAIChatTab(nil, with: behavior)
+                aiChatTabOpener.openNewAIChat(in: behavior)
             }
         } else {
             if let tab = tabViewModel?.tab {

@@ -22,7 +22,7 @@ import Common
 
 /// Container for both access and refresh tokens
 ///
-/// WARNING: Specialised for Privacy Pro Subscription, abstract for other use cases.
+/// WARNING: Specialised for Subscription, abstract for other use cases.
 ///
 /// This is the object that should be stored in the keychain and used to make authenticated requests
 /// The decoded tokens are used to determine the user's entitlements

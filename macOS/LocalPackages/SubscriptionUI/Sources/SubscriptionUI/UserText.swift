@@ -47,6 +47,11 @@ enum UserText {
     // MARK: Preferences - Duck.ai Premium
     static let preferencesPaidAIChatTitle = NSLocalizedString("subscription.paid.ai.chat.title", bundle: Bundle.module, value: "Duck.ai", comment: "Title of the preferences pane for Duck.ai Pro")
     static let openPaidAIChatButton = NSLocalizedString("subscription.preferences.paid.ai.chat.button", bundle: Bundle.module, value: "Open Duck.ai", comment: "Title for the preferences pane button to open Duck.ai Pro")
+    static let configureDuckAIPaidAIChatTitle = NSLocalizedString("subscription.preferences.paid.ai.chat.configure.duck.ai.title", bundle: Bundle.module, value: "Configure Duck.ai", comment: "Title of the section of settings that allows user to configure Duck.ai")
+    static let configureDuckAIPaidAIChatDescription = NSLocalizedString("subscription.preferences.paid.ai.chat.configure.duck.ai.description", bundle: Bundle.module, value: "Customize Duck.ai and other AI Features of your browser in AI Features Settings", comment: "Description of the section of settings that allows user to configure Duck.ai")
+    static let enableDuckAIPaidAIChatTitle = NSLocalizedString("subscription.preferences.paid.ai.chat.enable.duck.ai.title", bundle: Bundle.module, value: "Get access to advanced AI models in Duck.ai", comment: "Title of the section of settings that allows user to configure Duck.ai")
+    static let enableDuckAIPaidAIChatDescription = NSLocalizedString("subscription.preferences.paid.ai.chat.enable.duck.ai.description", bundle: Bundle.module, value: "Enable Duck.ai in AI Features Settings", comment: "Title of the section of settings that allows user to configure Duck.ai")
+    static let paidDuckAILinkToAIFeatures = NSLocalizedString("subscription.preferences.paid.ai.chat.ai.features.link", bundle: Bundle.module, value: "AI Features Settings", comment: "Link to the AI Features Settings")
 
     // MARK: Preferences - Identity Theft Restoration
 
@@ -98,7 +103,7 @@ enum UserText {
     static let preferencesSubscriptionFeedbackButton = NSLocalizedString("subscription.preferences.feedback.button", bundle: Bundle.module, value: "Send Feedback", comment: "Title for the subscription feedback button")
     static let preferencesPrivacyPolicyButton = NSLocalizedString("subscription.preferences.privacypolicy.button", bundle: Bundle.module, value: "Privacy Policy and Terms of Service", comment: "Title for the privacy policy button")
 
-    static func preferencesSubscriptionRenewingCaption(billingPeriod: PrivacyProSubscription.BillingPeriod, formattedDate: String) -> String {
+    static func preferencesSubscriptionRenewingCaption(billingPeriod: DuckDuckGoSubscription.BillingPeriod, formattedDate: String) -> String {
         let localized: String
 
         switch billingPeriod {
@@ -122,7 +127,7 @@ enum UserText {
         return String(format: localized, formattedDate)
     }
 
-    static func preferencesSubscriptionExpiringCaption(billingPeriod: PrivacyProSubscription.BillingPeriod, formattedDate: String) -> String {
+    static func preferencesSubscriptionExpiringCaption(billingPeriod: DuckDuckGoSubscription.BillingPeriod, formattedDate: String) -> String {
         let localized: String
 
         switch billingPeriod {
@@ -151,7 +156,7 @@ enum UserText {
         return String(format: localized, formattedDate)
     }
 
-    static func preferencesTrialSubscriptionRenewingCaption(billingPeriod: PrivacyProSubscription.BillingPeriod, formattedDate: String) -> String {
+    static func preferencesTrialSubscriptionRenewingCaption(billingPeriod: DuckDuckGoSubscription.BillingPeriod, formattedDate: String) -> String {
         let localized: String
 
         switch billingPeriod {
@@ -268,5 +273,5 @@ enum UserText {
     static let subscriptionAppleIDSyncFailedAlertTitle = NSLocalizedString("subscription.alert.subscription.apple-id.sync-failed.title", bundle: Bundle.module, value: "Something Went Wrong When Syncing Your Apple Account", comment: "Alert message when the subscription failed to restore")
 
     // MARK: - Rebranding Message
-    static let preferencesSubscriptionRebrandingMessage = NSLocalizedString("subscription.preferences.subscription.rebranding.message", bundle: Bundle.module, value: "Privacy Pro is now just called the DuckDuckGo subscription", comment: "Message informing users that Privacy Pro is now called the DuckDuckGo subscription")
+    static let preferencesSubscriptionRebrandingMessage = NSLocalizedString("subscription.preferences.subscription.rebranding.message", bundle: Bundle.module, value: "Privacy Pro is now just called the DuckDuckGo subscription", comment: "Message informing users that Subscription is now called the DuckDuckGo subscription")
 }

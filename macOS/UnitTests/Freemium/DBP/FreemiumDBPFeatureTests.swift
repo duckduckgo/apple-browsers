@@ -79,7 +79,7 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = nil
     }
 
-    func testWhenPrivacyProNotAvailable_thenFreemiumDBPIsNotAvailable() throws {
+    func testWhenSubscriptionNotAvailable_thenFreemiumDBPIsNotAvailable() throws {
         // Given
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
         mockSubscriptionManager.canPurchase = false

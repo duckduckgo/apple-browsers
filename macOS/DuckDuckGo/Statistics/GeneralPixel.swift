@@ -507,10 +507,6 @@ enum GeneralPixel: PixelKitEvent {
 
     case compilationFailed
 
-    // MARK: error page shown
-    case errorPageShownOther
-    case errorPageShownWebkitTermination
-
     // Broken site prompt
 
     case pageRefreshThreeTimesWithin20Seconds
@@ -529,6 +525,8 @@ enum GeneralPixel: PixelKitEvent {
      * - Useful for investigating the underlying error causing the failure.
      */
     case userScriptLoadJSFailed(jsFile: String, error: Error)
+
+    case unifiedURLPredictionMismatch(prediction: String, input: String)
 
     var name: String {
         switch self {
@@ -1225,9 +1223,6 @@ enum GeneralPixel: PixelKitEvent {
         case .bookmarksSearchExecuted: return "m_mac_search_bookmarks_executed"
         case .bookmarksSearchResultClicked: return "m_mac_search_result_clicked"
 
-        case .errorPageShownOther: return "m_mac_errorpageshown_other"
-        case .errorPageShownWebkitTermination: return "m_mac_errorpageshown_webkittermination"
-
             // Broken site prompt
         case .pageRefreshThreeTimesWithin20Seconds: return "m_mac_reload-three-times-within-20-seconds"
         case .siteNotWorkingShown: return "m_mac_site-not-working_shown"
@@ -1239,6 +1234,8 @@ enum GeneralPixel: PixelKitEvent {
             // UserScript
         case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
 
+        case .unifiedURLPredictionMismatch:
+            return "unified_url_prediction_mismatch"
         }
     }
 
@@ -1416,6 +1413,9 @@ enum GeneralPixel: PixelKitEvent {
             var params = error.pixelParameters
             params[PixelKit.Parameters.jsFile] = jsFile
             return params
+
+        case .unifiedURLPredictionMismatch(let prediction, let input):
+            return ["prediction": prediction, "input": input]
 
         default: return nil
         }

@@ -30,7 +30,7 @@ import Combine
 
 protocol AppearancePreferencesPersistor {
     var showFullURL: Bool { get set }
-    var currentThemeName: String { get set }
+    var themeAppearance: String { get set }
     var favoritesDisplayMode: String? { get set }
     var isOmnibarVisible: Bool { get set }
     var isFavoriteVisible: Bool { get set }
@@ -75,8 +75,8 @@ struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersisto
     @UserDefaultsWrapper(key: .showFullURL, defaultValue: false)
     var showFullURL: Bool
 
-    @UserDefaultsWrapper(key: .currentThemeName, defaultValue: ThemeName.systemDefault.rawValue)
-    var currentThemeName: String
+    @UserDefaultsWrapper(key: .themeAppearance, defaultValue: ThemeAppearance.systemDefault.rawValue)
+    var themeAppearance: String
 
     @UserDefaultsWrapper(key: .favoritesDisplayMode, defaultValue: FavoritesDisplayMode.displayNative(.desktop).description)
     var favoritesDisplayMode: String?
@@ -173,7 +173,7 @@ enum HomeButtonPosition: String, CaseIterable {
     case right
 }
 
-enum ThemeName: String, Equatable, CaseIterable {
+enum ThemeAppearance: String, Equatable, CaseIterable {
     case light
     case dark
     case systemDefault
@@ -242,9 +242,9 @@ final class AppearancePreferences: ObservableObject {
         static let dismissNextStepsCardsAfterDays = 9
     }
 
-    @Published var currentThemeName: ThemeName {
+    @Published var themeAppearance: ThemeAppearance {
         didSet {
-            persistor.currentThemeName = currentThemeName.rawValue
+            persistor.themeAppearance = themeAppearance.rawValue
             updateUserInterfaceStyle()
             pixelFiring?.fire(SettingsPixel.themeSettingChanged, frequency: .uniqueByName)
         }
@@ -387,7 +387,7 @@ final class AppearancePreferences: ObservableObject {
     }
 
     func updateUserInterfaceStyle() {
-        NSApp.appearance = currentThemeName.appearance
+        NSApp.appearance = themeAppearance.appearance
     }
 
     func openNewTabPageBackgroundCustomizationSettings() {
@@ -430,7 +430,7 @@ final class AppearancePreferences: ObservableObject {
         /// when adding new properties, make sure to update `reload()` to include them there.
         isContinueSetUpCardsViewOutdated = persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays
         continueSetUpCardsClosed = persistor.continueSetUpCardsClosed
-        currentThemeName = .init(rawValue: persistor.currentThemeName) ?? .systemDefault
+        themeAppearance = .init(rawValue: persistor.themeAppearance) ?? .systemDefault
         showFullURL = persistor.showFullURL
         favoritesDisplayMode = persistor.favoritesDisplayMode.flatMap(FavoritesDisplayMode.init) ?? .default
         isOmnibarVisible = persistor.isOmnibarVisible
@@ -452,7 +452,7 @@ final class AppearancePreferences: ObservableObject {
     func reload() {
         isContinueSetUpCardsViewOutdated = persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays
         continueSetUpCardsClosed = persistor.continueSetUpCardsClosed
-        currentThemeName = .init(rawValue: persistor.currentThemeName) ?? .systemDefault
+        themeAppearance = .init(rawValue: persistor.themeAppearance) ?? .systemDefault
         showFullURL = persistor.showFullURL
         favoritesDisplayMode = persistor.favoritesDisplayMode.flatMap(FavoritesDisplayMode.init) ?? .default
         isOmnibarVisible = persistor.isOmnibarVisible

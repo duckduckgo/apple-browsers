@@ -284,6 +284,16 @@
                ReferencedContainer = "container:../SharedPackages/VPN">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "URLPredictorTests"
+               BuildableName = "URLPredictorTests"
+               BlueprintName = "URLPredictorTests"
+               ReferencedContainer = "container:../SharedPackages/URLPredictor">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

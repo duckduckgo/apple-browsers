@@ -26,16 +26,16 @@ import Common
 /// Test all permutations according to https://app.asana.com/0/0/1206812323779606/f
 final class NetworkProtectionFeatureVisibilityTests: XCTestCase {
     
-    func testPrivacyProNotYetLaunched() {
+    func testSubscriptionNotYetLaunched() {
         // Waitlist beta OFF, not current waitlist user -> Show nothing, use nothing
         let mockWithNothing = NetworkProtectionFeatureVisibilityMocks(with: [])
         XCTAssertFalse(mockWithNothing.shouldMonitorEntitlement())
         XCTAssertFalse(mockWithNothing.shouldShowVPNShortcut())
     }
     
-    func testPrivacyProLaunched() {
+    func testSubscriptionLaunched() {
         // Waitlist beta OFF, not current waitlist user -> Enforce entitlement check, nothing else
-        let mockWithNothingElse = NetworkProtectionFeatureVisibilityMocks(with: [.isPrivacyProLaunched])
+        let mockWithNothingElse = NetworkProtectionFeatureVisibilityMocks(with: [.isSubscriptionLaunched])
         XCTAssertTrue(mockWithNothingElse.shouldMonitorEntitlement())
         XCTAssertFalse(mockWithNothingElse.shouldShowVPNShortcut())
     }
@@ -46,7 +46,7 @@ struct NetworkProtectionFeatureVisibilityMocks: NetworkProtectionFeatureVisibili
     let accountManager: AccountManager
     
     func shouldShowVPNShortcut() -> Bool {
-        if isPrivacyProLaunched() {
+        if isSubscriptionLaunched() {
             return accountManager.isUserAuthenticated
         } else {
             return false
@@ -56,7 +56,7 @@ struct NetworkProtectionFeatureVisibilityMocks: NetworkProtectionFeatureVisibili
     struct Options: OptionSet {
         let rawValue: Int
         
-        static let isPrivacyProLaunched = Options(rawValue: 1 << 0)
+        static let isSubscriptionLaunched = Options(rawValue: 1 << 0)
     }
     
     let options: Options
@@ -84,11 +84,11 @@ struct NetworkProtectionFeatureVisibilityMocks: NetworkProtectionFeatureVisibili
         NetworkProtectionFeatureVisibilityMocks(with: options.union(additionalOptions))
     }
     
-    func isPrivacyProLaunched() -> Bool {
-        options.contains(.isPrivacyProLaunched)
+    func isSubscriptionLaunched() -> Bool {
+        options.contains(.isSubscriptionLaunched)
     }
     
     func shouldMonitorEntitlement() -> Bool {
-        isPrivacyProLaunched()
+        isSubscriptionLaunched()
     }
 }

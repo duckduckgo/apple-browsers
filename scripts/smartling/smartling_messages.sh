@@ -89,7 +89,7 @@ generate_status_message() {
 	**Progress:** $percent%
 
 	🔗 **[View in Smartling Dashboard](https://dashboard.smartling.com/app/projects/$project_id/account-jobs/$project_id:$job_id)**
-	${workflow_url:+\n  🔧 **[View Workflow Run]($workflow_url)**}
+	${workflow_url:+🔧 **[View Workflow Run]($workflow_url)**}
 	EOF
 
 	# Add download suggestion if completed

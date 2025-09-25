@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Common
 
 /// Protocol for storing attributed metric data with rolling daily counters.
 public protocol AttributedMetricDataStoring {
@@ -24,7 +25,7 @@ public protocol AttributedMetricDataStoring {
     /// App installation date for attribution calculations.
     var installDate: Date? { get set }
     /// Last calculated retention threshold for privacy-preserving metrics.
-    var lastRetentionThreshold: TimePast? { get set }
+    var lastRetentionThreshold: QuantisedTimePast? { get set }
 
     /// Rolling 8-day counter for search events.
     var search8Days: RollingEightDaysInt { get set }
@@ -40,13 +41,52 @@ public protocol AttributedMetricDataStoring {
     func removeAll()
 }
 
+public enum DataStorageError: DDGError {
+    case encodingFailed(Error)
+    case decodingFailed(Error)
+
+    public var description: String {
+        switch self {
+        case .encodingFailed(let error):
+            "Encoding failed: \(error)"
+        case .decodingFailed(let error):
+            "Decoding failed: \(error)"
+        }
+    }
+
+    public static var errorDomain: String { "com.duckduckgo.attributedmetric.datastorage" }
+
+    public var errorCode: Int {
+        switch self {
+        case .encodingFailed:
+            return 16400
+        case .decodingFailed:
+            return 16401
+        }
+    }
+
+    /// Compares two DataStorageError instances by their error type and underlying error.
+    public static func == (lhs: DataStorageError, rhs: DataStorageError) -> Bool {
+        switch (lhs, rhs) {
+        case (.encodingFailed(let lhsError), .encodingFailed(let rhsError)):
+            return String(describing: lhsError) == String(describing: rhsError)
+        case (.decodingFailed(let lhsError), .decodingFailed(let rhsError)):
+            return String(describing: lhsError) == String(describing: rhsError)
+        default:
+            return false
+        }
+    }
+}
+
 /// UserDefaults-backed implementation for storing attributed metric data.
 class AttributedMetricDataStorage: AttributedMetricDataStoring {
 
     private let userDefaults: UserDefaults
+    private let errorHandler: AttributedMetricErrorHandler
 
-    init(userDefaults: UserDefaults) {
+    init(userDefaults: UserDefaults, errorHandler: AttributedMetricErrorHandler) {
         self.userDefaults = userDefaults
+        self.errorHandler = errorHandler
     }
 
     /// UserDefaults keys for storing metric data.
@@ -75,8 +115,12 @@ class AttributedMetricDataStorage: AttributedMetricDataStoring {
 
     /// JSON encodes and stores a Codable object to UserDefaults.
     func encode(_ object: Codable, to userDefaults: UserDefaults, key: StorageKey) {
-        guard let data = try? JSONEncoder().encode(object) else { return }
-        userDefaults.set(data, forKey: key.rawValue)
+        do {
+            let data = try JSONEncoder().encode(object)
+            userDefaults.set(data, forKey: key.rawValue)
+        } catch {
+
+        }
     }
 
     /// Retrieves and JSON decodes a Codable object from UserDefaults.
@@ -95,7 +139,7 @@ class AttributedMetricDataStorage: AttributedMetricDataStoring {
         get { return decode(from: userDefaults, key: .installDate) }
     }
 
-    var lastRetentionThreshold: TimePast? {
+    var lastRetentionThreshold: QuantisedTimePast? {
         set { encode(newValue, to: userDefaults, key: .lastRetentionThreshold) }
         get { return decode(from: userDefaults, key: .lastRetentionThreshold)}
     }

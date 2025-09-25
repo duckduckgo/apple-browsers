@@ -18,6 +18,7 @@
 
 import Foundation
 import PixelKit
+import Common
 
 /// Note: These pixels will need to be sent with a custom PixelKit instance that is not sending ATB, app version as specified in https://app.asana.com/1/137249556945/project/72649045549333/task/1210849966244847?focus=true
 /// All pixels below will not
@@ -25,6 +26,8 @@ import PixelKit
 /// - Appending app/OS version in the User-Agent header
 /// - Send default suffixes such as [phone|tablet]  or [store|direct]
 enum AttributedMetricPixel: PixelKitEvent {
+
+    // Metrics
     case userRetentionWeek(origin: String?, installDate: String?, defaultBrowser: Bool, count: String)
     case userRetentionMonth(origin: String?, installDate: String?, defaultBrowser: Bool, count: String)
     case userActivePastWeek(origin: String?, installDate: String?, days: Int)
@@ -34,6 +37,9 @@ enum AttributedMetricPixel: PixelKitEvent {
     case userAverageDuckAiUsagePastWeek(origin: String?, installDate: String?, count: String)
     case userSubscribed(origin: String?, installDate: String?, length: String)
     case userSyncedDevice(origin: String?, installDate: String?, devices: String)
+
+    // Errors
+    case dataStoreError(error: any DDGError)
 
     var name: String {
         switch self {
@@ -55,6 +61,8 @@ enum AttributedMetricPixel: PixelKitEvent {
             return "user_subscribed"
         case .userSyncedDevice:
             return "user_synced_device"
+        case .dataStoreError:
+            return "attributed_metric_data_store_error"
         }
     }
 
@@ -98,6 +106,8 @@ enum AttributedMetricPixel: PixelKitEvent {
             var result = [ConstantKeys.numberOfDevices: devices]
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result
+        case .dataStoreError(error: let error):
+            return [:]
         }
     }
 

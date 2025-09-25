@@ -143,7 +143,7 @@ public final class AttributedMetricManager {
         }
         let now = Date()
 
-        let timePastFromInstall = TimePast.timePastFrom(date: now, andInstallationDate: installDate)
+        let timePastFromInstall = QuantisedTimePast.timePastFrom(date: now, andInstallationDate: installDate)
         let lastRetentionThreshold = dataStorage.lastRetentionThreshold
         guard lastRetentionThreshold != timePastFromInstall else {
             Logger.attributedMetric.error("Threshold not changed")
@@ -249,7 +249,7 @@ public final class AttributedMetricManager {
             return
         }
         let now = Date()
-        if TimePast.daysBetween(from: subscriptionDate, to: now) >= Constants.daysInAMonth {
+        if QuantisedTimePast.daysBetween(from: subscriptionDate, to: now) >= Constants.daysInAMonth {
             Logger.attributedMetric.debug("Subscription purchased more than 1 month ago")
             pixelKit.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin, installDate: originOrInstall.installDate, length: "2+"), frequency: .legacyDailyNoSuffix)
         }

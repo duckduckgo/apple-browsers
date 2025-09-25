@@ -69,7 +69,8 @@ final class AttributedMetricManagerTests: XCTestCase {
             }
         }
 
-        let dataStorage = AttributedMetricDataStorage(userDefaults: userDefaults)
+        let errorhandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
+        let dataStorage = AttributedMetricDataStorage(userDefaults: userDefaults, errorHandler: errorhandler)
         let featureFlagger: any FeatureFlagger = MockFeatureFlagger(featuresStub:
                                                                         [AttributedMetric.AttributedMetricFeatureFlags.behaviorMetricsEnabled.rawValue: true]) // override FF
         let originProvider: AttributedMetricOriginProvider = AttributedMetricOriginProviderMock()

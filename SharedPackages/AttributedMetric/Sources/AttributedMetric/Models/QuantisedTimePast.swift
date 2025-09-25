@@ -1,5 +1,5 @@
 //
-//  TimePast.swift
+//  QuantisedTimePast.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import Foundation
 
 /// Represents time intervals since app installation for metrics attribution.
 /// Quantises durations into weeks (up to 4) then months for privacy-preserving analytics.
-public enum TimePast: Equatable, Codable {
+public enum QuantisedTimePast: Equatable, Codable {
     /// No time has passed or invalid date range
     case none
     /// Duration measured in weeks (1-4 weeks)
@@ -28,7 +28,7 @@ public enum TimePast: Equatable, Codable {
     /// Duration measured in months (1+ months, 28-day approximation)
     case months(Int)
 
-    public static func == (lhs: TimePast, rhs: TimePast) -> Bool {
+    public static func == (lhs: QuantisedTimePast, rhs: QuantisedTimePast) -> Bool {
         switch (lhs, rhs) {
         case (.none, .none):
             return true
@@ -43,7 +43,7 @@ public enum TimePast: Equatable, Codable {
 
     /// Calculates quantised time interval between installation and given date.
     /// Returns weeks for 0-4 week periods, months thereafter using 28-day approximation.
-    static func timePastFrom(date: Date, andInstallationDate installationDate: Date) -> TimePast {
+    static func timePastFrom(date: Date, andInstallationDate installationDate: Date) -> QuantisedTimePast {
         let days = daysBetween(from: installationDate, to: date)
 
         // Handle negative time intervals (invalid dates)

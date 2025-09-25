@@ -40,49 +40,49 @@ final class TimePastTests: XCTestCase {
         let installDate = testDate
 
         // Install date
-        XCTAssertEqual(TimePast.timePastFrom(date: installDate, andInstallationDate: installDate), .none)
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: installDate, andInstallationDate: installDate), .none)
 
         // Week 1
         let day2 = Calendar.current.date(byAdding: .day, value: 1, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day2, andInstallationDate: installDate), .weeks(1))
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day2, andInstallationDate: installDate), .weeks(1))
 
         let day7 = Calendar.current.date(byAdding: .day, value: 7, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day7, andInstallationDate: installDate), .weeks(1))
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day7, andInstallationDate: installDate), .weeks(1))
 
         // Week 2 boundary tests
         let day8 = Calendar.current.date(byAdding: .day, value: 8, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day8, andInstallationDate: installDate), .weeks(2))
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day8, andInstallationDate: installDate), .weeks(2))
 
         let day14 = Calendar.current.date(byAdding: .day, value: 14, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day14, andInstallationDate: installDate), .weeks(2))
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day14, andInstallationDate: installDate), .weeks(2))
 
         // Week 3 boundary tests
         let day15 = Calendar.current.date(byAdding: .day, value: 15, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day15, andInstallationDate: installDate), .weeks(3))
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day15, andInstallationDate: installDate), .weeks(3))
 
         let day21 = Calendar.current.date(byAdding: .day, value: 21, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day21, andInstallationDate: installDate), .weeks(3))
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day21, andInstallationDate: installDate), .weeks(3))
 
         // Week 4 boundary tests
         let day22 = Calendar.current.date(byAdding: .day, value: 22, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day22, andInstallationDate: installDate), .weeks(4))
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day22, andInstallationDate: installDate), .weeks(4))
 
         let day28 = Calendar.current.date(byAdding: .day, value: 28, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day28, andInstallationDate: installDate), .weeks(4))
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day28, andInstallationDate: installDate), .weeks(4))
 
         // Month 2 boundary tests
         let day29 = Calendar.current.date(byAdding: .day, value: 29, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day29, andInstallationDate: installDate), .months(2))
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day29, andInstallationDate: installDate), .months(2))
 
         let day56 = Calendar.current.date(byAdding: .day, value: 56, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day56, andInstallationDate: installDate), .months(2))
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day56, andInstallationDate: installDate), .months(2))
 
         // Month 6 boundary tests
         let day141 = Calendar.current.date(byAdding: .day, value: 141, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day141, andInstallationDate: installDate), .months(6))
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day141, andInstallationDate: installDate), .months(6))
 
         let day168 = Calendar.current.date(byAdding: .day, value: 168, to: installDate)!
-        XCTAssertEqual(TimePast.timePastFrom(date: day168, andInstallationDate: installDate), .months(6))
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day168, andInstallationDate: installDate), .months(6))
     }
 
     func testDaysBetween() {
@@ -91,26 +91,26 @@ final class TimePastTests: XCTestCase {
 
         let sameDayStart = calendar.startOfDay(for: baseDate)
         let sameDayEnd = calendar.date(byAdding: .hour, value: 12, to: sameDayStart)!
-        XCTAssertEqual(TimePast.daysBetween(from: sameDayStart, to: sameDayEnd), 0)
+        XCTAssertEqual(QuantisedTimePast.daysBetween(from: sameDayStart, to: sameDayEnd), 0)
 
         let oneDayLater = calendar.date(byAdding: .day, value: 1, to: sameDayStart)!
-        XCTAssertEqual(TimePast.daysBetween(from: sameDayStart, to: oneDayLater), 1)
+        XCTAssertEqual(QuantisedTimePast.daysBetween(from: sameDayStart, to: oneDayLater), 1)
 
         let threeDaysLater = calendar.date(byAdding: .day, value: 3, to: sameDayStart)!
-        XCTAssertEqual(TimePast.daysBetween(from: sameDayStart, to: threeDaysLater), 3)
+        XCTAssertEqual(QuantisedTimePast.daysBetween(from: sameDayStart, to: threeDaysLater), 3)
 
         let sevenDaysLater = calendar.date(byAdding: .day, value: 7, to: sameDayStart)!
-        XCTAssertEqual(TimePast.daysBetween(from: sameDayStart, to: sevenDaysLater), 7)
+        XCTAssertEqual(QuantisedTimePast.daysBetween(from: sameDayStart, to: sevenDaysLater), 7)
 
         let futureDate = calendar.date(byAdding: .day, value: -1, to: sameDayStart)!
-        XCTAssertEqual(TimePast.daysBetween(from: sameDayStart, to: futureDate), -1)
+        XCTAssertEqual(QuantisedTimePast.daysBetween(from: sameDayStart, to: futureDate), -1)
 
         let startDate = calendar.date(from: DateComponents(year: 2024, month: 1, day: 15))!
         let endDate = calendar.date(from: DateComponents(year: 2024, month: 1, day: 20))!
-        XCTAssertEqual(TimePast.daysBetween(from: startDate, to: endDate), 5)
+        XCTAssertEqual(QuantisedTimePast.daysBetween(from: startDate, to: endDate), 5)
 
         let acrossMonths = calendar.date(from: DateComponents(year: 2024, month: 1, day: 30))!
         let nextMonth = calendar.date(from: DateComponents(year: 2024, month: 2, day: 2))!
-        XCTAssertEqual(TimePast.daysBetween(from: acrossMonths, to: nextMonth), 3)
+        XCTAssertEqual(QuantisedTimePast.daysBetween(from: acrossMonths, to: nextMonth), 3)
     }
 }

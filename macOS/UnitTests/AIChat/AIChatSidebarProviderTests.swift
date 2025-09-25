@@ -324,27 +324,27 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
         // When - Check initial state
         XCTAssertEqual(provider.sidebarsByTab.count, 3)
-        XCTAssertTrue(provider.isShowingSidebar(for: tab1))
-        XCTAssertTrue(provider.isShowingSidebar(for: tab2))
-        XCTAssertTrue(provider.isShowingSidebar(for: tab3))
+        XCTAssertNotNil(provider.getSidebarViewController(for: tab1))
+        XCTAssertNotNil(provider.getSidebarViewController(for: tab2))
+        XCTAssertNotNil(provider.getSidebarViewController(for: tab3))
 
         // When - Close one sidebar
         provider.handleSidebarDidClose(for: tab2)
 
         // Then - Verify state after close
         XCTAssertEqual(provider.sidebarsByTab.count, 2)
-        XCTAssertTrue(provider.isShowingSidebar(for: tab1))
-        XCTAssertFalse(provider.isShowingSidebar(for: tab2))
-        XCTAssertTrue(provider.isShowingSidebar(for: tab3))
+        XCTAssertNotNil(provider.getSidebarViewController(for: tab1))
+        XCTAssertNil(provider.getSidebarViewController(for: tab2))
+        XCTAssertNotNil(provider.getSidebarViewController(for: tab3))
 
         // When - Clean up with only tab1 active
         provider.cleanUp(for: [tab1])
 
         // Then - Verify final state
         XCTAssertEqual(provider.sidebarsByTab.count, 1)
-        XCTAssertTrue(provider.isShowingSidebar(for: tab1))
-        XCTAssertFalse(provider.isShowingSidebar(for: tab2))
-        XCTAssertFalse(provider.isShowingSidebar(for: tab3))
+        XCTAssertNotNil(provider.getSidebarViewController(for: tab1))
+        XCTAssertNil(provider.getSidebarViewController(for: tab2))
+        XCTAssertNil(provider.getSidebarViewController(for: tab3))
     }
 
 }

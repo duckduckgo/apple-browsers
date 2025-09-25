@@ -64,7 +64,7 @@ protocol HistoryViewDataProviding: HistoryView.DataProviding {
     func titles(for urls: [URL]) -> [URL: String]
 
     func deleteVisits(matching query: DataModel.HistoryQueryKind) async
-    func burnVisits(matching query: DataModel.HistoryQueryKind) async
+    func burnVisits(matching query: DataModel.HistoryQueryKind, and burnChats: Bool) async
 
     /// Get actual visits for a given query (used for burning specific visits)
     func visits(matching query: DataModel.HistoryQueryKind) async -> [Visit]
@@ -124,7 +124,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         await refreshData()
     }
 
-    func burnVisits(matching query: DataModel.HistoryQueryKind) async {
+    func burnVisits(matching query: DataModel.HistoryQueryKind, and burnChats: Bool) async {
         guard query != .rangeFilter(.all) else {
             await historyBurner.burnAll()
             await refreshData()
@@ -135,7 +135,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         guard !visits.isEmpty else { return }
 
         let animated = query == .rangeFilter(.today)
-        await historyBurner.burn(visits, animated: animated)
+        await historyBurner.burn(visits, and: burnChats, animated: animated)
         await refreshData()
     }
 

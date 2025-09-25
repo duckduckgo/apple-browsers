@@ -26,6 +26,9 @@ protocol AIChatHistoryCleaning {
 
     /// Publisher that emits updates to the `shouldDisplayCleanAIChatHistoryOption` property.
     var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Deletes all Duck.ai chat history.
+    func cleanAIChatHistory()
 }
 
 final class AIChatHistoryCleaner: AIChatHistoryCleaning {
@@ -53,6 +56,11 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
         if let token = featureDiscoveryObserver {
             notificationCenter.removeObserver(token)
         }
+    }
+
+    func cleanAIChatHistory() {
+        // TODO: https://app.asana.com/1/137249556945/project/72649045549333/task/1211370814674973?focus=true
+        print("*** AIChatHistoryCleaner: cleaning chat history ***")
     }
 
     private func subscribeToChanges() {

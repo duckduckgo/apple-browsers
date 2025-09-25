@@ -277,6 +277,7 @@ extension FireCoordinator {
                                                 isToday: result.isToday,
                                                 closeWindows: result.includeTabsAndWindows,
                                                 clearSiteData: result.includeCookiesAndSiteData,
+                                                clearChatHistory: result.includeChatHistory,
                                                 urlToOpenIfWindowsAreClosed: nil)
             return
         }

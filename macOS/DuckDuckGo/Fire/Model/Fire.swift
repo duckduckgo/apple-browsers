@@ -48,8 +48,10 @@ protocol FireProtocol: AnyObject {
                                isToday: Bool,
                                closeWindows: Bool,
                                clearSiteData: Bool,
+                               clearChatHistory: Bool,
                                urlToOpenIfWindowsAreClosed url: URL?,
                                completion: (() -> Void)?)
+    @MainActor func burnChatHistory()
 }
 extension FireProtocol {
 
@@ -80,6 +82,7 @@ extension FireProtocol {
     func burnVisits(_ visits: [Visit],
                     except fireproofDomains: DomainFireproofStatusProviding,
                     isToday: Bool,
+                    clearChatHistory: Bool,
                     urlToOpenIfWindowsAreClosed url: URL? = nil,
                     completion: (() -> Void)? = nil) {
         burnVisits(visits,
@@ -87,6 +90,7 @@ extension FireProtocol {
                    isToday: isToday,
                    closeWindows: true,
                    clearSiteData: true,
+                   clearChatHistory: clearChatHistory,
                    urlToOpenIfWindowsAreClosed: url,
                    completion: completion)
     }
@@ -115,6 +119,7 @@ extension FireProtocol {
                     isToday: Bool,
                     closeWindows: Bool,
                     clearSiteData: Bool,
+                    clearChatHistory: Bool,
                     urlToOpenIfWindowsAreClosed url: URL? = .newtab) async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             self.burnVisits(visits,
@@ -122,6 +127,7 @@ extension FireProtocol {
                             isToday: isToday,
                             closeWindows: closeWindows,
                             clearSiteData: clearSiteData,
+                            clearChatHistory: clearChatHistory,
                             urlToOpenIfWindowsAreClosed: url) {
                 continuation.resume()
             }
@@ -152,6 +158,7 @@ final class Fire: FireProtocol {
     let getVisitedLinkStore: () -> WKVisitedLinkStoreWrapper?
     let getPrivacyStats: () async -> PrivacyStatsCollecting
     let visualizeFireAnimationDecider: VisualizeFireSettingsDecider
+    let aiChatHistoryCleaner: AIChatHistoryCleaning
 
     private var dispatchGroup: DispatchGroup?
 
@@ -231,7 +238,8 @@ final class Fire: FireProtocol {
          secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
          getPrivacyStats: (() async -> PrivacyStatsCollecting)? = nil,
          getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil,
-         visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil
+         visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil,
+         aIChatHistoryCleaner: AIChatHistoryCleaning? = nil
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
@@ -257,6 +265,9 @@ final class Fire: FireProtocol {
         } else {
             self.stateRestorationManager = NSApp.delegateTyped.stateRestorationManager
         }
+        self.aiChatHistoryCleaner = aIChatHistoryCleaner ?? AIChatHistoryCleaner(featureFlagger: NSApp.delegateTyped.featureFlagger,
+                                                                                 aiChatMenuConfiguration: NSApp.delegateTyped.aiChatMenuConfiguration,
+                                                                                 featureDiscovery: DefaultFeatureDiscovery())
     }
 
     @MainActor
@@ -396,6 +407,7 @@ final class Fire: FireProtocol {
                     isToday: Bool,
                     closeWindows: Bool,
                     clearSiteData: Bool,
+                    clearChatHistory: Bool,
                     urlToOpenIfWindowsAreClosed url: URL?,
                     completion: (() -> Void)?) {
 
@@ -432,8 +444,18 @@ final class Fire: FireProtocol {
                 entity = .none(selectedDomains: domains)
             }
 
-            self.burnEntity(entity, includingHistory: false, includingChatHistory: false, completion: completion)
+            self.burnEntity(entity,
+                            includingHistory: false,
+                            includingChatHistory: clearChatHistory,
+                            completion: completion)
         }
+    }
+
+    // MARK: - Duck.ai Chat History
+
+    @MainActor
+    func burnChatHistory() {
+        aiChatHistoryCleaner.cleanAIChatHistory()
     }
 
     // MARK: - Fire animation
@@ -794,14 +816,6 @@ final class Fire: FireProtocol {
         if syncService?.authState == .inactive {
             syncDataProviders?.bookmarksAdapter.databaseCleaner.cleanUpDatabaseNow()
         }
-    }
-
-    // MARK: - Duck.ai Chat History
-
-    private func burnChatHistory() {
-        guard Application.appDelegate.featureFlagger.isFeatureOn(.clearAIChatHistory) else { return }
-        // To implement: Burn chat history - https://app.asana.com/1/137249556945/task/1211370814674973
-        print("Burning chat history")
     }
 }
 

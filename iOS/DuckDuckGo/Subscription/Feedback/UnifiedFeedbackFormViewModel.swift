@@ -243,7 +243,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
 
         let url: URL? = {
         switch category {
-            case .subscription: return PrivacyProFeedbackSubcategory(rawValue: selectedSubcategory)?.url
+            case .subscription: return SubscriptionFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .vpn: return VPNFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .pir: return PIRFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .itr: return ITRFeedbackSubcategory(rawValue: selectedSubcategory)?.url

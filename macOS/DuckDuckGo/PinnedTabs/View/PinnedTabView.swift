@@ -99,7 +99,7 @@ struct PinnedTabView: View, DropDelegate {
               ].first(where: { item.registeredTypeIdentifiers.contains($0) }) else { return false }
 
         item.loadItem(forTypeIdentifier: typeIdentifier) { (result, _) in
-            guard let url = result as? URL ?? ((result as? Data)?.utf8String() ?? result as? String).flatMap(URL.makeURL(from:)) else { return }
+            guard let url = result as? URL ?? ((result as? Data)?.utf8String() ?? result as? String).flatMap({ URL.makeURL(from: $0, enableMetrics: false) }) else { return }
             DispatchQueue.main.async {
                 model.setUrl(url, source: .userEntered(url.absoluteString, downloadRequested: false))
             }

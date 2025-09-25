@@ -33,7 +33,7 @@ import PixelKit
  */
 enum MoreOptionsMenuPixel: PixelKitEvent {
 
-    /// Event Trigger: Feedback or Privacy Pro feedback menu action is clicked
+    /// Event Trigger: Feedback or Subscription feedback menu action is clicked
     case feedbackActionClicked
 
     /// Event Trigger: New Tab action is clicked

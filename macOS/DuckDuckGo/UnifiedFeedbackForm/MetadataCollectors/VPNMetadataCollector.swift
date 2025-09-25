@@ -76,8 +76,8 @@ struct VPNMetadata: Encodable {
         let notificationsAgentIsRunning: Bool
     }
 
-    struct PrivacyProInfo: Encodable {
-        let hasPrivacyProAccount: Bool
+    struct SubscriptionInfo: Encodable {
+        let hasSubscriptionAccount: Bool
 
         // nil means unknown
         let isVPNFeatureIncludedInSubscription: Bool?
@@ -92,7 +92,7 @@ struct VPNMetadata: Encodable {
     let vpnState: VPNState
     let vpnSettingsState: VPNSettingsState
     let loginItemState: LoginItemState
-    let privacyProInfo: PrivacyProInfo
+    let subscriptionInfo: SubscriptionInfo
 
     func toPrettyPrintedJSON() -> String? {
         let encoder = JSONEncoder()
@@ -170,7 +170,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
         let vpnState = await collectVPNState()
         let vpnSettingsState = collectVPNSettingsState()
         let loginItemState = collectLoginItemState()
-        let privacyProInfo = await collectPrivacyProInfo()
+        let subscriptionInfo = await collectSubscriptionInfo()
 
         return VPNMetadata(
             appInfo: appInfoMetadata,
@@ -179,7 +179,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
             vpnState: vpnState,
             vpnSettingsState: vpnSettingsState,
             loginItemState: loginItemState,
-            privacyProInfo: privacyProInfo
+            subscriptionInfo: subscriptionInfo
         )
     }
 
@@ -321,12 +321,12 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
         )
     }
 
-    func collectPrivacyProInfo() async -> VPNMetadata.PrivacyProInfo {
+    func collectSubscriptionInfo() async -> VPNMetadata.SubscriptionInfo {
         let isVPNFeatureIncludedInSubscription = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)
         let isVPNFeatureEnabled = try? await subscriptionManager.isFeatureEnabled(.networkProtection)
 
         return .init(
-            hasPrivacyProAccount: subscriptionManager.isUserAuthenticated,
+            hasSubscriptionAccount: subscriptionManager.isUserAuthenticated,
             isVPNFeatureIncludedInSubscription: isVPNFeatureIncludedInSubscription,
             isVPNFeatureEnabled: isVPNFeatureEnabled)
     }

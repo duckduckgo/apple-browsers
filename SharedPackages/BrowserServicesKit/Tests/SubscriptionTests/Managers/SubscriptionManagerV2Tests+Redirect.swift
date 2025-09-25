@@ -23,7 +23,7 @@ import SubscriptionTestingUtilities
 
 extension SubscriptionManagerV2Tests {
 
-    func testWhenURLIsPrivacyProThenRedirectToSubscriptionBaseURL() throws {
+    func testWhenURLIsSubscriptionThenRedirectToSubscriptionBaseURL() throws {
         // GIVEN
         let redirectURLComponents = try XCTUnwrap(URLComponents(string: "https://www.duckduckgo.com/pro"))
         let expectedURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
@@ -35,7 +35,7 @@ extension SubscriptionManagerV2Tests {
         XCTAssertEqual(result, expectedURL)
     }
 
-    func testWhenURLIsPrivacyProAndHasOriginQueryParameterThenRedirectToSubscriptionBaseURLAndAppendQueryParameter() throws {
+    func testWhenURLIsSubscriptionAndHasOriginQueryParameterThenRedirectToSubscriptionBaseURLAndAppendQueryParameter() throws {
         // GIVEN
         let redirectURLComponents = try XCTUnwrap(URLComponents(string: "https://www.duckduckgo.com/pro?origin=test"))
         let expectedURL = subscriptionManager.url(for: .purchase).appending(percentEncodedQueryItem: .init(name: "origin", value: "test"))
@@ -75,7 +75,7 @@ extension SubscriptionManagerV2Tests {
         XCTAssertEqual(result.getParameter(named: "origin"), "test")
     }
 
-    func testWhenURLIsPrivacyProWithSubdomainThenRedirectToSubscriptionBaseURLWithSubdomain() throws {
+    func testWhenURLIsSubscriptionWithSubdomainThenRedirectToSubscriptionBaseURLWithSubdomain() throws {
         // GIVEN
         let redirectURLComponents = try XCTUnwrap(URLComponents(string: "https://dev1.some-subdomain.duckduckgo.com/pro"))
         let expectedURL = try XCTUnwrap(URL(string: "https://dev1.some-subdomain.duckduckgo.com/subscriptions"))
@@ -87,7 +87,7 @@ extension SubscriptionManagerV2Tests {
         XCTAssertEqual(result, expectedURL)
     }
 
-    func testWhenURLIsPrivacyProWithSubdomainThenRedirectToSubscriptionBaseURLWithSubdomainAndPortAndHashFragmentAndParams() throws {
+    func testWhenURLIsSubscriptionWithSubdomainThenRedirectToSubscriptionBaseURLWithSubdomainAndPortAndHashFragmentAndParams() throws {
         // GIVEN
         let redirectURLComponents = try XCTUnwrap(URLComponents(string: "https://dev1.some-subdomain.duckduckgo.com:1234/pro?foo=bar#fragment"))
         let expectedURL = URL(string: "https://dev1.some-subdomain.duckduckgo.com:1234/subscriptions?foo=bar#fragment")!

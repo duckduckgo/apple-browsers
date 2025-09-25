@@ -30,12 +30,10 @@ extension Preferences {
         var body: some View {
             PreferencePane(UserText.privateSearch, spacing: 4) {
 
-                // SECTION 1: Status Indicator
                 PreferencePaneSection {
                     StatusIndicatorView(status: .alwaysOn, isLarge: true)
                 }
 
-                // SECTION 2: Description
                 PreferencePaneSection {
                     VStack(alignment: .leading, spacing: 1) {
                         TextMenuItemCaption(UserText.privateSearchExplanation)
@@ -45,9 +43,30 @@ extension Preferences {
                     }
                 }
 
-                // SECTION 3: Search Settings
                 PreferencePaneSection {
                     ToggleMenuItem(UserText.showAutocompleteSuggestions, isOn: $model.showAutocompleteSuggestions)
+                }
+
+                PreferencePaneSection {
+                    VStack(alignment: .leading) {
+                        TextMenuItemHeader(UserText.moreSearchSettings,
+                                                   bottomPadding: 2)
+
+                        TextMenuItemCaption(UserText.moreSearchSettingsDescription)
+                            .padding(.bottom, 6)
+                        Button {
+                            model.openMoreSearchSettings()
+                        } label: {
+                            HStack {
+                                Text(UserText.moreSearchSettingsLink)
+                                Image(.externalAppScheme)
+                            }
+                            .foregroundColor(Color.linkBlue)
+                            .cursor(.pointingHand)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.top, 10)
                 }
             }
         }

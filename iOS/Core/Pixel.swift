@@ -163,8 +163,8 @@ public struct PixelParameters {
     public static let fromOnboarding = "from_onboarding"
 
     // Subscription
-    public static let privacyProKeychainAccessType = "access_type"
-    public static let privacyProKeychainError = "error"
+    public static let subscriptionKeychainAccessType = "access_type"
+    public static let subscriptionKeychainError = "error"
 
     // Sync
     public static let connectedDevices = "connected_devices"

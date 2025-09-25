@@ -278,7 +278,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 }
 
 extension NewTabPageMessagesModelTests: MessageNavigationDelegate {
-    func segueToSettingsAIChat(completion: (() -> Void)? = nil) {
+    func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, completion: (() -> Void)?) {
         segueToAIChatSettingsCallCount += 1
     }
     

@@ -48,7 +48,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
         let startedAt = Date().startOfDay
         let expiresAt = Date().startOfDay.daysAgo(-10)
-        let subscription = PrivacyProSubscription(
+        let subscription = DuckDuckGoSubscription(
             productId: "test",
             name: "test",
             billingPeriod: .yearly,

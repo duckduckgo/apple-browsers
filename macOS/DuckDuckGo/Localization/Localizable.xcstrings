@@ -73971,6 +73971,42 @@
         }
       }
     },
+    "settings.more-search-settings" : {
+      "comment" : "The button name in preferences for More Search Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "More Search Settings"
+          }
+        }
+      }
+    },
+    "settings.more-search-settings.description" : {
+      "comment" : "Subtitle of the 'More Search Settings' button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Customize your language, region, and more"
+          }
+        }
+      }
+    },
+    "settings.more-search-settings.link" : {
+      "comment" : "Button to open More Search Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open More Search Settings"
+          }
+        }
+      }
+    },
     "settings.newer.critical.update.available" : {
       "comment" : "Label informing users the critical update of the app is available to install.",
       "extractionState" : "extracted_with_value",

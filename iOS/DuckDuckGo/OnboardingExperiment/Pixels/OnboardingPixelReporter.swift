@@ -102,7 +102,7 @@ protocol OnboardingDaxDialogsReporting {
     func measureFireDialogDismissButtonTapped()
     func measureEndOfJourneyDialogNewTabDismissButtonTapped()
     func measureEndOfJourneyDialogDismissButtonTapped()
-    func measurePrivacyPromoDialogNewTabDismissButtonTapped()
+    func measureSubscriptionDialogNewTabDismissButtonTapped()
     func measureEndOfJourneyDialogCTAAction()
 }
 
@@ -302,8 +302,8 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
         fire(event: .onboardingEndOfJourneyDialogDismissButtonTapped, unique: false)
     }
 
-    func measurePrivacyPromoDialogNewTabDismissButtonTapped() {
-        fire(event: .onboardingPrivacyPromoDialogDismissButtonTapped, unique: false)
+    func measureSubscriptionDialogNewTabDismissButtonTapped() {
+        fire(event: .onboardingSubscriptionDialogDismissButtonTapped, unique: false)
     }
 
     func measureEndOfJourneyDialogCTAAction() {

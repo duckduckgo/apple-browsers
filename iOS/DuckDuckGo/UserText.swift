@@ -1779,6 +1779,14 @@ public struct UserText {
     public static let aiChatSettingsEnableVoiceSearchToggle = NSLocalizedString("duckai.settings.enable.voice-search-toggle", value: "Voice Search", comment: "Toggle text to enable/disable Duck.ai in voice search")
 
     public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Tabs Screen", comment: "Toggle text to enable/disable Duck.ai in tab manager")
+    
+    public static let aiChatSettingsBrowserShortcutsSectionTitle = NSLocalizedString("duckai.settings.browserShortcuts.section.title", value: "Browser shortcuts", comment: "Title for section that groups shortcuts related to browser")
+    
+    public static let aiChatSettingsAllowFollowUpQuestionsSectionTitle = NSLocalizedString("duckai.settings.allowFollowUpQuestions.section.title", value: "Search shortcuts", comment: "Title for section that groups settings related to search results")
+    
+    public static let aiChatSettingsAllowFollowUpQuestionsToggle = NSLocalizedString("duckai.settings.allowFollowUpQuestions.toggle", value: "Ask Follow-Up Questions", comment: "Toggle text to enable/disable Duck.ai to ask follow-up questions")
+    
+    public static let aiChatSettingsAllowFollowUpQuestionsDescription = NSLocalizedString("duckai.settings.allowFollowUpQuestions.section.description", value: "Show Duck.ai buttons and links in DuckDuckGo search results.", comment: "Description text explaining what the 'Ask Follow-up Questions' toggle does")
 
     public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask privately", comment: "Placeholder text for the duck.ai input field")
 

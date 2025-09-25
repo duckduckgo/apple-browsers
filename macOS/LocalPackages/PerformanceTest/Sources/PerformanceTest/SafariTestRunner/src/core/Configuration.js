@@ -2,8 +2,6 @@
  * Configuration management for performance tests
  *
  * @module core/Configuration
- * @copyright 2024 DuckDuckGo
- * @license Apache-2.0
  */
 
 const { URL } = require('url');
@@ -16,7 +14,7 @@ const path = require('path');
 class Configuration {
     static DEFAULT_VALUES = {
         iterations: 1,
-        outputFolder: '.',
+        outputFolder: null,  // null = console output only
         timeout: 30000,
         retryDelay: 500,
         scrollDelay: 500,
@@ -27,7 +25,7 @@ class Configuration {
 
     static LIMITS = {
         minIterations: 1,
-        maxIterations: 1000
+        maxIterations: 50
     };
 
     constructor(options = {}) {
@@ -39,16 +37,13 @@ class Configuration {
      * @private
      */
     _validateAndSetOptions(options) {
-        // URL validation
-        this.url = this._validateUrl(options.url);
 
-        // Iterations validation
+        // Input validation
+        this.url = this._validateUrl(options.url);        
         this.iterations = this._validateIterations(options.iterations);
-
-        // Output folder validation
         this.outputFolder = this._validateOutputFolder(options.outputFolder);
 
-        // Set timing configurations
+        // Timing Configs
         this.timeout = options.timeout || Configuration.DEFAULT_VALUES.timeout;
         this.retryDelay = options.retryDelay || Configuration.DEFAULT_VALUES.retryDelay;
         this.scrollDelay = options.scrollDelay || Configuration.DEFAULT_VALUES.scrollDelay;
@@ -100,10 +95,18 @@ class Configuration {
      * @private
      */
     _validateOutputFolder(folder) {
+        // If no folder provided or explicitly set to null/empty, return null (console output)
+        if (!folder || folder === '' || folder === 'none' || folder === 'console') {
+            return null;
+        }
+
         const outputFolder = folder || Configuration.DEFAULT_VALUES.outputFolder;
 
         try {
-            const resolvedPath = path.resolve(outputFolder);
+            // Expand tilde for home directory
+            const expandedPath = outputFolder.replace(/^~/, process.env.HOME || process.env.USERPROFILE || '');
+            const resolvedPath = path.resolve(expandedPath);
+
             if (!fs.existsSync(resolvedPath)) {
                 fs.mkdirSync(resolvedPath, { recursive: true });
             }

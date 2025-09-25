@@ -2,8 +2,6 @@
  * Service for managing test results
  *
  * @module services/ResultsManager
- * @copyright 2024 DuckDuckGo
- * @license Apache-2.0
  */
 
 const fs = require('fs');
@@ -79,38 +77,69 @@ class ResultsManager {
     }
 
     /**
-     * Save results to file
-     * @returns {Promise<string>} Output file path
+     * Save results to file or output to console
+     * @returns {Promise<string|null>} Output file path or null if console output
      */
     async save() {
+        const jsonContent = JSON.stringify(this.results, null, 2);
+
+        // If no output folder specified, output to console only
+        if (!this.config.outputFolder || this.config.outputFolder === '.' || this.config.outputFolder === '') {
+            console.log('\n=== Test Results ===\n');
+            console.log(jsonContent);
+            console.log('\n===================\n');
+            this.logger.info('Results output to console (no output folder specified)');
+            return null;
+        }
+
+        // Otherwise, save to file
         try {
             const outputPath = this._generateOutputPath();
-            const jsonContent = JSON.stringify(this.results, null, 2);
-
             fs.writeFileSync(outputPath, jsonContent);
             this.logger.info(`Results saved to: ${outputPath}`);
-
             return outputPath;
         } catch (error) {
-            this.logger.error('Failed to save results', error);
+            this.logger.error('Failed to save results to file', error);
             // Fallback: output to console
-            console.log('\n=== Test Results (Fallback) ===\n');
-            console.log(JSON.stringify(this.results, null, 2));
+            console.log('\n=== Test Results (Fallback due to save error) ===\n');
+            console.log(jsonContent);
             throw error;
         }
     }
 
     /**
-     * Generate output file path
+     * Generate output file path with security validations
      * @private
      */
     _generateOutputPath() {
         const timestamp = Date.now();
         const hostname = new URL(this.config.url).hostname;
-        const sanitizedHost = hostname.replace(/[^a-z0-9]/gi, '_');
-        const filename = `safari-performance-${sanitizedHost}-${timestamp}.json`;
 
-        return path.join(this.config.outputFolder, filename);
+        // Comprehensive sanitization to prevent path traversal
+        const sanitizedHost = hostname
+            .replace(/[^a-z0-9.-]/gi, '_')  // Allow dots and hyphens
+            .replace(/\.{2,}/g, '_')         // Replace consecutive dots
+            .replace(/^\.+|\.+$/g, '')       // Remove leading/trailing dots
+            .substring(0, 100);              // Limit length
+
+        // Validate filename doesn't contain path separators
+        const filename = `safari-performance-${sanitizedHost}-${timestamp}.json`;
+        if (filename.includes('/') || filename.includes('\\') || filename.includes('..')) {
+            throw new Error('Invalid filename generated');
+        }
+
+        // Ensure output folder is absolute and normalized
+        const outputFolder = path.resolve(this.config.outputFolder);
+
+        // Verify the resolved path is within the intended directory
+        const outputPath = path.join(outputFolder, filename);
+        const normalizedOutput = path.normalize(outputPath);
+
+        if (!normalizedOutput.startsWith(outputFolder)) {
+            throw new Error('Security error: Output path traversal detected');
+        }
+
+        return normalizedOutput;
     }
 
     /**
@@ -121,60 +150,30 @@ class ResultsManager {
         const successful = this.results.iterations.filter(r => r.success);
         const failed = this.results.iterations.filter(r => !r.success);
 
-        const summary = {
+        return {
             total: this.results.iterations.length,
             successful: successful.length,
             failed: failed.length,
-            successRate: successful.length / this.results.iterations.length
+            successRate: this.results.iterations.length > 0
+                ? successful.length / this.results.iterations.length
+                : 0
         };
-
-        // Calculate average metrics for successful runs
-        if (successful.length > 0) {
-            const metrics = successful
-                .filter(r => r.metrics)
-                .map(r => r.metrics);
-
-            if (metrics.length > 0) {
-                summary.averageMetrics = this._calculateAverageMetrics(metrics);
-            }
-        }
-
-        return summary;
-    }
-
-    /**
-     * Calculate average metrics
-     * @private
-     */
-    _calculateAverageMetrics(metricsArray) {
-        const averages = {};
-        const numericFields = ['loadComplete', 'domComplete', 'fcp', 'ttfb', 'domInteractive'];
-
-        for (const field of numericFields) {
-            const values = metricsArray
-                .map(m => m[field])
-                .filter(v => typeof v === 'number' && !isNaN(v));
-
-            if (values.length > 0) {
-                const sum = values.reduce((a, b) => a + b, 0);
-                averages[field] = Math.round(sum / values.length);
-            }
-        }
-
-        return averages;
     }
 
     /**
      * Print summary to console
      */
     printSummary() {
-        const summary = this.getSummary();
+        const successful = this.results.iterations.filter(r => r.success).length;
+        const failed = this.results.iterations.filter(r => !r.success).length;
+        const total = this.results.iterations.length;
+        const successRate = total > 0 ? (successful / total * 100).toFixed(1) : 0;
 
         console.log('\n=== Test Summary ===');
-        console.log(`Total iterations: ${summary.total}`);
-        console.log(`Successful: ${summary.successful}`);
-        console.log(`Failed: ${summary.failed}`);
-        console.log(`Success rate: ${(summary.successRate * 100).toFixed(1)}%`);
+        console.log(`Total iterations: ${total}`);
+        console.log(`Successful: ${successful}`);
+        console.log(`Failed: ${failed}`);
+        console.log(`Success rate: ${successRate}%`);
 
         if (this.results.metadata.interrupted) {
             console.log('\n⚠️  Test was interrupted');

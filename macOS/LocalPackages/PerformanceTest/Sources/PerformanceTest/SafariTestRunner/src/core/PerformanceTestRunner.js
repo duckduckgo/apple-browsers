@@ -2,8 +2,6 @@
  * Main performance test orchestrator
  *
  * @module core/PerformanceTestRunner
- * @copyright 2024 DuckDuckGo
- * @license Apache-2.0
  */
 
 const Logger = require('../utils/Logger');
@@ -105,10 +103,8 @@ class PerformanceTestRunner {
             this.logger.info('Starting Safari Performance Test');
             this.logger.info(`Configuration:`, this.config.toObject());
 
-            // Initialize services
+            // Initialize services + iterations
             await this._initializeServices();
-
-            // Run test iterations
             await this._runIterations();
 
             // Finalize and save results

@@ -30,8 +30,8 @@ function showHelp() {
     console.log('');
     console.log('Arguments:');
     console.log('  URL           The URL to test (required)');
-    console.log('  iterations    Number of test iterations (default: 1, max: 1000)');
-    console.log('  output-folder Output folder for results (default: current directory)');
+    console.log('  iterations    Number of test iterations (default: 1, max: 50)');
+    console.log('  output-folder Output folder for results (default: console output only)');
     console.log('');
     console.log('Options:');
     console.log('  --verbose, -v Enable verbose logging');

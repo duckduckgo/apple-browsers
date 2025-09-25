@@ -2,41 +2,53 @@
  * WebDriver service for managing browser automation
  *
  * @module services/WebDriverService
- * @copyright 2024 DuckDuckGo
- * @license Apache-2.0
  */
 
-const { Builder, By, until } = require('selenium-webdriver');
-const safari = require('selenium-webdriver/safari');
+const { By, until } = require('selenium-webdriver');
+const WebDriverPool = require('./WebDriverPool');
 
 /**
- * Service for managing Safari WebDriver instances
+ * Service for managing Safari WebDriver instances with connection pooling
  */
 class WebDriverService {
-    constructor(logger) {
+    constructor(logger, usePool = true) {
         this.logger = logger;
+        this.usePool = usePool;
+        this.pool = usePool ? new WebDriverPool(logger, 2) : null;
+        this.currentConnection = null;
         this.driver = null;
         this.isInitialized = false;
     }
 
     /**
-     * Initialize Safari WebDriver
+     * Initialize Safari WebDriver (with pooling support)
      * @returns {Promise<WebDriver>} WebDriver instance
      */
     async initialize() {
-        if (this.isInitialized) {
-            this.logger.warn('WebDriver already initialized');
+        if (this.isInitialized && this.driver) {
+            this.logger.debug('WebDriver already initialized');
             return this.driver;
         }
 
         try {
             this.logger.debug('Initializing Safari WebDriver');
 
-            const options = new safari.Options();
-            this.driver = await new Builder()
-                .forBrowser('safari')
-                .setSafariOptions(options)
-                .build();
+            if (this.usePool) {
+                // Get from pool
+                this.currentConnection = await this.pool.acquire();
+                this.driver = this.currentConnection.driver;
+                this.currentConnection.usageCount++;
+                this.logger.debug(`Using pooled driver (Usage count: ${this.currentConnection.usageCount})`);
+            } else {
+                // Create standalone driver (fallback)
+                const { Builder } = require('selenium-webdriver');
+                const safari = require('selenium-webdriver/safari');
+                const options = new safari.Options();
+                this.driver = await new Builder()
+                    .forBrowser('safari')
+                    .setSafariOptions(options)
+                    .build();
+            }
 
             this.isInitialized = true;
             this.logger.debug('Safari WebDriver initialized successfully');
@@ -143,19 +155,44 @@ class WebDriverService {
     }
 
     /**
-     * Close the WebDriver instance
+     * Close the WebDriver instance (releases to pool if using pooling)
      */
     async quit() {
-        if (this.driver) {
-            try {
-                this.logger.debug('Closing Safari WebDriver');
+        if (!this.driver) {
+            return;
+        }
+
+        try {
+            if (this.usePool && this.currentConnection) {
+                // Release back to pool
+                this.logger.debug('Releasing WebDriver to pool');
+                await this.pool.release(this.currentConnection);
+                this.currentConnection = null;
+            } else {
+                // Close standalone driver
+                this.logger.debug('Closing standalone Safari WebDriver');
                 await this.driver.quit();
-                this.driver = null;
-                this.isInitialized = false;
-                this.logger.debug('WebDriver closed successfully');
-            } catch (error) {
-                this.logger.warn('Error closing WebDriver', error);
             }
+
+            this.driver = null;
+            this.isInitialized = false;
+            this.logger.debug('WebDriver released/closed successfully');
+        } catch (error) {
+            this.logger.warn('Error during WebDriver cleanup', error);
+            // Reset state even if error occurred
+            this.driver = null;
+            this.isInitialized = false;
+            this.currentConnection = null;
+        }
+    }
+
+    /**
+     * Shutdown the entire pool (call at end of all tests)
+     */
+    async shutdown() {
+        if (this.pool) {
+            await this.pool.shutdown();
+            this.pool = null;
         }
     }
 

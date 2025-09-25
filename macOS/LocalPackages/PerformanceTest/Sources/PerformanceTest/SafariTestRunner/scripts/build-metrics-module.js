@@ -8,8 +8,16 @@
 const fs = require('fs');
 const path = require('path');
 
-const SOURCE_PATH = path.join(__dirname, '../../Resources/performanceMetrics.js');
-const DEST_PATH = path.join(__dirname, '../src/constants/metricsScript.js');
+// Fix path resolution - go up to Resources directory correctly
+const SOURCE_PATH = path.resolve(__dirname, '../../Resources/performanceMetrics.js');
+const DEST_PATH = path.resolve(__dirname, '../src/constants/metricsScript.js');
+
+// Validate source exists
+if (!fs.existsSync(SOURCE_PATH)) {
+    console.error(`Error: Source file not found at ${SOURCE_PATH}`);
+    console.error('Please ensure performanceMetrics.js exists in the Resources directory');
+    process.exit(1);
+}
 
 // Ensure constants directory exists
 const constantsDir = path.dirname(DEST_PATH);
@@ -17,11 +25,12 @@ if (!fs.existsSync(constantsDir)) {
     fs.mkdirSync(constantsDir, { recursive: true });
 }
 
-// Read the performance metrics script
-const scriptContent = fs.readFileSync(SOURCE_PATH, 'utf8');
+try {
+    // Read the performance metrics script
+    const scriptContent = fs.readFileSync(SOURCE_PATH, 'utf8');
 
-// Create the module content
-const moduleContent = `/**
+    // Create the module content
+    const moduleContent = `/**
  * Auto-generated module containing the performance metrics script
  * Generated from: ${SOURCE_PATH}
  * Generated at: ${new Date().toISOString()}
@@ -36,9 +45,13 @@ const METRICS_SCRIPT = ${JSON.stringify(scriptContent)};
 module.exports = { METRICS_SCRIPT };
 `;
 
-// Write the module
-fs.writeFileSync(DEST_PATH, moduleContent);
+    // Write the module
+    fs.writeFileSync(DEST_PATH, moduleContent);
 
-console.log(`✓ Generated metrics module at: ${DEST_PATH}`);
-console.log(`  Source: ${SOURCE_PATH}`);
-console.log(`  Size: ${scriptContent.length} bytes`);
+    console.log(`✓ Generated metrics module at: ${DEST_PATH}`);
+    console.log(`  Source: ${SOURCE_PATH}`);
+    console.log(`  Size: ${scriptContent.length} bytes`);
+} catch (error) {
+    console.error(`Error building metrics module: ${error.message}`);
+    process.exit(1);
+}

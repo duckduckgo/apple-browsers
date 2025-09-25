@@ -2,8 +2,6 @@
  * Service for collecting performance metrics
  *
  * @module services/MetricsCollector
- * @copyright 2024 DuckDuckGo
- * @license Apache-2.0
  */
 
 const { METRICS_SCRIPT } = require('../constants/metricsScript');

@@ -2,8 +2,6 @@
  * Test executor for running performance tests
  *
  * @module core/TestExecutor
- * @copyright 2024 DuckDuckGo
- * @license Apache-2.0
  */
 
 /**

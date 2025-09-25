@@ -39,6 +39,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x373737 = Color(0x373737)
     private static let x474747 = Color(0x474747)
     private static let x7295F6 = Color(0x7295F6)
+    private static let x1E42A4 = Color(0x1E42A4)
+    private static let x969EF = Color(0x969EF)
 
     // URL bar
     private static let urlBar = DynamicColor(lightColor: .white, darkColor: x474747)
@@ -87,6 +89,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Accents
     private static let accentContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
+
+    private static let accentTertiary = DynamicColor(lightColor: x1E42A4, darkColor: x3969EF)
 
     // Various
     private static let variousIPadTabs = DynamicColor(lightColor: .gray20, darkColor: .black)
@@ -173,6 +177,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .decorationTertiary: return decorationTertiary
         case .highlightDecoration: return highlightDecoration
         case .accentContentPrimary: return accentContentPrimary
+        case .accentTertiary: return accentTertiary
 
         case .accent: return accent
         case .accentGlowSecondary: return accentGlowSecondary

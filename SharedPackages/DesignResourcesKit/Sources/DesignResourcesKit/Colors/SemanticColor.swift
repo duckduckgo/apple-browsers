@@ -56,6 +56,7 @@ public enum DesignSystemColor {
     case accent
     case accentGlowSecondary
     case accentContentPrimary
+    case accentTertiary
 
     // System
     case lines

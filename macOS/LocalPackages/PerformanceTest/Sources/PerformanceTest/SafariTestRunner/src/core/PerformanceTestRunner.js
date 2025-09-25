@@ -135,16 +135,42 @@ class PerformanceTestRunner {
     }
 
     /**
-     * Run test iterations
+     * Run test iterations with session restarts for clean cache
      * @private
      */
     async _runIterations() {
         const { iterations, url } = this.config;
 
+        // Note: With session restarts, warm-up benefits are limited to:
+        // - OS-level DNS caching
+        // - Network route optimization
+        // - Ensuring test setup works
+        // Browser-level warm-up is lost when we restart for each iteration
+
+        // Run warm-up iteration (not counted in results)
+        this.logger.info('Running warm-up iteration (validates test setup)');
+        const warmupResult = await this.services.testExecutor.execute(url, false); // Keep session for warm-up
+
+        if (warmupResult.success) {
+            this.logger.info(`  ✓ Warm-up completed successfully (${warmupResult.duration}ms)`);
+        } else {
+            this.logger.warn(`  ⚠ Warm-up failed: ${warmupResult.error}`);
+        }
+
+        // Delay after warm-up
+        if (!this.isShuttingDown) {
+            await this.services.webDriver.sleep(this.config.retryDelay);
+        }
+
+        // Run actual test iterations
+        // Each iteration restarts WebDriver to match Swift's complete cache clearing
         for (let i = 1; i <= iterations && !this.isShuttingDown; i++) {
             this.logger.info(`Running iteration ${i} of ${iterations}`);
 
-            const result = await this.services.testExecutor.execute(url);
+            // First iteration after warm-up still needs restart for clean cache
+            const needsRestart = true; // Always restart for consistent clean cache
+
+            const result = await this.services.testExecutor.execute(url, needsRestart);
             this.services.resultsManager.addIterationResult(result, i);
 
             if (result.success) {

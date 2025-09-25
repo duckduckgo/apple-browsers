@@ -4,6 +4,8 @@
  * @module core/TestExecutor
  */
 
+const SafariCacheCleaner = require('../services/SafariCacheCleaner');
+
 /**
  * Executor for individual performance test iterations
  */
@@ -13,19 +15,37 @@ class TestExecutor {
         this.metricsCollector = metricsCollector;
         this.config = configuration;
         this.logger = logger;
+        this.cacheCleaner = new SafariCacheCleaner(logger.child('CacheCleaner'));
     }
 
     /**
      * Execute a single test iteration
      * @param {string} url - URL to test
+     * @param {boolean} restartSession - Whether to restart WebDriver for clean cache
      * @returns {Promise<Object>} Test result
      */
-    async execute(url) {
+    async execute(url, restartSession = true) {
         const startTime = Date.now();
         const executionLogger = this.logger.child(`iteration`);
 
         try {
             executionLogger.debug('Starting test execution');
+
+            // Restart WebDriver session for complete cache clearing (new sandbox)
+            if (restartSession) {
+                executionLogger.debug('Restarting WebDriver session for clean cache');
+
+                // Quit current session (destroys ephemeral sandbox)
+                await this.webDriver.quit();
+
+                // Small delay for cleanup
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Initialize new session (creates fresh sandbox with clean cache)
+                await this.webDriver.initialize();
+
+                executionLogger.debug('Fresh WebDriver session started');
+            }
 
             // Navigate to URL
             await this._navigateToUrl(url);

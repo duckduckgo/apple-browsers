@@ -11,7 +11,7 @@ const WebDriverPool = require('./WebDriverPool');
  * Service for managing Safari WebDriver instances with connection pooling
  */
 class WebDriverService {
-    constructor(logger, usePool = true) {
+    constructor(logger, usePool = false) { // Disable pooling - we need fresh sessions
         this.logger = logger;
         this.usePool = usePool;
         this.pool = usePool ? new WebDriverPool(logger, 2) : null;
@@ -44,6 +44,7 @@ class WebDriverService {
                 const { Builder } = require('selenium-webdriver');
                 const safari = require('selenium-webdriver/safari');
                 const options = new safari.Options();
+
                 this.driver = await new Builder()
                     .forBrowser('safari')
                     .setSafariOptions(options)

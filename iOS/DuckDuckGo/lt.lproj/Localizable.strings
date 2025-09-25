@@ -3244,8 +3244,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Kalbėkis privačiai su išskirtiniais abonentams skirtais DI modeliais.\n[Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "Konfigūruokite „Duck.ai“ DI funkcijų nustatymuose.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Įgalinti DI funkcijų nustatymuose";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Atidaryti „Duck.ai“";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "Tvarkyti DI funkcijų nustatymuose";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";

@@ -3,10 +3,12 @@ set -euo pipefail
 
 # Smartling Status Check Script
 # Checks the status of a Smartling translation job
-# Generates status_message.txt for GitHub Actions
+# Generates a status message file for GitHub Actions (default: status_message.txt)
 
 JOB_ID="$1"
 PLATFORM="$2"
+# Optional: output message file name (defaults to status_message.txt)
+OUTPUT_FILE="${3:-status_message.txt}"
 
 if [ -z "$JOB_ID" ]; then
 	echo "Error: Job ID is required"
@@ -16,7 +18,7 @@ fi
 
 if [ -z "$PLATFORM" ]; then
 	echo "Error: Platform is required"
-	echo "Usage: $0 <job-id> <platform>"
+	echo "Usage: $0 <job-id> <platform> [message-file]"
 	exit 1
 fi
 
@@ -37,7 +39,7 @@ if [ "${status_failed:-0}" = "0" ]; then
 	echo "PERCENT=$percent"
 	
 	# Generate status message
-	./scripts/smartling/smartling_messages.sh status status_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" "$status" "$percent"
+	./scripts/smartling/smartling_messages.sh status "$OUTPUT_FILE" "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" "$status" "$percent"
 	echo "✅ Status check complete"
 	exit 0
 else

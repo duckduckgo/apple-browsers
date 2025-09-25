@@ -507,10 +507,6 @@ enum GeneralPixel: PixelKitEvent {
 
     case compilationFailed
 
-    // MARK: error page shown
-    case errorPageShownOther
-    case errorPageShownWebkitTermination
-
     // Broken site prompt
 
     case pageRefreshThreeTimesWithin20Seconds
@@ -1226,9 +1222,6 @@ enum GeneralPixel: PixelKitEvent {
         case .bookmarksSortByName: return "m_mac_sort_bookmarks_by_name"
         case .bookmarksSearchExecuted: return "m_mac_search_bookmarks_executed"
         case .bookmarksSearchResultClicked: return "m_mac_search_result_clicked"
-
-        case .errorPageShownOther: return "m_mac_errorpageshown_other"
-        case .errorPageShownWebkitTermination: return "m_mac_errorpageshown_webkittermination"
 
             // Broken site prompt
         case .pageRefreshThreeTimesWithin20Seconds: return "m_mac_reload-three-times-within-20-seconds"

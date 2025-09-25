@@ -29,13 +29,20 @@ output=$(./scripts/smartling/loc_tool.sh approve --job-id "$JOB_ID" 2>&1) || app
 echo "$output"
 
 if [ "${approve_failed:-0}" = "0" ] && echo "$output" | grep -q "APPROVED=1"; then
-	# Generate success message
+	# Set step outputs and generate success message
+	if [ -n "${GITHUB_OUTPUT:-}" ]; then
+		echo "approve_success=true" >> "$GITHUB_OUTPUT"
+	fi
 	./scripts/smartling/smartling_messages.sh approve approve_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" success
 	echo "✅ Job approved successfully"
-	exit 0
 else
-	# Generate error message
+	# Set step outputs and generate error message
+	if [ -n "${GITHUB_OUTPUT:-}" ]; then
+		echo "approve_success=false" >> "$GITHUB_OUTPUT"
+	fi
 	./scripts/smartling/smartling_messages.sh approve approve_message.txt "$PLATFORM" "$JOB_ID" "$SMARTLING_PROJECT_ID" failed
 	echo "❌ Job approval failed"
-	exit 1
 fi
+
+# Always succeed the step; downstream logic branches on outputs
+exit 0

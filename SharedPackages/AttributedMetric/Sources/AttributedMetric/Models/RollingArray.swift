@@ -173,11 +173,12 @@ public class RollingArray<T: Codable & Equatable>: Codable {
         }
     }
 
-    /// The number of non-nil values currently stored in the rolling structure.
+    /// The number of non-`.unknown` values currently stored in the rolling structure.
     public var count: Int {
         return values.count(where: { $0 != .unknown })
     }
 
+    /// The last value in the structure, nil if `.unknown`
     public var last: T? {
         guard let internalValue = values.last else {
             return nil
@@ -190,10 +191,9 @@ public class RollingArray<T: Codable & Equatable>: Codable {
         }
     }
 
+    /// The index of the last value, it can be the default value like `.unknown`
+    /// Returns -1 if the capacity is 0
     public var lastIndex: Int {
-        if values.count == 0 {
-            return 0
-        }
         return values.count-1
     }
 }

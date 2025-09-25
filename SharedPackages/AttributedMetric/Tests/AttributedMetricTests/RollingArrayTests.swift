@@ -35,11 +35,6 @@ final class RollingArrayTests: XCTestCase {
         rollingInt = nil
         super.tearDown()
     }
-}
-
-// MARK: - Core Functionality Tests
-
-extension RollingArrayTests {
 
     func testInitialization() {
         // Both types should start empty
@@ -112,11 +107,6 @@ extension RollingArrayTests {
         XCTAssertNil(rollingBool[7])
         XCTAssertNil(rollingBool[100])
     }
-}
-
-// MARK: - Advanced Behavior Tests
-
-extension RollingArrayTests {
 
     func testLargeNumberOfAppends() {
         // Test with alternating pattern
@@ -141,11 +131,6 @@ extension RollingArrayTests {
         XCTAssertEqual(rollingInt.allValues, values)
         XCTAssertEqual(rollingInt.count, 7)
     }
-}
-
-// MARK: - Codable Tests
-
-extension RollingArrayTests {
 
     func testCodableRoundTrip() throws {
         // Test empty state
@@ -199,5 +184,104 @@ extension RollingArrayTests {
         rolling1.append(true)
         rolling1.append(true)
         XCTAssertEqual(rolling1.count, 1)
+    }
+
+    func testEmptyArrayAllFunctions() {
+        let emptyRollingInt = RollingArray<Int>(capacity: 5)
+        let emptyRollingBool = RollingArray<Bool>(capacity: 3)
+
+        // Test count property
+        XCTAssertEqual(emptyRollingInt.count, 0)
+        XCTAssertEqual(emptyRollingBool.count, 0)
+
+        // Test allValues property
+        XCTAssertEqual(emptyRollingInt.allValues, [])
+        XCTAssertEqual(emptyRollingBool.allValues, [])
+
+        // Test last property
+        XCTAssertNil(emptyRollingInt.last)
+        XCTAssertNil(emptyRollingBool.last)
+
+        // Test lastIndex property
+        XCTAssertEqual(emptyRollingInt.lastIndex, 4) // capacity - 1
+        XCTAssertEqual(emptyRollingBool.lastIndex, 2) // capacity - 1
+
+        // Test subscript access for all valid indices
+        for i in 0..<5 {
+            XCTAssertNil(emptyRollingInt[i])
+        }
+        for i in 0..<3 {
+            XCTAssertNil(emptyRollingBool[i])
+        }
+
+        // Test subscript access for invalid indices
+        XCTAssertNil(emptyRollingInt[-1])
+        XCTAssertNil(emptyRollingInt[5])
+        XCTAssertNil(emptyRollingInt[100])
+        XCTAssertNil(emptyRollingBool[-1])
+        XCTAssertNil(emptyRollingBool[3])
+        XCTAssertNil(emptyRollingBool[100])
+
+        // Test subscript setter with nil
+        emptyRollingInt[0] = nil
+        XCTAssertNil(emptyRollingInt[0])
+        XCTAssertEqual(emptyRollingInt.count, 0)
+
+        // Test subscript setter with value
+        emptyRollingInt[2] = 42
+        XCTAssertEqual(emptyRollingInt[2], 42)
+        XCTAssertEqual(emptyRollingInt.count, 1)
+        XCTAssertEqual(emptyRollingInt.allValues, [42])
+
+        // Test that values array maintains correct structure
+        XCTAssertEqual(emptyRollingBool.values.count, 3)
+        for value in emptyRollingBool.values {
+            XCTAssertEqual(value, .unknown)
+        }
+    }
+
+    func testZeroCapacityArray() {
+        let zeroCapacityArray = RollingArray<Int>(capacity: 0)
+
+        // Test count property
+        XCTAssertEqual(zeroCapacityArray.count, 0)
+
+        // Test allValues property
+        XCTAssertEqual(zeroCapacityArray.allValues, [])
+
+        // Test last property
+        XCTAssertNil(zeroCapacityArray.last)
+
+        // Test lastIndex property (should be -1 for empty array)
+        XCTAssertEqual(zeroCapacityArray.lastIndex, -1)
+
+        // Test values array is empty
+        XCTAssertEqual(zeroCapacityArray.values.count, 0)
+        XCTAssertEqual(zeroCapacityArray.values, [])
+
+        // Test subscript access - all indices should return nil
+        XCTAssertNil(zeroCapacityArray[0])
+        XCTAssertNil(zeroCapacityArray[-1])
+        XCTAssertNil(zeroCapacityArray[1])
+
+        // Test subscript setter - should not crash but have no effect
+        zeroCapacityArray[0] = 42
+        XCTAssertEqual(zeroCapacityArray.count, 0)
+        XCTAssertEqual(zeroCapacityArray.allValues, [])
+        XCTAssertNil(zeroCapacityArray[0])
+
+        // Test append function - should not crash
+        zeroCapacityArray.append(100)
+        XCTAssertEqual(zeroCapacityArray.count, 1)
+        XCTAssertEqual(zeroCapacityArray.allValues, [100])
+        XCTAssertEqual(zeroCapacityArray.values.count, 1)
+        XCTAssertEqual(zeroCapacityArray.lastIndex, 0)
+
+        // Test append again to verify rolling behavior with single slot
+        zeroCapacityArray.append(200)
+        XCTAssertEqual(zeroCapacityArray.count, 1)
+        XCTAssertEqual(zeroCapacityArray.allValues, [200])
+        XCTAssertEqual(zeroCapacityArray.values.count, 1)
+        XCTAssertEqual(zeroCapacityArray[0], 200)
     }
 }

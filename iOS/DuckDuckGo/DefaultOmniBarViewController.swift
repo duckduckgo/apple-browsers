@@ -286,12 +286,22 @@ extension DefaultOmniBarViewController: UIViewControllerTransitioningDelegate {
     func animationController(forPresented presented: UIViewController,
                              presenting: UIViewController,
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        return OmniBarEditingStateTransition(isPresenting: true,
-                                             addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+        if dependencies.featureFlagger.isFeatureOn(.aiSearchBottomBarSupport) {
+            return NewOmniBarEditingStateTransition(isPresenting: true,
+                                                    addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+        } else {
+            return OmniBarEditingStateTransition(isPresenting: true,
+                                                 addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+        }
     }
 
     func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        return OmniBarEditingStateTransition(isPresenting: false,
-                                             addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+        if dependencies.featureFlagger.isFeatureOn(.aiSearchBottomBarSupport) {
+            return NewOmniBarEditingStateTransition(isPresenting: false,
+                                                    addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+        } else {
+            return OmniBarEditingStateTransition(isPresenting: false,
+                                                 addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+        }
     }
 }

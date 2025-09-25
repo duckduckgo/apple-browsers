@@ -52,7 +52,7 @@ final class AIChatSidebarViewController: NSViewController {
     weak var delegate: AIChatSidebarViewControllerDelegate?
     public var aiChatPayload: AIChatPayload?
     private(set) var currentAIChatURL: URL
-    
+
     /// The current AI chat restoration data being displayed.
     public var currentAIChatRestorationData: AIChatRestorationData? {
         get {
@@ -91,6 +91,10 @@ final class AIChatSidebarViewController: NSViewController {
 
     public func setPageContext(_ pageContext: AIChatPageContextData?) {
         aiTab.aiChat?.submitPageContext(pageContext)
+    }
+
+    public func setAIChatRestorationData(_ restorationData: AIChatRestorationData?) {
+        aiTab.aiChat?.setAIChatRestorationData(restorationData)
     }
 
     public var pageContextRequestedPublisher: AnyPublisher<Void, Never>? {

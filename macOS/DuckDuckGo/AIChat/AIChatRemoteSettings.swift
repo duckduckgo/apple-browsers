@@ -28,7 +28,7 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
     // Settings for KeepSession subfeature
     struct KeepSessionSettings: Codable {
         let sessionTimeoutMinutes: Int
-        static let defaultSessionTimeoutInMinutes: Int = 1
+        static let defaultSessionTimeoutInMinutes: Int = 60
     }
 
     enum SettingsValue: String {

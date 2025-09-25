@@ -108,7 +108,7 @@ struct AIChatTabOpener: AIChatTabOpening {
         guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
 
         let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
-        newAIChatTab.aiChat?.setAIChatRestorationData(data: data)
+        newAIChatTab.aiChat?.setAIChatRestorationData(data)
 
         tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
     }

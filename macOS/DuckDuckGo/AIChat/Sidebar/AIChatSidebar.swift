@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import AIChat
 
 /// A wrapper class that represents the AI Chat sidebar contents and its displayed view controller.
 
@@ -85,7 +86,9 @@ final class AIChatSidebar: NSObject {
     public func unloadViewController(){
         if let sidebarViewController {
             mostRecentAIChatURL = sidebarViewController.currentAIChatURL
-            mostRecentRestorationData = sidebarViewController.currentAIChatRestorationData
+            if let restorationData = sidebarViewController.currentAIChatRestorationData {
+                mostRecentRestorationData = restorationData
+            }
             sidebarViewController.stopLoading()
             sidebarViewController.removeCompletely()
             self.sidebarViewController = nil

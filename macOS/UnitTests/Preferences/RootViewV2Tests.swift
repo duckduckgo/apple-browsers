@@ -36,7 +36,7 @@ final class RootViewV2Tests: XCTestCase {
         let ddsSyncing = MockDDGSyncing(authState: .active, isSyncInProgress: false)
         let vpnGatekeeper = MockVPNFeatureGatekeeper(canStartVPN: false, isInstalled: false, isVPNVisible: false, onboardStatusPublisher: Just(.completed).eraseToAnyPublisher())
 
-        sidebarModel = PreferencesSidebarModel(privacyConfigurationManager: MockPrivacyConfigurationManaging(), featureFlagger: MockFeatureFlagger(), syncService: ddsSyncing, vpnGatekeeper: vpnGatekeeper, includeDuckPlayer: false, includeAIChat: true, subscriptionManager: SubscriptionAuthV1toV2BridgeMock())
+        sidebarModel = PreferencesSidebarModel(privacyConfigurationManager: MockPrivacyConfigurationManaging(), featureFlagger: MockFeatureFlagger(), syncService: ddsSyncing, vpnGatekeeper: vpnGatekeeper, includeDuckPlayer: false, includeAIChat: true, subscriptionManager: SubscriptionAuthV1toV2BridgeMock(), aiFeaturesStatusProvider: MockAIChatPreferences())
         subscriptionManager = SubscriptionManagerMockV2()
         subscriptionUIHandler = SubscriptionUIHandlerMock( didPerformActionCallback: { _ in })
         showTabCalled = false

@@ -115,7 +115,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
         // this sets lastPickedCustomColor
         customizationModel.customBackground = .solidColor(try XCTUnwrap(.init("#123abc")))
         customizationModel.customBackground = .solidColor(.color05)
-        appearancePreferences.currentThemeName = .light
+        appearancePreferences.themeAppearance = .light
 
         XCTAssertEqual(
             provider.customizerData,
@@ -157,35 +157,35 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     }
 
     func testThatThemeGetterReturnsAppearancePreferencesTheme() {
-        appearancePreferences.currentThemeName = .dark
+        appearancePreferences.themeAppearance = .dark
         XCTAssertEqual(provider.theme, .dark)
-        appearancePreferences.currentThemeName = .light
+        appearancePreferences.themeAppearance = .light
         XCTAssertEqual(provider.theme, .light)
-        appearancePreferences.currentThemeName = .systemDefault
+        appearancePreferences.themeAppearance = .systemDefault
         XCTAssertEqual(provider.theme, nil)
     }
 
     func testThatThemeSetterSetsAppearancePreferencesTheme() {
         provider.theme = .dark
-        XCTAssertEqual(appearancePreferences.currentThemeName, .dark)
+        XCTAssertEqual(appearancePreferences.themeAppearance, .dark)
         provider.theme = .light
-        XCTAssertEqual(appearancePreferences.currentThemeName, .light)
+        XCTAssertEqual(appearancePreferences.themeAppearance, .light)
         provider.theme = nil
-        XCTAssertEqual(appearancePreferences.currentThemeName, .systemDefault)
+        XCTAssertEqual(appearancePreferences.themeAppearance, .systemDefault)
     }
 
     func testThatThemePublisherPublishesEvents() throws {
         var events: [NewTabPageDataModel.Theme?] = []
         let cancellable = provider.themePublisher.sink { events.append($0) }
 
-        appearancePreferences.currentThemeName = .light
-        appearancePreferences.currentThemeName = .dark
-        appearancePreferences.currentThemeName = .dark
-        appearancePreferences.currentThemeName = .dark
-        appearancePreferences.currentThemeName = .dark
-        appearancePreferences.currentThemeName = .systemDefault
-        appearancePreferences.currentThemeName = .systemDefault
-        appearancePreferences.currentThemeName = .light
+        appearancePreferences.themeAppearance = .light
+        appearancePreferences.themeAppearance = .dark
+        appearancePreferences.themeAppearance = .dark
+        appearancePreferences.themeAppearance = .dark
+        appearancePreferences.themeAppearance = .dark
+        appearancePreferences.themeAppearance = .systemDefault
+        appearancePreferences.themeAppearance = .systemDefault
+        appearancePreferences.themeAppearance = .light
 
         cancellable.cancel()
 

@@ -24,8 +24,20 @@ import URLPredictorRust
 /// ```c
 /// char *ddg_up_classify_json(const char *input, const char *policy_json);
 /// void ddg_up_free_string(char *ptr);
+/// char *ddg_up_get_psl_ptr(void);
 /// ```
 public enum Classifier {
+
+    /// This function retrieves the raw Public Suffix List vendored by the `URLPredictorRust` framework.
+    public static func getPSLData() throws -> String {
+        guard let p = ddg_up_get_psl_ptr() else {
+            throw Error.resultNil
+        }
+        guard let s = String(validatingUTF8: p) else {
+            throw Error.resultNotUTF8
+        }
+        return s
+    }
 
     /// This function classifies `input` as either `Decision.navigate` or `Decision.search`.
     public static func classify(input: String, policy: Policy? = .default) throws -> Decision {

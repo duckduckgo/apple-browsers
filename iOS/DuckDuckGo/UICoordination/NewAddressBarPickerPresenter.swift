@@ -1,5 +1,5 @@
 //
-//  MockMessageNavigationDelegate.swift
+//  NewAddressBarPickerPresenter.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -17,12 +17,26 @@
 //  limitations under the License.
 //
 
-@testable import DuckDuckGo
-import DDGSync
+import Foundation
+import Core
 
-class MockMessageNavigationDelegate: MessageNavigationDelegate {
-    func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, completion: (() -> Void)?) {}
-    func segueToSettings() {}
-    func segueToFeedback() {}
-    func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?) {}
+@MainActor
+protocol NewAddressBarPickerPresenting {
+
+    func presentNewAddressBarPickerIfNeeded()
+
+}
+
+final class NewAddressBarPickerPresenter: NewAddressBarPickerPresenting {
+    private let mainViewController: MainViewController
+
+    init(mainViewController: MainViewController) {
+        self.mainViewController = mainViewController
+    }
+
+    func presentNewAddressBarPickerIfNeeded() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.mainViewController.presentNewAddressBarPickerIfNeeded()
+        }
+    }
 }

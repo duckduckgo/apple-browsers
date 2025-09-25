@@ -1725,6 +1725,9 @@
 		F1134ECE1F40EA9C00B73467 /* AtbParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1134ECC1F40EA2000B73467 /* AtbParserTests.swift */; };
 		F1134ED61F40F29F00B73467 /* StatisticsUserDefaultsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1134ED41F40F15800B73467 /* StatisticsUserDefaultsTests.swift */; };
 		F114C55B1E66EB020018F95F /* NibLoading.swift in Sources */ = {isa = PBXBuildFile; fileRef = F114C55A1E66EB020018F95F /* NibLoading.swift */; };
+		F11595CD2E854C6200CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595CC2E854C6200CC0481 /* AttributedMetric */; };
+		F11595CF2E854C6C00CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595CE2E854C6C00CC0481 /* AttributedMetric */; };
+		F11595D12E854C7400CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D02E854C7400CC0481 /* AttributedMetric */; };
 		F130D73A1E5776C500C45811 /* OmniBarDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F130D7391E5776C500C45811 /* OmniBarDelegate.swift */; };
 		F132D6A52C62239B00D85426 /* SubscriptionSettingsHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F132D6A42C62239B00D85426 /* SubscriptionSettingsHeaderView.swift */; };
 		F1386BA41E6846C40062FC3C /* TabDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1386BA31E6846C40062FC3C /* TabDelegate.swift */; };
@@ -4161,6 +4164,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9FE59CDA2E309A4F00C4B65D /* SystemSettingsPiPTutorialTestSupport in Frameworks */,
+				F11595CD2E854C6200CC0481 /* AttributedMetric in Frameworks */,
 				F486D3362506A037002D07D7 /* OHHTTPStubs in Frameworks */,
 				BD408CED2DCDB17900265476 /* ZIPFoundation in Frameworks */,
 				7BC26CB22DFC155500E52480 /* VPNTestUtils in Frameworks */,
@@ -4210,6 +4214,7 @@
 				1E1D8B632995143200C96994 /* OHHTTPStubs in Frameworks */,
 				1E1D8B652995143200C96994 /* OHHTTPStubsSwift in Frameworks */,
 				C1B441E52E2990F7005E2BA9 /* PersistenceTestingUtils in Frameworks */,
+				F11595CF2E854C6C00CC0481 /* AttributedMetric in Frameworks */,
 				4BC95EB72D7417DC002FAB32 /* Common in Frameworks */,
 				4BC95EBD2D7417F0002FAB32 /* SubscriptionTestingUtilities in Frameworks */,
 				4BC95EBB2D7417E9002FAB32 /* Subscription in Frameworks */,
@@ -4230,6 +4235,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F11595D12E854C7400CC0481 /* AttributedMetric in Frameworks */,
 				98D4B7DF2944DDBD0068814D /* Core.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -9148,6 +9154,7 @@
 				9F5412762E3998B000DBF008 /* SetDefaultBrowserTestSupport */,
 				4BB88F3E2E5D701200DE539A /* PixelKitTestingUtilities */,
 				31C71A772E6F4F5B004D503F /* RemoteMessagingTestsUtils */,
+				F11595CC2E854C6200CC0481 /* AttributedMetric */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = 84E341A61E2F7EFB00BDBA6F /* UnitTests.xctest */;
@@ -9217,6 +9224,7 @@
 				4BC95EBC2D7417F0002FAB32 /* SubscriptionTestingUtilities */,
 				986CD5342DE8F4FA00AFA98A /* RemoteMessaging */,
 				C1B441E42E2990F7005E2BA9 /* PersistenceTestingUtils */,
+				F11595CE2E854C6C00CC0481 /* AttributedMetric */,
 			);
 			productName = IntegrationTests;
 			productReference = 85D33FCB25C97B6E002B91A6 /* IntegrationTests.xctest */;
@@ -9258,6 +9266,7 @@
 			);
 			name = PerformanceTests;
 			packageProductDependencies = (
+				F11595D02E854C7400CC0481 /* AttributedMetric */,
 			);
 			productName = IntegrationTests;
 			productReference = 9825F9D7293F2DE900F220F2 /* PerformanceTests.xctest */;
@@ -15064,6 +15073,18 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 854007E52B57FB020001BD98 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
 			productName = ZIPFoundation;
+		};
+		F11595CC2E854C6200CC0481 /* AttributedMetric */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AttributedMetric;
+		};
+		F11595CE2E854C6C00CC0481 /* AttributedMetric */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AttributedMetric;
+		};
+		F11595D02E854C7400CC0481 /* AttributedMetric */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AttributedMetric;
 		};
 		F1D43AF92B99C1D300BAB743 /* BareBonesBrowserKit */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -3745,7 +3745,6 @@
 		F124E0ED2D6E123A0035C7BA /* PersistenceTestingUtils in Frameworks */ = {isa = PBXBuildFile; productRef = F124E0EC2D6E123A0035C7BA /* PersistenceTestingUtils */; };
 		F124E0EF2D6E123A0035C7BA /* PixelKitTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = F124E0EE2D6E123A0035C7BA /* PixelKitTestingUtilities */; };
 		F124E0F12D6E123A0035C7BA /* SubscriptionTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = F124E0F02D6E123A0035C7BA /* SubscriptionTestingUtilities */; };
-		F126D0C32E71AC9C00093D9A /* Attribution in Frameworks */ = {isa = PBXBuildFile; productRef = F126D0C22E71AC9C00093D9A /* Attribution */; };
 		F1476FC02C1359FB00EAE46A /* SubscriptionUIHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1476FBF2C1359FB00EAE46A /* SubscriptionUIHandler.swift */; };
 		F1476FC12C1359FB00EAE46A /* SubscriptionUIHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1476FBF2C1359FB00EAE46A /* SubscriptionUIHandler.swift */; };
 		F1664A682D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1664A672D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift */; };
@@ -5921,7 +5920,6 @@
 				4B9EE3522D76C9EB00DDC75C /* Navigation in Frameworks */,
 				4B9EE34E2D76C9B900DDC75C /* History in Frameworks */,
 				374EFDED2D01A1DE00B30939 /* Utilities in Frameworks */,
-				F126D0C32E71AC9C00093D9A /* Attribution in Frameworks */,
 				9DC70B1A2AA1FA5B005A844B /* LoginItems in Frameworks */,
 				4B9EE3642D76CA9700DDC75C /* Suggestions in Frameworks */,
 				37EE81432D00DBCC0068034A /* WebKitExtensions in Frameworks */,
@@ -11374,7 +11372,6 @@
 				85F592DD2DE1E9FE00117D5E /* DesignResourcesKitIcons */,
 				84C1763A2DF02567001DEEC7 /* CommonObjCExtensions */,
 				7BC26CA92DFC11D800E52480 /* VPN */,
-				F126D0C22E71AC9C00093D9A /* Attribution */,
 				D65D0FA02E7239730075A784 /* NetworkQualityMonitor */,
 				F1F76BAF2E840331004E0AE6 /* AttributedMetric */,
 				379C3E4B2E7238D800058C52 /* URLPredictor */,
@@ -18723,10 +18720,6 @@
 		F124E0F02D6E123A0035C7BA /* SubscriptionTestingUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SubscriptionTestingUtilities;
-		};
-		F126D0C22E71AC9C00093D9A /* Attribution */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Attribution;
 		};
 		F198C71D2BD18D88000BF24D /* SwiftLintTool */ = {
 			isa = XCSwiftPackageProductDependency;

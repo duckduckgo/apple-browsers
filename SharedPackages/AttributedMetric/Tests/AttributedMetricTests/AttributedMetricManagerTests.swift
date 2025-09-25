@@ -24,17 +24,8 @@ import BrowserServicesKit
 
 final class AttributedMetricManagerTests: XCTestCase {
 
-    override func setUp() {
-        super.setUp()
-    }
-
-    override func tearDown() {
-        
-        super.tearDown()
-    }
-
     func testDisabledFeatureFlag() {
-        
+
     }
 
     func testRetentionPixel() {
@@ -53,7 +44,7 @@ final class AttributedMetricManagerTests: XCTestCase {
             defaultHeaders: [:],
             dailyPixelCalendar: nil,
             defaults: userDefaults
-        ) { pixelName, headers, parameters, _, _, _ in
+        ) { pixelName, _, parameters, _, _, _ in
             print("Pixel fired: \(pixelName)")
 
             switch pixelName {
@@ -102,7 +93,6 @@ final class AttributedMetricManagerTests: XCTestCase {
         dataStorage.installDate = Date().addingTimeInterval(-.days(1))
         attributionManager.process(trigger: .appDidStart)
         // Expect pixel
-
 
         // Cleanup
         dataStorage.removeAll()

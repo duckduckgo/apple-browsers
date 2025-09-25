@@ -24,7 +24,7 @@ import AppKit
 #endif
 
 extension AttributedMetricManager {
-    
+
     func registerNotifications() {
 
         // App start
@@ -43,6 +43,6 @@ extension AttributedMetricManager {
                 self?.process(trigger: .appDidStart)
             }
             .store(in: &cancellables)
-#endif        
+#endif
     }
 }

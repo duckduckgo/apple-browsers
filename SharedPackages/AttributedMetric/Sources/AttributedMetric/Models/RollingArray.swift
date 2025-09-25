@@ -92,7 +92,7 @@ public class RollingArray<T: Codable & Equatable>: Codable {
     public init(capacity: Int, defaultValue: InternalValue = .unknown) {
         self.values = Array(repeating: defaultValue, count: capacity)
     }
-    
+
     /// Appends a new value to the rolling structure.
     ///
     /// This method removes the oldest value (at index 0) and adds the new value at the end.
@@ -113,7 +113,7 @@ public class RollingArray<T: Codable & Equatable>: Codable {
         }
         values.append(InternalValue.value(value))
     }
-    
+
     /// Accesses the value at the specified index.
     ///
     /// Returns the value stored at the given index, or `nil` if the slot is empty or the index is invalid.
@@ -149,7 +149,7 @@ public class RollingArray<T: Codable & Equatable>: Codable {
             }
         }
     }
-    
+
     /// Returns an array containing all non-nil values in the rolling structure.
     ///
     /// The returned array contains only the values that have been set, in the order they appear
@@ -172,7 +172,7 @@ public class RollingArray<T: Codable & Equatable>: Codable {
             }
         }
     }
-    
+
     /// The number of non-nil values currently stored in the rolling structure.
     public var count: Int {
         return values.count(where: { $0 != .unknown })

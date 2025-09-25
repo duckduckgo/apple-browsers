@@ -76,7 +76,7 @@ enum AttributedMetricPixel: PixelKitEvent {
         static let installDate = "install_date"
     }
 
-    var parameters: [String : String]? {
+    var parameters: [String: String]? {
         switch self {
         case .userRetentionWeek(origin: let origin,
                                 installDate: let installDate,

@@ -120,6 +120,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210921598044116?focus=true
     case aiChatPageContext
 
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1211026820773885?focus=true
+    case aiChatImprovements
+
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1211026820773885?focus=true
+    case aiChatKeepSession
+
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case osSupportForceUnsupportedMessage
 
@@ -257,6 +263,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatTextSummarization,
                 .aiChatTextTranslation,
                 .aiChatPageContext,
+                .aiChatImprovements,
+                .aiChatKeepSession,
                 .shortHistoryMenu,
                 .importChromeShortcuts,
                 .updateSafariBookmarksImport,
@@ -374,6 +382,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.textTranslation))
         case .aiChatPageContext:
             return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
+        case .aiChatImprovements:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.improvements))
+        case .aiChatKeepSession:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
         case .osSupportForceUnsupportedMessage:
             return .disabled
         case .osSupportForceWillSoonDropSupportMessage:

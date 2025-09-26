@@ -16,15 +16,19 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
+
 public enum DesignSystemColor {
 
     // Backgrounds
     case background
+
     case backgroundTertiary
     case surface
     case surfaceTertiary
     case backgroundSheets
     case panel
+
     case urlBar
 
     // Various
@@ -41,7 +45,6 @@ public enum DesignSystemColor {
     // Text
     case textPrimary
     case textSecondary
-    case textTertiary
     case textLink
     case textSelectionFill
     case textPlaceholder
@@ -50,36 +53,11 @@ public enum DesignSystemColor {
     case controlsFillPrimary
     case controlsFillSecondary
     case controlsFillTertiary
-    case controlsDecorationPrimary
-    case controlsDecorationSecondary
-    case controlsDecorationTertiary
-    case controlsDecorationQuaternary
 
     // Brand
     case accent
     case accentGlowSecondary
     case accentContentPrimary
-    case accentContentSecondary
-    case accentContentTertiary
-    case accentGlowPrimary
-    case accentPrimary
-    case accentSecondary
-    case accentTertiary
-    case accentTextPrimary
-    case accentTextSecondary
-    case accentTextTertiary
-
-    // Accent Alt
-    case accentAltContentPrimary
-    case accentAltContentSecondary
-    case accentAltContentTertiary
-    case accentAltGlowPrimary
-    case accentAltPrimary
-    case accentAltSecondary
-    case accentAltTertiary
-    case accentAltTextPrimary
-    case accentAltTextSecondary
-    case accentAltTextTertiary
 
     // System
     case lines
@@ -91,7 +69,6 @@ public enum DesignSystemColor {
 
     // Icons
     case icons
-    case iconsPrimary
     case iconsSecondary
     case iconsTertiary
 
@@ -138,28 +115,5 @@ public enum DesignSystemColor {
     case decorationSecondary
     case decorationTertiary
 
-    // Destructive
-    case destructiveContentPrimary
-    case destructiveContentSecondary
-    case destructiveContentTertiary
-    case destructiveGlow
-    case destructivePrimary
-    case destructiveSecondary
-    case destructiveTertiary
-    case destructiveTextPrimary
-    case destructiveTextSecondary
-    case destructiveTextTertiary
-
-    // Highlight
-    case highlightPrimary
-
-    // Surfaces
-    case surfaceBackdrop
-    case surfaceCanvas
-    case surfacePrimary
-    case surfaceSecondary
-
-    // Tone
-    case toneShadePrimary
-    case toneTintPrimary
 }
+#endif

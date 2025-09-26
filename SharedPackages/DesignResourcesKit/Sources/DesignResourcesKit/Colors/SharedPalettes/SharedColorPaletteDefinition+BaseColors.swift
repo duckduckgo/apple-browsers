@@ -1,5 +1,5 @@
 //
-//  ColorPalette+BaseColors.swift
+//  SharedColorPaletteDefinition+BaseColors.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
+import Foundation
 import SwiftUI
 
-#if os(iOS)
-extension ColorPaletteDefinition {
+#if os(macOS)
+extension SharedColorPaletteDefinition {
 
     /// Proxy for retrieving base colors.
     ///

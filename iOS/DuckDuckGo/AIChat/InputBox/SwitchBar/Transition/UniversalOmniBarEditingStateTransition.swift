@@ -30,7 +30,7 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         let logoYOffset: CGFloat
     }
 
-    private func calculateOffsets(switchBarTextViewHeight: CGFloat, bottomSafeAreaInset: CGFloat) -> TransitionOffsets {
+    private func calculateOffsets(switchBarTextViewHeight: CGFloat) -> TransitionOffsets {
 
         let switcherMultiplier: CGFloat = isTopBarPosition ? 1 : 0
 
@@ -91,9 +91,10 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
 
         transitionContext.containerView.addSubview(toVC.view)
 
+        // Let the VC adjust to the initial size of the textView
+        toVC.switchBarVC.view.layoutIfNeeded()
         let switchBarTextViewHeight = toVC.switchBarVC.textEntryViewController.view.frame.height
-        let offsets = calculateOffsets(switchBarTextViewHeight: switchBarTextViewHeight,
-                                       bottomSafeAreaInset: fromVC.view.safeAreaInsets.bottom)
+        let offsets = calculateOffsets(switchBarTextViewHeight: switchBarTextViewHeight)
 
         if !transitionContext.isAnimated {
             toVC.switchBarVC.textEntryViewController.isExpandable = true
@@ -153,8 +154,7 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         }
 
         let switchBarTextViewHeight = fromVC.switchBarVC.textEntryViewController.view.frame.height
-        let offsets = calculateOffsets(switchBarTextViewHeight: switchBarTextViewHeight,
-                                       bottomSafeAreaInset: fromVC.view.safeAreaInsets.bottom)
+        let offsets = calculateOffsets(switchBarTextViewHeight: switchBarTextViewHeight)
 
         // Dismissing animation
         let duration = transitionDuration(using: transitionContext)

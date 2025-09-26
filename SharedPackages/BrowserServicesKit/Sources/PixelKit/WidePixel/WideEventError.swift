@@ -1,5 +1,5 @@
 //
-//  WidePixelError.swift
+//  WideEventError.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import Foundation
 import Common
 
-public enum WidePixelError: DDGError, LocalizedError {
+public enum WideEventError: DDGError, LocalizedError {
     case flowNotFound(pixelName: String)
     case typeMismatch(expected: String, actual: String)
     case serializationFailed(Error)
@@ -76,7 +76,7 @@ public enum WidePixelError: DDGError, LocalizedError {
         }
     }
 
-    public static func == (lhs: WidePixelError, rhs: WidePixelError) -> Bool {
+    public static func == (lhs: WideEventError, rhs: WideEventError) -> Bool {
         switch (lhs, rhs) {
         case (.flowNotFound(let lhsPixelName), .flowNotFound(let rhsPixelName)):
             return lhsPixelName == rhsPixelName

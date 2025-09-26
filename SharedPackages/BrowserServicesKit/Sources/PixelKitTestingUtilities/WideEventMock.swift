@@ -1,5 +1,5 @@
 //
-//  WidePixelMock.swift
+//  WideEventMock.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -20,37 +20,37 @@ import Foundation
 import PixelKit
 import XCTest
 
-public final class WidePixelMock: WidePixelManaging {
-    public var started: [WidePixelData] = []
-    public var updates: [WidePixelData] = []
-    public var completions: [(WidePixelData, WidePixelStatus)] = []
-    public var discarded: [WidePixelData] = []
+public final class WideEventMock: WideEventManaging {
+    public var started: [WideEventData] = []
+    public var updates: [WideEventData] = []
+    public var completions: [(WideEventData, WideEventStatus)] = []
+    public var discarded: [WideEventData] = []
 
     public init() {}
 
-    public func startFlow<T: WidePixelData>(_ data: T) {
+    public func startFlow<T: WideEventData>(_ data: T) {
         started.append(data)
     }
 
-    public func updateFlow<T: WidePixelData>(_ data: T) {
+    public func updateFlow<T: WideEventData>(_ data: T) {
         updates.append(data)
     }
 
-    public func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock) {
+    public func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, onComplete: @escaping PixelKit.CompletionBlock) {
         completions.append((data, status))
         onComplete(true, nil)
     }
 
-    public func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus) async throws -> Bool {
+    public func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus) async throws -> Bool {
         completions.append((data, status))
         return true
     }
 
-    public func discardFlow<T: WidePixelData>(_ data: T) {
+    public func discardFlow<T: WideEventData>(_ data: T) {
         discarded.append(data)
     }
 
-    public func getAllFlowData<T: WidePixelData>(_ type: T.Type) -> [T] {
+    public func getAllFlowData<T: WideEventData>(_ type: T.Type) -> [T] {
         return started.compactMap { $0 as? T }
     }
 }

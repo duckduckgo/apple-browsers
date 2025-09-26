@@ -29,6 +29,7 @@ public enum SharedDesignSystemColor {
     case accentGlowPrimary
     case accentGlowSecondary
     case accentPrimary
+    case accentQuaternary
     case accentSecondary
     case accentTertiary
     case accentTextPrimary
@@ -40,12 +41,21 @@ public enum SharedDesignSystemColor {
     case accentAltContentSecondary
     case accentAltContentTertiary
     case accentAltGlowPrimary
+    case accentAltGlowSecondary
     case accentAltPrimary
     case accentAltSecondary
     case accentAltTertiary
     case accentAltTextPrimary
     case accentAltTextSecondary
     case accentAltTextTertiary
+
+    // Container
+    case containerDecorationPrimary
+    case containerDecorationSecondary
+    case containerDecorationTertiary
+    case containerFillPrimary
+    case containerFillSecondary
+    case containerFillTertiary
 
     // Controls
     case controlsDecorationPrimary
@@ -81,9 +91,6 @@ public enum SharedDesignSystemColor {
     case iconsPrimary
     case iconsSecondary
     case iconsTertiary
-
-    // Panel
-    case panel
 
     // Shadows
     case shadowPrimary

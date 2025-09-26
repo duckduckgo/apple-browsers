@@ -87,8 +87,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Accents
     private static let accentContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
 
-    // Various
-    private static let variousIPadTabs = DynamicColor(lightColor: .gray20, darkColor: .black)
     // Text
     private static let textLink = DynamicColor(lightColor: .blue50, darkColor: .blue30)
     private static let textSelectionFill = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))

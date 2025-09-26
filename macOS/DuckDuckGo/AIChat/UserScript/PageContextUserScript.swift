@@ -24,29 +24,12 @@ import OSLog
 import UserScript
 import WebKit
 
-struct PageContextFavicon: Codable {
-    let href: String
-    let rel: String
-}
-
-struct PageContext: Codable {
-    let title: String
-    let favicon: [PageContextFavicon]
-    let content: String
-    let truncated: Bool
+struct PageContextCollectionPayload: Codable {
+    let serializedPageData: AIChatPageContextData?
 }
 
 struct PageContextResponse: Codable {
-    let pageContext: PageContext?
-
-    init(pageContextData: AIChatPageContextData?) {
-        if let data = pageContextData,
-           let jsonData = data.data(using: .utf8) {
-            self.pageContext = try? JSONDecoder().decode(PageContext.self, from: jsonData)
-        } else {
-            self.pageContext = nil
-        }
-    }
+    let pageContextData: AIChatPageContextData?
 }
 
 final class PageContextUserScript: NSObject, Subfeature {
@@ -94,23 +77,26 @@ final class PageContextUserScript: NSObject, Subfeature {
 
     /// Receives collected page context
     private func collectionResult(params: Any, message: UserScriptMessage) async -> Encodable? {
-        // Decode the incoming parameters as PageContextResponse
-        do {
-            let jsonData = try JSONSerialization.data(withJSONObject: params, options: [])
-            let response = try JSONDecoder().decode(PageContextResponse.self, from: jsonData)
+        // TODO: For using AIChatPageContextData as a string
+//        guard let payload: PageContextCollectionPayload = DecodableHelper.decode(from: params) else {
+//            return nil
+//        }
+//
+//        collectionResultSubject.send(payload.serializedPageData)
+//
+//        return nil
 
-            // Convert back to JSON string for storage (to maintain compatibility with existing storage format)
-            if let pageContext = response.pageContext {
-                let encoder = JSONEncoder()
-                let pageContextData = try encoder.encode(pageContext)
-                let jsonString = String(data: pageContextData, encoding: .utf8)
-                collectionResultSubject.send(jsonString)
-            } else {
-                collectionResultSubject.send(nil)
-            }
-        } catch {
-            collectionResultSubject.send(nil)
+        // TODO: For decoding AIChatPageContextData as a struct
+        guard let paramsDict = params as? [String: Any],
+              let jsonString = paramsDict["serializedPageData"] as? String,
+              let jsonData = jsonString.data(using: .utf8) else {
+            return nil
         }
+
+        if let pageContextData = try? JSONDecoder().decode(AIChatPageContextData.self, from: jsonData) {
+            collectionResultSubject.send(pageContextData)
+        }
+
         return nil
     }
 }

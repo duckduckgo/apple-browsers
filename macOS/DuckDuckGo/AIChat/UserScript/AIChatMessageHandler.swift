@@ -92,7 +92,7 @@ extension AIChatMessageHandler {
                                             supportsNativeChatInput: false,
                                             supportsURLChatIDRestoration: true,
                                             supportsFullChatRestoration: true,
-                                            supportsPageContext: true)
+                                            supportsPageContext: true) // TODO: This needs to be fixed - we need to resolve this value based on feature flag state, here the whole case relies on sidebar which is already rolled out
         } else {
             return AIChatNativeConfigValues.defaultValues
         }

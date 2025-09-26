@@ -7,7 +7,6 @@
         parameters: [
             'appVersion',
             'pixelSource',
-            'isInternalUser',
             {
                 key: 'tries',
                 description: 'The number of tries it took for the action to complete',
@@ -48,7 +47,6 @@
         parameters: [
             'appVersion',
             'pixelSource',
-            'isInternalUser',
             {
                 key: 'tries',
                 description: 'The number of tries it took for the action to complete',
@@ -340,7 +338,6 @@
         parameters: [
             'appVersion',
             'pixelSource',
-            'isInternalUser',
             {
                 key: 'data_broker_url',
                 description: 'The URL of the data broker that this action was operating on',
@@ -381,7 +378,6 @@
         parameters: [
             'appVersion',
             'pixelSource',
-            'isInternalUser',
             {
                 key: 'data_broker_url',
                 description: 'The URL of the data broker that this action was operating on',
@@ -422,7 +418,6 @@
         parameters: [
             'appVersion',
             'pixelSource',
-            'isInternalUser',
             {
                 key: 'data_broker_url',
                 description: 'The URL of the data broker that this action was operating on',
@@ -453,7 +448,6 @@
         parameters: [
             'appVersion',
             'pixelSource',
-            'isInternalUser',
             {
                 key: 'data_broker_url',
                 description: 'The URL of the data broker that this action was operating on',

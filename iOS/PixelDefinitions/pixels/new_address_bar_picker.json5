@@ -7,7 +7,7 @@
         owners: ['Bunn'],
         triggers: ['other'],
         suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
+        parameters: ['appVersion', 'pixelSource'],
     },
     m_aichat_new_address_bar_picker_confirmed: {
         description: 'Fires when user taps Confirm on the New Address Bar Picker',
@@ -17,7 +17,6 @@
         parameters: [
             'appVersion',
             'pixelSource',
-            'isInternalUser',
             {
                 key: 'selection',
                 description: 'Selected option',
@@ -31,6 +30,6 @@
         owners: ['Bunn'],
         triggers: ['other'],
         suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource', 'isInternalUser'],
+        parameters: ['appVersion', 'pixelSource'],
     },
 }

@@ -8,7 +8,6 @@
         parameters: [
             'appVersion',
             'pixelSource',
-            'isInternalUser',
             {
                 key: 'type',
                 description: 'Type of the app intent performed: search for general search intents, duckai for AI chat intents.',

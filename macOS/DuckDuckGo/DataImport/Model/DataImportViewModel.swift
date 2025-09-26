@@ -301,7 +301,7 @@ struct DataImportViewModel {
             self.screen = .summary([dataType], isFileImport: true)
         } else if case .multiple(let dataTypes) = self.screen.fileImportDataTypeSelection {
             // TODO: might be handled by above
-            assert(false, "TODO: might be handled by above")
+            self.screen = .summary(dataTypes, isFileImport: true)
         } else if screenForNextDataTypeRemainingToImport(after: DataType.allCases.last(where: summary.keys.contains)) == nil { // no next data type manual import screen
             let allKeys = self.summary.reduce(into: Set()) { $0.insert($1.dataType) }
             Logger.dataImportExport.debug("mergeImportSummary: final summary(\(Set(allKeys)))")
@@ -425,6 +425,7 @@ private func dataImporter(for source: DataImport.Source, dataTypeSelection: Data
         }()
         return DataImport.BrowserProfile(browser: browser, profileURL: url)
     }
+    let loginImporter = SecureVaultLoginImporter(loginImportState: AutofillLoginImportState())
     return switch source {
     case .bookmarksHTML,
         /* any */_ where dataTypeSelection == .single(.bookmarks):
@@ -453,12 +454,29 @@ private func dataImporter(for source: DataImport.Source, dataTypeSelection: Data
                             featureFlagger: Application.appDelegate.featureFlagger)
     case .safari, .safariTechnologyPreview:
         switch dataTypeSelection {
-            case .single(.bookmarks):
+        case .single(.bookmarks):
                 SafariDataImporter(profile: profile,
                                    bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
                                    featureFlagger: Application.appDelegate.featureFlagger)
-        case .multiple(let dataTypes):
-            fatalError("Safari doesn't support multiple data types yet")
+        case .multiple:
+            switch UTType(filenameExtension: url.pathExtension) {
+            case .html:
+                SafariDataImporter(profile: profile,
+                                   bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                                   featureFlagger: Application.appDelegate.featureFlagger)
+            case .commaSeparatedText:
+                CSVImporter(fileURL: url, loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()), defaultColumnPositions: .init(source: source), reporter: SecureVaultReporter.shared, tld: Application.appDelegate.tld)
+            case .zip:
+                SafariArchiveImporter(archiveURL: url,
+                                      bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                                      loginImporter: loginImporter,
+                                      faviconManager: NSApp.delegateTyped.faviconManager,
+                                      featureFlagger: Application.appDelegate.featureFlagger,
+                                      secureVaultReporter: SecureVaultReporter.shared,
+                                      tld: Application.appDelegate.tld)
+            default:
+                fatalError("Unsupported Safari data type selection: \(String(describing: dataTypeSelection))")
+            }
         default:
             fatalError("Unsupported Safari data type selection: \(String(describing: dataTypeSelection))")
         }
@@ -525,7 +543,9 @@ extension DataImport.TypeSelection {
         case .single(let dataType):
             return dataType.allowedFileTypes
         case .multiple(let dataTypes):
-            return dataTypes.flatMap { $0.allowedFileTypes }
+            var allowedFileTypes = dataTypes.flatMap { $0.allowedFileTypes }
+            allowedFileTypes.append(.zip)
+            return allowedFileTypes
         }
     }
 }

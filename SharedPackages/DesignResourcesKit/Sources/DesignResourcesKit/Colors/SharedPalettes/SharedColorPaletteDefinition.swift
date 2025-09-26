@@ -22,9 +22,6 @@ import Foundation
 
 protocol SharedColorPaletteDefinition {
 
-    /// Gets dynamic color proxy for a specific semantic color based on the JSON import
-    static func dynamicColor(for designSystemColor: SharedDesignSystemColor) -> DynamicColor
-
     // MARK: - Accent Colors
     static var accentContentPrimary: DynamicColor { get }
     static var accentContentSecondary: DynamicColor { get }
@@ -116,6 +113,176 @@ protocol SharedColorPaletteDefinition {
     // MARK: - Tone Colors
     static var toneShadePrimary: DynamicColor { get }
     static var toneTintPrimary: DynamicColor { get }
+}
+
+
+extension SharedColorPaletteDefinition {
+
+    /// Gets dynamic color proxy for a specific semantic color based on the JSON import
+    static func dynamicColor(for designSystemColor: SharedDesignSystemColor) -> DynamicColor {
+
+        switch designSystemColor {
+        /// Accent Colors
+        case .accentContentPrimary:
+            return accentContentPrimary
+        case .accentContentSecondary:
+            return accentContentSecondary
+        case .accentContentTertiary:
+            return accentContentTertiary
+        case .accentGlowPrimary:
+            return accentGlowPrimary
+        case .accentGlowSecondary:
+            return accentGlowSecondary
+        case .accentPrimary:
+            return accentPrimary
+        case .accentQuaternary:
+            return accentQuaternary
+        case .accentSecondary:
+            return accentSecondary
+        case .accentTertiary:
+            return accentTertiary
+        case .accentTextPrimary:
+            return accentTextPrimary
+        case .accentTextSecondary:
+            return accentTextSecondary
+        case .accentTextTertiary:
+            return accentTextTertiary
+
+        /// Accent Alt Colors
+        case .accentAltContentPrimary:
+            return accentAltContentPrimary
+        case .accentAltContentSecondary:
+            return accentAltContentSecondary
+        case .accentAltContentTertiary:
+            return accentAltContentTertiary
+        case .accentAltGlowPrimary:
+            return accentAltGlowPrimary
+        case .accentAltGlowSecondary:
+            return accentAltGlowSecondary
+        case .accentAltPrimary:
+            return accentAltPrimary
+        case .accentAltSecondary:
+            return accentAltSecondary
+        case .accentAltTertiary:
+            return accentAltTertiary
+        case .accentAltTextPrimary:
+            return accentAltTextPrimary
+        case .accentAltTextSecondary:
+            return accentAltTextSecondary
+        case .accentAltTextTertiary:
+            return accentAltTextTertiary
+
+        /// Container Colors
+        case .containerDecorationPrimary:
+            return containerDecorationPrimary
+        case .containerDecorationSecondary:
+            return containerDecorationSecondary
+        case .containerDecorationTertiary:
+            return containerDecorationTertiary
+        case .containerFillPrimary:
+            return containerFillPrimary
+        case .containerFillSecondary:
+            return containerFillSecondary
+        case .containerFillTertiary:
+            return containerFillTertiary
+
+        /// Controls Colors
+        case .controlsDecorationPrimary:
+            return controlsDecorationPrimary
+        case .controlsDecorationSecondary:
+            return controlsDecorationSecondary
+        case .controlsDecorationTertiary:
+            return controlsDecorationTertiary
+        case .controlsDecorationQuaternary:
+            return controlsDecorationQuaternary
+        case .controlsFillPrimary:
+            return controlsFillPrimary
+        case .controlsFillSecondary:
+            return controlsFillSecondary
+        case .controlsFillTertiary:
+            return controlsFillTertiary
+
+        /// Decoration Colors
+        case .decorationPrimary:
+            return decorationPrimary
+        case .decorationSecondary:
+            return decorationSecondary
+        case .decorationTertiary:
+            return decorationTertiary
+
+        /// Destructive Colors
+        case .destructiveContentPrimary:
+            return destructiveContentPrimary
+        case .destructiveContentSecondary:
+            return destructiveContentSecondary
+        case .destructiveContentTertiary:
+            return destructiveContentTertiary
+        case .destructiveGlow:
+            return destructiveGlow
+        case .destructivePrimary:
+            return destructivePrimary
+        case .destructiveSecondary:
+            return destructiveSecondary
+        case .destructiveTertiary:
+            return destructiveTertiary
+        case .destructiveTextPrimary:
+            return destructiveTextPrimary
+        case .destructiveTextSecondary:
+            return destructiveTextSecondary
+        case .destructiveTextTertiary:
+            return destructiveTextTertiary
+
+        /// Highlight Colors
+        case .highlightPrimary:
+            return highlightPrimary
+
+        /// Icons Colors
+        case .icons:
+            return icons
+        case .iconsPrimary:
+            return iconsPrimary
+        case .iconsSecondary:
+            return iconsSecondary
+        case .iconsTertiary:
+            return iconsTertiary
+
+        /// Shadow Colors
+        case .shadowPrimary:
+            return shadowPrimary
+        case .shadowSecondary:
+            return shadowSecondary
+        case .shadowTertiary:
+            return shadowTertiary
+
+        /// Surface Colors
+        case .surface:
+            return surface
+        case .surfaceBackdrop:
+            return surfaceBackdrop
+        case .surfaceCanvas:
+            return surfaceCanvas
+        case .surfacePrimary:
+            return surfacePrimary
+        case .surfaceSecondary:
+            return surfaceSecondary
+        case .surfaceTertiary:
+            return surfaceTertiary
+
+        /// Text Colors
+        case .textPrimary:
+            return textPrimary
+        case .textSecondary:
+            return textSecondary
+        case .textTertiary:
+            return textTertiary
+
+        /// Tone Colors
+        case .toneShadePrimary:
+            return toneShadePrimary
+        case .toneTintPrimary:
+            return toneTintPrimary
+        }
+    }
 }
 
 #endif

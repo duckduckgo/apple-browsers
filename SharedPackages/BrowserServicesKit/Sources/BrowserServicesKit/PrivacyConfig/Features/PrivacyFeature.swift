@@ -236,6 +236,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Adds toggle for controlling  'Ask Follow-Up Questions' setting.
     case serpSettingsFollowUpQuestions
+
+    /// Rollout feature flag for entry point improvements
+    case improvements
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

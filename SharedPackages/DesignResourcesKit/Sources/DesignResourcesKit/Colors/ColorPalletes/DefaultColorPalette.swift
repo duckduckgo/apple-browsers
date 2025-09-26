@@ -18,8 +18,6 @@
 
 import SwiftUI
 
-#if os(iOS)
-
 /// See [Figma](https://www.figma.com/design/3W4vi0zX8hrpQc7zInQQB6/🎨-Global-Colors---Styles?node-id=11-1&p=f&vars=1&var-id=5476-10186&m=dev)
 struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x1F1F1F = Color(0x1F1F1F)
@@ -245,5 +243,3 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         }
     }
 }
-
-#endif

@@ -207,8 +207,8 @@ struct DataImportViewModel {
         // either import only data type for file import
         let dataTypes = dataTypeSelection.flatMap {
             switch $0 {
-                case .single(let dataType): return [dataType]
-                case .multiple(let dataTypes): return dataTypes
+            case .single(let dataType): return [dataType]
+            case .multiple(let dataTypes): return dataTypes
             }
         } ?? selectedDataTypes.subtracting(self.summary.filter { $0.result.isSuccess }.map(\.dataType)) // or all the selected data types subtracting the ones that are already imported
         let importer = dataImporterFactory(importSource, dataTypeSelection, url, primaryPassword)
@@ -300,7 +300,6 @@ struct DataImportViewModel {
             Logger.dataImportExport.debug("mergeImportSummary: file import summary(\(dataType))")
             self.screen = .summary([dataType], isFileImport: true)
         } else if case .multiple(let dataTypes) = self.screen.fileImportDataTypeSelection {
-            // TODO: might be handled by above
             self.screen = .summary(dataTypes, isFileImport: true)
         } else if screenForNextDataTypeRemainingToImport(after: DataType.allCases.last(where: summary.keys.contains)) == nil { // no next data type manual import screen
             let allKeys = self.summary.reduce(into: Set()) { $0.insert($1.dataType) }

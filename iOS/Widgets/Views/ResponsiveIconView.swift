@@ -44,6 +44,7 @@ struct ResponsiveIconView: View {
                 .foregroundStyle(Color(designSystemColor: .icons))
         }
         .makeAccentable()
+        // .frame(width: frameSize, height: frameSize)
         .frame(maxWidth: .infinity)
         .aspectRatio(contentMode: .fit)
     }

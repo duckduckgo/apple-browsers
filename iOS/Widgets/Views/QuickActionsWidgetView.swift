@@ -39,7 +39,7 @@ struct QuickActionsWidgetView: View {
                     Link(destination: entry.configuration.leftShortcut.destination) {
                         ResponsiveIconView(image: entry.configuration.leftShortcut.icon)
                     }
-                    Spacer()
+                    Spacer(minLength: 16)
                     Link(destination: entry.configuration.rightShortcut.destination) {
                         ResponsiveIconView(image: entry.configuration.rightShortcut.icon)
                     }

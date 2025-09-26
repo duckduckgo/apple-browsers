@@ -50,7 +50,7 @@ struct QuickActionsMediumWidgetView: View {
                         }
 
                         if index < shortcuts.count - 1 {
-                            Spacer()
+                            Spacer(minLength: 16)
                         }
                     }
                 }

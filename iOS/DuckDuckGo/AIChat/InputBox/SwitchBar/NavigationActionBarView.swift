@@ -173,6 +173,7 @@ final class NavigationActionBarView: UIView {
     private func setupNewLineButton() {
         let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
         let returnImage = UIImage(systemName: "return", withConfiguration: config)
+        newLineButton.isShadowHidden = !isFloating
         newLineButton.setIcon(returnImage)
         newLineButton.setColors(
             foreground: UIColor(designSystemColor: .textPrimary),
@@ -244,6 +245,7 @@ final class NavigationActionBarView: UIView {
 
     private func updateMicrophoneButton() {
         let isEnabled = viewModel.isVoiceSearchEnabled
+        microphoneButton.isShadowHidden = !isFloating
         microphoneButton.alpha = isEnabled ? 1.0 : 0.5
         microphoneButton.isEnabled = isEnabled
         microphoneButton.setColors(
@@ -264,7 +266,8 @@ final class NavigationActionBarView: UIView {
                 return DesignSystemImages.Glyphs.Size24.arrowRightSmall
             }
         }()
-        
+
+        searchButton.isShadowHidden = !isFloating
         searchButton.setIcon(icon)
         searchButton.setColors(
             foreground: hasText ? .white : UIColor(designSystemColor: .textPlaceholder),
@@ -321,6 +324,12 @@ private class CircularButton: UIButton {
     private let secondShadowLayer = CALayer()
     private var definedBackgroundColor: UIColor?
 
+    var isShadowHidden: Bool = false {
+        didSet {
+            updateShadowVisibility()
+        }
+    }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupButton()
@@ -351,6 +360,18 @@ private class CircularButton: UIButton {
         
         imageView?.contentMode = .scaleAspectFit
         adjustsImageWhenHighlighted = false
+
+        updateShadowVisibility()
+    }
+
+    private func updateShadowVisibility() {
+        if isShadowHidden {
+            layer.shadowOpacity = 0.0
+            secondShadowLayer.shadowOpacity = 0.0
+        } else {
+            layer.shadowOpacity = 1.0
+            secondShadowLayer.shadowOpacity = 1.0
+        }
     }
 
     override var isHighlighted: Bool {

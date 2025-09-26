@@ -30,7 +30,6 @@ public enum DesignSystemColor {
     case urlBar
 
     // Various
-    case variousOutline
     case backdrop
 
     // Shadows

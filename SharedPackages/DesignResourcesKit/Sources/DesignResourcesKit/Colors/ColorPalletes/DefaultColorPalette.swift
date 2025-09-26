@@ -89,8 +89,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Various
     private static let variousIPadTabs = DynamicColor(lightColor: .gray20, darkColor: .black)
-    private static let variousOutline = DynamicColor(lightColor: .shade(0.24), darkColor: .tint(0.24))
-
     // Text
     private static let textLink = DynamicColor(lightColor: .blue50, darkColor: .blue30)
     private static let textSelectionFill = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
@@ -213,9 +211,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             // Buttons/Color
         case .buttonsBlack: return buttonsBlack
         case .buttonsWhite: return buttonsWhite
-
-            // Various
-        case .variousOutline: return variousOutline
 
             // Buttons/DeleteGhost
         case .buttonsDeleteGhostPressedFill: return buttonsDeleteGhostPressedFill

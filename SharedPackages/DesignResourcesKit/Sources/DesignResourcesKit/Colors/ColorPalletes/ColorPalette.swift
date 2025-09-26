@@ -68,18 +68,6 @@ public enum ColorPalette {
         switch self {
         case .default:
             DefaultColorPalette.self
-        case .desert:
-            DesertColorPalette.self
-        case .green:
-            GreenColorPalette.self
-        case .orange:
-            OrangeColorPalette.self
-        case .rose:
-            RoseColorPalette.self
-        case .slateBlue:
-            SlateBlueColorPalette.self
-        case .violet:
-            VioletColorPalette.self
         }
     }
 #endif

@@ -37003,6 +37003,9 @@
         }
       }
     },
+    "Import from %@" : {
+
+    },
     "Import Passwords" : {
       "comment" : "Title of dialog with instruction for the user to import passwords from another browser",
       "localizations" : {
@@ -39809,6 +39812,18 @@
         }
       }
     },
+    "import.data.select-file.button.title" : {
+      "comment" : "Button text for selecting a file",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select File…"
+          }
+        }
+      }
+    },
     "import.data.skip" : {
       "comment" : "Button text to skip an import step",
       "extractionState" : "extracted_with_value",
@@ -39985,6 +40000,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Пропустить пароли"
+          }
+        }
+      }
+    },
+    "import.drag-and-drop-file" : {
+      "comment" : "Drag-and-drop instruction for importing a file\nSeparates import.data.select-file.button.title and import.drag-and-drop-file with the word 'or'. E.g 'Drag % drop your file here or Select File'.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Drag & drop your file here"
           }
         }
       }
@@ -40290,60 +40317,60 @@
       }
     },
     "import.html.instructions.safari" : {
-      "comment" : "Instructions to import Bookmarks exported as HTML from Safari.\n%N$d - step number\n%5$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Bookmarks exported as HTML from Safari.\n%N$d - step number\n%5$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_\nInstructions to import Bookmarks exported as HTML from Safari.\n%N$d - step number\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Öffne **Safari**\n%2$d Wähle **Datei → Exportieren → Lesezeichen**\n%3$d Speichere die Datei mit den Passwörtern an einem Ort, an dem du sie finden kannst (z. B. auf dem Desktop) %4$d %5$@"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$d Open **Safari**\n%2$d Select **File → Export → Bookmarks**\n%3$d Save the passwords file someplace you can find it (e.g., Desktop)\n%4$d %5$@"
+            "value" : "%1$d Open %2$@ **Safari → File → Export → Bookmarks**\n%3$d Select from **Bookmarks, Passwords, and Credit Cards → Export** and save the file\n%4$d Save the passwords file someplace you can find it (e.g., Desktop)\n%5$d Upload the exported ZIP file to DuckDuckGo"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Abre **Safari**\n%2$d Selecciona **Archivo → Exportar → Marcadores**\n%3$d Guarda el archivo de contraseñas donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%4$d %5$@"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Ouvrez **Safari**\n%2$d Sélectionnez **Fichier → Exporter → Signets**\n%3$d Enregistrez le fichier des mots de passe à un endroit où le trouver facilement (par exemple, sur le bureau)\n%4$d %5$@"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Apri **Safari**\n%2$d Seleziona **File → Esporta → Segnalibri**\n%3$d Salva il file delle password dove puoi trovarlo (ad esempio, sul desktop)\n%4$d %5$@"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Open **Safari**\n%2$d Selecteer **Bestand → Exporteren → Bladwijzers**\n%3$d Bewaar het bestand op een plek waar je het kunt vinden (bijv. het bureaublad)\n%4$d %5$@"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Otwórz przeglądarkę **Safari**\n%2$d Wybierz **Plik → Eksportuj → Zakładki**\n%3$d Zapisz plik w łatwo dostępnym miejscu (np. na biurku)\n%4$d %5$@"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Abre o **Safari**\n%2$d Selecione **Ficheiro → Exportar → Marcadores**\n%3$d Guarda o ficheiro de palavras-passe onde consigas encontrá-lo (por exemplo, no ambiente de trabalho)\n%4$d %5$@"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Откройте **Safari**\n%2$d Выберите раздел **Файл → Экспортировать → Закладки**\n%3$d Сохраните файл с закладками там, где вы легко его найдете (например, на рабочем столе)\n%4$d %5$@"
           }
         }

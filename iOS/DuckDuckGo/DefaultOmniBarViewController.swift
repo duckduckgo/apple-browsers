@@ -190,7 +190,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         let switchBarHandler = createSwitchBarHandler(for: textField)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
-        let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)
+        let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler, featureFlagger: dependencies.featureFlagger)
         editingStateViewController.delegate = self
 
         editingStateViewController.modalPresentationStyle = .custom
@@ -286,12 +286,22 @@ extension DefaultOmniBarViewController: UIViewControllerTransitioningDelegate {
     func animationController(forPresented presented: UIViewController,
                              presenting: UIViewController,
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        return OmniBarEditingStateTransition(isPresenting: true,
-                                             addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+        if dependencies.featureFlagger.isFeatureOn(.aiSearchBottomBarSupport) {
+            return UniversalOmniBarEditingStateTransition(isPresenting: true,
+                                                    addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+        } else {
+            return OmniBarEditingStateTransition(isPresenting: true,
+                                                 addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+        }
     }
 
     func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        return OmniBarEditingStateTransition(isPresenting: false,
-                                             addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+        if dependencies.featureFlagger.isFeatureOn(.aiSearchBottomBarSupport) {
+            return UniversalOmniBarEditingStateTransition(isPresenting: false,
+                                                    addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+        } else {
+            return OmniBarEditingStateTransition(isPresenting: false,
+                                                 addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+        }
     }
 }

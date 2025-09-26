@@ -40,7 +40,7 @@ final class DaxLogoManager {
 
     // MARK: - Public Methods
     
-    func installInViewController(_ viewController: UIViewController, asSubviewOf parentView: UIView, belowView topView: UIView) {
+    func installInViewController(_ parentController: UIViewController, asSubviewOf parentView: UIView, barView: UIView, isTopBarPosition: Bool) {
 
         logoContainerView.translatesAutoresizingMaskIntoConstraints = false
         logoContainerView.isUserInteractionEnabled = false
@@ -57,13 +57,23 @@ final class DaxLogoManager {
 
         containerYCenterConstraint = logoContainerView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor)
 
+        if isTopBarPosition {
+            NSLayoutConstraint.activate([
+                barView.bottomAnchor.constraint(equalTo: centeringGuide.topAnchor),
+                parentView.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor)
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                parentView.topAnchor.constraint(equalTo: centeringGuide.topAnchor),
+                barView.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor)
+            ])
+        }
+
         NSLayoutConstraint.activate([
 
             // Position layout centering guide vertically between top view and keyboard
             parentView.leadingAnchor.constraint(equalTo: centeringGuide.leadingAnchor),
             parentView.trailingAnchor.constraint(equalTo: centeringGuide.trailingAnchor),
-            topView.bottomAnchor.constraint(equalTo: centeringGuide.topAnchor),
-            parentView.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor),
 
             // Center within the layout guide
             logoContainerView.topAnchor.constraint(greaterThanOrEqualTo: centeringGuide.topAnchor),

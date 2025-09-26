@@ -686,7 +686,7 @@ private extension ViewHighlighter {
 
 }
 
-#if canImport(XCTest)
+#if DEBUG
 extension DaxDialogs {
 
     func setLastVisitedURL(_ url: URL?) {

@@ -59,7 +59,7 @@ struct ThemeColors: DuckDuckGo_Privacy_Browser.ColorPalette {
     let destructiveTextPrimary: NSColor
     let destructiveTextSecondary: NSColor
     let destructiveTextTertiary: NSColor
-    let highlightDecoration: NSColor
+    let highlightPrimary: NSColor
     let iconsPrimary: NSColor
     let iconsSecondary: NSColor
     let iconsTertiary: NSColor
@@ -122,7 +122,7 @@ extension ThemeColors {
         destructiveTextPrimary = NSColor(designSystemColor: .destructiveTextPrimary, palette: palette)
         destructiveTextSecondary = NSColor(designSystemColor: .destructiveTextSecondary, palette: palette)
         destructiveTextTertiary = NSColor(designSystemColor: .destructiveTextTertiary, palette: palette)
-        highlightDecoration = NSColor(designSystemColor: .highlightDecoration, palette: palette)
+        highlightPrimary = NSColor(designSystemColor: .highlightPrimary, palette: palette)
         iconsPrimary = NSColor(designSystemColor: .iconsPrimary, palette: palette)
         iconsSecondary = NSColor(designSystemColor: .iconsSecondary, palette: palette)
         iconsTertiary = NSColor(designSystemColor: .iconsTertiary, palette: palette)

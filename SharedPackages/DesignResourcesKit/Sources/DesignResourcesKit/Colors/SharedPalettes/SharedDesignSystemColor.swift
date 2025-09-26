@@ -49,6 +49,27 @@ public enum SharedDesignSystemColor {
     case accentAltTextSecondary
     case accentAltTextTertiary
 
+    // Alert
+    case alertGreen
+    case alertYellow
+
+    // Buttons/Primary
+    case buttonsPrimaryDefault
+    case buttonsPrimaryPressed
+    case buttonsPrimaryDisabled
+    case buttonsPrimaryText
+    case buttonsPrimaryTextDisabled
+
+    // Buttons/SecondaryFill
+    case buttonsSecondaryFillDefault
+    case buttonsSecondaryFillPressed
+    case buttonsSecondaryFillDisabled
+    case buttonsSecondaryFillText
+    case buttonsSecondaryFillTextDisabled
+
+    // Buttons/Color
+    case buttonsWhite
+
     // Container
     case containerDecorationPrimary
     case containerDecorationSecondary
@@ -91,6 +112,9 @@ public enum SharedDesignSystemColor {
     case iconsPrimary
     case iconsSecondary
     case iconsTertiary
+
+    // System
+    case lines
 
     // Shadows
     case shadowPrimary

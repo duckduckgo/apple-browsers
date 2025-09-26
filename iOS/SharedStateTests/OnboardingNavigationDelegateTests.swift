@@ -67,7 +67,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             duckPlayerStorage: MockDuckPlayerStorage(),
             configurationURLProvider: MockConfigurationURLProvider()
         )
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, subscriptionDataReporter: MockSubscriptionDataReporter())
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: remoteMessagingClient.store, subscriptionDataReporter: MockSubscriptionDataReporter())
         let tabsModel = TabsModel(desktop: true)
         onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = try TabsModelPersistence()

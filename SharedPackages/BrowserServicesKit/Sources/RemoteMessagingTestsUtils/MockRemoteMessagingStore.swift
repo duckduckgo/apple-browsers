@@ -30,7 +30,7 @@ public class MockRemoteMessagingStore: RemoteMessagingStoring {
     public var fetchDismissedRemoteMessageIDsCalls = 0
     public var updateRemoteMessageCalls = 0
 
-    public private(set) var capturedSurfaces: RemoteMessageSurfaceType?
+    public var capturedSurfaces: RemoteMessageSurfaceType?
 
     public var remoteMessagingConfig: RemoteMessagingConfig?
     public var scheduledRemoteMessage: RemoteMessageModel?

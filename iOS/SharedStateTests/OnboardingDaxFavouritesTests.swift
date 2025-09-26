@@ -70,7 +70,7 @@ import SystemSettingsPiPTutorialTestSupport
             configurationURLProvider: MockCustomURLProvider(),
             syncService: MockDDGSyncing()
         )
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: remoteMessagingClient.store, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
         let tabsModel = TabsModel(desktop: true)
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()

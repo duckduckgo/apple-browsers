@@ -1,5 +1,5 @@
 //
-//  SubscriptionWidePixelData.swift
+//  SubscriptionWideEventData.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,39 +18,39 @@
 
 import Foundation
 
-public class SubscriptionPurchaseWidePixelData: WidePixelData {
+public class SubscriptionPurchaseWideEventData: WideEventData {
     #if DEBUG
     public static let pixelName = "subscription_purchase_debug"
     #else
     public static let pixelName = "subscription_purchase"
     #endif
 
-    public var globalData: WidePixelGlobalData
-    public var contextData: WidePixelContextData
-    public var appData: WidePixelAppData
+    public var globalData: WideEventGlobalData
+    public var contextData: WideEventContextData
+    public var appData: WideEventAppData
 
     public let purchasePlatform: PurchasePlatform
     public var subscriptionIdentifier: String?
     public var freeTrialEligible: Bool
 
-    public var createAccountDuration: WidePixel.MeasuredInterval?
-    public var completePurchaseDuration: WidePixel.MeasuredInterval?
-    public var activateAccountDuration: WidePixel.MeasuredInterval?
+    public var createAccountDuration: WideEvent.MeasuredInterval?
+    public var completePurchaseDuration: WideEvent.MeasuredInterval?
+    public var activateAccountDuration: WideEvent.MeasuredInterval?
 
     public var failingStep: FailingStep?
-    public var errorData: WidePixelErrorData?
+    public var errorData: WideEventErrorData?
 
     public init(purchasePlatform: PurchasePlatform,
                 failingStep: FailingStep? = nil,
                 subscriptionIdentifier: String?,
                 freeTrialEligible: Bool,
-                createAccountDuration: WidePixel.MeasuredInterval? = nil,
-                completePurchaseDuration: WidePixel.MeasuredInterval? = nil,
-                activateAccountDuration: WidePixel.MeasuredInterval? = nil,
-                errorData: WidePixelErrorData? = nil,
-                contextData: WidePixelContextData,
-                appData: WidePixelAppData = WidePixelAppData(),
-                globalData: WidePixelGlobalData = WidePixelGlobalData()) {
+                createAccountDuration: WideEvent.MeasuredInterval? = nil,
+                completePurchaseDuration: WideEvent.MeasuredInterval? = nil,
+                activateAccountDuration: WideEvent.MeasuredInterval? = nil,
+                errorData: WideEventErrorData? = nil,
+                contextData: WideEventContextData,
+                appData: WideEventAppData = WideEventAppData(),
+                globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.purchasePlatform = purchasePlatform
         self.failingStep = failingStep
         self.subscriptionIdentifier = subscriptionIdentifier
@@ -65,7 +65,7 @@ public class SubscriptionPurchaseWidePixelData: WidePixelData {
     }
 }
 
-extension SubscriptionPurchaseWidePixelData {
+extension SubscriptionPurchaseWideEventData {
 
     public enum PurchasePlatform: String, Codable, CaseIterable {
         case appStore = "app_store"
@@ -88,48 +88,48 @@ extension SubscriptionPurchaseWidePixelData {
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
-        parameters[WidePixelParameter.Feature.name] = "subscription-purchase"
-        parameters[WidePixelParameter.SubscriptionFeature.purchasePlatform] = purchasePlatform.rawValue
+        parameters[WideEventParameter.Feature.name] = "subscription-purchase"
+        parameters[WideEventParameter.SubscriptionFeature.purchasePlatform] = purchasePlatform.rawValue
 
         if let failingStep = failingStep {
-            parameters[WidePixelParameter.SubscriptionFeature.failingStep] = failingStep.rawValue
+            parameters[WideEventParameter.SubscriptionFeature.failingStep] = failingStep.rawValue
         }
 
         if let subscriptionIdentifier = subscriptionIdentifier {
-            parameters[WidePixelParameter.SubscriptionFeature.subscriptionIdentifier] = subscriptionIdentifier
+            parameters[WideEventParameter.SubscriptionFeature.subscriptionIdentifier] = subscriptionIdentifier
         }
 
-        parameters[WidePixelParameter.SubscriptionFeature.freeTrialEligible] = freeTrialEligible ? "true" : "false"
+        parameters[WideEventParameter.SubscriptionFeature.freeTrialEligible] = freeTrialEligible ? "true" : "false"
 
         if let errorData = errorData {
-            parameters[WidePixelParameter.Feature.errorDomain] = errorData.domain
-            parameters[WidePixelParameter.Feature.errorCode] = String(errorData.code)
+            parameters[WideEventParameter.Feature.errorDomain] = errorData.domain
+            parameters[WideEventParameter.Feature.errorCode] = String(errorData.code)
 
             if let underlyingDomain = errorData.underlyingDomain {
-                parameters[WidePixelParameter.Feature.underlyingErrorDomain] = underlyingDomain
+                parameters[WideEventParameter.Feature.underlyingErrorDomain] = underlyingDomain
             }
 
             if let underlyingCode = errorData.underlyingCode {
-                parameters[WidePixelParameter.Feature.underlyingErrorCode] = String(underlyingCode)
+                parameters[WideEventParameter.Feature.underlyingErrorCode] = String(underlyingCode)
             }
         }
 
-        func emit(_ key: String, interval: WidePixel.MeasuredInterval?) {
+        func emit(_ key: String, interval: WideEvent.MeasuredInterval?) {
             guard let start = interval?.start, let end = interval?.end else { return }
             let ms = max(0, Int(end.timeIntervalSince(start) * 1000))
             parameters[key] = String(bucket(ms))
         }
 
-        emit(WidePixelParameter.SubscriptionFeature.accountCreationLatency, interval: createAccountDuration)
-        emit(WidePixelParameter.SubscriptionFeature.accountPaymentLatency, interval: completePurchaseDuration)
-        emit(WidePixelParameter.SubscriptionFeature.accountActivationLatency, interval: activateAccountDuration)
+        emit(WideEventParameter.SubscriptionFeature.accountCreationLatency, interval: createAccountDuration)
+        emit(WideEventParameter.SubscriptionFeature.accountPaymentLatency, interval: completePurchaseDuration)
+        emit(WideEventParameter.SubscriptionFeature.accountActivationLatency, interval: activateAccountDuration)
 
         return parameters
     }
 
     public func markAsFailed(at step: FailingStep, error: Error) {
         self.failingStep = step
-        self.errorData = WidePixelErrorData(error: error)
+        self.errorData = WideEventErrorData(error: error)
     }
 
     private func bucket(_ ms: Int) -> Int {

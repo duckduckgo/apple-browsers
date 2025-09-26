@@ -21,12 +21,12 @@ import Foundation
 
 struct WidePixelLaunchCleanupTask: LaunchTask {
 
-    let widePixelService: WidePixelService
+    let wideEventService: WideEventService
 
     var name: String = "Wide Pixel Launch Cleanup"
 
     func run(context: LaunchTaskContext) {
-        widePixelService.sendAbandonedPixels {
+        wideEventService.sendAbandonedPixels {
             context.finish()
         }
     }

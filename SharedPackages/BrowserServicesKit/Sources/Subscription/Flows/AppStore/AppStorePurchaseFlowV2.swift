@@ -92,7 +92,7 @@ public enum AppStorePurchaseFlowError: DDGError {
 @available(macOS 12.0, iOS 15.0, *)
 public protocol AppStorePurchaseFlowV2 {
     typealias TransactionJWS = String
-    typealias PurchaseResult = (transactionJWS: TransactionJWS, accountCreationDuration: WidePixel.MeasuredInterval?)
+    typealias PurchaseResult = (transactionJWS: TransactionJWS, accountCreationDuration: WideEvent.MeasuredInterval?)
 
     func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<PurchaseResult, AppStorePurchaseFlowError>
 
@@ -124,7 +124,7 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
         Logger.subscriptionAppStorePurchaseFlow.log("Purchasing Subscription")
 
         var externalID: String?
-        var accountCreationDuration: WidePixel.MeasuredInterval?
+        var accountCreationDuration: WideEvent.MeasuredInterval?
 
         if let existingExternalID = await getExpiredSubscriptionID() {
             Logger.subscriptionAppStorePurchaseFlow.log("External ID retrieved from expired subscription")
@@ -140,7 +140,7 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
             case .failure(let error):
                 Logger.subscriptionAppStorePurchaseFlow.log("Failed to restore an account from a past purchase: \(String(describing: error), privacy: .public)")
                 do {
-                    var creationStart = WidePixel.MeasuredInterval.startingNow()
+                    var creationStart = WideEvent.MeasuredInterval.startingNow()
                     externalID = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded).decodedAccessToken.externalID
                     creationStart.complete()
                     accountCreationDuration = creationStart

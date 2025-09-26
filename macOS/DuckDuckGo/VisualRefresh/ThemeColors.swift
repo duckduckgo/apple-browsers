@@ -19,7 +19,7 @@
 import Foundation
 import AppKit
 
-struct ThemeColors: DuckDuckGo_Privacy_Browser.ColorPalette {
+struct ThemeColors: ColorPalette {
     let accentAltContentPrimary: NSColor
     let accentAltContentSecondary: NSColor
     let accentAltContentTertiary: NSColor

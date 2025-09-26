@@ -1333,10 +1333,10 @@ extension MainViewController {
     }
 
     @objc func toggleWatchdog(_ sender: Any?) {
-        if Self.watchdog.isRunning {
-            Self.watchdog.stop()
+        if NSApp.delegateTyped.watchdog.isRunning {
+            NSApp.delegateTyped.watchdog.stop()
         } else {
-            Self.watchdog.start()
+            NSApp.delegateTyped.watchdog.start()
         }
     }
 

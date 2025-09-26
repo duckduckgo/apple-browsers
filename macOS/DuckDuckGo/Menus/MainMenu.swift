@@ -871,7 +871,7 @@ final class MainMenu: NSMenu {
 
     @MainActor
     private func updateWatchdogMenuItem() {
-        toggleWatchdogMenuItem.state = MainViewController.watchdog.isRunning ? .on : .off
+        toggleWatchdogMenuItem.state = NSApp.delegateTyped.watchdog.isRunning ? .on : .off
     }
 
     private func updateRemoteConfigurationInfo() {

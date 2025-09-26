@@ -85,6 +85,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let crashReporter: CrashReporter
 #endif
 
+    let watchdog: Watchdog
+
     let keyValueStore: ThrowingKeyValueStoring
 
     let faviconManager: FaviconManager
@@ -805,6 +807,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #if !APPSTORE
         crashReporter = CrashReporter(internalUserDecider: internalUserDecider)
 #endif
+
+        watchdog = Watchdog()
 
         super.init()
 

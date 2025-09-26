@@ -1,5 +1,5 @@
 //
-//  WidePixelData.swift
+//  WideEventData.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,21 +19,21 @@
 import Foundation
 import Common
 
-public protocol WidePixelData: Codable, WidePixelParameterProviding {
+public protocol WideEventData: Codable, WideEventParameterProviding {
     static var pixelName: String { get }
 
-    var contextData: WidePixelContextData { get set }
-    var appData: WidePixelAppData { get set }
-    var globalData: WidePixelGlobalData { get set }
+    var contextData: WideEventContextData { get set }
+    var appData: WideEventAppData { get set }
+    var globalData: WideEventGlobalData { get set }
 }
 
-public enum WidePixelStatus: Codable, Equatable, CustomStringConvertible {
+public enum WideEventStatus: Codable, Equatable, CustomStringConvertible {
     case success(reason: String? = nil)
     case failure
     case cancelled
     case unknown(reason: String)
 
-    public static var success: WidePixelStatus {
+    public static var success: WideEventStatus {
         return .success(reason: nil)
     }
 
@@ -83,9 +83,9 @@ public enum WidePixelStatus: Codable, Equatable, CustomStringConvertible {
     }
 }
 
-// MARK: - WidePixelGlobalData
+// MARK: - WideEventGlobalData
 
-public struct WidePixelGlobalData: Codable {
+public struct WideEventGlobalData: Codable {
     public let id: String
     public var platform: String
     public let type: String
@@ -107,21 +107,21 @@ public struct WidePixelGlobalData: Codable {
     }
 }
 
-extension WidePixelGlobalData: WidePixelParameterProviding {
+extension WideEventGlobalData: WideEventParameterProviding {
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
-        parameters[WidePixelParameter.Global.platform] = platform
-        parameters[WidePixelParameter.Global.type] = type
-        parameters[WidePixelParameter.Global.sampleRate] = String(sampleRate)
+        parameters[WideEventParameter.Global.platform] = platform
+        parameters[WideEventParameter.Global.type] = type
+        parameters[WideEventParameter.Global.sampleRate] = String(sampleRate)
 
         return parameters
     }
 }
 
-// MARK: - WidePixelAppData
+// MARK: - WideEventAppData
 
-public struct WidePixelAppData: Codable {
+public struct WideEventAppData: Codable {
     public var name: String
     public var version: String
     public var formFactor: String?
@@ -137,26 +137,26 @@ public struct WidePixelAppData: Codable {
         #if os(iOS)
         self.formFactor = formFactor ?? DevicePlatform.formFactor
         #else
-        self.formFactor = formFactor // Ignore the form factor on macOS, but allow it to be overriden for testing
+        self.formFactor = formFactor // Ignore the form factor on macOS, but allow it to be overridden for testing
         #endif
         self.internalUser = internalUser
     }
 }
 
-extension WidePixelAppData: WidePixelParameterProviding {
+extension WideEventAppData: WideEventParameterProviding {
 
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
-        parameters[WidePixelParameter.App.name] = name
-        parameters[WidePixelParameter.App.version] = version
+        parameters[WideEventParameter.App.name] = name
+        parameters[WideEventParameter.App.version] = version
 
         if let formFactor = formFactor {
-            parameters[WidePixelParameter.Global.formFactor] = formFactor
+            parameters[WideEventParameter.Global.formFactor] = formFactor
         }
 
         if let internalUser {
-            parameters[WidePixelParameter.App.internalUser] = internalUser ? "true" : nil
+            parameters[WideEventParameter.App.internalUser] = internalUser ? "true" : nil
         }
 
         return parameters
@@ -164,9 +164,9 @@ extension WidePixelAppData: WidePixelParameterProviding {
 
 }
 
-// MARK: - WidePixelContextData
+// MARK: - WideEventContextData
 
-public struct WidePixelContextData: Codable {
+public struct WideEventContextData: Codable {
 
     public let id: String
     public var name: String?
@@ -180,12 +180,12 @@ public struct WidePixelContextData: Codable {
 
 }
 
-extension WidePixelContextData: WidePixelParameterProviding {
+extension WideEventContextData: WideEventParameterProviding {
 
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
-        if let name = name { parameters[WidePixelParameter.Context.name] = name }
+        if let name = name { parameters[WideEventParameter.Context.name] = name }
         if let data = data {
             for (key, value) in data { parameters["context.data.\(key)"] = value }
         }
@@ -195,7 +195,7 @@ extension WidePixelContextData: WidePixelParameterProviding {
 
 }
 
-public struct WidePixelErrorData: Codable {
+public struct WideEventErrorData: Codable {
 
     public var domain: String
     public var code: Int

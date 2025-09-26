@@ -24,14 +24,46 @@ public struct DesignSystemPalette {
 }
 
 public enum ColorPalette {
+#if os(macOS)
     case `default`
+    case figma
+    case coolGray
     case desert
     case green
     case orange
     case rose
     case slateBlue
     case violet
+#else
+    case `default`
+#endif
 
+#if os(macOS)
+    var paletteDefinition: SharedColorPaletteDefinition.Type {
+        switch self {
+        case .default:
+            return SharedDefaultColorPalette.self
+        case .figma:
+            return SharedFigmaColorPalette.self
+        case .coolGray:
+            return CoolGrayColorPalette.self
+        case .desert:
+            return DesertColorPalette.self
+        case .green:
+            return GreenColorPalette.self
+        case .orange:
+            return OrangeColorPalette.self
+        case .rose:
+            return RoseColorPalette.self
+        case .slateBlue:
+            return SlateBlueColorPalette.self
+        case .violet:
+            return VioletColorPalette.self
+        }
+    }
+#endif
+
+#if os(iOS)
     var paletteDefinition: ColorPaletteDefinition.Type {
         switch self {
         case .default:
@@ -50,4 +82,5 @@ public enum ColorPalette {
             VioletColorPalette.self
         }
     }
+#endif
 }

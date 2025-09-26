@@ -339,7 +339,7 @@ struct DataImportView: ModalView {
                     model.performAction(for: model.buttons[idx],
                                         dismiss: dismiss.callAsFunction)
                 } label: {
-                    Text(model.buttons[idx].title(dataType: model.screen.fileImportDataType))
+                    Text(model.buttons[idx].title(dataTypeSelection: model.screen.fileImportDataTypeSelection))
                         .frame(minWidth: 80 - 16 - 1)
                 }
                 .keyboardShortcut(model.buttons[idx].shortcut)
@@ -529,18 +529,21 @@ extension DataImportViewModel.ButtonType {
 
 extension DataImportViewModel.ButtonType {
 
-    func title(dataType: DataImport.DataType?) -> String {
+    func title(dataTypeSelection: DataImport.TypeSelection?) -> String {
         switch self {
         case .next:
             UserText.next
         case .initiateImport:
             UserText.initiateImport
         case .skip:
-            switch dataType {
-            case .bookmarks:
+            switch dataTypeSelection {
+            case .single(.bookmarks):
                 UserText.skipBookmarksImport
-            case .passwords:
+            case .single(.passwords):
                 UserText.skipPasswordsImport
+            case .multiple:
+                // TODO: Think about this
+                "TODO!!"
             case nil:
                 UserText.skip
             }
@@ -618,9 +621,11 @@ extension DataImportViewModel {
             source == .chrome && selectedDataTypes.contains(.passwords) ? true : false
         }
 
-        init(source: DataImport.Source, dataType: DataImport.DataType? = nil) {
+        init(source: DataImport.Source, dataTypeSelection: DataImport.TypeSelection? = nil) {
             self.source = source
-            self.dataType = dataType
+            if case .single(let dataType) = dataTypeSelection {
+                self.dataType = dataType
+            }
         }
 
         func importData(types: Set<DataImport.DataType>) -> DataImportTask {
@@ -711,8 +716,8 @@ extension DataImportViewModel {
                       profileURL: URL(fileURLWithPath: "/test/Profile 2")),
             ], validateProfileData: { _ in { .init(logins: .available, bookmarks: .available) } // swiftlint:disable:this opening_brace
             })
-        } dataImporterFactory: { source, type, _, _ in
-            return MockDataImporter(source: source, dataType: type)
+        } dataImporterFactory: { source, typeSelection, _, _ in
+            return MockDataImporter(source: source, dataTypeSelection: typeSelection)
         } requestPrimaryPasswordCallback: { _ in
             print("primary password requested")
             return "password"

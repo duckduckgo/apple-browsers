@@ -1312,6 +1312,18 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkcie DuckDuckGo AI sú súkromné a voliteľné. Tvoje údaje sa nepoužívajú na trénovanie AI.";
 
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "Zobraziť tlačidlá a odkazy Duck.ai vo výsledkoch vyhľadávania DuckDuckGo.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Vyhľadávacie skratky";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Pýtaj sa doplňujúce otázky";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Skratky prehliadača";
+
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Riadok adresy";
 
@@ -3232,8 +3244,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Chatuj súkromne s modelmi umelej inteligencie exkluzívne pre predplatiteľov.\n[Viac informácií](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "Nakonfigurovať Duck.ai v nastaveniach funkcií AI.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Povoliť v nastaveniach funkcií AI";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Otvoriť Duck.ai";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "Spravovať v nastaveniach funkcií AI";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";

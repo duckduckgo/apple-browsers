@@ -69,6 +69,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         repository.reset()
         resources.reset()
         vault.reset()
+        pixelHandler.clear()
     }
 
     func testCheckForUpdatesFollowsRateLimit() async {
@@ -212,6 +213,253 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             XCTFail("Unexpected error")
         }
     }
+
+    func testWhenProcessBrokerJSONsSucceeds_thenSuccessPixelIsFired() throws {
+        let testBrokerContent = """
+        {
+            "name": "Test Broker",
+            "url": "broker.com",
+            "steps": [],
+            "version": "1.0.0",
+            "schedulingConfig": {
+                "retryError": 48,
+                "confirmOptOutScan": 72,
+                "maintenanceScan": 120,
+                "maxAttempts": -1
+            },
+            "optOutUrl": "https://broker.com/optout"
+        }
+        """
+
+        let realFileManager = FileManager.default
+        let testRemoteService = RemoteBrokerJSONService(
+            featureFlagger: MockFeatureFlagger(),
+            settings: settings,
+            vault: vault,
+            fileManager: realFileManager,
+            urlSession: urlSession,
+            authenticationManager: authenticationManager,
+            pixelHandler: pixelHandler,
+            localBrokerProvider: localBrokerJSONService
+        )
+
+        let tempDir = realFileManager.temporaryDirectory.appendingPathComponent("test-etag")
+        let jsonDir = tempDir.appendingPathComponent("json")
+        try realFileManager.createDirectory(at: jsonDir, withIntermediateDirectories: true)
+
+        let testFile = jsonDir.appendingPathComponent("broker.com.json")
+        try testBrokerContent.write(to: testFile, atomically: true, encoding: .utf8)
+
+        try testRemoteService.processBrokerJSONs(
+            eTag: "test-etag",
+            fileNames: ["broker.com.json"],
+            eTagMapping: ["broker.com.json": "etag123"],
+            activeBrokers: ["broker.com.json"],
+            testBrokers: []
+        )
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let successPixels = firedPixels.compactMap { pixel in
+            switch pixel {
+            case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt):
+                return (dataBrokerFileName, removedAt)
+            default:
+                return nil
+            }
+        }
+
+        XCTAssertFalse(successPixels.isEmpty, "updateDataBrokersSuccess pixel should be fired")
+        let (dataBroker, removedAt) = successPixels.first!
+        XCTAssertEqual(dataBroker, "broker.com.json")
+        XCTAssertNil(removedAt, "removedAt should be nil for broker without removal date")
+
+        // Clean up
+        try? realFileManager.removeItem(at: tempDir)
+    }
+
+    func testWhenProcessBrokerJSONsWithRemovedAt_thenSuccessPixelIsFiredWithTimestamp() throws {
+        let removedTimestamp: Int64 = 1693526400000
+        let testBrokerContent = """
+        {
+            "name": "Removed Broker",
+            "url": "removedbroker.com",
+            "steps": [],
+            "version": "1.0.0",
+            "schedulingConfig": {
+                "retryError": 48,
+                "confirmOptOutScan": 72,
+                "maintenanceScan": 120,
+                "maxAttempts": -1
+            },
+            "optOutUrl": "https://removedbroker.com/optout",
+            "removedAt": \(removedTimestamp)
+        }
+        """
+
+        let realFileManager = FileManager.default
+        let testRemoteService = RemoteBrokerJSONService(
+            featureFlagger: MockFeatureFlagger(),
+            settings: settings,
+            vault: vault,
+            fileManager: realFileManager,
+            urlSession: urlSession,
+            authenticationManager: authenticationManager,
+            pixelHandler: pixelHandler,
+            localBrokerProvider: localBrokerJSONService
+        )
+
+        let tempDir = realFileManager.temporaryDirectory.appendingPathComponent("test-etag-removed")
+        let jsonDir = tempDir.appendingPathComponent("json")
+        try realFileManager.createDirectory(at: jsonDir, withIntermediateDirectories: true)
+
+        let testFile = jsonDir.appendingPathComponent("removedbroker.com.json")
+        try testBrokerContent.write(to: testFile, atomically: true, encoding: .utf8)
+
+        try testRemoteService.processBrokerJSONs(
+            eTag: "test-etag-removed",
+            fileNames: ["removedbroker.com.json"],
+            eTagMapping: ["removedbroker.com.json": "etag456"],
+            activeBrokers: ["removedbroker.com.json"],
+            testBrokers: []
+        )
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let successPixels = firedPixels.compactMap { pixel in
+            switch pixel {
+            case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt):
+                return (dataBrokerFileName, removedAt)
+            default:
+                return nil
+            }
+        }
+
+        XCTAssertFalse(successPixels.isEmpty, "updateDataBrokersSuccess pixel should be fired")
+        let (dataBroker, removedAt) = successPixels.first!
+        XCTAssertEqual(dataBroker, "removedbroker.com.json")
+        XCTAssertEqual(removedAt, removedTimestamp, "removedAt should match the timestamp from JSON")
+
+        // Clean up
+        try? realFileManager.removeItem(at: tempDir)
+    }
+
+    func testWhenProcessBrokerJSONsWithInvalidJSON_thenFailurePixelIsFired() throws {
+        let invalidBrokerContent = "{ invalid json content"
+
+        let realFileManager = FileManager.default
+        let testRemoteService = RemoteBrokerJSONService(
+            featureFlagger: MockFeatureFlagger(),
+            settings: settings,
+            vault: vault,
+            fileManager: realFileManager,
+            urlSession: urlSession,
+            authenticationManager: authenticationManager,
+            pixelHandler: pixelHandler,
+            localBrokerProvider: localBrokerJSONService
+        )
+
+        let tempDir = realFileManager.temporaryDirectory.appendingPathComponent("test-etag-invalid")
+        let jsonDir = tempDir.appendingPathComponent("json")
+        try realFileManager.createDirectory(at: jsonDir, withIntermediateDirectories: true)
+
+        let testFile = jsonDir.appendingPathComponent("invalidbroker.com.json")
+        try invalidBrokerContent.write(to: testFile, atomically: true, encoding: .utf8)
+
+        try testRemoteService.processBrokerJSONs(
+            eTag: "test-etag-invalid",
+            fileNames: ["invalidbroker.com.json"],
+            eTagMapping: ["invalidbroker.com.json": "etag789"],
+            activeBrokers: ["invalidbroker.com.json"],
+            testBrokers: []
+        )
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let failurePixels = firedPixels.compactMap { pixel in
+            switch pixel {
+            case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, _):
+                return (dataBrokerFileName, removedAt)
+            default:
+                return nil
+            }
+        }
+
+        XCTAssertFalse(failurePixels.isEmpty, "updateDataBrokersFailure pixel should be fired for invalid JSON")
+        let (dataBroker, removedAt) = failurePixels.first!
+        XCTAssertEqual(dataBroker, "invalidbroker.com.json")
+        XCTAssertNil(removedAt, "removedAt should be nil when JSON decoding fails")
+
+        // Clean up
+        try? realFileManager.removeItem(at: tempDir)
+    }
+
+    func testWhenProcessBrokerJSONsWithUpsertFailure_thenFailurePixelIsFired() throws {
+        let testBrokerContent = """
+        {
+            "name": "Test Broker",
+            "url": "broker.com",
+            "steps": [],
+            "version": "1.0.1",
+            "schedulingConfig": {
+                "retryError": 48,
+                "confirmOptOutScan": 72,
+                "maintenanceScan": 120,
+                "maxAttempts": -1
+            },
+            "optOutUrl": "https://broker.com/optout"
+        }
+        """
+
+        // Configure vault to throw on update
+        vault.shouldReturnOldVersionBroker = true // Ensure broker exists so update path is taken
+        vault.shouldThrowOnUpdate = true
+
+        let realFileManager = FileManager.default
+        let testRemoteService = RemoteBrokerJSONService(
+            featureFlagger: MockFeatureFlagger(),
+            settings: settings,
+            vault: vault,
+            fileManager: realFileManager,
+            urlSession: urlSession,
+            authenticationManager: authenticationManager,
+            pixelHandler: pixelHandler,
+            localBrokerProvider: localBrokerJSONService
+        )
+
+        let tempDir = realFileManager.temporaryDirectory.appendingPathComponent("test-etag-upsert-fail")
+        let jsonDir = tempDir.appendingPathComponent("json")
+        try realFileManager.createDirectory(at: jsonDir, withIntermediateDirectories: true)
+
+        let testFile = jsonDir.appendingPathComponent("broker.com.json")
+        try testBrokerContent.write(to: testFile, atomically: true, encoding: .utf8)
+
+        // This should throw due to upsert failure, but should fire a failure pixel
+        XCTAssertThrowsError(try testRemoteService.processBrokerJSONs(
+            eTag: "test-etag-upsert-fail",
+            fileNames: ["broker.com.json"],
+            eTagMapping: ["broker.com.json": "etag999"],
+            activeBrokers: ["broker.com.json"],
+            testBrokers: []))
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let failurePixels = firedPixels.compactMap { pixel in
+            switch pixel {
+            case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, _):
+                return (dataBrokerFileName, removedAt)
+            default:
+                return nil
+            }
+        }
+
+        XCTAssertFalse(failurePixels.isEmpty, "updateDataBrokersFailure pixel should be fired for upsert failure")
+        let (dataBroker, removedAt) = failurePixels.first!
+        XCTAssertEqual(dataBroker, "broker.com.json")
+        XCTAssertNil(removedAt, "removedAt should be nil when upsert fails")
+
+        // Clean up
+        try? realFileManager.removeItem(at: tempDir)
+        vault.shouldReturnOldVersionBroker = false
+        vault.shouldThrowOnUpdate = false
+    }
+
 }
 
 extension HTTPURLResponse {

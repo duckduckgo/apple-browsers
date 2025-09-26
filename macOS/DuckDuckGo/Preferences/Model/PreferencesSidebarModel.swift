@@ -29,6 +29,13 @@ import PixelKit
 import PreferencesUI_macOS
 import SubscriptionUI
 
+protocol AIFeaturesStatusProviding: AnyObject {
+    var isAIFeaturesEnabled: Bool { get }
+    var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> { get }
+}
+
+extension AIChatPreferences: AIFeaturesStatusProviding {}
+
 final class PreferencesSidebarModel: ObservableObject {
 
     let tabSwitcherTabs: [Tab.TabContent]
@@ -63,10 +70,15 @@ final class PreferencesSidebarModel: ObservableObject {
     private let paidAIChatSubject = PassthroughSubject<StatusIndicator, Never>()
     public let paidAIChatUpdates: AnyPublisher<StatusIndicator, Never>
 
+    public var aiFeaturesEnabledUpdates: AnyPublisher<Bool, Never> {
+        aiFeaturesStatusProvider.isAIFeaturesEnabledPublisher
+    }
+
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring?
     private var isInitialSelectedPanePixelFired = false
     private let featureFlagger: FeatureFlagger
+    private let aiFeaturesStatusProvider: AIFeaturesStatusProviding
 
     var selectedTabContent: AnyPublisher<Tab.TabContent, Never> {
         $selectedTabIndex.map { [tabSwitcherTabs] in tabSwitcherTabs[$0] }.eraseToAnyPublisher()
@@ -85,7 +97,8 @@ final class PreferencesSidebarModel: ObservableObject {
         featureFlagger: FeatureFlagger,
         settingsIconProvider: SettingsIconsProviding = NSApp.delegateTyped.visualStyle.iconsProvider.settingsIconProvider,
         isUsingAuthV2: Bool,
-        pixelFiring: PixelFiring?
+        pixelFiring: PixelFiring?,
+        aiFeaturesStatusProvider: AIFeaturesStatusProviding
     ) {
         self.loadSections = loadSections
         self.tabSwitcherTabs = tabSwitcherTabs
@@ -96,6 +109,7 @@ final class PreferencesSidebarModel: ObservableObject {
         self.isUsingAuthV2 = isUsingAuthV2
         self.pixelFiring = pixelFiring
         self.featureFlagger = featureFlagger
+        self.aiFeaturesStatusProvider = aiFeaturesStatusProvider
 
         self.personalInformationRemovalUpdates = personalInformationRemovalSubject.eraseToAnyPublisher()
         self.identityTheftRestorationUpdates = identityTheftRestorationSubject.eraseToAnyPublisher()
@@ -108,6 +122,7 @@ final class PreferencesSidebarModel: ObservableObject {
         subscribeToFeatureFlagChanges(syncService: syncService,
                                       privacyConfigurationManager: privacyConfigurationManager)
         subscribeToSubscriptionChanges()
+        subscribeToAIChatFeaturesChanges()
 
         forceSelectedPanePixelIfNeeded()
     }
@@ -122,7 +137,8 @@ final class PreferencesSidebarModel: ObservableObject {
         includeDuckPlayer: Bool,
         includeAIChat: Bool,
         userDefaults: UserDefaults = .netP,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        aiFeaturesStatusProvider: AIFeaturesStatusProviding
     ) {
         let loadSections = { currentSubscriptionFeatures in
             return PreferencesSection.defaultSections(
@@ -140,7 +156,8 @@ final class PreferencesSidebarModel: ObservableObject {
                   subscriptionManager: subscriptionManager,
                   featureFlagger: featureFlagger,
                   isUsingAuthV2: subscriptionManager is DefaultSubscriptionManagerV2,
-                  pixelFiring: PixelKit.shared
+                  pixelFiring: PixelKit.shared,
+                  aiFeaturesStatusProvider: aiFeaturesStatusProvider
         )
     }
 
@@ -174,6 +191,17 @@ final class PreferencesSidebarModel: ObservableObject {
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.refreshSubscriptionStateAndSectionsIfNeeded()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToAIChatFeaturesChanges() {
+        aiFeaturesStatusProvider.isAIFeaturesEnabledPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                paidAIChatSubject.send(currentSubscriptionState.isPaidAIChatEnabled && aiFeaturesStatusProvider.isAIFeaturesEnabled ? .on : .off)
             }
             .store(in: &cancellables)
     }
@@ -228,7 +256,10 @@ final class PreferencesSidebarModel: ObservableObject {
         case .personalInformationRemoval:
             return personalInformationRemovalStatus()
         case .paidAIChat:
-            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.isPaidAIChatEnabled ? .on : .off)
+            let initialStatus = currentSubscriptionState.isPaidAIChatEnabled && aiFeaturesStatusProvider.isAIFeaturesEnabled
+            return PrivacyProtectionStatus(statusPublisher: paidAIChatUpdates, initialValue: initialStatus ? .on : .off) { status in
+                status
+            }
         case .identityTheftRestoration:
             return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.isIdentityTheftRestorationEnabled ? .on : .off)
         default:
@@ -302,7 +333,7 @@ final class PreferencesSidebarModel: ObservableObject {
                 }
 
                 if self.currentSubscriptionState.isPaidAIChatEnabled != updatedState.isPaidAIChatEnabled {
-                    paidAIChatSubject.send(updatedState.isPaidAIChatEnabled ? .on : .off)
+                    paidAIChatSubject.send(updatedState.isPaidAIChatEnabled && aiFeaturesStatusProvider.isAIFeaturesEnabled ? .on : .off)
                 }
 
                 if self.currentSubscriptionState.isIdentityTheftRestorationEnabled != updatedState.isIdentityTheftRestorationEnabled {
@@ -310,6 +341,7 @@ final class PreferencesSidebarModel: ObservableObject {
                 }
 
                 self.currentSubscriptionState = updatedState
+
                 self.refreshSections()
             }
         }
@@ -356,10 +388,10 @@ final class PreferencesSidebarModel: ObservableObject {
                 return
             }
 
-            // Adjust Privacy Pro selection when subscribed/unsubscribed state changes
-            if selectedPane == .subscriptionSettings, allPanes.contains(.privacyPro) {
-                selectedPane = .privacyPro
-            } else if selectedPane == .privacyPro, allPanes.contains(.subscriptionSettings) {
+            // Adjust Subscription selection when subscribed/unsubscribed state changes
+            if selectedPane == .subscriptionSettings, allPanes.contains(.subscription) {
+                selectedPane = .subscription
+            } else if selectedPane == .subscription, allPanes.contains(.subscriptionSettings) {
                 selectedPane = .subscriptionSettings
             } else if let firstPane = sections.first?.panes.first {
                 selectedPane = firstPane
@@ -370,7 +402,7 @@ final class PreferencesSidebarModel: ObservableObject {
             (selectedPane == .personalInformationRemoval && !currentSubscriptionState.isPersonalInformationRemovalEnabled) ||
             (selectedPane == .identityTheftRestoration && !currentSubscriptionState.isIdentityTheftRestorationEnabled) ||
             (selectedPane == .paidAIChat && !currentSubscriptionState.isPaidAIChatEnabled) {
-            selectedPane = currentSubscriptionState.hasSubscription ? .subscriptionSettings : .privacyPro
+            selectedPane = currentSubscriptionState.hasSubscription ? .subscriptionSettings : .subscription
         }
     }
 

@@ -45,11 +45,11 @@ public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridg
     }
 
     public var canPurchase: Bool = true
-    public var returnSubscription: Result<PrivacyProSubscription, Error>?
+    public var returnSubscription: Result<DuckDuckGoSubscription, Error>?
     public var canPurchasePublisher: AnyPublisher<Bool, Never> { canPurchaseSubject.eraseToAnyPublisher() }
     public var canPurchaseSubject: PassthroughSubject<Bool, Never> = .init()
 
-    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
+    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription {
         switch returnSubscription! {
         case .success(let subscription):
             return subscription

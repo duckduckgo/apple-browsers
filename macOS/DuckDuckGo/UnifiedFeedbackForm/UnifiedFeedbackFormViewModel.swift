@@ -132,7 +132,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     private var selectedSubcategoryPrompt: String {
         switch UnifiedFeedbackCategory(rawValue: selectedCategory) {
         case .selectFeature, nil: return ""
-        case .subscription: return PrivacyProFeedbackSubcategory.prompt.rawValue
+        case .subscription: return SubscriptionFeedbackSubcategory.prompt.rawValue
         case .vpn: return VPNFeedbackSubcategory.prompt.rawValue
         case .pir: return PIRFeedbackSubcategory.prompt.rawValue
         case .itr: return ITRFeedbackSubcategory.prompt.rawValue
@@ -244,7 +244,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         let url: URL? = {
             switch category {
             case .selectFeature: return nil
-            case .subscription: return PrivacyProFeedbackSubcategory(rawValue: selectedSubcategory)?.url
+            case .subscription: return SubscriptionFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .vpn: return VPNFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .pir: return PIRFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .itr: return ITRFeedbackSubcategory(rawValue: selectedSubcategory)?.url

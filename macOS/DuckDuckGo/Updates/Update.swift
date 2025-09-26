@@ -33,7 +33,7 @@ final class Update {
     let build: String
     let date: Date
     let releaseNotes: [String]
-    let releaseNotesPrivacyPro: [String]
+    let releaseNotesSubscription: [String]
     let needsLatestReleaseNote: Bool
 
     var title: String {
@@ -48,7 +48,7 @@ final class Update {
                   build: String,
                   date: Date,
                   releaseNotes: [String],
-                  releaseNotesPrivacyPro: [String],
+                  releaseNotesSubscription: [String],
                   needsLatestReleaseNote: Bool) {
         self.isInstalled = isInstalled
         self.type = type
@@ -56,7 +56,7 @@ final class Update {
         self.build = build
         self.date = date
         self.releaseNotes = releaseNotes
-        self.releaseNotesPrivacyPro = releaseNotesPrivacyPro
+        self.releaseNotesSubscription = releaseNotesSubscription
         self.needsLatestReleaseNote = needsLatestReleaseNote
     }
 
@@ -68,7 +68,7 @@ extension Update {
         let version = appcastItem.displayVersionString
         let build = appcastItem.versionString
         let date = appcastItem.date ?? Date()
-        let (releaseNotes, releaseNotesPrivacyPro) = ReleaseNotesParser.parseReleaseNotes(from: appcastItem.itemDescription)
+        let (releaseNotes, releaseNotesSubscription) = ReleaseNotesParser.parseReleaseNotes(from: appcastItem.itemDescription)
 
         self.init(isInstalled: isInstalled,
                   type: isCritical ? .critical : .regular,
@@ -76,7 +76,7 @@ extension Update {
                   build: build,
                   date: date,
                   releaseNotes: releaseNotes,
-                  releaseNotesPrivacyPro: releaseNotesPrivacyPro,
+                  releaseNotesSubscription: releaseNotesSubscription,
                   needsLatestReleaseNote: needsLatestReleaseNote)
     }
 }

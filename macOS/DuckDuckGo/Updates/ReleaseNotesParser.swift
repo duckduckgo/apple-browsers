@@ -24,15 +24,15 @@ final class ReleaseNotesParser {
         guard let description = description else { return ([], []) }
 
         var standardReleaseNotes = [String]()
-        var privacyProReleaseNotes = [String]()
+        var subscriptionReleaseNotes = [String]()
 
         // Patterns for the two sections with more flexible spacing
         let standardPattern = "<h3[^>]*>What's new</h3>\\s*<ul>(.*?)</ul>"
-        let privacyProPattern = "<h3[^>]*>For DuckDuckGo subscribers</h3>\\s*<ul>(.*?)</ul>"
+        let subscriptionPattern = "<h3[^>]*>For DuckDuckGo subscribers</h3>\\s*<ul>(.*?)</ul>"
 
         do {
             let standardRegex = try NSRegularExpression(pattern: standardPattern, options: .dotMatchesLineSeparators)
-            let privacyProRegex = try NSRegularExpression(pattern: privacyProPattern, options: .dotMatchesLineSeparators)
+            let subscriptionRegex = try NSRegularExpression(pattern: subscriptionPattern, options: .dotMatchesLineSeparators)
 
             // Extract the standard release notes section
             if let standardMatch = standardRegex.firstMatch(in: description, options: [], range: NSRange(location: 0, length: description.utf16.count)) {
@@ -42,18 +42,18 @@ final class ReleaseNotesParser {
                 }
             }
 
-            // Extract the privacy pro release notes section
-            if let privacyProMatch = privacyProRegex.firstMatch(in: description, options: [], range: NSRange(location: 0, length: description.utf16.count)) {
-                if let range = Range(privacyProMatch.range(at: 1), in: description) {
-                    let privacyProList = String(description[range])
-                    privacyProReleaseNotes = extractListItems(from: privacyProList)
+            // Extract the Subscription release notes section
+            if let subscriptionMatch = subscriptionRegex.firstMatch(in: description, options: [], range: NSRange(location: 0, length: description.utf16.count)) {
+                if let range = Range(subscriptionMatch.range(at: 1), in: description) {
+                    let subscriptionList = String(description[range])
+                    subscriptionReleaseNotes = extractListItems(from: subscriptionList)
                 }
             }
         } catch {
             assertionFailure("Error creating regular expression: \(error)")
         }
 
-        return (standardReleaseNotes, privacyProReleaseNotes)
+        return (standardReleaseNotes, subscriptionReleaseNotes)
     }
 
     // Helper method to extract list items

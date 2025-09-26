@@ -145,7 +145,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     private let appStorePurchaseFlow: AppStorePurchaseFlow
     private let appStoreRestoreFlow: AppStoreRestoreFlow
     private let appStoreAccountManagementFlow: AppStoreAccountManagementFlow
-    private let privacyProDataReporter: PrivacyProDataReporting?
+    private let subscriptionDataReporter: SubscriptionDataReporting?
     private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
 
     init(subscriptionManager: SubscriptionManager,
@@ -154,7 +154,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
          appStorePurchaseFlow: AppStorePurchaseFlow,
          appStoreRestoreFlow: AppStoreRestoreFlow,
          appStoreAccountManagementFlow: AppStoreAccountManagementFlow,
-         privacyProDataReporter: PrivacyProDataReporting? = nil,
+         subscriptionDataReporter: SubscriptionDataReporting? = nil,
          subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper()) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
@@ -162,7 +162,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         self.appStoreRestoreFlow = appStoreRestoreFlow
         self.appStoreAccountManagementFlow = appStoreAccountManagementFlow
         self.subscriptionAttributionOrigin = subscriptionAttributionOrigin
-        self.privacyProDataReporter = subscriptionAttributionOrigin != nil ? privacyProDataReporter : nil
+        self.subscriptionDataReporter = subscriptionAttributionOrigin != nil ? subscriptionDataReporter : nil
         self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
     }
 
@@ -284,7 +284,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     func subscriptionSelected(params: Any, original: WKScriptMessage) async -> Encodable? {
 
-        DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseAttempt,
+        DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseAttempt,
                                      pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
         setTransactionError(nil)
         setTransactionStatus(.purchasing)
@@ -319,7 +319,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         if await subscriptionManager.storePurchaseManager().hasActiveSubscription() {
             Logger.subscription.debug("Subscription already active")
             setTransactionError(.activeSubscriptionAlreadyPresent)
-            Pixel.fire(pixel: .privacyProRestoreAfterPurchaseAttempt)
+            Pixel.fire(pixel: .subscriptionRestoreAfterPurchaseAttempt)
             setTransactionStatus(.idle)
             return nil
         }
@@ -362,10 +362,10 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: subscriptionParameters) {
         case .success(let purchaseUpdate):
             Logger.subscription.debug("Subscription purchase completed successfully")
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseSuccess,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseSuccess,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-            UniquePixel.fire(pixel: .privacyProSubscriptionActivated)
-            Pixel.fireAttribution(pixel: .privacyProSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, privacyProDataReporter: privacyProDataReporter)
+            UniquePixel.fire(pixel: .subscriptionActivated)
+            Pixel.fireAttribution(pixel: .subscriptionSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, subscriptionDataReporter: subscriptionDataReporter)
             setTransactionStatus(.idle)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
         case .failure(let error):
@@ -419,7 +419,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     }
 
     func activateSubscription(params: Any, original: WKScriptMessage) async -> Encodable? {
-        Pixel.fire(pixel: .privacyProRestorePurchaseOfferPageEntry, debounce: 2)
+        Pixel.fire(pixel: .subscriptionRestorePurchaseOfferPageEntry, debounce: 2)
         onActivateSubscription?()
         return nil
     }
@@ -472,13 +472,13 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     func subscriptionsMonthlyPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.debug("Web function called: \(#function)")
-        Pixel.fire(pixel: .privacyProOfferMonthlyPriceClick)
+        Pixel.fire(pixel: .subscriptionOfferMonthlyPriceClick)
         return nil
     }
 
     func subscriptionsYearlyPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.debug("Web function called: \(#function)")
-        Pixel.fire(pixel: .privacyProOfferYearlyPriceClick)
+        Pixel.fire(pixel: .subscriptionOfferYearlyPriceClick)
         return nil
     }
 
@@ -490,19 +490,19 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     func subscriptionsAddEmailSuccess(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.debug("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .privacyProAddEmailSuccess)
+        UniquePixel.fire(pixel: .subscriptionAddEmailSuccess)
         return nil
     }
 
     func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.debug("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .privacyProWelcomeAddDevice)
+        UniquePixel.fire(pixel: .subscriptionWelcomeAddDevice)
         return nil
     }
 
     func subscriptionsWelcomeFaqClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.debug("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .privacyProWelcomeFAQClick)
+        UniquePixel.fire(pixel: .subscriptionWelcomeFAQClick)
         return nil
     }
 
@@ -587,30 +587,30 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     private let appStorePurchaseFlow: AppStorePurchaseFlowV2
     private let appStoreRestoreFlow: AppStoreRestoreFlowV2
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
-    private let privacyProDataReporter: PrivacyProDataReporting?
+    private let subscriptionDataReporter: SubscriptionDataReporting?
     private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
     private let internalUserDecider: InternalUserDecider
-    private let widePixel: WidePixelManaging
-    private var widePixelData: SubscriptionPurchaseWidePixelData?
+    private let wideEvent: WideEventManaging
+    private var wideEventData: SubscriptionPurchaseWideEventData?
 
     init(subscriptionManager: SubscriptionManagerV2,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          subscriptionAttributionOrigin: String?,
          appStorePurchaseFlow: AppStorePurchaseFlowV2,
          appStoreRestoreFlow: AppStoreRestoreFlowV2,
-         privacyProDataReporter: PrivacyProDataReporting? = nil,
+         subscriptionDataReporter: SubscriptionDataReporting? = nil,
          subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
          internalUserDecider: InternalUserDecider,
-         widePixel: WidePixelManaging) {
+         wideEvent: WideEventManaging) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
         self.appStoreRestoreFlow = appStoreRestoreFlow
         self.subscriptionAttributionOrigin = subscriptionAttributionOrigin
-        self.privacyProDataReporter = subscriptionAttributionOrigin != nil ? privacyProDataReporter : nil
+        self.subscriptionDataReporter = subscriptionAttributionOrigin != nil ? subscriptionDataReporter : nil
         self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         self.internalUserDecider = internalUserDecider
-        self.widePixel = widePixel
+        self.wideEvent = wideEvent
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -785,7 +785,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     // swiftlint:disable:next cyclomatic_complexity
     func subscriptionSelected(params: Any, original: WKScriptMessage) async -> Encodable? {
 
-        DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseAttempt,
+        DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseAttempt,
                                      pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
         setTransactionError(nil)
         setTransactionStatus(.purchasing)
@@ -821,7 +821,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         if await subscriptionManager.storePurchaseManager().hasActiveSubscription() {
             Logger.subscription.log("Subscription already active")
             setTransactionError(.activeSubscriptionAlreadyPresent)
-            Pixel.fire(pixel: .privacyProRestoreAfterPurchaseAttempt)
+            Pixel.fire(pixel: .subscriptionRestoreAfterPurchaseAttempt)
             setTransactionStatus(.idle)
             return nil
         }
@@ -831,16 +831,16 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
 
         if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
-            let data = SubscriptionPurchaseWidePixelData(
+            let data = SubscriptionPurchaseWideEventData(
                 purchasePlatform: .appStore,
                 subscriptionIdentifier: subscriptionSelection.id,
                 freeTrialEligible: freeTrialEligible,
-                contextData: WidePixelContextData(name: subscriptionAttributionOrigin),
-                appData: WidePixelAppData(internalUser: internalUserDecider.isInternalUser)
+                contextData: WideEventContextData(name: subscriptionAttributionOrigin),
+                appData: WideEventAppData(internalUser: internalUserDecider.isInternalUser)
             )
 
-            self.widePixelData = data
-            widePixel.startFlow(data)
+            self.wideEventData = data
+            wideEvent.startFlow(data)
         }
 
         let purchaseTransactionJWS: String
@@ -851,8 +851,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             Logger.subscription.log("Subscription purchased successfully")
             purchaseTransactionJWS = result.transactionJWS
 
-            if let accountCreationDuration = result.accountCreationDuration, let widePixelData {
-                widePixelData.createAccountDuration = accountCreationDuration
+            if let accountCreationDuration = result.accountCreationDuration, let wideEventData {
+                wideEventData.createAccountDuration = accountCreationDuration
             }
         case .failure(let error):
             Logger.subscription.error("App store purchase error: \(error.localizedDescription)")
@@ -862,39 +862,39 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
                 setTransactionError(.cancelledByUser)
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.canceled)
 
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
-                    widePixel.completeFlow(widePixelData, status: .cancelled, onComplete: { _, _ in })
+                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
+                    wideEvent.completeFlow(wideEventData, status: .cancelled, onComplete: { _, _ in })
                 }
 
                 return nil
             case .accountCreationFailed(let accountCreationError):
                 setTransactionError(.accountCreationFailed)
 
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
-                    widePixelData.markAsFailed(at: .accountCreate, error: accountCreationError)
-                    widePixel.completeFlow(widePixelData, status: .failure, onComplete: { _, _ in })
+                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
+                    wideEventData.markAsFailed(at: .accountCreate, error: accountCreationError)
+                    wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
                 }
             case .activeSubscriptionAlreadyPresent:
                 // If we found a subscription, then this is not a purchase flow - discard the purchase pixel.
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
-                    widePixel.discardFlow(widePixelData)
-                    self.widePixelData = nil
+                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
+                    wideEvent.discardFlow(wideEventData)
+                    self.wideEventData = nil
                 }
 
                 setTransactionError(.activeSubscriptionAlreadyPresent)
             case .internalError(let internalError):
                 setTransactionError(.purchaseFailed)
 
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
-                    widePixelData.markAsFailed(at: .accountPayment, error: internalError ?? error)
-                    widePixel.completeFlow(widePixelData, status: .failure, onComplete: { _, _ in })
+                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
+                    wideEventData.markAsFailed(at: .accountPayment, error: internalError ?? error)
+                    wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
                 }
             default:
                 setTransactionError(.purchaseFailed)
 
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
-                    widePixelData.markAsFailed(at: .accountPayment, error: error)
-                    widePixel.completeFlow(widePixelData, status: .failure, onComplete: { _, _ in })
+                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
+                    wideEventData.markAsFailed(at: .accountPayment, error: error)
+                    wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
                 }
             }
             originalMessage = original
@@ -908,8 +908,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             assertionFailure("Purchase transaction JWS is empty")
             setTransactionStatus(.idle)
             
-            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
-                widePixel.completeFlow(widePixelData, status: .failure, onComplete: { _, _ in })
+            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
+                wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
             }
             
             return nil
@@ -920,26 +920,26 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             subscriptionParameters = frontEndExperiment.asParameters()
         }
 
-        if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
-            widePixelData.activateAccountDuration = WidePixel.MeasuredInterval.startingNow()
-            widePixel.updateFlow(widePixelData)
+        if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
+            wideEventData.activateAccountDuration = WideEvent.MeasuredInterval.startingNow()
+            wideEvent.updateFlow(wideEventData)
         }
 
         switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS,
                                                                        additionalParams: subscriptionParameters) {
         case .success:
             Logger.subscription.log("Subscription purchase completed successfully")
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseSuccess,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseSuccess,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-            UniquePixel.fire(pixel: .privacyProSubscriptionActivated)
-            Pixel.fireAttribution(pixel: .privacyProSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, privacyProDataReporter: privacyProDataReporter)
+            UniquePixel.fire(pixel: .subscriptionActivated)
+            Pixel.fireAttribution(pixel: .subscriptionSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, subscriptionDataReporter: subscriptionDataReporter)
             setTransactionStatus(.idle)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
 
-            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
-                widePixelData.activateAccountDuration?.complete()
-                widePixel.updateFlow(widePixelData)
-                widePixel.completeFlow(widePixelData, status: .success(reason: nil), onComplete: { _, _ in })
+            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
+                wideEventData.activateAccountDuration?.complete()
+                wideEvent.updateFlow(wideEventData)
+                wideEvent.completeFlow(wideEventData, status: .success(reason: nil), onComplete: { _, _ in })
             }
 
         case .failure(let error):
@@ -954,10 +954,10 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             // Send the wide pixel error as long as the account isn't missing entitlements
             // If entitlements are missing, the app will check again later and send the pixel as a success if
             // they were fetched, or `unknown` if not
-            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData, error != .missingEntitlements {
-                widePixelData.markAsFailed(at: .accountActivation, error: error)
-                widePixel.updateFlow(widePixelData)
-                widePixel.completeFlow(widePixelData, status: .failure, onComplete: { _, _ in })
+            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData, error != .missingEntitlements {
+                wideEventData.markAsFailed(at: .accountActivation, error: error)
+                wideEvent.updateFlow(wideEventData)
+                wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
             }
         }
         return nil
@@ -965,7 +965,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
     func activateSubscription(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Activating Subscription")
-        Pixel.fire(pixel: .privacyProRestorePurchaseOfferPageEntry, debounce: 2)
+        Pixel.fire(pixel: .subscriptionRestorePurchaseOfferPageEntry, debounce: 2)
         onActivateSubscription?()
         return nil
     }
@@ -1016,13 +1016,13 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
     func subscriptionsMonthlyPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
-        Pixel.fire(pixel: .privacyProOfferMonthlyPriceClick)
+        Pixel.fire(pixel: .subscriptionOfferMonthlyPriceClick)
         return nil
     }
 
     func subscriptionsYearlyPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
-        Pixel.fire(pixel: .privacyProOfferYearlyPriceClick)
+        Pixel.fire(pixel: .subscriptionOfferYearlyPriceClick)
         return nil
     }
 
@@ -1034,19 +1034,19 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
     func subscriptionsAddEmailSuccess(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .privacyProAddEmailSuccess)
+        UniquePixel.fire(pixel: .subscriptionAddEmailSuccess)
         return nil
     }
 
     func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.debug("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .privacyProWelcomeAddDevice)
+        UniquePixel.fire(pixel: .subscriptionWelcomeAddDevice)
         return nil
     }
 
     func subscriptionsWelcomeFaqClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .privacyProWelcomeFAQClick)
+        UniquePixel.fire(pixel: .subscriptionWelcomeFAQClick)
         return nil
     }
 
@@ -1133,7 +1133,7 @@ extension Pixel {
         static let locale = "locale"
     }
 
-    static func fireAttribution(pixel: Pixel.Event, origin: String?, locale: Locale = .current, privacyProDataReporter: PrivacyProDataReporting?) {
+    static func fireAttribution(pixel: Pixel.Event, origin: String?, locale: Locale = .current, subscriptionDataReporter: SubscriptionDataReporting?) {
         var parameters: [String: String] = [:]
         parameters[AttributionParameters.locale] = locale.identifier
         if let origin {
@@ -1141,7 +1141,7 @@ extension Pixel {
         }
         Self.fire(
             pixel: pixel,
-            withAdditionalParameters: privacyProDataReporter?.mergeRandomizedParameters(for: .origin(origin), with: parameters) ?? parameters
+            withAdditionalParameters: subscriptionDataReporter?.mergeRandomizedParameters(for: .origin(origin), with: parameters) ?? parameters
         )
     }
 

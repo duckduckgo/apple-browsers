@@ -44,7 +44,7 @@ public enum ColorPalette {
         case .default:
             return SharedDefaultColorPalette.self
         case .figma:
-            return SharedFigmaColorPalette.self
+            return FigmaColorPalette.self
         case .coolGray:
             return CoolGrayColorPalette.self
         case .desert:

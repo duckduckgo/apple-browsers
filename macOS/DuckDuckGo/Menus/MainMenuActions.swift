@@ -1340,6 +1340,10 @@ extension MainViewController {
         }
     }
 
+    @objc func toggleWatchdogCrash(_ sender: Any?) {
+        NSApp.delegateTyped.watchdog.crashOnTimeout.toggle()
+    }
+
     @objc func simulateUIHang(_ sender: NSMenuItem) {
         guard let duration = sender.representedObject as? TimeInterval else {
             print("Error: No duration specified for simulateUIHang")

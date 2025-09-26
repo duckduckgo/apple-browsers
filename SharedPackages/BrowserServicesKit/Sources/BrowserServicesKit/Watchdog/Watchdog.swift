@@ -34,7 +34,6 @@ public final class Watchdog {
     private let minimumHangDuration: TimeInterval
     private let maximumHangDuration: TimeInterval
     private let checkInterval: TimeInterval
-    private let crashOnTimeout: Bool
 
     private static var logger = { Logger(subsystem: "com.duckduckgo.watchdog", category: "hang-detection") }()
 
@@ -43,6 +42,9 @@ public final class Watchdog {
 
     private var hangState: HangState = .responsive
     private var hangStartTime: Date?
+
+    // Used for debugging purposes, toggled via debug menu option
+    public var crashOnTimeout: Bool = false
 
     @MainActor
     public var isRunning: Bool {
@@ -56,7 +58,7 @@ public final class Watchdog {
     ///                          and will be reported as a timeout.
     ///   - checkInterval: The interval at which the main thread is checked for hangs.
     @MainActor
-    public init(minimumHangDuration: TimeInterval = 1.0, maximumHangDuration: TimeInterval = 10.0, checkInterval: TimeInterval = 0.25, crashOnTimeout: Bool = false) {
+    public init(minimumHangDuration: TimeInterval = 1.0, maximumHangDuration: TimeInterval = 10.0, checkInterval: TimeInterval = 0.25) {
         assert(checkInterval > 0, "checkInterval must be greater than 0")
         assert(minimumHangDuration >= 0, "minimumHangDuration must be greater than or equal to 0")
         assert(maximumHangDuration >= 0, "maximumHangDuration must be greater than or equal to 0")
@@ -65,7 +67,6 @@ public final class Watchdog {
         self.minimumHangDuration = minimumHangDuration
         self.maximumHangDuration = maximumHangDuration
         self.checkInterval = checkInterval
-        self.crashOnTimeout = crashOnTimeout
 
         self.monitor = WatchdogMonitor()
     }

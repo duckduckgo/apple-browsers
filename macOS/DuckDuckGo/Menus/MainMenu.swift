@@ -101,6 +101,7 @@ final class MainMenu: NSMenu {
     let configurationDateAndTimeMenuItem = NSMenuItem(title: "Configuration URL", action: nil)
     let autofillDebugScriptMenuItem = NSMenuItem(title: "Autofill Debug Script", action: #selector(MainMenu.toggleAutofillScriptDebugSettingsAction))
     let toggleWatchdogMenuItem = NSMenuItem(title: "Toggle Hang Watchdog", action: #selector(MainViewController.toggleWatchdog))
+    let toggleWatchdogCrashMenuItem = NSMenuItem(title: "Crash on timeout", action: #selector(MainViewController.toggleWatchdogCrash))
 
     // MARK: Help
 
@@ -494,7 +495,7 @@ final class MainMenu: NSMenu {
         updateRemoteConfigurationInfo()
         updateAutofillDebugScriptMenuItem()
         updateShowToolbarsOnFullScreenMenuItem()
-        updateWatchdogMenuItem()
+        updateWatchdogMenuItems()
     }
 
     private func updateAppAboutDDGMenuItem() {
@@ -778,6 +779,7 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: "Hang Debugging") {
                 toggleWatchdogMenuItem
+                toggleWatchdogCrashMenuItem
                 NSMenuItem(title: "Simulate hang") {
                     NSMenuItem(title: "0.5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 0.5)
                     NSMenuItem(title: "2 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 2.0)
@@ -870,8 +872,9 @@ final class MainMenu: NSMenu {
     }
 
     @MainActor
-    private func updateWatchdogMenuItem() {
+    private func updateWatchdogMenuItems() {
         toggleWatchdogMenuItem.state = NSApp.delegateTyped.watchdog.isRunning ? .on : .off
+        toggleWatchdogCrashMenuItem.state = NSApp.delegateTyped.watchdog.crashOnTimeout ? .on : .off
     }
 
     private func updateRemoteConfigurationInfo() {

@@ -78,24 +78,32 @@ struct DataImportView: ModalView {
 
     var body: some View {
         VStack(alignment: alignment, spacing: 0) {
-            viewHeader()
-                .padding(.top, 30)
-                .padding(.leading, 20)
-                .padding(.trailing, 20)
-                .padding(.bottom, 0)
-
-            viewBody()
-                .padding(.leading, 20)
-                .padding(.trailing, 20)
-                .padding(.bottom, 20)
-                .padding(.top, 0)
-
-            // if import in progress…
-            if let importProgress = model.importProgress {
-                progressView(importProgress)
+            switch model.screen {
+            case .fileImport(let typeSelection, let summary) where typeSelection.isMultiple:
+                MultiFileImportScreenView(model: $model,
+                                          dataTypeSelection: typeSelection,
+                                          summaryTypes: summary,
+                                          dismiss: dismiss.callAsFunction)
+            default:
+                viewHeader()
+                    .padding(.top, 30)
                     .padding(.leading, 20)
                     .padding(.trailing, 20)
-                    .padding(.bottom, 8)
+                    .padding(.bottom, 0)
+
+                viewBody()
+                    .padding(.leading, 20)
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 20)
+                    .padding(.top, 0)
+
+                // if import in progress…
+                if let importProgress = model.importProgress {
+                    progressView(importProgress)
+                        .padding(.leading, 20)
+                        .padding(.trailing, 20)
+                        .padding(.bottom, 8)
+                }
             }
 
             viewFooter()
@@ -542,8 +550,7 @@ extension DataImportViewModel.ButtonType {
             case .single(.passwords):
                 UserText.skipPasswordsImport
             case .multiple:
-                // TODO: Think about this
-                "TODO!!"
+                UserText.cancel
             case nil:
                 UserText.skip
             }

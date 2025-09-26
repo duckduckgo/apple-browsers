@@ -18,6 +18,8 @@
 
 import SwiftUI
 
+#if os(iOS)
+
 /// See [Figma](https://www.figma.com/design/3W4vi0zX8hrpQc7zInQQB6/🎨-Global-Colors---Styles?node-id=11-1&p=f&vars=1&var-id=5476-10186&m=dev)
 struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x1F1F1F = Color(0x1F1F1F)
@@ -39,15 +41,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x373737 = Color(0x373737)
     private static let x474747 = Color(0x474747)
     private static let x7295F6 = Color(0x7295F6)
-
-    // Additional hex colors for new semantic colors
-    private static let x070707 = Color(0x070707)
-    private static let x1C1C1C = Color(0x1C1C1C)
-    private static let x161617 = Color(0x161617)
-    private static let x03091A = Color(0x03091A)
-    private static let xE5EDFF = Color(0xE5EDFF)
-    private static let xD11527 = Color(0xD11527)
-    private static let xAA1926 = Color(0xAA1926)
 
     // URL bar
     private static let urlBar = DynamicColor(lightColor: .white, darkColor: x474747)
@@ -75,14 +68,12 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Icons
     private static let icons = DynamicColor(lightColor: x1F1F1F.opacity(0.84), darkColor: .tint(0.78))
-    private static let iconsPrimary = DynamicColor(lightColor: x000000.opacity(0.8), darkColor: xFFFFFF.opacity(0.78))
     private static let iconsSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.6), darkColor: .tint(0.48))
     private static let iconsTertiary = DynamicColor(lightColor: x000000.opacity(0.36), darkColor: xFFFFFF.opacity(0.24))
 
     // Text
     private static let textPrimary = DynamicColor(lightColor: x1F1F1F, darkColor: .tint(0.9))
     private static let textSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.72), darkColor: .tint(0.6))
-    private static let textTertiary = DynamicColor(lightColor: x000000.opacity(0.4), darkColor: xFFFFFF.opacity(0.4))
     private static let textPlaceholder = DynamicColor(lightColor: x1F1F1F.opacity(0.4), darkColor: .tint(0.4))
 
     // System
@@ -95,7 +86,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Highlight
     private static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))
-    private static let highlightPrimary = DynamicColor(lightColor: xFFFFFF.opacity(0.24), darkColor: xF9F9F9.opacity(0.12))
 
     // Accents
     private static let accentContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
@@ -157,57 +147,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let buttonsDeleteGhostText = DynamicColor(lightColor: .alertRedOnLight, darkColor: .alertRedOnDark)
     private static let buttonsDeleteGhostTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
 
-    // Controls
-    private static let controlsDecorationPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.3), darkColor: xF9F9F9.opacity(0.4))
-    private static let controlsDecorationSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.5), darkColor: xF9F9F9.opacity(0.6))
-    private static let controlsDecorationTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.6), darkColor: xF9F9F9.opacity(0.7))
-    private static let controlsDecorationQuaternary = DynamicColor(lightColor: x1F1F1F.opacity(0.7), darkColor: xF9F9F9.opacity(0.8))
-
-    // Accent
-    private static let accentContentSecondary = DynamicColor(lightColor: .blue0, darkColor: x03091A)
-    private static let accentContentTertiary = DynamicColor(lightColor: .blue10, darkColor: x000000)
-    private static let accentGlowPrimary = DynamicColor(lightColor: x3969EF.opacity(0.2), darkColor: x7295F6.opacity(0.2))
-    private static let accentPrimary = DynamicColor(lightColor: x3969EF, darkColor: x7295F6)
-    private static let accentSecondary = DynamicColor(lightColor: .blue60, darkColor: .blue40)
-    private static let accentTertiary = DynamicColor(lightColor: .blue70, darkColor: x3969EF)
-    private static let accentTextPrimary = DynamicColor(lightColor: x3969EF, darkColor: .blue10)
-    private static let accentTextSecondary = DynamicColor(lightColor: .blue60, darkColor: .blue20)
-    private static let accentTextTertiary = DynamicColor(lightColor: .blue70, darkColor: x7295F6)
-
-    // Accent Alt
-    private static let accentAltContentPrimary = DynamicColor(lightColor: .blue70, darkColor: .blue0)
-    private static let accentAltContentSecondary = DynamicColor(lightColor: .blue90, darkColor: xE5EDFF)
-    private static let accentAltContentTertiary = DynamicColor(lightColor: .blue100, darkColor: xFFFFFF)
-    private static let accentAltGlowPrimary = DynamicColor(lightColor: x7295F6.opacity(0.2), darkColor: .blue20.opacity(0.2))
-    private static let accentAltPrimary = DynamicColor(lightColor: .blue0, darkColor: .blue60)
-    private static let accentAltSecondary = DynamicColor(lightColor: .blue10, darkColor: .blue70)
-    private static let accentAltTertiary = DynamicColor(lightColor: .blue20, darkColor: .blue80)
-    private static let accentAltTextPrimary = DynamicColor(lightColor: .blue70, darkColor: .blue0)
-    private static let accentAltTextSecondary = DynamicColor(lightColor: .blue80, darkColor: .blue10)
-    private static let accentAltTextTertiary = DynamicColor(lightColor: .blue90, darkColor: .blue20)
-
-    // Destructive
-    private static let destructiveContentPrimary = DynamicColor(lightColor: xFFFFFF, darkColor: x000000)
-    private static let destructiveContentSecondary = DynamicColor(lightColor: xFFFFFF.opacity(0.9), darkColor: x000000.opacity(0.9))
-    private static let destructiveContentTertiary = DynamicColor(lightColor: xFFFFFF.opacity(0.6), darkColor: x000000.opacity(0.6))
-    private static let destructiveGlow = DynamicColor(lightColor: .alertRed.opacity(0.2), darkColor: .alertRed.opacity(0.2))
-    private static let destructivePrimary = DynamicColor(lightColor: .alertRed, darkColor: .alertRed)
-    private static let destructiveSecondary = DynamicColor(lightColor: xD11527, darkColor: xD11527)
-    private static let destructiveTertiary = DynamicColor(lightColor: xAA1926, darkColor: xAA1926)
-    private static let destructiveTextPrimary = DynamicColor(lightColor: .alertRed, darkColor: .alertRed)
-    private static let destructiveTextSecondary = DynamicColor(lightColor: xD11527, darkColor: xD11527)
-    private static let destructiveTextTertiary = DynamicColor(lightColor: xAA1926, darkColor: xAA1926)
-
-    // Surfaces
-    private static let surfaceBackdrop = DynamicColor(lightColor: xE0E0E0, darkColor: x070707)
-    private static let surfaceCanvas = DynamicColor(lightColor: .gray0, darkColor: x1C1C1C)
-    private static let surfacePrimary = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
-    private static let surfaceSecondary = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
-
-    // Tone
-    private static let toneShadePrimary = DynamicColor(lightColor: x000000.opacity(0.1), darkColor: x161617.opacity(0.32))
-    private static let toneTintPrimary = DynamicColor(lightColor: xFFFFFF.opacity(0.5), darkColor: xF9F9F9.opacity(0.12))
-
     static func dynamicColor(for designSystemColor: DesignSystemColor) -> DynamicColor {
         switch designSystemColor {
 
@@ -220,7 +159,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .panel: return background
         case .surface: return surface
         case .icons: return icons
-        case .iconsPrimary: return iconsPrimary
         case .iconsSecondary: return iconsSecondary
         case .iconsTertiary: return iconsTertiary
         case .textPrimary: return textPrimary
@@ -232,47 +170,20 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .controlsFillPrimary: return controlsFillPrimary
         case .controlsFillSecondary: return controlsFillSecondary
         case .controlsFillTertiary: return controlsFillTertiary
-        case .controlsDecorationPrimary: return controlsDecorationPrimary
-        case .controlsDecorationSecondary: return controlsDecorationSecondary
-        case .controlsDecorationTertiary: return controlsDecorationTertiary
-        case .controlsDecorationQuaternary: return controlsDecorationQuaternary
         case .decorationPrimary: return decorationPrimary
         case .decorationSecondary: return decorationSecondary
         case .decorationTertiary: return decorationTertiary
         case .highlightDecoration: return highlightDecoration
-        case .highlightPrimary: return highlightPrimary
         case .accentContentPrimary: return accentContentPrimary
-        case .accentContentSecondary: return accentContentSecondary
-        case .accentContentTertiary: return accentContentTertiary
 
         case .accent: return accent
-        case .accentGlowPrimary: return accentGlowPrimary
         case .accentGlowSecondary: return accentGlowSecondary
-        case .accentPrimary: return accentPrimary
-        case .accentSecondary: return accentSecondary
-        case .accentTertiary: return accentTertiary
-        case .accentTextPrimary: return accentTextPrimary
-        case .accentTextSecondary: return accentTextSecondary
-        case .accentTextTertiary: return accentTextTertiary
-
-        case .accentAltContentPrimary: return accentAltContentPrimary
-        case .accentAltContentSecondary: return accentAltContentSecondary
-        case .accentAltContentTertiary: return accentAltContentTertiary
-        case .accentAltGlowPrimary: return accentAltGlowPrimary
-        case .accentAltPrimary: return accentAltPrimary
-        case .accentAltSecondary: return accentAltSecondary
-        case .accentAltTertiary: return accentAltTertiary
-        case .accentAltTextPrimary: return accentAltTextPrimary
-        case .accentAltTextSecondary: return accentAltTextSecondary
-        case .accentAltTextTertiary: return accentAltTextTertiary
-
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
         case .border: return border
         case .textLink: return textLink
         case .textPlaceholder: return textPlaceholder
         case .textSecondary: return textSecondary
-        case .textTertiary: return textTertiary
         case .textSelectionFill: return textSelectionFill
 
             // Buttons/SecondaryFill
@@ -310,28 +221,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             // Various
         case .variousOutline: return variousOutline
 
-            // Destructive
-        case .destructiveContentPrimary: return destructiveContentPrimary
-        case .destructiveContentSecondary: return destructiveContentSecondary
-        case .destructiveContentTertiary: return destructiveContentTertiary
-        case .destructiveGlow: return destructiveGlow
-        case .destructivePrimary: return destructivePrimary
-        case .destructiveSecondary: return destructiveSecondary
-        case .destructiveTertiary: return destructiveTertiary
-        case .destructiveTextPrimary: return destructiveTextPrimary
-        case .destructiveTextSecondary: return destructiveTextSecondary
-        case .destructiveTextTertiary: return destructiveTextTertiary
-
-            // Surfaces
-        case .surfaceBackdrop: return surfaceBackdrop
-        case .surfaceCanvas: return surfaceCanvas
-        case .surfacePrimary: return surfacePrimary
-        case .surfaceSecondary: return surfaceSecondary
-
-            // Tone
-        case .toneShadePrimary: return toneShadePrimary
-        case .toneTintPrimary: return toneTintPrimary
-
             // Buttons/DeleteGhost
         case .buttonsDeleteGhostPressedFill: return buttonsDeleteGhostPressedFill
         case .buttonsDeleteGhostText: return buttonsDeleteGhostText
@@ -356,3 +245,5 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         }
     }
 }
+
+#endif

@@ -1340,10 +1340,15 @@ extension MainViewController {
         }
     }
 
-    @objc func simulate15SecondHang() {
+    @objc func simulateUIHang(_ sender: NSMenuItem) {
+        guard let duration = sender.representedObject as? TimeInterval else {
+            print("Error: No duration specified for simulateUIHang")
+            return
+        }
+
         DispatchQueue.main.async {
-            print("Simulating main thread hang...")
-            sleep(15)
+            print("Simulating main thread hang for \(duration) seconds...")
+            sleep(UInt32(duration))
             print("Main thread is unblocked")
         }
     }

@@ -778,10 +778,13 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: "Hang Debugging") {
                 toggleWatchdogMenuItem
-                NSMenuItem(
-                    title: "Simulate 15 Second Hang",
-                    action: #selector(MainViewController.simulate15SecondHang)
-                )
+                NSMenuItem(title: "Simulate hang") {
+                    NSMenuItem(title: "0.5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 0.5)
+                    NSMenuItem(title: "2 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 2.0)
+                    NSMenuItem(title: "5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 5.0)
+                    NSMenuItem(title: "10 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 10.0)
+                    NSMenuItem(title: "15 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 15.0)
+                }
             }
 
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)

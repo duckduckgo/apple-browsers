@@ -505,8 +505,8 @@ struct UserText {
     static let aiChatSidebarExpandButtonTooltip = NSLocalizedString("aichat.sidebar.expand-button.tooltip", value: "Expand", comment: "Tooltip for button to open duck.ai chat from sidebar in a full tab")
     static let aiChatSidebarCloseButtonTooltip = NSLocalizedString("aichat.sidebar.close-button.tooltip", value: "Close", comment: "Tooltip for button to close the sidebar with the duck.ai chat")
     static let moreSearchSettings = NSLocalizedString("settings.more-search-settings", value: "More Search Settings", comment: "The button name in preferences for More Search Settings")
-    static let moreSearchSettingsDescription = NSLocalizedString("settings.more-search-settings.description", value: "Customize your language, region, and more", comment: "Subtitle of the 'More Search Settings' button")
-    static let moreSearchSettingsLink = NSLocalizedString("settings.more-search-settings.link", value: "Open More Search Settings", comment: "Button to open More Search Settings")
+    static let moreSearchSettingsDescription = NSLocalizedString("settings.more-search-settings.description", value: "Customize your language, region, and more.", comment: "Subtitle of the 'More Search Settings' button")
+    static let moreSearchSettingsLink = NSLocalizedString("settings.more-search-settings.link", value: "Open DuckDuckGo Search Settings", comment: "Button to open Search Settings on duckduckgo.com")
 
     // Duck.ai Settings
     static let aiChatTitle = NSLocalizedString("duckai.title", value: "Duck.ai", comment: "Title for Duck.ai feature")

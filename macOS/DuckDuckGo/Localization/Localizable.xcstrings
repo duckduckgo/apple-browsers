@@ -73990,19 +73990,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Customize your language, region, and more"
+            "value" : "Customize your language, region, and more."
           }
         }
       }
     },
     "settings.more-search-settings.link" : {
-      "comment" : "Button to open More Search Settings",
+      "comment" : "Button to open Search Settings on duckduckgo.com",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open More Search Settings"
+            "value" : "Open DuckDuckGo Search Settings"
           }
         }
       }

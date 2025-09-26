@@ -26,6 +26,8 @@ public struct DesignSystemPalette {
 public enum ColorPalette {
 #if os(macOS)
     case `default`
+    case coolGray
+    case desert
     case figma
 #else
     case `default`
@@ -36,6 +38,10 @@ public enum ColorPalette {
         switch self {
         case .default:
             return SharedDefaultColorPalette.self
+        case .coolGray:
+            return CoolGrayColorPalette.self
+        case .desert:
+            return DesertColorPalette.self
         case .figma:
             return SharedFigmaColorPalette.self
         }

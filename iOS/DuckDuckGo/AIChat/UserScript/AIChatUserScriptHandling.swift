@@ -136,15 +136,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     // Workaround for WKWebView: see https://app.asana.com/1/137249556945/task/1211361207345641/comment/1211365575147531?focus=true
     func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable? {
-        Logger.aiChat.debug("openKeyboard received")
-
         guard let paramsDict = params as? [String: Any] else {
             Logger.aiChat.error("Invalid params format for openKeyboard")
             return nil
         }
-
-        guard let cssSelector = paramsDict["selector"] as? String,
-              !cssSelector.isEmpty else {
+        guard let cssSelector = paramsDict["selector"] as? String, !cssSelector.isEmpty else {
             Logger.aiChat.error("Missing or empty CSS selector for openKeyboard")
             return nil
         }
@@ -180,8 +176,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             webView.evaluateJavaScript(javascript) { _, error in
                 if let error = error {
                     Logger.aiChat.error("Failed to execute openKeyboard JavaScript: \(error.localizedDescription)")
-                } else {
-                    Logger.aiChat.debug("openKeyboard JavaScript executed successfully")
                 }
             }
         }

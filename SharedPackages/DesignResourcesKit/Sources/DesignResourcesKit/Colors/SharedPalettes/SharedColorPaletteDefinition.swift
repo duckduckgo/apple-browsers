@@ -115,7 +115,7 @@ protocol SharedColorPaletteDefinition {
     static var toneTintPrimary: DynamicColor { get }
 }
 
-
+// MARK: - Public Shared Helpers
 extension SharedColorPaletteDefinition {
 
     /// Gets dynamic color proxy for a specific semantic color based on the JSON import

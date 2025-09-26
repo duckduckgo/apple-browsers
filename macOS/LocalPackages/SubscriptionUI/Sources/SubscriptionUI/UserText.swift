@@ -47,6 +47,11 @@ enum UserText {
     // MARK: Preferences - Duck.ai Premium
     static let preferencesPaidAIChatTitle = NSLocalizedString("subscription.paid.ai.chat.title", bundle: Bundle.module, value: "Duck.ai", comment: "Title of the preferences pane for Duck.ai Pro")
     static let openPaidAIChatButton = NSLocalizedString("subscription.preferences.paid.ai.chat.button", bundle: Bundle.module, value: "Open Duck.ai", comment: "Title for the preferences pane button to open Duck.ai Pro")
+    static let configureDuckAIPaidAIChatTitle = NSLocalizedString("subscription.preferences.paid.ai.chat.configure.duck.ai.title", bundle: Bundle.module, value: "Configure Duck.ai", comment: "Title of the section of settings that allows user to configure Duck.ai")
+    static let configureDuckAIPaidAIChatDescription = NSLocalizedString("subscription.preferences.paid.ai.chat.configure.duck.ai.description", bundle: Bundle.module, value: "Customize Duck.ai and other AI Features of your browser in AI Features Settings", comment: "Description of the section of settings that allows user to configure Duck.ai")
+    static let enableDuckAIPaidAIChatTitle = NSLocalizedString("subscription.preferences.paid.ai.chat.enable.duck.ai.title", bundle: Bundle.module, value: "Get access to advanced AI models in Duck.ai", comment: "Title of the section of settings that allows user to configure Duck.ai")
+    static let enableDuckAIPaidAIChatDescription = NSLocalizedString("subscription.preferences.paid.ai.chat.enable.duck.ai.description", bundle: Bundle.module, value: "Enable Duck.ai in AI Features Settings", comment: "Title of the section of settings that allows user to configure Duck.ai")
+    static let paidDuckAILinkToAIFeatures = NSLocalizedString("subscription.preferences.paid.ai.chat.ai.features.link", bundle: Bundle.module, value: "AI Features Settings", comment: "Link to the AI Features Settings")
 
     // MARK: Preferences - Identity Theft Restoration
 

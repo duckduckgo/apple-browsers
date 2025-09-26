@@ -3244,8 +3244,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Discutez en privé avec des modèles d'IA réservés aux abonnés.\n[En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "Configurez Duck.ai dans les réglages des fonctionnalités d'IA.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Activer dans les réglages des fonctionnalités d'IA";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Ouvrir Duck.ai";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "Gérer dans les réglages des fonctionnalités d'IA";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";

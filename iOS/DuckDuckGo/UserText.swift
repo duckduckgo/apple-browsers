@@ -1479,6 +1479,9 @@ public struct UserText {
     public static let aiChatSubscriptionTitle = NSLocalizedString("subscription.duck.ai.title", value: "Duck.ai", comment: "Title of the setting page of Duck.ai")
     static let aiChatSubscriptionCaption = NSLocalizedString("subscription.duck.ai.caption", value: "Chat privately with subscriber-exclusive AI models.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)", comment: "Caption of the Duck.ai settings (do not modify link)")
     public static let openSubscriptionAIChat = NSLocalizedString("subscription.duck.ai.open", value: "Open Duck.ai", comment: "Title of the setting page action to open Duck.ai")
+    public static let openAIFeaturesSettings = NSLocalizedString("subscription.duck.ai.open.ai.features.settings", value: "Manage in AI Features Settings", comment: "Title of the setting item action to open AI Features Settings")
+    public static let aiChatSubscriptionEnableAIFeatures = NSLocalizedString("subscription.duck.ai.enable.ai.features", value: "Enable in AI Features Settings", comment: "Title of the setting page action to open AI features settings")
+    public static let aiChatSubscriptionConfigureAIFooter = NSLocalizedString("subscription.duck.ai.configure.duck.ai.footer", value: "Configure Duck.ai in AI Features settings.", comment: "Instruction to configure ai settings in AI Features settings")
 
     static func renewingSubscriptionInfo(billingPeriod: DuckDuckGoSubscription.BillingPeriod, renewalDate: String) -> String {
         let localized: String

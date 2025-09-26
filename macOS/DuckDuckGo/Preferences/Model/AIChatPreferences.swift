@@ -112,6 +112,10 @@ final class AIChatPreferences: ObservableObject {
         didSet { storage.isAIFeaturesEnabled = isAIFeaturesEnabled }
     }
 
+    var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isAIFeaturesEnabled.eraseToAnyPublisher()
+    }
+
     @Published var showShortcutOnNewTabPage: Bool {
         didSet { storage.showShortcutOnNewTabPage = showShortcutOnNewTabPage }
     }

@@ -466,13 +466,16 @@ enum Preferences {
                          openURL(subscriptionURL: url)
                      case .didOpenAICPreferencePane:
                          PixelKit.fire(SubscriptionPixel.subscriptionPaidAIChatSettingsImpression)
+                     case .openAIFeaturesSettings:
+                         model.selectPane(.aiChat)
                      }
                  }
              }
 
-             return PreferencesPaidAIChatModel(userEventHandler: userEventHandler,
-                                                             statusUpdates: model.paidAIChatUpdates)
-         }
+            return PreferencesPaidAIChatModel(userEventHandler: userEventHandler,
+                                              statusUpdates: model.paidAIChatUpdates,
+                                              aiFeaturesEnabledUpdates: model.aiFeaturesEnabledUpdates)
+        }
 
         private func makeIdentityTheftRestorationViewModel() -> PreferencesIdentityTheftRestorationModel {
             let userEventHandler: (PreferencesIdentityTheftRestorationModel.UserEvent) -> Void = { event in

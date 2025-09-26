@@ -229,15 +229,10 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         switch singleUseColor {
         case .controlWidgetBackground:
             return DynamicColor(staticColor: .x818387)
-        case .newTabPageItemAccessoryAddBackground:
-            return DynamicColor(lightColor: surface.lightColor, darkColor: .gray85)
         case .unifiedFeedbackFieldBackground:
             return DynamicColor(lightColor: surface.lightColor, darkColor: .x1C1C1E)
-        case .downloadProgressBarBackground: return DynamicColor(lightColor: .gray85, darkColor: .gray70)
         case .privacyDashboardBackground:
             return DynamicColor(lightColor: surface.lightColor, darkColor: background.darkColor)
-        case .duckPlayerPillBackground:
-            return DynamicColor(lightColor: surface.lightColor, darkColor: .tint(0.12))
         }
     }
 }

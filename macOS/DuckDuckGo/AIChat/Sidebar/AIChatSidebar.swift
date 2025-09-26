@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import AIChat
 
 /// A wrapper class that represents the AI Chat sidebar contents and its displayed view controller.
 
@@ -27,33 +28,34 @@ final class AIChatSidebar: NSObject {
 
     private let burnerMode: BurnerMode
 
-    /// The view controller that displays the sidebar contents.
-    /// This property is lazily created when first accessed.
-    var sidebarViewController: AIChatSidebarViewController {
-        get {
-            guard let sidebarViewController = _sidebarViewController else {
-                let sidebarViewController = AIChatSidebarViewController(currentAIChatURL: currentAIChatURL, burnerMode: burnerMode)
-                _sidebarViewController = sidebarViewController
-                return sidebarViewController
-            }
-            return sidebarViewController
-        }
-    }
+    /// The AI chat URL that was active in the sidebar.
+    private(set)  var aiChatURL: URL?
 
-    // swiftlint:disable identifier_name
-    private var _sidebarViewController: AIChatSidebarViewController?
+    /// The AI chat restoration data that was active in the sidebar.
+    private(set) var restorationData: AIChatRestorationData?
+
+    /// Indicates whether the sidebar is currently presented in the UI.
+    /// This is separate from whether a view controller exists, as view controllers can be created
+    /// during state restoration before the sidebar is actually shown.
+    private(set) var isPresented: Bool = false
+
+    /// The date when the sidebar was last hidden, if applicable.
+    private(set) var hiddenAt: Date?
+
+    /// The view controller that displays the sidebar contents.
+    /// This property is set by the AIChatSidebarProvider when the view controller is created.
+    var sidebarViewController: AIChatSidebarViewController?
 
     /// The current AI chat URL being displayed.
-    private var currentAIChatURL: URL {
+    public var currentAIChatURL: URL {
         get {
-            if let _sidebarViewController {
-                return _sidebarViewController.currentAIChatURL
+            if let sidebarViewController {
+                return sidebarViewController.currentAIChatURL
             } else {
-                return initialAIChatURL
+                return aiChatURL ?? initialAIChatURL
             }
         }
     }
-    // swiftlint:enable identifier_name
 
     private let aiChatRemoteSettings = AIChatRemoteSettings()
 
@@ -63,6 +65,39 @@ final class AIChatSidebar: NSObject {
         self.initialAIChatURL = initialAIChatURL ?? aiChatRemoteSettings.aiChatURL.forAIChatSidebar()
         self.burnerMode = burnerMode
     }
+
+    /// Marks the sidebar as presented in the UI.
+    /// Call this when the sidebar is actually shown to the user.
+    public func setRevealed() {
+        isPresented = true
+        hiddenAt = nil
+    }
+
+    /// Marks the sidebar as hidden/not presented in the UI.
+    /// Call this when the sidebar is hidden from the user.
+    public func setHidden(at date: Date = Date()) {
+        isPresented = false
+        hiddenAt = date
+    }
+
+    /// Unloads the sidebar view controller after reading and updating the current AI chat URL and restoration data.
+    /// This method ensures the current URL state and restoration data are captured before the view controller is unloaded.
+    /// Also marks the sidebar as hidden since the view controller is being unloaded.
+    public func unloadViewController(persistingState: Bool) {
+        if let sidebarViewController {
+            if persistingState {
+                aiChatURL = sidebarViewController.currentAIChatURL
+                if let restorationData = sidebarViewController.currentAIChatRestorationData {
+                    self.restorationData = restorationData
+                }
+            }
+            sidebarViewController.stopLoading()
+            sidebarViewController.removeCompletely()
+            self.sidebarViewController = nil
+        }
+
+        setHidden()
+    }
 }
 
 // MARK: - NSSecureCoding
@@ -71,15 +106,18 @@ extension AIChatSidebar: NSSecureCoding {
 
     private enum CodingKeys {
         static let initialAIChatURL = "initialAIChatURL"
+        static let isPresented = "isPresented"
     }
 
     convenience init?(coder: NSCoder) {
         let initialAIChatURL = coder.decodeObject(of: NSURL.self, forKey: CodingKeys.initialAIChatURL) as URL?
         self.init(initialAIChatURL: initialAIChatURL, burnerMode: .regular)
+        self.isPresented = coder.decodeIfPresent(at: CodingKeys.isPresented) ?? true
     }
 
     func encode(with coder: NSCoder) {
         coder.encode(currentAIChatURL as NSURL, forKey: CodingKeys.initialAIChatURL)
+        coder.encode(isPresented, forKey: CodingKeys.isPresented)
     }
 
     static var supportsSecureCoding: Bool {

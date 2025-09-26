@@ -84,6 +84,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private var dockCustomizer: DockCustomization?
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let featureFlagger: FeatureFlagger
+    private let freeTrialBadgePersistor: FreeTrialBadgePersisting
 
     private let notificationCenter: NotificationCenter
 
@@ -129,7 +130,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
          isFireWindowDefault: Bool = NSApp.delegateTyped.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
          isUsingAuthV2: Bool,
-         syncDeviceButtonModel: SyncDeviceButtonModel = SyncDeviceButtonModel()) {
+         syncDeviceButtonModel: SyncDeviceButtonModel = SyncDeviceButtonModel(),
+         freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard)) {
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -152,6 +154,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.featureFlagger = featureFlagger
+        self.freeTrialBadgePersistor = freeTrialBadgePersistor
         self.moreOptionsMenuIconsProvider = visualStyle.iconsProvider.moreOptionsMenuIconsProvider
         self.isFireWindowDefault = isFireWindowDefault
         self.syncDeviceButtonModel = syncDeviceButtonModel
@@ -600,8 +603,10 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             var subscriptionItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
                 .withImage(moreOptionsMenuIconsProvider.subscriptionIcon)
 
-            // Check if user is eligible for Free Trial
-            if featureFlagger.isFeatureOn(.privacyProFreeTrial) && subscriptionManager.isUserEligibleForFreeTrial() {
+            // Check if user is eligible for Free Trial and hasn't exceeded view limit
+            if featureFlagger.isFeatureOn(.privacyProFreeTrial) &&
+               subscriptionManager.isUserEligibleForFreeTrial() &&
+               !freeTrialBadgePersistor.hasReachedViewLimit {
                 subscriptionItem = NSMenuItem.createMenuItemWithBadge(
                     title: UserText.subscriptionOptionsMenuItem,
                     badgeText: UserText.subscriptionOptionsMenuItemFreeTrialBadge,
@@ -711,6 +716,14 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             updateController.needsNotificationDot = false
         }
 #endif
+
+        // Increment free trial badge view count if the user is eligible and badge is shown
+        if !subscriptionManager.isUserAuthenticated &&
+           featureFlagger.isFeatureOn(.privacyProFreeTrial) &&
+           subscriptionManager.isUserEligibleForFreeTrial() &&
+           !freeTrialBadgePersistor.hasReachedViewLimit {
+            freeTrialBadgePersistor.incrementViewCount()
+        }
     }
 
     func menuDidClose(_ menu: NSMenu) {

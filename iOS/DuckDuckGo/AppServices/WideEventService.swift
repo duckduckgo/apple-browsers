@@ -1,5 +1,5 @@
 //
-//  WidePixelService.swift
+//  WideEventService.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -22,16 +22,16 @@ import BrowserServicesKit
 import PixelKit
 import Subscription
 
-final class WidePixelService {
-    private let widePixel: WidePixelManaging
+final class WideEventService {
+    private let wideEvent: WideEventManaging
     private let featureFlagger: FeatureFlagger
     private let subscriptionBridge: SubscriptionAuthV1toV2Bridge
     private let activationTimeoutInterval: TimeInterval = .hours(4)
 
     private let sendQueue = DispatchQueue(label: "com.duckduckgo.wide-pixel.send-queue", qos: .utility)
 
-    init(widePixel: WidePixelManaging, featureFlagger: FeatureFlagger, subscriptionBridge: SubscriptionAuthV1toV2Bridge) {
-        self.widePixel = widePixel
+    init(wideEvent: WideEventManaging, featureFlagger: FeatureFlagger, subscriptionBridge: SubscriptionAuthV1toV2Bridge) {
+        self.wideEvent = wideEvent
         self.featureFlagger = featureFlagger
         self.subscriptionBridge = subscriptionBridge
     }
@@ -84,7 +84,7 @@ final class WidePixelService {
     // MARK: - Subscription Purchase
 
     private func sendAbandonedSubscriptionPurchasePixels() async {
-        let pending: [SubscriptionPurchaseWidePixelData] = widePixel.getAllFlowData(SubscriptionPurchaseWidePixelData.self)
+        let pending: [SubscriptionPurchaseWideEventData] = wideEvent.getAllFlowData(SubscriptionPurchaseWideEventData.self)
 
         // Any pixels that aren't pending activation are considered abandoned at launch.
         // Pixels that are pending activation will be handled in the delayed function, in the case that activation takes
@@ -95,12 +95,12 @@ final class WidePixelService {
                 continue
             }
 
-            _ = try? await widePixel.completeFlow(data, status: .unknown(reason: SubscriptionPurchaseWidePixelData.StatusReason.partialData.rawValue))
+            _ = try? await wideEvent.completeFlow(data, status: .unknown(reason: SubscriptionPurchaseWideEventData.StatusReason.partialData.rawValue))
         }
     }
     
     private func sendDelayedSubscriptionPurchasePixels() async {
-        let pending: [SubscriptionPurchaseWidePixelData] = widePixel.getAllFlowData(SubscriptionPurchaseWidePixelData.self)
+        let pending: [SubscriptionPurchaseWideEventData] = wideEvent.getAllFlowData(SubscriptionPurchaseWideEventData.self)
 
         for data in pending {
             // Pending pixels are identified by having an activation start but no end.
@@ -113,8 +113,8 @@ final class WidePixelService {
                 interval.complete()
                 data.activateAccountDuration = interval
 
-                let reason = SubscriptionPurchaseWidePixelData.StatusReason.missingEntitlementsDelayedActivation.rawValue
-                _ = try? await widePixel.completeFlow(data, status: .success(reason: reason))
+                let reason = SubscriptionPurchaseWideEventData.StatusReason.missingEntitlementsDelayedActivation.rawValue
+                _ = try? await wideEvent.completeFlow(data, status: .success(reason: reason))
             } else {
                 let deadline = start.addingTimeInterval(activationTimeoutInterval)
                 if Date() < deadline {
@@ -123,8 +123,8 @@ final class WidePixelService {
                 }
 
                 // Timed out and still no entitlements → report unknown due to missing entitlements
-                let reason = SubscriptionPurchaseWidePixelData.StatusReason.missingEntitlements.rawValue
-                _ = try? await widePixel.completeFlow(data, status: .unknown(reason: reason))
+                let reason = SubscriptionPurchaseWideEventData.StatusReason.missingEntitlements.rawValue
+                _ = try? await wideEvent.completeFlow(data, status: .unknown(reason: reason))
             }
         }
     }

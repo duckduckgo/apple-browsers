@@ -1,5 +1,5 @@
 //
-//  WidePixelParameters.swift
+//  WideEventParameters.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,14 +18,14 @@
 
 import Foundation
 
-public protocol WidePixelParameterProviding {
+public protocol WideEventParameterProviding {
     func pixelParameters() -> [String: String]
     func jsonParameters() throws -> String
 }
 
-extension WidePixelParameterProviding {
-    // Wide pixels will eventually support being sent as JSON to a POST endpoint.
-    // This extension can be used for all wide pixel data objects to handle this.
+extension WideEventParameterProviding {
+    // Wide events will eventually support being sent as JSON to a POST endpoint.
+    // This extension can be used for all wide event data objects to handle this.
     public func jsonParameters() throws -> String {
         let object = nestedDictionary(from: pixelParameters())
         let data = try JSONSerialization.data(withJSONObject: object, options: [])
@@ -69,7 +69,7 @@ extension WidePixelParameterProviding {
     }
 }
 
-public enum WidePixelParameter {
+public enum WideEventParameter {
 
     public enum Global {
         static let platform = "global.platform"

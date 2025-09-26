@@ -281,8 +281,8 @@
 		4B27FBB52C927435007E21A7 /* PersistentPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B27FBB42C927435007E21A7 /* PersistentPixelTests.swift */; };
 		4B2855352E3825000085D31D /* privacy-reference-tests in Resources */ = {isa = PBXBuildFile; fileRef = EA39B7E1268A1A35000C62CD /* privacy-reference-tests */; };
 		4B2C79612C5B27AC00A240CC /* VPNSnoozeActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD96E082C4DCDD2003BC32C /* VPNSnoozeActivityAttributes.swift */; };
-		4B2DF8A42E64BBF800FBF11E /* WidePixelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2DF8A32E64BBF400FBF11E /* WidePixelService.swift */; };
-		4B2DF8A62E64C67300FBF11E /* WidePixelServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2DF8A52E64C67000FBF11E /* WidePixelServiceTests.swift */; };
+		4B2DF8A42E64BBF800FBF11E /* WideEventService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2DF8A32E64BBF400FBF11E /* WideEventService.swift */; };
+		4B2DF8A62E64C67300FBF11E /* WideEventServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2DF8A52E64C67000FBF11E /* WideEventServiceTests.swift */; };
 		4B37E0502B928CA6009E81CA /* vpn-light-mode.json in Resources */ = {isa = PBXBuildFile; fileRef = 4B37E04F2B928CA6009E81CA /* vpn-light-mode.json */; };
 		4B412ACC2BBB3D0900A39F5E /* LazyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B412ACB2BBB3D0900A39F5E /* LazyView.swift */; };
 		4B470EE4299C6DFB0086EBDC /* Core.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F143C2E41E4A4CD400CFDE3A /* Core.framework */; };
@@ -2262,8 +2262,8 @@
 		4B27FBAF2C9251B2007E21A7 /* DefaultPersistentPixelStorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultPersistentPixelStorageTests.swift; sourceTree = "<group>"; };
 		4B27FBB22C926E51007E21A7 /* PersistentPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistentPixel.swift; sourceTree = "<group>"; };
 		4B27FBB42C927435007E21A7 /* PersistentPixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistentPixelTests.swift; sourceTree = "<group>"; };
-		4B2DF8A32E64BBF400FBF11E /* WidePixelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidePixelService.swift; sourceTree = "<group>"; };
-		4B2DF8A52E64C67000FBF11E /* WidePixelServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidePixelServiceTests.swift; sourceTree = "<group>"; };
+		4B2DF8A32E64BBF400FBF11E /* WideEventService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WideEventService.swift; sourceTree = "<group>"; };
+		4B2DF8A52E64C67000FBF11E /* WideEventServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WideEventServiceTests.swift; sourceTree = "<group>"; };
 		4B37E04F2B928CA6009E81CA /* vpn-light-mode.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "vpn-light-mode.json"; sourceTree = "<group>"; };
 		4B412ACB2BBB3D0900A39F5E /* LazyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazyView.swift; sourceTree = "<group>"; };
 		4B52648A25F9613B00CB4C24 /* trackerData.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = trackerData.json; sourceTree = "<group>"; };
@@ -7798,7 +7798,7 @@
 				CB3B4D432D5F757A006DAD63 /* StatisticsService.swift */,
 				9FB859882E2DD2BB00BA68E4 /* SystemSettingsPiPTutorialService.swift */,
 				9D41D8DE2DC5213500BA0B63 /* DBPService.swift */,
-				4B2DF8A32E64BBF400FBF11E /* WidePixelService.swift */,
+				4B2DF8A32E64BBF400FBF11E /* WideEventService.swift */,
 			);
 			path = AppServices;
 			sourceTree = "<group>";
@@ -8546,7 +8546,7 @@
 				CB3B4D4F2D63957F006DAD63 /* UIInteractionManagerTests.swift */,
 				CB3B4D512D63CDA0006DAD63 /* AppStateMachineTests.swift */,
 				CB18A3652E2790C700BE9D8D /* UserAgentConfigurationTests.swift */,
-				4B2DF8A52E64C67000FBF11E /* WidePixelServiceTests.swift */,
+				4B2DF8A52E64C67000FBF11E /* WideEventServiceTests.swift */,
 			);
 			name = Application;
 			sourceTree = "<group>";
@@ -10095,7 +10095,7 @@
 				9874F9EE2187AFCE00CAF33D /* Themable.swift in Sources */,
 				0283A1FC2C6E3D8100508FBD /* BrokenSitePromptView.swift in Sources */,
 				F44D279E27F331BB0037F371 /* AutofillLoginPromptViewModel.swift in Sources */,
-				4B2DF8A42E64BBF800FBF11E /* WidePixelService.swift in Sources */,
+				4B2DF8A42E64BBF800FBF11E /* WideEventService.swift in Sources */,
 				3151F0F02735802800226F58 /* VoiceSearchViewController.swift in Sources */,
 				D6FEB8B32B74990D00C3615F /* HeadlessWebViewNavCoordinator.swift in Sources */,
 				85BDC310243359040053DB07 /* FindInPageUserScript.swift in Sources */,
@@ -10909,7 +10909,7 @@
 				F1BDDBFD2C340D9C00459306 /* SubscriptionContainerViewModelTests.swift in Sources */,
 				98E564A82DE8EDE200E6E75F /* CapturingAlertPresenter.swift in Sources */,
 				987243142C5232B5007ECC76 /* BookmarksDatabaseSetupTests.swift in Sources */,
-				4B2DF8A62E64C67300FBF11E /* WidePixelServiceTests.swift in Sources */,
+				4B2DF8A62E64C67300FBF11E /* WideEventServiceTests.swift in Sources */,
 				56C23F652E0AD93600FD63C6 /* MockFeedbackSender.swift in Sources */,
 				56CA25EE2DB7ABCF00BE4226 /* LocalizationTests.swift in Sources */,
 				98D094832E6AFA6B00D94984 /* InternalUserCommandsTests.swift in Sources */,

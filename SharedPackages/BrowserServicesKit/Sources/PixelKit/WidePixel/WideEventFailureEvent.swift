@@ -1,5 +1,5 @@
 //
-//  WidePixelFailureEvent.swift
+//  WideEventFailureEvent.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,8 +19,8 @@
 import Foundation
 import Common
 
-public enum WidePixelFailureEvent {
-    public static let eventMapping: EventMapping<WidePixelFailureEvent> = .init { event, _, _, _ in
+public enum WideEventFailureEvent {
+    public static let eventMapping: EventMapping<WideEventFailureEvent> = .init { event, _, _, _ in
         PixelKit.shared?.fire(event, frequency: .dailyAndCount)
     }
 
@@ -31,7 +31,7 @@ public enum WidePixelFailureEvent {
     case discardFailed(pixelName: String, error: Error)
 }
 
-extension WidePixelFailureEvent: PixelKitEvent, PixelKitEventWithCustomPrefix {
+extension WideEventFailureEvent: PixelKitEvent, PixelKitEventWithCustomPrefix {
     public var namePrefix: String {
 #if os(macOS)
         return "m_mac_"

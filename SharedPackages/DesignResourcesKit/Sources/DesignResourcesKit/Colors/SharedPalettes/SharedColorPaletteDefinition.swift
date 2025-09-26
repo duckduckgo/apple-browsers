@@ -22,8 +22,267 @@ import Foundation
 
 protocol SharedColorPaletteDefinition {
 
+    // MARK: - Accent Colors
+    static var accentContentPrimary: DynamicColor { get }
+    static var accentContentSecondary: DynamicColor { get }
+    static var accentContentTertiary: DynamicColor { get }
+    static var accentGlowPrimary: DynamicColor { get }
+    static var accentGlowSecondary: DynamicColor { get }
+    static var accentPrimary: DynamicColor { get }
+    static var accentQuaternary: DynamicColor { get }
+    static var accentSecondary: DynamicColor { get }
+    static var accentTertiary: DynamicColor { get }
+    static var accentTextPrimary: DynamicColor { get }
+    static var accentTextSecondary: DynamicColor { get }
+    static var accentTextTertiary: DynamicColor { get }
+
+    // MARK: - Accent Alt Colors
+    static var accentAltContentPrimary: DynamicColor { get }
+    static var accentAltContentSecondary: DynamicColor { get }
+    static var accentAltContentTertiary: DynamicColor { get }
+    static var accentAltGlowPrimary: DynamicColor { get }
+    static var accentAltGlowSecondary: DynamicColor { get }
+    static var accentAltPrimary: DynamicColor { get }
+    static var accentAltSecondary: DynamicColor { get }
+    static var accentAltTertiary: DynamicColor { get }
+    static var accentAltTextPrimary: DynamicColor { get }
+    static var accentAltTextSecondary: DynamicColor { get }
+    static var accentAltTextTertiary: DynamicColor { get }
+
+    // MARK: - Container Colors
+    static var containerDecorationPrimary: DynamicColor { get }
+    static var containerDecorationSecondary: DynamicColor { get }
+    static var containerDecorationTertiary: DynamicColor { get }
+    static var containerFillPrimary: DynamicColor { get }
+    static var containerFillSecondary: DynamicColor { get }
+    static var containerFillTertiary: DynamicColor { get }
+
+    // MARK: - Controls Colors
+    static var controlsDecorationPrimary: DynamicColor { get }
+    static var controlsDecorationSecondary: DynamicColor { get }
+    static var controlsDecorationTertiary: DynamicColor { get }
+    static var controlsDecorationQuaternary: DynamicColor { get }
+    static var controlsFillPrimary: DynamicColor { get }
+    static var controlsFillSecondary: DynamicColor { get }
+    static var controlsFillTertiary: DynamicColor { get }
+
+    // MARK: - Decoration Colors
+    static var decorationPrimary: DynamicColor { get }
+    static var decorationSecondary: DynamicColor { get }
+    static var decorationTertiary: DynamicColor { get }
+
+    // MARK: - Destructive Colors
+    static var destructiveContentPrimary: DynamicColor { get }
+    static var destructiveContentSecondary: DynamicColor { get }
+    static var destructiveContentTertiary: DynamicColor { get }
+    static var destructiveGlow: DynamicColor { get }
+    static var destructivePrimary: DynamicColor { get }
+    static var destructiveSecondary: DynamicColor { get }
+    static var destructiveTertiary: DynamicColor { get }
+    static var destructiveTextPrimary: DynamicColor { get }
+    static var destructiveTextSecondary: DynamicColor { get }
+    static var destructiveTextTertiary: DynamicColor { get }
+
+    // MARK: - Highlight Colors
+    static var highlightPrimary: DynamicColor { get }
+
+    // MARK: - Icons Colors
+    static var icons: DynamicColor { get }
+    static var iconsPrimary: DynamicColor { get }
+    static var iconsSecondary: DynamicColor { get }
+    static var iconsTertiary: DynamicColor { get }
+
+    // MARK: - Shadow Colors
+    static var shadowPrimary: DynamicColor { get }
+    static var shadowSecondary: DynamicColor { get }
+    static var shadowTertiary: DynamicColor { get }
+
+    // MARK: - Surface Colors
+    static var surface: DynamicColor { get }
+    static var surfaceBackdrop: DynamicColor { get }
+    static var surfaceCanvas: DynamicColor { get }
+    static var surfacePrimary: DynamicColor { get }
+    static var surfaceSecondary: DynamicColor { get }
+    static var surfaceTertiary: DynamicColor { get }
+
+    // MARK: - Text Colors
+    static var textPrimary: DynamicColor { get }
+    static var textSecondary: DynamicColor { get }
+    static var textTertiary: DynamicColor { get }
+
+    // MARK: - Tone Colors
+    static var toneShadePrimary: DynamicColor { get }
+    static var toneTintPrimary: DynamicColor { get }
+}
+
+// MARK: - Public Shared Helpers
+extension SharedColorPaletteDefinition {
+
     /// Gets dynamic color proxy for a specific semantic color based on the JSON import
-    static func dynamicColor(for designSystemColor: SharedDesignSystemColor) -> DynamicColor
+    static func dynamicColor(for designSystemColor: SharedDesignSystemColor) -> DynamicColor {
+
+        switch designSystemColor {
+        /// Accent Colors
+        case .accentContentPrimary:
+            return accentContentPrimary
+        case .accentContentSecondary:
+            return accentContentSecondary
+        case .accentContentTertiary:
+            return accentContentTertiary
+        case .accentGlowPrimary:
+            return accentGlowPrimary
+        case .accentGlowSecondary:
+            return accentGlowSecondary
+        case .accentPrimary:
+            return accentPrimary
+        case .accentQuaternary:
+            return accentQuaternary
+        case .accentSecondary:
+            return accentSecondary
+        case .accentTertiary:
+            return accentTertiary
+        case .accentTextPrimary:
+            return accentTextPrimary
+        case .accentTextSecondary:
+            return accentTextSecondary
+        case .accentTextTertiary:
+            return accentTextTertiary
+
+        /// Accent Alt Colors
+        case .accentAltContentPrimary:
+            return accentAltContentPrimary
+        case .accentAltContentSecondary:
+            return accentAltContentSecondary
+        case .accentAltContentTertiary:
+            return accentAltContentTertiary
+        case .accentAltGlowPrimary:
+            return accentAltGlowPrimary
+        case .accentAltGlowSecondary:
+            return accentAltGlowSecondary
+        case .accentAltPrimary:
+            return accentAltPrimary
+        case .accentAltSecondary:
+            return accentAltSecondary
+        case .accentAltTertiary:
+            return accentAltTertiary
+        case .accentAltTextPrimary:
+            return accentAltTextPrimary
+        case .accentAltTextSecondary:
+            return accentAltTextSecondary
+        case .accentAltTextTertiary:
+            return accentAltTextTertiary
+
+        /// Container Colors
+        case .containerDecorationPrimary:
+            return containerDecorationPrimary
+        case .containerDecorationSecondary:
+            return containerDecorationSecondary
+        case .containerDecorationTertiary:
+            return containerDecorationTertiary
+        case .containerFillPrimary:
+            return containerFillPrimary
+        case .containerFillSecondary:
+            return containerFillSecondary
+        case .containerFillTertiary:
+            return containerFillTertiary
+
+        /// Controls Colors
+        case .controlsDecorationPrimary:
+            return controlsDecorationPrimary
+        case .controlsDecorationSecondary:
+            return controlsDecorationSecondary
+        case .controlsDecorationTertiary:
+            return controlsDecorationTertiary
+        case .controlsDecorationQuaternary:
+            return controlsDecorationQuaternary
+        case .controlsFillPrimary:
+            return controlsFillPrimary
+        case .controlsFillSecondary:
+            return controlsFillSecondary
+        case .controlsFillTertiary:
+            return controlsFillTertiary
+
+        /// Decoration Colors
+        case .decorationPrimary:
+            return decorationPrimary
+        case .decorationSecondary:
+            return decorationSecondary
+        case .decorationTertiary:
+            return decorationTertiary
+
+        /// Destructive Colors
+        case .destructiveContentPrimary:
+            return destructiveContentPrimary
+        case .destructiveContentSecondary:
+            return destructiveContentSecondary
+        case .destructiveContentTertiary:
+            return destructiveContentTertiary
+        case .destructiveGlow:
+            return destructiveGlow
+        case .destructivePrimary:
+            return destructivePrimary
+        case .destructiveSecondary:
+            return destructiveSecondary
+        case .destructiveTertiary:
+            return destructiveTertiary
+        case .destructiveTextPrimary:
+            return destructiveTextPrimary
+        case .destructiveTextSecondary:
+            return destructiveTextSecondary
+        case .destructiveTextTertiary:
+            return destructiveTextTertiary
+
+        /// Highlight Colors
+        case .highlightPrimary:
+            return highlightPrimary
+
+        /// Icons Colors
+        case .icons:
+            return icons
+        case .iconsPrimary:
+            return iconsPrimary
+        case .iconsSecondary:
+            return iconsSecondary
+        case .iconsTertiary:
+            return iconsTertiary
+
+        /// Shadow Colors
+        case .shadowPrimary:
+            return shadowPrimary
+        case .shadowSecondary:
+            return shadowSecondary
+        case .shadowTertiary:
+            return shadowTertiary
+
+        /// Surface Colors
+        case .surface:
+            return surface
+        case .surfaceBackdrop:
+            return surfaceBackdrop
+        case .surfaceCanvas:
+            return surfaceCanvas
+        case .surfacePrimary:
+            return surfacePrimary
+        case .surfaceSecondary:
+            return surfaceSecondary
+        case .surfaceTertiary:
+            return surfaceTertiary
+
+        /// Text Colors
+        case .textPrimary:
+            return textPrimary
+        case .textSecondary:
+            return textSecondary
+        case .textTertiary:
+            return textTertiary
+
+        /// Tone Colors
+        case .toneShadePrimary:
+            return toneShadePrimary
+        case .toneTintPrimary:
+            return toneTintPrimary
+        }
+    }
 }
 
 #endif

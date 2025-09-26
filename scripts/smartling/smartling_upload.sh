@@ -20,6 +20,10 @@ if [ -z "$JOB_NAME" ]; then
 	JOB_NAME="$(git rev-parse --abbrev-ref HEAD)"
 fi
 
+# Always append date suffix to prevent naming conflicts
+DATE_SUFFIX="$(date +%Y-%m-%d)"
+JOB_NAME="${JOB_NAME}-${DATE_SUFFIX}"
+
 echo "Uploading translations for platform: $PLATFORM"
 echo "Job name: $JOB_NAME"
 

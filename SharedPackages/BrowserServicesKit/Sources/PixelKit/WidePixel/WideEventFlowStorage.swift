@@ -1,5 +1,5 @@
 //
-//  WidePixelFlowStorage.swift
+//  WideEventFlowStorage.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,63 +18,63 @@
 
 import Foundation
 
-public protocol WidePixelStoring {
-    func save<T: WidePixelData>(_ data: T) throws
-    func load<T: WidePixelData>(globalID: String) throws -> T
-    func update<T: WidePixelData>(_ data: T) throws
-    func delete<T: WidePixelData>(_ data: T)
-    func allWidePixels<T: WidePixelData>(for type: T.Type) -> [T]
+public protocol WideEventStoring {
+    func save<T: WideEventData>(_ data: T) throws
+    func load<T: WideEventData>(globalID: String) throws -> T
+    func update<T: WideEventData>(_ data: T) throws
+    func delete<T: WideEventData>(_ data: T)
+    func allWideEvents<T: WideEventData>(for type: T.Type) -> [T]
     func percentile(for contextID: String) -> Float
 }
 
-public final class WidePixelUserDefaultsStorage: WidePixelStoring {
+public final class WideEventUserDefaultsStorage: WideEventStoring {
     public static let suiteName = "com.duckduckgo.wide-pixel.storage"
 
     private let defaults: UserDefaults
 
-    public init(userDefaults: UserDefaults = UserDefaults(suiteName: WidePixelUserDefaultsStorage.suiteName) ?? .standard) {
+    public init(userDefaults: UserDefaults = UserDefaults(suiteName: WideEventUserDefaultsStorage.suiteName) ?? .standard) {
         self.defaults = userDefaults
     }
 
-    public func save<T: WidePixelData>(_ data: T) throws {
+    public func save<T: WideEventData>(_ data: T) throws {
         let key = storageKey(T.self, globalID: data.globalData.id)
 
         do {
             let encoded = try JSONEncoder().encode(data)
             defaults.set(encoded, forKey: key)
         } catch {
-            throw WidePixelError.serializationFailed(error)
+            throw WideEventError.serializationFailed(error)
         }
     }
 
-    public func load<T: WidePixelData>(globalID: String) throws -> T {
+    public func load<T: WideEventData>(globalID: String) throws -> T {
         let key = storageKey(T.self, globalID: globalID)
 
         guard let data = defaults.data(forKey: key) else {
-            throw WidePixelError.flowNotFound(pixelName: T.pixelName)
+            throw WideEventError.flowNotFound(pixelName: T.pixelName)
         }
 
         do {
             return try JSONDecoder().decode(T.self, from: data)
         } catch {
-            throw WidePixelError.serializationFailed(error)
+            throw WideEventError.serializationFailed(error)
         }
     }
 
-    public func update<T: WidePixelData>(_ data: T) throws {
+    public func update<T: WideEventData>(_ data: T) throws {
         guard defaults.data(forKey: storageKey(T.self, globalID: data.globalData.id)) != nil else {
-            throw WidePixelError.flowNotFound(pixelName: T.pixelName)
+            throw WideEventError.flowNotFound(pixelName: T.pixelName)
         }
 
         try save(data)
     }
 
-    public func delete<T: WidePixelData>(_ data: T) {
+    public func delete<T: WideEventData>(_ data: T) {
         let key = storageKey(T.self, globalID: data.globalData.id)
         defaults.removeObject(forKey: key)
     }
 
-    public func allWidePixels<T: WidePixelData>(for type: T.Type) -> [T] {
+    public func allWideEvents<T: WideEventData>(for type: T.Type) -> [T] {
         let allKeys = Array(defaults.dictionaryRepresentation().keys)
         var results: [T] = []
 
@@ -103,7 +103,7 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
         return value
     }
 
-    private func storageKey<T: WidePixelData>(_ type: T.Type, globalID: String) -> String {
+    private func storageKey<T: WideEventData>(_ type: T.Type, globalID: String) -> String {
         return "\(T.pixelName).\(globalID)"
     }
 

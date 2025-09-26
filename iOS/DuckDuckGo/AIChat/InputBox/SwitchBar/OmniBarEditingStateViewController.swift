@@ -227,6 +227,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             switchBarVC.view.bottomAnchor.constraint(equalTo: container.keyboardLayoutGuide.topAnchor, constant: -8).isActive = true
         }
 
+        switchBarVC.textEntryViewController.isUsingIncreasedButtonPadding = !isUsingTopBarPosition
         switchBarVC.didMove(toParent: self)
         switchBarVC.backButton.addTarget(self, action: #selector(dismissButtonTapped), for: .touchUpInside)
     }

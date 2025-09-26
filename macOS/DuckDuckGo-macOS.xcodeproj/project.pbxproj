@@ -3354,6 +3354,10 @@
 		BB80DDD32D75EEAC00ED1FFF /* ApplicationBuildType.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDD12D75EEA100ED1FFF /* ApplicationBuildType.swift */; };
 		BB80DDDB2D761EC700ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDDA2D761EC400ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift */; };
 		BB80DDDC2D761EC700ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDDA2D761EC400ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift */; };
+		BB91BEEA2E842771006CC502 /* FreeTrialBadgePersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB91BEE92E842771006CC502 /* FreeTrialBadgePersistor.swift */; };
+		BB91BEEB2E842771006CC502 /* FreeTrialBadgePersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB91BEE92E842771006CC502 /* FreeTrialBadgePersistor.swift */; };
+		BB91BEED2E8427A0006CC502 /* FreeTrialBadgePersistorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB91BEEC2E8427A0006CC502 /* FreeTrialBadgePersistorTests.swift */; };
+		BB91BEEE2E8427A0006CC502 /* FreeTrialBadgePersistorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB91BEEC2E8427A0006CC502 /* FreeTrialBadgePersistorTests.swift */; };
 		BB960BCD2DD77A0B002C46DD /* SettingsIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB960BCC2DD77A02002C46DD /* SettingsIconsProviding.swift */; };
 		BB960BCE2DD77A0B002C46DD /* SettingsIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB960BCC2DD77A02002C46DD /* SettingsIconsProviding.swift */; };
 		BB960BD32DD7890B002C46DD /* BookmarksIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB960BD22DD788FD002C46DD /* BookmarksIconsProviding.swift */; };
@@ -5674,6 +5678,8 @@
 		BB80DDCE2D75E94A00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptCoordinatorTests.swift; sourceTree = "<group>"; };
 		BB80DDD12D75EEA100ED1FFF /* ApplicationBuildType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationBuildType.swift; sourceTree = "<group>"; };
 		BB80DDDA2D761EC400ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPresentingTests.swift; sourceTree = "<group>"; };
+		BB91BEE92E842771006CC502 /* FreeTrialBadgePersistor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeTrialBadgePersistor.swift; sourceTree = "<group>"; };
+		BB91BEEC2E8427A0006CC502 /* FreeTrialBadgePersistorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeTrialBadgePersistorTests.swift; sourceTree = "<group>"; };
 		BB960BCC2DD77A02002C46DD /* SettingsIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsIconsProviding.swift; sourceTree = "<group>"; };
 		BB960BD22DD788FD002C46DD /* BookmarksIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksIconsProviding.swift; sourceTree = "<group>"; };
 		BB9851912E3102ED00FED56A /* NetworkProtectionNavBarButtonModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionNavBarButtonModelTests.swift; sourceTree = "<group>"; };
@@ -6887,6 +6893,7 @@
 		378205F9283C275E00D1D4AA /* Menus */ = {
 			isa = PBXGroup;
 			children = (
+				BB91BEEC2E8427A0006CC502 /* FreeTrialBadgePersistorTests.swift */,
 				566B195F29CDB7A9007E38F4 /* Mocks */,
 				378205FA283C277800D1D4AA /* MainMenuTests.swift */,
 				566B195C29CDB692007E38F4 /* MoreOptionsMenuTests.swift */,
@@ -7243,6 +7250,7 @@
 		37EE55D72D5F197300D53C7C /* View */ = {
 			isa = PBXGroup;
 			children = (
+				BB91BEE92E842771006CC502 /* FreeTrialBadgePersistor.swift */,
 				BBFE94EA2E391421000D4920 /* NetworkProtectionButton.swift */,
 				BBFE94EB2E391421000D4920 /* NotificationDotProviding.swift */,
 				37EE55C42D5F197300D53C7C /* Animations */,
@@ -13262,6 +13270,7 @@
 				37FD78122A29EBD100B36DB1 /* SyncErrorHandler.swift in Sources */,
 				1D4B03D62CA4432000224E99 /* BookmarkUrlExtension.swift in Sources */,
 				987799F42999993C005D8EB6 /* LegacyBookmarksStoreMigration.swift in Sources */,
+				BB91BEEA2E842771006CC502 /* FreeTrialBadgePersistor.swift in Sources */,
 				3706FB7A293F65D500E42796 /* FileDownloadManager.swift in Sources */,
 				3706FB7B293F65D500E42796 /* BookmarkImport.swift in Sources */,
 				3706FB7C293F65D500E42796 /* KeySetDictionary.swift in Sources */,
@@ -14274,6 +14283,7 @@
 				3706FE7F293F661700E42796 /* FileDownloadManagerMock.swift in Sources */,
 				7B1522B12DE9CCA900887371 /* MockFeatureGatekeeper.swift in Sources */,
 				3706FE81293F661700E42796 /* PermissionModelTests.swift in Sources */,
+				BB91BEED2E8427A0006CC502 /* FreeTrialBadgePersistorTests.swift in Sources */,
 				5681ED442BDBA5F900F59729 /* SyncBookmarksAdapterTests.swift in Sources */,
 				BB0036652E426EDD0016DDEF /* ReportProblemFormViewModelTests.swift in Sources */,
 				BB0036662E426EDD0016DDEF /* FeedbackTests.swift in Sources */,
@@ -15155,6 +15165,7 @@
 				B6B1E88B26D774090062C350 /* LinkButton.swift in Sources */,
 				4BBF0915282DD40100EE1418 /* TemporaryFileHandler.swift in Sources */,
 				B602E8162A1E2570006D261F /* URL+NetworkProtection.swift in Sources */,
+				BB91BEEB2E842771006CC502 /* FreeTrialBadgePersistor.swift in Sources */,
 				C1935A142C88F958001AD72D /* SyncPromoView.swift in Sources */,
 				CB6BCDF927C6BEFF00CC76DC /* PrivacyFeatures.swift in Sources */,
 				378F44EB29B4C73E00899924 /* ViewExtension.swift in Sources */,
@@ -15943,6 +15954,7 @@
 				84DC715B2C1C1E9000033B8C /* UserDefaultsWrapperTests.swift in Sources */,
 				561D29CA2BDA752F007B91D0 /* MockAppearancePreferencesPersistor.swift in Sources */,
 				56A0540D2C1C375D007D8FAB /* MockWindow.swift in Sources */,
+				BB91BEEE2E8427A0006CC502 /* FreeTrialBadgePersistorTests.swift in Sources */,
 				567DA93F29E8045D008AC5EE /* MockEmailStorage.swift in Sources */,
 				37CD54B727F1B28A00F1F7B9 /* DefaultBrowserPreferencesTests.swift in Sources */,
 				028904202A7B25380028369C /* AppConfigurationURLProviderTests.swift in Sources */,

@@ -20,9 +20,9 @@ import PixelKit
 
 enum HangPixel: PixelKitEvent {
 
-    case uiHangRecovered(durationSeconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, freeMemoryPercent: Double?, batteryPower: BatteryPower?, openBrowserWindowCount: Int?, openBrowserTabCount: Int?, stackTrace: String?)
-    case uiHangNotRecovered(durationSeconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, freeMemoryPercent: Double?, batteryPower: BatteryPower?, openBrowserWindowCount: Int?, openBrowserTabCount: Int?, stackTrace: String?)
-    case uiHangDeadlock(durationSeconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, freeMemoryPercent: Double?, batteryPower: BatteryPower?, openBrowserWindowCount: Int?, openBrowserTabCount: Int?, stackTrace: String?)
+    case uiHangRecovered(durationSeconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, batteryPower: BatteryPower?, openBrowserWindowCount: Int?, openBrowserTabCount: Int?, stackTrace: String?)
+    case uiHangNotRecovered(durationSeconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, batteryPower: BatteryPower?, openBrowserWindowCount: Int?, openBrowserTabCount: Int?, stackTrace: String?)
+    case uiHangDeadlock(durationSeconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, batteryPower: BatteryPower?, openBrowserWindowCount: Int?, openBrowserTabCount: Int?, stackTrace: String?)
 
     enum BatteryPower: String, CustomStringConvertible {
         var description: String { rawValue }
@@ -44,9 +44,9 @@ enum HangPixel: PixelKitEvent {
 
     var parameters: [String: String]? {
         switch self {
-        case .uiHangRecovered(let durationSeconds, let inForeground, let anyWindowVisible, let freeMemoryPercent, let batteryPower, let openBrowserWindowCount, let openBrowserTabCount, let stackTrace),
-             .uiHangNotRecovered(let durationSeconds, let inForeground, let anyWindowVisible, let freeMemoryPercent, let batteryPower, let openBrowserWindowCount, let openBrowserTabCount, let stackTrace),
-             .uiHangDeadlock(let durationSeconds, let inForeground, let anyWindowVisible, let freeMemoryPercent, let batteryPower, let openBrowserWindowCount, let openBrowserTabCount, let stackTrace):
+        case .uiHangRecovered(let durationSeconds, let inForeground, let anyWindowVisible, let batteryPower, let openBrowserWindowCount, let openBrowserTabCount, let stackTrace),
+             .uiHangNotRecovered(let durationSeconds, let inForeground, let anyWindowVisible, let batteryPower, let openBrowserWindowCount, let openBrowserTabCount, let stackTrace),
+             .uiHangDeadlock(let durationSeconds, let inForeground, let anyWindowVisible, let batteryPower, let openBrowserWindowCount, let openBrowserTabCount, let stackTrace):
 
             var params: [String: String] = [:]
 
@@ -58,10 +58,6 @@ enum HangPixel: PixelKitEvent {
 
             if let anyWindowVisible {
                 params["any_window_visible"] = anyWindowVisible ? "true" : "false"
-            }
-
-            if let freeMemoryPercent {
-                params["free_memory_percent"] = String(format: "%.1f", freeMemoryPercent)
             }
 
             if let batteryPower {

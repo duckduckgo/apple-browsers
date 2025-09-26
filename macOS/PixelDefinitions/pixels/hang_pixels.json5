@@ -31,11 +31,6 @@
                 description: 'Optional. Indicates whether any browser windows are visible (not minimized, not hidden).',
             },
             {
-                key: 'free_memory_percent',
-                type: 'number',
-                description: 'Optional. The percentage of free memory available.',
-            },
-            {
                 key: 'battery_power',
                 type: 'string',
                 description: 'Optional. Whether the computer is running on battery power or plugged in.',

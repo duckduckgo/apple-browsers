@@ -663,6 +663,9 @@ let package = Package(
                 .copy("Resources/remote-messaging-config-unsupported-items.json"),
                 .copy("Resources/remote-messaging-config.json"),
                 .copy("Resources/remote-messaging-config-surfaces-items.json"),
+                .copy("Resources/Database_V1.sqlite"),
+                .copy("Resources/Database_V1.sqlite-shm"),
+                .copy("Resources/Database_V1.sqlite-wal"),
             ]
         ),
         .testTarget(

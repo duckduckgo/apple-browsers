@@ -131,7 +131,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let buttonsGhostTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
 
     // Buttons/Color
-    private static let buttonsBlack = DynamicColor(lightColor: .black, darkColor: .white)
     private static let buttonsWhite = DynamicColor(lightColor: .white, darkColor: .black)
 
     // Buttons/DeleteGhost
@@ -207,7 +206,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .buttonsGhostTextDisabled: return buttonsGhostTextDisabled
 
             // Buttons/Color
-        case .buttonsBlack: return buttonsBlack
         case .buttonsWhite: return buttonsWhite
 
             // Buttons/DeleteGhost

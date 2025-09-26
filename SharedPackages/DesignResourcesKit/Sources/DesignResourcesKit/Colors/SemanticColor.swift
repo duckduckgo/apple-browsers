@@ -97,7 +97,6 @@ public enum DesignSystemColor {
     case buttonsGhostTextDisabled
 
     // Buttons/Color
-    case buttonsBlack
     case buttonsWhite
 
     // Buttons/DeleteGhost

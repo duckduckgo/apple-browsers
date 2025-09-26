@@ -19,7 +19,7 @@
 import XCTest
 @testable import AttributedMetric
 
-final class QuantisedTimePast: XCTestCase {
+final class QuantisedTimePastTests: XCTestCase {
 
     let testDate = Date(timeIntervalSince1970: 434720061)
 

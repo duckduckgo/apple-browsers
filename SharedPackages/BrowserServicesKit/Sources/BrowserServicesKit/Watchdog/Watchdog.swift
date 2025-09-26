@@ -19,15 +19,30 @@
 import Foundation
 import os.log
 
-/// A watchdog that monitors the main thread for hangs and crashes the app to generate stack traces
+/// The current state of the main thread.
+private enum HangState {
+    case responsive
+    case hanging
+    case timeout
+}
+
+/// A watchdog that monitors the main thread for hangs. Hangs of at least one second will be reported via a pixel.
+///
 public final class Watchdog {
     private let monitor: WatchdogMonitor
-    private let timeout: TimeInterval
+
+    private let minimumHangDuration: TimeInterval
+    private let maximumHangDuration: TimeInterval
     private let checkInterval: TimeInterval
-    private let killAppFunction: (TimeInterval) -> Void
+    private let crashOnTimeout: Bool
+
     private static var logger = { Logger(subsystem: "com.duckduckgo.watchdog", category: "hang-detection") }()
 
     private var monitoringTask: Task<Void, Never>?
+    private var heartbeatUpdateTask: Task<Void, Never>?
+
+    private var hangState: HangState = .responsive
+    private var hangStartTime: Date?
 
     @MainActor
     public var isRunning: Bool {
@@ -35,32 +50,41 @@ public final class Watchdog {
         return !task.isCancelled
     }
 
+    /// - Parameters:
+    ///   - minimumHangDuration: The minimum duration of hang to be detected.
+    ///   - maximumHangDuration: The maximum duration of hang to be detected. After this point, the hang will stop being measured
+    ///                          and will be reported as a timeout.
+    ///   - checkInterval: The interval at which the main thread is checked for hangs.
     @MainActor
-    convenience public init(timeout: TimeInterval = 10.0, checkInterval: TimeInterval = 2.0) {
-        self.init(killAppFunction: Self.killApp(afterTimeout:), timeout: timeout, checkInterval: checkInterval)
-    }
+    public init(minimumHangDuration: TimeInterval = 1.0, maximumHangDuration: TimeInterval = 10.0, checkInterval: TimeInterval = 0.25, crashOnTimeout: Bool = false) {
+        assert(checkInterval > 0, "checkInterval must be greater than 0")
+        assert(minimumHangDuration >= 0, "minimumHangDuration must be greater than or equal to 0")
+        assert(maximumHangDuration >= 0, "maximumHangDuration must be greater than or equal to 0")
+        assert(minimumHangDuration <= maximumHangDuration, "minimumHangDuration must be less than maximumHangDuration")
 
-    @MainActor
-    init(killAppFunction: @escaping (TimeInterval) -> Void, timeout: TimeInterval = 10.0, checkInterval: TimeInterval = 2.0) {
-        self.timeout = timeout
+        self.minimumHangDuration = minimumHangDuration
+        self.maximumHangDuration = maximumHangDuration
         self.checkInterval = checkInterval
+        self.crashOnTimeout = crashOnTimeout
+
         self.monitor = WatchdogMonitor()
-        self.killAppFunction = killAppFunction
     }
 
     deinit {
         monitoringTask?.cancel()
+        heartbeatUpdateTask?.cancel()
     }
 
     @MainActor
     public func start() {
         // Cancel any existing task
         monitoringTask?.cancel()
+        heartbeatUpdateTask?.cancel()
 
-        Self.logger.info("Watchdog started monitoring main thread with timeout: \(self.timeout)s")
+        Self.logger.info("Watchdog started monitoring main thread with timeout: \(self.maximumHangDuration)s")
 
-        monitoringTask = Task {
-            await startMonitoring()
+        monitoringTask = Task.detached { [weak self] in
+            await self?.startMonitoring()
         }
     }
 
@@ -69,6 +93,9 @@ public final class Watchdog {
         monitoringTask?.cancel()
         monitoringTask = nil
 
+        heartbeatUpdateTask?.cancel()
+        heartbeatUpdateTask = nil
+
         Self.logger.info("Watchdog stopped monitoring")
     }
 
@@ -76,9 +103,13 @@ public final class Watchdog {
         await monitor.resetHeartbeat()
 
         while !Task.isCancelled {
+            heartbeatUpdateTask?.cancel()
+
             // Schedule heartbeat update on main thread (key: this might not execute if main thread is hung)
-            Task { @MainActor [weak self] in
+            heartbeatUpdateTask = Task { @MainActor [weak self] in
                 await self?.monitor.updateHeartbeat()
+
+                self?.heartbeatUpdateTask = nil
             }
 
             // Sleep for check interval
@@ -92,20 +123,64 @@ public final class Watchdog {
 
             // Check if the heartbeat was actually updated
             let timeSinceLastCheck = await monitor.timeSinceLastHeartbeat()
+            handleHangDetection(timeSinceLastCheck: timeSinceLastCheck)
+        }
+    }
 
-            if timeSinceLastCheck > timeout {
-                Self.logger.critical("Main thread hang detected! Last heartbeat: \(timeSinceLastCheck)s ago (timeout: \(self.timeout)s)")
-                killAppFunction(timeout)
+    private func handleHangDetection(timeSinceLastCheck: TimeInterval) {
+        let now = Date()
+
+        switch hangState {
+        case .responsive:
+            if timeSinceLastCheck > minimumHangDuration {
+                // Start of hang detected
+                hangState = .hanging
+                hangStartTime = now.addingTimeInterval(-timeSinceLastCheck)
+                Self.logger.info("Main thread hang detected! Last heartbeat: \(timeSinceLastCheck)s ago.")
+            }
+        case .hanging:
+            if timeSinceLastCheck <= minimumHangDuration {
+                // Hang ended
+                logHangDuration(message: "Main thread hang ended.", currentTime: now)
+
+                hangState = .responsive
+                hangStartTime = nil
+            } else if timeSinceLastCheck > maximumHangDuration {
+                hangState = .timeout
+                logHangDuration(message: "Main thread hang timeout reached.", currentTime: now)
+            } else {
+                // Still hanging
+                logHangDuration(message: "Ongoing main thread hang.", currentTime: now)
+            }
+        case .timeout:
+            if timeSinceLastCheck <= minimumHangDuration {
+                // Hang became responsive again after timeout. Reset hang state.
+                hangState = .responsive
+                hangStartTime = nil
+                logHangDuration(message: "Main thread hang ended after timeout.", currentTime: now)
+            } else if timeSinceLastCheck > maximumHangDuration && crashOnTimeout {
+                killApp()
             }
         }
     }
 
-    static func killApp(afterTimeout timeout: TimeInterval) {
+    private func logHangDuration(message: String, currentTime: Date) {
+        guard let hangStartTime else { return }
+
+        let hangDuration = currentTime.timeIntervalSince(hangStartTime)
+        Self.logger.info("\(message) Duration: \(self.formattedHangDuration(duration: hangDuration))s")
+    }
+
+    private func killApp() {
         // Log before crashing to help with debugging
         Self.logger.critical("Watchdog is terminating the app due to main thread hang")
 
         // Use fatalError to generate crash report with stack trace`
-        fatalError("Main thread hang detected by Watchdog (timeout: \(timeout)s). This crash is intentional to provide debugging information.")
+        fatalError("Main thread hang detected by Watchdog (timeout: \(maximumHangDuration)s). This crash is intentional to provide debugging information.")
+    }
+
+    private func formattedHangDuration(duration: TimeInterval) -> String {
+        return String(format: "%.1f", duration)
     }
 }
 

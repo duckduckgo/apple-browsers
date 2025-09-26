@@ -87,7 +87,7 @@ struct FavoriteView: View {
         ZStack {
             if isPreview {
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(Color(designSystemColor: .controlsFillPrimary))
+                    .renderAwareBackgroundFill(Color(designSystemColor: .surface))
             }
 
             if let favorite = favorite {

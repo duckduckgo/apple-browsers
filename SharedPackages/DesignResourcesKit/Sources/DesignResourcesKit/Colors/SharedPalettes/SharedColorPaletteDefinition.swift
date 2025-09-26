@@ -1,5 +1,5 @@
 //
-//  ColorPaletteDefinition.swift
+//  SharedColorPaletteDefinition.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,17 +16,14 @@
 //  limitations under the License.
 //
 
-import SwiftUI
+import Foundation
 
-/// Color palette definition that logically collects all colors that work properly with each other.
-protocol ColorPaletteDefinition {
+#if os(macOS)
 
-    /// Gets dynamic color proxy for a specific semantic color.
-    static func dynamicColor(for designSystemColor: DesignSystemColor) -> DynamicColor
+protocol SharedColorPaletteDefinition {
 
-    /// Gets dynamic color proxy for a single use semantic color.
-    static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor
-
-    /// Returns a base color.
-    static func color(for baseColor: BaseColor) -> Color
+    /// Gets dynamic color proxy for a specific semantic color based on the JSON import
+    static func dynamicColor(for designSystemColor: SharedDesignSystemColor) -> DynamicColor
 }
+
+#endif

@@ -18,6 +18,7 @@
 
 import Foundation
 import AppKit
+import DesignResourcesKit
 
 struct ThemeColors: ColorPalette {
     let accentAltContentPrimary: NSColor
@@ -81,7 +82,7 @@ struct ThemeColors: ColorPalette {
 extension ThemeColors {
 
     init(themeName: ThemeName) {
-        let palette = themeName.designColorPalette
+        let palette = Self.designColorPalette(for: themeName)
 
         accentAltContentPrimary = NSColor(designSystemColor: .accentAltContentPrimary, palette: palette)
         accentAltContentSecondary = NSColor(designSystemColor: .accentAltContentSecondary, palette: palette)
@@ -139,5 +140,28 @@ extension ThemeColors {
         textTertiary = NSColor(designSystemColor: .textTertiary, palette: palette)
         toneShadePrimary = NSColor(designSystemColor: .toneShadePrimary, palette: palette)
         toneTintPrimary = NSColor(designSystemColor: .toneTintPrimary, palette: palette)
+    }
+
+    private static func designColorPalette(for themeName: ThemeName) -> DesignResourcesKit.ColorPalette {
+        switch themeName {
+        case .default:
+            .default
+        case .figma:
+            .figma
+        case .coolGray:
+            .coolGray
+        case .desert:
+            .desert
+        case .green:
+            .green
+        case .orange:
+            .orange
+        case .rose:
+            .rose
+        case .slateBlue:
+            .slateBlue
+        case .violet:
+            .violet
+        }
     }
 }

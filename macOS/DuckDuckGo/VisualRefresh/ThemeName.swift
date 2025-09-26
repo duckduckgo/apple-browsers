@@ -17,33 +17,15 @@
 //
 
 import Foundation
-import DesignResourcesKit
 
 enum ThemeName: String, CaseIterable {
     case `default`
+    case figma
+    case coolGray
     case desert
     case green
     case orange
     case rose
     case slateBlue
     case violet
-
-    var designColorPalette: DesignResourcesKit.ColorPalette {
-        switch self {
-        case .default:
-            .default
-        case .desert:
-            .desert
-        case .green:
-            .green
-        case .orange:
-            .orange
-        case .rose:
-            .rose
-        case .slateBlue:
-            .slateBlue
-        case .violet:
-            .violet
-        }
-    }
 }

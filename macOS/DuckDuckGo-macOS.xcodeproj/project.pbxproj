@@ -1814,6 +1814,14 @@
 		4BCBE4562BA7E16900FC75A1 /* DataBrokerProtectionSubscriptionEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB5789712B2CA70F0009DFE2 /* DataBrokerProtectionSubscriptionEventHandler.swift */; };
 		4BCBE4582BA7E17800FC75A1 /* SubscriptionUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4BCBE4572BA7E17800FC75A1 /* SubscriptionUI */; };
 		4BCBFDCB2E4BDD4800E41763 /* UpdateControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCBFDCA2E4BDD4800E41763 /* UpdateControllerTests.swift */; };
+		4BCFE7A72E86AA090095A99D /* BrowserServicesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BCFE7A62E86AA090095A99D /* BrowserServicesKit */; };
+		4BCFE7A92E86AA0E0095A99D /* BrowserServicesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BCFE7A82E86AA0E0095A99D /* BrowserServicesKit */; };
+		4BCFE7AB2E86AA120095A99D /* BrowserServicesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BCFE7AA2E86AA120095A99D /* BrowserServicesKit */; };
+		4BCFE7AD2E86AA180095A99D /* BrowserServicesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BCFE7AC2E86AA180095A99D /* BrowserServicesKit */; };
+		4BCFE7AF2E86AB050095A99D /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = 4BCFE7AE2E86AB050095A99D /* ContentBlocking */; };
+		4BCFE7B12E86AB0C0095A99D /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = 4BCFE7B02E86AB0C0095A99D /* ContentBlocking */; };
+		4BCFE7B32E86AB110095A99D /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = 4BCFE7B22E86AB110095A99D /* ContentBlocking */; };
+		4BCFE7B52E86AB170095A99D /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = 4BCFE7B42E86AB170095A99D /* ContentBlocking */; };
 		4BD18F01283F0BC500058124 /* BookmarksBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD18EFF283F0BC500058124 /* BookmarksBarViewController.swift */; };
 		4BD18F05283F151F00058124 /* BookmarksBar.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4BD18F04283F151F00058124 /* BookmarksBar.storyboard */; };
 		4BDFA4AE27BF19E500648192 /* ToggleableScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BDFA4AD27BF19E500648192 /* ToggleableScrollView.swift */; };
@@ -5985,10 +5993,12 @@
 			files = (
 				3706FE88293F661700E42796 /* OHHTTPStubs in Frameworks */,
 				B65CD8CF2B316E0200A595BB /* SnapshotTesting in Frameworks */,
+				4BCFE7A72E86AA090095A99D /* BrowserServicesKit in Frameworks */,
 				9DC5FACD2C6B8E620011F068 /* AppKitExtensions in Frameworks */,
 				84494D252E18211900C9E5E8 /* NoARCObjCTestsExtensions in Frameworks */,
 				4B9EE3722D76CB5F00DDC75C /* SubscriptionTestingUtilities in Frameworks */,
 				F11595E72E8571A600CC0481 /* AttributedMetric in Frameworks */,
+				4BCFE7B32E86AB110095A99D /* ContentBlocking in Frameworks */,
 				8448016E2E3BA42400E8A2C1 /* Clocks in Frameworks */,
 				84D6780C2D842DBE0030BC82 /* InlineSnapshotTesting in Frameworks */,
 				374EFDF12D01C70A00B30939 /* Utilities in Frameworks */,
@@ -6005,12 +6015,14 @@
 			files = (
 				844801702E3BA42800E8A2C1 /* Clocks in Frameworks */,
 				B65CD8D12B316E0C00A595BB /* SnapshotTesting in Frameworks */,
+				4BCFE7AB2E86AA120095A99D /* BrowserServicesKit in Frameworks */,
 				F124E0ED2D6E123A0035C7BA /* PersistenceTestingUtils in Frameworks */,
 				9DC5FACF2C6BA23C0011F068 /* AppKitExtensions in Frameworks */,
 				F11595E92E8571AB00CC0481 /* AttributedMetric in Frameworks */,
 				F124E0F12D6E123A0035C7BA /* SubscriptionTestingUtilities in Frameworks */,
 				84B49F0F2CB10F0900FF08BB /* OHHTTPStubsSwift in Frameworks */,
 				4B9EE3742D76CB6D00DDC75C /* Common in Frameworks */,
+				4BCFE7B52E86AB170095A99D /* ContentBlocking in Frameworks */,
 				F124E0EF2D6E123A0035C7BA /* PixelKitTestingUtilities in Frameworks */,
 				F124E0EB2D6E123A0035C7BA /* NetworkingTestingUtils in Frameworks */,
 				84494D272E18211D00C9E5E8 /* NoARCObjCTestsExtensions in Frameworks */,
@@ -6032,12 +6044,14 @@
 			files = (
 				8448016C2E3BA41F00E8A2C1 /* Clocks in Frameworks */,
 				B65CD8CD2B316DFC00A595BB /* SnapshotTesting in Frameworks */,
+				4BCFE7AD2E86AA180095A99D /* BrowserServicesKit in Frameworks */,
 				F124E0E52D6E12260035C7BA /* SubscriptionTestingUtilities in Frameworks */,
 				F124E0E32D6E12260035C7BA /* PersistenceTestingUtils in Frameworks */,
 				F11595E52E8571A000CC0481 /* AttributedMetric in Frameworks */,
 				9DC5FAC92C6B8B910011F068 /* AppKitExtensions in Frameworks */,
 				4B9EE36C2D76CB3800DDC75C /* PixelKitTestingUtilities in Frameworks */,
 				4B9EE36E2D76CB4000DDC75C /* Common in Frameworks */,
+				4BCFE7B12E86AB0C0095A99D /* ContentBlocking in Frameworks */,
 				F124E0E12D6E12260035C7BA /* NetworkingTestingUtils in Frameworks */,
 				B6AE39F329374AEC00C37AA4 /* OHHTTPStubs in Frameworks */,
 				84494D232E18211500C9E5E8 /* NoARCObjCTestsExtensions in Frameworks */,
@@ -6310,10 +6324,12 @@
 			files = (
 				B6DA44172616C13800DD1EC2 /* OHHTTPStubs in Frameworks */,
 				B65CD8CB2B316DF100A595BB /* SnapshotTesting in Frameworks */,
+				4BCFE7A92E86AA0E0095A99D /* BrowserServicesKit in Frameworks */,
 				4B9EE36A2D76CB2300DDC75C /* PixelKitTestingUtilities in Frameworks */,
 				84494D212E18211200C9E5E8 /* NoARCObjCTestsExtensions in Frameworks */,
 				9DC5FACB2C6B8E050011F068 /* AppKitExtensions in Frameworks */,
 				F11595E32E85719900CC0481 /* AttributedMetric in Frameworks */,
+				4BCFE7AF2E86AB050095A99D /* ContentBlocking in Frameworks */,
 				8448016A2E3BA41A00E8A2C1 /* Clocks in Frameworks */,
 				84EFBCD02D817CC400706739 /* InlineSnapshotTesting in Frameworks */,
 				4B9EE3682D76CB1600DDC75C /* SubscriptionTestingUtilities in Frameworks */,
@@ -11435,6 +11451,8 @@
 				84494D242E18211900C9E5E8 /* NoARCObjCTestsExtensions */,
 				8448016D2E3BA42400E8A2C1 /* Clocks */,
 				F11595E62E8571A600CC0481 /* AttributedMetric */,
+				4BCFE7A62E86AA090095A99D /* BrowserServicesKit */,
+				4BCFE7B22E86AB110095A99D /* ContentBlocking */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = 3706FE99293F661700E42796 /* Unit Tests App Store.xctest */;
@@ -11468,6 +11486,8 @@
 				84494D262E18211D00C9E5E8 /* NoARCObjCTestsExtensions */,
 				8448016F2E3BA42800E8A2C1 /* Clocks */,
 				F11595E82E8571AB00CC0481 /* AttributedMetric */,
+				4BCFE7AA2E86AA120095A99D /* BrowserServicesKit */,
+				4BCFE7B42E86AB170095A99D /* ContentBlocking */,
 			);
 			productName = "Integration Tests";
 			productReference = 3706FEB2293F662100E42796 /* Integration Tests App Store.xctest */;
@@ -11519,6 +11539,8 @@
 				84494D222E18211500C9E5E8 /* NoARCObjCTestsExtensions */,
 				8448016B2E3BA41F00E8A2C1 /* Clocks */,
 				F11595E42E8571A000CC0481 /* AttributedMetric */,
+				4BCFE7AC2E86AA180095A99D /* BrowserServicesKit */,
+				4BCFE7B02E86AB0C0095A99D /* ContentBlocking */,
 			);
 			productName = "Integration Tests";
 			productReference = 4B1AD89D25FC27E200261379 /* Integration Tests.xctest */;
@@ -11960,6 +11982,8 @@
 				84494D202E18211200C9E5E8 /* NoARCObjCTestsExtensions */,
 				844801692E3BA41A00E8A2C1 /* Clocks */,
 				F11595E22E85719900CC0481 /* AttributedMetric */,
+				4BCFE7A82E86AA0E0095A99D /* BrowserServicesKit */,
+				4BCFE7AE2E86AB050095A99D /* ContentBlocking */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = AA585D90248FD31400E9A3E2 /* Unit Tests.xctest */;
@@ -18146,6 +18170,38 @@
 		4BCBE4572BA7E17800FC75A1 /* SubscriptionUI */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SubscriptionUI;
+		};
+		4BCFE7A62E86AA090095A99D /* BrowserServicesKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BrowserServicesKit;
+		};
+		4BCFE7A82E86AA0E0095A99D /* BrowserServicesKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BrowserServicesKit;
+		};
+		4BCFE7AA2E86AA120095A99D /* BrowserServicesKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BrowserServicesKit;
+		};
+		4BCFE7AC2E86AA180095A99D /* BrowserServicesKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BrowserServicesKit;
+		};
+		4BCFE7AE2E86AB050095A99D /* ContentBlocking */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ContentBlocking;
+		};
+		4BCFE7B02E86AB0C0095A99D /* ContentBlocking */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ContentBlocking;
+		};
+		4BCFE7B22E86AB110095A99D /* ContentBlocking */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ContentBlocking;
+		};
+		4BCFE7B42E86AB170095A99D /* ContentBlocking */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ContentBlocking;
 		};
 		4BF97AD02B43C43F00EB4240 /* NetworkProtectionIPC */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -34,15 +34,25 @@ fi
 JOB_ID=""
 PLATFORM=""
 
-# Find job metadata
+# Find job metadata - iterate through all comments to get the latest upload
+LATEST_PLATFORM=""
+LATEST_JOB_ID=""
+
 while IFS= read -r comment; do
 	if [[ "$comment" =~ \<\!--\ smartling-metadata:platform=([^,]+),job_id=([^,]+),action=upload\ --\> ]]; then
-		PLATFORM="${BASH_REMATCH[1]}"
-		JOB_ID="${BASH_REMATCH[2]}"
-		echo "✅ Found job details from metadata: platform=$PLATFORM, job_id=$JOB_ID"
-		break
+		LATEST_PLATFORM="${BASH_REMATCH[1]}"
+		LATEST_JOB_ID="${BASH_REMATCH[2]}"
+		echo "Found upload job: platform=$LATEST_PLATFORM, job_id=$LATEST_JOB_ID"
 	fi
 done <<< "$COMMENTS"
+
+# Use the latest found values
+PLATFORM="$LATEST_PLATFORM"
+JOB_ID="$LATEST_JOB_ID"
+
+if [ -n "$JOB_ID" ] && [ "$JOB_ID" != "N/A" ]; then
+	echo "✅ Using latest job details: platform=$PLATFORM, job_id=$JOB_ID"
+fi
 
 # Validate we found both values
 if [ -z "$JOB_ID" ] || [ "$JOB_ID" == "N/A" ]; then

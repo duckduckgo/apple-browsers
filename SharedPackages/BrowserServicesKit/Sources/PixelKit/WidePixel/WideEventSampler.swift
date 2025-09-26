@@ -1,5 +1,5 @@
 //
-//  WidePixelSampler.swift
+//  WideEventSampler.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,15 +18,15 @@
 
 import Foundation
 
-public protocol WidePixelSampling {
+public protocol WideEventSampling {
     func shouldSendPixel(sampleRate: Float, contextID: String) -> Bool
 }
 
-public struct DefaultWidePixelSampler: WidePixelSampling {
+public struct DefaultWideEventSampler: WideEventSampling {
 
-    private let storage: WidePixelStoring
+    private let storage: WideEventStoring
 
-    public init(storage: WidePixelStoring) {
+    public init(storage: WideEventStoring) {
         self.storage = storage
     }
 

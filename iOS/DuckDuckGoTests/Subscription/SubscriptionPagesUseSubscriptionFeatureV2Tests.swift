@@ -35,7 +35,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     var mockStripePurchaseFlow: StripePurchaseFlowMockV2!
     var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
     var mockNotificationCenter: NotificationCenter!
-    var mockWidePixel: WidePixelMock!
+    var mockWideEvent: WideEventMock!
     var mockInternalUserDecider: MockInternalUserDecider!
 
     @MainActor
@@ -46,7 +46,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockStripePurchaseFlow = StripePurchaseFlowMockV2(subscriptionOptionsResult: .success(.empty), prepareSubscriptionPurchaseResult: .success((purchaseUpdate: .completed, accountCreationDuration: nil)))
         mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true)
         mockNotificationCenter = NotificationCenter()
-        mockWidePixel = WidePixelMock()
+        mockWideEvent = WideEventMock()
         mockInternalUserDecider = MockInternalUserDecider(isInternalUser: true)
 
         sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
@@ -58,7 +58,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             subscriptionDataReporter: nil,
             subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
             internalUserDecider: mockInternalUserDecider,
-            widePixel: mockWidePixel)
+            wideEvent: mockWideEvent)
     }
     
     override func tearDown() {
@@ -67,7 +67,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockStripePurchaseFlow = nil
         mockSubscriptionFeatureAvailability = nil
         mockNotificationCenter = nil
-        mockWidePixel = nil
+        mockWideEvent = nil
         super.tearDown()
     }
     
@@ -206,31 +206,31 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             subscriptionDataReporter: nil,
             subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
             internalUserDecider: mockInternalUserDecider,
-            widePixel: mockWidePixel
+            wideEvent: mockWideEvent
         )
 
         _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
 
-        XCTAssertEqual(mockWidePixel.started.count, 1)
-        XCTAssertEqual(mockWidePixel.completions.count, 1)
+        XCTAssertEqual(mockWideEvent.started.count, 1)
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
 
-        let started = try XCTUnwrap(mockWidePixel.started.first as? SubscriptionPurchaseWidePixelData)
+        let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
         XCTAssertEqual(started.purchasePlatform, .appStore)
         XCTAssertEqual(started.subscriptionIdentifier, "yearly")
         XCTAssertEqual(started.freeTrialEligible, true)
         XCTAssertEqual(started.contextData.name, "funnel_appsettings_ios")
 
-        let updated = try XCTUnwrap(mockWidePixel.updates.last as? SubscriptionPurchaseWidePixelData)
+        let updated = try XCTUnwrap(mockWideEvent.updates.last as? SubscriptionPurchaseWideEventData)
         XCTAssertNotNil(updated.activateAccountDuration?.start)
         XCTAssertNotNil(updated.activateAccountDuration?.end)
 
-        let completion = try XCTUnwrap(mockWidePixel.completions.first)
-        XCTAssertTrue(completion.0 is SubscriptionPurchaseWidePixelData)
+        let completion = try XCTUnwrap(mockWideEvent.completions.first)
+        XCTAssertTrue(completion.0 is SubscriptionPurchaseWideEventData)
         XCTAssertEqual(completion.1, .success(reason: nil))
     }
 
     @MainActor
-    func testAppStoreCancelled_EmitsWidePixelCancelled() async throws {
+    func testAppStoreCancelled_EmitsWideEventCancelled() async throws {
         let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_onboarding_ios")!
         let webView = MockURLWebView(url: originURL)
         let message = MockWKScriptMessage(name: "subscriptionSelected", body: "", webView: webView)
@@ -250,14 +250,14 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             subscriptionDataReporter: nil,
             subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
             internalUserDecider: mockInternalUserDecider,
-            widePixel: mockWidePixel
+            wideEvent: mockWideEvent
         )
 
         _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
 
-        XCTAssertEqual(mockWidePixel.started.count, 1)
-        XCTAssertEqual(mockWidePixel.completions.count, 1)
-        let completion = try XCTUnwrap(mockWidePixel.completions.first)
+        XCTAssertEqual(mockWideEvent.started.count, 1)
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
+        let completion = try XCTUnwrap(mockWideEvent.completions.first)
         XCTAssertEqual(completion.1, .cancelled)
     }
 
@@ -282,12 +282,12 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             subscriptionDataReporter: nil,
             subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
             internalUserDecider: mockInternalUserDecider,
-            widePixel: mockWidePixel
+            wideEvent: mockWideEvent
         )
 
         _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
 
-        let started = try XCTUnwrap(mockWidePixel.started.first as? SubscriptionPurchaseWidePixelData)
+        let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
         XCTAssertEqual(started.contextData.name, SubscriptionFunnelOrigin.appSettings.rawValue)
     }
 }

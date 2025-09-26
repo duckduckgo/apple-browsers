@@ -1,5 +1,5 @@
 //
-//  TimePastTests.swift
+//  QuantisedTimePast.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import XCTest
 @testable import AttributedMetric
 
-final class TimePastTests: XCTestCase {
+final class QuantisedTimePast: XCTestCase {
 
     let testDate = Date(timeIntervalSince1970: 434720061)
 

@@ -178,7 +178,6 @@ final class RollingEightDaysIntTests: XCTestCase {
         for (dayIndex, increments) in dailyIncrements.enumerated() {
             // Set lastDay to simulate different days
             if dayIndex > 0 {
-//                currentDate = Calendar.current.date(byAdding: .day, value: 1, to: currentDate)!
                 rollingInt.lastDay = currentDate.addingTimeInterval(-.day)
             }
 

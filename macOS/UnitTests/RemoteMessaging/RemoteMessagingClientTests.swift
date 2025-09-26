@@ -24,6 +24,7 @@ import Freemium
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 import SubscriptionTestingUtilities
+import RemoteMessagingTestsUtils
 import BrowserServicesKit
 
 struct MockRemoteMessagingStoreProvider: RemoteMessagingStoreProviding {

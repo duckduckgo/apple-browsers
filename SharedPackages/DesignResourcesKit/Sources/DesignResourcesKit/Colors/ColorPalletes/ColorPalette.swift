@@ -43,7 +43,7 @@ public enum ColorPalette {
         case .desert:
             return DesertColorPalette.self
         case .figma:
-            return SharedFigmaColorPalette.self
+            return FigmaColorPalette.self
         }
     }
 #endif

@@ -26,12 +26,9 @@ import DesignResourcesKitIcons
 
 struct ResponsiveIconView: View {
 
-    @Environment(\.widgetFamily) var widgetFamily
-
     let image: Image
 
     var frameSize: CGFloat {
-        // widgetFamily == .systemSmall ? 56 : 60
         return 60
     }
 
@@ -47,7 +44,6 @@ struct ResponsiveIconView: View {
                 .foregroundStyle(Color(designSystemColor: .icons))
         }
         .makeAccentable()
-        // .frame(width: frameSize, height: frameSize)
         .frame(maxWidth: .infinity)
         .aspectRatio(contentMode: .fit)
     }

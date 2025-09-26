@@ -133,11 +133,6 @@ public final class AIChatPageContextHandler: AIChatConsumableDataHandling {
     }
 }
 
-// public typealias AIChatPageContextData = String
-
-// TODO:Do we need to define a precise content of page context data, maybe it can be opaque to us
-// like AIChatPayload or AIChatPageContextHandler, that way we native app can be independent to format FE uses
-
  public struct AIChatPageContextData: Codable {
     let title: String
     let favicon: [PageContextFavicon]

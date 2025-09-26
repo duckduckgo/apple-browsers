@@ -77,16 +77,6 @@ final class PageContextUserScript: NSObject, Subfeature {
 
     /// Receives collected page context
     private func collectionResult(params: Any, message: UserScriptMessage) async -> Encodable? {
-        // TODO: For using AIChatPageContextData as a string
-//        guard let payload: PageContextCollectionPayload = DecodableHelper.decode(from: params) else {
-//            return nil
-//        }
-//
-//        collectionResultSubject.send(payload.serializedPageData)
-//
-//        return nil
-
-        // TODO: For decoding AIChatPageContextData as a struct
         guard let paramsDict = params as? [String: Any],
               let jsonString = paramsDict["serializedPageData"] as? String,
               let jsonData = jsonString.data(using: .utf8) else {

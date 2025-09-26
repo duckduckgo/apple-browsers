@@ -25,6 +25,7 @@ import SubscriptionTestingUtilities
 import BrowserServicesKit
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
+import Persistence
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -107,7 +108,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
 
     @MainActor
-    private func setupMoreOptionsMenu(isFireWindowDefault: Bool = false) {
+    private func setupMoreOptionsMenu(isFireWindowDefault: Bool = false, freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard)) {
         let aiChatPreferencesStorage = MockAIChatPreferencesStorage()
         aiChatPreferencesStorage.showShortcutInApplicationMenu = true
 
@@ -135,7 +136,8 @@ final class MoreOptionsMenuTests: XCTestCase {
                                             featureFlagger: mockFeatureFlagger
                                           ),
                                           isFireWindowDefault: isFireWindowDefault,
-                                          isUsingAuthV2: true)
+                                          isUsingAuthV2: true,
+                                          freeTrialBadgePersistor: freeTrialBadgePersistor)
 
         moreOptionsMenu.actionDelegate = capturingActionDelegate
     }
@@ -793,6 +795,68 @@ final class MoreOptionsMenuTests: XCTestCase {
 
         XCTAssertEqual(moreOptionsMenu.items[3].title, UserText.newBurnerWindowMenuItem)
         XCTAssertEqual(moreOptionsMenu.items[4].title, UserText.newWindowMenuItem)
+    }
+
+    // MARK: - Free Trial Badge Visibility
+
+    @MainActor
+    func testSubscriptionBadge_ShowsWhenEligibleAndUnderCap() {
+        // Given
+        let persistor = MockFreeTrialBadgePersistor(initialCount: 3, cap: 4)
+
+        subscriptionManager.canPurchase = true
+        subscriptionManager.isEligibleForFreeTrialResult = true
+        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
+
+        setupMoreOptionsMenu(freeTrialBadgePersistor: persistor)
+
+        // When
+        let subscriptionItem = moreOptionsMenu.items.first {
+            $0.action == #selector(MoreOptionsMenu.openSubscriptionPurchasePage(_:))
+        }
+
+        // Then
+        XCTAssertNotNil(subscriptionItem, "Subscription item should be present")
+        XCTAssertNotNil(subscriptionItem?.view, "Free trial badge should be shown when under view limit and eligible")
+    }
+
+    @MainActor
+    func testSubscriptionBadge_HidesWhenEligibleAndAtOrAboveCap() {
+        // Given
+        let persistor = MockFreeTrialBadgePersistor(initialCount: 4, cap: 4)
+
+        subscriptionManager.canPurchase = true
+        subscriptionManager.isEligibleForFreeTrialResult = true
+        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
+
+        setupMoreOptionsMenu(freeTrialBadgePersistor: persistor)
+
+        // When
+        let subscriptionItem = moreOptionsMenu.items.first {
+            $0.action == #selector(MoreOptionsMenu.openSubscriptionPurchasePage(_:))
+        }
+
+        // Then
+        XCTAssertNotNil(subscriptionItem, "Subscription item should be present")
+        XCTAssertNil(subscriptionItem?.view, "Free trial badge should be hidden when view limit has been reached")
+    }
+}
+
+// MARK: - Test Doubles
+
+private final class MockFreeTrialBadgePersistor: FreeTrialBadgePersisting {
+    private(set) var viewCount: Int
+    private let cap: Int
+
+    init(initialCount: Int, cap: Int) {
+        self.viewCount = initialCount
+        self.cap = cap
+    }
+
+    var hasReachedViewLimit: Bool { viewCount >= cap }
+
+    func incrementViewCount() {
+        if viewCount < cap { viewCount += 1 }
     }
 }
 

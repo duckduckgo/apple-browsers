@@ -220,6 +220,7 @@ public class Pixel {
     public enum QueryParameters: Codable {
         case atb
         case appVersion
+        case isInternalUser
     }
     
     
@@ -288,7 +289,7 @@ public class Pixel {
         if isDebugBuild {
             newParams[PixelParameters.test] = PixelValues.test
         }
-        if isInternalUser {
+        if isInternalUser && includedParameters.contains(.isInternalUser) {
             newParams[PixelParameters.isInternalUser] = "true"
         }
 

@@ -52,7 +52,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let background = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
     private static let backgroundTertiary = DynamicColor(lightColor: .white, darkColor: x474747)
     private static let backgroundSheets = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
-    private static let backgroundBlur = DynamicColor(staticColor: .gray90.opacity(0.7))
 
     // Shadow
     private static let shadowPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.04), darkColor: .shade(0.16))
@@ -152,7 +151,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .background: return background
         case .backgroundTertiary: return backgroundTertiary
         case .backgroundSheets: return backgroundSheets
-        case .backgroundBlur: return backgroundBlur
         case .backdrop: return backdrop
         case .panel: return background
         case .surface: return surface

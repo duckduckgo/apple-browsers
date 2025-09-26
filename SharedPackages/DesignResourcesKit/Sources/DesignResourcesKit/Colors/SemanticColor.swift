@@ -32,7 +32,6 @@ public enum DesignSystemColor {
     // Various
     case variousOutline
     case backdrop
-    case backgroundBlur
 
     // Shadows
     case shadowPrimary

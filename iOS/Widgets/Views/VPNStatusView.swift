@@ -69,7 +69,7 @@ struct VPNStatusView: View {
                           tintable: UIImage(resource: headerImage(with: status, tinted: true)))
                 .padding(.bottom, 6)
                 .accessibilityHidden(true)
-                .frame(width: 64, height: 64)
+                .frame(width: 55, height: 48)
 
             Text(title(with: status))
                 .daxSubheadSemibold()

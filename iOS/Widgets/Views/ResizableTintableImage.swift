@@ -27,13 +27,16 @@ struct ResizableTintableImage: View {
     let tintable: UIImage
 
     var body: some View {
-        if #available(iOS 16, *) {
-            RenderingAwareImage(fullColor: fullColor, tintable: tintable)
-        } else {
-            Image(uiImage: fullColor)
-                .resizable()
-                .useFullColorRendering()
+        Group {
+            if #available(iOS 16, *) {
+                RenderingAwareImage(fullColor: fullColor, tintable: tintable)
+            } else {
+                Image(uiImage: fullColor)
+                    .resizable()
+                    .useFullColorRendering()
+            }
         }
+        .aspectRatio(contentMode: .fit)
     }
 
 }

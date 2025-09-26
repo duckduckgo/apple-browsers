@@ -31,7 +31,8 @@ struct ResponsiveIconView: View {
     let image: Image
 
     var frameSize: CGFloat {
-        widgetFamily == .systemSmall ? 56 : 60
+        // widgetFamily == .systemSmall ? 56 : 60
+        return 60
     }
 
     var body: some View {
@@ -46,6 +47,8 @@ struct ResponsiveIconView: View {
                 .foregroundStyle(Color(designSystemColor: .icons))
         }
         .makeAccentable()
-        .frame(width: frameSize, height: frameSize)
+        // .frame(width: frameSize, height: frameSize)
+        .frame(maxWidth: .infinity)
+        .aspectRatio(contentMode: .fit)
     }
 }

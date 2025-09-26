@@ -32,7 +32,7 @@ struct SearchWidgetView: View {
 
                 ResizableTintableImage(fullColor: UIImage(resource: .widgetDaxLogo),
                                        tintable: UIImage(resource: .widgetDaxLogoTinted))
-                    .frame(width: 72, height: 72, alignment: .center)
+                    .frame(width: 68, height: 68, alignment: .center)
 
                 Spacer()
 

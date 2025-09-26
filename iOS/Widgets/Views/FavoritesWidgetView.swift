@@ -162,15 +162,16 @@ struct FavoritesGridView: View {
 
     var body: some View {
 
-        FavoritesRowView(entry: entry, start: 0, end: 3)
+        VStack(spacing: 24) {
 
-        if widgetFamily == .systemLarge {
+            FavoritesRowView(entry: entry, start: 0, end: 3)
 
-            FavoritesRowView(entry: entry, start: 4, end: 7)
-                .padding(.top, 24)
+            if widgetFamily == .systemLarge {
 
-            FavoritesRowView(entry: entry, start: 8, end: 11)
-                .padding(.top, 24)
+                FavoritesRowView(entry: entry, start: 4, end: 7)
+
+                FavoritesRowView(entry: entry, start: 8, end: 11)
+            }
 
         }
 

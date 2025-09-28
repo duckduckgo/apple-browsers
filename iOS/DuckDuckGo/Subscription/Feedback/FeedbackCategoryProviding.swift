@@ -77,7 +77,7 @@ enum UnifiedFeedbackCategory: String, FeedbackCategoryProviding {
     }
 }
 
-enum PrivacyProFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackFAQProviding {
+enum SubscriptionFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackFAQProviding {
     case otp
     case somethingElse
 

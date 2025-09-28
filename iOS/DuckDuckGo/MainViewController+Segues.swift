@@ -201,7 +201,7 @@ extension MainViewController {
         launchSettings()
     }
 
-    func segueToPrivacyPro() {
+    func segueToDuckDuckGoSubscription() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings {
@@ -257,12 +257,14 @@ extension MainViewController {
         }
     }
 
-    func segueToSettingsAIChat(completion: (() -> Void)? = nil) {
+    func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool = false, completion: (() -> Void)? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings(completion: { _ in
             completion?()
-        }, deepLinkTarget: .aiChat)
+        }, deepLinkTarget: .aiChat) { viewModel, _ in
+            viewModel.openedFromSERPSettingsButton = openedFromSERPSettingsButton
+        }
     }
 
     func segueToSettingsPrivateSearch(completion: (() -> Void)? = nil) {
@@ -318,6 +320,7 @@ extension MainViewController {
                                                             dbpIOSPublicInterface: dbpIOSPublicInterface)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
+        let serpSettings = SERPSettings(aiChatSettings: aiChatSettings)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
                                                   isAuthV2Enabled: isAuthV2Enabled,
@@ -329,9 +332,10 @@ extension MainViewController {
                                                   deepLink: deepLinkTarget,
                                                   historyManager: historyManager,
                                                   syncPausedStateManager: syncPausedStateManager,
-                                                  privacyProDataReporter: privacyProDataReporter,
+                                                  subscriptionDataReporter: subscriptionDataReporter,
                                                   textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
+                                                  serpSettings: serpSettings,
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
                                                   themeManager: themeManager,
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),

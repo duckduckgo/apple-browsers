@@ -57,7 +57,7 @@ protocol DependencyProvider {
     var serverInfoObserver: ConnectionServerInfoObserver { get }
     var vpnSettings: VPNSettings { get }
     var persistentPixel: PersistentPixelFiring { get }
-    var widePixel: WidePixelManaging { get }
+    var wideEvent: WideEventManaging { get }
 
     // Subscription
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge { get }
@@ -111,7 +111,7 @@ final class AppDependencyProvider: DependencyProvider {
     let vpnSettings = VPNSettings(defaults: .networkProtectionGroupDefaults)
     let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
     let persistentPixel: PersistentPixelFiring = PersistentPixel()
-    let widePixel: WidePixelManaging = WidePixel()
+    let wideEvent: WideEventManaging = WideEvent()
 
     private init() {
 #if DEBUG
@@ -157,11 +157,11 @@ final class AppDependencyProvider: DependencyProvider {
         let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
         let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
 
-            let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-                              PixelParameters.privacyProKeychainError: error.localizedDescription,
+            let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
+                              PixelParameters.subscriptionKeychainError: error.localizedDescription,
                               PixelParameters.source: KeychainErrorSource.browser.rawValue,
                               PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
-            DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainAccessError,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
                                          withAdditionalParameters: parameters)
         }

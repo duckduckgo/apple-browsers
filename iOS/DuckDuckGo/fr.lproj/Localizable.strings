@@ -1312,6 +1312,18 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Les fonctionnalités de DuckDuckGo AI sont privées et facultatives. Vos données ne servent pas à entraîner l'IA.";
 
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "Afficher les boutons et liens Duck.ai dans les résultats de recherche DuckDuckGo.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Raccourcis de recherche";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Poser des questions de suivi";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Raccourcis du navigateur";
+
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Barre d'adresse";
 
@@ -3232,8 +3244,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Discutez en privé avec des modèles d'IA réservés aux abonnés.\n[En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "Configurez Duck.ai dans les réglages des fonctionnalités d'IA.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Activer dans les réglages des fonctionnalités d'IA";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Ouvrir Duck.ai";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "Gérer dans les réglages des fonctionnalités d'IA";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";
@@ -3420,6 +3441,36 @@
 
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Synchronisez et sauvegardez vos mots de passe";
+
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sync & Backup cet appareil";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "En enregistrant votre code de récupération, vous pourrez restaurer facilement vos mots de passe à l'avenir.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Les mots de passe synchronisés ne peuvent être restaurés que si vous avez accès à un autre appareil ou en utilisant le code de récupération fourni dans le cadre de la configuration de Sync & Backup.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Scanner le code de récupération";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Autre appareil indisponible ? Scannez votre code de récupération.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Vous n’avez pas d’autre appareil ?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "Les mots de passe DuckDuckGo ne sont pas transférés avec iCloud car ils sont chiffrés sur votre appareil. Tout le reste est déjà là.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Synchroniser avec un autre appareil";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Sur un nouveau %@ ? Synchronisons vos mots de passe.";
 
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Supprimer";

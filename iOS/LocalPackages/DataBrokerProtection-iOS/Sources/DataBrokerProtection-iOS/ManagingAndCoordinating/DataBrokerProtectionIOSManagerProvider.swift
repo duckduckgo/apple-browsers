@@ -114,11 +114,11 @@ public class DataBrokerProtectionIOSManagerProvider {
         let mismatchCalculator = DefaultMismatchCalculator(database: database,
                                                            pixelHandler: sharedPixelsHandler)
 
-        let queueManager =  BrokerProfileJobQueueManager(jobQueue: operationQueue,
-                                                         jobProvider: jobProvider,
-                                                         emailConfirmationJobProvider: EmailConfirmationJobProvider(),
-                                                         mismatchCalculator: mismatchCalculator,
-                                                         pixelHandler: sharedPixelsHandler)
+        let queueManager = JobQueueManager(jobQueue: operationQueue,
+                                           jobProvider: jobProvider,
+                                           emailConfirmationJobProvider: EmailConfirmationJobProvider(),
+                                           mismatchCalculator: mismatchCalculator,
+                                           pixelHandler: sharedPixelsHandler)
 
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: sharedPixelsHandler,
                                                                                    settings: dbpSettings)

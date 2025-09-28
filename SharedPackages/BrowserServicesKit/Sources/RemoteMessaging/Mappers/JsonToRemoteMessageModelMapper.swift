@@ -75,12 +75,12 @@ private enum AttributesKey: String, CaseIterable {
         case .appTheme: return AppThemeMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .daysSinceInstalled: return DaysSinceInstalledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .daysSinceNetPEnabled: return DaysSinceNetPEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
-        case .pproEligible: return IsPrivacyProEligibleUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
-        case .pproSubscriber: return IsPrivacyProSubscriberUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
-        case .pproDaysSinceSubscribed: return PrivacyProDaysSinceSubscribedMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
-        case .pproDaysUntilExpiryOrRenewal: return PrivacyProDaysUntilExpiryMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
-        case .pproPurchasePlatform: return PrivacyProPurchasePlatformMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
-        case .pproSubscriptionStatus: return PrivacyProSubscriptionStatusMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .pproEligible: return IsSubscriptionEligibleUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .pproSubscriber: return IsDuckDuckGoSubscriberUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .pproDaysSinceSubscribed: return SubscriptionDaysSinceSubscribedMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .pproDaysUntilExpiryOrRenewal: return SubscriptionDaysUntilExpiryMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .pproPurchasePlatform: return SubscriptionPurchasePlatformMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .pproSubscriptionStatus: return SubscriptionStatusMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .interactedWithMessage: return InteractedWithMessageMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .interactedWithDeprecatedMacRemoteMessage: return InteractedWithDeprecatedMacRemoteMessageMatchingAttribute(
             jsonMatchingAttribute: jsonMatchingAttribute

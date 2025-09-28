@@ -1312,6 +1312,18 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo MI funkcijas ir privātas un nav obligātas. Tavi dati netiek izmantoti mākslīgā intelekta apmācībai.";
 
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "Rādīt Duck.ai pogas un saites DuckDuckGo meklēšanas rezultātos.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Meklēšanas saīsnes";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Uzdot papildjautājumus";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Pārlūkprogrammas īsinājumtaustiņi";
+
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adreses josla";
 
@@ -3232,8 +3244,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Privāti tērzē ar abonentiem ekskluzīviem mākslīgā intelekta modeļiem.\n[Uzziniet vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "Konfigurē Duck.ai MI funkciju iestatījumos.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Ieslēgt MI funkciju iestatījumos";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Atver Duck.ai";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "Pārvaldīt MI funkciju iestatījumos";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";
@@ -3420,6 +3441,36 @@
 
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sinhronizē un dublē savas paroles";
+
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sync & Backup šo ierīci";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Atjaunošanas koda saglabāšana var nodrošināt, ka nākotnē varēsiet viegli atjaunot paroles.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Sinhronizētas paroles var atjaunot tikai tad, ja tev ir piekļuve citai ierīcei vai izmantojot atkopšanas kodu, kas ir daļa no Sync & Backup iestatīšanas.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Skenēt atkopšanas kodu";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Vai cita ierīce nav pieejama? Skenē savu atkopšanas kodu.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Vai tev nav citas ierīces?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "DuckDuckGo paroles netiek pārsūtītas ar iCloud, jo tās ir šifrētas tavā ierīcē. Viss pārējais jau ir šeit.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Sinhronizēt ar citu ierīci";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Uz jauna %@? Sinhronizēsim tavas paroles.";
 
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Noņemt";

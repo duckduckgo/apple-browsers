@@ -1312,6 +1312,18 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI-funktioner er private og valgfrie. Dine data bruges ikke til at træne AI.";
 
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "Vis Duck.ai-knapper og -links i DuckDuckGo-søgeresultater.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Søgegenveje";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Stil opfølgende spørgsmål";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Browsergenveje";
+
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adresselinje";
 
@@ -3232,8 +3244,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Chat privat med abonnent-eksklusive AI-modeller.\n[Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "Konfigurer Duck.ai i indstillingerne for AI-funktioner.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Aktivér i indstillinger for AI-funktioner";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Åbn Duck.ai";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "Administrer i indstillinger for AI-funktioner";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";
@@ -3420,6 +3441,36 @@
 
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Synkroniser og sikkerhedskopier dine adgangskoder";
+
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sync & Backup denne enhed";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Hvis du gemmer gendannelseskoden, sikrer du, at du nemt kan gendanne dine adgangskoder i fremtiden.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Synkroniserede adgangskoder kan kun gendannes, hvis du har adgang til en anden enhed eller ved at bruge den gendannelseskode, du får under opsætningen af Sync & Backup.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Scan gendannelseskode";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Har du ikke adgang til en anden enhed? Scan din gendannelseskode.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Har du ikke en anden enhed?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "DuckDuckGo-adgangskoder overføres ikke med iCloud, fordi de er krypteret på din enhed. Alt andet er her allerede.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Synkroniser med en anden enhed";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Bruger du en ny %@? Lad os synkronisere dine adgangskoder.";
 
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Fjern";

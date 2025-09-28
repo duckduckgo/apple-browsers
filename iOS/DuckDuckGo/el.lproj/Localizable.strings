@@ -1312,6 +1312,18 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Οι λειτουργίες τεχνητής νοημοσύνης του DuckDuckGo είναι ιδιωτικές και προαιρετικές. Τα δεδομένα σας δεν χρησιμοποιούνται για εκπαίδευση της τεχνητής νοημοσύνης.";
 
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "Εμφάνιση κουμπιών και συνδέσμων του Duck.ai στα αποτελέσματα αναζήτησης του DuckDuckGo.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Συντομεύσεις αναζήτησης";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Κάντε συμπληρωματικές ερωτήσεις";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Συντομεύσεις προγράμματος περιήγησης";
+
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Γραμμή διευθύνσεων";
 
@@ -3232,8 +3244,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Συνομίλησε ιδιωτικά με μοντέλα τεχνητής νοημοσύνης αποκλειστικά για συνδρομητές.\n[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "Διαμόρφωση του Duck.ai στις Ρυθμίσεις λειτουργιών τεχνητής νοημοσύνης.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Ενεργοποίηση στις Ρυθμίσεις λειτουργιών τεχνητής νοημοσύνης";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Άνοιξε το Duck.ai";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "Διαχείριση στις Ρυθμίσεις λειτουργιών τεχνητής νοημοσύνης";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";
@@ -3420,6 +3441,36 @@
 
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας των κωδικών πρόσβασής σας";
+
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας σε αυτήν τη συσκευή";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Η αποθήκευση του κωδικού ανάκτησης μπορεί να διασφαλίσει ότι θα μπορείτε να επαναφέρετε εύκολα τους κωδικούς σας στο μέλλον.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Οι συγχρονισμένοι κωδικοί πρόσβασης μπορούν να αποκατασταθούν μόνο εάν έχετε πρόσβαση σε άλλη συσκευή ή χρησιμοποιώντας τον κωδικό ανάκτησης που παρέχεται στο πλαίσιο της ρύθμισης του Sync & Backup.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Σάρωση κωδικού ανάκτησης";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Δεν είναι διαθέσιμη άλλη συσκευή; Σαρώστε τον Κωδικό ανάκτησής σας.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Δεν έχετε άλλη συσκευή;";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "Οι κωδικοί πρόσβασης του DuckDuckGo δεν μεταφέρονται με το iCloud επειδή είναι κρυπτογραφημένοι στη συσκευή σας. Όλα τα υπόλοιπα είναι ήδη εδώ.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Συγχρονισμός με άλλη συσκευή";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Σε ένα καινούργιο %@; Ας συγχρονίσουμε τους κωδικούς σας.";
 
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Αφαίρεση";

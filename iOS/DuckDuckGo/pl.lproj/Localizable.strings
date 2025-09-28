@@ -1312,6 +1312,18 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkcje sztucznej inteligencji DuckDuckGo są prywatne i opcjonalne. Twoje dane nie są używane do trenowania AI.";
 
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "Pokaż przyciski i linki Duck.ai w wynikach wyszukiwania DuckDuckGo.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Skróty wyszukiwania";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Zadawaj pytania uzupełniające";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Skróty przeglądarki";
+
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Pasek adresu";
 
@@ -3232,8 +3244,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Czatuj prywatnie z modelami AI dostępnymi wyłącznie dla subskrybentów.\n[Więcej informacji](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "Skonfiguruj Duck.ai w ustawieniach funkcji AI.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Włącz w ustawieniach funkcji AI";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Otwórz Duck.ai";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "Zarządzaj w ustawieniach funkcji AI";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";
@@ -3420,6 +3441,36 @@
 
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Synchronizuj i twórz kopie zapasowe haseł";
+
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Synchronizuj i utwórz kopię zapasową tego urządzenia";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Zapisanie kodu odzyskiwania pozwoli Ci z łatwością przywrócić hasła w przyszłości.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Zsynchronizowane hasła można przywrócić jedynie w przypadku dysponowania dostępem do innego urządzenia lub za pomocą kodu odzyskiwania podanego w ramach konfiguracji funkcji Sync & Backup.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Więcej informacji](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Skanuj kod odzyskiwania";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Inne urządzenie jest niedostępne? Zeskanuj kod odzyskiwania.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Nie masz innego urządzenia?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "Hasła DuckDuckGo nie są przesyłane przez iCloud, ponieważ są zaszyfrowane na Twoim urządzeniu. Wszystkie pozostałe dane już tu są.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Synchronizuj z innym urządzeniem";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Nowy %@? Zsynchronizujmy Twoje hasła.";
 
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Usuń";

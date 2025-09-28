@@ -80,6 +80,5 @@ private final class MockWindowControllerManager: WindowControllersManagerProtoco
         nil
     }
 
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior) {}
     func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool) {}
 }

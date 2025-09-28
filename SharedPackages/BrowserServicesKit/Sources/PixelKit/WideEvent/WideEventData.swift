@@ -95,12 +95,12 @@ public struct WideEventGlobalData: Codable {
         self.init(sampleRate: 1.0)
     }
 
-    public init(platform: String = DevicePlatform.currentPlatform.rawValue, sampleRate: Float) {
+    public init(id: String = UUID().uuidString, platform: String = DevicePlatform.currentPlatform.rawValue, sampleRate: Float) {
         if sampleRate > 1.0 || sampleRate < 0.0 {
             assertionFailure("Sample rate must be between 0-1")
         }
 
-        self.id = UUID().uuidString
+        self.id = id
         self.platform = platform
         self.type = "app" // Don't allow type to be overridden
         self.sampleRate = sampleRate.clamped(to: 0...1)

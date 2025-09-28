@@ -301,7 +301,7 @@
 		4B74A1C32E49512500277779 /* NetworkProtectionLogManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B74A1C22E49512500277779 /* NetworkProtectionLogManager.swift */; };
 		4B75EA9226A266CB00018634 /* PrintingUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B75EA9126A266CB00018634 /* PrintingUserScript.swift */; };
 		4B821FAC2E21CD3900685484 /* RunDBPDebugModeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B821FAB2E21CD3600685484 /* RunDBPDebugModeViewController.swift */; };
-		4B82E4772E64E4CF00DE9F0C /* WidePixelLaunchCleanupTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B82E4762E64E4CF00DE9F0C /* WidePixelLaunchCleanupTask.swift */; };
+		4B82E4772E64E4CF00DE9F0C /* WideEventLaunchCleanupTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B82E4762E64E4CF00DE9F0C /* WideEventLaunchCleanupTask.swift */; };
 		4B94B79E2D4831D90014AAB8 /* SyncUI-iOS in Frameworks */ = {isa = PBXBuildFile; productRef = 4B94B79D2D4831D90014AAB8 /* SyncUI-iOS */; };
 		4BB7CBB02AF59C310014A35F /* VPNWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB7CBAF2AF59C310014A35F /* VPNWidget.swift */; };
 		4BB88F3F2E5D701200DE539A /* PixelKitTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB88F3E2E5D701200DE539A /* PixelKitTestingUtilities */; };
@@ -2289,7 +2289,7 @@
 		4B74A1C22E49512500277779 /* NetworkProtectionLogManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionLogManager.swift; sourceTree = "<group>"; };
 		4B75EA9126A266CB00018634 /* PrintingUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrintingUserScript.swift; sourceTree = "<group>"; };
 		4B821FAB2E21CD3600685484 /* RunDBPDebugModeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunDBPDebugModeViewController.swift; sourceTree = "<group>"; };
-		4B82E4762E64E4CF00DE9F0C /* WidePixelLaunchCleanupTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidePixelLaunchCleanupTask.swift; sourceTree = "<group>"; };
+		4B82E4762E64E4CF00DE9F0C /* WideEventLaunchCleanupTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WideEventLaunchCleanupTask.swift; sourceTree = "<group>"; };
 		4B94B79C2D4831700014AAB8 /* SyncUI-iOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "SyncUI-iOS"; sourceTree = "<group>"; };
 		4BB7CBAF2AF59C310014A35F /* VPNWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNWidget.swift; sourceTree = "<group>"; };
 		4BBBBA912B03291700D965DA /* VPNWaitlistUserText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNWaitlistUserText.swift; sourceTree = "<group>"; };
@@ -7857,7 +7857,7 @@
 				CBD72E662E25253E00DB0938 /* LaunchTaskManager.swift */,
 				CBD72E682E25262A00DB0938 /* LaunchTask.swift */,
 				CBD72E6D2E2528E400DB0938 /* ClearInteractionStateTask.swift */,
-				4B82E4762E64E4CF00DE9F0C /* WidePixelLaunchCleanupTask.swift */,
+				4B82E4762E64E4CF00DE9F0C /* WideEventLaunchCleanupTask.swift */,
 			);
 			path = LaunchTask;
 			sourceTree = "<group>";
@@ -10602,7 +10602,7 @@
 				F1CA3C3B1F045B65005FADB3 /* Authenticator.swift in Sources */,
 				F1D4472D2D9EB2470085809A /* SubscriptionPixelHandler.swift in Sources */,
 				CBD4F13D279EBFA000B20FD7 /* HomeMessageCollectionViewCell.swift in Sources */,
-				4B82E4772E64E4CF00DE9F0C /* WidePixelLaunchCleanupTask.swift in Sources */,
+				4B82E4772E64E4CF00DE9F0C /* WideEventLaunchCleanupTask.swift in Sources */,
 				8505836D219F424500ED4EDB /* Point.swift in Sources */,
 				3158461A281B08F5004ADB8B /* AutofillLoginListViewModel.swift in Sources */,
 				31C138A827A3E9C900FFD4B2 /* URLDownloadSession.swift in Sources */,

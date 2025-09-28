@@ -199,7 +199,7 @@ struct Launching: LaunchingHandling {
                                                                    tabManager: mainCoordinator.tabManager))
         
         // Clean up wide pixel data at launch
-        launchTaskManager.register(task: WidePixelLaunchCleanupTask(wideEventService: wideEventService))
+        launchTaskManager.register(task: WideEventLaunchCleanupTask(wideEventService: wideEventService))
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window

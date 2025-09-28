@@ -1,5 +1,5 @@
 //
-//  WidePixelLaunchCleanupTask.swift
+//  WideEventLaunchCleanupTask.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -19,11 +19,11 @@
 
 import Foundation
 
-struct WidePixelLaunchCleanupTask: LaunchTask {
+struct WideEventLaunchCleanupTask: LaunchTask {
 
     let wideEventService: WideEventService
 
-    var name: String = "Wide Pixel Launch Cleanup"
+    var name: String = "Wide Event Launch Cleanup"
 
     func run(context: LaunchTaskContext) {
         wideEventService.sendAbandonedPixels {

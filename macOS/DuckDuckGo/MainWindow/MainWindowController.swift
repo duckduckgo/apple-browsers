@@ -101,7 +101,13 @@ final class MainWindowController: NSWindowController {
     }
 
     private var shouldShowOnboarding: Bool {
- #if REVIEW
+ #if DEBUG
+        if AppVersion.runType == .unitTests {
+            return false
+        }
+        let onboardingIsComplete = OnboardingActionsManager.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
+        return !onboardingIsComplete
+ #elseif REVIEW
         if AppVersion.runType == .uiTests {
             Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
             return false

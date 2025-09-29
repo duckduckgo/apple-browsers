@@ -63,7 +63,7 @@ public class SitePerformanceTester: NSObject {
                     loadTimes: loadTimes,
                     detailedMetrics: detailedMetrics,
                     failedAttempts: failedAttempts,
-                    iterations: iteration - 1,
+                    iterations: loadTimes.count,  // Actual completed tests (excluding warm-up)
                     cancelled: true
                 )
             }

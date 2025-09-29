@@ -65,7 +65,11 @@ public class PageLoadTester: NSObject {
     }
 
     deinit {
-        webView.navigationDelegate = previousNavigationDelegate
+        // Safely restore delegate on main thread
+        // PageLoadTester is @MainActor so this should always succeed, but we verify for safety
+        MainActor.assumeIsolated {
+            webView.navigationDelegate = previousNavigationDelegate
+        }
     }
 
     public func measurePageLoad(

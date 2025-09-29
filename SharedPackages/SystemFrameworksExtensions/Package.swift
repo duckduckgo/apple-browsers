@@ -11,17 +11,17 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "SwiftUIExtensions",
-            targets: ["SwiftUIExtensions"]
+            name: "FoundationExtensions",
+            targets: ["FoundationExtensions"]
         ),
     ],
     targets: [
         .target(
-            name: "SwiftUIExtensions"
+            name: "FoundationExtensions"
         ),
         .testTarget(
-            name: "SwiftUIExtensionsTests",
-            dependencies: ["SwiftUIExtensions"]
+            name: "FoundationExtensionsTests",
+            dependencies: ["FoundationExtensions"]
         ),
     ]
 )

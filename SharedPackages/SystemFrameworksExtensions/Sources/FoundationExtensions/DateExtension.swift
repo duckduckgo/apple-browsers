@@ -19,5 +19,5 @@
 @_exported import Foundation
 
 public extension Date {
-
+   // Methods and types go here.
 }

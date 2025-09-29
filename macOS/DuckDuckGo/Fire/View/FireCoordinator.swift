@@ -57,7 +57,7 @@ final class FireCoordinator {
 
         // Present dialog gated by feature flag; fallback to legacy popover
         if featureFlagger.isFeatureOn(.fireDialog) {
-            let vm = FirePopoverViewModel(
+            let vm = FireDialogViewModel(
                 fireViewModel: self.fireViewModel,
                 tabCollectionViewModel: mainViewController.tabCollectionViewModel,
                 historyCoordinating: Application.appDelegate.historyCoordinator,

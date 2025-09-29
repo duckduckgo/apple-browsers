@@ -1,5 +1,5 @@
 //
-//  FirePopoverViewModelTests.swift
+//  FireDialogViewModelTests.swift
 //
 //  Copyright © 2022 DuckDuckGo. All rights reserved.
 //
@@ -21,13 +21,13 @@ import History
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
-final class FirePopoverViewModelTests: XCTestCase {
+final class FireDialogViewModelTests: XCTestCase {
 
     @MainActor
     private func makeViewModel(
         with tabCollectionViewModel: TabCollectionViewModel,
         onboardingContextualDialogsManager: ContextualOnboardingStateUpdater = ContextualDialogsManager(trackerMessageProvider: MockTrackerMessageProvider())
-    ) -> FirePopoverViewModel {
+    ) -> FireDialogViewModel {
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()
         let permissionManager = PermissionManagerMock()
@@ -38,7 +38,7 @@ final class FirePopoverViewModelTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         tld: Application.appDelegate.tld)
-        return FirePopoverViewModel(
+        return FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionViewModel,
             historyCoordinating: HistoryCoordinatingMock(),
@@ -86,7 +86,7 @@ final class FirePopoverViewModelTests: XCTestCase {
                         faviconManagement: faviconManager,
                         tld: Application.appDelegate.tld)
 
-        let viewModel = FirePopoverViewModel(
+        let viewModel = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
@@ -123,7 +123,7 @@ final class FirePopoverViewModelTests: XCTestCase {
         let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())
         fireproofDomains.add(domain: URL.duckduckgoDomain)
 
-        let viewModel = FirePopoverViewModel(
+        let viewModel = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
@@ -154,7 +154,7 @@ final class FirePopoverViewModelTests: XCTestCase {
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
 
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
@@ -186,7 +186,7 @@ final class FirePopoverViewModelTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
@@ -216,7 +216,7 @@ final class FirePopoverViewModelTests: XCTestCase {
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
 
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
@@ -248,7 +248,7 @@ final class FirePopoverViewModelTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
@@ -277,7 +277,7 @@ final class FirePopoverViewModelTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
@@ -306,7 +306,7 @@ final class FirePopoverViewModelTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
@@ -338,7 +338,7 @@ final class FirePopoverViewModelTests: XCTestCase {
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
 
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
@@ -369,7 +369,7 @@ final class FirePopoverViewModelTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
@@ -399,7 +399,7 @@ final class FirePopoverViewModelTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
@@ -432,7 +432,7 @@ final class FirePopoverViewModelTests: XCTestCase {
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
 
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
@@ -460,7 +460,7 @@ final class FirePopoverViewModelTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
@@ -495,7 +495,7 @@ final class FirePopoverViewModelTests: XCTestCase {
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
 
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,

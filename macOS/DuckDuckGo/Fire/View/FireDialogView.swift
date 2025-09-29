@@ -43,7 +43,7 @@ struct FireDialogView: ModalView {
         }
     }
 
-    @ObservedObject var viewModel: FirePopoverViewModel
+    @ObservedObject var viewModel: FireDialogViewModel
     private let featureFlagger: FeatureFlagger
     @Environment(\.dismiss) private var dismiss
 
@@ -52,7 +52,7 @@ struct FireDialogView: ModalView {
     @State private var includeCookiesAndSiteData: Bool = true
     @State private var isShowingSitesOverlay: Bool = false
 
-    init(viewModel: FirePopoverViewModel, showSitesOverlay: Bool = false, featureFlagger: FeatureFlagger? = nil) {
+    init(viewModel: FireDialogViewModel, showSitesOverlay: Bool = false, featureFlagger: FeatureFlagger? = nil) {
         self.featureFlagger = featureFlagger ?? Application.appDelegate.featureFlagger
         self.viewModel = viewModel
         self._isShowingSitesOverlay = State(initialValue: showSitesOverlay)
@@ -134,12 +134,12 @@ struct FireDialogView: ModalView {
         PillSegmentedControl(
             selection: Binding(
                 get: { viewModel.clearingOption.rawValue },
-                set: { viewModel.clearingOption = FirePopoverViewModel.ClearingOption(rawValue: $0) ?? .allData }
+                set: { viewModel.clearingOption = FireDialogViewModel.ClearingOption(rawValue: $0) ?? .allData }
             ),
             segments: [
-                .init(id: FirePopoverViewModel.ClearingOption.currentTab.rawValue, title: UserText.fireDialogSegmentTab, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.tabDesktop)),
-                .init(id: FirePopoverViewModel.ClearingOption.currentWindow.rawValue, title: UserText.fireDialogSegmentWindow, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.window)),
-                .init(id: FirePopoverViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogSegmentEverything, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.windowsAndTabs))
+                .init(id: FireDialogViewModel.ClearingOption.currentTab.rawValue, title: UserText.fireDialogSegmentTab, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.tabDesktop)),
+                .init(id: FireDialogViewModel.ClearingOption.currentWindow.rawValue, title: UserText.fireDialogSegmentWindow, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.window)),
+                .init(id: FireDialogViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogSegmentEverything, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.windowsAndTabs))
             ],
             containerBackground: Color(singleUseColor: .fireDialogPillBackground),
             containerBorder: Color(singleUseColor: .fireDialogPillBorder),
@@ -466,7 +466,7 @@ private class MockFireproofDomains: FireproofDomains {
 @available(macOS 14.0, *)
 #Preview("Fire Dialog", traits: FireDialogView.Constants.viewSize.fixedLayout) {
     let tld = TLD()
-    let vm = FirePopoverViewModel(
+    let vm = FireDialogViewModel(
         fireViewModel: FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider),
         tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
         historyCoordinating: Application.appDelegate.historyCoordinator,
@@ -509,7 +509,7 @@ private class MockFireproofDomains: FireproofDomains {
     faviconMock.setImage(NSImage(named: NSImage.bonjourName)!, forHost: "cnn.com")
     faviconMock.setImage(NSImage(named: NSImage.networkName)!, forHost: "dropbox.com")
 
-    let vm = FirePopoverViewModel(
+    let vm = FireDialogViewModel(
         fireViewModel: FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider),
         tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
         historyCoordinating: history,

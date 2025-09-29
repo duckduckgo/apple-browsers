@@ -1,5 +1,5 @@
 //
-//  FirePopoverViewModel.swift
+//  FireDialogViewModel.swift
 //
 //  Copyright © 2021 DuckDuckGo. All rights reserved.
 //
@@ -24,7 +24,7 @@ import History
 import PixelKit
 
 @MainActor
-final class FirePopoverViewModel: ObservableObject {
+final class FireDialogViewModel: ObservableObject {
 
     enum ClearingOption: Int, CaseIterable {
 
@@ -64,7 +64,7 @@ final class FirePopoverViewModel: ObservableObject {
         self.historyCoordinating = historyCoordinating
         self.fireproofDomains = fireproofDomains
         self.faviconManagement = faviconManagement
-        self.clearingOption = clearingOption ?? FirePopoverViewModel.lastSelectedClearingOption
+        self.clearingOption = clearingOption ?? FireDialogViewModel.lastSelectedClearingOption
         self.tld = tld
         self.onboardingContextualDialogsManager = onboardingContextualDialogsManager
 
@@ -240,7 +240,7 @@ final class FirePopoverViewModel: ObservableObject {
 
         case (.currentWindow, _):
             guard let tabCollectionViewModel = tabCollectionViewModel else {
-                assertionFailure("FirePopoverViewModel: TabCollectionViewModel is not present")
+                assertionFailure("FireDialogViewModel: TabCollectionViewModel is not present")
                 return
             }
             PixelKit.fire(GeneralPixel.fireButton(option: .window))

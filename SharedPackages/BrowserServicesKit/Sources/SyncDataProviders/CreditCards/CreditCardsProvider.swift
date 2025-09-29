@@ -148,7 +148,7 @@ public final class CreditCardsProvider: DataProvider {
                             received: [Syncable],
                             clientTimestamp: Date,
                             serverTimestamp: String?,
-                             crypter: Crypting) async throws {
+                            crypter: Crypting) async throws {
         var saveError: Error?
 
         let secureVault = try secureVaultFactory.makeVault(reporter: secureVaultErrorReporter)

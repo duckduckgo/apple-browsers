@@ -39,6 +39,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
     private let webRunnerForTesting: BrokerProfileOptOutSubJobWebProtocol?
     private let webViewHandlerForTesting: WebViewHandler?
+    private let wideEventRecorder: OptOutSubmissionWideEventRecorder?
 
     private let id = UUID()
     private var _isExecuting = false
@@ -62,6 +63,9 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         self.jobDependencies = jobDependencies
         self.webRunnerForTesting = webRunnerForTesting
         self.webViewHandlerForTesting = webViewHandlerForTesting
+        self.wideEventRecorder = UUID(uuidString: jobData.attemptID).flatMap {
+            OptOutSubmissionWideEventRecorder.resumeIfPossible(wideEvent: jobDependencies.wideEvent, attemptID: $0)
+        }
         super.init()
     }
 
@@ -134,13 +138,8 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             vpnConnectionState: jobDependencies.vpnBypassService?.connectionStatus ?? "unknown",
             vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
         )
-        let attemptID = UUID(uuidString: jobData.attemptID)
         let attemptInfo = try? jobDependencies.database.fetchAttemptInformation(for: jobData.extractedProfileId)
         let recordFoundDate = attemptInfo?.startDate ?? stageDurationCalculator.startTime
-        let wideEventRecorder = attemptID.flatMap {
-            OptOutSubmissionWideEventRecorder.resumeIfPossible(wideEvent: jobDependencies.wideEvent,
-                                                               attemptID: $0)
-        }
         stageDurationCalculator.attachWideEventRecorder(wideEventRecorder)
         stageDurationCalculator.setStage(.emailConfirmDecoupled)
 
@@ -208,7 +207,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                                recordFoundDate: recordFoundDate,
                                                broker: broker,
                                                wideEventRecorder: wideEventRecorder,
-                                               attemptUUID: attemptID)
+                                               attemptUUID: UUID(uuidString: jobData.attemptID))
         }
     }
 
@@ -219,7 +218,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                                     broker: DataBroker,
                                                     wideEventRecorder: OptOutSubmissionWideEventRecorder?,
                                                     attemptUUID: UUID?) {
-        let now = Date()
         wideEventRecorder?.recordError(error)
         switch error {
         case is TimeoutError:
@@ -228,8 +226,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 OptOutConfirmationWideEventEmitter.emitCancelled(
                     wideEvent: jobDependencies.wideEvent,
                     attemptID: attemptUUID,
-                    recordFoundDate: recordFoundDate,
-                    cancelDate: now,
                     dataBrokerURL: broker.url,
                     dataBrokerVersion: broker.version,
                     error: error
@@ -241,8 +237,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 OptOutConfirmationWideEventEmitter.emitCancelled(
                     wideEvent: jobDependencies.wideEvent,
                     attemptID: attemptUUID,
-                    recordFoundDate: recordFoundDate,
-                    cancelDate: now,
                     dataBrokerURL: broker.url,
                     dataBrokerVersion: broker.version,
                     error: dbpError
@@ -255,8 +249,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                     OptOutConfirmationWideEventEmitter.emitFailure(
                         wideEvent: jobDependencies.wideEvent,
                         attemptID: attemptUUID,
-                        recordFoundDate: recordFoundDate,
-                        cancelDate: now,
                         dataBrokerURL: broker.url,
                         dataBrokerVersion: broker.version,
                         error: error

@@ -186,8 +186,6 @@ struct BrokerProfileOptOutSubJob {
                 OptOutConfirmationWideEventEmitter.emitCancelled(
                     wideEvent: dependencies.wideEvent,
                     attemptID: stageDurationCalculator.attemptId,
-                    recordFoundDate: recordFoundDate,
-                    cancelDate: now,
                     dataBrokerURL: brokerProfileQueryData.dataBroker.url,
                     dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
                     error: error
@@ -197,8 +195,6 @@ struct BrokerProfileOptOutSubJob {
                 OptOutConfirmationWideEventEmitter.emitCancelled(
                     wideEvent: dependencies.wideEvent,
                     attemptID: stageDurationCalculator.attemptId,
-                    recordFoundDate: recordFoundDate,
-                    cancelDate: now,
                     dataBrokerURL: brokerProfileQueryData.dataBroker.url,
                     dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
                     error: dbpError
@@ -208,8 +204,6 @@ struct BrokerProfileOptOutSubJob {
                 OptOutConfirmationWideEventEmitter.emitFailure(
                     wideEvent: dependencies.wideEvent,
                     attemptID: stageDurationCalculator.attemptId,
-                    recordFoundDate: recordFoundDate,
-                    cancelDate: now,
                     dataBrokerURL: brokerProfileQueryData.dataBroker.url,
                     dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
                     error: error

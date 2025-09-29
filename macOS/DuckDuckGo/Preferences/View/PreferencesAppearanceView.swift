@@ -96,13 +96,18 @@ extension Preferences {
                     .font(.system(size: 13))
                     .foregroundColor(.primary)
             }
-            .frame(width: 140, height: 32)
+            .frame(width: 139, height: 32)
         }
     }
 
     struct ThemeAppearancePickerV2: View {
         @EnvironmentObject var model: AppearancePreferences
-        private let settings = SlidingPickerSettings(borderColor: Color(.decorationTertiary), selectionColor: Color(.controlBackgroundColor), dividerSize: CGSize(width: 1, height: 16))
+        private let settings = SlidingPickerSettings(
+            backgroundColor: Color(designSystemColor: .surfacePrimary),
+            borderColor: Color(designSystemColor: .containerDecorationSecondary),
+            selectionBackgroundColor: Color(designSystemColor: .surfaceTertiary),
+            selectionBorderColor: Color(designSystemColor: .containerDecorationSecondary),
+            dividerSize: CGSize(width: 1, height: 16))
 
         var body: some View {
             SlidingPickerView(settings: settings, allValues: ThemeAppearance.allCases, selectedValue: $model.themeAppearance) { appearance in

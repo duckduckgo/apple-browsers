@@ -103,6 +103,7 @@ tags:
 - launchApp:
     arguments:
       clearState: false
+      isMaestroRunning: true
 - assertVisible:
     text: "Pay"    
 - tapOn:

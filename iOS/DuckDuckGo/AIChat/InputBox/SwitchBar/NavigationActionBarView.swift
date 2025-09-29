@@ -29,6 +29,7 @@ final class NavigationActionBarView: UIView {
         static let barHeight: CGFloat = 76
         static let buttonSize: CGFloat = 40
         static let padding: CGFloat = 16
+        static let smallPadding: CGFloat = 8
         static let buttonSpacing: CGFloat = 12
         static let cornerRadius: CGFloat = 8
         
@@ -47,6 +48,8 @@ final class NavigationActionBarView: UIView {
         }
     }
 
+    let isFloating: Bool
+
     private let viewModel: NavigationActionBarViewModel
     private var cancellables = Set<AnyCancellable>()
 
@@ -60,8 +63,9 @@ final class NavigationActionBarView: UIView {
     private let solidView = UIView()
 
     // MARK: - Initialization
-    init(viewModel: NavigationActionBarViewModel) {
+    init(viewModel: NavigationActionBarViewModel, isFloating: Bool) {
         self.viewModel = viewModel
+        self.isFloating = isFloating
         super.init(frame: .init(x: 0, y: 0, width: 300, height: 100))
         setupUI()
         setupBindings()
@@ -117,27 +121,17 @@ final class NavigationActionBarView: UIView {
         solidView.translatesAutoresizingMaskIntoConstraints = false
         mainStackView.translatesAutoresizingMaskIntoConstraints = false
         backgroundGradientView.translatesAutoresizingMaskIntoConstraints = false
-        
+
+        let mainStackPadding = isFloating ? Constants.padding : Constants.smallPadding
+
         let mainStackMinHeightConstraint = mainStackView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.buttonSize)
         NSLayoutConstraint.activate([
             // Main stack view constraints
-            mainStackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Constants.padding),
-            mainStackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Constants.padding),
-            mainStackView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: Constants.padding),
-            mainStackView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor, constant: -Constants.padding),
+            mainStackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: mainStackPadding),
+            mainStackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -mainStackPadding),
+            mainStackView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: mainStackPadding),
+
             mainStackMinHeightConstraint,
-
-            // Background gradient should align with the keyboard (or bottom safe area)
-            backgroundGradientView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            backgroundGradientView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            backgroundGradientView.topAnchor.constraint(equalTo: mainStackView.topAnchor),
-            backgroundGradientView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor),
-
-            // Position the solid view under gradient and extend to the bottom of the view
-            solidView.topAnchor.constraint(equalTo: backgroundGradientView.bottomAnchor),
-            solidView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            solidView.leadingAnchor.constraint(equalTo: backgroundGradientView.leadingAnchor),
-            solidView.trailingAnchor.constraint(equalTo: backgroundGradientView.trailingAnchor),
 
             // Button size constraints
             microphoneButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
@@ -147,6 +141,28 @@ final class NavigationActionBarView: UIView {
             searchButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             searchButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize)
         ])
+
+        if isFloating {
+            NSLayoutConstraint.activate([
+                // Stick to the keyboard's top
+                mainStackView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor, constant: -mainStackPadding),
+
+                // Background gradient should align with the keyboard (or bottom safe area)
+                backgroundGradientView.leadingAnchor.constraint(equalTo: leadingAnchor),
+                backgroundGradientView.trailingAnchor.constraint(equalTo: trailingAnchor),
+                backgroundGradientView.topAnchor.constraint(equalTo: mainStackView.topAnchor),
+                backgroundGradientView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor),
+
+                // Position the solid view under gradient and extend to the bottom of the view
+                solidView.topAnchor.constraint(equalTo: backgroundGradientView.bottomAnchor),
+                solidView.bottomAnchor.constraint(equalTo: bottomAnchor),
+                solidView.leadingAnchor.constraint(equalTo: backgroundGradientView.leadingAnchor),
+                solidView.trailingAnchor.constraint(equalTo: backgroundGradientView.trailingAnchor),
+            ])
+        } else {
+            // Anchor to superview safe area. Not floating means it's in a externally controlled container
+            mainStackView.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor, constant: -mainStackPadding).isActive = true
+        }
     }
 
     private func setupMicrophoneButton() {

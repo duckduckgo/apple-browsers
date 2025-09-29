@@ -84,6 +84,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private var dockCustomizer: DockCustomization?
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let featureFlagger: FeatureFlagger
+    private let freeTrialBadgePersistor: FreeTrialBadgePersisting
 
     private let notificationCenter: NotificationCenter
 
@@ -129,7 +130,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
          isFireWindowDefault: Bool = NSApp.delegateTyped.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
          isUsingAuthV2: Bool,
-         syncDeviceButtonModel: SyncDeviceButtonModel = SyncDeviceButtonModel()) {
+         syncDeviceButtonModel: SyncDeviceButtonModel = SyncDeviceButtonModel(),
+         freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard)) {
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -152,6 +154,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.featureFlagger = featureFlagger
+        self.freeTrialBadgePersistor = freeTrialBadgePersistor
         self.moreOptionsMenuIconsProvider = visualStyle.iconsProvider.moreOptionsMenuIconsProvider
         self.isFireWindowDefault = isFireWindowDefault
         self.syncDeviceButtonModel = syncDeviceButtonModel
@@ -318,7 +321,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func newAiChat(_ sender: NSMenuItem) {
-        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, with: .newTab(selected: true))
+        NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
         PixelKit.fire(AIChatPixel.aichatApplicationMenuAppClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
@@ -607,33 +610,35 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         if !subscriptionManager.isUserAuthenticated {
 
-            var privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
-                .withImage(moreOptionsMenuIconsProvider.privacyProIcon)
+            var subscriptionItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
+                .withImage(moreOptionsMenuIconsProvider.subscriptionIcon)
 
-            // Check if user is eligible for Free Trial
-            if featureFlagger.isFeatureOn(.privacyProFreeTrial) && subscriptionManager.isUserEligibleForFreeTrial() {
-                privacyProItem = NSMenuItem.createMenuItemWithBadge(
+            // Check if user is eligible for Free Trial and hasn't exceeded view limit
+            if featureFlagger.isFeatureOn(.privacyProFreeTrial) &&
+               subscriptionManager.isUserEligibleForFreeTrial() &&
+               !freeTrialBadgePersistor.hasReachedViewLimit {
+                subscriptionItem = NSMenuItem.createMenuItemWithBadge(
                     title: UserText.subscriptionOptionsMenuItem,
                     badgeText: UserText.subscriptionOptionsMenuItemFreeTrialBadge,
                     action: #selector(openSubscriptionPurchasePage(_:)),
                     target: self,
-                    image: moreOptionsMenuIconsProvider.privacyProIcon,
+                    image: moreOptionsMenuIconsProvider.subscriptionIcon,
                     menu: self
                 )
             } else {
-                privacyProItem.target = self
-                privacyProItem.action = #selector(openSubscriptionPurchasePage(_:))
+                subscriptionItem.target = self
+                subscriptionItem.action = #selector(openSubscriptionPurchasePage(_:))
             }
 
             // Do not add for App Store when purchase not available in the region
             if !shouldHideDueToNoProduct() {
-                addItem(privacyProItem)
+                addItem(subscriptionItem)
             }
         } else {
-            let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
-                .withImage(moreOptionsMenuIconsProvider.privacyProIcon)
+            let subscriptionItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
+                .withImage(moreOptionsMenuIconsProvider.subscriptionIcon)
 
-            privacyProItem.submenu = SubscriptionSubMenu(targeting: self,
+            subscriptionItem.submenu = SubscriptionSubMenu(targeting: self,
                                                          subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(),
                                                          subscriptionManager: subscriptionManager,
                                                          moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider,
@@ -642,7 +647,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                          onComplete: { [weak self] in
                                                              self?.submenuBuildingCompleteSubject.send(true)
                                                          })
-            addItem(privacyProItem)
+            addItem(subscriptionItem)
         }
     }
 
@@ -719,6 +724,14 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         if updateController.hasPendingUpdate && updateController.needsNotificationDot {
             updateController.needsNotificationDot = false
+        }
+
+        // Increment free trial badge view count if the user is eligible and badge is shown
+        if !subscriptionManager.isUserAuthenticated &&
+           featureFlagger.isFeatureOn(.privacyProFreeTrial) &&
+           subscriptionManager.isUserEligibleForFreeTrial() &&
+           !freeTrialBadgePersistor.hasReachedViewLimit {
+            freeTrialBadgePersistor.incrementViewCount()
         }
     }
 
@@ -873,10 +886,10 @@ final class FeedbackSubMenu: NSMenu {
             addItem(.separator())
 
             let sendPProFeedbackItem = NSMenuItem(title: UserText.sendSubscriptionFeedback,
-                                                  action: #selector(sendPrivacyProFeedback(_:)),
+                                                  action: #selector(sendSubscriptionFeedback(_:)),
                                                   keyEquivalent: "")
                 .targetting(self)
-                .withImage(moreOptionsMenuIconsProvider.sendPrivacyProFeedbackIcon)
+                .withImage(moreOptionsMenuIconsProvider.sendSubscriptionFeedbackIcon)
             addItem(sendPProFeedbackItem)
         }
 
@@ -930,7 +943,7 @@ final class FeedbackSubMenu: NSMenu {
     }
 
     @MainActor
-    @objc private func sendPrivacyProFeedback(_ sender: Any?) {
+    @objc private func sendSubscriptionFeedback(_ sender: Any?) {
         PixelKit.fire(MoreOptionsMenuPixel.feedbackActionClicked, frequency: .daily)
         Application.appDelegate.openPProFeedback(sender)
     }

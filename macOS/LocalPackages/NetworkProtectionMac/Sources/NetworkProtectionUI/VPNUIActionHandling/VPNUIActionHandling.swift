@@ -23,7 +23,7 @@ public protocol VPNUIActionHandling {
     func moveAppToApplications() async
     func setExclusion(_ exclude: Bool, forDomain domain: String) async
     func shareFeedback() async
-    func showPrivacyPro() async
+    func showSubscription() async
     func showVPNLocations() async
 
     /// Called when the user clicks on the toggle to stop the VPN.

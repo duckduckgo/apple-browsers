@@ -32,6 +32,22 @@ final class DataBrokerLogMonitorViewModel: ObservableObject {
     @Published var retentionLimitText: String = "2000"
     @Published var errorMessage: String?
 
+    // Subsystem selection
+    @Published var shouldUseCustomSubsystem: Bool = false {
+        didSet { updateSubsystemIfNeeded() }
+    }
+    @Published var customSubsystem: String = "" {
+        didSet { updateSubsystemIfNeeded() }
+    }
+
+    // Category selection
+    @Published var shouldUseCustomCategory: Bool = false {
+        didSet { updateCategoryFiltering() }
+    }
+    @Published var customCategory: String = "" {
+        didSet { updateCategoryFiltering() }
+    }
+
     private var allLogs: [LogEntry] = []
     private var monitoringTask: Task<Void, Never>?
     private let logService: DataBrokerLogMonitorService
@@ -39,6 +55,16 @@ final class DataBrokerLogMonitorViewModel: ObservableObject {
 
     var logCount: Int { filteredLogs.count }
     var totalLogCount: Int { allLogs.count }
+
+    /// Returns the effective subsystem being monitored
+    var effectiveSubsystem: String {
+        shouldUseCustomSubsystem ? customSubsystem : Logger.dbpSubsystem
+    }
+
+    /// Returns the display name for the current subsystem
+    var subsystemDisplayName: String {
+        shouldUseCustomSubsystem ? (customSubsystem.isEmpty ? "(enter subsystem)" : customSubsystem) : "PIR"
+    }
 
     init(logService: DataBrokerLogMonitorService = DataBrokerLogMonitorService()) {
         self.logService = logService
@@ -115,6 +141,34 @@ final class DataBrokerLogMonitorViewModel: ObservableObject {
 
     private func applyFiltersToExistingLogs() {
         filteredLogs = allLogs.filter { filterSettings.matches($0) }
+    }
+
+    /// Updates the monitored subsystem when the selection changes
+    private func updateSubsystemIfNeeded() {
+        guard !shouldUseCustomSubsystem || !customSubsystem.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return
+        }
+
+        let newSubsystem = effectiveSubsystem
+        logService.updateSubsystem(newSubsystem)
+
+        if isMonitoring {
+            let wasMonitoring = isMonitoring
+            stopMonitoring()
+            if wasMonitoring {
+                startMonitoring()
+            }
+        }
+
+        Logger.dataBrokerProtection.debug("Updated log monitor subsystem to: \(newSubsystem, privacy: .public)")
+    }
+
+    /// Updates the category filtering when the selection changes
+    private func updateCategoryFiltering() {
+        filterSettings.shouldUseCustomCategory = shouldUseCustomCategory
+        filterSettings.customCategory = customCategory
+
+        Logger.dataBrokerProtection.debug("Updated log monitor category filtering: custom=\(self.filterSettings.shouldUseCustomCategory, privacy: .public) category=\(self.filterSettings.customCategory, privacy: .public)")
     }
 
     deinit {

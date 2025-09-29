@@ -83,6 +83,7 @@ protocol TabBarViewItemDelegate: AnyObject {
     @MainActor func otherTabBarViewItemsState(for tabBarViewItem: TabBarViewItem) -> OtherTabBarViewItemsState
 
     @MainActor func tabBarViewItemCrashAction(_: TabBarViewItem)
+    @MainActor func tabBarViewItemCrashMultipleTimesAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_: TabBarViewItem, sender: NSButton, shouldShow: Bool)
 }
 
@@ -1044,11 +1045,18 @@ extension TabBarViewItem: NSMenuDelegate {
         if tabViewModel?.canKillWebContentProcess == true {
             menu.addItem(.separator())
             addCrashMenuItem(to: menu)
+            addCrashMultipleTimesMenuItem(to: menu)
         }
     }
 
     private func addCrashMenuItem(to menu: NSMenu) {
         let crashMenuItem = NSMenuItem(title: Tab.crashTabMenuOptionTitle, action: #selector(crashMenuItemAction(_:)), keyEquivalent: "")
+        crashMenuItem.target = self
+        menu.addItem(crashMenuItem)
+    }
+
+    private func addCrashMultipleTimesMenuItem(to menu: NSMenu) {
+        let crashMenuItem = NSMenuItem(title: Tab.crashTabMenuOptionTitleMultipleTimes, action: #selector(crashMultipleTimesMenuItemAction(_:)), keyEquivalent: "")
         crashMenuItem.target = self
         menu.addItem(crashMenuItem)
     }
@@ -1062,6 +1070,10 @@ extension TabBarViewItem: NSMenuDelegate {
 
     @objc private func crashMenuItemAction(_ sender: NSButton) {
         delegate?.tabBarViewItemCrashAction(self)
+    }
+
+    @objc private func crashMultipleTimesMenuItemAction(_ sender: NSButton) {
+        delegate?.tabBarViewItemCrashMultipleTimesAction(self)
     }
 
     private func addPinMenuItem(to menu: NSMenu) {
@@ -1507,6 +1519,7 @@ extension TabBarViewItem {
             .init(hasItemsToTheLeft: false, hasItemsToTheRight: false)
         }
         func tabBarViewItemCrashAction(_: TabBarViewItem) {}
+        func tabBarViewItemCrashMultipleTimesAction(_: TabBarViewItem) {}
         func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_: TabBarViewItem, sender: NSButton, shouldShow: Bool) {}
     }
 }

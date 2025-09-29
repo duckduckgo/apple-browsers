@@ -120,6 +120,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210921598044116?focus=true
     case aiChatPageContext
 
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1211026820773885?focus=true
+    case aiChatImprovements
+
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1211026820773885?focus=true
+    case aiChatKeepSession
+
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case osSupportForceUnsupportedMessage
 
@@ -128,6 +134,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case willSoonDropBigSurSupport
+
+    /// https://app.asana.com/1/137249556945/project/1211264967278501/task/1211247682232308?focus=true
+    case hangReporting
 
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210493210455717?focus=true
     case shortHistoryMenu
@@ -186,6 +195,12 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211258257937392?focus=true
     case appStoreCheckForUpdatesFlow
+
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1211260578559159?focus=true
+    case unifiedURLPredictor
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211396583578252?focus=true
+    case unifiedURLPredictorMetrics
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -245,11 +260,14 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage,
                 .willSoonDropBigSurSupport,
+                .hangReporting,
                 .aiChatGlobalSwitch,
 				.aiChatSidebar,
                 .aiChatTextSummarization,
                 .aiChatTextTranslation,
                 .aiChatPageContext,
+                .aiChatImprovements,
+                .aiChatKeepSession,
                 .shortHistoryMenu,
                 .importChromeShortcuts,
                 .updateSafariBookmarksImport,
@@ -270,7 +288,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .subscriptionPurchaseWidePixelMeasurement,
                 .syncFeatureLevel3,
                 .themes,
-                .appStoreCheckForUpdatesFlow:
+                .appStoreCheckForUpdatesFlow,
+                .unifiedURLPredictor,
+                .unifiedURLPredictorMetrics:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -366,12 +386,18 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.textTranslation))
         case .aiChatPageContext:
             return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
+        case .aiChatImprovements:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.improvements))
+        case .aiChatKeepSession:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
         case .osSupportForceUnsupportedMessage:
             return .disabled
         case .osSupportForceWillSoonDropSupportMessage:
             return .disabled
         case .willSoonDropBigSurSupport:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.willSoonDropBigSurSupport))
+        case .hangReporting:
+            return .internalOnly()
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))
         case .importChromeShortcuts:
@@ -410,6 +436,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .appStoreCheckForUpdatesFlow:
             return .internalOnly()
+        case .unifiedURLPredictor:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
+        case .unifiedURLPredictorMetrics:
+            return .disabled
         }
     }
 }

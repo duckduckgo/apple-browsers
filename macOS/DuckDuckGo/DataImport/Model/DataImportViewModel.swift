@@ -501,7 +501,7 @@ extension DataImport.Source {
              .operaGX, .tor, .vivaldi, .yandex:
             return .profileAndDataTypesPicker
         case .safari, .safariTechnologyPreview:
-            if Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
+            if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
                 return .fileImport(dataTypeSelection: .multiple([.bookmarks, .passwords]))
             } else {
                 return .profileAndDataTypesPicker

@@ -15,6 +15,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+#if APPSTORE
 
 import XCTest
 import Cocoa
@@ -123,3 +124,5 @@ final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
         XCTAssertEqual(menuItem.action, #selector(AppStoreUpdateController.openUpdatesPage))
     }
 }
+
+#endif

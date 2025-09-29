@@ -28,6 +28,7 @@ final class UpdateControllerProtocolTests: XCTestCase {
 
     // MARK: - Basic Protocol Tests
 
+    #if APPSTORE
     func testUpdateControllerProtocol_DefaultImplementationExists() {
         // This test just verifies the protocol extension exists and compiles
         // Given
@@ -39,6 +40,7 @@ final class UpdateControllerProtocolTests: XCTestCase {
         // No assertions needed - if it compiles and doesn't crash, the extension works
         XCTAssertNotNil(controller)
     }
+    #endif
 
     func testNotificationTimingLogic() {
         // Test the 7-day logic directly

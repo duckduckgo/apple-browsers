@@ -15,7 +15,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-
+#if APPSTORE
 import XCTest
 import Combine
 import NetworkingTestingUtils
@@ -554,3 +554,5 @@ class MockAppStoreOpener: AppStoreOpener {
         openAppStoreCallCount = 0
     }
 }
+
+#endif

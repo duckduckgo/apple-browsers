@@ -20,6 +20,7 @@ import Bookmarks
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKit
 
 extension Preferences {
 
@@ -82,6 +83,37 @@ extension Preferences {
         }
     }
 
+    struct ThemeAppearanceViewV2: View {
+        var appearance: ThemeAppearance
+
+        var body: some View {
+            HStack(spacing: 6) {
+                Image(systemNamed: appearance.icon)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.primary)
+
+                Text(appearance.displayName)
+                    .font(.system(size: 13))
+                    .foregroundColor(.primary)
+            }
+            .frame(width: 140, height: 32)
+        }
+    }
+
+    struct ThemeAppearancePickerV2: View {
+        @EnvironmentObject var model: AppearancePreferences
+        private let settings = SlidingPickerSettings(borderColor: Color(.decorationTertiary), selectionColor: Color(.controlBackgroundColor), dividerSize: CGSize(width: 1, height: 16))
+
+        var body: some View {
+            SlidingPickerView(settings: settings, allValues: ThemeAppearance.allCases, selectedValue: $model.themeAppearance) { appearance in
+                AnyView(
+                    ThemeAppearanceViewV2(appearance: appearance)
+                )
+            }
+            .frame(height: 32)
+        }
+    }
+
     struct AppearanceView: View {
         @ObservedObject var model: AppearancePreferences
         @ObservedObject var aiChatModel: AIChatPreferences
@@ -94,6 +126,9 @@ extension Preferences {
                 PreferencePaneSection(UserText.theme) {
 
                     if isThemeSwitcherEnabled {
+                        ThemeAppearancePickerV2()
+                            .environmentObject(model)
+
                     } else {
                         ThemeAppearancePicker()
                             .environmentObject(model)
@@ -178,6 +213,20 @@ extension Preferences {
                     }
                 }
             }
+        }
+    }
+}
+
+private extension ThemeAppearance {
+
+    var icon: Image.SystemImageName {
+        switch self {
+        case .light:
+            .sunMax
+        case .dark:
+            .moon
+        case .systemDefault:
+            .circleLeftHalfFilled
         }
     }
 }

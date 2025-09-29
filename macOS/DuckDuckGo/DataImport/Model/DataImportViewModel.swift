@@ -465,7 +465,7 @@ private func dataImporter(for source: DataImport.Source, dataTypeSelection: Data
                                    featureFlagger: Application.appDelegate.featureFlagger)
             case .commaSeparatedText:
                 CSVImporter(fileURL: url, loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()), defaultColumnPositions: .init(source: source), reporter: SecureVaultReporter.shared, tld: Application.appDelegate.tld)
-            case .zip:
+            default:
                 SafariArchiveImporter(archiveURL: url,
                                       bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
                                       loginImporter: loginImporter,
@@ -473,11 +473,11 @@ private func dataImporter(for source: DataImport.Source, dataTypeSelection: Data
                                       featureFlagger: Application.appDelegate.featureFlagger,
                                       secureVaultReporter: SecureVaultReporter.shared,
                                       tld: Application.appDelegate.tld)
-            default:
-                fatalError("Unsupported Safari data type selection: \(String(describing: dataTypeSelection))")
             }
         default:
-            fatalError("Unsupported Safari data type selection: \(String(describing: dataTypeSelection))")
+            SafariDataImporter(profile: profile,
+                               bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                               featureFlagger: Application.appDelegate.featureFlagger)
         }
     }
 }

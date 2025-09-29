@@ -123,11 +123,13 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
             return nil
         }
 
-        let data = messageHandling.getDataForMessageType(.pageContext)
-        if data == nil, payload.reason == "userAction" {
+        let pageContext = messageHandling.getDataForMessageType(.pageContext) as? AIChatPageContextData
+
+        if pageContext == nil, payload.reason == "userAction" {
             pageContextRequestedSubject.send()
         }
-        return data
+
+        return PageContextResponse(pageContextData: pageContext)
     }
 
     @MainActor

@@ -134,7 +134,7 @@ extension AIChatMessageHandler {
     }
 
     private func getPageContext() -> Encodable? {
-        return PageContextResponse(pageContextData: pageContextHandler.consumeData())
+        pageContextHandler.consumeData()
     }
 
     private func setPageContext(_ data: AIChatPageContextData?) {

@@ -24,6 +24,12 @@ import XCTest
 final class FireDialogViewModelTests: XCTestCase {
 
     @MainActor
+    override func setUp() {
+        super.setUp()
+        FireDialogViewModel.resetPersistedDefaults()
+    }
+
+    @MainActor
     private func makeViewModel(
         with tabCollectionViewModel: TabCollectionViewModel,
         onboardingContextualDialogsManager: ContextualOnboardingStateUpdater = ContextualDialogsManager(trackerMessageProvider: MockTrackerMessageProvider())
@@ -97,7 +103,8 @@ final class FireDialogViewModelTests: XCTestCase {
         )
 
         viewModel.clearingOption = .allData
-        viewModel.burn(includeHistory: false)
+        viewModel.includeHistory = false
+        viewModel.burn()
 
         XCTAssertFalse(historyCoordinator.burnAllCalled)
         XCTAssertFalse(historyCoordinator.burnVisitsCalled)
@@ -169,7 +176,8 @@ final class FireDialogViewModelTests: XCTestCase {
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnVisits") }
-        vm.burn(includeHistory: true)
+        vm.includeHistory = true
+        vm.burn()
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -201,7 +209,8 @@ final class FireDialogViewModelTests: XCTestCase {
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnVisits") }
-        vm.burn(includeHistory: true)
+        vm.includeHistory = true
+        vm.burn()
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -234,7 +243,9 @@ final class FireDialogViewModelTests: XCTestCase {
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnVisits") }
-        vm.burn(includeHistory: true, includeTabsAndWindows: false)
+        vm.includeHistory = true
+        vm.includeTabsAndWindows = false
+        vm.burn()
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -263,7 +274,9 @@ final class FireDialogViewModelTests: XCTestCase {
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnVisits") }
-        vm.burn(includeHistory: true, includeTabsAndWindows: false)
+        vm.includeHistory = true
+        vm.includeTabsAndWindows = false
+        vm.burn()
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -292,7 +305,9 @@ final class FireDialogViewModelTests: XCTestCase {
         historyCoordinator.onBurnVisits = { XCTFail("onBurnVisits should not be called when expecting onBurnAll") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnAll") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnAll") }
-        vm.burn(includeHistory: true, includeTabsAndWindows: false)
+        vm.includeHistory = true
+        vm.includeTabsAndWindows = false
+        vm.burn()
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -321,7 +336,8 @@ final class FireDialogViewModelTests: XCTestCase {
         historyCoordinator.onBurnVisits = { XCTFail("onBurnVisits should not be called when expecting onBurnAll") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnAll") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnAll") }
-        vm.burn(includeHistory: true)
+        vm.includeHistory = true
+        vm.burn()
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -353,7 +369,10 @@ final class FireDialogViewModelTests: XCTestCase {
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnVisits") }
-        vm.burn(includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: false)
+        vm.includeHistory = true
+        vm.includeTabsAndWindows = true
+        vm.includeCookiesAndSiteData = false
+        vm.burn()
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -385,7 +404,10 @@ final class FireDialogViewModelTests: XCTestCase {
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnVisits") }
 
-        vm.burn(includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: false)
+        vm.includeHistory = true
+        vm.includeTabsAndWindows = true
+        vm.includeCookiesAndSiteData = false
+        vm.burn()
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -415,7 +437,10 @@ final class FireDialogViewModelTests: XCTestCase {
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnAll") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnAll") }
         // includeCookiesAndSiteData: false forces switch path (.allData, false)
-        vm.burn(includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: false)
+        vm.includeHistory = true
+        vm.includeTabsAndWindows = true
+        vm.includeCookiesAndSiteData = false
+        vm.burn()
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -442,7 +467,8 @@ final class FireDialogViewModelTests: XCTestCase {
             onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )
         vm.clearingOption = .currentTab
-        vm.burn(includeHistory: false)
+        vm.includeHistory = false
+        vm.burn()
         XCTAssertFalse(historyCoordinator.burnAllCalled)
         XCTAssertFalse(historyCoordinator.burnVisitsCalled)
         XCTAssertFalse(historyCoordinator.burnDomainsCalled)
@@ -470,7 +496,8 @@ final class FireDialogViewModelTests: XCTestCase {
             onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )
         vm.clearingOption = .currentWindow
-        vm.burn(includeHistory: false)
+        vm.includeHistory = false
+        vm.burn()
         XCTAssertFalse(historyCoordinator.burnAllCalled)
         XCTAssertFalse(historyCoordinator.burnVisitsCalled)
         XCTAssertFalse(historyCoordinator.burnDomainsCalled)

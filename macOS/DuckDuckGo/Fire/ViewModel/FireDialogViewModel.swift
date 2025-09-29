@@ -49,6 +49,17 @@ final class FireDialogViewModel: ObservableObject {
 
     /// Remember last selected scope
     static var lastSelectedClearingOption: ClearingOption = .currentTab
+    static var lastIncludeTabsAndWindowsState: Bool = true
+    static var lastIncludeHistoryState: Bool = true
+    static var lastIncludeCookiesAndSiteDataState: Bool = true
+
+    /// Reset persisted UI defaults - used for tests
+    static func resetPersistedDefaults() {
+        lastSelectedClearingOption = .currentTab
+        lastIncludeTabsAndWindowsState = true
+        lastIncludeHistoryState = true
+        lastIncludeCookiesAndSiteDataState = true
+    }
 
     init(fireViewModel: FireViewModel,
          tabCollectionViewModel: TabCollectionViewModel,
@@ -56,6 +67,9 @@ final class FireDialogViewModel: ObservableObject {
          fireproofDomains: FireproofDomains,
          faviconManagement: FaviconManagement,
          clearingOption: ClearingOption? = nil,
+         includeTabsAndWindows: Bool? = nil,
+         includeHistory: Bool? = nil,
+         includeCookiesAndSiteData: Bool? = nil,
          tld: TLD,
          onboardingContextualDialogsManager: ContextualOnboardingStateUpdater) {
 
@@ -64,19 +78,16 @@ final class FireDialogViewModel: ObservableObject {
         self.historyCoordinating = historyCoordinating
         self.fireproofDomains = fireproofDomains
         self.faviconManagement = faviconManagement
-        self.clearingOption = clearingOption ?? FireDialogViewModel.lastSelectedClearingOption
+        self.clearingOption = clearingOption ?? Self.lastSelectedClearingOption
+        self.includeTabsAndWindows = includeTabsAndWindows ?? Self.lastIncludeTabsAndWindowsState
+        self.includeHistory = includeHistory ?? Self.lastIncludeHistoryState
+        self.includeCookiesAndSiteData = includeCookiesAndSiteData ?? Self.lastIncludeCookiesAndSiteDataState
+
         self.tld = tld
         self.onboardingContextualDialogsManager = onboardingContextualDialogsManager
 
         // Initialize selectable/fireproofed lists so counts (e.g., cookiesSitesCountForCurrentScope) are available immediately
         updateItems(for: self.clearingOption)
-    }
-
-    var clearingOption: ClearingOption {
-        didSet {
-            updateItems(for: clearingOption)
-            Self.lastSelectedClearingOption = clearingOption
-        }
     }
 
     private(set) var shouldShowPinnedTabsInfo: Bool = false
@@ -89,7 +100,32 @@ final class FireDialogViewModel: ObservableObject {
     private let tld: TLD
     private let onboardingContextualDialogsManager: ContextualOnboardingStateUpdater
 
-    private(set) var hasOnlySingleFireproofDomain: Bool = false
+    var clearingOption: ClearingOption {
+        didSet {
+            updateItems(for: clearingOption)
+            Self.lastSelectedClearingOption = clearingOption
+        }
+    }
+
+    /// when true, selected tabs/windows are closed; when false, tabs remain open, but their history/session state is cleared if includeHistory is true.
+    @Published var includeTabsAndWindows: Bool {
+        didSet {
+            Self.lastIncludeTabsAndWindowsState = includeTabsAndWindows
+        }
+    }
+    /// when true, history is cleared for the selected scope.
+    @Published var includeHistory: Bool {
+        didSet {
+            Self.lastIncludeHistoryState = includeHistory
+        }
+    }
+    /// when true, cookies/site data are cleared for the selected (non-fireproof) domains in scope.
+    @Published var includeCookiesAndSiteData: Bool {
+        didSet {
+            Self.lastIncludeCookiesAndSiteDataState = includeCookiesAndSiteData
+        }
+    }
+
     @Published private(set) var selectable: [Item] = []
     @Published private(set) var fireproofed: [Item] = []
     @Published private(set) var selected: Set<Int> = Set()
@@ -130,12 +166,6 @@ final class FireDialogViewModel: ObservableObject {
             }
         let selectable = visitedETLDPlus1Domains
             .subtracting(fireproofed)
-
-        if visitedETLDPlus1Domains.count == 1, let domain = visitedETLDPlus1Domains.first, fireproofed.contains(domain) {
-            self.hasOnlySingleFireproofDomain = true
-        } else {
-            self.hasOnlySingleFireproofDomain = false
-        }
 
         self.selectable = selectable
             .map { Item(domain: $0, favicon: faviconManagement.getCachedFavicon(forDomainOrAnySubdomain: $0, sizeCategory: .small)?.image) }
@@ -215,9 +245,7 @@ final class FireDialogViewModel: ObservableObject {
     ///   - includeHistory: when true, history is cleared for the selected scope.
     ///   - includeTabsAndWindows: when true, selected tabs/windows are closed; when false, tabs remain open, but their history/session state is cleared if includeHistory is true.
     ///   - includeCookiesAndSiteData: when true, cookies/site data are cleared for the selected (non-fireproof) domains in scope.
-    func burn(includeHistory: Bool = true,
-              includeTabsAndWindows: Bool = true,
-              includeCookiesAndSiteData: Bool = true) {
+    func burn() {
         onboardingContextualDialogsManager.fireButtonUsed()
         PixelKit.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
 

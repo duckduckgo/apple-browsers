@@ -47,9 +47,6 @@ struct FireDialogView: ModalView {
     private let featureFlagger: FeatureFlagger
     @Environment(\.dismiss) private var dismiss
 
-    @State private var includeTabsAndWindows: Bool = true
-    @State private var includeHistory: Bool = true
-    @State private var includeCookiesAndSiteData: Bool = true
     @State private var isShowingSitesOverlay: Bool = false
 
     init(viewModel: FireDialogViewModel, showSitesOverlay: Bool = false, featureFlagger: FeatureFlagger? = nil) {
@@ -69,7 +66,7 @@ struct FireDialogView: ModalView {
     }
 
     private var isDeleteEnabled: Bool {
-        includeTabsAndWindows || includeHistory || includeCookiesAndSiteData
+        viewModel.includeTabsAndWindows || viewModel.includeHistory || viewModel.includeCookiesAndSiteData
     }
 
     var body: some View {
@@ -166,7 +163,7 @@ struct FireDialogView: ModalView {
                 icon: DesignSystemImages.Glyphs.Size16.windowsAndTabs,
                 title: UserText.fireDialogTabsAndWindows,
                 subtitle: tabsSubtitle,
-                isOn: $includeTabsAndWindows
+                isOn: $viewModel.includeTabsAndWindows
             )
             sectionDivider()
 
@@ -175,7 +172,7 @@ struct FireDialogView: ModalView {
                 icon: DesignSystemImages.Glyphs.Size16.history,
                 title: UserText.fireDialogHistoryTitle,
                 subtitle: historySubtitle,
-                isOn: $includeHistory
+                isOn: $viewModel.includeHistory
             )
             sectionDivider()
 
@@ -184,9 +181,9 @@ struct FireDialogView: ModalView {
                 icon: DesignSystemImages.Glyphs.Size16.cookie,
                 title: UserText.cookiesAndSiteDataTitle,
                 subtitle: cookiesSubtitle,
-                isOn: $includeCookiesAndSiteData,
+                isOn: $viewModel.includeCookiesAndSiteData,
                 infoAction: { isShowingSitesOverlay = true },
-                infoEnabled: includeCookiesAndSiteData && viewModel.cookiesSitesCountForCurrentScope > 0
+                infoEnabled: viewModel.includeCookiesAndSiteData && viewModel.cookiesSitesCountForCurrentScope > 0
             )
             sectionDivider(padding: 0)
 
@@ -423,9 +420,7 @@ struct FireDialogView: ModalView {
             .keyboardShortcut(.cancelAction)
 
             Button {
-                viewModel.burn(includeHistory: includeHistory,
-                               includeTabsAndWindows: includeTabsAndWindows,
-                               includeCookiesAndSiteData: includeCookiesAndSiteData)
+                viewModel.burn()
                 dismiss()
             } label: {
                 Text(UserText.delete)

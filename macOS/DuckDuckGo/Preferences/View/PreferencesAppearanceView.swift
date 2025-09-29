@@ -24,6 +24,8 @@ import DesignResourcesKit
 
 extension Preferences {
 
+    // MARK: - Legacy: Superceded by `ThemeAppearanceViewV2`
+    //
     struct ThemeAppearanceButton: View {
         let title: String
         let imageName: String
@@ -54,6 +56,8 @@ extension Preferences {
 
     }
 
+    // MARK: - Legacy: Superceded by `ThemeAppearancePickerV2`
+    //
     struct ThemeAppearancePicker: View {
         @EnvironmentObject var model: AppearancePreferences
 
@@ -83,6 +87,8 @@ extension Preferences {
         }
     }
 
+    // MARK: - Appearance View (Light / Dark / System)
+    //
     struct ThemeAppearanceViewV2: View {
         var appearance: ThemeAppearance
 
@@ -100,17 +106,13 @@ extension Preferences {
         }
     }
 
+    // MARK: - Picker: Appearance (Light / Dark / System)
+    //
     struct ThemeAppearancePickerV2: View {
         @EnvironmentObject var model: AppearancePreferences
-        private let settings = SlidingPickerSettings(
-            backgroundColor: Color(designSystemColor: .surfacePrimary),
-            borderColor: Color(designSystemColor: .containerDecorationSecondary),
-            selectionBackgroundColor: Color(designSystemColor: .surfaceTertiary),
-            selectionBorderColor: Color(designSystemColor: .containerDecorationSecondary),
-            dividerSize: CGSize(width: 1, height: 16))
 
         var body: some View {
-            SlidingPickerView(settings: settings, allValues: ThemeAppearance.allCases, selectedValue: $model.themeAppearance) { appearance in
+            SlidingPickerView(settings: .appearancePickerSettings, allValues: ThemeAppearance.allCases, selectedValue: $model.themeAppearance) { appearance in
                 AnyView(
                     ThemeAppearanceViewV2(appearance: appearance)
                 )
@@ -222,6 +224,8 @@ extension Preferences {
     }
 }
 
+// MARK: - ThemeAppearance Helpers
+//
 private extension ThemeAppearance {
 
     var icon: Image.SystemImageName {
@@ -233,5 +237,20 @@ private extension ThemeAppearance {
         case .systemDefault:
             .circleLeftHalfFilled
         }
+    }
+}
+
+
+// MARK: - SlidingPickerSettings Helpers
+//
+private extension SlidingPickerSettings {
+
+    static var appearancePickerSettings: SlidingPickerSettings {
+        SlidingPickerSettings(
+            backgroundColor: Color(designSystemColor: .surfacePrimary),
+            borderColor: Color(designSystemColor: .containerDecorationSecondary),
+            selectionBackgroundColor: Color(designSystemColor: .surfaceTertiary),
+            selectionBorderColor: Color(designSystemColor: .containerDecorationSecondary),
+            dividerSize: CGSize(width: 1, height: 16))
     }
 }

@@ -809,6 +809,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
 
         watchdog = Watchdog()
+ #if !DEBUG
+        if featureFlagger.isFeatureOn(.hangReporting) {
+            watchdog.start()
+        }
+ #endif
 
         super.init()
 

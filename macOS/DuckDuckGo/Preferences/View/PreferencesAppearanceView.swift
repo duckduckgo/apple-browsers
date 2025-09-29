@@ -23,7 +23,7 @@ import SwiftUIExtensions
 
 extension Preferences {
 
-    struct ThemeButton: View {
+    struct ThemeAppearanceButton: View {
         let title: String
         let imageName: String
         @Binding var isSelected: Bool
@@ -53,13 +53,13 @@ extension Preferences {
 
     }
 
-    struct ThemePicker: View {
+    struct ThemeAppearancePicker: View {
         @EnvironmentObject var model: AppearancePreferences
 
         var body: some View {
             HStack(spacing: 24) {
                 ForEach(ThemeAppearance.allCases, id: \.self) { theme in
-                    ThemeButton(
+                    ThemeAppearanceButton(
                         title: theme.displayName,
                         imageName: theme.imageName,
                         isSelected: isThemeSelected(theme)
@@ -92,8 +92,8 @@ extension Preferences {
                 // SECTION 1: Theme
                 PreferencePaneSection(UserText.theme) {
 
-                    ThemePicker()
-                        .environmentObject(model)
+                        ThemeAppearancePicker()
+                            .environmentObject(model)
                 }
 
                 // SECTION 2: Address Bar

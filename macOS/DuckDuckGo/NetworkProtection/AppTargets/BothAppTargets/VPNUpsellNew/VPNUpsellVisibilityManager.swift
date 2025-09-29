@@ -61,7 +61,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     private let timerDuration: TimeInterval
     private let autoDismissDays: Int
     private var persistor: VPNUpsellUserDefaultsPersisting
-    private let pixelHandler: (PrivacyProPixel) -> Void
+    private let pixelHandler: (SubscriptionPixel) -> Void
 
     // MARK: - State
     private let isDefaultBrowserSubject = PassthroughSubject<Bool, Never>()
@@ -80,7 +80,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
          persistor: VPNUpsellUserDefaultsPersisting,
          timerDuration: TimeInterval = Constants.timeIntervalBeforeShowingUpsell,
          autoDismissDays: Int = Constants.autoDismissDays,
-         pixelHandler: @escaping (PrivacyProPixel) -> Void = { PixelKit.fire($0) }) {
+         pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) }) {
         self.isFirstLaunch = isFirstLaunch
         self.isNewUser = isNewUser
         self.subscriptionManager = subscriptionManager
@@ -331,7 +331,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
 
         // Fire pixel when transitioning to visible state
         if previousState != .visible {
-            pixelHandler(.privacyProToolbarButtonShown)
+            pixelHandler(.subscriptionToolbarButtonShown)
         }
 
         state = newState

@@ -82,7 +82,7 @@ final class MockMoreOpationsMenuIconProvider: MoreOptionsMenuIconsProviding {
     var deleteBrowsingDataIcon: NSImage = .logo
     var syncIcon: NSImage = .logo
     var emailProtectionIcon: NSImage = .logo
-    var privacyProIcon: NSImage = .logo
+    var subscriptionIcon: NSImage = .logo
     var fireproofSiteIcon: NSImage = .logo
     var removeFireproofIcon: NSImage = .logo
     var findInPageIcon: NSImage = .logo
@@ -93,7 +93,7 @@ final class MockMoreOpationsMenuIconProvider: MoreOptionsMenuIconsProviding {
     var browserFeedbackIcon: NSImage = .logo
     var reportBrokenSiteIcon: NSImage = .logo
     var paidAIChat: NSImage = .logo
-    var sendPrivacyProFeedbackIcon: NSImage = .logo
+    var sendSubscriptionFeedbackIcon: NSImage = .logo
     var passwordsSubMenuIcon: NSImage = .logo
     var identitiesIcon: NSImage = .logo
     var creditCardsIcon: NSImage = .logo

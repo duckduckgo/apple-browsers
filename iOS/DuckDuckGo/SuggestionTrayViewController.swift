@@ -112,7 +112,7 @@ class SuggestionTrayViewController: UIViewController {
         let homePageMessagesConfiguration: HomePageMessagesConfiguration
         let subscriptionDataReporting: SubscriptionDataReporting?
         let newTabDialogFactory: NewTabDaxDialogFactory
-        let newTabDaxDialogManager: NewTabDialogSpecProvider & PrivacyProPromotionCoordinating
+        let newTabDaxDialogManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating
         let faviconLoader: FavoritesFaviconLoading
         let messageNavigationDelegate: MessageNavigationDelegate
         let appSettings: AppSettings

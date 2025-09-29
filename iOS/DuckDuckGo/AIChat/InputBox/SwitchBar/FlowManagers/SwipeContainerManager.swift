@@ -45,24 +45,33 @@ final class SwipeContainerManager: NSObject {
     }
     
     // MARK: - Public Methods
-    
+
+
     /// Installs the swipe container in the provided parent view
-    func installInViewController(_ parentController: UIViewController, asSubviewOf view: UIView, belowView: UIView) {
+    func installInViewController(_ parentController: UIViewController, asSubviewOf view: UIView, barView: UIView, isTopBarPosition: Bool) {
         parentController.addChild(swipeContainerViewController)
 
-        view.insertSubview(swipeContainerViewController.view, belowSubview: belowView)
+        view.insertSubview(swipeContainerViewController.view, belowSubview: barView)
+
         swipeContainerViewController.view.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
             swipeContainerViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            swipeContainerViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            // Allow scroll to flow under
-            swipeContainerViewController.view.topAnchor.constraint(equalTo: belowView.bottomAnchor, constant: -Metrics.contentUnderflowOffset),
-            swipeContainerViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            swipeContainerViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
 
-        // Compensate for the underflow + margin
-        swipeContainerViewController.additionalSafeAreaInsets.top = Metrics.contentMargin + Metrics.contentUnderflowOffset
+        if isTopBarPosition {
+            swipeContainerViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+            // Allow scroll to flow under
+            swipeContainerViewController.view.topAnchor.constraint(equalTo: barView.bottomAnchor,
+                                                                   constant: -Metrics.contentUnderflowOffset).isActive = true
+
+            // Compensate for the underflow + margin
+            swipeContainerViewController.additionalSafeAreaInsets.top = Metrics.contentMargin + Metrics.contentUnderflowOffset
+        } else {
+            swipeContainerViewController.view.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+            swipeContainerViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+        }
 
         swipeContainerViewController.didMove(toParent: parentController)
     }

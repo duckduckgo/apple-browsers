@@ -51,7 +51,7 @@ public struct NetworkProtectionStatusView: View {
 
             if model.shouldShowSubscriptionExpired {
                 SubscriptionExpiredView {
-                    model.openPrivacyPro()
+                    model.openSubscription()
                 } uninstallButtonHandler: {
                     model.uninstallVPN()
                 }

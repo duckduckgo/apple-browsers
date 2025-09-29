@@ -240,7 +240,6 @@ private extension ThemeAppearance {
     }
 }
 
-
 // MARK: - SlidingPickerSettings Helpers
 //
 private extension SlidingPickerSettings {

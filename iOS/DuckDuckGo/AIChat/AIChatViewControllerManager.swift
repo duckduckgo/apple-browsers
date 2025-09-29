@@ -294,14 +294,6 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
             }
         case .closeAIChat:
             chatViewController?.dismiss(animated: true)
-        case .openKeyboard:
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                print("🇳🇴 refreshing webview")
-                self.chatViewController?.webView?.setNeedsDisplay()
-                self.chatViewController?.webView?.layoutIfNeeded()
-                self.chatViewController?.webView?.setNeedsLayout()
-//                self.chatViewController?.webView?.scrollView
-            }
         default:
             break
         }

@@ -147,10 +147,7 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.reportMetric
         case .openKeyboard:
             return { [weak self] params, message in
-                await self?.handler.openKeyboard(params: params, message: message, webView: self?.webView, openKeyboardHandler: {
-                    #warning("fix force unwrap here!")
-                    self!.delegate!.aiChatUserScript(self!, didReceiveMessage: .openKeyboard)
-                })
+                await self?.handler.openKeyboard(params: params, message: message, webView: self?.webView)
             }
         default:
             return nil

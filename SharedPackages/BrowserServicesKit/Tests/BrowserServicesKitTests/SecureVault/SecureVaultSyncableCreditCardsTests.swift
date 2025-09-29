@@ -37,26 +37,6 @@ class SecureVaultSyncableCreditCardsTests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    private func deleteDbFile() throws {
-        do {
-            let fm = FileManager.default
-            if fm.fileExists(atPath: databaseLocation.path) {
-                try fm.removeItem(at: databaseLocation)
-            }
-            let shmPath = databaseLocation.path + "-shm"
-            if fm.fileExists(atPath: shmPath) {
-                try fm.removeItem(atPath: shmPath)
-            }
-            let walPath = databaseLocation.path + "-wal"
-            if fm.fileExists(atPath: walPath) {
-                try fm.removeItem(atPath: walPath)
-            }
-        } catch {
-            print("Error deleting database file: \(error)")
-            throw error
-        }
-    }
-
     func testWhenCreditCardsAreInsertedThenSyncableCreditCardsArePopulated() throws {
         let creditCard = SecureVaultModels.CreditCard(
             title: "Test Card",
@@ -387,4 +367,26 @@ class SecureVaultSyncableCreditCardsTests: XCTestCase {
         return try XCTUnwrap(try provider.creditCardForCardId(cardId))
     }
 
+    private func deleteDbFile() throws {
+        do {
+            let dbFileContainer = databaseLocation.deletingLastPathComponent()
+            for file in try FileManager.default.contentsOfDirectory(atPath: dbFileContainer.path) {
+                guard ["db", "bak"].contains((file as NSString).pathExtension) else { continue }
+                try FileManager.default.removeItem(atPath: dbFileContainer.appendingPathComponent(file).path)
+            }
+
+#if os(iOS)
+            let sharedDbFileContainer = DefaultAutofillDatabaseProvider.defaultSharedDatabaseURL().deletingLastPathComponent()
+            for file in try FileManager.default.contentsOfDirectory(atPath: sharedDbFileContainer.path) {
+                guard ["db", "bak"].contains((file as NSString).pathExtension) else { continue }
+                try FileManager.default.removeItem(atPath: sharedDbFileContainer.appendingPathComponent(file).path)
+            }
+#endif
+        } catch let error as NSError {
+            // File not found
+            if error.domain != NSCocoaErrorDomain || error.code != 4 {
+                throw error
+            }
+        }
+    }
 }

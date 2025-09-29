@@ -83,10 +83,7 @@ struct BrokerProfileOptOutSubJob {
             vpnBypassStatus: vpnBypassStatus
         )
 
-        let matchingOptOutJob = brokerProfileQueryData.optOutJobData.first { job in
-            job.extractedProfile.id == extractedProfileId
-        }
-        let recordFoundDate = matchingOptOutJob?.createdDate ?? stageDurationCalculator.startTime
+        let recordFoundDate = brokerProfileQueryData.optOutJobDataMatching(extractedProfileId)?.createdDate ?? stageDurationCalculator.startTime
         let wideEventRecorder = OptOutWideEventRecorder.makeIfPossible(
             wideEvent: dependencies.wideEvent,
             attemptID: stageDurationCalculator.attemptId,
@@ -180,16 +177,17 @@ struct BrokerProfileOptOutSubJob {
             // 9. Catch errors from the opt-out job and report them:
             let tries = try? fetchTotalNumberOfOptOutAttempts(database: dependencies.database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1)
-            if let timeoutError = error as? TimeoutError {
+
+            wideEventRecorder?.recordError(error)
+            switch error {
+            case is TimeoutError:
                 wideEventRecorder?.cancel()
-            } else if let dbpError = error as? DataBrokerProtectionError, case .cancelled = dbpError {
+            case let error as DataBrokerProtectionError where error == .jobTimeout:
                 wideEventRecorder?.cancel()
-            } else if error is CancellationError {
-                wideEventRecorder?.cancel()
-            } else {
-                wideEventRecorder?.recordError(error)
+            default:
                 wideEventRecorder?.complete(status: .failure)
             }
+
             handleOperationError(
                 origin: .optOut,
                 brokerId: brokerId,
@@ -319,4 +317,10 @@ struct BrokerProfileOptOutSubJob {
         Logger.dataBrokerProtection.error("Error on operation : \(error.localizedDescription, privacy: .public)")
     }
 
+}
+
+extension BrokerProfileQueryData {
+    fileprivate func optOutJobDataMatching(_ extractedProfileId: Int64) -> OptOutJobData? {
+        optOutJobData.first(where: { $0.extractedProfile.id == extractedProfileId })
+    }
 }

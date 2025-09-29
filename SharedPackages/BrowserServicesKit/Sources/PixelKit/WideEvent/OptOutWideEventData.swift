@@ -99,18 +99,18 @@ extension OptOutWideEventData {
         var parameters: [String: String] = [:]
 
         parameters[WideEventParameter.Feature.name] = "pir-opt-out"
-        parameters[WideEventParameter.OptOutFeature.dataBrokerURL] = dataBrokerURL
+        parameters[WideEventParameter.PIR.OptOutFeature.dataBrokerURL] = dataBrokerURL
 
         if let dataBrokerVersion {
-            parameters[WideEventParameter.OptOutFeature.dataBrokerVersion] = dataBrokerVersion
+            parameters[WideEventParameter.PIR.OptOutFeature.dataBrokerVersion] = dataBrokerVersion
         }
 
         if let submissionBuckets = bucketedValues(for: submissionInterval) {
-            parameters.merge(submissionBuckets.withPrefix(WideEventParameter.OptOutFeature.submissionIntervalPrefix), uniquingKeysWith: { _, new in new })
+            parameters.merge(submissionBuckets.withPrefix(WideEventParameter.PIR.OptOutFeature.submissionIntervalPrefix), uniquingKeysWith: { _, new in new })
         }
 
         if let confirmationBuckets = bucketedValues(for: confirmationInterval) {
-            parameters.merge(confirmationBuckets.withPrefix(WideEventParameter.OptOutFeature.confirmationIntervalPrefix), uniquingKeysWith: { _, new in new })
+            parameters.merge(confirmationBuckets.withPrefix(WideEventParameter.PIR.OptOutFeature.confirmationIntervalPrefix), uniquingKeysWith: { _, new in new })
         }
 
         if let errorData {
@@ -127,7 +127,7 @@ extension OptOutWideEventData {
         }
 
         for (index, stage) in stages.enumerated() {
-            let base = WideEventParameter.OptOutFeature.stagePrefix(index: index)
+            let base = WideEventParameter.PIR.OptOutFeature.stagePrefix(index: index)
             parameters["\(base).name"] = stage.name.rawValue
 
             if let duration = stage.durationMilliseconds {

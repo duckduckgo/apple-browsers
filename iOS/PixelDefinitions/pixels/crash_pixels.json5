@@ -5,7 +5,7 @@
         triggers: ['exception'],
         suffixes: [
             ['daily', 'platform', 'form_factor'],
-            ['platform', 'form_factor']
+            ['platform', 'form_factor'],
         ],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
@@ -15,7 +15,7 @@
         triggers: ['exception'],
         suffixes: [
             ['daily', 'platform', 'form_factor'],
-            ['platform', 'form_factor']
+            ['platform', 'form_factor'],
         ],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
@@ -25,7 +25,7 @@
         triggers: ['exception'],
         suffixes: [
             ['daily', 'platform', 'form_factor'],
-            ['platform', 'form_factor']
+            ['platform', 'form_factor'],
         ],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
@@ -35,7 +35,7 @@
         triggers: ['exception'],
         suffixes: [
             ['daily', 'platform', 'form_factor'],
-            ['platform', 'form_factor']
+            ['platform', 'form_factor'],
         ],
         parameters: [
             'appVersion',
@@ -62,7 +62,7 @@
         triggers: ['exception'],
         suffixes: [
             ['daily', 'platform', 'form_factor'],
-            ['platform', 'form_factor']
+            ['platform', 'form_factor'],
         ],
         parameters: [
             'appVersion',
@@ -117,7 +117,7 @@
         triggers: ['exception'],
         suffixes: [
             ['daily', 'platform', 'form_factor'],
-            ['platform', 'form_factor']
+            ['platform', 'form_factor'],
         ],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
@@ -127,7 +127,7 @@
         triggers: ['exception'],
         suffixes: [
             ['daily', 'platform', 'form_factor'],
-            ['platform', 'form_factor']
+            ['platform', 'form_factor'],
         ],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
@@ -146,7 +146,7 @@
         triggers: ['exception'],
         suffixes: [
             ['first_daily_count', 'platform', 'form_factor'],
-            ['platform', 'form_factor']
+            ['platform', 'form_factor'],
         ],
         parameters: [
             'appVersion',
@@ -194,7 +194,7 @@
         triggers: ['exception'],
         suffixes: [
             ['daily', 'platform', 'form_factor'],
-            ['platform', 'form_factor']
+            ['platform', 'form_factor'],
         ],
         parameters: [
             'appVersion',
@@ -223,7 +223,7 @@
         triggers: ['exception'],
         suffixes: [
             ['daily', 'platform', 'form_factor'],
-            ['platform', 'form_factor']
+            ['platform', 'form_factor'],
         ],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },

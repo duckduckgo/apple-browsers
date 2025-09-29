@@ -7,7 +7,7 @@
         triggers: ['other'],
         suffixes: [
             ['first_daily_count', 'platform', 'form_factor'],
-            ['platform', 'form_factor']
+            ['platform', 'form_factor'],
         ],
         parameters: ['appVersion', 'pixelSource'],
     },
@@ -93,7 +93,7 @@
         triggers: ['other'],
         suffixes: [
             ['first_daily_count', 'platform', 'form_factor'],
-            ['platform', 'form_factor']
+            ['platform', 'form_factor'],
         ],
         parameters: ['appVersion', 'pixelSource'],
     },

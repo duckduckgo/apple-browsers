@@ -37,7 +37,7 @@
     isInternalUser: {
         key: 'is_internal_user',
         type: 'boolean',
-        enum: [ true ]
+        enum: [true],
     },
     underlyingErrorCode: {
         keyPattern: '^ue[0-9]$',

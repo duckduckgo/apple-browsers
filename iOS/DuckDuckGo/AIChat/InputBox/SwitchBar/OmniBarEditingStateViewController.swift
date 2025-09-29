@@ -55,12 +55,17 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     // MARK: - Core Components
     private lazy var contentContainerView = UIView()
 
+    private lazy var bottomLocationSwitchBarBackgroundMaskView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
 
-    private var isUsingTopBarPosition: Bool {
-        appSettings.currentAddressBarPosition == .top || !featureFlagger.isFeatureOn(.aiSearchBottomBarSupport)
-    }
+    private let isUsingTopBarPosition: Bool
     lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler,
                                                    showsSeparator: !isUsingTopBarPosition,
                                                    reduceTopPaddings: !isUsingTopBarPosition)
@@ -91,6 +96,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         self.daxLogoManager = DaxLogoManager()
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
+        self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || !featureFlagger.isFeatureOn(.aiSearchBottomBarSupport)
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -226,7 +232,18 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         if isUsingTopBarPosition {
             switchBarVC.view.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 8).isActive = true
         } else {
+
             switchBarVC.view.bottomAnchor.constraint(equalTo: container.keyboardLayoutGuide.topAnchor, constant: -8).isActive = true
+
+            // Add content mask
+            // Prevents content overflow from being visible under text input.
+            container.addSubview(bottomLocationSwitchBarBackgroundMaskView)
+            NSLayoutConstraint.activate([
+                bottomLocationSwitchBarBackgroundMaskView.topAnchor.constraint(equalTo: switchBarVC.view.bottomAnchor),
+                bottomLocationSwitchBarBackgroundMaskView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+                bottomLocationSwitchBarBackgroundMaskView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+                bottomLocationSwitchBarBackgroundMaskView.trailingAnchor.constraint(equalTo: container.trailingAnchor)
+            ])
         }
 
         switchBarVC.textEntryViewController.isUsingIncreasedButtonPadding = !isUsingTopBarPosition

@@ -113,8 +113,10 @@ final class NavigationActionBarView: UIView {
         mainStackView.addArrangedSubview(rightStackView)
         
         // Add to view
-        addSubview(solidView)
-        addSubview(backgroundGradientView)
+        if isFloating {
+            addSubview(solidView)
+            addSubview(backgroundGradientView)
+        }
         addSubview(mainStackView)
         
         // Setup constraints
@@ -129,17 +131,17 @@ final class NavigationActionBarView: UIView {
             // Main stack view constraints
             mainStackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: mainStackPadding),
             mainStackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -mainStackPadding),
-            mainStackView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: mainStackPadding),
+            mainStackView.topAnchor.constraint(greaterThanOrEqualTo: safeAreaLayoutGuide.topAnchor, constant: mainStackPadding),
 
             mainStackMinHeightConstraint,
 
             // Button size constraints
-            microphoneButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            microphoneButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
-            newLineButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            newLineButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
-            searchButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            searchButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize)
+            microphoneButton.widthAnchor.constraint(equalTo: microphoneButton.heightAnchor, multiplier: 1.0),
+            microphoneButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize).withPriority(.defaultHigh),
+            newLineButton.widthAnchor.constraint(equalTo: newLineButton.heightAnchor, multiplier: 1.0),
+            newLineButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize).withPriority(.defaultHigh),
+            searchButton.widthAnchor.constraint(equalTo: searchButton.heightAnchor, multiplier: 1.0),
+            searchButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize).withPriority(.defaultHigh),
         ])
 
         if isFloating {

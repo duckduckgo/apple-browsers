@@ -20,6 +20,7 @@ import Foundation
 
 public final class OptOutSubmissionWideEventData: WideEventData {
     public static let pixelName = "pir_opt_out_submission"
+    private static let featureName = "pir-opt-out-submission"
 
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData
@@ -69,7 +70,7 @@ public final class OptOutSubmissionWideEventData: WideEventData {
     public private(set) var stages: [Stage]
 
     public init(globalData: WideEventGlobalData,
-                contextData: WideEventContextData = WideEventContextData(name: "pir-opt-out"),
+                contextData: WideEventContextData = WideEventContextData(),
                 appData: WideEventAppData = WideEventAppData(),
                 dataBrokerURL: String,
                 dataBrokerVersion: String?,
@@ -95,7 +96,7 @@ extension OptOutSubmissionWideEventData {
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
-        parameters[WideEventParameter.Feature.name] = "pir-opt-out"
+        parameters[WideEventParameter.Feature.name] = Self.featureName
         parameters[WideEventParameter.PIR.OptOutSubmissionFeature.dataBrokerURL] = dataBrokerURL
 
         if let dataBrokerVersion {

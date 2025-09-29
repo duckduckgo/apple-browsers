@@ -94,7 +94,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     private(set) var tries = 1
     let vpnConnectionState: String
     let vpnBypassStatus: String
-    weak var wideEventRecorder: OptOutWideEventRecording?
+    weak var wideEventRecorder: OptOutSubmissionWideEventRecording?
 
     init(attemptId: UUID = UUID(),
          startTime: Date = Date(),
@@ -115,7 +115,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.vpnBypassStatus = vpnBypassStatus
     }
 
-    func attachWideEventRecorder(_ recorder: OptOutWideEventRecording?) {
+    func attachWideEventRecorder(_ recorder: OptOutSubmissionWideEventRecording?) {
         self.wideEventRecorder = recorder
     }
 
@@ -272,16 +272,19 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     }
 
     func fireOptOutSubmitSuccess(tries: Int) {
+        let now = Date()
+        let totalDuration = durationSinceStartTime()
         handler.fire(.optOutSubmitSuccess(dataBroker: dataBroker,
                                           attemptId: attemptId,
-                                          duration: durationSinceStartTime(),
+                                          duration: totalDuration,
                                           tries: tries,
                                           emailPattern: emailPattern,
                                           vpnConnectionState: vpnConnectionState,
                                           vpnBypassStatus: vpnBypassStatus))
-        wideEventRecorder?.markSubmissionCompleted(at: Date(),
+        wideEventRecorder?.markSubmissionCompleted(at: now,
                                                    tries: tries,
                                                    actionID: actionID)
+        wideEventRecorder?.complete(status: .success)
     }
 
     func fireOptOutFailure(tries: Int) {

@@ -127,11 +127,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
         let extractedProfile = extractedProfileData.profile
 
-        let attemptUUID = UUID(uuidString: jobData.attemptID)
-        let wideEventRecorder = attemptUUID.flatMap {
-            OptOutWideEventRecorder.resumeIfPossible(wideEvent: jobDependencies.wideEvent,
-                                                     attemptID: $0)
-        }
         let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
             dataBroker: broker.url,
             dataBrokerVersion: broker.version,
@@ -139,6 +134,13 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             vpnConnectionState: jobDependencies.vpnBypassService?.connectionStatus ?? "unknown",
             vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
         )
+        let attemptID = UUID(uuidString: jobData.attemptID)
+        let attemptInfo = try? jobDependencies.database.fetchAttemptInformation(for: jobData.extractedProfileId)
+        let recordFoundDate = attemptInfo?.startDate ?? stageDurationCalculator.startTime
+        let wideEventRecorder = attemptID.flatMap {
+            OptOutSubmissionWideEventRecorder.resumeIfPossible(wideEvent: jobDependencies.wideEvent,
+                                                               attemptID: $0)
+        }
         stageDurationCalculator.attachWideEventRecorder(wideEventRecorder)
         stageDurationCalculator.setStage(.emailConfirmDecoupled)
 
@@ -200,15 +202,66 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                        attemptNumber: attemptNumber,
                                        schedulingConfig: broker.schedulingConfig)
 
-            if (error as? TimeoutError) != nil {
-                wideEventRecorder?.cancel()
-            } else if let dbpError = error as? DataBrokerProtectionError, case .cancelled = dbpError {
-                wideEventRecorder?.cancel()
-            } else if error is CancellationError {
-                wideEventRecorder?.cancel()
-            } else if attemptNumber >= Self.maxRetries {
-                wideEventRecorder?.recordError(error)
+            handleConfirmationWideEventOutcome(error: error,
+                                               attemptNumber: attemptNumber,
+                                               stageDurationCalculator: stageDurationCalculator,
+                                               recordFoundDate: recordFoundDate,
+                                               broker: broker,
+                                               wideEventRecorder: wideEventRecorder,
+                                               attemptUUID: attemptID)
+        }
+    }
+
+    private func handleConfirmationWideEventOutcome(error: Error,
+                                                    attemptNumber: Int,
+                                                    stageDurationCalculator: DataBrokerProtectionStageDurationCalculator,
+                                                    recordFoundDate: Date,
+                                                    broker: DataBroker,
+                                                    wideEventRecorder: OptOutSubmissionWideEventRecorder?,
+                                                    attemptUUID: UUID?) {
+        let now = Date()
+        wideEventRecorder?.recordError(error)
+        switch error {
+        case is TimeoutError:
+            wideEventRecorder?.cancel()
+            if let attemptUUID {
+                OptOutConfirmationWideEventEmitter.emitCancelled(
+                    wideEvent: jobDependencies.wideEvent,
+                    attemptID: attemptUUID,
+                    recordFoundDate: recordFoundDate,
+                    cancelDate: now,
+                    dataBrokerURL: broker.url,
+                    dataBrokerVersion: broker.version,
+                    error: error
+                )
+            }
+        case let dbpError as DataBrokerProtectionError where dbpError == .jobTimeout:
+            wideEventRecorder?.cancel()
+            if let attemptUUID {
+                OptOutConfirmationWideEventEmitter.emitCancelled(
+                    wideEvent: jobDependencies.wideEvent,
+                    attemptID: attemptUUID,
+                    recordFoundDate: recordFoundDate,
+                    cancelDate: now,
+                    dataBrokerURL: broker.url,
+                    dataBrokerVersion: broker.version,
+                    error: dbpError
+                )
+            }
+        default:
+            if attemptNumber >= Self.maxRetries {
                 wideEventRecorder?.complete(status: .failure)
+                if let attemptUUID {
+                    OptOutConfirmationWideEventEmitter.emitFailure(
+                        wideEvent: jobDependencies.wideEvent,
+                        attemptID: attemptUUID,
+                        recordFoundDate: recordFoundDate,
+                        cancelDate: now,
+                        dataBrokerURL: broker.url,
+                        dataBrokerVersion: broker.version,
+                        error: error
+                    )
+                }
             }
         }
     }

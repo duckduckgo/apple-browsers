@@ -84,7 +84,7 @@ struct BrokerProfileOptOutSubJob {
         )
 
         let recordFoundDate = brokerProfileQueryData.optOutJobDataMatching(extractedProfileId)?.createdDate ?? stageDurationCalculator.startTime
-        let wideEventRecorder = OptOutWideEventRecorder.makeIfPossible(
+        let wideEventRecorder = OptOutSubmissionWideEventRecorder.makeIfPossible(
             wideEvent: dependencies.wideEvent,
             attemptID: stageDurationCalculator.attemptId,
             dataBrokerURL: brokerProfileQueryData.dataBroker.url,
@@ -178,14 +178,42 @@ struct BrokerProfileOptOutSubJob {
             let tries = try? fetchTotalNumberOfOptOutAttempts(database: dependencies.database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1)
 
+            let now = Date()
             wideEventRecorder?.recordError(error)
             switch error {
             case is TimeoutError:
                 wideEventRecorder?.cancel()
-            case let error as DataBrokerProtectionError where error == .jobTimeout:
+                OptOutConfirmationWideEventEmitter.emitCancelled(
+                    wideEvent: dependencies.wideEvent,
+                    attemptID: stageDurationCalculator.attemptId,
+                    recordFoundDate: recordFoundDate,
+                    cancelDate: now,
+                    dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+                    dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+                    error: error
+                )
+            case let dbpError as DataBrokerProtectionError where dbpError == .jobTimeout:
                 wideEventRecorder?.cancel()
+                OptOutConfirmationWideEventEmitter.emitCancelled(
+                    wideEvent: dependencies.wideEvent,
+                    attemptID: stageDurationCalculator.attemptId,
+                    recordFoundDate: recordFoundDate,
+                    cancelDate: now,
+                    dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+                    dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+                    error: dbpError
+                )
             default:
                 wideEventRecorder?.complete(status: .failure)
+                OptOutConfirmationWideEventEmitter.emitFailure(
+                    wideEvent: dependencies.wideEvent,
+                    attemptID: stageDurationCalculator.attemptId,
+                    recordFoundDate: recordFoundDate,
+                    cancelDate: now,
+                    dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+                    dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+                    error: error
+                )
             }
 
             handleOperationError(

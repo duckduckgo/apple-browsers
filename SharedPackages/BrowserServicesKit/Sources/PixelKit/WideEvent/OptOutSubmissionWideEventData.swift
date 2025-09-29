@@ -1,5 +1,5 @@
 //
-//  OptOutWideEventData.swift
+//  OptOutSubmissionWideEventData.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,8 +18,8 @@
 
 import Foundation
 
-public final class OptOutWideEventData: WideEventData {
-    public static let pixelName = "pir_opt_out"
+public final class OptOutSubmissionWideEventData: WideEventData {
+    public static let pixelName = "pir_opt_out_submission"
 
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData
@@ -28,7 +28,6 @@ public final class OptOutWideEventData: WideEventData {
     public var dataBrokerURL: String
     public var dataBrokerVersion: String?
     public var submissionInterval: WideEvent.MeasuredInterval?
-    public var confirmationInterval: WideEvent.MeasuredInterval?
 
     public var errorData: WideEventErrorData?
 
@@ -75,7 +74,6 @@ public final class OptOutWideEventData: WideEventData {
                 dataBrokerURL: String,
                 dataBrokerVersion: String?,
                 submissionInterval: WideEvent.MeasuredInterval? = nil,
-                confirmationInterval: WideEvent.MeasuredInterval? = nil,
                 errorData: WideEventErrorData? = nil,
                 stages: [Stage] = []) {
         self.globalData = globalData
@@ -84,7 +82,6 @@ public final class OptOutWideEventData: WideEventData {
         self.dataBrokerURL = dataBrokerURL
         self.dataBrokerVersion = dataBrokerVersion
         self.submissionInterval = submissionInterval
-        self.confirmationInterval = confirmationInterval
         self.errorData = errorData
         self.stages = stages
     }
@@ -94,23 +91,19 @@ public final class OptOutWideEventData: WideEventData {
     }
 }
 
-extension OptOutWideEventData {
+extension OptOutSubmissionWideEventData {
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
         parameters[WideEventParameter.Feature.name] = "pir-opt-out"
-        parameters[WideEventParameter.PIR.OptOutFeature.dataBrokerURL] = dataBrokerURL
+        parameters[WideEventParameter.PIR.OptOutSubmissionFeature.dataBrokerURL] = dataBrokerURL
 
         if let dataBrokerVersion {
-            parameters[WideEventParameter.PIR.OptOutFeature.dataBrokerVersion] = dataBrokerVersion
+            parameters[WideEventParameter.PIR.OptOutSubmissionFeature.dataBrokerVersion] = dataBrokerVersion
         }
 
-        if let submissionBuckets = bucketedValues(for: submissionInterval) {
-            parameters.merge(submissionBuckets.withPrefix(WideEventParameter.PIR.OptOutFeature.submissionIntervalPrefix), uniquingKeysWith: { _, new in new })
-        }
-
-        if let confirmationBuckets = bucketedValues(for: confirmationInterval) {
-            parameters.merge(confirmationBuckets.withPrefix(WideEventParameter.PIR.OptOutFeature.confirmationIntervalPrefix), uniquingKeysWith: { _, new in new })
+        if let bucketedDuration = bucketedDuration(for: submissionInterval) {
+            parameters[WideEventParameter.PIR.OptOutSubmissionFeature.submissionLatency] = String(bucketedDuration)
         }
 
         if let errorData {
@@ -127,7 +120,7 @@ extension OptOutWideEventData {
         }
 
         for (index, stage) in stages.enumerated() {
-            let base = WideEventParameter.PIR.OptOutFeature.stagePrefix(index: index)
+            let base = WideEventParameter.PIR.OptOutSubmissionFeature.stagePrefix(index: index)
             parameters["\(base).name"] = stage.name.rawValue
 
             if let duration = stage.durationMilliseconds {
@@ -146,18 +139,13 @@ extension OptOutWideEventData {
         return parameters
     }
 
-    private func bucketedValues(for interval: WideEvent.MeasuredInterval?) -> IntervalBuckets? {
-        guard let interval, let start = interval.start, let end = interval.end else { return nil }
+    private func bucketedDuration(for interval: WideEvent.MeasuredInterval?) -> Int? {
+        guard let interval, let start = interval.start, let end = interval.end else {
+            return nil
+        }
+
         let ms = max(Int(end.timeIntervalSince(start) * 1000), 0)
-        return IntervalBuckets(durationMilliseconds: ms)
-    }
-}
-
-private struct IntervalBuckets {
-    let durationMilliseconds: Int
-
-    func withPrefix(_ prefix: String) -> [String: String] {
-        return ["\(prefix).duration_ms_bucketed": String(bucket(durationMilliseconds))]
+        return bucket(ms)
     }
 
     private func bucket(_ ms: Int) -> Int {

@@ -287,11 +287,14 @@ struct BrokerProfileScanSubJob {
                     pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceStart,
                                                      brokerType: brokerProfileQueryData.dataBroker.type, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
 
-                    if let recorder = OptOutWideEventRecorder.resumeIfPossible(wideEvent: dependencies.wideEvent,
-                                                                               attemptID: attemptUUID) {
-                        recorder.markConfirmationCompleted(at: now)
-                        recorder.complete(status: .success)
-                    }
+                    OptOutConfirmationWideEventEmitter.emitSuccess(
+                        wideEvent: dependencies.wideEvent,
+                        attemptID: attemptUUID,
+                        recordFoundDate: attempt.startDate,
+                        confirmationDate: now,
+                        dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+                        dataBrokerVersion: brokerProfileQueryData.dataBroker.version
+                    )
                 }
             }
         }

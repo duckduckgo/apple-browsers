@@ -317,7 +317,7 @@ final class WatchdogTests: XCTestCase {
         optionalWatchdog?.crashOnTimeout = false
         optionalWatchdog?.start()
 
-        // Block main thread for 0.3 seconds\
+        // Block main thread for 0.3 seconds
         Task.detached {
             DispatchQueue.main.sync {
                 let startTime = Date()

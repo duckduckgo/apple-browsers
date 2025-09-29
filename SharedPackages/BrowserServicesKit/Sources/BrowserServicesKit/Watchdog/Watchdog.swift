@@ -48,7 +48,6 @@ public final class Watchdog {
         didSet {
             if hangState != oldValue {
                 let duration = hangStartTime.map { Date().timeIntervalSince($0) }
-                print("Sending hang state change: \(hangState)")
                 hangStateSubject.send((hangState, duration))
             }
         }

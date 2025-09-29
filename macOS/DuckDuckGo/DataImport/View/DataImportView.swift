@@ -96,14 +96,14 @@ struct DataImportView: ModalView {
                     .padding(.trailing, 20)
                     .padding(.bottom, 20)
                     .padding(.top, 0)
+            }
 
-                // if import in progress…
-                if let importProgress = model.importProgress {
-                    progressView(importProgress)
-                        .padding(.leading, 20)
-                        .padding(.trailing, 20)
-                        .padding(.bottom, 8)
-                }
+            // if import in progress…
+            if let importProgress = model.importProgress {
+                progressView(importProgress)
+                    .padding(.leading, 20)
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 8)
             }
 
             viewFooter()

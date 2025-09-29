@@ -16,19 +16,20 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import os.log
-
-/// The current state of the main thread.
-private enum HangState {
-    case responsive
-    case hanging
-    case timeout
-}
 
 /// A watchdog that monitors the main thread for hangs. Hangs of at least one second will be reported via a pixel.
 ///
 public final class Watchdog {
+    /// The current state of the main thread.
+    public enum HangState {
+        case responsive
+        case hanging
+        case timeout
+    }
+
     private let monitor: WatchdogMonitor
 
     private let minimumHangDuration: TimeInterval
@@ -37,11 +38,27 @@ public final class Watchdog {
 
     private static var logger = { Logger(subsystem: "com.duckduckgo.watchdog", category: "hang-detection") }()
 
+    private var killAppFunction: ((TimeInterval) -> Void)?
+
     private var monitoringTask: Task<Void, Never>?
     private var heartbeatUpdateTask: Task<Void, Never>?
 
-    private var hangState: HangState = .responsive
     private var hangStartTime: Date?
+    private var hangState: HangState = .responsive {
+        didSet {
+            if hangState != oldValue {
+                let duration = hangStartTime.map { Date().timeIntervalSince($0) }
+                print("Sending hang state change: \(hangState)")
+                hangStateSubject.send((hangState, duration))
+            }
+        }
+    }
+
+    // Publisher for state changes – used for testing only
+    private let hangStateSubject = PassthroughSubject<(HangState, TimeInterval?), Never>() // (state, duration)
+    internal var hangStatePublisher: AnyPublisher<(HangState, TimeInterval?), Never> {
+        hangStateSubject.eraseToAnyPublisher()
+    }
 
     // Used for debugging purposes, toggled via debug menu option
     public var crashOnTimeout: Bool = false
@@ -58,7 +75,7 @@ public final class Watchdog {
     ///                          and will be reported as a timeout.
     ///   - checkInterval: The interval at which the main thread is checked for hangs.
     @MainActor
-    public init(minimumHangDuration: TimeInterval = 1.0, maximumHangDuration: TimeInterval = 10.0, checkInterval: TimeInterval = 0.25) {
+    public init(minimumHangDuration: TimeInterval = 1.0, maximumHangDuration: TimeInterval = 10.0, checkInterval: TimeInterval = 0.25, killAppFunction: ((TimeInterval) -> Void)? = nil) {
         assert(checkInterval > 0, "checkInterval must be greater than 0")
         assert(minimumHangDuration >= 0, "minimumHangDuration must be greater than or equal to 0")
         assert(maximumHangDuration >= 0, "maximumHangDuration must be greater than or equal to 0")
@@ -67,6 +84,7 @@ public final class Watchdog {
         self.minimumHangDuration = minimumHangDuration
         self.maximumHangDuration = maximumHangDuration
         self.checkInterval = checkInterval
+        self.killAppFunction = killAppFunction
 
         self.monitor = WatchdogMonitor()
     }
@@ -160,7 +178,7 @@ public final class Watchdog {
                 hangStartTime = nil
                 logHangDuration(message: "Main thread hang ended after timeout.", currentTime: now)
             } else if timeSinceLastCheck > maximumHangDuration && crashOnTimeout {
-                killApp()
+                killAppFunction?(maximumHangDuration) ?? killApp(timeout: maximumHangDuration)
             }
         }
     }
@@ -172,7 +190,7 @@ public final class Watchdog {
         Self.logger.info("\(message) Duration: \(self.formattedHangDuration(duration: hangDuration))s")
     }
 
-    private func killApp() {
+    private func killApp(timeout: TimeInterval) {
         // Log before crashing to help with debugging
         Self.logger.critical("Watchdog is terminating the app due to main thread hang")
 

@@ -30,13 +30,13 @@ final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTra
         let logoYOffset: CGFloat
     }
 
-    private func calculateOffsets(switchBarTextViewMinY: CGFloat, bottomSafeAreaInset: CGFloat) -> TransitionOffsets {
+    private func calculateOffsets(switchBarTextViewHeight: CGFloat) -> TransitionOffsets {
 
         let switcherMultiplier: CGFloat = isTopBarPosition ? 1 : -1
 
-        let switcherYOffset = switchBarTextViewMinY * switcherMultiplier
-        let contentYOffset: CGFloat = switchBarTextViewMinY * switcherMultiplier
-        let barYOffset: CGFloat = isTopBarPosition ? switchBarTextViewMinY : 0
+        let switcherYOffset = switchBarTextViewHeight * switcherMultiplier
+        let contentYOffset: CGFloat = switchBarTextViewHeight * switcherMultiplier
+        let barYOffset: CGFloat = isTopBarPosition ? switchBarTextViewHeight : 0
         let baseLogoOffset: CGFloat = isTopBarPosition ? 0 : -(DefaultOmniBarView.expectedHeight + Constants.toolbarHeight)
 
         // Temporary adjustment until there's new bottom position
@@ -94,8 +94,10 @@ final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTra
 
         transitionContext.containerView.addSubview(toVC.view)
 
-        let switchBarTextViewMinY = toVC.switchBarVC.textEntryViewController.view.frame.minY
-        let offsets = calculateOffsets(switchBarTextViewMinY: switchBarTextViewMinY, bottomSafeAreaInset: fromVC.view.safeAreaInsets.bottom)
+        // Let the VC adjust to the initial size of the textView
+        toVC.switchBarVC.view.layoutIfNeeded()
+        let switchBarTextViewHeight = toVC.switchBarVC.textEntryViewController.view.frame.height
+        let offsets = calculateOffsets(switchBarTextViewHeight: switchBarTextViewHeight)
 
         if !transitionContext.isAnimated {
             toVC.switchBarVC.textEntryViewController.isExpandable = true
@@ -154,8 +156,8 @@ final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTra
             return
         }
 
-        let switchBarTextViewMinY = fromVC.switchBarVC.textEntryViewController.view.frame.minY
-        let offsets = calculateOffsets(switchBarTextViewMinY: switchBarTextViewMinY, bottomSafeAreaInset: fromVC.view.safeAreaInsets.bottom)
+        let switchBarTextViewHeight = fromVC.switchBarVC.textEntryViewController.view.frame.height
+        let offsets = calculateOffsets(switchBarTextViewHeight: switchBarTextViewHeight)
 
         // Dismissing animation
         let duration = transitionDuration(using: transitionContext)

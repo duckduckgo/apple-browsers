@@ -152,7 +152,7 @@ struct SettingsRootView: View {
                                                                  tld: AppDependencyProvider.shared.storageCache.tld,
                                                                  internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                                  dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
-                                                                 widePixel: AppDependencyProvider.shared.widePixel)
+                                                                 wideEvent: AppDependencyProvider.shared.wideEvent)
         } else {
             SubscriptionContainerViewFactory.makeSubscribeFlow(redirectURLComponents: redirectURLComponents,
                                                                navigationCoordinator: subscriptionNavigationCoordinator,
@@ -173,7 +173,7 @@ struct SettingsRootView: View {
                                                              internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                              emailFlow: .restoreFlow,
                                                              dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
-                                                             widePixel: AppDependencyProvider.shared.widePixel,
+                                                             wideEvent: AppDependencyProvider.shared.wideEvent,
                                                              onDisappear: {})
         } else {
             SubscriptionContainerViewFactory.makeEmailFlow(navigationCoordinator: subscriptionNavigationCoordinator,

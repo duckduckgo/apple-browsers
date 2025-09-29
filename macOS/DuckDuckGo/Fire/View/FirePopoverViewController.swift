@@ -43,7 +43,7 @@ final class FirePopoverViewController: NSViewController {
     weak var delegate: FirePopoverViewControllerDelegate?
 
     private let fireViewModel: FireViewModel
-    private var firePopoverViewModel: FirePopoverViewModel
+    private var firePopoverViewModel: FireDialogViewModel
     private let historyCoordinating: HistoryCoordinating
     private let visualStyle: VisualStyleProviding
 
@@ -91,7 +91,7 @@ final class FirePopoverViewController: NSViewController {
         self.fireViewModel = fireViewModel
         self.historyCoordinating = historyCoordinating
         self.visualStyle = visualStyle
-        self.firePopoverViewModel = FirePopoverViewModel(fireViewModel: fireViewModel,
+        self.firePopoverViewModel = FireDialogViewModel(fireViewModel: fireViewModel,
                                                          tabCollectionViewModel: tabCollectionViewModel,
                                                          historyCoordinating: historyCoordinating,
                                                          fireproofDomains: fireproofDomains,
@@ -165,7 +165,7 @@ final class FirePopoverViewController: NSViewController {
     }
 
     @IBAction func optionsButtonAction(_ sender: NSPopUpButton) {
-        guard let tag = sender.selectedItem?.tag, let clearingOption = FirePopoverViewModel.ClearingOption(rawValue: tag) else {
+        guard let tag = sender.selectedItem?.tag, let clearingOption = FireDialogViewModel.ClearingOption(rawValue: tag) else {
             assertionFailure("Clearing option for not found for the selected menu item")
             return
         }
@@ -375,7 +375,7 @@ final class FirePopoverViewController: NSViewController {
         let attributes = [NSAttributedString.Key.font: font]
         var maxWidth: CGFloat = 0
 
-        FirePopoverViewModel.ClearingOption.allCases.forEach { option in
+        FireDialogViewModel.ClearingOption.allCases.forEach { option in
             if option == .allData {
                 menu.addItem(.separator())
             }

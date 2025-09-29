@@ -108,8 +108,8 @@ struct MetricBox: View {
             let sizeInKB = value.contains("MB") ? numericValue * 1000 : numericValue
             return max(0, min(1, 1.0 - (sizeInKB / PerformanceTestConstants.Thresholds.maxSizeForProgress)))
         } else {
-            // For counts: normalize to 0-200 range
-            return max(0, min(1, numericValue / PerformanceTestConstants.Thresholds.maxCountForProgress))
+            // For counts: smaller is better (like time and size)
+            return max(0, min(1, 1.0 - (numericValue / PerformanceTestConstants.Thresholds.maxCountForProgress)))
         }
     }
 }

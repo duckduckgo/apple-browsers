@@ -501,7 +501,11 @@ extension DataImport.Source {
              .operaGX, .tor, .vivaldi, .yandex:
             return .profileAndDataTypesPicker
         case .safari, .safariTechnologyPreview:
-            return .fileImport(dataTypeSelection: .multiple([.bookmarks, .passwords]))
+            if Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
+                return .fileImport(dataTypeSelection: .multiple([.bookmarks, .passwords]))
+            } else {
+                return .profileAndDataTypesPicker
+            }
         case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv:
             return .fileImport(dataTypeSelection: .single(.passwords))
         case .bookmarksHTML:

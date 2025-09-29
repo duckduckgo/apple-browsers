@@ -182,6 +182,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1203822806345703/task/1211227407476981?focus=true
     case syncFeatureLevel3
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211469820985204?focus=true
+    case dataImportNewSafariFilePicker
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -265,7 +268,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dbpEmailConfirmationDecoupling,
                 .dbpRemoteBrokerDelivery,
                 .subscriptionPurchaseWidePixelMeasurement,
-                .syncFeatureLevel3:
+                .syncFeatureLevel3,
+                .dataImportNewSafariFilePicker:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -403,6 +407,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.newSyncEntryPoints))
         case .syncFeatureLevel3:
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
+        case .dataImportNewSafariFilePicker:
+            return .disabled
         }
     }
 }

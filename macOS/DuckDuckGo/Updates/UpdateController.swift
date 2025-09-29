@@ -56,7 +56,14 @@ extension UpdateController {
     func showUpdateNotificationIfNeeded() {
         guard let latestUpdate, hasPendingUpdate, shouldShowUpdateNotification else { return }
 
-        let action = areAutomaticUpdatesEnabled ? UserText.autoUpdateAction : UserText.manualUpdateAction
+        let manualActionText: String
+        #if APPSTORE
+        manualActionText = UserText.manualUpdateAppStoreAction
+        #else
+        manualActionText = UserText.manualUpdateAction
+        #endif
+
+        let action = areAutomaticUpdatesEnabled ? UserText.autoUpdateAction : manualActionText
 
         switch latestUpdate.type {
         case .critical:

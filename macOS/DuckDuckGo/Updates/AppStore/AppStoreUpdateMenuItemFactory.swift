@@ -20,7 +20,7 @@ import Cocoa
 final class AppStoreUpdateMenuItemFactory {
 
     static func menuItem(for update: Update) -> NSMenuItem {
-        let item = NSMenuItem(title: UserText.updateAvailableMenuItem)
+        let item = NSMenuItem(title: UserText.updateAvailableMenuItemAppStore)
         item.target = Application.appDelegate.updateController
         item.action = #selector(AppStoreUpdateController.openUpdatesPage)
         item.image = NSImage.updateMenuItemIcon

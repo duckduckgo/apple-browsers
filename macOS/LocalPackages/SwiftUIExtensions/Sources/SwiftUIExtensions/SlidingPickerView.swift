@@ -20,20 +20,36 @@ import Foundation
 import SwiftUI
 
 public struct SlidingPickerSettings {
+    let backgroundColor: Color
     let borderColor: Color
-    let selectionColor: Color
+    let selectionBackgroundColor: Color
+    let selectionBorderColor: Color
     let cornerRadius: CGFloat
     let dividerSize: CGSize?
     let elementsPadding: CGFloat
-    let sliderInsets: EdgeInsets
+    let sliderInset: CGFloat
+    let sliderLineWidth: CGFloat
 
-    public init(borderColor: Color, selectionColor: Color, cornerRadius: CGFloat = 4, dividerSize: CGSize?, elementsPadding: CGFloat = .zero, sliderInsets: EdgeInsets = .zero) {
+    public init(
+        backgroundColor: Color = .clear,
+        borderColor: Color = .clear,
+        selectionBackgroundColor: Color = .clear,
+        selectionBorderColor: Color = .clear,
+        cornerRadius: CGFloat = 4,
+        dividerSize: CGSize? = nil,
+        elementsPadding: CGFloat = .zero,
+        sliderInset: CGFloat = .zero,
+        sliderLineWidth: CGFloat = 1)
+    {
+        self.backgroundColor = backgroundColor
         self.borderColor = borderColor
-        self.selectionColor = selectionColor
+        self.selectionBackgroundColor = selectionBackgroundColor
+        self.selectionBorderColor = selectionBorderColor
         self.cornerRadius = cornerRadius
         self.dividerSize = dividerSize
         self.elementsPadding = elementsPadding
-        self.sliderInsets = sliderInsets
+        self.sliderInset = sliderInset
+        self.sliderLineWidth = sliderLineWidth
     }
 }
 
@@ -68,7 +84,7 @@ public struct SlidingPickerView<SelectionValue>: View where SelectionValue: Hash
         ZStack {
             // Background + Outer Border
             RoundedRectangle(cornerRadius: settings.cornerRadius)
-                .fill(settings.selectionColor)
+                .fill(settings.backgroundColor)
                 .overlay(
                     RoundedRectangle(cornerRadius: settings.cornerRadius)
                         .stroke(settings.borderColor)
@@ -77,10 +93,11 @@ public struct SlidingPickerView<SelectionValue>: View where SelectionValue: Hash
 
             // Slider
             RoundedRectangle(cornerRadius: settings.cornerRadius)
-                .fill(Color(.selectedControlColor))
+                .fill(settings.selectionBackgroundColor)
                 .overlay(
                     RoundedRectangle(cornerRadius: settings.cornerRadius)
-                        .stroke(settings.borderColor)
+                        .inset(by: -2 * settings.sliderInset)
+                        .stroke(settings.selectionBorderColor, lineWidth: settings.sliderLineWidth)
                 )
                 .offset(x: highlightOffset)
                 .frame(width: highlightSize.width, height: highlightSize.height)
@@ -148,10 +165,10 @@ private extension SlidingPickerView {
         // Note: Our Highlight with Zero Offset appears at the center of the ZStack
         highlightOffset = buttonFrame.minX - (contentSize.width - buttonFrame.width) * 0.5
 
-        let sliderInsets = settings.sliderInsets
+        let sliderInset = settings.sliderInset
         highlightSize = CGSize(
-            width: buttonFrame.width - sliderInsets.leading - sliderInsets.trailing,
-            height: buttonFrame.height - sliderInsets.top - sliderInsets.bottom
+            width: buttonFrame.width + sliderInset * 2,
+            height: buttonFrame.height + sliderInset * 2
         )
     }
 

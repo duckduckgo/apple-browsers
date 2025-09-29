@@ -24,6 +24,19 @@ import AIChat
 import OSLog
 import WebKit
 
+// MARK: - Response Types
+
+/// Response structure for openKeyboard request
+struct OpenKeyboardResponse: Encodable {
+    let success: Bool
+    let error: String?
+
+    init(success: Bool, error: String? = nil) {
+        self.success = success
+        self.error = error
+    }
+}
+
 protocol AIChatMetricReportingHandling {
     func didReportMetric(_ metric: AIChatMetric)
 }
@@ -138,49 +151,51 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable? {
         guard let paramsDict = params as? [String: Any] else {
             Logger.aiChat.error("Invalid params format for openKeyboard")
-            return nil
+            return OpenKeyboardResponse(success: false, error: "Invalid parameters format")
         }
         guard let cssSelector = paramsDict["selector"] as? String, !cssSelector.isEmpty else {
             Logger.aiChat.error("Missing or empty CSS selector for openKeyboard")
-            return nil
+            return OpenKeyboardResponse(success: false, error: "Missing or empty CSS selector")
         }
 
         // Sanitize CSS selector to prevent XSS
         let sanitizedSelector = sanitizeCSSSelector(cssSelector)
         guard !sanitizedSelector.isEmpty else {
             Logger.aiChat.error("CSS selector failed validation for openKeyboard")
-            return nil
+            return OpenKeyboardResponse(success: false, error: "CSS selector failed validation")
         }
 
         guard let webView = webView else {
             Logger.aiChat.error("WebView not available for openKeyboard")
-            return nil
+            return OpenKeyboardResponse(success: false, error: "WebView not available")
         }
 
-        // Bring up the keyboard and scroll to the bottom of the page without an explicit user gesture
-        DispatchQueue.main.async {
-            let javascript = """
-            (function() {
-                try {
-                    const element = document.querySelector('\(sanitizedSelector)');
-                    element?.focus?.();
-                    setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 50);
-                    return true;
-                } catch (error) {
-                    console.error('Error focusing element:', error);
-                    return false;
-                }
-            })();
-            """
+        // Execute JavaScript and wait for the result
+        return await withCheckedContinuation { continuation in
+            DispatchQueue.main.async {
+                let javascript = """
+                (function() {
+                    try {
+                        const element = document.querySelector('\(sanitizedSelector)');
+                        element?.focus?.();
+                        return true;
+                    } catch (error) {
+                        console.error('Error focusing element:', error);
+                        return false;
+                    }
+                })();
+                """
 
-            webView.evaluateJavaScript(javascript) { _, error in
-                if let error = error {
-                    Logger.aiChat.error("Failed to execute openKeyboard JavaScript: \(error.localizedDescription)")
+                webView.evaluateJavaScript(javascript) { _, error in
+                    if let error = error {
+                        Logger.aiChat.error("Failed to execute openKeyboard JavaScript: \(error.localizedDescription)")
+                        continuation.resume(returning: OpenKeyboardResponse(success: false, error: "JavaScript execution failed"))
+                    } else {
+                        continuation.resume(returning: OpenKeyboardResponse(success: true))
+                    }
                 }
             }
         }
-
-        return nil
     }
 
     // MARK: - Private Helper Methods

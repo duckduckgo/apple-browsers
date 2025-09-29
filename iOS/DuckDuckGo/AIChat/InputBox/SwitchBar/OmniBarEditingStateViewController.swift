@@ -61,7 +61,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private var isUsingTopBarPosition: Bool {
         appSettings.currentAddressBarPosition == .top || !featureFlagger.isFeatureOn(.aiSearchBottomBarSupport)
     }
-    lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler, showsSeparator: !isUsingTopBarPosition)
+    lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler,
+                                                   showsSeparator: !isUsingTopBarPosition,
+                                                   reduceTopPaddings: !isUsingTopBarPosition)
 
     private weak var contentContainerViewLeadingConstraint: NSLayoutConstraint?
     private weak var contentContainerViewTrailingConstraint: NSLayoutConstraint?

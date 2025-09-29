@@ -115,6 +115,8 @@ protocol XPCServerInterface {
     func startImmediateOperations(showWebView: Bool)
     func startScheduledOperations(showWebView: Bool)
     func runAllOptOuts(showWebView: Bool)
+    func checkForEmailConfirmationData()
+    func runEmailConfirmationOperations(showWebView: Bool)
     func getDebugMetadata(completion: @escaping (DBPBackgroundAgentMetadata?) -> Void)
 }
 
@@ -195,6 +197,18 @@ extension DefaultDataBrokerProtectionIPCServer: XPCServerInterface {
 
     func runAllOptOuts(showWebView: Bool) {
         serverDelegate?.runAllOptOuts(showWebView: showWebView)
+    }
+
+    func checkForEmailConfirmationData() {
+        Task {
+            await serverDelegate?.checkForEmailConfirmationData()
+        }
+    }
+
+    func runEmailConfirmationOperations(showWebView: Bool) {
+        Task {
+            await serverDelegate?.runEmailConfirmationOperations(showWebView: showWebView)
+        }
     }
 
     func getDebugMetadata(completion: @escaping (DBPBackgroundAgentMetadata?) -> Void) {

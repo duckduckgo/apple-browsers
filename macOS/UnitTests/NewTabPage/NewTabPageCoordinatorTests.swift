@@ -45,7 +45,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
     var keyValueStore: MockKeyValueFileStore!
     var firePixelCalls: [PixelKitEvent] = []
     var featureFlagger: FeatureFlagger!
-    var windowControllersManager: WindowControllersManagerProtocol!
+    var windowControllersManager: (WindowControllersManagerProtocol & AIChatTabManaging)!
     var tabsPreferences: TabsPreferences!
 
     @MainActor

@@ -235,9 +235,9 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
             let storefrontCountryCode: String?
             let storefrontRegion: SubscriptionRegion
 
-            if let subscriptionFeatureFlagger, subscriptionFeatureFlagger.isFeatureOn(.usePrivacyProUSARegionOverride) {
+            if let subscriptionFeatureFlagger, subscriptionFeatureFlagger.isFeatureOn(.useSubscriptionUSARegionOverride) {
                 storefrontCountryCode = "USA"
-            } else if let subscriptionFeatureFlagger, subscriptionFeatureFlagger.isFeatureOn(.usePrivacyProROWRegionOverride) {
+            } else if let subscriptionFeatureFlagger, subscriptionFeatureFlagger.isFeatureOn(.useSubscriptionROWRegionOverride) {
                 storefrontCountryCode = "POL"
             } else {
                 storefrontCountryCode = await Storefront.current?.countryCode

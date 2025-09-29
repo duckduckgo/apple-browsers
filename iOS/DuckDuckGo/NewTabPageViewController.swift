@@ -32,7 +32,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private lazy var borderView = StyledTopBottomBorderView()
 
     private let newTabDialogFactory: any NewTabDaxDialogProvider
-    private let daxDialogsManager: NewTabDialogSpecProvider & PrivacyProPromotionCoordinating
+    private let daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating
 
     private let newTabPageViewModel: NewTabPageViewModel
     private let messagesModel: NewTabPageMessagesModel
@@ -51,13 +51,14 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     init(tab: Tab,
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
-         privacyProDataReporting: PrivacyProDataReporting? = nil,
+         subscriptionDataReporting: SubscriptionDataReporting? = nil,
          newTabDialogFactory: any NewTabDaxDialogProvider,
-         daxDialogsManager: NewTabDialogSpecProvider & PrivacyProPromotionCoordinating,
+         daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating,
          faviconLoader: FavoritesFaviconLoading,
          messageNavigationDelegate: MessageNavigationDelegate,
          appSettings: AppSettings,
          internalUserCommands: URLBasedDebugCommands,
+         narrowLayoutInLandscape: Bool = false,
          appWidthObserver: AppWidthObserver = .shared) {
 
         self.associatedTab = tab
@@ -72,10 +73,11 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         favoritesModel = FavoritesViewModel(favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader)
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
-                                                privacyProDataReporter: privacyProDataReporting,
+                                                subscriptionDataReporter: subscriptionDataReporting,
                                                 navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate))
 
-        super.init(rootView: NewTabPageView(viewModel: self.newTabPageViewModel,
+        super.init(rootView: NewTabPageView(narrowLayoutInLandscape: narrowLayoutInLandscape,
+                                            viewModel: self.newTabPageViewModel,
                                             messagesModel: self.messagesModel,
                                             favoritesViewModel: self.favoritesModel))
 
@@ -191,8 +193,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     weak var delegate: NewTabPageControllerDelegate?
 
     private func launchNewSearch() {
-        // If we are displaying a Privacy Pro promotion on a new tab, do not activate search
-        guard !daxDialogsManager.isShowingPrivacyProPromotion else { return }
+        // If we are displaying a Subscription promotion on a new tab, do not activate search
+        guard !daxDialogsManager.isShowingSubscriptionPromotion else { return }
         chromeDelegate?.omniBar.beginEditing(animated: true)
     }
 
@@ -248,7 +250,7 @@ extension NewTabPageViewController {
             guard let self else { return }
 
             let nextSpec = dialogProvider.nextHomeScreenMessageNew()
-            guard nextSpec != .privacyProPromotion else {
+            guard nextSpec != .subscriptionPromotion else {
                 chromeDelegate?.omniBar.endEditing()
                 showNextDaxDialog()
                 return

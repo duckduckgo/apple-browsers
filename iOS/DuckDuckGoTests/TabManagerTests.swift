@@ -89,7 +89,7 @@ final class TabManagerTests: XCTestCase {
                           bookmarksDatabase: MockBookmarksDatabase.make(prepareFolderStructure: false),
                           historyManager: MockHistoryManager(),
                           syncService: MockDDGSyncing(),
-                          privacyProDataReporter: MockPrivacyProDataReporter(),
+                          subscriptionDataReporter: MockSubscriptionDataReporter(),
                           contextualOnboardingPresenter: ContextualOnboardingPresenterMock(),
                           contextualOnboardingLogic: ContextualOnboardingLogicMock(),
                           onboardingPixelReporter: OnboardingPixelReporterMock(),

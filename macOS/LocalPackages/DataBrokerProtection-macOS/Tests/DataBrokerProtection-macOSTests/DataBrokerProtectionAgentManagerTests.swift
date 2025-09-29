@@ -31,7 +31,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     private var mockActivityScheduler: MockDataBrokerProtectionBackgroundActivityScheduler!
     private var mockEventsHandler: MockOperationEventsHandler!
     private var mockNotificationService: MockUserNotificationService!
-    private var mockQueueManager: MockBrokerProfileJobQueueManager!
+    private var mockQueueManager: MockJobQueueManager!
     private var mockDataManager: MockDataBrokerProtectionDataManager!
     private var mockIPCServer: MockIPCServer!
     private var mockSharedPixelsHandler: DataBrokerProtectionCoreTestsUtils.MockPixelHandler!
@@ -64,9 +64,10 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 
         let mockDatabase = MockDatabase()
         let mockMismatchCalculator = MockMismatchCalculator(database: mockDatabase, pixelHandler: mockSharedPixelsHandler)
-        mockQueueManager = MockBrokerProfileJobQueueManager(
+        mockQueueManager = MockJobQueueManager(
             jobQueue: MockBrokerProfileJobQueue(),
             jobProvider: MockDataBrokerOperationsCreator(),
+            emailConfirmationJobProvider: MockEmailConfirmationJobProvider(),
             mismatchCalculator: mockMismatchCalculator,
             pixelHandler: mockSharedPixelsHandler)
 
@@ -731,10 +732,10 @@ final class MockEmailConfirmationDataService: EmailConfirmationDataServiceProvid
         URL(string: "https://example.com")!
     }
 
-    func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64,
+    func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64?,
                                              dataBrokerURL: String,
-                                             profileQueryId: Int64,
-                                             extractedProfileId: Int64,
+                                             profileQueryId: Int64?,
+                                             extractedProfileId: Int64?,
                                              attemptId: UUID) async throws -> EmailData {
         EmailData(pattern: "", emailAddress: "hello@example.com")
     }

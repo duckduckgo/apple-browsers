@@ -32,8 +32,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
     lazy var sheetModel = SubscriptionAccessViewModel(actionHandlers: sheetActionHandler,
-                                                      purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform,
-                                                      isRebrandingOn: { [weak self] in self?.featureFlagger.isFeatureOn(.subscriptionRebranding) ?? false })
+                                                      purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform)
 
     var shouldDirectlyLaunchActivationFlow: Bool {
         subscriptionManager.currentEnvironment.purchasePlatform == .stripe
@@ -92,13 +91,9 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         featureFlagger.isFeatureOn(.paidAIChat) && subscriptionManager is DefaultSubscriptionManagerV2
     }
 
-    var isSubscriptionRebrandingEnabled: Bool {
-        featureFlagger.isFeatureOn(.subscriptionRebranding)
-    }
-
     /// Updates the user's eligibility for a free trial based on feature flag status and subscription manager checks.
     ///
-    /// This method checks if the Privacy Pro free trial feature flag is enabled. If the flag is active,
+    /// This method checks if the Subscription free trial feature flag is enabled. If the flag is active,
     /// it queries the subscription manager to determine if the user is eligible for a free trial.
     /// If the feature flag is disabled, the user is marked as ineligible for the free trial.
     ///

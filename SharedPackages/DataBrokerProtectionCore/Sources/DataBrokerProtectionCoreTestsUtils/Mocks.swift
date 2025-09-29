@@ -431,6 +431,45 @@ public final class EmailServiceMock: EmailServiceProtocol {
     }
 }
 
+public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDataServiceProvider {
+
+    public var shouldThrow: Bool = false
+
+    public init() {}
+
+    public func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64?,
+                                                    dataBrokerURL: String,
+                                                    profileQueryId: Int64?,
+                                                    extractedProfileId: Int64?,
+                                                    attemptId: UUID) async throws -> EmailData {
+        if shouldThrow {
+            throw DataBrokerProtectionError.emailError(nil)
+        }
+        return EmailData(pattern: nil, emailAddress: "test@duck.com")
+    }
+
+    public func getConfirmationLink(from email: String,
+                                    numberOfRetries: Int,
+                                    pollingInterval: TimeInterval,
+                                    attemptId: UUID,
+                                    shouldRunNextStep: @escaping () -> Bool) async throws -> URL {
+        if shouldThrow {
+            throw DataBrokerProtectionError.emailError(nil)
+        }
+        return URL(string: "https://www.duckduckgo.com")!
+    }
+
+    public func checkForEmailConfirmationData() async throws {
+        if shouldThrow {
+            throw DataBrokerProtectionError.emailError(nil)
+        }
+    }
+
+    public func reset() {
+        shouldThrow = false
+    }
+}
+
 public final class CaptchaServiceMock: CaptchaServiceProtocol {
 
     public var wasSubmitCaptchaInformationCalled = false
@@ -488,16 +527,21 @@ public final class BrokerUpdaterRepositoryMock: BrokerUpdaterRepository {
 public final class ResourcesRepositoryMock: ResourcesRepository {
     public var wasFetchBrokerFromResourcesFilesCalled = false
     public var brokersList: [DataBroker]?
+    public var shouldThrowOnFetch = false
 
     public init() {}
 
-    public func fetchBrokerFromResourceFiles() -> [DataBroker]? {
+    public func fetchBrokerFromResourceFiles() throws -> [DataBroker]? {
         wasFetchBrokerFromResourcesFilesCalled = true
+        if shouldThrowOnFetch {
+            throw DataBrokerProtectionError.unknown("Mock fetch error")
+        }
         return brokersList
     }
 
     public func reset() {
         wasFetchBrokerFromResourcesFilesCalled = false
+        shouldThrowOnFetch = false
         brokersList?.removeAll()
         brokersList = nil
     }
@@ -544,6 +588,7 @@ public final class SecureStorageDatabaseProviderMock: SecureStorageDatabaseProvi
 public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecureVault {
     public var shouldReturnOldVersionBroker = false
     public var shouldReturnNewVersionBroker = false
+    public var shouldThrowOnUpdate = false
     public var wasBrokerUpdateCalled = false
     public var wasBrokerSavedCalled = false
     public var wasUpdateProfileQueryCalled = false
@@ -556,6 +601,13 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public var optOutJobData = [OptOutJobData]()
     public var lastPreferredRunDateOnScan: Date?
 
+    public var wasDeleteOptOutEmailConfirmationCalled = false
+    public var lastDeletedEmailConfirmationProfileQueryId: Int64?
+    public var lastDeletedEmailConfirmationBrokerId: Int64?
+    public var lastDeletedEmailConfirmationExtractedProfileId: Int64?
+    public var wasIncrementAttemptCountCalled = false
+    public var incrementAttemptCountCallCount = 0
+
     public typealias DatabaseProvider = SecureStorageDatabaseProviderMock
 
     required public init(providers: SecureStorageProviders<SecureStorageDatabaseProviderMock>) {
@@ -564,6 +616,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public func reset() {
         shouldReturnOldVersionBroker = false
         shouldReturnNewVersionBroker = false
+        shouldThrowOnUpdate = false
         wasBrokerUpdateCalled = false
         wasBrokerSavedCalled = false
         wasUpdateProfileQueryCalled = false
@@ -596,6 +649,9 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
     public func update(_ broker: DataBroker, with id: Int64) throws {
         wasBrokerUpdateCalled = true
+        if shouldThrowOnUpdate {
+            throw DataBrokerProtectionError.unknown("Mock update error")
+        }
     }
 
     public func fetchBroker(with id: Int64) throws -> DataBroker? {
@@ -793,10 +849,16 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         return []
     }
 
+    public func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier> {
+        return Set<OptOutIdentifier>()
+    }
+
     public func updateOptOutEmailConfirmationLink(_ link: String?, emailConfirmationLinkObtainedOnBEDate: Date?, profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
     }
 
     public func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
+        wasIncrementAttemptCountCalled = true
+        incrementAttemptCountCallCount += 1
     }
 
     public func save(backgroundTaskEvent: BackgroundTaskEvent) throws {
@@ -819,6 +881,10 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public func deleteOptOutEmailConfirmation(profileQueryId: Int64,
                                               brokerId: Int64,
                                               extractedProfileId: Int64) throws {
+        wasDeleteOptOutEmailConfirmationCalled = true
+        lastDeletedEmailConfirmationProfileQueryId = profileQueryId
+        lastDeletedEmailConfirmationBrokerId = brokerId
+        lastDeletedEmailConfirmationExtractedProfileId = extractedProfileId
     }
 
     public func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData] {
@@ -887,6 +953,17 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var attemptCount: Int64 = 0
     public private(set) var scanEvents = [HistoryEvent]()
     public private(set) var optOutEvents = [HistoryEvent]()
+
+    public var brokerToReturn: DataBroker?
+    public var profileQueryToReturn: ProfileQuery?
+    public var extractedProfileToReturn: ExtractedProfile?
+    public var wasDeleteOptOutEmailConfirmationCalled = false
+    public var lastDeletedEmailConfirmationProfileQueryId: Int64?
+    public var lastDeletedEmailConfirmationBrokerId: Int64?
+    public var lastDeletedEmailConfirmationExtractedProfileId: Int64?
+    public var wasIncrementAttemptCountCalled = false
+    public var incrementAttemptCountCallCount = 0
+    public var lastAddedHistoryEvent: HistoryEvent?
 
     public var saveResult: Result<Void, Error> = .success(())
 
@@ -981,14 +1058,15 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     }
 
     public func fetchBroker(with id: Int64) throws -> DataBroker? {
-        return dataBrokersToReturn.first { $0.id == id }
+        brokerToReturn ?? dataBrokersToReturn.first { $0.id == id }
     }
 
     public func fetchProfileQuery(with id: Int64) throws -> ProfileQuery? {
-        return ProfileQuery.mock
+        profileQueryToReturn ?? ProfileQuery.mock
     }
 
     public var recordsAwaitingLink: [OptOutEmailConfirmationJobData] = []
+    public var activeConfirmationIdentifiers: Set<OptOutIdentifier> = []
 
     public func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData] {
         return recordsAwaitingLink
@@ -996,6 +1074,10 @@ public final class MockDatabase: DataBrokerProtectionRepository {
 
     public func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData] {
         return []
+    }
+
+    public func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier> {
+        return activeConfirmationIdentifiers
     }
 
     public func updateOptOutEmailConfirmationLink(_ link: String?,
@@ -1008,6 +1090,8 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64,
                                                              brokerId: Int64,
                                                              extractedProfileId: Int64) throws {
+        wasIncrementAttemptCountCalled = true
+        incrementAttemptCountCallCount += 1
     }
 
     public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) {
@@ -1061,6 +1145,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
 
     public func add(_ historyEvent: HistoryEvent) {
         wasAddHistoryEventCalled = true
+        lastAddedHistoryEvent = historyEvent
         if historyEvent.extractedProfileId != nil {
             optOutEvents.append(historyEvent)
         } else {
@@ -1113,7 +1198,10 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     }
 
     public func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)? {
-        nil
+        if let extractedProfileToReturn = extractedProfileToReturn {
+            return (brokerId: 1, profileQueryId: 1, profile: extractedProfileToReturn)
+        }
+        return nil
     }
 
     public func fetchFirstEligibleJobDate() throws -> Date? {
@@ -1188,6 +1276,10 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public func deleteOptOutEmailConfirmation(profileQueryId: Int64,
                                               brokerId: Int64,
                                               extractedProfileId: Int64) throws {
+        wasDeleteOptOutEmailConfirmationCalled = true
+        lastDeletedEmailConfirmationProfileQueryId = profileQueryId
+        lastDeletedEmailConfirmationBrokerId = brokerId
+        lastDeletedEmailConfirmationExtractedProfileId = extractedProfileId
     }
 
     public func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData] {
@@ -1513,8 +1605,8 @@ public extension OptOutJobData {
     }
 }
 
-public final class MockBrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
-    public var delegate: BrokerProfileJobQueueManagerDelegate?
+public final class MockJobQueueManager: JobQueueManaging {
+    public var delegate: JobQueueManagerDelegate?
 
     public var debugRunningStatusString: String { return "" }
 
@@ -1526,7 +1618,7 @@ public final class MockBrokerProfileJobQueueManager: BrokerProfileJobQueueManagi
     public var startScheduledAllOperationsIfPermittedCalledCompletion: (() -> Void)?
     public var startScheduledScanOperationsIfPermittedCalledCompletion: (() -> Void)?
 
-    public init(jobQueue: BrokerProfileJobQueue, jobProvider: BrokerProfileJobProviding, mismatchCalculator: MismatchCalculator, pixelHandler: Common.EventMapping<DataBrokerProtectionSharedPixels>) {
+    public init(jobQueue: BrokerProfileJobQueue, jobProvider: BrokerProfileJobProviding, emailConfirmationJobProvider: EmailConfirmationJobProviding, mismatchCalculator: MismatchCalculator, pixelHandler: Common.EventMapping<DataBrokerProtectionSharedPixels>) {
 
     }
 
@@ -1552,6 +1644,25 @@ public final class MockBrokerProfileJobQueueManager: BrokerProfileJobQueueManagi
     }
 
     public func stop() {
+    }
+
+    public func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding) {
+    }
+}
+
+public final class MockEmailConfirmationJobProvider: EmailConfirmationJobProviding {
+    public var shouldThrowError = false
+    public var jobsToReturn: [EmailConfirmationJob] = []
+
+    public init() {}
+
+    public func createEmailConfirmationJobs(showWebView: Bool,
+                                            errorDelegate: EmailConfirmationErrorDelegate,
+                                            jobDependencies: EmailConfirmationJobDependencyProviding) throws -> [EmailConfirmationJob] {
+        if shouldThrowError {
+            throw NSError(domain: "test", code: 1, userInfo: nil)
+        }
+        return jobsToReturn
     }
 }
 
@@ -1741,7 +1852,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public var eventsHandler: EventMapping<JobEvent>
     public var dataBrokerProtectionSettings: DataBrokerProtectionSettings
-    public var emailService: any EmailServiceProtocol
+    public var emailConfirmationDataService: any EmailConfirmationDataServiceProvider
     public var captchaService: any CaptchaServiceProtocol
     public var vpnBypassService: (any VPNBypassFeatureProvider)?
     public var jobSortPredicate: BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
@@ -1759,7 +1870,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
         self.pixelHandler = MockPixelHandler()
         self.eventsHandler = MockOperationEventsHandler()
         self.dataBrokerProtectionSettings = DataBrokerProtectionSettings(defaults: .standard)
-        self.emailService = EmailServiceMock()
+        self.emailConfirmationDataService = MockEmailConfirmationDataServiceProvider()
         self.captchaService = CaptchaServiceMock()
         self.featureFlagger = MockDBPFeatureFlagger()
     }
@@ -2328,9 +2439,10 @@ public final class MockScanSubJobWebRunner: BrokerProfileScanSubJobWebRunning {
     }
 }
 
-public final class MockOptOutSubJobWebRunner: BrokerProfileOptOutSubJobWebRunning {
-    public var shouldOptOutThrow = false
+public final class MockOptOutSubJobWebRunner: BrokerProfileOptOutSubJobWebProtocol {
+    public var shouldOptOutThrow: (Int) -> Bool = { _ in false }
     public var wasOptOutCalled = false
+    public var attemptCount = 0
 
     public init() { }
 
@@ -2339,15 +2451,29 @@ public final class MockOptOutSubJobWebRunner: BrokerProfileOptOutSubJobWebRunnin
                        showWebView: Bool,
                        shouldRunNextStep: @escaping () -> Bool) async throws {
         wasOptOutCalled = true
+        attemptCount += 1
 
-        if shouldOptOutThrow {
+        if shouldOptOutThrow(attemptCount) {
+            throw DataBrokerProtectionError.unknown("Test error")
+        }
+    }
+
+    public func run(inputValue: ExtractedProfile,
+                    webViewHandler: WebViewHandler?,
+                    actionsHandler: ActionsHandler?,
+                    showWebView: Bool) async throws {
+        wasOptOutCalled = true
+        attemptCount += 1
+
+        if shouldOptOutThrow(attemptCount) {
             throw DataBrokerProtectionError.unknown("Test error")
         }
     }
 
     public func clear() {
-        shouldOptOutThrow = false
+        shouldOptOutThrow = { _ in false }
         wasOptOutCalled = false
+        attemptCount = 0
     }
 }
 
@@ -2380,6 +2506,38 @@ public extension DataBroker {
             steps: [
                 Step(type: .scan, actions: [Action]()),
                 Step(type: .optOut, actions: [Action]())
+            ],
+            version: "1.0",
+            schedulingConfig: DataBrokerScheduleConfig(
+                retryError: 0,
+                confirmOptOutScan: 0,
+                maintenanceScan: 0,
+                maxAttempts: -1
+            ),
+            optOutUrl: "",
+            eTag: "",
+            removedAt: nil
+        )
+    }
+
+    static var mockWithEmailConfirmation: DataBroker {
+        DataBroker(
+            id: 1,
+            name: "Test broker",
+            url: "testbroker.com",
+            steps: [
+                Step(type: .scan, actions: []),
+                Step(
+                    type: .optOut,
+                    actions: [
+                        EmailConfirmationAction(
+                            id: "emailConfirmation",
+                            actionType: .emailConfirmation,
+                            pollingTime: 30,
+                            dataSource: nil
+                        )
+                    ]
+                )
             ],
             version: "1.0",
             schedulingConfig: DataBrokerScheduleConfig(
@@ -2645,6 +2803,35 @@ public extension AttemptInformation {
                            attemptId: UUID().uuidString,
                            lastStageDate: Date(),
                            startDate: Date())
+    }
+}
+
+public final class MockWebViewHandler: NSObject, WebViewHandler {
+    public func initializeWebView(showWebView: Bool) async {
+    }
+
+    public func load(url: URL) async throws {
+    }
+
+    public func takeSnaphost(path: String, fileName: String) async throws {
+    }
+
+    public func saveHTML(path: String, fileName: String) async throws {
+    }
+
+    public func waitForWebViewLoad() async throws {
+    }
+
+    public func finish() async {
+    }
+
+    public func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) async {
+    }
+
+    public func evaluateJavaScript(_ javaScript: String) async throws {
+    }
+
+    public func setCookies(_ cookies: [HTTPCookie]) async {
     }
 }
 

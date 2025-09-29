@@ -26,19 +26,19 @@ final class ReportingService {
 
     let marketplaceAdPostbackManager = MarketplaceAdPostbackManager()
     let onboardingPixelReporter = OnboardingPixelReporter()
-    let privacyProDataReporter: PrivacyProDataReporting
+    let subscriptionDataReporter: SubscriptionDataReporting
     let featureFlagging: FeatureFlagger
 
     var syncService: SyncService? {
         didSet {
             guard let syncService else { return }
-            privacyProDataReporter.injectSyncService(syncService.sync)
+            subscriptionDataReporter.injectSyncService(syncService.sync)
         }
     }
 
     init(fireproofing: Fireproofing, featureFlagging: FeatureFlagger) {
         self.featureFlagging = featureFlagging
-        privacyProDataReporter = PrivacyProDataReporter(fireproofing: fireproofing)
+        subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
         NotificationCenter.default.addObserver(forName: .didFetchConfigurationOnForeground,
                                                object: nil,
                                                queue: .main) { _ in
@@ -75,7 +75,7 @@ final class ReportingService {
 
     func resume() {
         Task {
-            await privacyProDataReporter.saveWidgetAdded()
+            await subscriptionDataReporter.saveWidgetAdded()
         }
         reportFailedCompilationsPixelIfNeeded()
         AppDependencyProvider.shared.persistentPixel.sendQueuedPixels { _ in }
@@ -84,7 +84,7 @@ final class ReportingService {
     // MARK: - Suspend
 
     func suspend() {
-        privacyProDataReporter.saveApplicationLastSessionEnded()
+        subscriptionDataReporter.saveApplicationLastSessionEnded()
     }
 
 }

@@ -89,7 +89,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
     // MARK: - Subscription Status Tests
 
     func testRefreshCachedSubscription_ActiveSubscription() async throws {
-        let activeSubscription = PrivacyProSubscription(
+        let activeSubscription = DuckDuckGoSubscription(
             productId: "testProduct",
             name: "Test Subscription",
             billingPeriod: .monthly,
@@ -109,7 +109,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
     }
 
     func testRefreshCachedSubscription_ExpiredSubscription() async {
-        let expiredSubscription = PrivacyProSubscription(
+        let expiredSubscription = DuckDuckGoSubscription(
             productId: "testProduct",
             name: "Test Subscription",
             billingPeriod: .monthly,

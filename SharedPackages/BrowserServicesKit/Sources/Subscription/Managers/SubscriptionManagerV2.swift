@@ -117,8 +117,8 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
 
     /// Retrieve the purchased subscription
     /// - Parameter cachePolicy: The cache policy, `remoteFirst` or `cacheFirst`
-    /// - Returns: A `PrivacyProSubscription` if available, throws `SubscriptionEndpointServiceError.noData` if the subscription is not available or any other errors if the process failed at any point.
-    @discardableResult func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription
+    /// - Returns: A `DuckDuckGoSubscription` if available, throws `SubscriptionEndpointServiceError.noData` if the subscription is not available or any other errors if the process failed at any point.
+    @discardableResult func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription
 
     /// - Returns: true is a subscription (expired or not) is present, false otherwise.
     func isSubscriptionPresent() -> Bool
@@ -127,7 +127,7 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     /// - Parameter lastTransactionJWSRepresentation: A platform signature coming from the AppStore
     /// - Returns: A subscription if found
     /// - Throws: An error if the access token is not available or something goes wrong in the api requests
-    func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> PrivacyProSubscription?
+    func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> DuckDuckGoSubscription?
 
     /// If the user can purchase a subscription or not
     var canPurchase: Bool { get }
@@ -157,7 +157,7 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     func clearSubscriptionCache()
 
     /// Confirm a purchase with a platform signature
-    func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> PrivacyProSubscription
+    func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription
 
     /// Closure called when an expired refresh token is detected and the Subscription login is invalid. An attempt to automatically recover it can be performed or the app can ask the user to do it manually
     typealias TokenRecoveryHandler = () async throws -> Void
@@ -315,7 +315,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     }
 
     @discardableResult
-    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
+    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription {
 
         // NOTE: This is ugly, the subscription cache will be moved from the endpoint service to here and handled properly https://app.asana.com/0/0/1209015691872191
 
@@ -323,7 +323,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             throw SubscriptionEndpointServiceError.noData
         }
 
-        var subscription: PrivacyProSubscription
+        var subscription: DuckDuckGoSubscription
 
         switch cachePolicy {
 
@@ -360,7 +360,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         subscriptionEndpointService.getCachedSubscription() != nil
     }
 
-    public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> PrivacyProSubscription? {
+    public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> DuckDuckGoSubscription? {
         do {
             let tokenContainer = try await oAuthClient.activate(withPlatformSignature: lastTransactionJWSRepresentation)
             return try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken, cachePolicy: .remoteFirst)
@@ -589,7 +589,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         try? legacyAccountStorage?.clearAuthenticationState()
     }
 
-    public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> PrivacyProSubscription {
+    public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription {
         Logger.subscription.log("Confirming Purchase...")
         let accessToken = try await getTokenContainer(policy: .localValid).accessToken
         let confirmation = try await subscriptionEndpointService.confirmPurchase(accessToken: accessToken,

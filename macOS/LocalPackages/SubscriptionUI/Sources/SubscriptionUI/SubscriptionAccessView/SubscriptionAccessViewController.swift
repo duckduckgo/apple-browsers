@@ -24,25 +24,21 @@ public final class SubscriptionAccessViewController: NSViewController {
 
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private var actionHandlers: SubscriptionAccessActionHandlers
-    private var isRebrandingOn: () -> Bool
 
     public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
     public init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-                actionHandlers: SubscriptionAccessActionHandlers,
-                isRebrandingOn: @escaping () -> Bool) {
+                actionHandlers: SubscriptionAccessActionHandlers) {
         self.subscriptionManager = subscriptionManager
         self.actionHandlers = actionHandlers
-        self.isRebrandingOn = isRebrandingOn
         super.init(nibName: nil, bundle: nil)
     }
 
     public override func loadView() {
         lazy var sheetModel = SubscriptionAccessViewModel(actionHandlers: actionHandlers,
-                                                          purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform,
-                                                          isRebrandingOn: isRebrandingOn)
+                                                          purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform)
         let subscriptionAccessView = SubscriptionAccessView(model: sheetModel,
                                                             dismiss: { [weak self] in
                 guard let self = self else { return }

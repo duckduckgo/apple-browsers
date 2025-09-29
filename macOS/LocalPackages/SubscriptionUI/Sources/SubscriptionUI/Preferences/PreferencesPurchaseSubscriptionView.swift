@@ -62,7 +62,7 @@ public struct PreferencesPurchaseSubscriptionView: View {
                 TextMenuItemHeader(UserText.preferencesSubscriptionInactiveHeader(isPaidAIChatEnabled: model.isPaidAIChatEnabled))
                 TextMenuItemCaption(UserText.preferencesSubscriptionInactiveCaption(region: model.subscriptionStorefrontRegion, isPaidAIChatEnabled: model.isPaidAIChatEnabled))
 
-                let purchaseButtonText = model.isUserEligibleForFreeTrial ? UserText.purchaseFreeTrialButton(isSubscriptionRebrandingEnabled: model.isSubscriptionRebrandingEnabled) : UserText.purchaseButton(isSubscriptionRebrandingEnabled: model.isSubscriptionRebrandingEnabled)
+                let purchaseButtonText = model.isUserEligibleForFreeTrial ? UserText.purchaseFreeTrialButton : UserText.purchaseButton
 
                 HStack {
                     Button(purchaseButtonText) { model.purchaseAction() }

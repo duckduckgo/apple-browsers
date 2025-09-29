@@ -51,7 +51,7 @@ public struct NetworkProtectionStatusView: View {
 
             if model.shouldShowSubscriptionExpired {
                 SubscriptionExpiredView {
-                    model.openPrivacyPro()
+                    model.openSubscription()
                 } uninstallButtonHandler: {
                     model.uninstallVPN()
                 }
@@ -61,6 +61,11 @@ public struct NetworkProtectionStatusView: View {
                     .padding(.horizontal, 5)
                     .padding(.top, 5)
                     .transition(.slide)
+            }
+
+            if let environmentWarningViewModel = model.environmentWarningViewModel {
+                Spacer()
+                WarningView(model: environmentWarningViewModel)
             }
 
             Spacer()

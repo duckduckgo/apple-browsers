@@ -22,6 +22,8 @@ import PixelKitTestingUtilities
 import Testing
 import UserScript
 import WebKit
+import AIChat
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockAIChatMessageHandler: AIChatMessageHandling {
@@ -59,6 +61,7 @@ struct AIChatUserScriptHandlerTests {
     private var notificationCenter = NotificationCenter()
     private var pixelFiring = PixelKitMock()
     private var handler: AIChatUserScriptHandler
+    private var statisticsLoader = StatisticsLoader(statisticsStore: MockStatisticsStore())
 
     @MainActor
     init() {
@@ -69,6 +72,7 @@ struct AIChatUserScriptHandlerTests {
             messageHandling: messageHandler,
             windowControllersManager: windowControllersManager,
             pixelFiring: pixelFiring,
+            statisticsLoader: statisticsLoader,
             notificationCenter: notificationCenter
         )
     }
@@ -285,6 +289,63 @@ struct AIChatUserScriptHandlerTests {
             throw EventNotReceivedError()
         }
         #expect(prompt == .queryPrompt("test", autoSubmit: true))
+    }
+
+    @Test("didReportMetric refreshes ATBs only for prompt submission metrics")
+    func testThatUserDidSubmitPromptRefreshesATBs() async throws {
+        let promptMetrics: [AIChatMetricName] = [
+            .userDidSubmitPrompt,
+            .userDidSubmitFirstPrompt
+        ]
+
+        for metric in promptMetrics {
+            let statisticsStore = MockStatisticsStore()
+            let loader = StatisticsLoader(statisticsStore: statisticsStore)
+            let testHandler = AIChatUserScriptHandler(
+                storage: storage,
+                messageHandling: messageHandler,
+                windowControllersManager: windowControllersManager,
+                pixelFiring: pixelFiring,
+                statisticsLoader: loader,
+                notificationCenter: notificationCenter
+            )
+
+            await withCheckedContinuation { continuation in
+                testHandler.didReportMetric(.init(metricName: metric)) {
+                    #expect(statisticsStore.searchRetentionRefreshed)
+                    #expect(statisticsStore.duckAIRetentionRefreshed)
+                    continuation.resume()
+                }
+            }
+        }
+
+        let otherMetrics: [AIChatMetricName] = [
+            .userDidOpenHistory,
+            .userDidSelectFirstHistoryItem,
+            .userDidCreateNewChat,
+            .userDidTapKeyboardReturnKey
+        ]
+
+        for metric in otherMetrics {
+            let statisticsStore = MockStatisticsStore()
+            let loader = StatisticsLoader(statisticsStore: statisticsStore)
+            let testHandler = AIChatUserScriptHandler(
+                storage: storage,
+                messageHandling: messageHandler,
+                windowControllersManager: windowControllersManager,
+                pixelFiring: pixelFiring,
+                statisticsLoader: loader,
+                notificationCenter: notificationCenter
+            )
+
+            await withCheckedContinuation { continuation in
+                testHandler.didReportMetric(.init(metricName: metric)) {
+                    #expect(!statisticsStore.searchRetentionRefreshed)
+                    #expect(!statisticsStore.duckAIRetentionRefreshed)
+                    continuation.resume()
+                }
+            }
+        }
     }
 
 }

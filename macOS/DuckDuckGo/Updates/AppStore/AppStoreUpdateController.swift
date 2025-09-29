@@ -111,7 +111,7 @@ final class AppStoreUpdateController: NSObject, UpdateController {
     }
 
     /// User-initiated update check (bypasses automatic update settings and rate limiting)
-    func checkForUpdate() {
+    func checkForUpdateSkippingRollout() {
         if featureFlagger.isFeatureOn(.appStoreCheckForUpdatesFlow) {
             // New flow - check cloud for updates
             Task { @UpdateCheckActor in

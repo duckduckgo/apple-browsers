@@ -34,7 +34,7 @@ final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
                 build: "101",
                 date: Date(),
                 releaseNotes: ["Bug fixes"],
-                releaseNotesPrivacyPro: [],
+                releaseNotesSubscription: [],
                 needsLatestReleaseNote: false
             )
         }
@@ -52,7 +52,7 @@ final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
         let menuItem = AppStoreUpdateMenuItemFactory.menuItem(for: mockUpdate)
 
         // Then
-        XCTAssertEqual(menuItem.title, UserText.updateAvailableMenuItem)
+        XCTAssertEqual(menuItem.title, UserText.updateAvailableMenuItemAppStore)
     }
 
     func testMenuItem_SetsCorrectTarget() {
@@ -90,7 +90,7 @@ final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
             build: "101",
             date: Date(),
             releaseNotes: ["Critical security fix"],
-            releaseNotesPrivacyPro: [],
+            releaseNotesSubscription: [],
             needsLatestReleaseNote: false
         )
 
@@ -98,7 +98,7 @@ final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
         let menuItem = AppStoreUpdateMenuItemFactory.menuItem(for: criticalUpdate)
 
         // Then
-        XCTAssertEqual(menuItem.title, UserText.updateAvailableMenuItem)
+        XCTAssertEqual(menuItem.title, UserText.updateAvailableMenuItemAppStore)
         XCTAssertEqual(menuItem.action, #selector(AppStoreUpdateController.openUpdatesPage))
     }
 
@@ -111,7 +111,7 @@ final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
             build: "101",
             date: Date(),
             releaseNotes: ["Bug fixes"],
-            releaseNotesPrivacyPro: [],
+            releaseNotesSubscription: [],
             needsLatestReleaseNote: false
         )
 
@@ -119,7 +119,7 @@ final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {
         let menuItem = AppStoreUpdateMenuItemFactory.menuItem(for: installedUpdate)
 
         // Then
-        XCTAssertEqual(menuItem.title, UserText.updateAvailableMenuItem)
+        XCTAssertEqual(menuItem.title, UserText.updateAvailableMenuItemAppStore)
         XCTAssertEqual(menuItem.action, #selector(AppStoreUpdateController.openUpdatesPage))
     }
 }

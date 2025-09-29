@@ -141,7 +141,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
             if oldValue != areAutomaticUpdatesEnabled {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
                     _ = try? self?.configureUpdater()
-                    self?.checkForUpdate()
+                    self?.checkForUpdateSkippingRollout()
                 }
             }
         }
@@ -321,7 +321,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
 
     // Check for updates immediately, bypassing the rollout schedule
     // This is used for user-initiated update checks only
-    func checkForUpdate() {
+    func checkForUpdateSkippingRollout() {
         Task { @UpdateCheckActor in
             await performUpdateCheckSkippingRollout()
         }
@@ -479,7 +479,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             _ = try? self?.configureUpdater()
-            self?.checkForUpdate()
+            self?.checkForUpdateSkippingRollout()
         }
     }
 

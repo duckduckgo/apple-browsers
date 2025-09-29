@@ -111,7 +111,7 @@ final class ReleaseNotesTabExtension: NavigationResponder {
         guard AppVersion.runType != .uiTests, navigation.url == .releaseNotes else { return }
         let updateController = Application.appDelegate.updateController!
         if updateController.latestUpdate?.needsLatestReleaseNote == true {
-            updateController.checkForUpdate()
+            updateController.checkForUpdateSkippingRollout()
         }
     }
 }

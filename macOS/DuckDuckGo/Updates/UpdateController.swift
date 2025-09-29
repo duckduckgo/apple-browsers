@@ -43,7 +43,7 @@ protocol UpdateController: AnyObject {
     var notificationPresenter: UpdateNotificationPresenter { get }
 
     func runUpdate()
-    func checkForUpdate()
+    func checkForUpdateSkippingRollout()
     func openUpdatesPage()
 }
 

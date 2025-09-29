@@ -192,7 +192,7 @@ final class AppStoreUpdateControllerTests: XCTestCase {
 
     func testCheckForUpdate_DoesNotCrash() {
         // When
-        controller.checkForUpdate()
+        controller.checkForUpdateSkippingRollout()
 
         // Then - Just verify the method doesn't crash
         XCTAssertNotNil(controller)
@@ -249,7 +249,7 @@ final class AppStoreUpdateControllerTests: XCTestCase {
             )
 
             // When
-            controller.checkForUpdate()
+            controller.checkForUpdateSkippingRollout()
 
             // Then - Should go directly to App Store
             XCTAssertTrue(mockAppStoreOpener.openAppStoreCalled, "Should open App Store when feature flag is off")
@@ -270,7 +270,7 @@ final class AppStoreUpdateControllerTests: XCTestCase {
             )
 
             // When
-            controller.checkForUpdate()
+            controller.checkForUpdateSkippingRollout()
 
             // Then - Should attempt cloud check, NOT open App Store directly
             XCTAssertFalse(mockAppStoreOpener.openAppStoreCalled, "Should not open App Store when feature flag is on")

@@ -117,7 +117,7 @@ extension ReleaseNotesUserScript {
     @MainActor
     private func retryUpdate(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         DispatchQueue.main.async { [weak self] in
-            self?.updateController?.checkForUpdate()
+            self?.updateController?.checkForUpdateSkippingRollout()
         }
         return nil
     }

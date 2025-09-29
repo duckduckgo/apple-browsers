@@ -41,7 +41,7 @@ final class UpdateModelTests: XCTestCase {
         XCTAssertEqual(update.type, Update.UpdateType.regular)
         XCTAssertFalse(update.isInstalled)
         XCTAssertEqual(update.releaseNotes, []) // App Store doesn't provide detailed release notes
-        XCTAssertEqual(update.releaseNotesPrivacyPro, [])
+        XCTAssertEqual(update.releaseNotesSubscription, [])
         XCTAssertFalse(update.needsLatestReleaseNote)
     }
 
@@ -63,7 +63,7 @@ final class UpdateModelTests: XCTestCase {
         XCTAssertEqual(update.type, Update.UpdateType.critical)
         XCTAssertTrue(update.isInstalled)
         XCTAssertEqual(update.releaseNotes, []) // App Store doesn't provide detailed release notes
-        XCTAssertEqual(update.releaseNotesPrivacyPro, [])
+        XCTAssertEqual(update.releaseNotesSubscription, [])
         XCTAssertFalse(update.needsLatestReleaseNote)
     }
 
@@ -78,7 +78,7 @@ final class UpdateModelTests: XCTestCase {
             build: "101",
             date: Date(),
             releaseNotes: ["Bug fixes"],
-            releaseNotesPrivacyPro: [],
+            releaseNotesSubscription: [],
             needsLatestReleaseNote: false
         )
 
@@ -95,7 +95,7 @@ final class UpdateModelTests: XCTestCase {
             build: "101",
             date: Date(),
             releaseNotes: ["Critical security fix"],
-            releaseNotesPrivacyPro: [],
+            releaseNotesSubscription: [],
             needsLatestReleaseNote: false
         )
 
@@ -118,7 +118,7 @@ final class UpdateModelTests: XCTestCase {
             build: "101",
             date: specificDate,
             releaseNotes: ["Bug fixes"],
-            releaseNotesPrivacyPro: [],
+            releaseNotesSubscription: [],
             needsLatestReleaseNote: false
         )
 
@@ -145,7 +145,7 @@ final class UpdateModelTests: XCTestCase {
 
         // Then
         XCTAssertEqual(update.releaseNotes, [])
-        XCTAssertEqual(update.releaseNotesPrivacyPro, [])
+        XCTAssertEqual(update.releaseNotesSubscription, [])
         XCTAssertEqual(update.type, Update.UpdateType.regular)
     }
 
@@ -184,7 +184,7 @@ final class UpdateModelTests: XCTestCase {
         XCTAssertEqual(update.version, releaseMetadata.latestVersion)
         XCTAssertEqual(update.build, String(releaseMetadata.buildNumber))
         XCTAssertEqual(update.releaseNotes, []) // App Store doesn't provide detailed release notes via API
-        XCTAssertEqual(update.releaseNotesPrivacyPro, [])
+        XCTAssertEqual(update.releaseNotesSubscription, [])
         XCTAssertEqual(update.type, releaseMetadata.isCritical ? Update.UpdateType.critical : Update.UpdateType.regular)
     }
 }

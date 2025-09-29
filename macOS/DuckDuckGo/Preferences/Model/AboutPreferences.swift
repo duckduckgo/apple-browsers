@@ -211,7 +211,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
     func checkForUpdate(userInitiated: Bool) {
         if userInitiated {
-            updateController?.checkForUpdate()
+            updateController?.checkForUpdateSkippingRollout()
         } else {
             #if SPARKLE
             guard let updateController = updateController as? SparkleUpdateController else { return }

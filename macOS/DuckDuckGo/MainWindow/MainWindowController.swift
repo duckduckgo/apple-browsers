@@ -101,9 +101,7 @@ final class MainWindowController: NSWindowController {
     }
 
     private var shouldShowOnboarding: Bool {
-#if DEBUG
-        return false
-#elseif REVIEW
+ #if REVIEW
         if AppVersion.runType == .uiTests {
             Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
             return false
@@ -114,10 +112,10 @@ final class MainWindowController: NSWindowController {
             let onboardingIsComplete = OnboardingActionsManager.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
             return !onboardingIsComplete
         }
-#else
+ #else
         let onboardingIsComplete = OnboardingActionsManager.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
         return !onboardingIsComplete
-#endif
+ #endif
     }
 
     private func setupWindow(_ window: NSWindow) {

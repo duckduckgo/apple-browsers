@@ -37,7 +37,7 @@ jobs:
     runs-on: macos-15
     name: Smartling translation job
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
       issues: write
     env:

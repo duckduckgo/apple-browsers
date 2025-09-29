@@ -299,7 +299,6 @@ final public class HistoryCoordinator: HistoryCoordinating {
                     entriesToRemove.append(historyEntry)
                 }
             } else {
-                // TODO: Asserts on 2nd burn!
                 assertionFailure("No history entry")
             }
         }

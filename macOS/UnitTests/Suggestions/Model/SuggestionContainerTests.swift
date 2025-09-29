@@ -204,6 +204,7 @@ final class SuggestionContainerTests: XCTestCase {
 
         let mockFeatureFlagger = MockFeatureFlagger()
         mockFeatureFlagger.enabledFeatureFlags.append(.autocompleteTabs)
+        mockFeatureFlagger.enabledFeatureFlags.append(.paidAIChat)
 
         // Tested object
         let suggestionContainer = SuggestionContainer(urlSession: .mock(),

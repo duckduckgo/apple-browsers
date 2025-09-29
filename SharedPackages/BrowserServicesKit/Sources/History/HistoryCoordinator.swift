@@ -184,7 +184,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
     }
 
     public func burnAll(completion: @escaping () -> Void) {
-        clean(until: Date()) {
+        clean(until: .distantFuture) {
             self.historyDictionary = [:]
             completion()
         }

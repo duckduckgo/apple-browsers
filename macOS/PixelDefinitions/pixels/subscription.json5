@@ -91,7 +91,7 @@
         description: 'Wide pixel sent at the end of a subscription purchase flow',
         owners: ['samsymons'],
         triggers: ['other'],
-        suffixes: [],
+        suffixes: ['daily_standard'],
         parameters: [
             'widePixelAppName',
             'widePixelAppVersion',
@@ -114,7 +114,7 @@
                 key: 'feature.status_reason',
                 type: 'string',
                 description: 'Reason string for the current status, when applicable - currently applied to UNKNOWN status pixels',
-                enum: ['Account activation timed out'],
+                enum: ['partial_data', 'missing_entitlements', 'missing_entitlements_delayed_activation'],
             },
             {
                 key: 'feature.data.ext.purchase_platform',
@@ -156,6 +156,11 @@
                 type: 'integer',
                 description: 'Bucketed latency for account activation step (ms)',
                 enum: [1000, 5000, 10000, 30000, 60000, 300000, 600000],
+            },
+            {
+                key: 'app.native_apps_experiments',
+                description: 'The list of enrolled Native Apps experiments in a comma-separated string, e.g. experiment1.cohortX,experiment2.cohortY',
+                type: 'string',
             },
             {
                 key: 'context.name',

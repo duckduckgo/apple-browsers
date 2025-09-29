@@ -1176,6 +1176,7 @@ protocol NewWindowPolicyDecisionMaker {
 
 extension Tab {
     static let crashTabMenuOptionTitle = "Crash Tab"
+    static let crashTabMenuOptionTitleMultipleTimes = "Crash Tab Multiple Times in a Row"
 
     private enum Selector {
         static let killWebContentProcessAndResetState = NSSelectorFromString("_killWebContentProcessAndResetState")
@@ -1188,6 +1189,18 @@ extension Tab {
     func killWebContentProcess() {
         if webView.responds(to: Selector.killWebContentProcessAndResetState) {
             webView.perform(Selector.killWebContentProcessAndResetState)
+        }
+    }
+
+    func killWebContentProcessMultipleTimes() {
+        if webView.responds(to: Selector.killWebContentProcessAndResetState) {
+            Task { @MainActor [weak self] in
+                for _ in 0..<50 {
+                    guard let self else { return }
+                    self.webView.perform(Selector.killWebContentProcessAndResetState)
+                    try await Task.sleep(nanoseconds: 20 * NSEC_PER_MSEC)
+                }
+            }
         }
     }
 }
@@ -1204,6 +1217,7 @@ extension Tab: UserContentControllerDelegate {
         userScripts.debugScript.instrumentation = instrumentation
         userScripts.pageObserverScript.delegate = self
         userScripts.printingUserScript.delegate = self
+        userScripts.serpSettingsUserScript?.delegate = self
         specialPagesUserScript = nil
     }
 
@@ -1213,6 +1227,18 @@ extension Tab: PageObserverUserScriptDelegate {
 
     func pageDOMLoaded() {
         self.delegate?.tabPageDOMLoaded(self)
+    }
+
+}
+
+extension Tab: SERPSettingsUserScriptDelegate {
+
+    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
+        delegate?.closeTab(self)
+    }
+
+    func serpSettingsUserScriptDidRequestToOpenDuckAISettings(_ userScript: SERPSettingsUserScript) {
+        delegate?.closeTab(self)
     }
 
 }
@@ -1352,7 +1378,8 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
     @MainActor
     func navigationDidFinish(_ navigation: Navigation) {
         invalidateInteractionStateData()
-        statisticsLoader?.refreshRetentionAtb(isSearch: navigation.url.isDuckDuckGoSearch)
+        statisticsLoader?.refreshRetentionAtbOnNavigation(isSearch: navigation.url.isDuckDuckGoSearch,
+                                              isDuckAI: navigation.url.isDuckAIURL)
         if !navigation.url.isDuckDuckGoSearch {
             onboardingPixelReporter.measureSiteVisited()
         }
@@ -1397,6 +1424,14 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
     @MainActor
     private func loadErrorHTML(_ error: WKError, header: String, forUnreachableURL url: URL, alternate: Bool) {
         let html = ErrorPageHTMLFactory.html(for: error, featureFlagger: featureFlagger, header: header)
+
+        // Fire error page shown pixel when error page is actually loaded
+        if error.code == WKError.Code.webContentProcessTerminated {
+            PixelKit.fire(ErrorPagePixel.errorPageShownWebkitTermination)
+        } else {
+            PixelKit.fire(ErrorPagePixel.errorPageShownOther(error: error))
+        }
+
         if alternate {
             webView.loadAlternateHTML(html, baseURL: .error, forUnreachableURL: url)
         } else {

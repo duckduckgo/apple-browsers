@@ -107,6 +107,7 @@ public protocol DataBrokerProtectionDatabaseProvider: SecureStorageDatabaseProvi
     func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationDB]
     func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationDB]
     func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationDB]
+    func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier>
 
     func save(_ scanEvent: ScanHistoryEventDB) throws
     func save(_ optOutEvent: OptOutHistoryEventDB) throws
@@ -676,6 +677,32 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
             try OptOutEmailConfirmationDB
                 .filter(OptOutEmailConfirmationDB.Columns.emailConfirmationLink != nil)
                 .fetchAll(db)
+        }
+    }
+
+    public func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier> {
+        try db.read { db in
+            // BE only stores email addresses for 7 days
+            let cutOff = Date().daysAgo(7)
+            let recentEvents = try OptOutHistoryEventDB
+                .filter(OptOutHistoryEventDB.Columns.timestamp >= cutOff)
+                .order(OptOutHistoryEventDB.Columns.timestamp.desc)
+                .fetchAll(db)
+
+            var visitedCombinations: Set<OptOutIdentifier> = []
+            var results: Set<OptOutIdentifier> = []
+            for event in recentEvents {
+                let identifier = OptOutIdentifier(brokerId: event.brokerId, profileQueryId: event.profileQueryId, extractedProfileId: event.extractedProfileId)
+                if !visitedCombinations.contains(identifier) {
+                    visitedCombinations.insert(identifier)
+                    let eventType = try JSONDecoder().decode(HistoryEvent.EventType.self, from: event.event)
+                    if eventType == .optOutSubmittedAndAwaitingEmailConfirmation {
+                        results.insert(identifier)
+                    }
+                }
+            }
+
+            return results
         }
     }
 

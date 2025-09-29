@@ -142,8 +142,8 @@ struct AutofillCreditCardDetailsView: View {
                                          keyboardType: .numberPad,
                                          inEditMode: viewModel.viewMode == .edit,
                                          characterLimit: 4,
-                                         selectedCell: $viewModel.selectedCell)
-                    .accessibilityIdentifier("Field_SecurityCode")
+                                         selectedCell: $viewModel.selectedCell,
+                                         textFieldAccessibilityIdentifier: "Field_SecurityCode")
                 } else {
                     AutofillEditableMaskedCell(title: UserText.autofillCreditCardDetailsCVV,
                                                placeholderText: UserText.autofillCreditCardDetailsEditCVVPlaceholder,
@@ -152,8 +152,8 @@ struct AutofillCreditCardDetailsView: View {
                                                isMasked: $viewModel.isSecurityCodeHidden,
                                                keyboardType: .numberPad,
                                                characterLimit: 4,
-                                               selectedCell: $viewModel.selectedCell)
-                    .accessibilityIdentifier("Field_SecurityCode")
+                                               selectedCell: $viewModel.selectedCell,
+                                               textFieldAccessibilityIdentifier: "Field_SecurityCode")
                 }
                 
                 AutofillEditableCell(title: UserText.autofillCreditCardDetailsCardName,
@@ -162,8 +162,8 @@ struct AutofillCreditCardDetailsView: View {
                                      autoCapitalizationType: .words,
                                      disableAutoCorrection: true,
                                      inEditMode: viewModel.viewMode == .edit,
-                                     selectedCell: $viewModel.selectedCell)
-                .accessibilityIdentifier("Field_CardName")
+                                     selectedCell: $viewModel.selectedCell,
+                                     textFieldAccessibilityIdentifier: "Field_CardName")
             }
             
             Section {
@@ -172,8 +172,8 @@ struct AutofillCreditCardDetailsView: View {
                                      placeholderText: UserText.autofillCreditCardDetailsEditCardNicknamePlaceholder,
                                      autoCapitalizationType: .words,
                                      inEditMode: viewModel.viewMode == .edit,
-                                     selectedCell: $viewModel.selectedCell)
-                .accessibilityIdentifier("Field_CardNickname")
+                                     selectedCell: $viewModel.selectedCell,
+                                     textFieldAccessibilityIdentifier: "Field_CardNickname")
             }
             
             if viewModel.viewMode == .edit {

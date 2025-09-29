@@ -96,6 +96,7 @@ public protocol DataBrokerProtectionRepository {
     func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData]
     func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData]
     func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData]
+    func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier>
     func updateOptOutEmailConfirmationLink(_ emailConfirmationLink: String?,
                                            emailConfirmationLinkObtainedOnBEDate: Date?,
                                            profileQueryId: Int64,
@@ -796,6 +797,15 @@ extension DataBrokerProtectionDatabase {
             return try vault.fetchOptOutEmailConfirmationsWithLink()
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchOptOutEmailConfirmationsWithLink")
+            throw error
+        }
+    }
+
+    public func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier> {
+        do {
+            return try vault.fetchIdentifiersForActiveEmailConfirmations()
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchIdentifiersForActiveEmailConfirmations")
             throw error
         }
     }

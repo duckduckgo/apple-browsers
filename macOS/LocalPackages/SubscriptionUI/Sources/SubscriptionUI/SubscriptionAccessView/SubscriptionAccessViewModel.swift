@@ -23,16 +23,11 @@ public final class SubscriptionAccessViewModel {
 
     private var actionHandlers: SubscriptionAccessActionHandlers
     private let purchasePlatform: SubscriptionEnvironment.PurchasePlatform
-    private var isRebrandingOn: () -> Bool
 
-    public var title: String {
-        UserText.addSubscriptionModalTitle(isRebrandingOn: isRebrandingOn())
-    }
+    public var title = UserText.addSubscriptionModalTitle
 
     public var emailLabel = UserText.addViaEmailTitle
-    public var emailDescription: String {
-        UserText.addViaEmailDescription(isRebrandingOn: isRebrandingOn())
-    }
+    public var emailDescription = UserText.addViaEmailDescription
     public var emailButtonTitle = UserText.addViaEmailButtonTitle
 
     public var appleAccountLabel = UserText.addViaAppleAccountTitle
@@ -42,12 +37,9 @@ public final class SubscriptionAccessViewModel {
     public var shouldShowRestorePurchase: Bool { purchasePlatform == .appStore }
 
     public init(actionHandlers: SubscriptionAccessActionHandlers,
-                purchasePlatform: SubscriptionEnvironment.PurchasePlatform,
-                isRebrandingOn: @escaping () -> Bool
-    ) {
+                purchasePlatform: SubscriptionEnvironment.PurchasePlatform) {
         self.actionHandlers = actionHandlers
         self.purchasePlatform = purchasePlatform
-        self.isRebrandingOn = isRebrandingOn
     }
 
     public func handleEmailAction() {

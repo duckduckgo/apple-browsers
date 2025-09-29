@@ -35,6 +35,7 @@ extension Color {
     @available(*, deprecated)
     static let gray15 = Color(0xF2F2F2)
 
+    @available(*, deprecated)
     static let gray25 = Color(0xE5E5E5)
 
     @available(*, deprecated)

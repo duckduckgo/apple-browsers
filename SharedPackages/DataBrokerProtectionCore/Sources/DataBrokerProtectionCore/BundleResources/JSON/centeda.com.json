@@ -1,7 +1,7 @@
 {
   "name": "Centeda",
   "url": "centeda.com",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "addedDatetime": 1677736800000,
   "optOutUrl": "https://centeda.com/ng/control/privacy",
   "steps": [
@@ -71,32 +71,33 @@
             {
               "type": "button",
               "selector": "//a[contains(text(), 'Profile control')]",
-              "profileMatch": {
-                "selector": "preceding-sibling::a[contains(@href, '/srv/go_sponsored_link')][1]",
-                "profile": {
-                  "name": {
-                    "selector": ".title",
-                    "beforeText": "Age "
-                  },
-                  "alternativeNamesList": {
-                    "selector": ".//div[@class='col-sm-24 col-md-8 known-as']//li",
-                    "findElements": true
-                  },
-                  "age": {
-                    "selector": ".age"
-                  },
-                  "addressCityStateList": {
-                    "selector": ".//div[@class='col-sm-24 col-md-8 lived-in']//li",
-                    "findElements": true
-                  },
-                  "relativesList": {
-                    "selector": ".//div[@class='col-sm-24 col-md-8 related-to']//li",
-                    "findElements": true
-                  },
-                  "profileUrl": {
-                    "selector": ".",
-                    "identifierType": "param",
-                    "identifier": "pid"
+              "parent": {
+                "profileMatch": {
+                  "selector": ".search-result",
+                  "profile": {
+                    "name": {
+                      "selector": ".title",
+                      "beforeText": "Age "
+                    },
+                    "alternativeNamesList": {
+                      "selector": ".//div[@class='col-sm-24 col-md-8 known-as']//li",
+                      "findElements": true
+                    },
+                    "age": {
+                      "selector": ".age"
+                    },
+                    "addressCityStateList": {
+                      "selector": ".//div[@class='col-sm-24 col-md-8 lived-in']//li",
+                      "findElements": true
+                    },
+                    "relativesList": {
+                      "selector": ".//div[@class='col-sm-24 col-md-8 related-to']//li"
+                    },
+                    "profileUrl": {
+                      "selector": "a",
+                      "identifierType": "param",
+                      "identifier": "pid"
+                    }
                   }
                 }
               }

@@ -17,9 +17,10 @@
 //
 
 import Combine
+import AIChat
 @testable import DuckDuckGo_Privacy_Browser
 
-final class WindowControllersManagerMock: WindowControllersManagerProtocol {
+final class WindowControllersManagerMock: WindowControllersManagerProtocol, AIChatTabManaging {
 
     var stateChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
 
@@ -104,8 +105,42 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
         openTabCalls.append(OpenTabCall(tab: tab, parentTab: parentTab, selected: selected))
     }
 
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior) {}
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool) {}
+    // MARK: - AIChatTabManaging
+
+    struct OpenAIChatCall: Equatable {
+        let url: URL
+        let behavior: LinkOpenBehavior
+        let hasPrompt: Bool
+    }
+    var openAIChatCalls: [OpenAIChatCall] = []
+
+    @MainActor
+    func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool) {
+        openAIChatCalls.append(OpenAIChatCall(url: url, behavior: behavior, hasPrompt: hasPrompt))
+    }
+
+    struct InsertAIChatTabCall: Equatable {
+        let url: URL
+        let payload: AIChatPayload?
+        let restorationData: AIChatRestorationData?
+
+        static func == (lhs: InsertAIChatTabCall, rhs: InsertAIChatTabCall) -> Bool {
+            return lhs.url == rhs.url &&
+            (lhs.payload as? NSDictionary) == (rhs.payload as? NSDictionary) &&
+            lhs.restorationData?.id == rhs.restorationData?.id
+        }
+    }
+    var insertAIChatTabCalls: [InsertAIChatTabCall] = []
+
+    @MainActor
+    func insertAIChatTab(with url: URL, payload: AIChatPayload) {
+        insertAIChatTabCalls.append(InsertAIChatTabCall(url: url, payload: payload, restorationData: nil))
+    }
+
+    @MainActor
+    func insertAIChatTab(with url: URL, restorationData: AIChatRestorationData) {
+        insertAIChatTabCalls.append(InsertAIChatTabCall(url: url, payload: nil, restorationData: restorationData))
+    }
 
     var showTabCalls: [Tab.TabContent] = []
     struct OpenTabCall: Equatable {

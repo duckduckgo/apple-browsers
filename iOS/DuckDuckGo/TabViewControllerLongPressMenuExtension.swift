@@ -108,7 +108,7 @@ extension TabViewController {
             historyManager: historyManager,
             syncService: syncService,
             duckPlayer: duckPlayer,
-            privacyProDataReporter: privacyProDataReporter,
+            subscriptionDataReporter: subscriptionDataReporter,
             contextualOnboardingPresenter: contextualOnboardingPresenter,
             contextualOnboardingLogic: contextualOnboardingLogic,
             onboardingPixelReporter: onboardingPixelReporter,

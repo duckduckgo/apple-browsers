@@ -152,7 +152,7 @@ public struct SaveRecoveryKeyView: View {
         } foregroundContent: {
             nextButton()
         }
-        .background(Color(designSystemColor: .background))
+        .background(Color(designSystemColor: .backgroundSheets))
     }
 
 }

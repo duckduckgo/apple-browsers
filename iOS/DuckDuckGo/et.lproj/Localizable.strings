@@ -1312,6 +1312,18 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo tehisintellekti funktsioonid on privaatsed ja valikulised. Sinu andmeid ei kasutata tehisintellekti treenimiseks.";
 
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "Kuva Duck.ai nupud ja lingid DuckDuckGo otsingutulemustes.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Otsingu otseteed";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Küsi lisaküsimusi";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Brauseri otseteed";
+
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Aadressiriba";
 
@@ -1709,7 +1721,7 @@
 "feedback.form.submit" = "Esita";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Aidake täiustada Privacy Pro'd";
+"feedback.form.title" = "Aita DuckDuckGo tellimust täiustada";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -1917,6 +1929,9 @@
 
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Impordi paroolid DuckDuckGosse";
+
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "Küsi privaatselt";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Peate lubama VPN-i rakenduses DuckDuckGo.";
@@ -2289,6 +2304,30 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Otseteed";
+
+/* Confirm button for the new address bar picker */
+"new.address.bar.picker.confirm" = "Kinnita";
+
+/* Description text for the new address bar picker modal */
+"new.address.bar.picker.description" = "Tehisintellekti funktsioonid on alati valikulised.";
+
+/* Footer text for the new address bar picker */
+"new.address.bar.picker.footer" = "Kohanda menüüs Seaded > Tehisintellekti funktsioonid";
+
+/* Not now button for the new address bar picker */
+"new.address.bar.picker.not.now" = "Mitte praegu";
+
+/* Option for search and AI in the new address bar picker */
+"new.address.bar.picker.search.and.ai" = "Otsi ja Duck.ai";
+
+/* Option for search only in the new address bar picker */
+"new.address.bar.picker.search.only" = "Ainult otsi";
+
+/* Subtitle for the new address bar picker modal */
+"new.address.bar.picker.subtitle" = "Vaheta otsingu ja tehisintellekti vestluse vahel";
+
+/* Title for the new address bar picker modal */
+"new.address.bar.picker.title" = "Aadressiriba valik";
 
 /* No comment provided by engineer. */
 "No results found" = "Ühtegi tulemust ei leitud";
@@ -2665,9 +2704,6 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Otsi või sisesta aadress";
 
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Küsi Duck.ai käest";
-
 /* Search input toggle button title for asking AI Chat */
 "search.input.toggle.aichat.button.title" = "Duck.ai";
 
@@ -2704,9 +2740,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Teave";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "Lisaks pakume ka [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), kolm-ühes tellimusteenust, mis on integreeritud meie brauserisse. Privacy Pro tellijad saavad veelgi parema privaatsuse kaitse kiire ja lihtsa [VPN]-iga (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), mis aitab kaitsta sinu veebitegevust, teenusega, mis leiab ja eemaldab sinu isikuandmed inimesteotsingu saitidelt, ja teenusega, mis taastab varguse korral sinu identideedi.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "Lisaks pakume ka [DuckDuckGo tellimust](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integreeritud meie brauserisse. Tellijad saavad veelgi tõhusama privaatsuskaitse kiire ja lihtsa [VPN]-iga (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), mis aitab kaitsta sinu veebitegevust, juurdepääsu täiustatud tehisintellekti mudelitele meie privaatses tehisintellekti vestlusteenuses Duck.ai, teenuse, mis otsib ja eemaldab sinu isikuandmed inimesteotsingu saitidelt, ning teenuse, mis taastab sinu identiteedi, kui see varastatakse.";
 
@@ -2734,20 +2767,14 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Näita kogu saidi aadressi";
 
-/* Caption indicating the default option in the AI experimental picker */
-"settings.ai.experimental.picker.default" = "(Vaikimisi)";
-
-/* Caption indicating the experimental option in the AI experimental picker */
-"settings.ai.experimental.picker.experimental" = "(Eksperimentaalne)";
-
-/* Footer under the AI experimental picker, descriptive sentence without link */
-"settings.ai.experimental.picker.footer" = "Proovi meie eksperimentaalset valikut küsida Duck.ai käest otse aadressiribalt.";
-
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Otsi ja Duck.ai";
 
 /* Title for the 'Search Only' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_only" = "Ainult otsi";
+
+/* Footer under the AI picker, descriptive sentence without link */
+"settings.ai.new.picker.footer" = "Proovi uut valikut lülituda otsingu ja Duck.ai vahel aadressiribal.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Duck.ai otseteede haldamine";
@@ -2831,7 +2858,7 @@
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo muudel platvormidel";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Sinu Privacy Pro tellimus on aegunud";
+"settings.duckduckgo.subscription.expired.title" = "Sinu DuckDuckGo tellimus aegus";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Blokeerige e-posti jälgijad ja peitke oma aadress ilma oma e-posti teenuse pakkujat vahetamata.\n[Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2920,9 +2947,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "Sees";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Privaatsuspoliitika ja teenuse tingimused";
 
@@ -2992,23 +3016,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Mul on tellimus";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Sinu Privacy Pro tellimus on aegunud";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "DuckDuckGo tellimus";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Kui sinu identiteet on varastatud, aitame selle taastada";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Hangi Privacy Pro";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Tellimuse seaded";
@@ -3027,9 +3042,6 @@
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Proovi tasuta";
-
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Proovi Privacy Pro'd tasuta";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3181,9 +3193,6 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Muuda e-posti";
 
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "Lisa sellele seadmele oma Privacy Pro tellimus";
-
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Tühista";
 
@@ -3202,9 +3211,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Alustage";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Kasutage sellesse seadmesse Privacy Pro lisamiseks e-posti aadressi.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "Lisa e-posti aadressi kaudu";
 
@@ -3216,15 +3222,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Lisa e-post";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Lisa Privacy Pro teistele seadmetele";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Lisage Privacy Pro oma teistesse seadmetesse Apple ID kaudu või e-posti aadressi linkimise teel. **[Lisateave](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Kasutage seda e-posti aadressi, et lisada oma tellimus teistesse seadmetesse DuckDuckGo rakenduses. Avage jaotis Seaded > Privacy Pro > Mul on tellimus. **[Lisateave](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Sinu püsitellimus osteti Google Play poe kaudu. Püsitellimuse pikendamiseks ava Google Play poe tellimuse seaded seadmes, mis on sisse logitud samasse Google'i kontosse, mida kasutati algselt püsitellimuse ostmiseks.";
@@ -3247,8 +3244,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Vestle privaatselt tellijatele mõeldud eksklusiivsete AI-mudelitega.\n[Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "Konfigureerige Duck.ai tehisintellekti funktsioonide seadetes.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Luba tehisintellekti funktsioonide seadetes";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Ava Duck.ai";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "Halda tehisintellekti funktsioonide seadetes";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";
@@ -3264,9 +3270,6 @@
 
 /* FAQ Button */
 "subscription.faq" = "KKK ja tugi";
-
-/* FAQ Description */
-"subscription.faq.description" = "Saa vastused korduma kippuvatele küsimustele või võta ühendust Privacy Pro klienditoega meie abilehtedelt.";
 
 /* Share Feedback Button */
 "subscription.feedback" = "Jaga tagasisidet";
@@ -3301,14 +3304,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Kuva plaane";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Personal Information Removal'i seadistamiseks aktiveerige töölaual Privacy Pro";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "Mine töölaua DuckDuckGo brauseris jaotisse %1$@ ja klõpsa %2$@, et alustada.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Seaded > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Seaded > Telli DuckDuckGo";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Mul on tellimus";
@@ -3333,9 +3333,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Eemalda sellest seadmest";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "Sa ei pääse enam oma Privacy Pro tellimusele selles seadmes ligi. See ei tühista su tellimust ja see jääb teistel seadmetel aktiivseks.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Kas soovid sellest seadmest eemaldada?";
@@ -3409,9 +3406,6 @@
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Teie aastane tellimus uueneb %@.";
 
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
-
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Tasuta prooviperiood aktiveeritud";
 
@@ -3447,6 +3441,36 @@
 
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Oma paroolide sünkroonimine ja varundamine";
+
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sync & Backup see seade";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Taastamiskoodi salvestamine tagab, et saad tulevikus oma paroole hõlpsasti taastada.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Sünkroonitud paroole saab taastada ainult siis, kui sul on juurdepääs teisele seadmele või kasutades taastamiskoodi, mis on osa Sync & Backupi seadistamisest.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Skanni taastamiskood";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Kas teine seade pole saadaval? Skanni oma taastamiskood.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Kas sul pole teist seadet?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "DuckDuckGo paroolid ei kandu iCloudiga üle, sest need on sinu seadmesse krüpteeritud. Kõik muu on juba olemas.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Sünkrooni teise seadmega";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Kasutad uut %@? Sünkroonime su paroolid.";
 
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Eemaldage";

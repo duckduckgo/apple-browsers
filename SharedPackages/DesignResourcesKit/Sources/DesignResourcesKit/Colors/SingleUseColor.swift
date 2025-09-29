@@ -21,11 +21,8 @@
 /// - Important: When used in multiple places, it should be proposed to promote the color to `DesignSystemColor`.
 public enum SingleUseColor {
     case controlWidgetBackground
-    case newTabPageItemAccessoryAddBackground
     case unifiedFeedbackFieldBackground
-    case downloadProgressBarBackground
     case privacyDashboardBackground
-    case duckPlayerPillBackground
     // Fire Dialog View
     case fireDialogBackground
     case fireDialogPillBackground

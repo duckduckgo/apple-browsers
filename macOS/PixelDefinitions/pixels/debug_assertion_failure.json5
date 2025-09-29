@@ -1,0 +1,27 @@
+{
+    m_mac_debug_assertion_failure: {
+        description: 'Fired when an unexpected condition triggers',
+        owners: ['alessandroboron'],
+        triggers: ['other'],
+        suffixes: ['daily_standard'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'message',
+                description: 'The custom message describing the unexpected condition, e.g "Failed to access Downloads folder"',
+                type: 'string',
+            },
+            {
+                key: 'file',
+                description: 'The name of the file where the unexpected condition happened, e.g. "DuckDuckGo_Privacy_Browser/AppDelegate.swift"',
+                type: 'string',
+            },
+            {
+                key: 'line',
+                description: 'The line number of the file where the unexpected condition happened, e.g. "1017"',
+                type: 'string',
+            },
+        ],
+    },
+}

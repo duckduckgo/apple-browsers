@@ -25,6 +25,7 @@ struct LogEntry: Identifiable, Hashable {
     let timestamp: Date
     let level: OSLogEntryLog.Level
     let category: DataBrokerProtectionLoggerCategory
+    let rawCategory: String
     let subsystem: String
     let message: String
     let process: String
@@ -39,7 +40,15 @@ struct LogEntry: Identifiable, Hashable {
         self.message = logEntry.composedMessage
         self.subsystem = logEntry.subsystem
         self.process = logEntry.process
-        self.category = DataBrokerProtectionLoggerCategory(rawValue: logEntry.category) ?? .dataBrokerProtection
+        if let pirCategory = DataBrokerProtectionLoggerCategory(rawValue: logEntry.category) {
+            self.category = pirCategory
+        } else {
+            // Create a fallback category for non-PIR subsystems
+            self.category = .dataBrokerProtection // Use as fallback, will be handled in UI
+        }
+
+        // Store the raw category for display purposes
+        self.rawCategory = logEntry.category
     }
 
     var levelIcon: String {
@@ -71,19 +80,33 @@ struct LogFilterSettings {
     var searchText: String = ""
     var autoScroll: Bool = true
 
+    var shouldUseCustomCategory: Bool = false
+    var customCategory: String = ""
+
     func matches(_ log: LogEntry) -> Bool {
-        let categoryMatch = categories.contains(log.category)
+        let categoryMatch: Bool
+        if shouldUseCustomCategory {
+            categoryMatch = log.rawCategory == customCategory
+        } else {
+            categoryMatch = categories.contains(log.category)
+        }
+
         let levelMatch = logLevels.contains(log.level)
         let searchMatch = searchText.isEmpty ||
                          log.message.localizedCaseInsensitiveContains(searchText) ||
-                         log.category.rawValue.localizedCaseInsensitiveContains(searchText)
+                         log.category.rawValue.localizedCaseInsensitiveContains(searchText) ||
+                         log.rawCategory.localizedCaseInsensitiveContains(searchText)
 
         return categoryMatch && levelMatch && searchMatch
     }
 
     var hasActiveFilters: Bool {
-        categories.count != DataBrokerProtectionLoggerCategory.allCases.count ||
-        logLevels.count != OSLogEntryLog.Level.allPirSupportedLevels.count ||
-        !searchText.isEmpty
+        if shouldUseCustomCategory {
+            return !customCategory.isEmpty || logLevels.count != OSLogEntryLog.Level.allPirSupportedLevels.count || !searchText.isEmpty
+        } else {
+            return categories.count != DataBrokerProtectionLoggerCategory.allCases.count ||
+                   logLevels.count != OSLogEntryLog.Level.allPirSupportedLevels.count ||
+                   !searchText.isEmpty
+        }
     }
 }

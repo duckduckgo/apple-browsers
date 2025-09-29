@@ -85,6 +85,7 @@ extension Preferences {
     struct AppearanceView: View {
         @ObservedObject var model: AppearancePreferences
         @ObservedObject var aiChatModel: AIChatPreferences
+        var isThemeSwitcherEnabled: Bool = false
 
         var body: some View {
             PreferencePane(UserText.appearance) {
@@ -92,8 +93,11 @@ extension Preferences {
                 // SECTION 1: Theme
                 PreferencePaneSection(UserText.theme) {
 
+                    if isThemeSwitcherEnabled {
+                    } else {
                         ThemeAppearancePicker()
                             .environmentObject(model)
+                    }
                 }
 
                 // SECTION 2: Address Bar

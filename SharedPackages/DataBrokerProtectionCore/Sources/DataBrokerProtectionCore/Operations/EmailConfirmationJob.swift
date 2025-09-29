@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import BrowserServicesKit
 import os.log
 
 public protocol EmailConfirmationErrorDelegate: AnyObject {
@@ -126,6 +127,11 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
         let extractedProfile = extractedProfileData.profile
 
+        let attemptUUID = UUID(uuidString: jobData.attemptID)
+        let wideEventRecorder = attemptUUID.flatMap {
+            OptOutWideEventRecorder.resumeIfPossible(wideEvent: jobDependencies.wideEvent,
+                                                     attemptID: $0)
+        }
         let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
             dataBroker: broker.url,
             dataBrokerVersion: broker.version,
@@ -133,6 +139,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             vpnConnectionState: jobDependencies.vpnBypassService?.connectionStatus ?? "unknown",
             vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
         )
+        stageDurationCalculator.attachWideEventRecorder(wideEventRecorder)
         stageDurationCalculator.setStage(.emailConfirmDecoupled)
 
         let attemptNumber = Int(jobData.emailConfirmationAttemptCount) + 1
@@ -162,6 +169,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                     actionId: stageDurationCalculator.actionID
                 )
             )
+            stageDurationCalculator.fireOptOutSubmitSuccess(tries: attemptNumber)
             try await markAsSuccessful(stageDurationCalculator: stageDurationCalculator, broker: broker)
             Logger.dataBrokerProtection.log("✉️ Email confirmation completed successfully")
         } catch {
@@ -191,6 +199,17 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                        broker: broker,
                                        attemptNumber: attemptNumber,
                                        schedulingConfig: broker.schedulingConfig)
+
+            if (error as? TimeoutError) != nil {
+                wideEventRecorder?.cancel()
+            } else if let dbpError = error as? DataBrokerProtectionError, case .cancelled = dbpError {
+                wideEventRecorder?.cancel()
+            } else if error is CancellationError {
+                wideEventRecorder?.cancel()
+            } else if attemptNumber >= Self.maxRetries {
+                wideEventRecorder?.recordError(error)
+                wideEventRecorder?.complete(status: .failure)
+            }
         }
     }
 

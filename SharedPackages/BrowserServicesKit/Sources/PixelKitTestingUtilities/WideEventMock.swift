@@ -50,6 +50,10 @@ public final class WideEventMock: WideEventManaging {
         discarded.append(data)
     }
 
+    public func getFlowData<T: WideEventData>(_ type: T.Type, globalID: String) -> T? {
+        return started.first { ($0 as? T)?.globalData.id == globalID } as? T
+    }
+
     public func getAllFlowData<T: WideEventData>(_ type: T.Type) -> [T] {
         return started.compactMap { $0 as? T }
     }

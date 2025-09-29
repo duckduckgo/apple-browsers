@@ -30,6 +30,7 @@ public protocol WideEventManaging {
     func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, onComplete: @escaping PixelKit.CompletionBlock)
     func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus) async throws -> Bool
     func discardFlow<T: WideEventData>(_ data: T)
+    func getFlowData<T: WideEventData>(_ type: T.Type, globalID: String) -> T?
     func getAllFlowData<T: WideEventData>(_ type: T.Type) -> [T]
 }
 

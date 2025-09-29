@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import BrowserServicesKit
 import os.log
 
 struct BrokerProfileScanSubJob {
@@ -285,6 +286,12 @@ struct BrokerProfileScanSubJob {
                     pixelHandler.fire(.optOutFinish(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceLastStage))
                     pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceStart,
                                                      brokerType: brokerProfileQueryData.dataBroker.type, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
+
+                    if let recorder = OptOutWideEventRecorder.resumeIfPossible(wideEvent: dependencies.wideEvent,
+                                                                               attemptID: attemptUUID) {
+                        recorder.markConfirmationCompleted(at: now)
+                        recorder.complete(status: .success)
+                    }
                 }
             }
         }

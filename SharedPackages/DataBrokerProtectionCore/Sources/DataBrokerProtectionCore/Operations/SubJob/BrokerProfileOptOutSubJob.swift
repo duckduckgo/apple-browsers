@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import BrowserServicesKit
 import os.log
 
 struct BrokerProfileOptOutSubJob {
@@ -81,6 +82,19 @@ struct BrokerProfileOptOutSubJob {
             vpnConnectionState: vpnConnectionState,
             vpnBypassStatus: vpnBypassStatus
         )
+
+        let matchingOptOutJob = brokerProfileQueryData.optOutJobData.first { job in
+            job.extractedProfile.id == extractedProfileId
+        }
+        let recordFoundDate = matchingOptOutJob?.createdDate ?? stageDurationCalculator.startTime
+        let wideEventRecorder = OptOutWideEventRecorder.makeIfPossible(
+            wideEvent: dependencies.wideEvent,
+            attemptID: stageDurationCalculator.attemptId,
+            dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+            dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+            recordFoundDate: recordFoundDate
+        )
+        stageDurationCalculator.attachWideEventRecorder(wideEventRecorder)
 
         // 6. Record the start of the opt-out job:
         stageDurationCalculator.fireOptOutStart()
@@ -166,6 +180,16 @@ struct BrokerProfileOptOutSubJob {
             // 9. Catch errors from the opt-out job and report them:
             let tries = try? fetchTotalNumberOfOptOutAttempts(database: dependencies.database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1)
+            if let timeoutError = error as? TimeoutError {
+                wideEventRecorder?.cancel()
+            } else if let dbpError = error as? DataBrokerProtectionError, case .cancelled = dbpError {
+                wideEventRecorder?.cancel()
+            } else if error is CancellationError {
+                wideEventRecorder?.cancel()
+            } else {
+                wideEventRecorder?.recordError(error)
+                wideEventRecorder?.complete(status: .failure)
+            }
             handleOperationError(
                 origin: .optOut,
                 brokerId: brokerId,

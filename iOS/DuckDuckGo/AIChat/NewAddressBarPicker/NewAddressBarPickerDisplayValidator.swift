@@ -136,7 +136,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     }
 
     private var isRunningUnderMaestro: Bool {
-        ProcessInfo.processInfo.arguments.contains("isFooEnabled")
+        ProcessInfo.processInfo.arguments.contains("isMaestroRunning")
     }
 }
 

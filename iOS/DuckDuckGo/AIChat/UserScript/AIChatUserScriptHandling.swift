@@ -39,7 +39,8 @@ protocol AIChatUserScriptHandling {
     func hideChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
-    func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable?
+//    func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable?
+    func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?, openKeyboardHandler: @escaping (() -> Void)) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -135,7 +136,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     // Workaround for WKWebView: see https://app.asana.com/1/137249556945/task/1211361207345641/comment/1211365575147531?focus=true
-    func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable? {
+//    func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable? {
+    func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?, openKeyboardHandler: @escaping (() -> Void)) async -> Encodable? {
         guard let paramsDict = params as? [String: Any] else {
             Logger.aiChat.error("Invalid params format for openKeyboard")
             return nil
@@ -157,14 +159,16 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return nil
         }
 
+        openKeyboardHandler()
+        
         // Bring up the keyboard and scroll to the bottom of the page without an explicit user gesture
         DispatchQueue.main.async {
+            // setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 50);
             let javascript = """
             (function() {
                 try {
                     const element = document.querySelector('\(sanitizedSelector)');
                     element?.focus?.();
-                    setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 50);
                     return true;
                 } catch (error) {
                     console.error('Error focusing element:', error);
@@ -174,6 +178,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             """
 
             webView.evaluateJavaScript(javascript) { _, error in
+                openKeyboardHandler()
                 if let error = error {
                     Logger.aiChat.error("Failed to execute openKeyboard JavaScript: \(error.localizedDescription)")
                 }

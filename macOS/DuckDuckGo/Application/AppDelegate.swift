@@ -830,12 +830,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if AppVersion.runType != .uiTests {
             updateController = AppStoreUpdateController()
         }
-#endif
-#if SPARKLE
+#elseif SPARKLE
         if AppVersion.runType != .uiTests {
-            updateController = SparkleUpdateController(internalUserDecider: internalUserDecider)
-
-            guard let updateController = updateController as? SparkleUpdateController else { return }
+            let updateController = SparkleUpdateController(internalUserDecider: internalUserDecider)
+            self.updateController = updateController
             stateRestorationManager.subscribeToAutomaticAppRelaunching(using: updateController.willRelaunchAppPublisher)
         }
 #endif
@@ -1349,12 +1347,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func subscribeToUpdateControllerChanges() {
 #if SPARKLE
         guard AppVersion.runType != .uiTests else { return }
-        guard let updateController = updateController as? SparkleUpdateController else { return}
 
         updateProgressCancellable = updateController.updateProgressPublisher
             .sink { [weak self] progress in
-                guard let updateController = self?.updateController as? SparkleUpdateController else { return }
-                updateController.checkNewApplicationVersionIfNeeded(updateProgress: progress)
+                (self?.updateController as? SparkleUpdateController)?.checkNewApplicationVersionIfNeeded(updateProgress: progress)
             }
 #endif
     }

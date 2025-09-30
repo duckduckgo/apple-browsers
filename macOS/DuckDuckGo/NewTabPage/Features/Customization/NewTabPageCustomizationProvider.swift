@@ -36,7 +36,7 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
     var customizerData: NewTabPageDataModel.CustomizerData {
         .init(
             background: .init(customizationModel.customBackground),
-            theme: .init(appearancePreferences.themeAppearance),
+            theme: .init(appearancePreferences.currentThemeName),
             userColor: customizationModel.lastPickedCustomColor,
             userImages: customizationModel.availableUserBackgroundImages.map(NewTabPageDataModel.UserImage.init),
             defaultStyles: .init(customizationModel.backgroundColors)
@@ -60,15 +60,15 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
 
     var theme: NewTabPageDataModel.Theme? {
         get {
-            .init(appearancePreferences.themeAppearance)
+            .init(appearancePreferences.currentThemeName)
         }
         set {
-            appearancePreferences.themeAppearance = .init(newValue)
+            appearancePreferences.currentThemeName = .init(newValue)
         }
     }
 
     var themePublisher: AnyPublisher<NewTabPageDataModel.Theme?, Never> {
-        appearancePreferences.$themeAppearance.dropFirst().removeDuplicates()
+        appearancePreferences.$currentThemeName.dropFirst().removeDuplicates()
             .map(NewTabPageDataModel.Theme.init)
             .eraseToAnyPublisher()
     }
@@ -173,7 +173,7 @@ extension ColorScheme {
     }
 }
 
-extension ThemeAppearance {
+extension ThemeName {
     init(_ theme: NewTabPageDataModel.Theme?) {
         switch theme {
         case .dark:
@@ -198,8 +198,8 @@ extension NewTabPageDataModel.Theme {
         }
     }
 
-    init?(_ appearance: ThemeAppearance) {
-        switch appearance {
+    init?(_ themeName: ThemeName) {
+        switch themeName {
         case .light:
             self = .light
         case .dark:

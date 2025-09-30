@@ -95,8 +95,8 @@ struct Launching: LaunchingHandling {
         let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
-        let wideEventService = WideEventService(
-            wideEvent: AppDependencyProvider.shared.wideEvent,
+        let widePixelService = WidePixelService(
+            widePixel: AppDependencyProvider.shared.widePixel,
             featureFlagger: featureFlagger,
             subscriptionBridge: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
         )
@@ -189,7 +189,7 @@ struct Launching: LaunchingHandling {
                                defaultBrowserPromptService: defaultBrowserPromptService,
                                systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
                                inactivityNotificationSchedulerService: inactivityNotificationSchedulerService,
-                               wideEventService: wideEventService,
+                               widePixelService: widePixelService,
                                aiChatService: AIChatService(aiChatSettings: aiChatSettings)
         )
 
@@ -199,7 +199,7 @@ struct Launching: LaunchingHandling {
                                                                    tabManager: mainCoordinator.tabManager))
         
         // Clean up wide pixel data at launch
-        launchTaskManager.register(task: WideEventLaunchCleanupTask(wideEventService: wideEventService))
+        launchTaskManager.register(task: WidePixelLaunchCleanupTask(widePixelService: widePixelService))
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window

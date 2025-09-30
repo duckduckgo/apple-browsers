@@ -100,7 +100,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     var feature: (any SubscriptionPagesUseSubscriptionFeature)!
     var featureAuthV2: (any SubscriptionPagesUseSubscriptionFeature)!
 
-    var mockWideEvent: WideEventMock!
+    var mockWidePixel: WidePixelMock!
     var pixelsFired: [String] = []
 
     // V2
@@ -188,7 +188,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                                  appStoreAccountManagementFlow: appStoreAccountManagementFlow)
 
         // Auth V2 mocks
-        mockWideEvent = WideEventMock()
+        mockWidePixel = WidePixelMock()
         subscriptionManagerV2 = SubscriptionManagerMockV2()
         purchaseFlow = AppStorePurchaseFlowMockV2()
         restoreFlow = AppStoreRestoreFlowMockV2()
@@ -199,7 +199,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                                          appStorePurchaseFlow: purchaseFlow,
                                                                          appStoreRestoreFlow: restoreFlow,
                                                                          internalUserDecider: mockInternalUserDecider,
-                                                                         wideEvent: mockWideEvent)
+                                                                         widePixel: mockWidePixel)
 
     }
 
@@ -232,7 +232,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
         feature = nil
         featureAuthV2 = nil
-        mockWideEvent = nil
     }
 
     // MARK: - Tests for getSubscription

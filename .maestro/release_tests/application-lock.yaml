@@ -23,9 +23,7 @@ tags:
 
 - stopApp
 
-- launchApp:
-    arguments:
-        isRunningUITests: true
+- launchApp
 
 - assertVisible: "Unlock DuckDuckGo."
 - inputText: "password"
@@ -54,8 +52,6 @@ tags:
 
 - stopApp
 
-- launchApp:
-    arguments:
-        isRunningUITests: true
+- launchApp
 
 - assertVisible: "Privacy Test Pages"

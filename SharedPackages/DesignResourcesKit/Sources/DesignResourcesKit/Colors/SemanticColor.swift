@@ -22,18 +22,17 @@ public enum DesignSystemColor {
     case background
 
     case backgroundTertiary
+    case surface
+    case surfaceTertiary
     case backgroundSheets
     case panel
-
-    // Surfaces
-    case surface // T-surface/secondary
-    case surfaceTertiary
-    case surfaceCanvas
 
     case urlBar
 
     // Various
+    case variousOutline
     case backdrop
+    case backgroundBlur
 
     // Shadows
     case shadowPrimary
@@ -100,6 +99,7 @@ public enum DesignSystemColor {
     case buttonsGhostTextDisabled
 
     // Buttons/Color
+    case buttonsBlack
     case buttonsWhite
 
     // Buttons/DeleteGhost

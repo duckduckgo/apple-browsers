@@ -28,7 +28,7 @@ class MockAppearancePreferencesPersistor: AppearancePreferencesPersistor {
 
     var showAutocompleteSuggestions: Bool = false
 
-    var themeAppearance: String = ""
+    var currentThemeName: String = ""
 
     var defaultPageZoom: CGFloat = 1.0
 

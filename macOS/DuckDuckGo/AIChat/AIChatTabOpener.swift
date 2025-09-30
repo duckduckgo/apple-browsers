@@ -104,7 +104,6 @@ struct AIChatTabOpener: AIChatTabOpening {
 
         case .payload(let payload):
             aiChatTabManaging.insertAIChatTab(with: aiChatRemoteSettings.aiChatURL, payload: payload)
-
         case .restoration(let data):
             aiChatTabManaging.insertAIChatTab(with: aiChatRemoteSettings.aiChatURL, restorationData: data)
         }
@@ -175,7 +174,7 @@ extension WindowControllersManager: AIChatTabManaging {
     func insertAIChatTab(with url: URL, restorationData: AIChat.AIChatRestorationData) {
         guard let tabCollectionViewModel = lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
         let newAIChatTab = Tab(content: .url(url, source: .ui))
-        newAIChatTab.aiChat?.setAIChatRestorationData(restorationData)
+        newAIChatTab.aiChat?.setAIChatRestorationData(data: restorationData)
         tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
     }
 }

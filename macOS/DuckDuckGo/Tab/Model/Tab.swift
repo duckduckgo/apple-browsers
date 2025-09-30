@@ -1169,7 +1169,6 @@ protocol NewWindowPolicyDecisionMaker {
 
 extension Tab {
     static let crashTabMenuOptionTitle = "Crash Tab"
-    static let crashTabMenuOptionTitleMultipleTimes = "Crash Tab Multiple Times in a Row"
 
     private enum Selector {
         static let killWebContentProcessAndResetState = NSSelectorFromString("_killWebContentProcessAndResetState")
@@ -1182,18 +1181,6 @@ extension Tab {
     func killWebContentProcess() {
         if webView.responds(to: Selector.killWebContentProcessAndResetState) {
             webView.perform(Selector.killWebContentProcessAndResetState)
-        }
-    }
-
-    func killWebContentProcessMultipleTimes() {
-        if webView.responds(to: Selector.killWebContentProcessAndResetState) {
-            Task { @MainActor [weak self] in
-                for _ in 0..<50 {
-                    guard let self else { return }
-                    self.webView.perform(Selector.killWebContentProcessAndResetState)
-                    try await Task.sleep(nanoseconds: 20 * NSEC_PER_MSEC)
-                }
-            }
         }
     }
 }

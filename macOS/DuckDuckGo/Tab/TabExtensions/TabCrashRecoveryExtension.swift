@@ -83,7 +83,6 @@ final class TabCrashRecoveryExtension {
     private let firePixel: (PixelKitEvent, [String: String]) -> Void
 
     private var cancellables = Set<AnyCancellable>()
-    private var lastPixelFireTime: Date?
 
     init(
         featureFlagger: FeatureFlagger,
@@ -133,19 +132,13 @@ extension TabCrashRecoveryExtension: NavigationResponder {
 
         attemptTabCrashRecovery(for: error, in: webView)
 
-        let now = Date()
-        let lastFireTime = lastPixelFireTime ?? Date.distantPast
-        if now.timeIntervalSince(lastFireTime) >= 0.1 {
-            lastPixelFireTime = now
-
-            Task.detached(priority: .utility) {
+        Task.detached(priority: .utility) {
 #if APPSTORE
-                let additionalParameters = [String: String]()
+            let additionalParameters = [String: String]()
 #else
-                let additionalParameters = await SystemInfo.pixelParameters()
+            let additionalParameters = await SystemInfo.pixelParameters()
 #endif
-                self.firePixel(DebugEvent(GeneralPixel.webKitDidTerminate, error: error), additionalParameters)
-            }
+            self.firePixel(DebugEvent(GeneralPixel.webKitDidTerminate, error: error), additionalParameters)
         }
     }
 

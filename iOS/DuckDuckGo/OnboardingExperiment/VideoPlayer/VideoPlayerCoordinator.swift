@@ -52,7 +52,6 @@ final class VideoPlayerCoordinator: ObservableObject {
     private(set) var url: URL?
     private let audioSessionManager: AudioSessionManaging
     private var playerLooper: AVPlayerLooper?
-    private let configuration: VideoPlayerConfiguration
 
     private let scheduler: AnySchedulerOf<DispatchQueue>
 
@@ -71,9 +70,8 @@ final class VideoPlayerCoordinator: ObservableObject {
         self.pictureInPictureController = pictureInPictureController
         self.audioSessionManager = audioSessionManager
         self.scheduler = scheduler
-        self.configuration = configuration
         bind()
-        configureVideoPlayer()
+        configureVideoPlayer(configuration: configuration)
     }
 
     convenience init(configuration: VideoPlayerConfiguration) {
@@ -98,7 +96,6 @@ final class VideoPlayerCoordinator: ObservableObject {
         return Task(priority: .userInitiated) { @MainActor in
             do {
                 try await performLoadAsset(url: url, shouldLoopVideo: shouldLoopVideo)
-                performPostLoadAssetSetup()
             } catch {
                 Logger.videoPlayer.error("Video Is Not Playable. Error: \(error)")
                 playerItemStatus = .failed
@@ -169,11 +166,15 @@ private extension VideoPlayerCoordinator {
             .assign(to: \.isPictureInPictureActive, onWeaklyHeld: self)
     }
 
-    func configureVideoPlayer() {
+    func configureVideoPlayer(configuration: VideoPlayerConfiguration) {
         // Let the application goes to sleep if needed when the video is playing. Default value is false as we're not playing a movie.
         player.preventsDisplaySleepDuringVideoPlayback = configuration.preventsDisplaySleepDuringVideoPlayback
         // Disable playback video on external displays.
         player.allowsExternalPlayback = configuration.allowsExternalPlayback
+        // If the video can continue playing in the background in a PiP window, activate the audio session.
+        if configuration.allowsPictureInPicturePlayback {
+            audioSessionManager.setPlaybackSessionActive()
+        }
     }
 
     func performLoadAsset(url: URL, shouldLoopVideo: Bool) async throws  {
@@ -197,13 +198,6 @@ private extension VideoPlayerCoordinator {
                 player.replaceCurrentItem(with: playerItem)
             }
         }
-    }
-
-    func performPostLoadAssetSetup() {
-        guard playerItemStatus != .failed, configuration.allowsPictureInPicturePlayback else { return }
-
-        // If the video can continue playing in the background in a PiP window, activate the audio session.
-        audioSessionManager.setPlaybackSessionActive()
     }
 
     func observePlayerItemStatus() {

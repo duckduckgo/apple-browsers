@@ -239,9 +239,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Wide Pixel Service
 
-    private lazy var wideEventService: WideEventService = {
-        return WideEventService(
-            wideEvent: WideEvent(),
+    private lazy var widePixelService: WidePixelService = {
+        return WidePixelService(
+            widePixel: WidePixel(),
             featureFlagger: featureFlagger,
             subscriptionBridge: subscriptionAuthV1toV2Bridge
         )
@@ -420,7 +420,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.featureFlagger = featureFlagger
 
-        aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
+        aiChatSidebarProvider = AIChatSidebarProvider()
         aiChatMenuConfiguration = AIChatMenuConfiguration(
             storage: DefaultAIChatPreferencesStorage(),
             remoteSettings: AIChatRemoteSettings(
@@ -1009,7 +1009,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         freemiumDBPScanResultPolling = DefaultFreemiumDBPScanResultPolling(dataManager: DataBrokerProtectionManager.shared.dataManager, freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPScanResultPolling?.startPollingOrObserving()
 
-        wideEventService.sendAbandonedPixels { }
+        widePixelService.sendAbandonedPixels { }
 
         PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
     }

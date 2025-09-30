@@ -901,7 +901,7 @@ extension MainViewController: BrowserTabViewControllerDelegate {
     )
     bkman.loadBookmarks()
 
-    let vc = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()), bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()))
+    let vc = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()), bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider())
     var c: AnyCancellable!
     c = vc.publisher(for: \.view.window).sink { window in
         window?.titlebarAppearsTransparent = true

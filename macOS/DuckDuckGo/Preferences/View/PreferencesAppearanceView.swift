@@ -58,7 +58,7 @@ extension Preferences {
 
         var body: some View {
             HStack(spacing: 24) {
-                ForEach(ThemeAppearance.allCases, id: \.self) { theme in
+                ForEach(ThemeName.allCases, id: \.self) { theme in
                     ThemeButton(
                         title: theme.displayName,
                         imageName: theme.imageName,
@@ -68,14 +68,14 @@ extension Preferences {
             }
         }
 
-        private func isThemeSelected(_ theme: ThemeAppearance) -> Binding<Bool> {
+        private func isThemeSelected(_ theme: ThemeName) -> Binding<Bool> {
             .init(
                 get: {
-                    model.themeAppearance == theme
+                    model.currentThemeName == theme
                 },
                 set: { isSelected in
                     if isSelected {
-                        model.themeAppearance = theme
+                        model.currentThemeName = theme
                     }
                 }
             )

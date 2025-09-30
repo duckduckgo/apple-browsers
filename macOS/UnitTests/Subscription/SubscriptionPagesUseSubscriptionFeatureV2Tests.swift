@@ -42,7 +42,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockNotificationCenter: NotificationCenter!
-    private var mockWideEvent: WideEventMock!
+    private var mockWidePixel: WidePixelMock!
     private var broker: UserScriptMessageBroker!
 
     private struct Constants {
@@ -74,7 +74,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
         mockFeatureFlagger = MockFeatureFlagger()
         mockNotificationCenter = NotificationCenter()
-        mockWideEvent = WideEventMock()
+        mockWidePixel = WidePixelMock()
 
         sut = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManagerV2,
                                                         subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
@@ -86,7 +86,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                                                         dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
                                                         featureFlagger: mockFeatureFlagger,
                                                         aiChatURL: URL.duckDuckGo,
-                                                        wideEvent: mockWideEvent)
+                                                        widePixel: mockWidePixel)
         sut.with(broker: broker)
     }
 
@@ -98,7 +98,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockStorePurchaseManager = nil
         mockSubscriptionFeatureAvailability = nil
         mockUIHandler = nil
-        mockWideEvent = nil
+        mockWidePixel = nil
         subscriptionManagerV2 = nil
         subscriptionSuccessPixelHandler = nil
         sut = nil
@@ -413,7 +413,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     }
 
     @MainActor
-    func testAppStoreSuccess_EmitsWideEventWithContext() async throws {
+    func testAppStoreSuccess_EmitsWidePixelWithContext() async throws {
         let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_macos")!
         let webView = MockURLWebView(url: originURL)
         let message = MockWKScriptMessage(name: "subscriptionSelected", body: [:], webView: webView)
@@ -424,9 +424,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         _ = try await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
 
-        XCTAssertEqual(mockWideEvent.started.count, 1)
-        XCTAssertEqual(mockWideEvent.completions.count, 1)
-        let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
+        XCTAssertEqual(mockWidePixel.started.count, 1)
+        XCTAssertEqual(mockWidePixel.completions.count, 1)
+        let started = try XCTUnwrap(mockWidePixel.started.first as? SubscriptionPurchaseWidePixelData)
         XCTAssertEqual(started.contextData.name, "funnel_appsettings_macos")
     }
 

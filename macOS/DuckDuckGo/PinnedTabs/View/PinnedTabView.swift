@@ -174,11 +174,6 @@ struct PinnedTabView: View, DropDelegate {
             } label: {
                 Text(verbatim: Tab.crashTabMenuOptionTitle)
             }
-            Button { [weak model] in
-                model?.killWebContentProcessMultipleTimes()
-            } label: {
-                Text(verbatim: Tab.crashTabMenuOptionTitleMultipleTimes)
-            }
         }
     }
 

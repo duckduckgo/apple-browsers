@@ -22,9 +22,4 @@
         description: 'Pixel schedule type, legacy suffix',
         enum: ['d', 'c'],
     },
-    count: {
-        type: 'string',
-        description: 'Count pixel schedule type',
-        enum: ['count'],
-    },
 }

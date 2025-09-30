@@ -59,7 +59,7 @@ struct SettingsSubscriptionView: View {
                                                            subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
                                                            subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                           wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                           widePixel: AppDependencyProvider.shared.widePixel,
                                                            dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider)
     }
 

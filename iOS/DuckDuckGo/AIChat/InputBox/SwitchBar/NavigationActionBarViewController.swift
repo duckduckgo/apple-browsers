@@ -28,11 +28,8 @@ final class NavigationActionBarViewController: UIViewController {
         set { navigationActionBarView.isShowingGradient = newValue }
     }
 
-    private let isFloating: Bool
-
-    init(viewModel: NavigationActionBarViewModel, isFloating: Bool) {
+    init(viewModel: NavigationActionBarViewModel) {
         self.viewModel = viewModel
-        self.isFloating = isFloating
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -41,7 +38,7 @@ final class NavigationActionBarViewController: UIViewController {
     }
 
     override func loadView() {
-        navigationActionBarView = NavigationActionBarView(viewModel: viewModel, isFloating: isFloating)
+        navigationActionBarView = NavigationActionBarView(viewModel: viewModel)
         view = navigationActionBarView
     }
     

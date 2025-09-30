@@ -43,7 +43,7 @@ final class BookmarksBarViewControllerTests: XCTestCase {
             tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
             bookmarkManager: bookmarksManager,
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
-            aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
+            aiChatSidebarProvider: AIChatSidebarProvider(),
             fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld)
         )
         mockWindow.contentView = mainViewController.view

@@ -24,14 +24,11 @@ public struct DesignSystemPalette {
 }
 
 public enum ColorPalette {
-#if os(macOS)
     case `default`
-    case figma
-#else
-    case `default`
-#endif
 
 #if os(macOS)
+    case figma
+
     var paletteDefinition: SharedColorPaletteDefinition.Type {
         switch self {
         case .default:

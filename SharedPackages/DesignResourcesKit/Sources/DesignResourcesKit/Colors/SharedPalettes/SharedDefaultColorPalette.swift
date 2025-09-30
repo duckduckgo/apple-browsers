@@ -35,10 +35,8 @@ struct SharedDefaultColorPalette: SharedColorPaletteDefinition {
     private static let x000000 = Color(0x000000)
     private static let xFFFFFF = Color(0xFFFFFF)
     private static let x3969EF = Color(0x3969EF)
-    private static let x080808 = Color(0x080808)
     private static let x282828 = Color(0x282828)
     private static let x373737 = Color(0x373737)
-    private static let x474747 = Color(0x474747)
     private static let x7295F6 = Color(0x7295F6)
 
     // Accents

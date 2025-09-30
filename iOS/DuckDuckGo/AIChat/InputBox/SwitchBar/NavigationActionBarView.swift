@@ -29,7 +29,6 @@ final class NavigationActionBarView: UIView {
         static let barHeight: CGFloat = 76
         static let buttonSize: CGFloat = 40
         static let padding: CGFloat = 16
-        static let smallPadding: CGFloat = 8
         static let buttonSpacing: CGFloat = 12
         static let cornerRadius: CGFloat = 8
         
@@ -116,6 +115,10 @@ final class NavigationActionBarView: UIView {
         if isFloating {
             addSubview(solidView)
             addSubview(backgroundGradientView)
+        } else {
+            // If embed in another container,
+            // using layout margins prevents padding from influencing the layout if there are no buttons visible
+            rightStackView.layoutMargins = .init(top: 4, left: 8, bottom: 8, right: 8)
         }
         addSubview(mainStackView)
         
@@ -124,28 +127,28 @@ final class NavigationActionBarView: UIView {
         mainStackView.translatesAutoresizingMaskIntoConstraints = false
         backgroundGradientView.translatesAutoresizingMaskIntoConstraints = false
 
-        let mainStackPadding = isFloating ? Constants.padding : Constants.smallPadding
+        let mainStackPadding = isFloating ? Constants.padding : 0
 
-        let mainStackMinHeightConstraint = mainStackView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.buttonSize)
         NSLayoutConstraint.activate([
             // Main stack view constraints
             mainStackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: mainStackPadding),
             mainStackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -mainStackPadding),
             mainStackView.topAnchor.constraint(greaterThanOrEqualTo: safeAreaLayoutGuide.topAnchor, constant: mainStackPadding),
 
-            mainStackMinHeightConstraint,
-
             // Button size constraints
             microphoneButton.widthAnchor.constraint(equalTo: microphoneButton.heightAnchor, multiplier: 1.0),
-            microphoneButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize).withPriority(.defaultHigh),
+            microphoneButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             newLineButton.widthAnchor.constraint(equalTo: newLineButton.heightAnchor, multiplier: 1.0),
-            newLineButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize).withPriority(.defaultHigh),
+            newLineButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             searchButton.widthAnchor.constraint(equalTo: searchButton.heightAnchor, multiplier: 1.0),
-            searchButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize).withPriority(.defaultHigh),
+            searchButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
         ])
 
         if isFloating {
             NSLayoutConstraint.activate([
+                // Ensure minimum height, so that gradient is visible
+                mainStackView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.buttonSize),
+
                 // Stick to the keyboard's top
                 mainStackView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor, constant: -mainStackPadding),
 
@@ -163,7 +166,7 @@ final class NavigationActionBarView: UIView {
             ])
         } else {
             // Anchor to superview safe area. Not floating means it's in a externally controlled container
-            mainStackView.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor, constant: -mainStackPadding).isActive = true
+            mainStackView.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor).isActive = true
         }
     }
 
@@ -243,6 +246,16 @@ final class NavigationActionBarView: UIView {
         updateMicrophoneButton()
         updateSearchButton()
         updateButtonVisibility()
+
+        updateButtonsStackVisibility()
+    }
+
+    private func updateButtonsStackVisibility() {
+        guard !isFloating else { return }
+
+        let allButtonsHidden = rightStackView.arrangedSubviews.allSatisfy(\.isHidden)
+        rightStackView.isHidden = allButtonsHidden
+        rightStackView.isLayoutMarginsRelativeArrangement = !allButtonsHidden
     }
 
     private func updateMicrophoneButton() {

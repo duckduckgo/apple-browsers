@@ -142,8 +142,16 @@ public class SitePerformanceTester: NSObject {
         url: URL,
         timeout: TimeInterval
     ) async -> DetailedPerformanceMetrics? {
+        // Store original delegate to restore later
+        let originalDelegate = webView.navigationDelegate
+
         let delegate = NavigationDelegate()
         webView.navigationDelegate = delegate
+
+        defer {
+            // Always restore original delegate
+            webView.navigationDelegate = originalDelegate
+        }
 
         delegate.startMeasurement()
         webView.load(URLRequest(url: url))
@@ -151,19 +159,13 @@ public class SitePerformanceTester: NSObject {
         let checkInterval: TimeInterval = 0.5
         var elapsed: TimeInterval = 0
 
+        // Wait for navigation to complete or timeout
         while !delegate.isComplete && elapsed < timeout {
             try? await Task.sleep(nanoseconds: UInt64(checkInterval * 1_000_000_000))
             elapsed += checkInterval
-
-            // Try to get performance metrics after 2 seconds
-            if elapsed > 2.0 {
-                if let metrics = await collectPerformanceMetrics() {
-                    return metrics
-                }
-            }
         }
 
-        // If delegate completed, collect metrics
+        // Only collect metrics if navigation completed successfully
         if delegate.isComplete && delegate.error == nil {
             return await collectPerformanceMetrics()
         }

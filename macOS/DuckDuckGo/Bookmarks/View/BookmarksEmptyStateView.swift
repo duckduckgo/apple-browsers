@@ -28,9 +28,9 @@ private struct ButtonWidthPreferenceKey: PreferenceKey {
 
 private struct DynamicWidthButtonStyle: ButtonStyle {
     let maxWidth: CGFloat?
-    let defaultBackgroundColor: SharedDesignSystemColor
-    let pressedBackgroundColor: SharedDesignSystemColor
-    let textColor: SharedDesignSystemColor
+    let defaultBackgroundColor: DesignSystemColor
+    let pressedBackgroundColor: DesignSystemColor
+    let textColor: DesignSystemColor
 
     func makeBody(configuration: Configuration) -> some View {
         let backgroundColor = configuration.isPressed ? pressedBackgroundColor : defaultBackgroundColor

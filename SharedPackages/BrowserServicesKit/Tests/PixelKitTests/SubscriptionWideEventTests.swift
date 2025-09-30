@@ -82,7 +82,7 @@ final class SubscriptionWideEventTests: XCTestCase {
     // MARK: - Successful Subscription Flow Tests
 
     func testSuccessfulAppStoreSubscriptionFlow() throws {
-        let context = WideEventContextData(id: UUID().uuidString, name: "funnel_onboarding_ios")
+        let context = WideEventContextData(name: "funnel_onboarding_ios")
         let subscriptionData = SubscriptionPurchaseWideEventData(
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
@@ -152,7 +152,7 @@ final class SubscriptionWideEventTests: XCTestCase {
     }
 
     func testSuccessfulStripeSubscriptionFlow() throws {
-        let context = WideEventContextData(id: UUID().uuidString, name: "funnel_onboarding_ios")
+        let context = WideEventContextData(name: "funnel_onboarding_ios")
         let subscriptionData = SubscriptionPurchaseWideEventData(
             purchasePlatform: .stripe,
             subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
@@ -196,7 +196,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: true,
-            contextData: WideEventContextData(id: UUID().uuidString)
+            contextData: WideEventContextData()
         )
         wideEvent.startFlow(subscriptionData)
 
@@ -240,7 +240,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: true,
-            contextData: WideEventContextData(id: UUID().uuidString)
+            contextData: WideEventContextData()
         )
         wideEvent.startFlow(subscriptionData)
 
@@ -284,7 +284,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: false,
-            contextData: WideEventContextData(id: UUID().uuidString)
+            contextData: WideEventContextData()
         )
         wideEvent.startFlow(subscriptionData)
 
@@ -315,7 +315,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .stripe,
             subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
             freeTrialEligible: false,
-            contextData: WideEventContextData(id: UUID().uuidString)
+            contextData: WideEventContextData()
         )
         wideEvent.startFlow(subscriptionData)
 

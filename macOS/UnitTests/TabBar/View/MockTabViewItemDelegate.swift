@@ -137,6 +137,14 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
 
     }
 
+    func tabBarViewItemCrashMultipleTimesAction(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
+
+    }
+
+    func tabBarViewItemCrashMultiProcessAction(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
+
+    }
+
     func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_: TabBarViewItem, sender: NSButton, shouldShow: Bool) {
 
     }

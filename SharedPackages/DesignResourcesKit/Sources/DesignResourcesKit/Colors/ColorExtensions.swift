@@ -53,7 +53,7 @@ public extension UIColor {
 #if canImport(AppKit)
 
 public extension Color {
-    init(designSystemColor: SharedDesignSystemColor, palette: ColorPalette = DesignSystemPalette.current) {
+    init(designSystemColor: DesignSystemColor, palette: ColorPalette = DesignSystemPalette.current) {
         self = palette.paletteDefinition.dynamicColor(for: designSystemColor).color
     }
 
@@ -63,7 +63,7 @@ public extension Color {
 }
 
 public extension NSColor {
-    convenience init(designSystemColor: SharedDesignSystemColor, palette: ColorPalette = DesignSystemPalette.current) {
+    convenience init(designSystemColor: DesignSystemColor, palette: ColorPalette = DesignSystemPalette.current) {
         self.init(name: nil, dynamicProvider: palette.paletteDefinition.dynamicColor(for: designSystemColor).dynamicProvider)
     }
 

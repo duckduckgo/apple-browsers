@@ -151,7 +151,12 @@ final class SafariArchiveImporter: DataImporter {
             let csvImporter = CSVImporter(fileURL: nil, csvContent: csvContent, loginImporter: loginImporter, defaultColumnPositions: nil, reporter: secureVaultReporter, tld: tld)
             let passwordTask = csvImporter.importData(types: [DataImport.DataType.passwords])
             let passwordResults = await passwordTask.task.value
+            try updateProgress(.importingPasswords(numberOfPasswords: passwordResults.count, fraction: 1.0))
             summary.merge(passwordResults) { _, new in new }
+        } else if types.contains(.passwords) {
+            let passwordsResults: DataImportSummary = [.passwords: .failure(ImportError(action: .passwords, type: .importContents, underlyingError: nil))]
+            try updateProgress(.importingPasswords(numberOfPasswords: 0, fraction: 1.0))
+            summary.merge(passwordsResults) { _, new in new }
         }
 
         // Import bookmarks if requested and available
@@ -159,7 +164,12 @@ final class SafariArchiveImporter: DataImporter {
             let bookmarkHTMLImporter = BookmarkHTMLImporter(fileURL: bookmarkFile, bookmarkImporter: bookmarkImporter)
             let bookmarkTask = bookmarkHTMLImporter.importData(types: [.bookmarks])
             let bookmarkResults = await bookmarkTask.task.value
+            try updateProgress(.importingBookmarks(numberOfBookmarks: bookmarkResults.count, fraction: 1.0))
             summary.merge(bookmarkResults) { _, new in new }
+        } else if types.contains(.bookmarks) {
+            let bookmarksResults: DataImportSummary = [.bookmarks: .failure(ImportError(action: .bookmarks, type: .importContents, underlyingError: nil))]
+            try updateProgress(.importingBookmarks(numberOfBookmarks: 0, fraction: 1.0))
+            summary.merge(bookmarksResults) { _, new in new }
         }
 
         try updateProgress(.done)

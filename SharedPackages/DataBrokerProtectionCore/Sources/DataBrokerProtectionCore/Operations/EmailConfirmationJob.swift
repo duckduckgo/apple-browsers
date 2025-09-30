@@ -206,7 +206,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                                stageDurationCalculator: stageDurationCalculator,
                                                recordFoundDate: recordFoundDate,
                                                broker: broker,
-                                               wideEventRecorder: wideEventRecorder,
                                                attemptUUID: UUID(uuidString: jobData.attemptID))
         }
     }
@@ -216,7 +215,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                                     stageDurationCalculator: DataBrokerProtectionStageDurationCalculator,
                                                     recordFoundDate: Date,
                                                     broker: DataBroker,
-                                                    wideEventRecorder: OptOutSubmissionWideEventRecorder?,
                                                     attemptUUID: UUID?) {
         wideEventRecorder?.recordError(error)
         switch error {

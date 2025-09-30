@@ -34,16 +34,16 @@ public final class OptOutSubmissionWideEventData: WideEventData {
 
     public struct Stage: Codable, Equatable {
         public let name: StageName
-        public let durationMilliseconds: Int?
+        public let duration: Double?
         public let tries: Int?
         public let actionID: String?
 
         public init(name: StageName,
-                    durationMilliseconds: Int?,
+                    duration: Double?,
                     tries: Int?,
                     actionID: String?) {
             self.name = name
-            self.durationMilliseconds = durationMilliseconds
+            self.duration = duration
             self.tries = tries
             self.actionID = actionID
         }
@@ -113,7 +113,7 @@ extension OptOutSubmissionWideEventData {
             let base = WideEventParameter.PIR.OptOutSubmissionFeature.stagePrefix(index: index)
             parameters["\(base).name"] = stage.name.rawValue
 
-            if let duration = stage.durationMilliseconds {
+            if let duration = stage.duration {
                 parameters["\(base).duration_ms"] = String(duration)
             }
 

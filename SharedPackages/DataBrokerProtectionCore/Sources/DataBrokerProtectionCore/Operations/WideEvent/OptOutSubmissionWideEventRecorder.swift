@@ -22,7 +22,7 @@ import PixelKit
 
 protocol OptOutSubmissionWideEventRecording: AnyObject {
     func recordStage(_ stage: Stage,
-                     durationMilliseconds: Int?,
+                     duration: Double?,
                      tries: Int,
                      actionID: String?)
     func markSubmissionCompleted(at date: Date,
@@ -85,13 +85,13 @@ final class OptOutSubmissionWideEventRecorder {
     }
 
     private func addStage(name: OptOutSubmissionWideEventData.StageName,
-                          durationMilliseconds: Int?,
+                          duration: Double?,
                           tries: Int?,
                           actionID: String?) {
         queue.async {
-            let sanitizedDuration = durationMilliseconds.flatMap { max($0, 0) }
+            let sanitizedDuration = duration.flatMap { max($0, 0) }
             let stage = OptOutSubmissionWideEventData.Stage(name: name,
-                                                            durationMilliseconds: sanitizedDuration,
+                                                            duration: sanitizedDuration,
                                                             tries: tries,
                                                             actionID: actionID)
             self.data.appendStage(stage)
@@ -138,13 +138,13 @@ final class OptOutSubmissionWideEventRecorder {
 
 extension OptOutSubmissionWideEventRecorder: OptOutSubmissionWideEventRecording {
     func recordStage(_ stage: Stage,
-                     durationMilliseconds: Int?,
+                     duration: Double?,
                      tries: Int,
                      actionID: String?) {
         let sanitizedAction = actionID?.isEmpty == false ? actionID : nil
-        let sanitizedDuration = durationMilliseconds.flatMap { max($0, 0) }
+        let sanitizedDuration = duration.flatMap { max($0, 0) }
         addStage(name: mapStageName(stage),
-                 durationMilliseconds: sanitizedDuration,
+                 duration: sanitizedDuration,
                  tries: tries,
                  actionID: sanitizedAction)
     }

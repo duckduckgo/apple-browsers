@@ -138,7 +138,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         setStage(.start)
         handler.fire(.optOutStart(dataBroker: dataBroker, attemptId: attemptId))
         wideEventRecorder?.recordStage(.start,
-                                       durationMilliseconds: nil,
+                                       duration: nil,
                                        tries: tries,
                                        actionID: actionID)
     }
@@ -152,7 +152,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                           tries: tries,
                                           actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.emailGenerate,
-                                       durationMilliseconds: Int(duration),
+                                       duration: duration,
                                        tries: tries,
                                        actionID: actionID)
     }
@@ -166,7 +166,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          tries: tries,
                                          actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.captchaParse,
-                                       durationMilliseconds: Int(duration),
+                                       duration: duration,
                                        tries: tries,
                                        actionID: actionID)
     }
@@ -180,7 +180,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                         tries: tries,
                                         actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.captchaSend,
-                                       durationMilliseconds: Int(duration),
+                                       duration: duration,
                                        tries: tries,
                                        actionID: actionID)
     }
@@ -194,7 +194,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          tries: tries,
                                          actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.captchaSolve,
-                                       durationMilliseconds: Int(duration),
+                                       duration: duration,
                                        tries: tries,
                                        actionID: actionID)
     }
@@ -209,7 +209,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                    tries: tries,
                                    actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.submit,
-                                       durationMilliseconds: Int(duration),
+                                       duration: duration,
                                        tries: tries,
                                        actionID: actionID)
     }
@@ -223,7 +223,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          tries: tries,
                                          actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.emailReceive,
-                                       durationMilliseconds: Int(duration),
+                                       duration: duration,
                                        tries: tries,
                                        actionID: actionID)
     }
@@ -237,7 +237,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          tries: tries,
                                          actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.emailConfirm,
-                                       durationMilliseconds: Int(duration),
+                                       duration: duration,
                                        tries: tries,
                                        actionID: actionID)
     }
@@ -252,7 +252,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                      tries: tries,
                                      actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.validate,
-                                       durationMilliseconds: Int(duration),
+                                       duration: duration,
                                        tries: tries,
                                        actionID: actionID)
     }
@@ -266,7 +266,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                      tries: tries,
                                      actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.fillForm,
-                                       durationMilliseconds: Int(duration),
+                                       duration: duration,
                                        tries: tries,
                                        actionID: actionID)
     }
@@ -300,7 +300,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     vpnConnectionState: vpnConnectionState,
                                     vpnBypassStatus: vpnBypassStatus))
         wideEventRecorder?.recordStage(stage,
-                                       durationMilliseconds: Int(totalDuration),
+                                       duration: totalDuration,
                                        tries: tries,
                                        actionID: actionID)
     }
@@ -314,7 +314,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                            tries: tries,
                                            actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.conditionFound,
-                                       durationMilliseconds: Int(duration),
+                                       duration: duration,
                                        tries: tries,
                                        actionID: actionID)
     }
@@ -328,7 +328,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                               tries: tries,
                                               actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.conditionNotFound,
-                                       durationMilliseconds: Int(duration),
+                                       duration: duration,
                                        tries: tries,
                                        actionID: actionID)
     }

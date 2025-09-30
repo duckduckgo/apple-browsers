@@ -29,6 +29,7 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(
                 showFullURL: false,
                 themeAppearance: ThemeAppearance.systemDefault.rawValue,
+                themeName: ThemeName.default.rawValue,
                 favoritesDisplayMode: FavoritesDisplayMode.displayNative(.desktop).description,
                 isContinueSetUpVisible: true,
                 isFavoriteVisible: true,
@@ -44,6 +45,7 @@ final class AppearancePreferencesTests: XCTestCase {
 
         XCTAssertEqual(model.showFullURL, false)
         XCTAssertEqual(model.themeAppearance, ThemeAppearance.systemDefault)
+        XCTAssertEqual(model.themeName, ThemeName.default)
         XCTAssertEqual(model.favoritesDisplayMode, .displayNative(.desktop))
         XCTAssertEqual(model.isFavoriteVisible, true)
         XCTAssertEqual(model.isProtectionsReportVisible, true)
@@ -57,6 +59,7 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(
                 showFullURL: true,
                 themeAppearance: ThemeAppearance.light.rawValue,
+                themeName: ThemeName.green.rawValue,
                 favoritesDisplayMode: FavoritesDisplayMode.displayUnified(native: .desktop).description,
                 isContinueSetUpVisible: false,
                 isFavoriteVisible: false,
@@ -72,6 +75,7 @@ final class AppearancePreferencesTests: XCTestCase {
         )
         XCTAssertEqual(model.showFullURL, true)
         XCTAssertEqual(model.themeAppearance, ThemeAppearance.light)
+        XCTAssertEqual(model.themeName, ThemeName.green)
         XCTAssertEqual(model.favoritesDisplayMode, .displayUnified(native: .desktop))
         XCTAssertEqual(model.isFavoriteVisible, false)
         XCTAssertEqual(model.isProtectionsReportVisible, false)
@@ -82,16 +86,30 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertTrue(model.showTabsAndBookmarksBarOnFullScreen)
     }
 
-    func testWhenInitializedWithGarbageThenThemeIsSetToSystemDefault() throws {
+    func testWhenInitializedWithGarbageThenThemeAppearanceIsSetToSystemDefault() throws {
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(
-                themeAppearance: "garbage"
+                themeAppearance: "garbage",
+                themeName: "garbage"
             ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger()
         )
 
         XCTAssertEqual(model.themeAppearance, ThemeAppearance.systemDefault)
+        XCTAssertEqual(model.themeName, ThemeName.default)
+    }
+
+    func testWhenInitializedWithGarbageThenThemeNameIsSetToSystemDefault() throws {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(
+                themeName: "garbage"
+            ),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
+
+        XCTAssertEqual(model.themeName, ThemeName.default)
     }
 
     func testThemeAppearanceReturnsCorrectAppearanceObject() throws {

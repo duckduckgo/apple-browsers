@@ -253,8 +253,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var didFinishLaunching = false
 
-#if SPARKLE
     var updateController: UpdateController!
+#if SPARKLE
     var dockCustomization: DockCustomization?
 #endif
 
@@ -835,10 +835,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                              keyValueStore: keyValueStore,
                                                              sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
                                                              pixelFiring: PixelKit.shared)
-
-#if SPARKLE
+#if APPSTORE
         if AppVersion.runType != .uiTests {
-            updateController = UpdateController(internalUserDecider: internalUserDecider)
+            updateController = AppStoreUpdateController()
+        }
+#elseif SPARKLE
+        if AppVersion.runType != .uiTests {
+            let updateController = SparkleUpdateController(internalUserDecider: internalUserDecider)
+            self.updateController = updateController
             stateRestorationManager.subscribeToAutomaticAppRelaunching(using: updateController.willRelaunchAppPublisher)
         }
 #endif
@@ -1355,7 +1359,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         updateProgressCancellable = updateController.updateProgressPublisher
             .sink { [weak self] progress in
-                self?.updateController.checkNewApplicationVersionIfNeeded(updateProgress: progress)
+                (self?.updateController as? SparkleUpdateController)?.checkNewApplicationVersionIfNeeded(updateProgress: progress)
             }
 #endif
     }

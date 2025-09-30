@@ -59,8 +59,8 @@ final class TabCrashAggregator {
     private func fireAggregatedPixel() {
         guard crashCount > 0 else { return }
 
-        let parameters = ["crash_count": "\(crashCount)"]
-        PixelKit.fire(GeneralPixel.webKitDidTerminateAggregated,
+        let parameters = ["tab_count": "\(crashCount)"]
+        PixelKit.fire(GeneralPixel.webKitDidTerminateNonRecoverableAggregated,
                      frequency: .dailyAndStandard,
                      withAdditionalParameters: parameters)
 

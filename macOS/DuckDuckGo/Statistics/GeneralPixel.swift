@@ -404,7 +404,7 @@ enum GeneralPixel: PixelKitEvent {
     case userViewedWebKitTerminationErrorPage
     case webKitTerminationLoop
     case webKitTerminationIndicatorClicked
-    case webKitDidTerminateAggregated
+    case webKitDidTerminateNonRecoverableAggregated
 
     case removedInvalidBookmarkManagedObjects
 
@@ -1096,8 +1096,8 @@ enum GeneralPixel: PixelKitEvent {
         case .webKitTerminationIndicatorClicked:
             return "webkit_termination_indicator_clicked"
         /// Event trigger: Aggregated WebKit process crashes (burst detection)
-        case .webKitDidTerminateAggregated:
-            return "webkit_did_terminate_aggregated"
+        case .webKitDidTerminateNonRecoverableAggregated:
+            return "webkit_did_terminate_non_recoverable_aggregated"
 
         case .removedInvalidBookmarkManagedObjects:
             return "removed_invalid_bookmark_managed_objects"

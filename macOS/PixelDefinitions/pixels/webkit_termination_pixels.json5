@@ -1,5 +1,5 @@
 {
-    webkit_did_terminate_aggregated: {
+    webkit_did_terminate_non_recoverable_aggregated: {
         description: 'Fires when multiple WebKit web content processes terminate/crash within a short time window (100ms), indicating burst crashes. Provides crash count for burst detection.',
         owners: ['diegoreymendez'],
         triggers: ['exception'],
@@ -8,7 +8,7 @@
             'appVersion',
             'pixelSource',
             {
-                key: 'crash_count',
+                key: 'tab_count',
                 description: 'Number of tab crashes that occurred in the burst (within 100ms window)',
                 type: 'string',
             },

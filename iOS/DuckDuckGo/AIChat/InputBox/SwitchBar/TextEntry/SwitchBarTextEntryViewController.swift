@@ -39,7 +39,7 @@ class SwitchBarTextEntryViewController: UIViewController {
 
     var isUsingIncreasedButtonPadding: Bool {
         get { textEntryView.isUsingIncreasedButtonPadding }
-        set { textEntryView.isUsingIncreasedButtonPadding = newValue}
+        set { textEntryView.isUsingIncreasedButtonPadding = newValue }
     }
 
     // MARK: - Initialization

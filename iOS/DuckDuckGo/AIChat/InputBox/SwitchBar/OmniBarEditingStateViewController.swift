@@ -294,6 +294,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                 self?.delegate?.onQueryUpdated(currentText)
                 self?.suggestionTrayManager?.handleQueryUpdate(currentText)
                 self?.updateDaxVisibility()
+                self?.updateSwipeContainerSafeArea()
             }
             .store(in: &cancellables)
 
@@ -329,6 +330,15 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                 self?.handleMicrophoneButtonTapped()
             }
             .store(in: &cancellables)
+    }
+
+    private func updateSwipeContainerSafeArea() {
+        if isUsingTopBarPosition {
+            swipeContainerManager?.swipeContainerViewController.additionalSafeAreaInsets.bottom = 0
+        } else {
+            let barHeigthAboveSafeArea = switchBarVC.view.bounds.height - switchBarVC.view.safeAreaInsets.bottom
+            swipeContainerManager?.swipeContainerViewController.additionalSafeAreaInsets.bottom = barHeigthAboveSafeArea
+        }
     }
 
     private func observeRemoteMessagesChanges() {

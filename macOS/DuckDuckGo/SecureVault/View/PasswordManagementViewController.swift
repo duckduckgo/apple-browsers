@@ -661,6 +661,7 @@ final class PasswordManagementViewController: NSViewController {
                 syncModelsOnIdentity(storedIdentity)
             }
             postChange()
+            requestSync()
 
         } catch {
             PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
@@ -749,6 +750,7 @@ final class PasswordManagementViewController: NSViewController {
             case .alertFirstButtonReturn:
                 do {
                     try self.secureVault?.deleteIdentityFor(identityId: id)
+                    self.requestSync()
                     self.refreshData()
                 } catch {
                     PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))

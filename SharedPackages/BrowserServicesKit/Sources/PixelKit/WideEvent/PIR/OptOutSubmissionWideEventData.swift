@@ -107,10 +107,6 @@ extension OptOutSubmissionWideEventData {
             parameters[WideEventParameter.PIR.OptOutSubmissionFeature.submissionLatency] = String(bucketedDuration)
         }
 
-        if let errorData {
-            parameters.merge(errorData.pixelParameters(), uniquingKeysWith: { _, new in new })
-        }
-
         for (index, stage) in stages.enumerated() {
             let base = WideEventParameter.PIR.OptOutSubmissionFeature.stagePrefix(index: index)
             parameters["\(base).name"] = stage.name.rawValue

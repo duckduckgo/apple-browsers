@@ -64,10 +64,6 @@ extension OptOutConfirmationWideEventData {
             parameters[WideEventParameter.PIR.OptOutConfirmationFeature.confirmationLatency] = String(bucketedDuration)
         }
 
-        if let errorData {
-            parameters.merge(errorData.pixelParameters(), uniquingKeysWith: { _, new in new })
-        }
-
         return parameters
     }
 

@@ -31,6 +31,10 @@ public protocol WideEventData: Codable, WideEventParameterProviding {
 
     /// Data about the current install of the app, such as version and form factor.
     var appData: WideEventAppData { get set }
+
+    /// Optional error data.
+    /// All layers of underlying errors will be reported.
+    var errorData: WideEventErrorData? { get set }
 }
 
 public enum WideEventStatus: Codable, Equatable, CustomStringConvertible {

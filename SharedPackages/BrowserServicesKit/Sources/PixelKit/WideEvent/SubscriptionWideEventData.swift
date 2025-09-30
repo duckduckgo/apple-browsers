@@ -101,10 +101,6 @@ extension SubscriptionPurchaseWideEventData {
 
         parameters[WideEventParameter.SubscriptionFeature.freeTrialEligible] = freeTrialEligible ? "true" : "false"
 
-        if let errorData {
-            parameters.merge(errorData.pixelParameters(), uniquingKeysWith: { _, new in new })
-        }
-
         func emit(_ key: String, interval: WideEvent.MeasuredInterval?) {
             guard let start = interval?.start, let end = interval?.end else { return }
             let ms = max(0, Int(end.timeIntervalSince(start) * 1000))

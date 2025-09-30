@@ -25,7 +25,7 @@ extension HistoryViewActionsManager {
         historyCoordinator: HistoryDataSource,
         bookmarksHandler: HistoryViewBookmarksHandling,
         fireproofStatusProvider: DomainFireproofStatusProviding,
-        fire: @escaping () async -> Fire
+        fire: @escaping () async -> FireProtocol
     ) {
         let dataProvider = HistoryViewDataProvider(
             historyDataSource: historyCoordinator,

@@ -18,6 +18,8 @@
 
 import BrowserServicesKit
 import Combine
+import History
+import HistoryView
 import Onboarding
 import PrivacyDashboard
 import struct SwiftUI.AnyView
@@ -339,7 +341,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         tab.navigateFromOnboarding(to: url)
         wait(for: [expectation], timeout: 3.0)
 
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger, historyProvider: MockHistoryProvider())
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),

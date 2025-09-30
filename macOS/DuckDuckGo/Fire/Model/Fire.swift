@@ -16,19 +16,117 @@
 //  limitations under the License.
 //
 
-import Common
-import Foundation
 import BrowserServicesKit
+import Combine
+import Common
 import DDGSync
-import PrivacyDashboard
-import WebKit
-import SecureStorage
-import History
-import PrivacyStats
 import FeatureFlags
+import Foundation
+import History
 import os.log
+import PrivacyDashboard
+import PrivacyStats
+import SecureStorage
+import WebKit
 
-final class Fire {
+protocol FireProtocol: AnyObject {
+    var burningData: Fire.BurningData? { get }
+    var fireproofDomains: FireproofDomains { get }
+    var visualizeFireAnimationDecider: VisualizeFireSettingsDecider { get }
+    var burningDataPublisher: AnyPublisher<Fire.BurningData?, Never> { get }
+
+    func fireAnimationDidStart()
+    func fireAnimationDidFinish()
+
+    @MainActor func burnAll(isBurnOnExit: Bool, opening url: URL, completion: (() -> Void)?)
+    @MainActor func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool, completion: (() -> Void)?)
+    @MainActor func burnVisits(_ visits: [Visit],
+                               except fireproofDomains: DomainFireproofStatusProviding,
+                               isToday: Bool,
+                               closeWindows: Bool,
+                               clearSiteData: Bool,
+                               urlToOpenIfWindowsAreClosed url: URL?,
+                               completion: (() -> Void)?)
+}
+extension FireProtocol {
+
+    @MainActor
+    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab) {
+        burnAll(isBurnOnExit: isBurnOnExit, opening: url, completion: nil)
+    }
+    @MainActor
+    func burnAll(opening url: URL) {
+        burnAll(isBurnOnExit: false, opening: url, completion: nil)
+    }
+    @MainActor
+    func burnAll(completion: (() -> Void)? = nil) {
+        burnAll(isBurnOnExit: false, opening: .newtab, completion: completion)
+    }
+
+    @MainActor
+    func burnAll(isBurnOnExit: Bool, completion: (() -> Void)? = nil) {
+        burnAll(isBurnOnExit: isBurnOnExit, opening: .newtab, completion: completion)
+    }
+
+    @MainActor
+    func burnEntity(_ entity: Fire.BurningEntity, completion: (() -> Void)? = nil) {
+        burnEntity(entity, includingHistory: true, completion: completion)
+    }
+
+    @MainActor
+    func burnVisits(_ visits: [Visit],
+                    except fireproofDomains: DomainFireproofStatusProviding,
+                    isToday: Bool,
+                    urlToOpenIfWindowsAreClosed url: URL? = nil,
+                    completion: (() -> Void)? = nil) {
+        burnVisits(visits,
+                   except: fireproofDomains,
+                   isToday: isToday,
+                   closeWindows: true,
+                   clearSiteData: true,
+                   urlToOpenIfWindowsAreClosed: url,
+                   completion: completion)
+    }
+
+    @MainActor
+    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            self.burnAll(isBurnOnExit: isBurnOnExit, opening: url) {
+                continuation.resume()
+            }
+        }
+    }
+
+    @MainActor
+    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            self.burnEntity(entity, includingHistory: includingHistory) {
+                continuation.resume()
+            }
+        }
+    }
+
+    @MainActor
+    func burnVisits(_ visits: [Visit],
+                    except fireproofDomains: DomainFireproofStatusProviding,
+                    isToday: Bool,
+                    closeWindows: Bool,
+                    clearSiteData: Bool,
+                    urlToOpenIfWindowsAreClosed url: URL? = .newtab) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            self.burnVisits(visits,
+                            except: fireproofDomains,
+                            isToday: isToday,
+                            closeWindows: closeWindows,
+                            clearSiteData: clearSiteData,
+                            urlToOpenIfWindowsAreClosed: url) {
+                continuation.resume()
+            }
+        }
+    }
+}
+
+final class Fire: FireProtocol {
 
     let webCacheManager: WebCacheManager
     let historyCoordinating: HistoryCoordinating
@@ -108,6 +206,8 @@ final class Fire {
 
     @Published private(set) var burningData: BurningData?
 
+    var burningDataPublisher: AnyPublisher<BurningData?, Never> { $burningData.eraseToAnyPublisher() }
+
     @MainActor
     init(cacheManager: WebCacheManager? = nil,
          historyCoordinating: HistoryCoordinating? = nil,
@@ -157,9 +257,7 @@ final class Fire {
     }
 
     @MainActor
-    func burnEntity(entity: BurningEntity,
-                    includingHistory: Bool = true,
-                    completion: (() -> Void)? = nil) {
+    func burnEntity(_ entity: BurningEntity, includingHistory: Bool, completion: (() -> Void)?) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -221,7 +319,7 @@ final class Fire {
     }
 
     @MainActor
-    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab, completion: (() -> Void)? = nil) {
+    func burnAll(isBurnOnExit: Bool, opening url: URL, completion: (() -> Void)?) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -286,8 +384,10 @@ final class Fire {
     func burnVisits(_ visits: [Visit],
                     except fireproofDomains: DomainFireproofStatusProviding,
                     isToday: Bool,
-                    urlToOpenIfWindowsAreClosed url: URL? = .newtab,
-                    completion: (() -> Void)? = nil) {
+                    closeWindows: Bool,
+                    clearSiteData: Bool,
+                    urlToOpenIfWindowsAreClosed url: URL?,
+                    completion: (() -> Void)?) {
 
         // Get domains to burn
         var domains = Set<String>()
@@ -307,18 +407,22 @@ final class Fire {
 
         burnVisitedLinks(visits)
         historyCoordinating.burnVisits(visits) {
+            // If cookie/site data should not be cleared, finish after history burn
+            guard clearSiteData else {
+                completion?()
+                return
+            }
+
             let entity: BurningEntity
 
-            // Burn all windows in case we are burning visits for today
+            // Burn all windows in case we are burning visits for today (respecting closeWindows flag)
             if isToday {
-                entity = .allWindows(mainWindowControllers: self.windowControllerManager.mainWindowControllers, selectedDomains: domains, customURLToOpen: url, close: true)
+                entity = .allWindows(mainWindowControllers: self.windowControllerManager.mainWindowControllers, selectedDomains: domains, customURLToOpen: url, close: closeWindows)
             } else {
                 entity = .none(selectedDomains: domains)
             }
 
-            self.burnEntity(entity: entity,
-                            includingHistory: false,
-                            completion: completion)
+            self.burnEntity(entity, includingHistory: false, completion: completion)
         }
     }
 

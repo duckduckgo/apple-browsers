@@ -265,6 +265,7 @@ struct UserText {
     static let deleteAllHistory = NSLocalizedString("history.delete.all.dialog.title", value: "Delete all history?", comment: "Title of a dialog asking the user to confirm deleting all history")
     static let deleteAllHistoryFromToday = NSLocalizedString("history.delete.today.dialog.title", value: "Delete all history from today?", comment: "Title of a dialog asking the user to confirm deleting history from today")
     static let deleteAllHistoryFromYesterday = NSLocalizedString("history.delete.yesterday.dialog.title", value: "Delete all history from yesterday?", comment: "Title of a dialog asking the user to confirm deleting history from yesterday")
+    static let deleteOlderHistory = NSLocalizedString("history.delete.older.dialog.title", value: "Delete older history?", comment: "Title of a dialog asking the user to confirm deleting older history (more than a week old)")
     static func deleteHistory(for date: String) -> String {
         let localized = NSLocalizedString("history.delete.date.dialog.title",
                                           value: "Delete all history from\n%@?",
@@ -413,6 +414,7 @@ struct UserText {
     static let newWindowMenuItem = NSLocalizedString("new.window.menu.item", value: "New Window", comment: "Menu item title")
     static let newBurnerWindowMenuItem = NSLocalizedString("new.burner.window.menu.item", value: "New Fire Window", comment: "Menu item title")
     static let deleteBrowsingDataMenuItem = NSLocalizedString("delete.browsing.data.menu.item", value: "Delete Browsing Data…", comment: "Menu item title")
+    static let deleteHistoryAndBrowsingDataMenuItem = NSLocalizedString("delete.history.and.browsing.data.menu.item", value: "Delete History and Browsing Data…", comment: "Menu item title")
 
     static let fireDialogFireproofSites = NSLocalizedString("fire.dialog.fireproof.sites", value: "Fireproof sites won't be cleared", comment: "Category of domains in fire button dialog")
     static let fireDialogClearSites = NSLocalizedString("fire.dialog.clear.sites", value: "Selected sites will be cleared", comment: "Category of domains in fire button dialog")
@@ -461,6 +463,38 @@ struct UserText {
     static let fireDialogSitesOverlaySubtitle = NSLocalizedString("fire.dialog.sites.overlay.subtitle",
                                                                  value: "These sites will be deleted.",
                                                                  comment: "Subtitle above the list of domains in in-dialog overlay")
+
+    // MARK: - Fire dialog single-entry contextual titles
+    /// Title used when reusing the Fire dialog as a single entry point (from History, menu, etc.) with full-time range
+    static let deleteBrowsingDataAll = NSLocalizedString("fire.dialog.single.title.all",
+                                                         value: "Delete browsing data?",
+                                                         comment: "Title asking user to confirm deleting browsing data (all time)")
+
+    /// Title used for 'today' scope
+    static let deleteBrowsingDataFromToday = NSLocalizedString("fire.dialog.single.title.today",
+                                                               value: "Delete browsing data from today?",
+                                                               comment: "Title asking user to confirm deleting browsing data from today")
+
+    /// Title used for 'yesterday' scope
+    static let deleteBrowsingDataFromYesterday = NSLocalizedString("fire.dialog.single.title.yesterday",
+                                                                   value: "Delete browsing data from yesterday?",
+                                                                   comment: "Title asking user to confirm deleting browsing data from yesterday")
+
+    /// Title used for a specific date or formatted day string
+    static func deleteBrowsingData(for formattedDateOrLabel: String) -> String {
+        let localized = NSLocalizedString("fire.dialog.single.title.date",
+                                          value: "Delete browsing data from %@?",
+                                          comment: "Title asking user to confirm deleting browsing data from a specific date label (e.g., Monday, April 1)")
+        return String(format: localized, formattedDateOrLabel)
+    }
+
+    /// Title used when deleting for a specific site/domain
+    static func deleteBrowsingDataFromSite(_ domain: String) -> String {
+        let localized = NSLocalizedString("fire.dialog.single.title.site",
+                                          value: "Delete browsing data from %@?",
+                                          comment: "Title asking user to confirm deleting browsing data from a specific site/domain")
+        return String(format: localized, domain)
+    }
     static let fireproofCookiesAndSiteDataExplanation = NSLocalizedString("burn.fireproofing.explanation.message", value: "Fireproof site cookies and data won’t be deleted.", comment: "Explanation of what Fireproofing site cookies and data means.")
     static let fireproofSite = NSLocalizedString("options.menu.fireproof-site", value: "Fireproof This Site", comment: "Context menu item")
     static let removeFireproofing = NSLocalizedString("options.menu.remove-fireproofing", value: "Remove Fireproofing", comment: "Context menu item")

@@ -42,11 +42,11 @@ final class UserDefaultsHistoryViewDeleteDialogSettingsPersistor: HistoryViewDel
 
 final class HistoryViewDeleteDialogModel: ObservableObject {
     enum Response {
-        case unknown, noAction, delete, burn
+        case noAction, delete, burn
     }
 
     enum DeleteMode: Equatable {
-        case all, today, yesterday, date(Date), formattedDate(String), unspecified
+        case all, today, yesterday, date(Date), sites(Set<String>), older, unspecified
 
         var date: Date? {
             guard case let .date(date) = self else {
@@ -54,24 +54,30 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
             }
             return date
         }
-    }
 
-    var title: String {
-        switch mode {
-        case .all:
-            return UserText.deleteAllHistory
-        case .today:
-            return UserText.deleteAllHistoryFromToday
-        case .yesterday:
-            return UserText.deleteAllHistoryFromYesterday
-        case .unspecified:
-            return UserText.deleteHistory
-        case .date(let date):
-            return UserText.deleteHistory(for: Self.dateFormatter.string(from: date))
-        case .formattedDate(let stringDate):
-            return UserText.deleteHistory(for: stringDate)
+        var title: String {
+            switch self {
+            case .all:
+                return UserText.deleteAllHistory
+            case .today:
+                return UserText.deleteAllHistoryFromToday
+            case .yesterday:
+                return UserText.deleteAllHistoryFromYesterday
+            case .older:
+                return UserText.deleteOlderHistory
+            case .unspecified:
+                return UserText.deleteHistory
+            case .date(let date):
+                return UserText.deleteHistory(for: HistoryViewDeleteDialogModel.dateFormatter.string(from: date))
+            case .sites(let domains) where domains.count == 1:
+                return UserText.deleteHistory(for: domains.first!)
+            case .sites:
+                return UserText.deleteHistory
+            }
         }
     }
+
+    var title: String { mode.title }
 
     let message: String
 
@@ -89,11 +95,11 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
             settingsPersistor.shouldBurnHistoryWhenDeleting = shouldBurn
         }
     }
-    @Published private(set) var response: Response = .unknown
+    @Published private(set) var response: Response?
 
     init(
         entriesCount: Int,
-        mode: DeleteMode = .unspecified,
+        mode: DeleteMode,
         settingsPersistor: HistoryViewDeleteDialogSettingsPersisting = UserDefaultsHistoryViewDeleteDialogSettingsPersistor()
     ) {
         self.message = {
@@ -119,7 +125,7 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
     private let mode: DeleteMode
     private let settingsPersistor: HistoryViewDeleteDialogSettingsPersisting
 
-    private static let dateFormatter: DateFormatter = {
+    static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .full
         formatter.timeStyle = .none

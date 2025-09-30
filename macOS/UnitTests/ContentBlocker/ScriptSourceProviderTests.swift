@@ -18,6 +18,8 @@
 
 import BrowserServicesKit
 import Common
+import History
+import HistoryView
 import PersistenceTestingUtils
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -79,7 +81,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             fireproofDomains: MockFireproofDomains(domains: []),
-            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger),
+            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger, historyProvider: MockHistoryProvider()),
             newTabPageActionsManager: nil
         )
 

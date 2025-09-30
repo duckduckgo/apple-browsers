@@ -85,7 +85,7 @@ enum HistoryViewPixel: PixelKitEvent {
 
         init(_ queryKind: DataModel.HistoryQueryKind) {
             switch queryKind {
-            case .rangeFilter:
+            case .rangeFilter, .dateFilter:
                 self = .range
             case .domainFilter:
                 self = .domain
@@ -102,7 +102,7 @@ enum HistoryViewPixel: PixelKitEvent {
             switch queryKind {
             case .rangeFilter(.all):
                 self = .all
-            case .rangeFilter:
+            case .rangeFilter, .dateFilter:
                 self = .range
             case .domainFilter:
                 self = .domain

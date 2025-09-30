@@ -64,12 +64,14 @@ extension NSAlert {
         return alert
     }
 
-    static func clearHistoryAndDataAlert(dateString: String?) -> NSAlert {
+    static func clearHistoryAndDataAlert(timeWindow: ClearTimeWindowHistoryMenuItem.HistoryTimeWindow) -> NSAlert {
         let alert = NSAlert()
-        if let dateString = dateString {
+        switch timeWindow {
+        case .other(date: let date):
+            let dateString = HistoryMenu.suffixFormatter.string(from: date)
             alert.messageText = String(format: UserText.clearDataHeader, dateString)
             alert.informativeText = UserText.clearDataDescription
-        } else {
+        case .today:
             alert.messageText = String(format: UserText.clearDataTodayHeader)
             alert.informativeText = UserText.clearDataTodayDescription
         }

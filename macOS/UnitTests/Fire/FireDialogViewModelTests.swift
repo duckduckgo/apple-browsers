@@ -1,5 +1,5 @@
 //
-//  FirePopoverViewModelTests.swift
+//  FireDialogViewModelTests.swift
 //
 //  Copyright © 2022 DuckDuckGo. All rights reserved.
 //
@@ -18,16 +18,14 @@
 
 import Common
 import History
+import HistoryView
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
-final class FirePopoverViewModelTests: XCTestCase {
+final class FireDialogViewModelTests: XCTestCase {
 
     @MainActor
-    private func makeViewModel(
-        with tabCollectionViewModel: TabCollectionViewModel,
-        onboardingContextualDialogsManager: ContextualOnboardingStateUpdater = ContextualDialogsManager(trackerMessageProvider: MockTrackerMessageProvider())
-    ) -> FirePopoverViewModel {
+    private func makeViewModel(with tabCollectionViewModel: TabCollectionViewModel) -> FireDialogViewModel {
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()
         let permissionManager = PermissionManagerMock()
@@ -38,15 +36,37 @@ final class FirePopoverViewModelTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         tld: Application.appDelegate.tld)
-        return FirePopoverViewModel(
+        return FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionViewModel,
-            historyCoordinating: HistoryCoordinatingMock(),
+            historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
-            tld: Application.appDelegate.tld,
-            onboardingContextualDialogsManager: onboardingContextualDialogsManager
+            tld: Application.appDelegate.tld
         )
+    }
+
+    @MainActor
+    private func handle(_ vm: FireDialogViewModel,
+                        _ result: FireDialogResult,
+                        onboarding: ContextualOnboardingStateUpdater? = nil) {
+        let coordinator = FireCoordinator(
+            tld: Application.appDelegate.tld,
+            featureFlagger: Application.appDelegate.featureFlagger,
+            historyProvider: MockHistoryProvider(),
+            fireViewModel: vm.fireViewModel
+        )
+        let isAllHistorySelected: Bool
+        if vm.scopeCookieDomains != nil  {
+            isAllHistorySelected = false
+        } else {
+            // no specific domains passed initially
+            isAllHistorySelected = result.selectedCookieDomains == nil || result.selectedCookieDomains?.count == vm.selectable.count
+        }
+
+        Task {
+            await coordinator.handleDialogResult(result, tabCollectionViewModel: vm.tabCollectionViewModel, isAllHistorySelected: isAllHistorySelected)
+        }
     }
 
     @MainActor func testOnBurn_OnboardingContextualDialogsManagerFireButtonUsedCalled() {
@@ -55,13 +75,17 @@ final class FirePopoverViewModelTests: XCTestCase {
         // Expectation: Only fireButtonUsed is recorded; no other onboarding actions occur.
         let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         let onboardingContextualDialogsManager = CapturingContextualOnboardingStateUpdater()
-        let vm = makeViewModel(with: tabCollectionVM, onboardingContextualDialogsManager: onboardingContextualDialogsManager)
+        let vm = makeViewModel(with: tabCollectionVM)
         XCTAssertNil(onboardingContextualDialogsManager.updatedForTab)
         XCTAssertFalse(onboardingContextualDialogsManager.gotItPressedCalled)
         XCTAssertFalse(onboardingContextualDialogsManager.fireButtonUsedCalled)
 
         // When
-        vm.burn()
+        let result = FireDialogResult(clearingOption: vm.clearingOption,
+                                      includeHistory: vm.includeHistory,
+                                      includeTabsAndWindows: vm.includeTabsAndWindows,
+                                      includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+        handle(vm, result, onboarding: onboardingContextualDialogsManager)
 
         // Then
         XCTAssertNil(onboardingContextualDialogsManager.updatedForTab)
@@ -86,18 +110,22 @@ final class FirePopoverViewModelTests: XCTestCase {
                         faviconManagement: faviconManager,
                         tld: Application.appDelegate.tld)
 
-        let viewModel = FirePopoverViewModel(
+        let viewModel = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: faviconManager,
             tld: Application.appDelegate.tld,
-            onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )
 
         viewModel.clearingOption = .allData
-        viewModel.burn(includeHistory: false)
+        viewModel.includeHistory = false
+        let result2 = FireDialogResult(clearingOption: viewModel.clearingOption,
+                                       includeHistory: viewModel.includeHistory,
+                                       includeTabsAndWindows: viewModel.includeTabsAndWindows,
+                                       includeCookiesAndSiteData: viewModel.includeCookiesAndSiteData)
+        handle(viewModel, result2)
 
         XCTAssertFalse(historyCoordinator.burnAllCalled)
         XCTAssertFalse(historyCoordinator.burnVisitsCalled)
@@ -123,14 +151,13 @@ final class FirePopoverViewModelTests: XCTestCase {
         let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())
         fireproofDomains.add(domain: URL.duckduckgoDomain)
 
-        let viewModel = FirePopoverViewModel(
+        let viewModel = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: fireproofDomains,
             faviconManagement: faviconManager,
             tld: Application.appDelegate.tld,
-            onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )
 
         viewModel.clearingOption = .currentWindow
@@ -154,14 +181,13 @@ final class FirePopoverViewModelTests: XCTestCase {
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
 
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: Application.appDelegate.tld,
-            onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )
         vm.clearingOption = .currentTab
         let exp = expectation(description: "burnVisits called")
@@ -169,7 +195,12 @@ final class FirePopoverViewModelTests: XCTestCase {
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnVisits") }
-        vm.burn(includeHistory: true)
+        vm.includeHistory = true
+        let r1 = FireDialogResult(clearingOption: vm.clearingOption,
+                                  includeHistory: vm.includeHistory,
+                                  includeTabsAndWindows: vm.includeTabsAndWindows,
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+        handle(vm, r1)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -186,14 +217,13 @@ final class FirePopoverViewModelTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: Application.appDelegate.tld,
-            onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )
         vm.clearingOption = .currentWindow
         let exp = expectation(description: "burnVisits called")
@@ -201,7 +231,12 @@ final class FirePopoverViewModelTests: XCTestCase {
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnVisits") }
-        vm.burn(includeHistory: true)
+        vm.includeHistory = true
+        let r2 = FireDialogResult(clearingOption: vm.clearingOption,
+                                  includeHistory: vm.includeHistory,
+                                  includeTabsAndWindows: vm.includeTabsAndWindows,
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+        handle(vm, r2)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -216,14 +251,13 @@ final class FirePopoverViewModelTests: XCTestCase {
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
 
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: Application.appDelegate.tld,
-            onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )
         vm.clearingOption = .currentTab
         // Ensure selected tab exists
@@ -234,7 +268,13 @@ final class FirePopoverViewModelTests: XCTestCase {
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnVisits") }
-        vm.burn(includeHistory: true, includeTabsAndWindows: false)
+        vm.includeHistory = true
+        vm.includeTabsAndWindows = false
+        let r3 = FireDialogResult(clearingOption: vm.clearingOption,
+                                  includeHistory: vm.includeHistory,
+                                  includeTabsAndWindows: vm.includeTabsAndWindows,
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+        handle(vm, r3)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -248,14 +288,13 @@ final class FirePopoverViewModelTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: Application.appDelegate.tld,
-            onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )
         vm.clearingOption = .currentWindow
         let exp = expectation(description: "burnVisits called")
@@ -263,7 +302,13 @@ final class FirePopoverViewModelTests: XCTestCase {
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnVisits") }
-        vm.burn(includeHistory: true, includeTabsAndWindows: false)
+        vm.includeHistory = true
+        vm.includeTabsAndWindows = false
+        let r4 = FireDialogResult(clearingOption: vm.clearingOption,
+                                  includeHistory: vm.includeHistory,
+                                  includeTabsAndWindows: vm.includeTabsAndWindows,
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+        handle(vm, r4)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -277,14 +322,13 @@ final class FirePopoverViewModelTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: Application.appDelegate.tld,
-            onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )
         vm.clearingOption = .allData
         let exp = expectation(description: "burnAll called")
@@ -292,7 +336,13 @@ final class FirePopoverViewModelTests: XCTestCase {
         historyCoordinator.onBurnVisits = { XCTFail("onBurnVisits should not be called when expecting onBurnAll") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnAll") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnAll") }
-        vm.burn(includeHistory: true, includeTabsAndWindows: false)
+        vm.includeHistory = true
+        vm.includeTabsAndWindows = false
+        let r5 = FireDialogResult(clearingOption: vm.clearingOption,
+                                  includeHistory: vm.includeHistory,
+                                  includeTabsAndWindows: vm.includeTabsAndWindows,
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+        handle(vm, r5)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -306,14 +356,13 @@ final class FirePopoverViewModelTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: Application.appDelegate.tld,
-            onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )
         vm.clearingOption = .allData
         let exp = expectation(description: "burnAll called")
@@ -321,7 +370,12 @@ final class FirePopoverViewModelTests: XCTestCase {
         historyCoordinator.onBurnVisits = { XCTFail("onBurnVisits should not be called when expecting onBurnAll") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnAll") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnAll") }
-        vm.burn(includeHistory: true)
+        vm.includeHistory = true
+        let r6 = FireDialogResult(clearingOption: vm.clearingOption,
+                                  includeHistory: vm.includeHistory,
+                                  includeTabsAndWindows: vm.includeTabsAndWindows,
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+        handle(vm, r6)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -338,14 +392,13 @@ final class FirePopoverViewModelTests: XCTestCase {
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
 
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: Application.appDelegate.tld,
-            onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )
         vm.clearingOption = .currentTab
         let exp = expectation(description: "burnVisits called")
@@ -353,7 +406,14 @@ final class FirePopoverViewModelTests: XCTestCase {
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnVisits") }
-        vm.burn(includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: false)
+        vm.includeHistory = true
+        vm.includeTabsAndWindows = true
+        vm.includeCookiesAndSiteData = false
+        let r7 = FireDialogResult(clearingOption: vm.clearingOption,
+                                  includeHistory: vm.includeHistory,
+                                  includeTabsAndWindows: vm.includeTabsAndWindows,
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+        handle(vm, r7)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -369,14 +429,13 @@ final class FirePopoverViewModelTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: Application.appDelegate.tld,
-            onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )
         vm.clearingOption = .currentWindow
         let exp = expectation(description: "burnVisits called")
@@ -385,7 +444,14 @@ final class FirePopoverViewModelTests: XCTestCase {
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnVisits") }
 
-        vm.burn(includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: false)
+        vm.includeHistory = true
+        vm.includeTabsAndWindows = true
+        vm.includeCookiesAndSiteData = false
+        let r8 = FireDialogResult(clearingOption: vm.clearingOption,
+                                  includeHistory: vm.includeHistory,
+                                  includeTabsAndWindows: vm.includeTabsAndWindows,
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+        handle(vm, r8)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -399,14 +465,13 @@ final class FirePopoverViewModelTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: Application.appDelegate.tld,
-            onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )
         vm.clearingOption = .allData
         let exp = expectation(description: "burnAll called")
@@ -415,7 +480,14 @@ final class FirePopoverViewModelTests: XCTestCase {
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnAll") }
         historyCoordinator.onBurn = { XCTFail("onBurn should not be called when expecting onBurnAll") }
         // includeCookiesAndSiteData: false forces switch path (.allData, false)
-        vm.burn(includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: false)
+        vm.includeHistory = true
+        vm.includeTabsAndWindows = true
+        vm.includeCookiesAndSiteData = false
+        let r9 = FireDialogResult(clearingOption: vm.clearingOption,
+                                  includeHistory: vm.includeHistory,
+                                  includeTabsAndWindows: vm.includeTabsAndWindows,
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+        handle(vm, r9)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -432,17 +504,21 @@ final class FirePopoverViewModelTests: XCTestCase {
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
 
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: Application.appDelegate.tld,
-            onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )
         vm.clearingOption = .currentTab
-        vm.burn(includeHistory: false)
+        vm.includeHistory = false
+        let result = FireDialogResult(clearingOption: vm.clearingOption,
+                                      includeHistory: vm.includeHistory,
+                                      includeTabsAndWindows: vm.includeTabsAndWindows,
+                                      includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+        handle(vm, result)
         XCTAssertFalse(historyCoordinator.burnAllCalled)
         XCTAssertFalse(historyCoordinator.burnVisitsCalled)
         XCTAssertFalse(historyCoordinator.burnDomainsCalled)
@@ -460,17 +536,21 @@ final class FirePopoverViewModelTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: Application.appDelegate.tld,
-            onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )
         vm.clearingOption = .currentWindow
-        vm.burn(includeHistory: false)
+        vm.includeHistory = false
+        let resultB = FireDialogResult(clearingOption: vm.clearingOption,
+                                       includeHistory: vm.includeHistory,
+                                       includeTabsAndWindows: vm.includeTabsAndWindows,
+                                       includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+        handle(vm, resultB)
         XCTAssertFalse(historyCoordinator.burnAllCalled)
         XCTAssertFalse(historyCoordinator.burnVisitsCalled)
         XCTAssertFalse(historyCoordinator.burnDomainsCalled)
@@ -495,7 +575,7 @@ final class FirePopoverViewModelTests: XCTestCase {
                         faviconManagement: FaviconManagerMock(),
                         tld: Application.appDelegate.tld)
 
-        let vm = FirePopoverViewModel(
+        let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
@@ -503,7 +583,6 @@ final class FirePopoverViewModelTests: XCTestCase {
             faviconManagement: FaviconManagerMock(),
             clearingOption: .allData,
             tld: Application.appDelegate.tld,
-            onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater()
         )
 
         // Initial update done in init for .allData

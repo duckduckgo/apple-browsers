@@ -18,6 +18,9 @@
 
 import XCTest
 import Combine
+import History
+import HistoryView
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class BookmarksBarViewControllerTests: XCTestCase {
@@ -44,7 +47,7 @@ final class BookmarksBarViewControllerTests: XCTestCase {
             bookmarkManager: bookmarksManager,
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
             aiChatSidebarProvider: AIChatSidebarProvider(),
-            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger, historyProvider: MockHistoryProvider())
         )
         mockWindow.contentView = mainViewController.view
 

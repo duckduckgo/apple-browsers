@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import History
+import HistoryView
 import XCTest
 import Onboarding
 @testable import DuckDuckGo_Privacy_Browser
@@ -28,7 +30,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     @MainActor
     override func setUpWithError() throws {
         reporter = CapturingOnboardingPixelReporter()
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger, historyProvider: MockHistoryProvider())
         factory = DefaultContextualDaxDialogViewFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
         delegate = CapturingOnboardingNavigationDelegate()
     }
@@ -238,7 +240,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let onFireButtonPressed = { onFireButtonRun = true }
         let onDismiss = { onDismissRun = true }
 
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger, historyProvider: MockHistoryProvider())
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),

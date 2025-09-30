@@ -21,11 +21,31 @@ import BrowserServicesKit
 import Common
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import History
 import SwiftUI
 import SwiftUIExtensions
 
+// Result returned by FireDialogView when using onConfirm callback
+struct FireDialogResult {
+    let clearingOption: FireDialogViewModel.ClearingOption
+    let includeHistory: Bool
+    let includeTabsAndWindows: Bool
+    let includeCookiesAndSiteData: Bool
+    /// Optional selection of cookie domains (eTLD+1). When provided, cookie/site data clearing is limited to this set.
+    var selectedCookieDomains: Set<String>?
+    /// Optional explicit visits selection for history flows
+    var selectedVisits: [Visit]?
+    /// Optional hint for today to enable animation when burning visits
+    var isToday: Bool = false
+}
+
 @MainActor
 struct FireDialogView: ModalView {
+
+    enum Response {
+        case noAction
+        case burn(options: FireDialogResult?)
+    }
 
     fileprivate enum Constants {
         static let viewSize = CGSize(width: 440, height: 592)
@@ -43,19 +63,24 @@ struct FireDialogView: ModalView {
         }
     }
 
-    @ObservedObject var viewModel: FirePopoverViewModel
+    @ObservedObject var viewModel: FireDialogViewModel
     private let featureFlagger: FeatureFlagger
+    private let showIndividualSitesLink: Bool
+    private let onConfirm: ((FireDialogView.Response) -> Void)?
     @Environment(\.dismiss) private var dismiss
 
-    @State private var includeTabsAndWindows: Bool = true
-    @State private var includeHistory: Bool = true
-    @State private var includeCookiesAndSiteData: Bool = true
     @State private var isShowingSitesOverlay: Bool = false
 
-    init(viewModel: FirePopoverViewModel, showSitesOverlay: Bool = false, featureFlagger: FeatureFlagger? = nil) {
+    init(viewModel: FireDialogViewModel,
+         showSitesOverlay: Bool = false,
+         featureFlagger: FeatureFlagger? = nil,
+         showIndividualSitesLink: Bool = true,
+         onConfirm: ((FireDialogView.Response) -> Void)? = nil) {
         self.featureFlagger = featureFlagger ?? Application.appDelegate.featureFlagger
         self.viewModel = viewModel
         self._isShowingSitesOverlay = State(initialValue: showSitesOverlay)
+        self.showIndividualSitesLink = showIndividualSitesLink
+        self.onConfirm = onConfirm
     }
 
     private var historySubtitle: String {
@@ -69,7 +94,7 @@ struct FireDialogView: ModalView {
     }
 
     private var isDeleteEnabled: Bool {
-        includeTabsAndWindows || includeHistory || includeCookiesAndSiteData
+        viewModel.includeTabsAndWindows || viewModel.includeHistory || viewModel.includeCookiesAndSiteData
     }
 
     var body: some View {
@@ -78,9 +103,11 @@ struct FireDialogView: ModalView {
                 VStack(spacing: 16) {
                     headerView
                         .padding(.top, 10) // presenter sheet crops the padding 🤷‍♂️
-                    segmentedControlView
+                    if viewModel.mode.shouldShowSegmentedControl {
+                        segmentedControlView
+                    }
                     sectionsView
-                    if featureFlagger.isFeatureOn(.fireDialogIndividualSitesLink) {
+                    if showIndividualSitesLink && featureFlagger.isFeatureOn(.fireDialogIndividualSitesLink) {
                         individualSitesLink
                     }
                 }
@@ -112,6 +139,7 @@ struct FireDialogView: ModalView {
             footerView
                 .zIndex(11)
                 .padding(.bottom, 10) // presenter sheet crops the padding 🤷‍♂️
+                .background(Color(singleUseColor: .fireDialogBackground))
         }
         .frame(maxWidth: Constants.viewSize.width, maxHeight: .infinity)
         .background(Color(singleUseColor: .fireDialogBackground))
@@ -122,7 +150,8 @@ struct FireDialogView: ModalView {
             Image(nsImage: DesignSystemImages.Color.Size72.fire)
                 .padding(.top, 8)
 
-            Text(UserText.fireDialogTitle)
+            Text(viewModel.mode.dialogTitle)
+                .multilineText()
                 .multilineTextAlignment(.center)
                 .font(.system(size: 15).weight(.semibold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -134,12 +163,12 @@ struct FireDialogView: ModalView {
         PillSegmentedControl(
             selection: Binding(
                 get: { viewModel.clearingOption.rawValue },
-                set: { viewModel.clearingOption = FirePopoverViewModel.ClearingOption(rawValue: $0) ?? .allData }
+                set: { viewModel.clearingOption = FireDialogViewModel.ClearingOption(rawValue: $0) ?? .allData }
             ),
             segments: [
-                .init(id: FirePopoverViewModel.ClearingOption.currentTab.rawValue, title: UserText.fireDialogSegmentTab, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.tabDesktop)),
-                .init(id: FirePopoverViewModel.ClearingOption.currentWindow.rawValue, title: UserText.fireDialogSegmentWindow, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.window)),
-                .init(id: FirePopoverViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogSegmentEverything, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.windowsAndTabs))
+                .init(id: FireDialogViewModel.ClearingOption.currentTab.rawValue, title: UserText.fireDialogSegmentTab, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.tabDesktop)),
+                .init(id: FireDialogViewModel.ClearingOption.currentWindow.rawValue, title: UserText.fireDialogSegmentWindow, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.window)),
+                .init(id: FireDialogViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogSegmentEverything, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.windowsAndTabs))
             ],
             containerBackground: Color(singleUseColor: .fireDialogPillBackground),
             containerBorder: Color(singleUseColor: .fireDialogPillBorder),
@@ -161,21 +190,22 @@ struct FireDialogView: ModalView {
 
     private var sectionsView: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Row 1: Tabs and Windows
-            sectionRow(
-                icon: DesignSystemImages.Glyphs.Size16.windowsAndTabs,
-                title: UserText.fireDialogTabsAndWindows,
-                subtitle: tabsSubtitle,
-                isOn: $includeTabsAndWindows
-            )
-            sectionDivider()
+            if viewModel.mode.shouldShowCloseTabsToggle {
+                sectionRow(
+                    icon: DesignSystemImages.Glyphs.Size16.windowsAndTabs,
+                    title: UserText.fireDialogTabsAndWindows,
+                    subtitle: tabsSubtitle,
+                    isOn: $viewModel.includeTabsAndWindows
+                )
+                sectionDivider()
+            }
 
             // Row 2: History
             sectionRow(
                 icon: DesignSystemImages.Glyphs.Size16.history,
                 title: UserText.fireDialogHistoryTitle,
                 subtitle: historySubtitle,
-                isOn: $includeHistory
+                isOn: $viewModel.includeHistory
             )
             sectionDivider()
 
@@ -184,14 +214,16 @@ struct FireDialogView: ModalView {
                 icon: DesignSystemImages.Glyphs.Size16.cookie,
                 title: UserText.cookiesAndSiteDataTitle,
                 subtitle: cookiesSubtitle,
-                isOn: $includeCookiesAndSiteData,
+                isOn: $viewModel.includeCookiesAndSiteData,
                 infoAction: { isShowingSitesOverlay = true },
-                infoEnabled: includeCookiesAndSiteData && viewModel.cookiesSitesCountForCurrentScope > 0
+                infoEnabled: viewModel.includeCookiesAndSiteData && viewModel.cookiesSitesCountForCurrentScope > 0
             )
             sectionDivider(padding: 0)
 
             // Fireproof section
-            fireproofSectionView
+            if viewModel.mode.shouldShowFireproofSection {
+                fireproofSectionView
+            }
         }
         .background(
             RoundedRectangle(cornerRadius: 12.0, style: .continuous)
@@ -219,7 +251,7 @@ struct FireDialogView: ModalView {
             .lastKeyMainWindowController?
             .mainViewController
             .browserTabViewController
-            .openNewTab(with: .history)
+            .openNewTab(with: .history(pane: .sites))
     }
 
     // MARK: - Sites overlay
@@ -257,13 +289,7 @@ struct FireDialogView: ModalView {
 
                     ForEach(viewModel.selectable, id: \.domain) { item in
                         HStack(spacing: 6) {
-                            if let image = item.favicon {
-                                Image(nsImage: image)
-                                    .resizable()
-                                    .frame(width: 16, height: 16)
-                            } else {
-                                Image(nsImage: DesignSystemImages.Glyphs.Size16.globe)
-                            }
+                            FaviconView(url: URL(string: "https://\(item.domain)"), size: 16)
                             Text(item.domain)
                                 .font(.system(size: 13))
                                 .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -286,13 +312,7 @@ struct FireDialogView: ModalView {
 
                         ForEach(viewModel.fireproofed, id: \.domain) { item in
                             HStack(spacing: 6) {
-                                if let image = item.favicon {
-                                    Image(nsImage: image)
-                                        .resizable()
-                                        .frame(width: 16, height: 16)
-                                } else {
-                                    Image(nsImage: DesignSystemImages.Glyphs.Size16.globe)
-                                }
+                                FaviconView(url: URL(string: "https://\(item.domain)"), size: 16)
                                 Text(item.domain)
                                     .font(.system(size: 13))
                                     .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -408,6 +428,7 @@ struct FireDialogView: ModalView {
         // Buttons
         HStack(spacing: 8) {
             Button {
+                onConfirm?(.noAction)
                 dismiss()
             } label: {
                 Text(UserText.cancel)
@@ -423,9 +444,15 @@ struct FireDialogView: ModalView {
             .keyboardShortcut(.cancelAction)
 
             Button {
-                viewModel.burn(includeHistory: includeHistory,
-                               includeTabsAndWindows: includeTabsAndWindows,
-                               includeCookiesAndSiteData: includeCookiesAndSiteData)
+                let result = FireDialogResult(
+                    clearingOption: viewModel.clearingOption,
+                    includeHistory: viewModel.includeHistory,
+                    includeTabsAndWindows: viewModel.includeTabsAndWindows,
+                    includeCookiesAndSiteData: viewModel.includeCookiesAndSiteData,
+                    selectedCookieDomains: viewModel.selectedCookieDomainsForScope,
+                    selectedVisits: viewModel.historyVisits
+                )
+                onConfirm?(.burn(options: result))
                 dismiss()
             } label: {
                 Text(UserText.delete)
@@ -440,7 +467,6 @@ struct FireDialogView: ModalView {
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 16)
-        .background(Color(singleUseColor: .fireDialogBackground))
     }
 
 }
@@ -466,14 +492,13 @@ private class MockFireproofDomains: FireproofDomains {
 @available(macOS 14.0, *)
 #Preview("Fire Dialog", traits: FireDialogView.Constants.viewSize.fixedLayout) {
     let tld = TLD()
-    let vm = FirePopoverViewModel(
+    let vm = FireDialogViewModel(
         fireViewModel: FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider),
         tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
         historyCoordinating: Application.appDelegate.historyCoordinator,
         fireproofDomains: Application.appDelegate.fireproofDomains,
         faviconManagement: Application.appDelegate.faviconManager,
-        tld: tld,
-        onboardingContextualDialogsManager: Application.appDelegate.onboardingContextualDialogsManager
+        tld: tld
     )
 
     PreviewView(showWindowTitle: false) {
@@ -509,15 +534,14 @@ private class MockFireproofDomains: FireproofDomains {
     faviconMock.setImage(NSImage(named: NSImage.bonjourName)!, forHost: "cnn.com")
     faviconMock.setImage(NSImage(named: NSImage.networkName)!, forHost: "dropbox.com")
 
-    let vm = FirePopoverViewModel(
+    let vm = FireDialogViewModel(
         fireViewModel: FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider),
         tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
-        historyCoordinating: history,
+        historyCoordinating: Application.appDelegate.historyCoordinator,
         fireproofDomains: fireproofDomains,
         faviconManagement: faviconMock,
         clearingOption: .allData,
-        tld: tld,
-        onboardingContextualDialogsManager: Application.appDelegate.onboardingContextualDialogsManager
+        tld: tld
     )
 
     return PreviewView(showWindowTitle: false) {

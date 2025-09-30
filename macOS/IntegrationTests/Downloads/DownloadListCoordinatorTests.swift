@@ -19,6 +19,8 @@
 import Combine
 import Common
 import Foundation
+import History
+import HistoryView
 import UniformTypeIdentifiers
 import XCTest
 
@@ -107,7 +109,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
 
         var fireWindowSession: FireWindowSessionRef?
         if isBurner {
-            let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+            let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger, historyProvider: MockHistoryProvider())
             let mainViewController = MainViewController(
                 tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: []), burnerMode: .init(isBurner: true)),
                 autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),

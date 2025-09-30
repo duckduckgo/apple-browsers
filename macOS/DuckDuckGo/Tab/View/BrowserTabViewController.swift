@@ -1081,7 +1081,7 @@ final class BrowserTabViewController: NSViewController {
     }
 
     func generateNativePreviewIfNeeded() {
-        guard let tabViewModel = tabViewModel, !tabViewModel.tab.content.isUrl, tabViewModel.tab.content != .history, !tabViewModel.isShowingErrorPage else {
+        guard let tabViewModel = tabViewModel, !tabViewModel.tab.content.isUrl, !tabViewModel.tab.content.isHistory, !tabViewModel.isShowingErrorPage else {
             return
         }
 

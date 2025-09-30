@@ -18,6 +18,7 @@
 
 import AppKit
 import Foundation
+import HistoryView
 import Navigation
 import Subscription
 
@@ -28,7 +29,7 @@ extension Tab {
         case url(URL, credential: URLCredential? = nil, source: URLSource)
         case settings(pane: PreferencePaneIdentifier?)
         case bookmarks
-        case history
+        case history(pane: HistoryPaneIdentifier?)
         case onboarding
         case none
         case dataBrokerProtection
@@ -42,6 +43,7 @@ extension Tab {
 
 }
 typealias TabContent = Tab.Content
+typealias HistoryPaneIdentifier = HistoryView.DataModel.HistoryRange
 
 extension TabContent {
 
@@ -132,8 +134,8 @@ extension TabContent {
                 return .newtab
             }
             return .url(customURL, source: source)
-        case let historyURL where historyURL?.isHistory == true:
-            return .history
+        case URL.history, URL.Invalid.aboutHistory:
+            return .anyHistoryPane
         default: break
         }
 
@@ -162,6 +164,8 @@ extension TabContent {
 
         if let settingsPane = url.flatMap(PreferencePaneIdentifier.init(url:)) {
             return .settings(pane: settingsPane)
+        } else if let historyPane = url.flatMap(HistoryPaneIdentifier.init(url:)) {
+            return .history(pane: historyPane)
         } else if url?.isDuckPlayer == true, let (videoId, timestamp) = url?.youtubeVideoParams {
             return .url(.duckPlayer(videoId, timestamp: timestamp), credential: nil, source: source)
         } else if let url, let credential = url.basicAuthCredential {
@@ -187,6 +191,7 @@ extension TabContent {
     /// Convenience accessor for `.preferences` Tab Content with no particular pane selected,
     /// i.e. the currently selected pane is decided internally by `PreferencesViewController`.
     static let anySettingsPane: Self = .settings(pane: nil)
+    static let anyHistoryPane: Self = .history(pane: nil)
 
     var isDisplayable: Bool {
         switch self {
@@ -257,7 +262,9 @@ extension TabContent {
             return .settings
         case .bookmarks:
             return .bookmarks
-        case .history:
+        case .history(pane: .some(let pane)):
+            return .historyPane(pane)
+        case .history(pane: .none):
             return .history
         case .onboarding:
             return URL.onboarding
@@ -306,6 +313,10 @@ extension TabContent {
         userEnteredValue != nil
     }
 
+    var isHistory: Bool {
+        if case .history = self { true } else { false }
+    }
+
     var isUserRequestedPageDownload: Bool {
         if case .url(_, credential: _, source: .userEntered(_, downloadRequested: true)) = self {
             return true
@@ -352,5 +363,19 @@ extension TabContent {
         case .url, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .webExtensionUrl, .aiChat:
             return true
         }
+    }
+}
+extension HistoryPaneIdentifier {
+    init?(url: URL) {
+        // manually extract path because URLs such as "about:settings" can't figure out their host or path
+        for urlPrefix in [URL.history, URL.Invalid.aboutHistory] {
+            let prefix = urlPrefix.absoluteString + "/"
+            guard url.absoluteString.hasPrefix(prefix) else { continue }
+
+            let path = url.absoluteString.dropping(prefix: prefix)
+            self.init(rawValue: path)
+            return
+        }
+        return nil
     }
 }

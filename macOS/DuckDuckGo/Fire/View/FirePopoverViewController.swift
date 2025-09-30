@@ -43,7 +43,7 @@ final class FirePopoverViewController: NSViewController {
     weak var delegate: FirePopoverViewControllerDelegate?
 
     private let fireViewModel: FireViewModel
-    private var firePopoverViewModel: FirePopoverViewModel
+    private var firePopoverViewModel: FireDialogViewModel
     private let historyCoordinating: HistoryCoordinating
     private let visualStyle: VisualStyleProviding
 
@@ -91,13 +91,12 @@ final class FirePopoverViewController: NSViewController {
         self.fireViewModel = fireViewModel
         self.historyCoordinating = historyCoordinating
         self.visualStyle = visualStyle
-        self.firePopoverViewModel = FirePopoverViewModel(fireViewModel: fireViewModel,
+        self.firePopoverViewModel = FireDialogViewModel(fireViewModel: fireViewModel,
                                                          tabCollectionViewModel: tabCollectionViewModel,
                                                          historyCoordinating: historyCoordinating,
                                                          fireproofDomains: fireproofDomains,
                                                          faviconManagement: faviconManagement,
-                                                         tld: tld,
-                                                         onboardingContextualDialogsManager: Application.appDelegate.onboardingContextualDialogsManager)
+                                                         tld: tld)
 
         super.init(coder: coder)
     }
@@ -165,7 +164,7 @@ final class FirePopoverViewController: NSViewController {
     }
 
     @IBAction func optionsButtonAction(_ sender: NSPopUpButton) {
-        guard let tag = sender.selectedItem?.tag, let clearingOption = FirePopoverViewModel.ClearingOption(rawValue: tag) else {
+        guard let tag = sender.selectedItem?.tag, let clearingOption = FireDialogViewModel.ClearingOption(rawValue: tag) else {
             assertionFailure("Clearing option for not found for the selected menu item")
             return
         }
@@ -295,8 +294,19 @@ final class FirePopoverViewController: NSViewController {
 
     @IBAction func clearButtonAction(_ sender: Any) {
         delegate?.firePopoverViewControllerDidClear(self)
-        firePopoverViewModel.burn()
-
+        let result = FireDialogResult(
+            clearingOption: firePopoverViewModel.clearingOption,
+            includeHistory: firePopoverViewModel.includeHistory,
+            includeTabsAndWindows: firePopoverViewModel.includeTabsAndWindows,
+            includeCookiesAndSiteData: firePopoverViewModel.includeCookiesAndSiteData,
+            selectedCookieDomains: firePopoverViewModel.selectedCookieDomainsForScope,
+            selectedVisits: nil,
+            isToday: false
+        )
+        Task {
+            await Application.appDelegate.fireCoordinator.handleDialogResult(result, tabCollectionViewModel: firePopoverViewModel.tabCollectionViewModel, isAllHistorySelected: true)
+            Application.appDelegate.onboardingContextualDialogsManager.fireButtonUsed()
+        }
     }
 
     @IBAction func cancelButtonAction(_ sender: Any) {
@@ -375,7 +385,7 @@ final class FirePopoverViewController: NSViewController {
         let attributes = [NSAttributedString.Key.font: font]
         var maxWidth: CGFloat = 0
 
-        FirePopoverViewModel.ClearingOption.allCases.forEach { option in
+        FireDialogViewModel.ClearingOption.allCases.forEach { option in
             if option == .allData {
                 menu.addItem(.separator())
             }

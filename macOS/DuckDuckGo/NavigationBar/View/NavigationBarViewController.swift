@@ -477,7 +477,7 @@ final class NavigationBarViewController: NSViewController {
 
         // If we're on history tab, we don't show the onboarding and mark it as shown,
         // assuming that the user is onboarded
-        guard tabCollectionViewModel.selectedTabViewModel?.tab.content != .history else {
+        guard tabCollectionViewModel.selectedTabViewModel?.tab.content.isHistory != true else {
             onboardingDecider.skipPresentingOnboarding()
             return
         }
@@ -488,7 +488,7 @@ final class NavigationBarViewController: NSViewController {
             popovers.closeHistoryViewOnboardingViewPopover()
 
             if showHistory {
-                tabCollectionViewModel.insertOrAppendNewTab(.history, selected: true)
+                tabCollectionViewModel.insertOrAppendNewTab(.anyHistoryPane, selected: true)
             }
         }
     }

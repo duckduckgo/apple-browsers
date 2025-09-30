@@ -160,31 +160,7 @@ extension AppDelegate {
                 return
             }
 
-            if featureFlagger.isFeatureOn(.historyView) {
-                let historyViewDataProvider = HistoryViewDataProvider(
-                    historyDataSource: historyCoordinator,
-                    historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains, fire: { @MainActor in self.fireCoordinator.fireViewModel.fire })
-                )
-                await historyViewDataProvider.refreshData()
-                let visitsCount = await historyViewDataProvider.countVisibleVisits(matching: .rangeFilter(.all))
-
-                let presenter = DefaultHistoryViewDialogPresenter()
-                switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all, in: window) {
-                case .burn:
-                    fireCoordinator.fireViewModel.fire.burnAll()
-                case .delete:
-                    historyCoordinator.burnAll {
-                        // History View doesn't currently support having new data pushed to it
-                        // so we need to instruct all open history tabs to reload themselves.
-                        let historyTabs = self.windowControllersManager.mainWindowControllers
-                            .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
-                            .filter { $0.content == .history }
-                        historyTabs.forEach { $0.reload() }
-                    }
-                default:
-                    break
-                }
-            } else {
+            guard featureFlagger.isFeatureOn(.historyView) else {
                 let alert = NSAlert.clearAllHistoryAndDataAlert()
                 alert.beginSheetModal(for: window, completionHandler: { response in
                     guard case .alertFirstButtonReturn = response else {
@@ -192,19 +168,42 @@ extension AppDelegate {
                     }
                     self.fireCoordinator.fireViewModel.fire.burnAll()
                 })
+                return
+            }
+            let historyViewDataProvider = HistoryViewDataProvider(
+                historyDataSource: historyCoordinator,
+                historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains, fire: { @MainActor in self.fireCoordinator.fireViewModel.fire })
+            )
+            await historyViewDataProvider.refreshData()
+            let visits = await historyViewDataProvider.visits(matching: .rangeFilter(.all))
+
+            let presenter = DefaultHistoryViewDialogPresenter()
+            let result = await presenter.showDeleteDialog(for: visits, deleteMode: .all, in: window)
+            guard result != .noAction else { return }
+
+            historyCoordinator.burnAll {
+                // History View doesn't currently support having new data pushed to it
+                // so we need to instruct all open history tabs to reload themselves.
+                let historyTabs = self.windowControllersManager.mainWindowControllers
+                    .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
+                    .filter { $0.content.isHistory }
+                historyTabs.forEach { $0.reload() }
             }
         }
     }
 
-    @objc func clearThisHistory(_ sender: ClearThisHistoryMenuItem) {
+    /// History → [Date] → Clear This History…
+    /// Clear history for a chosen date range selected from the History menu
+    @objc func clearTimeWindowHistory(_ sender: ClearTimeWindowHistoryMenuItem) {
         DispatchQueue.main.async {
+            // AppDelegate call means there‘s no open window, so we need to open a new one
             guard let window = WindowsManager.openNewWindow(with: Tab(content: .newtab)),
                   let windowController = window.windowController as? MainWindowController else {
                 assertionFailure("No reference to main window controller")
                 return
             }
 
-            windowController.mainViewController.clearThisHistory(sender)
+            windowController.mainViewController.clearTimeWindowHistory(sender)
         }
     }
 
@@ -1060,23 +1059,27 @@ extension MainViewController {
         Application.appDelegate.windowControllersManager.open(historyEntry, with: NSApp.currentEvent)
     }
 
-    @objc func clearThisHistory(_ sender: ClearThisHistoryMenuItem) {
-        let isToday = sender.isToday
+    /// History → [Date] → Clear This History…
+    /// Clear history for a chosen date range selected from the History menu
+    @objc func clearTimeWindowHistory(_ sender: ClearTimeWindowHistoryMenuItem) {
+        guard let window = view.window else {
+            assertionFailure("No window")
+            return
+        }
+
         let visits = sender.getVisits(featureFlagger: featureFlagger)
 
         if featureFlagger.isFeatureOn(.historyView) {
-            let deleteMode: HistoryViewDeleteDialogModel.DeleteMode = {
-                guard let dateString = sender.dateString else {
-                    return sender.isToday ? .today : .unspecified
-                }
-                return .formattedDate(dateString)
-            }()
+            let deleteMode: HistoryViewDeleteDialogModel.DeleteMode = switch sender.historyTimeWindow {
+            case .today: .today
+            case .other(date: let date): .date(date)
+            }
 
             Task {
                 let presenter = DefaultHistoryViewDialogPresenter()
-                switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode, in: nil) {
+                switch await presenter.showDeleteDialog(for: visits, deleteMode: deleteMode, in: window) {
                 case .burn:
-                    self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: isToday)
+                    self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: deleteMode == .today)
                 case .delete:
                     historyCoordinator.burnVisits(visits) {}
                 default:
@@ -1084,18 +1087,14 @@ extension MainViewController {
                 }
             }
         } else {
-            guard let window = view.window else {
-                assertionFailure("No window")
-                return
-            }
-
-            let dateString = sender.dateString
-            let alert = NSAlert.clearHistoryAndDataAlert(dateString: dateString)
+            let alert = NSAlert.clearHistoryAndDataAlert(timeWindow: sender.historyTimeWindow)
             alert.beginSheetModal(for: window, completionHandler: { response in
                 guard case .alertFirstButtonReturn = response else {
                     return
                 }
-                self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: self.fireproofDomains, isToday: isToday)
+                Task {
+                    await self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: self.fireproofDomains, isToday: sender.historyTimeWindow.isToday, closeWindows: true, clearSiteData: true)
+                }
             })
         }
     }
@@ -1178,7 +1177,7 @@ extension MainViewController {
 
     @objc func showHistory(_ sender: Any?) {
         makeKeyIfNeeded()
-        browserTabViewController.openNewTab(with: .history)
+        browserTabViewController.openNewTab(with: .anyHistoryPane)
         if let menuItem = sender as? NSMenuItem {
             if menuItem.representedObject as? HistoryMenu.Location == .moreOptionsMenu {
                 PixelKit.fire(HistoryViewPixel.historyPageShown(.sideMenu), frequency: .dailyAndStandard)
@@ -1525,7 +1524,7 @@ extension MainViewController: NSMenuItemValidation {
              #selector(MainViewController.showPageResources(_:)):
             let canReload = activeTabViewModel?.canReload == true
             let isHTMLNewTabPage = activeTabViewModel?.tab.content == .newtab && !isBurner
-            let isHistoryView = featureFlagger.isFeatureOn(.historyView) && activeTabViewModel?.tab.content == .history
+            let isHistoryView = featureFlagger.isFeatureOn(.historyView) && activeTabViewModel?.tab.content.isHistory == true
             return canReload || isHTMLNewTabPage || isHistoryView
 
         case #selector(MainViewController.toggleDownloads(_:)):

@@ -170,7 +170,7 @@ final class FireTests: XCTestCase {
             }
         } .store(in: &cancellables)
 
-        fire.burnAll()
+        fire.burnAll(completion: {})
 
         await fulfillment(of: [isBurningExpectation, finishedBurningExpectation], timeout: 5)
     }
@@ -215,7 +215,7 @@ final class FireTests: XCTestCase {
                         tld: Application.appDelegate.tld)
 
         XCTAssertTrue(appStateRestorationManager.canRestoreLastSessionState)
-        fire.burnEntity(entity: .none(selectedDomains: Set()))
+        fire.burnEntity(.none(selectedDomains: Set()))
         XCTAssertFalse(appStateRestorationManager.canRestoreLastSessionState)
     }
 
@@ -227,7 +227,7 @@ final class FireTests: XCTestCase {
                         tld: Application.appDelegate.tld)
 
         let finishedBurningExpectation = expectation(description: "Finished burning")
-        fire.burnEntity(entity: .none(selectedDomains: domainsToBurn)) {
+        fire.burnEntity(.none(selectedDomains: domainsToBurn)) {
             finishedBurningExpectation.fulfill()
         }
 

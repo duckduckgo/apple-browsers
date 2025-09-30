@@ -45,6 +45,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
     private let bookmarksHandler: HistoryViewBookmarksHandling
     private let tabOpener: HistoryViewTabOpening
     private let dialogPresenter: HistoryViewDialogPresenting
+    private let fireCoordinator: FireCoordinator
 
     /**
      * A handle to the context menu response. This is returned to FE from `showContextMenu(for:using:)`.
@@ -81,6 +82,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         dialogPresenter: HistoryViewDialogPresenting = DefaultHistoryViewDialogPresenter(),
         tabOpener: HistoryViewTabOpening = DefaultHistoryViewTabOpener(),
         bookmarksHandler: HistoryViewBookmarksHandling,
+        fireCoordinator: FireCoordinator = Application.appDelegate.fireCoordinator,
         firePixel: @escaping (HistoryViewPixel, PixelKit.Frequency) -> Void = { PixelKit.fire($0, frequency: $1) }
     ) {
         self.dataProvider = dataProvider
@@ -88,6 +90,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         self.tabOpener = tabOpener
         self.tabOpener.dialogPresenter = dialogPresenter
         self.bookmarksHandler = bookmarksHandler
+        self.fireCoordinator = fireCoordinator
         self.firePixel = firePixel
     }
 
@@ -96,39 +99,68 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
             return .noAction
         }
 
-        let visitsCount = await dataProvider.countVisibleVisits(matching: query)
-        guard visitsCount > 0 else {
-            return .noAction
-        }
+        // Compute presentation scope and mode
+        let isSitesSelection: Bool = (query == .rangeFilter(.sites))
 
-        let adjustedQuery: DataModel.HistoryQueryKind = await {
-            switch query {
-            case .rangeFilter:
-                return query
-            default:
-                let allVisitsCount = await dataProvider.countVisibleVisits(matching: .rangeFilter(.all))
-                return allVisitsCount == visitsCount ? .rangeFilter(.all) : query
+        // Adjust query when not a range filter and matches all items
+        var adjustedQuery = query
+        if !isSitesSelection {
+            let baseCount = await dataProvider.countVisibleVisits(matching: query)
+            guard baseCount > 0 else { return .noAction }
+            if case .rangeFilter = query {
+                // keep as is
+            } else {
+                let allCount = await dataProvider.countVisibleVisits(matching: .rangeFilter(.all))
+                if allCount == baseCount { adjustedQuery = .rangeFilter(.all) }
             }
-        }()
-
-        switch await dialogPresenter.showDeleteDialog(for: visitsCount, deleteMode: adjustedQuery.deleteMode, in: window) {
-        case .burn:
-            await dataProvider.burnVisits(matching: adjustedQuery)
-            firePixel(.delete, .daily)
-            firePixel(.multipleItemsDeleted(.init(adjustedQuery), burn: true), .dailyAndStandard)
-            return .delete
-        case .delete:
-            await dataProvider.deleteVisits(matching: adjustedQuery)
-            firePixel(.delete, .daily)
-            firePixel(.multipleItemsDeleted(.init(adjustedQuery), burn: false), .dailyAndStandard)
-            return .delete
-        default:
-            return .noAction
         }
+
+        let scopeQuery: DataModel.HistoryQueryKind = isSitesSelection ? .rangeFilter(.all) : adjustedQuery
+        let deleteMode: HistoryViewDeleteDialogModel.DeleteMode = isSitesSelection ? .all : adjustedQuery.deleteMode
+        let pixelScope: HistoryViewPixel.DeletedBatchKind = isSitesSelection ? .all : .init(adjustedQuery)
+
+        let scopeVisits = await dataProvider.visits(matching: scopeQuery)
+        guard scopeVisits.count > 0 else { return .noAction }
+
+        let scopeCookieDomains = await dataProvider.cookieDomains(matching: scopeQuery)
+        let response = await dialogPresenter.showDeleteDialog(for: scopeVisits,
+                                                              deleteMode: deleteMode,
+                                                              in: window,
+                                                              scopeCookieDomains: scopeCookieDomains)
+        switch response {
+        case .burn:
+            self.firePixel(.delete, .daily)
+            self.firePixel(.multipleItemsDeleted(pixelScope, burn: true), .dailyAndStandard)
+        case .delete:
+            self.firePixel(.delete, .daily)
+            self.firePixel(.multipleItemsDeleted(pixelScope, burn: false), .dailyAndStandard)
+        default:
+            break
+        }
+        return mapDialogResponse(response)
     }
 
     func showDeleteDialog(for entries: [String], in window: NSWindow?) async -> DataModel.DeleteDialogResponse {
-        await showDeleteDialog(for: entries.compactMap(VisitIdentifier.init), in: window)
+        // If entries represent site selections (e.g., "site:example.com"),
+        // mirror the context menu behavior and present the Fire dialog for sites.
+        let siteDomains: [String] = entries.compactMap { entry in
+            guard entry.hasPrefix("site:"), let idx = entry.firstIndex(of: ":") else { return nil }
+            let domain = entry[entry.index(after: idx)...]
+            return domain.isEmpty ? nil : String(domain)
+        }
+
+        if !siteDomains.isEmpty {
+            return await showDeleteDialog(for: .domainFilter(Set(siteDomains)), in: window)
+        }
+
+        return await showDeleteDialog(for: entries.compactMap(VisitIdentifier.init), in: window)
+    }
+
+    @MainActor
+    private func deleteDomains(_ domains: Set<String>, window: NSWindow?) {
+        deleteDialogTask = Task { @MainActor in
+            await showDeleteDialog(for: .domainFilter(domains), in: window)
+        }
     }
 
     @MainActor
@@ -138,11 +170,31 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         contextMenuResponse = .noAction
 
         let identifiers = entries.compactMap(VisitIdentifier.init)
-        guard !identifiers.isEmpty else {
-            return .noAction
+        let siteDomains: [String] = entries.compactMap { entry in
+            guard entry.hasPrefix("site:"), let idx = entry.firstIndex(of: ":") else { return nil }
+            let domain = entry[entry.index(after: idx)...]
+            return domain.isEmpty ? nil : String(domain)
         }
 
-        let urls = identifiers.map(\.url)
+        // Unify sites vs identifiers: compute selection kind and build a single menu differing only by delete item
+        let isSiteSelection = identifiers.isEmpty && !siteDomains.isEmpty
+
+        // Resolve URLs and delete behavior
+        let urls: [URL]
+        let deleteTitle: String
+        let performDelete: () -> Void
+
+        if isSiteSelection {
+            urls = siteDomains.compactMap { dataProvider?.preferredURL(forSiteDomain: $0) }
+            deleteTitle = UserText.deleteHistoryAndBrowsingDataMenuItem
+            performDelete = { [weak self] in self?.deleteDomains(Set(siteDomains), window: presenter.window) }
+        } else {
+            guard !identifiers.isEmpty else { return .noAction }
+            urls = identifiers.map(\.url)
+            deleteTitle = UserText.delete
+            performDelete = { [weak self] in self?.delete(identifiers, window: presenter.window) }
+        }
+
         let menu = NSMenu {
             NSMenuItem(title: urls.count == 1 ? UserText.openInNewTab : UserText.openAllInNewTabs) { [weak self] _ in
                 self?.openInNewTab(urls, window: presenter.window)
@@ -161,14 +213,19 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
 
             NSMenuItem.separator()
 
-            if urls.count == 1, let url = urls.first {
+            if isSiteSelection || urls.count == 1 {
                 NSMenuItem(title: UserText.showAllHistoryFromThisSite) { [weak self] _ in
                     self?.showAllHistoryFromThisSite()
                 }
                 .withAccessibilityIdentifier("HistoryView.showAllHistoryFromThisSite")
+
                 NSMenuItem.separator()
+            }
+
+            if urls.count == 1, let url = urls.first {
                 NSMenuItem(title: UserText.copyLink, action: #selector(copy(_:)), target: self, representedObject: url)
                     .withAccessibilityIdentifier("HistoryView.copyLink")
+
                 if !bookmarksHandler.isUrlBookmarked(url: url) {
                     NSMenuItem(title: UserText.addToBookmarks) { [weak self] _ in
                         self?.addBookmarks(for: [url])
@@ -189,15 +246,15 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
             }
 
             NSMenuItem.separator()
-            NSMenuItem(title: UserText.delete) { [weak self] _ in
-                self?.delete(identifiers, window: presenter.window)
+            NSMenuItem(title: deleteTitle) { _ in
+                performDelete()
             }
             .withAccessibilityIdentifier("HistoryView.delete")
         }
 
         presenter.showContextMenu(menu)
 
-        // If 'Delete' action was selected and it displayed a dialog, await the response from that dialog before continuing.
+        // Await potential delete dialog result before returning
         if let deleteDialogResponse = await deleteDialogTask?.value {
             deleteDialogTask = nil
             contextMenuResponse = deleteDialogResponse
@@ -291,53 +348,73 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
             return .delete
         }
 
-        let visitsCount = identifiers.count
+        let visits = await dataProvider.visits(for: identifiers)
 
-        switch await dialogPresenter.showDeleteDialog(for: visitsCount, deleteMode: .unspecified, in: window) {
+        let response = await dialogPresenter.showDeleteDialog(for: visits,
+                                                              deleteMode: .unspecified,
+                                                              in: window,
+                                                              scopeCookieDomains: nil)
+        switch response {
         case .burn:
-            await dataProvider.burnVisits(for: identifiers)
-            firePixel(.delete, .daily)
-            firePixel(.multipleItemsDeleted(.multiSelect, burn: true), .dailyAndStandard)
-            return .delete
+            self.firePixel(.delete, .daily)
+            self.firePixel(.multipleItemsDeleted(.multiSelect, burn: true), .dailyAndStandard)
         case .delete:
-            await dataProvider.deleteVisits(for: identifiers)
-            firePixel(.delete, .daily)
-            firePixel(.multipleItemsDeleted(.multiSelect, burn: false), .dailyAndStandard)
-            return .delete
+            self.firePixel(.delete, .daily)
+            self.firePixel(.multipleItemsDeleted(.multiSelect, burn: false), .dailyAndStandard)
         default:
+            break
+        }
+        return mapDialogResponse(response)
+    }
+
+    private func mapDialogResponse(_ response: HistoryViewDeleteDialogModel.Response) -> DataModel.DeleteDialogResponse {
+        switch response {
+        case .noAction:
             return .noAction
+        case .delete, .burn:
+            return .delete
         }
     }
 }
 
 extension DataModel.HistoryQueryKind {
     var deleteMode: HistoryViewDeleteDialogModel.DeleteMode {
-        guard case let .rangeFilter(range) = self else {
-            return .unspecified
-        }
-
-        switch range {
-        case .all:
-            return .all
-        case .today:
-            return .today
-        case .yesterday:
-            return .yesterday
-        case .older:
-            return .unspecified
-        default:
-            guard let date = range.date(for: Date()) else {
-                return .unspecified
+        switch self {
+        case .rangeFilter(let range):
+            switch range {
+            case .all:
+                return .all
+            case .today:
+                return .today
+            case .yesterday:
+                return .yesterday
+            case .sites:
+                // Treat Sites section as "All" for dialog presentation to allow showing the Close Tabs/Windows toggle
+                return .all
+            case .older:
+                return .older
+            default:
+                guard let date = range.date(for: Date()) else {
+                    return .unspecified
+                }
+                return .date(date)
             }
+        case .dateFilter(let date):
             return .date(date)
+        case .domainFilter(let domains):
+            return .sites(domains)
+        case .searchTerm:
+            return .unspecified
         }
     }
 
     var shouldSkipDeleteDialog: Bool {
         switch self {
-        case .searchTerm(let term), .domainFilter(let term):
+        case .searchTerm(let term):
             return term.isEmpty
-        case .rangeFilter:
+        case.domainFilter(let domains):
+            return domains.isEmpty
+        case .rangeFilter, .dateFilter:
             return false
         }
     }

@@ -201,7 +201,7 @@ final class MainWindowController: NSWindowController {
 
     private var burningDataCancellable: AnyCancellable?
     private func subscribeToBurningData() {
-        burningDataCancellable = fireViewModel.fire.$burningData
+        burningDataCancellable = fireViewModel.fire.burningDataPublisher
             .dropFirst()
             .removeDuplicates()
             .sink(receiveValue: { [weak self] burningData in

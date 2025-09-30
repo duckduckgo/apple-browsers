@@ -639,7 +639,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         startupPreferences = StartupPreferences(persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore), appearancePreferences: appearancePreferences)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
 
-        fireCoordinator = FireCoordinator(tld: tld, featureFlagger: featureFlagger)
+        fireCoordinator = FireCoordinator(tld: tld,
+                                          featureFlagger: featureFlagger,
+                                          historyProvider: HistoryViewDataProvider(historyDataSource: historyCoordinator,
+                                                                                   historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains, fire: { @MainActor in NSApp.delegateTyped.fireCoordinator.fireViewModel.fire })),
+                                          fireproofDomains: fireproofDomains)
 
         var appContentBlocking: AppContentBlocking?
 #if DEBUG

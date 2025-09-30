@@ -18,6 +18,8 @@
 
 import BrowserServicesKit
 import Common
+import History
+import HistoryView
 import PersistenceTestingUtils
 import WebKit
 import XCTest
@@ -61,7 +63,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
                                                bookmarkManager: MockBookmarkManager(),
                                                historyCoordinator: CapturingHistoryDataSource(),
                                                fireproofDomains: MockFireproofDomains(domains: []),
-                                               fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger),
+                                               fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger, historyProvider: MockHistoryProvider()),
                                                newTabPageActionsManager: nil
                                               ),
             config: MockPrivacyConfiguration()

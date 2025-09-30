@@ -1422,6 +1422,9 @@ enum GeneralPixel: PixelKitEvent {
             params[PixelKit.Parameters.jsFile] = jsFile
             return params
 
+        case let .assertionFailure(message, file, line):
+            return [PixelKit.Parameters.errorDomain: "\(message) (\(file):\(line))"]
+
         default: return nil
         }
     }

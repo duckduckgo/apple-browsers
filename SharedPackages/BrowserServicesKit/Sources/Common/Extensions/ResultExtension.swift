@@ -1,5 +1,5 @@
 //
-//  MockFireproofDomains.swift
+//  ResultExtension.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,14 +16,17 @@
 //  limitations under the License.
 //
 
-import Common
-@testable import DuckDuckGo_Privacy_Browser
-
-class MockFireproofDomains: FireproofDomains {
-    init(domains: [String]) {
-        super.init(store: FireproofDomainsStoreMock(), tld: TLD())
-        for domain in domains {
-            super.add(domain: domain, notify: false)
+extension Result where Success: ~Copyable {
+    /// Creates a new result by evaluating a throwing closure, capturing the
+    /// returned value as a success, or any thrown error as a failure.
+    ///
+    /// - Parameter body: A potentially throwing closure to evaluate.
+    public init(catching body: () async throws (Failure) -> Success) async {
+        do {
+            let value = try await body()
+            self = .success(value)
+        } catch {
+            self = .failure(error)
         }
     }
 }

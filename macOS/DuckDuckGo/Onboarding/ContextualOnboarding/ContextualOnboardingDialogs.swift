@@ -17,8 +17,10 @@
 //
 
 import Common
-import SwiftUI
+import History
+import HistoryView
 import Onboarding
+import SwiftUI
 import SwiftUIExtensions
 
 struct OnboardingDialogsContants {
@@ -317,9 +319,46 @@ struct OnboardingSecondaryCTAButton: View {
         .padding()
 }
 
+// MARK: - Preview Helper
+
+private class PreviewHistoryProvider: HistoryViewDataProviding {
+    // HistoryView.DataProviding methods
+    var ranges: [DataModel.HistoryRangeWithCount] { [] }
+
+    func refreshData() async {}
+
+    func visitsBatch(for query: DataModel.HistoryQueryKind, source: DataModel.HistoryQuerySource, limit: Int, offset: Int) async -> DataModel.HistoryItemsBatch {
+        return DataModel.HistoryItemsBatch(finished: true, visits: [])
+    }
+
+    // HistoryViewDataProviding methods
+    func titles(for urls: [URL]) -> [URL: String] {
+        return [:]
+    }
+
+    func visits(for identifiers: [VisitIdentifier]) async -> [History.Visit] {
+        []
+    }
+
+    func countVisibleVisits(matching query: DataModel.HistoryQueryKind) async -> Int {
+        return 0
+    }
+
+    func visits(matching query: HistoryView.DataModel.HistoryQueryKind) async -> [History.Visit] { [] }
+    func deleteVisits(for identifiers: [VisitIdentifier]) async {}
+
+    func cookieDomains(matching query: DataModel.HistoryQueryKind) async -> Set<String> {
+        return []
+    }
+
+    @MainActor func preferredURL(forSiteDomain domain: String) -> URL? {
+        return URL(string: "https://\(domain)")
+    }
+}
+
 #Preview("Try Fire Button") {
     DaxDialogView(logoPosition: .left) {
-        OnboardingFireButtonDialogContent(viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: FireCoordinator(tld: TLD(), featureFlagger: Application.appDelegate.featureFlagger), onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}))
+        OnboardingFireButtonDialogContent(viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: FireCoordinator(tld: TLD(), featureFlagger: Application.appDelegate.featureFlagger, historyProvider: PreviewHistoryProvider()), onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}))
     }
     .padding()
 }
@@ -329,6 +368,6 @@ struct OnboardingSecondaryCTAButton: View {
         let firstString = UserText.ContextualOnboarding.onboardingTryFireButtonMessage
         return NSMutableAttributedString(string: firstString)
     }()
-    OnboardingTrackersDoneDialog(shouldFollowUp: true, message: message, blockedTrackersCTAAction: {}, viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: FireCoordinator(tld: TLD(), featureFlagger: Application.appDelegate.featureFlagger), onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}), onManualDismiss: {})
+    OnboardingTrackersDoneDialog(shouldFollowUp: true, message: message, blockedTrackersCTAAction: {}, viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: FireCoordinator(tld: TLD(), featureFlagger: Application.appDelegate.featureFlagger, historyProvider: PreviewHistoryProvider()), onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}), onManualDismiss: {})
         .padding()
 }

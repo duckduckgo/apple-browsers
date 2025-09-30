@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import History
+import HistoryView
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -42,7 +44,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         }
 
         reporter = CapturingOnboardingPixelReporter()
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger, historyProvider: MockHistoryProvider())
         viewModel = OnboardingFireButtonDialogViewModel(
             onboardingPixelReporter: reporter,
             fireCoordinator: fireCoordinator,
@@ -68,7 +70,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenTryFireButtonThenOnFireButtonPressedCalledAndPixelSent() throws {
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger, historyProvider: MockHistoryProvider())
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),

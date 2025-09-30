@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import History
 import HistoryView
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -63,6 +64,32 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
         return titlesForURLs(urls)
     }
 
+    func cookieDomains(matching query: DataModel.HistoryQueryKind) async -> Set<String> {
+        cookieDomainsMatchingQueryCalls.append(query)
+        return await cookieDomainsMatchingQuery(query)
+    }
+
+    func cookieDomains(for identifiers: [VisitIdentifier]) async -> Set<String> {
+        cookieDomainsForIdentifiersCalls.append(identifiers)
+        return await cookieDomainsForIdentifiers(identifiers)
+    }
+
+    func visits(matching query: DataModel.HistoryQueryKind) async -> [Visit] {
+        visitsMatchingQueryCalls.append(query)
+        return await visitsMatchingQuery(query)
+    }
+
+    func visits(for identifiers: [DuckDuckGo_Privacy_Browser.VisitIdentifier]) async -> [History.Visit] {
+        visitsForIdentifiersCalls.append(identifiers)
+        return await visitsForIdentifiers(identifiers)
+    }
+
+    func preferredURL(forSiteDomain domain: String) -> URL? {
+        URL(string: "https://\(domain)")
+    }
+
+    // Removed dialog-result forwarding: this is now handled by FireCoordinator
+
     // swiftlint:disable:next identifier_name
     var _ranges: [DataModel.HistoryRangeWithCount] = []
     var rangesCallCount: Int = 0
@@ -82,6 +109,20 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
 
     var titlesForURLsCalls: [[URL]] = []
     var titlesForURLs: ([URL]) -> [URL: String] = { _ in [:] }
+
+    var cookieDomainsMatchingQueryCalls: [DataModel.HistoryQueryKind] = []
+    var cookieDomainsMatchingQuery: (DataModel.HistoryQueryKind) async -> Set<String> = { _ in return [] }
+
+    var cookieDomainsForIdentifiersCalls: [[VisitIdentifier]] = []
+    var cookieDomainsForIdentifiers: ([VisitIdentifier]) async -> Set<String> = { _ in return [] }
+
+    var visitsMatchingQueryCalls: [DataModel.HistoryQueryKind] = []
+    var visitsMatchingQuery: (DataModel.HistoryQueryKind) async -> [Visit] = { _ in return [] }
+
+    var visitsForIdentifiersCalls: [[DuckDuckGo_Privacy_Browser.VisitIdentifier]] = []
+    var visitsForIdentifiers: ([DuckDuckGo_Privacy_Browser.VisitIdentifier]) async -> [Visit] = { _ in return [] }
+
+    // Removed call capture for dialog-result forwarding
 
     struct VisitsBatchCall: Equatable {
         let query: DataModel.HistoryQueryKind

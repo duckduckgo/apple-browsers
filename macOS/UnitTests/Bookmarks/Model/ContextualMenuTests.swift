@@ -16,7 +16,10 @@
 //  limitations under the License.
 //
 
+import History
+import HistoryView
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ContextualMenuTests: XCTestCase {
@@ -424,7 +427,7 @@ final class ContextualMenuTests: XCTestCase {
             XCTFail("No item")
             return
         }
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger, historyProvider: MockHistoryProvider())
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
@@ -463,7 +466,7 @@ final class ContextualMenuTests: XCTestCase {
             XCTFail("No item")
             return
         }
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger, historyProvider: MockHistoryProvider())
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),

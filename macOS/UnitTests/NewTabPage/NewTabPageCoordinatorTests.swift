@@ -18,6 +18,8 @@
 
 import Combine
 import Common
+import History
+import HistoryView
 import NewTabPage
 import PersistenceTestingUtils
 import PixelKit
@@ -102,7 +104,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                 dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler()
             ),
             tld: Application.appDelegate.tld,
-            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger),
+            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger, historyProvider: MockHistoryProvider()),
             keyValueStore: keyValueStore,
             notificationCenter: notificationCenter,
             visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider(),

@@ -2772,6 +2772,42 @@
         }
       }
     },
+    "alert.sync-identities-bad-data-error-description" : {
+      "comment" : "Description for alert shown when sync error occurs because of bad data",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some identities are formatted incorrectly or too long and were not synced."
+          }
+        }
+      }
+    },
+    "alert.sync-identities-paused-description" : {
+      "comment" : "Description for alert shown when sync identities paused for too many items",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You've reached the maximum number of identities. Please delete some to resume sync."
+          }
+        }
+      }
+    },
+    "alert.sync-identities-paused-title" : {
+      "comment" : "Title for alert shown when sync identities paused for too many items",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Identities Sync is Paused"
+          }
+        }
+      }
+    },
     "alert.sync-invalid-login-error-description" : {
       "comment" : "Description for alert shown when sync error occurs because of invalid login credentials",
       "extractionState" : "extracted_with_value",
@@ -70163,6 +70199,30 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Some credit cards are formatted incorrectly or too long and were not synced."
+          }
+        }
+      }
+    },
+    "prefrences.sync.identities-limit-exceeded-description" : {
+      "comment" : "Description for sync identities limits exceeded warning",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You've reached the maximum number of identities. Please delete some to resume sync."
+          }
+        }
+      }
+    },
+    "prefrences.sync.identities.bad.request.description" : {
+      "comment" : "Description of incorrectly formatted data error when syncing.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some identities are formatted incorrectly or too long and were not synced."
           }
         }
       }

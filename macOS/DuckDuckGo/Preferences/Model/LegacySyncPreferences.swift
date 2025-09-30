@@ -95,6 +95,22 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
         return syncPausedStateManager.syncCreditCardsPausedMessageData?.action
     }
 
+    var syncIdentitiesPausedTitle: String? {
+        return syncPausedStateManager.syncIdentitiesPausedMessageData?.title
+    }
+
+    var syncIdentitiesPausedMessage: String? {
+        return syncPausedStateManager.syncIdentitiesPausedMessageData?.description
+    }
+
+    var syncIdentitiesPausedButtonTitle: String? {
+        return syncPausedStateManager.syncIdentitiesPausedMessageData?.buttonTitle
+    }
+
+    var syncIdentitiesPausedButtonAction: (() -> Void)? {
+        return syncPausedStateManager.syncIdentitiesPausedMessageData?.action
+    }
+
     struct Consts {
         static let syncPausedStateChanged = Notification.Name("com.duckduckgo.app.SyncPausedStateChanged")
     }
@@ -143,10 +159,12 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
     @Published var isSyncBookmarksPaused: Bool = false
     @Published var isSyncCredentialsPaused: Bool = false
     @Published var isSyncCreditCardsPaused: Bool = false
+    @Published var isSyncIdentitiesPaused: Bool = false
 
     @Published var invalidBookmarksTitles: [String] = []
     @Published var invalidCredentialsTitles: [String] = []
     @Published var invalidCreditCardsTitles: [String] = []
+    @Published var invalidIdentitiesTitles: [String] = []
 
     private var shouldRequestSyncOnFavoritesOptionChange: Bool = true
     private var isScreenLocked: Bool = false
@@ -193,6 +211,7 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
         syncBookmarksAdapter: SyncBookmarksAdapter,
         syncCredentialsAdapter: SyncCredentialsAdapter,
         syncCreditCardsAdapter: SyncCreditCardsAdapter?,
+        syncIdentitiesAdapter: SyncIdentitiesAdapter?,
         appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
         managementDialogModel: ManagementDialogModel = ManagementDialogModel(),
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
@@ -204,6 +223,7 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
         self.syncBookmarksAdapter = syncBookmarksAdapter
         self.syncCredentialsAdapter = syncCredentialsAdapter
         self.syncCreditCardsAdapter = syncCreditCardsAdapter
+        self.syncIdentitiesAdapter = syncIdentitiesAdapter
         self.appearancePreferences = appearancePreferences
         self.syncFeatureFlags = syncService.featureFlags
         self.userAuthenticator = userAuthenticator
@@ -229,6 +249,7 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
         self.isSyncBookmarksPaused = syncPausedStateManager.isSyncBookmarksPaused
         self.isSyncCredentialsPaused = syncPausedStateManager.isSyncCredentialsPaused
         self.isSyncCreditCardsPaused = syncPausedStateManager.isSyncCreditCardsPaused
+        self.isSyncIdentitiesPaused = syncPausedStateManager.isSyncIdentitiesPaused
     }
 
     private func updateInvalidObjects() {
@@ -244,6 +265,13 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
             invalidCreditCardsTitles = invalidCreditCardsObjects
         } else {
             invalidCreditCardsTitles = []
+        }
+
+        if let syncIdentitiesAdapter = syncIdentitiesAdapter {
+            let invalidIdentitiesObjects: [String] = (try? syncIdentitiesAdapter.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []
+            invalidIdentitiesTitles = invalidIdentitiesObjects
+        } else {
+            invalidIdentitiesTitles = []
         }
     }
 
@@ -347,6 +375,13 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
         guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
         let navigationViewController = parentWindowController.mainViewController.navigationBarViewController
         navigationViewController.showPasswordManagerPopover(selectedCategory: .cards, source: .sync)
+    }
+
+    @MainActor
+    func manageIdentities() {
+        guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
+        let navigationViewController = parentWindowController.mainViewController.navigationBarViewController
+        navigationViewController.showPasswordManagerPopover(selectedCategory: .identities, source: .sync)
     }
 
     private func setUpSyncOptionsObservables(apperancePreferences: AppearancePreferences) {
@@ -487,6 +522,7 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
     private let syncBookmarksAdapter: SyncBookmarksAdapter
     private let syncCredentialsAdapter: SyncCredentialsAdapter
     private let syncCreditCardsAdapter: SyncCreditCardsAdapter?
+    private let syncIdentitiesAdapter: SyncIdentitiesAdapter?
     private let appearancePreferences: AppearancePreferences
     private var cancellables = Set<AnyCancellable>()
     private var connector: RemoteConnecting?

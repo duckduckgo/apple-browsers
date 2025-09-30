@@ -3564,6 +3564,10 @@
 		C1D3C56B2E747BBE0086A2BD /* SyncCreditCardsAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D3C5672E747BBE0086A2BD /* SyncCreditCardsAdapter.swift */; };
 		C1D3C56F2E89D8F30086A2BD /* SyncCreditCardsAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D3C56E2E89D8F30086A2BD /* SyncCreditCardsAdapterTests.swift */; };
 		C1D3C5702E89D8F30086A2BD /* SyncCreditCardsAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D3C56E2E89D8F30086A2BD /* SyncCreditCardsAdapterTests.swift */; };
+		C1D3C5732E8ADB080086A2BD /* IdentitiesCleanupErrorHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D3C5712E8ADB080086A2BD /* IdentitiesCleanupErrorHandling.swift */; };
+		C1D3C5742E8ADB080086A2BD /* SyncIdentitiesAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D3C5722E8ADB080086A2BD /* SyncIdentitiesAdapter.swift */; };
+		C1D3C5752E8ADB080086A2BD /* IdentitiesCleanupErrorHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D3C5712E8ADB080086A2BD /* IdentitiesCleanupErrorHandling.swift */; };
+		C1D3C5762E8ADB080086A2BD /* SyncIdentitiesAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D3C5722E8ADB080086A2BD /* SyncIdentitiesAdapter.swift */; };
 		C1D8BE452C1739E70057E426 /* DataBrokerProtectionMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D8BE442C1739E70057E426 /* DataBrokerProtectionMocks.swift */; };
 		C1D8BE462C1739EC0057E426 /* DataBrokerProtectionMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D8BE442C1739E70057E426 /* DataBrokerProtectionMocks.swift */; };
 		C1DAF3B52B9A44860059244F /* AutofillPopoverPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1DAF3B42B9A44860059244F /* AutofillPopoverPresenter.swift */; };
@@ -5782,6 +5786,8 @@
 		C1D3C5662E747BBE0086A2BD /* CreditCardsCleanupErrorHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCardsCleanupErrorHandling.swift; sourceTree = "<group>"; };
 		C1D3C5672E747BBE0086A2BD /* SyncCreditCardsAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCreditCardsAdapter.swift; sourceTree = "<group>"; };
 		C1D3C56E2E89D8F30086A2BD /* SyncCreditCardsAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCreditCardsAdapterTests.swift; sourceTree = "<group>"; };
+		C1D3C5712E8ADB080086A2BD /* IdentitiesCleanupErrorHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentitiesCleanupErrorHandling.swift; sourceTree = "<group>"; };
+		C1D3C5722E8ADB080086A2BD /* SyncIdentitiesAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncIdentitiesAdapter.swift; sourceTree = "<group>"; };
 		C1D8BE442C1739E70057E426 /* DataBrokerProtectionMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionMocks.swift; sourceTree = "<group>"; };
 		C1DAF3B42B9A44860059244F /* AutofillPopoverPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillPopoverPresenter.swift; sourceTree = "<group>"; };
 		C1E961E72B879E4D001760E1 /* MockAutofillActionPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAutofillActionPresenter.swift; sourceTree = "<group>"; };
@@ -6852,11 +6858,13 @@
 				37445F9B2A1569F00029F789 /* SyncBookmarksAdapter.swift */,
 				372BC2A02A4AFA47001D8FD5 /* SyncCredentialsAdapter.swift */,
 				C1D3C5672E747BBE0086A2BD /* SyncCreditCardsAdapter.swift */,
+				C1D3C5722E8ADB080086A2BD /* SyncIdentitiesAdapter.swift */,
 				37CBCA992A8966E60050218F /* SyncSettingsAdapter.swift */,
 				37FD78102A29EBD100B36DB1 /* SyncErrorHandler.swift */,
 				372A0FEB2B2379310033BF7F /* SyncMetricsEventsHandler.swift */,
 				37CEFCA82A6737A2001EF741 /* CredentialsCleanupErrorHandling.swift */,
 				C1D3C5662E747BBE0086A2BD /* CreditCardsCleanupErrorHandling.swift */,
+				C1D3C5712E8ADB080086A2BD /* IdentitiesCleanupErrorHandling.swift */,
 				37A6A8F02AFCC988008580A3 /* FaviconsFetcherOnboarding.swift */,
 				37A6A8F52AFCCA59008580A3 /* FaviconsFetcherOnboardingViewController.swift */,
 				EEDFA3892CD148DE00D1C558 /* SyncDiagnosisHelper.swift */,
@@ -13872,6 +13880,8 @@
 				3706FC9F293F65D500E42796 /* NSMenuItemExtension.swift in Sources */,
 				3706FCA0293F65D500E42796 /* ContiguousBytesExtension.swift in Sources */,
 				B602E8172A1E2570006D261F /* URL+NetworkProtection.swift in Sources */,
+				C1D3C5732E8ADB080086A2BD /* IdentitiesCleanupErrorHandling.swift in Sources */,
+				C1D3C5742E8ADB080086A2BD /* SyncIdentitiesAdapter.swift in Sources */,
 				3706FCA1293F65D500E42796 /* AdjacentItemEnumerator.swift in Sources */,
 				9F9C49FA2BC7BC970099738D /* BookmarkAllTabsDialogView.swift in Sources */,
 				31ECDA122BED339600AE679F /* DataBrokerAuthenticationManagerBuilder.swift in Sources */,
@@ -15245,6 +15255,8 @@
 				B655369B268442EE00085A79 /* GeolocationProvider.swift in Sources */,
 				562802C82DAAB43B009F2F04 /* ContextualDialogsManager.swift in Sources */,
 				BBB881882C4029BA001247C6 /* BookmarkListTreeControllerSearchDataSource.swift in Sources */,
+				C1D3C5752E8ADB080086A2BD /* IdentitiesCleanupErrorHandling.swift in Sources */,
+				C1D3C5762E8ADB080086A2BD /* SyncIdentitiesAdapter.swift in Sources */,
 				C1B1CBE12BE1915100B6049C /* DataImportShortcutsViewModel.swift in Sources */,
 				31521AC32CC01BC700248E6F /* AIChatTabOpener.swift in Sources */,
 				37B904712E2996FA00E5DAF7 /* AppVersionModel.swift in Sources */,

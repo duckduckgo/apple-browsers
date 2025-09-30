@@ -5603,6 +5603,18 @@
         }
       }
     },
+    "prefrences.sync.identities-limit-exceeded-action" : {
+      "comment" : "Button title for sync identities limits exceeded warning to go to manage identities",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Manage identities…"
+          }
+        }
+      }
+    },
     "prefrences.sync.invalid-bookmarks-present-description-many" : {
       "comment" : "Alert message for multiple invalid bookmark being filtered out of synced data",
       "extractionState" : "extracted_with_value",
@@ -5995,6 +6007,42 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Some credit cards are not syncing due to excessively long content in certain fields."
+          }
+        }
+      }
+    },
+    "prefrences.sync.invalid-identities-present-description-many" : {
+      "comment" : "Alert message for multiple invalid identities being filtered out of synced data",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some identities (%d) can't sync because some of their fields exceed the character limit."
+          }
+        }
+      }
+    },
+    "prefrences.sync.invalid-identities-present-description-one" : {
+      "comment" : "Alert message for 1 invalid credit card being filtered out of synced data",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your identity for %@ can't sync because one of its fields exceeds the character limit."
+          }
+        }
+      }
+    },
+    "prefrences.sync.invalid-identities-present-title" : {
+      "comment" : "Alert title for invalid identities being filtered out of synced data",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some identities are not syncing due to excessively long content in certain fields."
           }
         }
       }

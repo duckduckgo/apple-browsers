@@ -151,9 +151,11 @@ enum UserText {
     static let bookmarksLimitExceededAction = NSLocalizedString("prefrences.sync.bookmarks-limit-exceeded-action", bundle: Bundle.module, value: "Manage Bookmarks", comment: "Button title for sync bookmarks limits exceeded warning to go to manage bookmarks")
     static let credentialsLimitExceededAction = NSLocalizedString("prefrences.sync.credentials-limit-exceeded-action", bundle: Bundle.module, value: "Manage passwords…", comment: "Button title for sync credentials limits exceeded warning to go to manage passwords")
     static let creditCardsLimitExceededAction = NSLocalizedString("prefrences.sync.credit-cards-limit-exceeded-action", value: "Manage credit cards…", comment: "Button title for sync credit cards limits exceeded warning to go to manage payment methods")
+    static let identitiesLimitExceededAction = NSLocalizedString("prefrences.sync.identities-limit-exceeded-action", value: "Manage identities…", comment: "Button title for sync identities limits exceeded warning to go to manage identities")
     static let invalidBookmarksPresentTitle = NSLocalizedString("prefrences.sync.invalid-bookmarks-present-title", bundle: Bundle.module, value: "Some bookmarks are not syncing due to excessively long content in certain fields.", comment: "Alert title for invalid bookmarks being filtered out of synced data")
     static let invalidCredentialsPresentTitle = NSLocalizedString("prefrences.sync.invalid-credentials-present-title", bundle: Bundle.module, value: "Some passwords are not syncing due to excessively long content in certain fields.", comment: "Alert title for invalid logins being filtered out of synced data")
     static let invalidCreditCardsPresentTitle = NSLocalizedString("prefrences.sync.invalid-credit-cards-present-title", bundle: Bundle.module, value: "Some credit cards are not syncing due to excessively long content in certain fields.", comment: "Alert title for invalid credit cards being filtered out of synced data")
+    static let invalidIdentitiesPresentTitle = NSLocalizedString("prefrences.sync.invalid-identities-present-title", bundle: Bundle.module, value: "Some identities are not syncing due to excessively long content in certain fields.", comment: "Alert title for invalid identities being filtered out of synced data")
 
     static func invalidBookmarksPresentDescription(_ invalidItemTitle: String, numberOfInvalidItems: Int) -> String {
         guard numberOfInvalidItems > 1 else {
@@ -208,6 +210,25 @@ enum UserText {
             bundle: Bundle.module,
             value: "Some credit cards (%d) can't sync because some of their fields exceed the character limit.",
             comment: "Alert message for multiple invalid credit cards being filtered out of synced data"
+        )
+        return String(format: message, numberOfInvalidItems)
+    }
+
+    static func invalidIdentitiesPresentDescription(_ invalidItemTitle: String, numberOfInvalidItems: Int) -> String {
+        guard numberOfInvalidItems > 1 else {
+            let message = NSLocalizedString(
+                "prefrences.sync.invalid-identities-present-description-one",
+                bundle: Bundle.module,
+                value: "Your identity for %@ can't sync because one of its fields exceeds the character limit.",
+                comment: "Alert message for 1 invalid credit card being filtered out of synced data"
+            )
+            return String(format: message, invalidItemTitle)
+        }
+        let message = NSLocalizedString(
+            "prefrences.sync.invalid-identities-present-description-many",
+            bundle: Bundle.module,
+            value: "Some identities (%d) can't sync because some of their fields exceed the character limit.",
+            comment: "Alert message for multiple invalid identities being filtered out of synced data"
         )
         return String(format: message, numberOfInvalidItems)
     }

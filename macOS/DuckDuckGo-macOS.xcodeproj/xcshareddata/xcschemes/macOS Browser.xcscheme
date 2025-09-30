@@ -294,6 +294,16 @@
                ReferencedContainer = "container:../SharedPackages/URLPredictor">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FoundationExtensionsTests"
+               BuildableName = "FoundationExtensionsTests"
+               BlueprintName = "FoundationExtensionsTests"
+               ReferencedContainer = "container:../SharedPackages/SystemFrameworksExtensions">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

@@ -36,6 +36,7 @@
     },
     isInternalUser: {
         key: 'is_internal_user',
+        description: 'Whether the user is flagged as internal.  Should ONLY be sent with "true" value',
         type: 'boolean',
         enum: [true],
     },

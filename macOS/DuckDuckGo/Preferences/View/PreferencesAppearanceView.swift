@@ -128,10 +128,8 @@ extension Preferences {
         // MARK: - Constants
         private let outerSize: CGFloat = 42
         private let outerCornerRadius: CGFloat = 8
-
         private let innerSize = CGSize(width: 40, height: 31)
         private let innerCornerRadius: CGFloat = 7
-
         private let knobSize = CGSize(width: 28, height: 8)
         private let knobRadius: CGFloat = 7
 

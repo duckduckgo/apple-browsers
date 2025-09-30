@@ -24,7 +24,7 @@ import DesignResourcesKit
 
 extension Preferences {
 
-    // MARK: - Legacy: Superceded by `ThemeAppearanceViewV2`
+    // MARK: - Legacy: Superseded by `ThemeAppearanceViewV2`
     //
     struct ThemeAppearanceButton: View {
         let title: String
@@ -56,7 +56,7 @@ extension Preferences {
 
     }
 
-    // MARK: - Legacy: Superceded by `ThemeAppearancePickerV2`
+    // MARK: - Legacy: Superseded by `ThemeAppearancePickerV2`
     //
     struct ThemeAppearancePicker: View {
         @EnvironmentObject var model: AppearancePreferences

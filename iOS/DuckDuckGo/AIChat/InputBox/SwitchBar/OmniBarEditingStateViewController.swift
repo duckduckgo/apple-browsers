@@ -118,6 +118,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         suggestionTrayManager?.showInitialSuggestions()
 
         updateDaxVisibility()
+        updateSwipeContainerSafeArea()
     }
 
     override func viewWillAppear(_ animated: Bool) {

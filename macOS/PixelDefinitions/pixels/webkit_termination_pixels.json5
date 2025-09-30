@@ -1,27 +1,7 @@
 {
-    webkit_did_terminate: {
-        description: 'Fires when a WebKit web content process terminates/crashes for an individual tab.',
-        owners: ['ddg'],
-        triggers: ['exception'],
-        suffixes: ['daily_standard'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-            {
-                key: 'errorCode',
-                description: 'WebKit termination error code',
-                type: 'string',
-            },
-            {
-                key: 'errorDomain',
-                description: 'WebKit termination error domain',
-                type: 'string',
-            },
-        ],
-    },
     webkit_did_terminate_aggregated: {
         description: 'Fires when multiple WebKit web content processes terminate/crash within a short time window (100ms), indicating burst crashes. Provides crash count for burst detection.',
-        owners: ['ddg'],
+        owners: ['diegoreymendez'],
         triggers: ['exception'],
         suffixes: ['daily_standard'],
         parameters: [
@@ -33,26 +13,5 @@
                 type: 'string',
             },
         ],
-    },
-    webkit_termination_loop: {
-        description: 'Fires when WebKit termination loop is detected for a tab.',
-        owners: ['ddg'],
-        triggers: ['exception'],
-        suffixes: ['daily_standard'],
-        parameters: ['appVersion', 'pixelSource'],
-    },
-    webkit_termination_indicator_clicked: {
-        description: 'Fires when user clicks the WebKit process crash indicator icon.',
-        owners: ['ddg'],
-        triggers: ['user_submitted'],
-        suffixes: ['daily_standard'],
-        parameters: ['appVersion', 'pixelSource'],
-    },
-    user_viewed_webkit_termination_error_page: {
-        description: 'Fires when user views the WebKit termination error page.',
-        owners: ['ddg'],
-        triggers: ['page_load'],
-        suffixes: ['daily_standard'],
-        parameters: ['appVersion', 'pixelSource'],
     },
 }

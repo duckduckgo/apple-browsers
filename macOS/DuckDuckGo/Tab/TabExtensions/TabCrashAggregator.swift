@@ -40,9 +40,14 @@ final class TabCrashAggregator {
 
         debounceTask?.cancel()
         debounceTask = Task.detached(priority: .utility) {
-            try? await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
-            await MainActor.run {
-                self.fireAggregatedPixel()
+            do {
+                try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
+                await MainActor.run {
+                    self.fireAggregatedPixel()
+                }
+            } catch {
+                // Task was cancelled - don't fire the pixel
+                return
             }
         }
     }

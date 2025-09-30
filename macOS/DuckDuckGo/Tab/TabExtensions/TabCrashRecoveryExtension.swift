@@ -136,9 +136,6 @@ extension TabCrashRecoveryExtension: NavigationResponder {
 
         attemptTabCrashRecovery(for: error, in: webView)
 
-        // Record crash for aggregated burst detection (outside debouncing)
-        tabCrashAggregator.recordCrash()
-
         let now = Date()
         let lastFireTime = lastPixelFireTime ?? Date.distantPast
         if now.timeIntervalSince(lastFireTime) >= 0.1 {
@@ -165,6 +162,9 @@ extension TabCrashRecoveryExtension: NavigationResponder {
             lastCrashedAt = crashTimestamp
 
             if isCrashLoop {
+                // Record non-recoverable crash for aggregated burst detection
+                tabCrashAggregator.recordCrash()
+
                 Task.detached(priority: .utility) {
                     self.firePixel(GeneralPixel.webKitTerminationLoop, [:])
                 }
@@ -174,6 +174,11 @@ extension TabCrashRecoveryExtension: NavigationResponder {
         } else {
             // disable auto-reload if tab crash debugging flag is enabled, to allow testing
             shouldAutoReload = featureFlagger.internalUserDecider.isInternalUser && !featureFlagger.isFeatureOn(.tabCrashDebugging)
+
+            // Record non-recoverable crash when auto-reload is disabled
+            if !shouldAutoReload {
+                tabCrashAggregator.recordCrash()
+            }
         }
 
         handleTabCrash(error, in: webView, shouldAutoReload: shouldAutoReload)

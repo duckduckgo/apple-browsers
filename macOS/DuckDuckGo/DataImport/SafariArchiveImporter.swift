@@ -25,6 +25,31 @@ import Common
 /// A DataImporter that can import bookmarks and passwords from a zip archive
 /// by extracting the contents and using BookmarkHTMLImporter and CSVImporter.
 final class SafariArchiveImporter: DataImporter {
+    struct ImportError: DataImportError {
+        enum OperationType: Int {
+            case validateAccess
+            case readContents
+            case createTempFiles
+            case importContents
+        }
+
+        let action: DataImportAction
+        let type: OperationType
+        let underlyingError: Error?
+
+        var errorType: DataImport.ErrorType {
+            switch type {
+            case .validateAccess:
+                return .other
+            case .readContents:
+                return .noData
+            case .createTempFiles:
+                return .other
+            case .importContents:
+                return .noData
+            }
+        }
+    }
 
     private let archiveURL: URL
     private let archiveReader: ImportArchiveReading

@@ -1,47 +1,58 @@
+//
+//  PerformanceTestWindowController.swift
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
 import AppKit
 import SwiftUI
+import WebKit
 
-/// Stub implementation for Performance Test Window Controller
-/// Full implementation will be added in PR 2
-public final class PerformanceTestWindowController: NSWindowController {
+/// Window controller for performance testing - handles everything internally
+public class PerformanceTestWindowController: NSWindowController {
 
-    public convenience init() {
+    private var viewModel: PerformanceTestViewModel?
+    private var hostingController: NSHostingController<PerformanceTestWindowView>?
+
+    public convenience init(webView: WKWebView) {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
+            contentRect: NSRect(
+                x: 0,
+                y: 0,
+                width: PerformanceTestConstants.windowWidth,
+                height: PerformanceTestConstants.windowHeight
+            ),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
-        window.title = "Performance Test"
+        window.title = PerformanceTestConstants.windowTitle
         window.center()
 
         self.init(window: window)
 
-        // Placeholder view
-        let placeholderView = NSHostingView(rootView: PlaceholderView())
-        window.contentView = placeholderView
-    }
+        // Create view model with the webView
+        let viewModel = PerformanceTestViewModel(webView: webView)
+        self.viewModel = viewModel
 
-    public override func showWindow(_ sender: Any?) {
-        super.showWindow(sender)
-        window?.makeKeyAndOrderFront(nil)
-    }
-}
+        // Create the SwiftUI view
+        let contentView = PerformanceTestWindowView(viewModel: viewModel)
+        let hostingController = NSHostingController(rootView: contentView)
+        self.hostingController = hostingController
 
-struct PlaceholderView: View {
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("Performance Test Tool")
-                .font(.largeTitle)
-                .padding()
-
-            Text("Full UI implementation coming in next PR")
-                .font(.headline)
-                .foregroundColor(.secondary)
-
-            Spacer()
-        }
-        .frame(minWidth: 600, minHeight: 400)
-        .padding()
+        window.contentViewController = hostingController
+        window.setFrameAutosaveName(PerformanceTestConstants.windowAutosaveName)
     }
 }

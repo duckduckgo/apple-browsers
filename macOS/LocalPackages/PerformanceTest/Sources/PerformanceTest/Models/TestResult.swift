@@ -1,36 +1,35 @@
 //
 //  TestResult.swift
-//  PerformanceTest
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 //
 
 import Foundation
 
-/// Result of a single performance test
 public struct TestResult: Codable, Equatable {
-
-    // MARK: - Properties
-
-    /// URL that was tested
     public let url: URL
 
-    /// Performance metrics if test succeeded
     public let metrics: PerformanceMetrics?
 
-    /// Whether the test completed successfully
     public let success: Bool
 
-    /// Error if test failed
     public let error: TestError?
 
-    /// When the test started
     public let timestamp: Date
 
-    /// When the test ended (optional for duration calculation)
     public let endTime: Date?
-
-    // MARK: - Initialization
 
     public init(
         url: URL,
@@ -48,7 +47,6 @@ public struct TestResult: Codable, Equatable {
         self.endTime = endTime
     }
 
-    // Convenience initializer without error type for basic errors
     public init(
         url: URL,
         metrics: PerformanceMetrics?,
@@ -64,8 +62,6 @@ public struct TestResult: Codable, Equatable {
         self.timestamp = timestamp
         self.endTime = endTime
     }
-
-    // MARK: - Computed Properties
 
     /// Duration of the test if endTime is available
     public var duration: TimeInterval? {

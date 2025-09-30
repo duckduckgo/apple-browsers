@@ -115,6 +115,7 @@ extension Syncable {
         static let maxEncryptedEmailAddressLength = 1000
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     init(syncableIdentity: SecureVaultModels.SyncableIdentity, encryptedUsing encrypt: (String) throws -> String) throws {
         var payload: [String: Any] = [:]
 

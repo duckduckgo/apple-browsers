@@ -244,37 +244,22 @@ final class SecureVaultSyncableIdentitiesTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func deleteDbFile() throws {
-        let fm = FileManager.default
-        if fm.fileExists(atPath: databaseLocation.path) {
-            try fm.removeItem(at: databaseLocation)
-        }
-        let shmPath = databaseLocation.path + "-shm"
-        if fm.fileExists(atPath: shmPath) {
-            try fm.removeItem(atPath: shmPath)
-        }
-        let walPath = databaseLocation.path + "-wal"
-        if fm.fileExists(atPath: walPath) {
-            try fm.removeItem(atPath: walPath)
-        }
-    }
-
     private func makeIdentity(identityId: Int64? = nil,
-                               title: String? = nil,
-                               firstName: String? = nil,
-                               middleName: String? = nil,
-                               lastName: String? = nil,
-                               birthdayDay: Int? = nil,
-                               birthdayMonth: Int? = nil,
-                               birthdayYear: Int? = nil,
-                               addressStreet: String? = nil,
-                               addressStreet2: String? = nil,
-                               addressCity: String? = nil,
-                               addressProvince: String? = nil,
-                               addressPostalCode: String? = nil,
-                               addressCountryCode: String? = nil,
-                               homePhone: String? = nil,
-                               emailAddress: String? = nil) -> SecureVaultModels.Identity {
+                              title: String? = nil,
+                              firstName: String? = nil,
+                              middleName: String? = nil,
+                              lastName: String? = nil,
+                              birthdayDay: Int? = nil,
+                              birthdayMonth: Int? = nil,
+                              birthdayYear: Int? = nil,
+                              addressStreet: String? = nil,
+                              addressStreet2: String? = nil,
+                              addressCity: String? = nil,
+                              addressProvince: String? = nil,
+                              addressPostalCode: String? = nil,
+                              addressCountryCode: String? = nil,
+                              homePhone: String? = nil,
+                              emailAddress: String? = nil) -> SecureVaultModels.Identity {
         let now = Date()
         return SecureVaultModels.Identity(
             id: identityId,
@@ -303,5 +288,28 @@ final class SecureVaultSyncableIdentitiesTests: XCTestCase {
     private func storeAndFetchIdentity(_ identity: SecureVaultModels.Identity) throws -> SecureVaultModels.Identity {
         let identityId = try provider.storeIdentity(identity)
         return try XCTUnwrap(try provider.identityForIdentityId(identityId))
+    }
+
+    private func deleteDbFile() throws {
+        do {
+            let dbFileContainer = databaseLocation.deletingLastPathComponent()
+            for file in try FileManager.default.contentsOfDirectory(atPath: dbFileContainer.path) {
+                guard ["db", "bak"].contains((file as NSString).pathExtension) else { continue }
+                try FileManager.default.removeItem(atPath: dbFileContainer.appendingPathComponent(file).path)
+            }
+
+#if os(iOS)
+            let sharedDbFileContainer = DefaultAutofillDatabaseProvider.defaultSharedDatabaseURL().deletingLastPathComponent()
+            for file in try FileManager.default.contentsOfDirectory(atPath: sharedDbFileContainer.path) {
+                guard ["db", "bak"].contains((file as NSString).pathExtension) else { continue }
+                try FileManager.default.removeItem(atPath: sharedDbFileContainer.appendingPathComponent(file).path)
+            }
+#endif
+        } catch let error as NSError {
+            // File not found
+            if error.domain != NSCocoaErrorDomain || error.code != 4 {
+                throw error
+            }
+        }
     }
 }

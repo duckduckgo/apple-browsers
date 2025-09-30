@@ -33,7 +33,7 @@ final class VPNPopoverPresenterTests: XCTestCase {
     var mockDefaultBrowserProvider: MockDefaultBrowserProvider!
     var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
     var vpnUpsellVisibilityManager: VPNUpsellVisibilityManager!
-    var firedPixels: [PrivacyProPixel] = []
+    var firedPixels: [SubscriptionPixel] = []
 
     override func setUp() {
         super.setUp()
@@ -89,6 +89,6 @@ final class VPNPopoverPresenterTests: XCTestCase {
 
         // Then
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, PrivacyProPixel.privacyProToolbarButtonPopoverShown.name)
+        XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.subscriptionToolbarButtonPopoverShown.name)
     }
 }

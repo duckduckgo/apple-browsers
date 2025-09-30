@@ -23,11 +23,8 @@ final class TLDTests: XCTestCase {
 
     let tld = TLD()
 
-    func testWhenJsonAccessedThenReturnsValidJson() {
-        let tlds = try? JSONDecoder().decode([String].self, from: tld.json.data(using: .utf8)!)
-
-        XCTAssertNotNil(tlds)
-        XCTAssertFalse(tlds?.isEmpty ?? true)
+    func testThatTLDSSetIsLoaded() {
+        XCTAssertFalse(TLD.tlds.isEmpty)
     }
 
     func testWhenHostMultiPartTopLevelWithSubdomainThenDomainCorrect() {
@@ -87,15 +84,6 @@ final class TLDTests: XCTestCase {
 
     func testWhenHostIsIncorrectThenDomainIsNil() {
         XCTAssertNil(tld.domain("abcdefgh"))
-    }
-
-    func testWhenTLDInstantiatedThenLoadsTLDData() {
-        XCTAssertFalse(tld.tlds.isEmpty)
-    }
-
-    func testWhenTLDIsExampleThenItIsMatched() {
-        XCTAssertEqual("something.example", tld.domain("something.example"))
-        XCTAssertEqual("example", tld.domain("example"))
     }
 
     func testWhenStringURLHasNoSubdomainThenSecondLevelDomainCorrect() {
@@ -162,11 +150,6 @@ final class TLDTests: XCTestCase {
 
     func testWhenHostIsNilThenETLDIsNil() {
         XCTAssertNil(tld.eTLD(nil))
-    }
-
-    func testWhenHostIsExampleThenETLDIsFound() {
-        XCTAssertEqual("example", tld.eTLD("something.example"))
-        XCTAssertEqual("example", tld.eTLD("example"))
     }
 
     func testWhenHostHasComplexMultiPartTLDThenETLDCorrect() {

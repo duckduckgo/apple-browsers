@@ -162,7 +162,6 @@ extension TabCrashRecoveryExtension: NavigationResponder {
             lastCrashedAt = crashTimestamp
 
             if isCrashLoop {
-                // Record non-recoverable crash for aggregated burst detection
                 tabCrashAggregator.recordCrash()
 
                 Task.detached(priority: .utility) {
@@ -175,7 +174,6 @@ extension TabCrashRecoveryExtension: NavigationResponder {
             // disable auto-reload if tab crash debugging flag is enabled, to allow testing
             shouldAutoReload = featureFlagger.internalUserDecider.isInternalUser && !featureFlagger.isFeatureOn(.tabCrashDebugging)
 
-            // Record non-recoverable crash when auto-reload is disabled
             if !shouldAutoReload {
                 tabCrashAggregator.recordCrash()
             }

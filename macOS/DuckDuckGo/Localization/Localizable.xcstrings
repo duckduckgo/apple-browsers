@@ -73975,10 +73975,58 @@
       "comment" : "The button name in preferences for More Search Settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weitere Sucheinstellungen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "More Search Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más opciones de búsqueda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autres paramètres de recherche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altre impostazioni di ricerca"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meer zoekinstellingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Więcej ustawień wyszukiwania"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais definições de pesquisa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дополнительные настройки поиска"
           }
         }
       }
@@ -73987,22 +74035,118 @@
       "comment" : "Subtitle of the 'More Search Settings' button",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pass deine Sprache, Region und mehr an."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Customize your language, region, and more"
+            "value" : "Customize your language, region, and more."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personaliza tu idioma, región y más."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personnalisez votre langue, votre région et plus encore."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizza la lingua, la regione e altro ancora."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas je taal, regio en meer aan."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dostosuj język, region i nie tylko."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personaliza o teu idioma, região e muito mais."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбор языка, региона и так далее."
           }
         }
       }
     },
     "settings.more-search-settings.link" : {
-      "comment" : "Button to open More Search Settings",
+      "comment" : "Button to open Search Settings on duckduckgo.com",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo Search-Einstellungen öffnen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open More Search Settings"
+            "value" : "Open DuckDuckGo Search Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir la configuración de DuckDuckGo Search"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir les paramètres de DuckDuckGo Search"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri le impostazioni di DuckDuckGo Search"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo zoek-instellingen openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz ustawienia DuckDuckGo Search"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir definições do DuckDuckGo Search"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть настройки DuckDuckGo Search"
           }
         }
       }

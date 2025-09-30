@@ -3656,6 +3656,8 @@
 		EA0BA3A9272217E6002A0B6C /* ClickToLoadUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0BA3A8272217E6002A0B6C /* ClickToLoadUserScript.swift */; };
 		EA18D1CA272F0DC8006DC101 /* social_images in Resources */ = {isa = PBXBuildFile; fileRef = EA18D1C9272F0DC8006DC101 /* social_images */; };
 		EA8AE76A279FBDB20078943E /* ClickToLoadTDSTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA8AE769279FBDB20078943E /* ClickToLoadTDSTests.swift */; };
+		ED7478182E845D35008628A1 /* HangPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED7478172E845D35008628A1 /* HangPixel.swift */; };
+		ED7478192E845D35008628A1 /* HangPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED7478172E845D35008628A1 /* HangPixel.swift */; };
 		EE02D41A2BB4609900DBE6B3 /* UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE02D4192BB4609900DBE6B3 /* UITests.swift */; };
 		EE02D41C2BB460A600DBE6B3 /* BrowsingHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE02D41B2BB460A600DBE6B3 /* BrowsingHistoryTests.swift */; };
 		EE02D4222BB4611A00DBE6B3 /* TestsURLExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6EC37FB29B83E99001ACE79 /* TestsURLExtension.swift */; };
@@ -5824,6 +5826,7 @@
 		EA0BA3A8272217E6002A0B6C /* ClickToLoadUserScript.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClickToLoadUserScript.swift; sourceTree = "<group>"; };
 		EA18D1C9272F0DC8006DC101 /* social_images */ = {isa = PBXFileReference; lastKnownFileType = folder; path = social_images; sourceTree = "<group>"; };
 		EA8AE769279FBDB20078943E /* ClickToLoadTDSTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickToLoadTDSTests.swift; sourceTree = "<group>"; };
+		ED7478172E845D35008628A1 /* HangPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HangPixel.swift; sourceTree = "<group>"; };
 		EE02D4192BB4609900DBE6B3 /* UITests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UITests.swift; sourceTree = "<group>"; };
 		EE02D41B2BB460A600DBE6B3 /* BrowsingHistoryTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BrowsingHistoryTests.swift; sourceTree = "<group>"; };
 		EE0429DF2BA31D2F009EB20F /* FindInPageTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FindInPageTests.swift; sourceTree = "<group>"; };
@@ -9273,6 +9276,7 @@
 		AA585D80248FD31100E9A3E2 /* DuckDuckGo */ = {
 			isa = PBXGroup;
 			children = (
+				ED7478162E845958008628A1 /* AppHealth */,
 				F1A2E11E2DCB9FB00086F538 /* LogExporter */,
 				BB4EC6902D9B5C6400660600 /* VisualRefresh */,
 				BBDE001A2D6DE66100109F88 /* DefaultBrowserAndAddToDockPrompts */,
@@ -11167,6 +11171,14 @@
 			path = MaliciousSiteProtection;
 			sourceTree = "<group>";
 		};
+		ED7478162E845958008628A1 /* AppHealth */ = {
+			isa = PBXGroup;
+			children = (
+				ED7478172E845D35008628A1 /* HangPixel.swift */,
+			);
+			path = AppHealth;
+			sourceTree = "<group>";
+		};
 		EEA3EEAF2B24EB5100E8333A /* VPNLocation */ = {
 			isa = PBXGroup;
 			children = (
@@ -12965,6 +12977,7 @@
 				3706FAD1293F65D500E42796 /* VisitViewModel.swift in Sources */,
 				3706FAD3293F65D500E42796 /* DownloadsViewController.swift in Sources */,
 				3706FAD6293F65D500E42796 /* ConfigurationStore.swift in Sources */,
+				ED7478182E845D35008628A1 /* HangPixel.swift in Sources */,
 				EEDFA38B2CD148DE00D1C558 /* SyncDiagnosisHelper.swift in Sources */,
 				3706FAD7293F65D500E42796 /* Feedback.swift in Sources */,
 				1D0DE9422C3BB9CC0037ABC2 /* ReleaseNotesParser.swift in Sources */,
@@ -14865,6 +14878,7 @@
 				1D01A3D82B88DF8B00FE8150 /* PreferencesSyncView.swift in Sources */,
 				B6619EFB2B111CC500CD9186 /* InstructionsFormatParser.swift in Sources */,
 				9FBD84522BB3AACB00220859 /* AttributionOriginFileProvider.swift in Sources */,
+				ED7478192E845D35008628A1 /* HangPixel.swift in Sources */,
 				1DC669702B6CF0D700AA0645 /* TabSnapshotStore.swift in Sources */,
 				BB7BAABF2DDBADB2004A5A58 /* NavigationToolbarIconsProviding.swift in Sources */,
 				379026D12C650CCD00A089E8 /* UserBackgroundImagesManager.swift in Sources */,

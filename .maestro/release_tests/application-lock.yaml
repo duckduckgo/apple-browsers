@@ -25,7 +25,7 @@ tags:
 
 - launchApp:
     arguments:
-        isMaestroRunning: true
+        isRunningUITests: true
 
 - assertVisible: "Unlock DuckDuckGo."
 - inputText: "password"
@@ -56,6 +56,6 @@ tags:
 
 - launchApp:
     arguments:
-        isMaestroRunning: true
+        isRunningUITests: true
 
 - assertVisible: "Privacy Test Pages"

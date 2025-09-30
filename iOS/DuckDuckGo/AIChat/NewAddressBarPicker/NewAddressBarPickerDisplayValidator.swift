@@ -69,10 +69,10 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
 
         Logger.addressBarPicker.info("Checking picker display conditions...")
 
-        /// Do not display during Maestro automated UI runs
+        /// Do not display during automated UI runs
         /// https://app.asana.com/1/137249556945/project/414709148257752/task/1211474728965506?focus=true
-        guard !isRunningUnderMaestro else { return false }
-        Logger.addressBarPicker.info("✓ Not running under Maestro")
+        guard !isRunningUITests else { return false }
+        Logger.addressBarPicker.info("✓ Not running UI Tests")
 
         guard isMainDuckAIEnabled else { return false }
         Logger.addressBarPicker.info("✓ Main DuckAI is enabled")
@@ -135,8 +135,8 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         launchSourceManager.source != .standard
     }
 
-    private var isRunningUnderMaestro: Bool {
-        ProcessInfo.processInfo.arguments.contains("isMaestroRunning")
+    private var isRunningUITests: Bool {
+        ProcessInfo.processInfo.arguments.contains("isRunningUITests")
     }
 }
 

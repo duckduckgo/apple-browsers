@@ -51,7 +51,7 @@ tags:
 - stopApp
 - launchApp:
     arguments:
-        isMaestroRunning: true
+        isRunningUITests: true
 
 - tapOn: "Tab Switcher"
 - tapOn:

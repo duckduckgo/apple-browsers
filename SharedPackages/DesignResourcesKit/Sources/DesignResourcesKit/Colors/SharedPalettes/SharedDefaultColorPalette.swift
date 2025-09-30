@@ -91,9 +91,9 @@ struct SharedDefaultColorPalette: SharedColorPaletteDefinition {
     static let containerDecorationPrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x16, darkHex: 0xffffff, darkOpacityHex: 0x1e)
     static let containerDecorationSecondary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x0f, darkHex: 0xffffff, darkOpacityHex: 0x16)
     static let containerDecorationTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x0f, darkHex: 0xffffff, darkOpacityHex: 0x16)
-    static let containerFillPrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x0f, darkHex: 0xffffff, darkOpacityHex: 0x16)
+    static let containerFillPrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x02, darkHex: 0xffffff, darkOpacityHex: 0x07)
     static let containerFillSecondary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x07, darkHex: 0xffffff, darkOpacityHex: 0x0f)
-    static let containerFillTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x02, darkHex: 0xffffff, darkOpacityHex: 0x07)
+    static let containerFillTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x0f, darkHex: 0xffffff, darkOpacityHex: 0x16)
 
     // Controls Colors
     static let controlsBase = DynamicColor(lightHex: 0x1f1f1f, darkHex: 0xf8f8f8)

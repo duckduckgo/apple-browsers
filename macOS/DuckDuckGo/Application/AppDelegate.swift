@@ -808,7 +808,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         crashReporter = CrashReporter(internalUserDecider: internalUserDecider)
 #endif
 
-        watchdog = Watchdog()
+        let watchdogDiagnosticProvider = MacWatchdogDiagnosticProvider(windowControllersManager: windowControllersManager)
+        let eventMapper = WatchdogEventMapper(diagnosticProvider: watchdogDiagnosticProvider)
+        watchdog = Watchdog(eventMapper: eventMapper)
  #if !DEBUG
         if featureFlagger.isFeatureOn(.hangReporting) {
             watchdog.start()

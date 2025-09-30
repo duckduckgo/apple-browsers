@@ -201,6 +201,7 @@ public enum FeatureFlag: String, CaseIterable {
 
     ///  https://app.asana.com/1/137249556945/project/72649045549333/task/1207055705580443?focus=true
     case syncCreditCards
+    case syncIdentities
 
 }
 
@@ -218,7 +219,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .restoreSessionPrompt,
                 .refactorOfSyncPreferences,
                 .subscriptionPurchaseWidePixelMeasurement,
-                .syncCreditCards:
+                .syncCreditCards,
+                .syncIdentities:
             true
         default:
             false
@@ -292,7 +294,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .themes,
                 .unifiedURLPredictor,
                 .unifiedURLPredictorMetrics,
-                .syncCreditCards:
+                .syncCreditCards,
+                .syncIdentities:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -344,6 +347,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .syncCreditCards:
             return .remoteReleasable(.subfeature(SyncSubfeature.syncCreditCards))
+        case .syncIdentities:
+            return .remoteReleasable(.subfeature(SyncSubfeature.syncIdentities))
         case .scamSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .scheduledSetDefaultBrowserAndAddToDockPrompts:

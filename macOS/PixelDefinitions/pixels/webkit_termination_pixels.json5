@@ -44,7 +44,7 @@
     webkit_termination_indicator_clicked: {
         description: 'Fires when user clicks the WebKit process crash indicator icon.',
         owners: ['ddg'],
-        triggers: ['user_action'],
+        triggers: ['user_submitted'],
         suffixes: ['daily_standard'],
         parameters: ['appVersion', 'pixelSource'],
     },

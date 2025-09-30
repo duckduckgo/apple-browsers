@@ -81,6 +81,7 @@ final class TabCrashRecoveryExtension {
     private let featureFlagger: FeatureFlagger
     private let crashLoopDetector: TabCrashLoopDetecting
     private let firePixel: (PixelKitEvent, [String: String]) -> Void
+    private let tabCrashAggregator: TabCrashAggregator
 
     private var cancellables = Set<AnyCancellable>()
     private var lastPixelFireTime: Date?
@@ -93,11 +94,13 @@ final class TabCrashRecoveryExtension {
         crashLoopDetector: TabCrashLoopDetecting = TabCrashLoopDetector(),
         firePixel: @escaping (PixelKitEvent, [String: String]) -> Void = { event, parameters in
             PixelKit.fire(event, frequency: .dailyAndStandard, withAdditionalParameters: parameters)
-        }
+        },
+        tabCrashAggregator: TabCrashAggregator
     ) {
         self.featureFlagger = featureFlagger
         self.crashLoopDetector = crashLoopDetector
         self.firePixel = firePixel
+        self.tabCrashAggregator = tabCrashAggregator
 
         contentPublisher.sink { [weak self] content in
             self?.content = content
@@ -132,6 +135,9 @@ extension TabCrashRecoveryExtension: NavigationResponder {
         ])
 
         attemptTabCrashRecovery(for: error, in: webView)
+
+        // Record crash for aggregated burst detection (outside debouncing)
+        tabCrashAggregator.recordCrash()
 
         let now = Date()
         let lastFireTime = lastPixelFireTime ?? Date.distantPast

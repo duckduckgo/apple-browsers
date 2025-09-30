@@ -1348,6 +1348,19 @@ extension MainViewController {
         }
     }
 
+    @MainActor
+    @objc func crashAllTabs() {
+        let windowControllersManager = Application.appDelegate.windowControllersManager
+        let allTabViewModels = windowControllersManager.allTabViewModels
+
+        for tabViewModel in allTabViewModels {
+            let tab = tabViewModel.tab
+            if tab.canKillWebContentProcess {
+                tab.killWebContentProcess()
+            }
+        }
+    }
+
     @objc func resetPinnedTabs(_ sender: Any?) {
         if tabCollectionViewModel.selectedTabIndex?.isPinnedTab == true, tabCollectionViewModel.tabCollection.tabs.count > 0 {
             tabCollectionViewModel.select(at: .unpinned(0))

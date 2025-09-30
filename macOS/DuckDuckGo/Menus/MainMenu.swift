@@ -774,6 +774,11 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "fatalError", action: #selector(AppDelegate.triggerFatalError))
                 NSMenuItem(title: "NSException", action: #selector(MainViewController.crashOnException))
                 NSMenuItem(title: "C++ exception", action: #selector(AppDelegate.crashOnCxxException))
+                if featureFlagger.isFeatureOn(.tabCrashDebugging) {
+                    NSMenuItem(title: "Crash All Tabs", action: #selector(MainViewController.crashAllTabs))
+                } else {
+                    nil
+                }
             }
 
             NSMenuItem(title: "Hang Debugging") {

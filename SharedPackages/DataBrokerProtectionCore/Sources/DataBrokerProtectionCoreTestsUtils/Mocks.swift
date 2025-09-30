@@ -953,6 +953,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var attemptCount: Int64 = 0
     public private(set) var scanEvents = [HistoryEvent]()
     public private(set) var optOutEvents = [HistoryEvent]()
+    public var optOutToReturn: OptOutJobData?
 
     public var brokerToReturn: DataBroker?
     public var profileQueryToReturn: ProfileQuery?
@@ -1165,8 +1166,12 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         return scanEvents
     }
 
-    public func fetchOptOutHistoryEvents(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) -> [HistoryEvent] {
+    public func fetchOptOutHistoryEvents(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> [HistoryEvent] {
         return optOutEvents
+    }
+
+    public func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> OptOutJobData? {
+        optOutToReturn
     }
 
     public func hasMatches() -> Bool {

@@ -138,8 +138,15 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             vpnConnectionState: jobDependencies.vpnBypassService?.connectionStatus ?? "unknown",
             vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
         )
-        let attemptInfo = try? jobDependencies.database.fetchAttemptInformation(for: jobData.extractedProfileId)
-        let recordFoundDate = attemptInfo?.startDate ?? stageDurationCalculator.startTime
+        let optOutJob = try? jobDependencies.database.fetchOptOut(brokerId: jobData.brokerId,
+                                                                  profileQueryId: jobData.profileQueryId,
+                                                                  extractedProfileId: jobData.extractedProfileId)
+        let recordFoundDate = RecordFoundDateResolver.resolve(optOutJob: optOutJob,
+                                                              repository: jobDependencies.database,
+                                                              brokerId: jobData.brokerId,
+                                                              profileQueryId: jobData.profileQueryId,
+                                                              extractedProfileId: jobData.extractedProfileId,
+                                                              fallback: stageDurationCalculator.startTime)
         stageDurationCalculator.attachWideEventRecorder(wideEventRecorder)
         stageDurationCalculator.setStage(.emailConfirmDecoupled)
 

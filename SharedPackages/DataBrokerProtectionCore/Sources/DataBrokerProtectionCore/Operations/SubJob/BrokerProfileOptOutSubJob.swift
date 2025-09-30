@@ -83,7 +83,13 @@ struct BrokerProfileOptOutSubJob {
             vpnBypassStatus: vpnBypassStatus
         )
 
-        let recordFoundDate = brokerProfileQueryData.optOutJobDataMatching(extractedProfileId)?.createdDate ?? stageDurationCalculator.startTime
+        let matchingOptOutJob = brokerProfileQueryData.optOutJobDataMatching(extractedProfileId)
+        let recordFoundDate = RecordFoundDateResolver.resolve(optOutJob: matchingOptOutJob,
+                                                              repository: dependencies.database,
+                                                              brokerId: brokerId,
+                                                              profileQueryId: profileQueryId,
+                                                              extractedProfileId: extractedProfileId,
+                                                              fallback: stageDurationCalculator.startTime)
         let wideEventRecorder = OptOutSubmissionWideEventRecorder.makeIfPossible(
             wideEvent: dependencies.wideEvent,
             attemptID: stageDurationCalculator.attemptId,

@@ -1081,6 +1081,8 @@ struct UserText {
     static let importLoginsPasswordsExplainer = NSLocalizedString("import.logins.passwords.explainer2", value: "Passwords are encrypted. Nobody but you can see your passwords, not even us. Find Passwords in DuckDuckGo Settings > Passwords & Autofill.", comment: "Explanatory text for the Passwords import option to alleviate security concerns and explain usage.")
     static let importLoginsPasswordsExplainerAutolockOff = NSLocalizedString("import.logins.passwords.explainer.autolock.off", value: "Passwords are encrypted. We recommend setting up Auto-lock to keep your passwords even more secure. Set it up in DuckDuckGo Settings > Passwords & Autofill.", comment: "Explanatory text for the Passwords import option to alleviate security concerns and explain usage when autolock is disabled")
 
+    static let importCreditCards = NSLocalizedString("import.credit-cards", value: "Credit Cards", comment: "Title text for the Credit Card import option")
+
     static let importBookmarksButtonTitle = NSLocalizedString("bookmarks.import.button.title", value: "Import", comment: "Button text to open bookmark import dialog")
     static let initiateImport = NSLocalizedString("import.data.initiate", value: "Import", comment: "Button text for importing data")
     static let skipBookmarksImport = NSLocalizedString("import.data.skip.bookmarks", value: "Skip bookmarks", comment: "Button text to skip bookmarks manual import")
@@ -1191,6 +1193,15 @@ struct UserText {
             return String(format: localized, numberOfPasswords)
         } else {
             return NSLocalizedString("import.passwords.indefinite.progress.text", value: "Importing passwords…", comment: "Operation progress info message about indefinite number of passwords being imported")
+        }
+    }
+
+    static func importingCreditCards(_ numberOfCreditCards: Int?) -> String {
+        if let numberOfCreditCards, numberOfCreditCards > 0 {
+            let localized = NSLocalizedString("import.credit-cards.number.progress.text", value: "Importing credit cards (%d)…", comment: "Operation progress info message about %d number of credit cards being imported")
+            return String(format: localized, numberOfCreditCards)
+        } else {
+            return NSLocalizedString("import.credit-cards.indefinite.progress.text", value: "Importing credit cards…", comment: "Operation progress info message about indefinite number of passwords being imported")
         }
     }
 

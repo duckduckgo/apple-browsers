@@ -55,6 +55,8 @@ final class SafariArchiveImporter: DataImporter {
     private let archiveReader: ImportArchiveReading
     private let bookmarkImporter: BookmarkImporter
     private let loginImporter: LoginImporter
+    private let creditCardImporter: CreditCardImporter
+    private let vault: (any AutofillSecureVault)?
     private let faviconManager: FaviconManagement
     private let featureFlagger: FeatureFlagger
     private let secureVaultReporter: SecureVaultReporting
@@ -74,6 +76,8 @@ final class SafariArchiveImporter: DataImporter {
          archiveReader: ImportArchiveReading = ImportArchiveReader(),
          bookmarkImporter: BookmarkImporter,
          loginImporter: LoginImporter,
+         creditCardImporter: CreditCardImporter = SecureVaultCreditCardImporter(),
+         vault: (any AutofillSecureVault)? = nil,
          faviconManager: FaviconManagement,
          featureFlagger: FeatureFlagger,
          secureVaultReporter: SecureVaultReporting,
@@ -82,6 +86,8 @@ final class SafariArchiveImporter: DataImporter {
         self.archiveReader = archiveReader
         self.bookmarkImporter = bookmarkImporter
         self.loginImporter = loginImporter
+        self.creditCardImporter = creditCardImporter
+        self.vault = vault ?? (try? AutofillSecureVaultFactory.makeVault(reporter: secureVaultReporter))
         self.faviconManager = faviconManager
         self.featureFlagger = featureFlagger
         self.secureVaultReporter = secureVaultReporter
@@ -103,11 +109,9 @@ final class SafariArchiveImporter: DataImporter {
         if !contents.bookmarks.isEmpty {
             types.append(.bookmarks)
         }
-        #if os(iOS)
         if !contents.creditCards.isEmpty {
             types.append(.creditCards)
         }
-        #endif
         return types
     }
 
@@ -195,6 +199,19 @@ final class SafariArchiveImporter: DataImporter {
             let bookmarksResults: DataImportSummary = [.bookmarks: .failure(ImportError(action: .bookmarks, type: .importContents, underlyingError: nil))]
             try updateProgress(.importingBookmarks(numberOfBookmarks: 0, fraction: 1.0))
             summary.merge(bookmarksResults) { _, new in new }
+        }
+
+        // Import credit cards if requested and available
+        if types.contains(.creditCards), let content = contents.creditCards.first {
+            let safariCreditCardImporter = SafariPaymentCardsImporter(fileURL: nil, jsonContent: content, creditCardImporter: creditCardImporter, vault: vault)
+            let creditCardTask = safariCreditCardImporter.importData(types: [.creditCards])
+            let creditCardResults = await creditCardTask.task.value
+            try updateProgress(.importingCreditCards(numberOfCreditCards: creditCardResults.count, fraction: 1.0))
+            summary.merge(creditCardResults) { _, new in new }
+        } else if types.contains(.creditCards) {
+            let creditCardsResults: DataImportSummary = [.creditCards: .failure(ImportError(action: .creditCards, type: .importContents, underlyingError: nil))]
+            try updateProgress(.importingCreditCards(numberOfCreditCards: 0, fraction: 1.0))
+            summary.merge(creditCardsResults) { _, new in new }
         }
 
         try updateProgress(.done)

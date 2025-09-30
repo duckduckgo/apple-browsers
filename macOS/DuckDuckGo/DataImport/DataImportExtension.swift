@@ -359,6 +359,7 @@ extension DataImport.DataType {
         switch self {
         case .bookmarks: UserText.bookmarkImportBookmarks
         case .passwords: UserText.importLoginsPasswords
+        case .creditCards: UserText.importCreditCards
         }
     }
 

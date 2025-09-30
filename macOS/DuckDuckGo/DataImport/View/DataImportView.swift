@@ -499,6 +499,8 @@ extension DataImportProgressEvent {
             fraction
         case .importingPasswords(numberOfPasswords: _, fraction: let fraction):
             fraction
+        case .importingCreditCards(numberOfCreditCards: _, fraction: let fraction):
+            fraction
         case .done:
             nil
         }
@@ -512,6 +514,8 @@ extension DataImportProgressEvent {
             UserText.importingBookmarks(num)
         case .importingPasswords(numberOfPasswords: let num, fraction: _):
             UserText.importingPasswords(num)
+        case .importingCreditCards(numberOfCreditCards: let num, fraction: _):
+            UserText.importingCreditCards(num)
         case .done:
             nil
         }
@@ -549,7 +553,7 @@ extension DataImportViewModel.ButtonType {
                 UserText.skipBookmarksImport
             case .single(.passwords):
                 UserText.skipPasswordsImport
-            case .multiple:
+            case .multiple, .single(.creditCards): // Shouldn't really happen
                 UserText.cancel
             case nil:
                 UserText.skip

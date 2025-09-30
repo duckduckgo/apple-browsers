@@ -101,8 +101,7 @@ struct DataImportViewModel {
     }
 
     var dataTypesSelection: DataTypeSelection {
-        assert(DataType.allCases.count == 2, "Unexpected number of DataType cases. Update logic.")
-        if selectedDataTypes.count == DataType.allCases.count {
+        if selectedDataTypes.count == [DataType.passwords, .bookmarks].count {
             return .all
         }
         guard let selectedDataType = selectedDataTypes.first else {
@@ -502,7 +501,7 @@ extension DataImport.Source {
             return .profileAndDataTypesPicker
         case .safari, .safariTechnologyPreview:
             if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
-                return .fileImport(dataTypeSelection: .multiple([.bookmarks, .passwords]))
+                return .fileImport(dataTypeSelection: .multiple([.bookmarks, .passwords, .creditCards]))
             } else {
                 return .profileAndDataTypesPicker
             }
@@ -535,6 +534,7 @@ extension DataImport.DataType {
         switch self {
         case .bookmarks: [.html]
         case .passwords: [.commaSeparatedText]
+        case .creditCards: [.json]
         }
     }
 

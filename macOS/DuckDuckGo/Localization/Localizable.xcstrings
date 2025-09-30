@@ -17380,6 +17380,18 @@
         }
       }
     },
+    "Credit card import failed: " : {
+
+    },
+    "Credit card import failed." : {
+
+    },
+    "Credit cards import complete. You can now delete the saved credit cards file." : {
+      "comment" : "message about Credit Cards Data Import completion"
+    },
+    "Credit Cards:" : {
+
+    },
     "dashboard.permission.allow" : {
       "comment" : "Privacy Dashboard: Website can always access input media device",
       "extractionState" : "extracted_with_value",
@@ -38428,6 +38440,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Импортирование завершено."
+          }
+        }
+      }
+    },
+    "import.credit-cards" : {
+      "comment" : "Title text for the Credit Card import option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Credit Cards"
+          }
+        }
+      }
+    },
+    "import.credit-cards.indefinite.progress.text" : {
+      "comment" : "Operation progress info message about indefinite number of passwords being imported",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Importing credit cards…"
+          }
+        }
+      }
+    },
+    "import.credit-cards.number.progress.text" : {
+      "comment" : "Operation progress info message about %d number of credit cards being imported",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Importing credit cards (%d)…"
           }
         }
       }
@@ -88207,6 +88255,9 @@
           }
         }
       }
+    },
+    "We couldn't find any credit cards." : {
+      "comment" : "Data import error message: Credit cards weren't found."
     },
     "We couldn‘t find any passwords." : {
       "comment" : "Data import error message: Passwords weren‘t found.",

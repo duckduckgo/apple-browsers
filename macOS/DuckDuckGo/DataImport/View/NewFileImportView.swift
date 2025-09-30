@@ -28,7 +28,7 @@ func newFileImportInstructionsBuilder(source: DataImport.Source, dataTypeSelecti
     switch dataTypeSelection {
     case .multiple:
         newFileImportMultipleTypeInstructionsBuilder(source: source)
-    case .single(let dataType):
+    case .single:
         fatalError("Not yet implemented")
     }
 }
@@ -503,7 +503,8 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         (.onePassword8, .bookmarks),
         (.bitwarden, .bookmarks),
         (.lastPass, .bookmarks),
-        (.csv, .bookmarks):
+        (.csv, .bookmarks),
+        (_, .creditCards):
         assertionFailure("Invalid source/dataType")
     }
 }

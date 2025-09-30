@@ -81,7 +81,7 @@ public class PageLoadTester: NSObject {
         var lastError: Error?
         var attempts = 0
 
-        while attempts <= maxRetries {
+        while attempts < maxRetries {
             attempts += 1
 
             // Call setup hook if provided

@@ -26,6 +26,7 @@ import History
 import NetworkProtectionIPC
 import NetworkQualityMonitor
 import os.log
+import PerformanceTest
 import PixelKit
 import SwiftUI
 import VPN
@@ -834,6 +835,25 @@ extension MainViewController {
 
     @objc func testNetworkQuality() {
         let windowController = NetworkQualitySwiftUIWindowController()
+        windowController.showWindow(nil)
+    }
+
+    // MARK: - Performance Testing
+
+    @objc func testCurrentSitePerformance() {
+        // Get the current tab's web view
+        guard let currentTab = tabCollectionViewModel.selectedTabViewModel?.tab else {
+            let alert = NSAlert()
+            alert.messageText = "No Active Page"
+            alert.informativeText = "Please navigate to a webpage first to test its performance."
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+            return
+        }
+
+        // Use the package to handle everything
+        let windowController = PerformanceTestWindowController(webView: currentTab.webView)
         windowController.showWindow(nil)
     }
 }

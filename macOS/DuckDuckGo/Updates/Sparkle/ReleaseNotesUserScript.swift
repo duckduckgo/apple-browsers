@@ -26,7 +26,7 @@ import Common
 
 final class ReleaseNotesUserScript: NSObject, Subfeature {
 
-    lazy var updateController: UpdateControllerProtocol = Application.appDelegate.updateController
+    lazy var updateController: SparkleUpdateController? = Application.appDelegate.updateController as? SparkleUpdateController
     var messageOriginPolicy: MessageOriginPolicy = .only(rules: [.exact(hostname: "release-notes")])
     let featureName: String = "release-notes"
     weak var broker: UserScriptMessageBroker?
@@ -78,7 +78,7 @@ final class ReleaseNotesUserScript: NSObject, Subfeature {
             return
         }
 
-        guard let updateController = Application.appDelegate.updateController else {
+        guard let updateController = Application.appDelegate.updateController as? SparkleUpdateController else {
             return
         }
 
@@ -117,7 +117,7 @@ extension ReleaseNotesUserScript {
     @MainActor
     private func retryUpdate(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         DispatchQueue.main.async { [weak self] in
-            self?.updateController.checkForUpdateSkippingRollout()
+            self?.updateController?.checkForUpdateSkippingRollout()
         }
         return nil
     }
@@ -139,7 +139,7 @@ extension ReleaseNotesUserScript {
 
     private func browserRestart(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         DispatchQueue.main.async { [weak self] in
-            self?.updateController.runUpdate()
+            self?.updateController?.runUpdate()
         }
         return nil
     }

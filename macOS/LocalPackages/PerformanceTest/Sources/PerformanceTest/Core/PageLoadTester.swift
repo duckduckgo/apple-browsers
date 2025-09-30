@@ -1,51 +1,81 @@
 //
 //  PageLoadTester.swift
-//  PerformanceTest
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 //
 
 import Foundation
 import WebKit
 import os.log
 
-/// Measures page load performance using WebKit
+public let defaultPageLoadTimeout: TimeInterval = 30.0
+
 @MainActor
 public class PageLoadTester: NSObject {
 
-    // MARK: - Properties
+    private enum Constants {
+        static let loggerSubsystem = "com.duckduckgo.macos.browser.performancetest"
+        static let loggerCategory = "PageLoadTester"
+        static let unknownURLString = "unknown"
+
+        // Error Messages
+        static let javascriptMetricsError = "JavaScript metrics collection error: "
+        static let failedToCollectMetrics = "Failed to collect performance metrics: "
+        static let allRetryAttemptsFailed = "All retry attempts failed"
+        static let testAttemptFailed = "Test attempt %d failed: "
+        static let navigationFailed = "Navigation failed: "
+
+        // Debug Messages
+        static let navigationStarted = "Navigation started for: "
+        static let navigationFinished = "Navigation finished for: "
+    }
 
     private let webView: WKWebView
-    private let logger = Logger(subsystem: "com.duckduckgo.macos.browser.performancetest", category: "PageLoadTester")
+    private let logger = Logger(subsystem: Constants.loggerSubsystem, category: Constants.loggerCategory)
+    private weak var previousNavigationDelegate: WKNavigationDelegate?
 
-    /// Progress callback for UI updates (0.0 to 1.0)
     public var progressHandler: ((Double) -> Void)?
 
-    /// Completion callback for results
     public var completionHandler: ((TestResult) -> Void)?
 
-    /// Hook for test setup
     public var beforeLoadHandler: (() -> Void)?
 
-    // Navigation tracking
     private var navigationStartTime: Date?
     private var currentURL: URL?
+    private var currentTimeout: TimeInterval = defaultPageLoadTimeout
     private var continuation: CheckedContinuation<TestResult, Error>?
-
-    // MARK: - Initialization
 
     public init(webView: WKWebView) {
         self.webView = webView
         super.init()
+        self.previousNavigationDelegate = webView.navigationDelegate
         self.webView.navigationDelegate = self
     }
 
-    // MARK: - Public Methods
+    deinit {
+        // Restore delegate on main thread
+        let webView = self.webView
+        let previousDelegate = self.previousNavigationDelegate
+        Task { @MainActor in
+            webView.navigationDelegate = previousDelegate
+        }
+    }
 
-    /// Measure page load performance for a URL
     public func measurePageLoad(
         url: URL,
-        timeout: TimeInterval = 30.0,
+        timeout: TimeInterval = defaultPageLoadTimeout,
         maxRetries: Int = 1
     ) async throws -> TestResult {
         var lastError: Error?
@@ -62,7 +92,8 @@ public class PageLoadTester: NSObject {
                 return result
             } catch {
                 lastError = error
-                logger.warning("Test attempt \(attempts) failed: \(error.localizedDescription)")
+                let attemptError = String(format: Constants.testAttemptFailed, attempts)
+                logger.warning("\(attemptError)\(error.localizedDescription)")
 
                 // Only retry on transient errors
                 if case PageLoadError.timeout = error {
@@ -75,86 +106,101 @@ public class PageLoadTester: NSObject {
             }
         }
 
-        // All retries exhausted
-        throw lastError ?? PageLoadError.networkError(message: "All retry attempts failed")
+        throw lastError ?? PageLoadError.networkError(message: Constants.allRetryAttemptsFailed)
     }
-
-    // MARK: - Private Methods
 
     private func performSingleTest(url: URL, timeout: TimeInterval) async throws -> TestResult {
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 self.continuation = continuation
                 self.currentURL = url
+                self.currentTimeout = timeout
                 self.navigationStartTime = Date()
 
-                // Start loading
                 let request = URLRequest(url: url)
                 self.webView.load(request)
 
-                // Set timeout
-                Task {
-                    try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-                    if self.continuation != nil {
-                        self.continuation?.resume(throwing: PageLoadError.timeout(duration: timeout))
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                    guard let self = self else { return }
+                    if let continuation = self.continuation {
                         self.continuation = nil
+                        continuation.resume(throwing: PageLoadError.timeout(duration: timeout))
                     }
                 }
             }
         } onCancel: {
-            Task { @MainActor in
-                self.continuation?.resume(throwing: CancellationError())
-                self.continuation = nil
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                if let continuation = self.continuation {
+                    self.continuation = nil
+                    continuation.resume(throwing: CancellationError())
+                }
                 self.webView.stopLoading()
             }
         }
     }
 
     private func collectPerformanceMetrics() async throws -> PerformanceMetrics? {
-        // Use JavaScript to collect performance metrics
-        let script = """
-            (function() {
-                const perf = performance.getEntriesByType('navigation')[0];
-                const paintEntries = performance.getEntriesByType('paint');
-                const fcp = paintEntries.find(e => e.name === 'first-contentful-paint');
-                const lcp = performance.getEntriesByType('largest-contentful-paint')[0];
+        // Load JavaScript from bundle resources - try correct bundle path
+        let bundle: Bundle
+        if let moduleBundle = Bundle(identifier: "PerformanceTest") {
+            bundle = moduleBundle
+        } else {
+            // Look for the PerformanceTest_PerformanceTest.bundle inside main bundle
+            let mainBundle = Bundle(for: PageLoadTester.self)
+            guard let resourcePath = mainBundle.resourcePath,
+                  let performanceBundle = Bundle(path: "\(resourcePath)/PerformanceTest_PerformanceTest.bundle") else {
+                logger.error("Failed to find PerformanceTest bundle")
+                throw PageLoadError.networkError(message: "PerformanceTest bundle not found")
+            }
+            bundle = performanceBundle
+        }
 
-                return {
-                    loadTime: perf ? perf.loadEventEnd - perf.fetchStart : null,
-                    firstContentfulPaint: fcp ? fcp.startTime : null,
-                    largestContentfulPaint: lcp ? lcp.startTime : null,
-                    timeToFirstByte: perf ? perf.responseStart - perf.fetchStart : null
-                };
-            })();
-        """
+        guard let url = bundle.url(forResource: "performanceMetrics", withExtension: "js") else {
+            logger.error("Failed to find performanceMetrics.js in bundle")
+            throw PageLoadError.networkError(message: "Performance metrics script not found in bundle")
+        }
+
+        guard let scriptContent = try? String(contentsOf: url) else {
+            logger.error("Failed to read performanceMetrics.js from bundle")
+            throw PageLoadError.networkError(message: "Failed to load performance metrics script")
+        }
 
         do {
-            let result = try await webView.evaluateJavaScript(script)
+            let result = try await webView.evaluateJavaScript(scriptContent)
             guard let metrics = result as? [String: Any] else { return nil }
 
-            // Convert milliseconds to seconds for loadTime
-            let loadTimeMs = metrics["loadTime"] as? Double ?? 0
-            let loadTime = loadTimeMs / 1000.0
+            // Check for errors from JavaScript
+            if let error = metrics["error"] as? String {
+                logger.error("\(Constants.javascriptMetricsError)\(error)")
+                return nil
+            }
+
+            // Convert milliseconds to seconds for time metrics
+            let loadComplete = (metrics["loadComplete"] as? Double ?? 0) / 1000.0
+            let fcp = (metrics["firstContentfulPaint"] as? Double).map { $0 / 1000.0 }
+            let lcp = (metrics["largestContentfulPaint"] as? Double).map { $0 / 1000.0 }
+            let ttfb = (metrics["timeToFirstByte"] as? Double).map { $0 / 1000.0 }
 
             return PerformanceMetrics(
-                loadTime: loadTime,
-                firstContentfulPaint: metrics["firstContentfulPaint"] as? Double,
-                largestContentfulPaint: metrics["largestContentfulPaint"] as? Double,
-                timeToFirstByte: metrics["timeToFirstByte"] as? Double
+                loadTime: loadComplete,
+                firstContentfulPaint: fcp,
+                largestContentfulPaint: lcp,
+                timeToFirstByte: ttfb
             )
         } catch {
-            logger.warning("Failed to collect performance metrics: \(error)")
+            logger.warning("\(Constants.failedToCollectMetrics)\(error)")
             return nil
         }
     }
 }
 
-// MARK: - WKNavigationDelegate
-
 extension PageLoadTester: WKNavigationDelegate {
 
     public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        logger.debug("Navigation started for: \(self.currentURL?.absoluteString ?? "unknown")")
+        let urlString = self.currentURL?.absoluteString ?? Constants.unknownURLString
+        logger.debug("\(Constants.navigationStarted)\(urlString)")
         progressHandler?(0.1)
     }
 
@@ -163,13 +209,16 @@ extension PageLoadTester: WKNavigationDelegate {
     }
 
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        logger.debug("Navigation finished for: \(self.currentURL?.absoluteString ?? "unknown")")
+        let urlString = self.currentURL?.absoluteString ?? Constants.unknownURLString
+        logger.debug("\(Constants.navigationFinished)\(urlString)")
         progressHandler?(0.9)
 
         guard let startTime = navigationStartTime,
               let url = currentURL else {
-            continuation?.resume(throwing: PageLoadError.invalidURL)
-            continuation = nil
+            if let continuation = continuation {
+                self.continuation = nil
+                continuation.resume(throwing: PageLoadError.invalidURL)
+            }
             return
         }
 
@@ -194,8 +243,10 @@ extension PageLoadTester: WKNavigationDelegate {
 
             progressHandler?(1.0)
             completionHandler?(result)
-            continuation?.resume(returning: result)
-            continuation = nil
+            if let continuation = self.continuation {
+                self.continuation = nil
+                continuation.resume(returning: result)
+            }
         }
     }
 
@@ -203,17 +254,23 @@ extension PageLoadTester: WKNavigationDelegate {
         handleNavigationError(error)
     }
 
-    public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+    public func webView(
+        _ webView: WKWebView,
+        didFailProvisionalNavigation navigation: WKNavigation!,
+        withError error: Error
+    ) {
         handleNavigationError(error)
     }
 
     private func handleNavigationError(_ error: Error) {
-        logger.error("Navigation failed: \(error.localizedDescription)")
+        logger.error("\(Constants.navigationFailed)\(error.localizedDescription)")
 
         guard let startTime = navigationStartTime,
               let url = currentURL else {
-            continuation?.resume(throwing: PageLoadError.invalidURL)
-            continuation = nil
+            if let continuation = continuation {
+                self.continuation = nil
+                continuation.resume(throwing: PageLoadError.invalidURL)
+            }
             return
         }
 
@@ -222,7 +279,7 @@ extension PageLoadTester: WKNavigationDelegate {
 
         switch nsError.code {
         case NSURLErrorTimedOut:
-            testError = .timeout(duration: 30.0)
+            testError = .timeout(duration: currentTimeout)
         case NSURLErrorCannotFindHost, NSURLErrorCannotConnectToHost:
             testError = .networkError(message: error.localizedDescription)
         case NSURLErrorCancelled:
@@ -241,8 +298,11 @@ extension PageLoadTester: WKNavigationDelegate {
         )
 
         completionHandler?(result)
-        continuation?.resume(throwing: testError)
-        continuation = nil
+        // Check if continuation exists before resuming to prevent crashes
+        if let continuation = continuation {
+            self.continuation = nil
+            continuation.resume(throwing: testError)
+        }
     }
 }
 
@@ -257,7 +317,7 @@ public enum PageLoadError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .timeout(let duration):
-            return "Page load timed out after \(duration) seconds"
+            return String(format: "Page load timed out after %.0f seconds", duration)
         case .networkError(let message):
             return "Network error: \(message)"
         case .invalidURL:

@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Common
 import Foundation
 import os.log
 
@@ -30,7 +31,17 @@ public final class Watchdog {
         case timeout
     }
 
+    /// Events for use with an EventMapper.
+    ///
+    public enum Event {
+        /// A recovered hang is one that has ended by the time we report it.
+        case uiHangNotRecovered(durationSeconds: Int)
+        /// A 'not recovered' hang is one that is still ongoing at the time of reporting.
+        case uiHangRecovered(durationSeconds: Int)
+    }
+
     private let monitor: WatchdogMonitor
+    private let eventMapper: EventMapping<Watchdog.Event>?
 
     private let minimumHangDuration: TimeInterval
     private let maximumHangDuration: TimeInterval
@@ -74,7 +85,7 @@ public final class Watchdog {
     ///                          and will be reported as a timeout.
     ///   - checkInterval: The interval at which the main thread is checked for hangs.
     @MainActor
-    public init(minimumHangDuration: TimeInterval = 1.0, maximumHangDuration: TimeInterval = 10.0, checkInterval: TimeInterval = 0.25, killAppFunction: ((TimeInterval) -> Void)? = nil) {
+    public init(minimumHangDuration: TimeInterval = 1.0, maximumHangDuration: TimeInterval = 10.0, checkInterval: TimeInterval = 0.25, eventMapper: EventMapping<Watchdog.Event>? = nil, killAppFunction: ((TimeInterval) -> Void)? = nil) {
         assert(checkInterval > 0, "checkInterval must be greater than 0")
         assert(minimumHangDuration >= 0, "minimumHangDuration must be greater than or equal to 0")
         assert(maximumHangDuration >= 0, "maximumHangDuration must be greater than or equal to 0")
@@ -83,6 +94,7 @@ public final class Watchdog {
         self.minimumHangDuration = minimumHangDuration
         self.maximumHangDuration = maximumHangDuration
         self.checkInterval = checkInterval
+        self.eventMapper = eventMapper
         self.killAppFunction = killAppFunction
 
         self.monitor = WatchdogMonitor()
@@ -160,12 +172,14 @@ public final class Watchdog {
             if timeSinceLastCheck <= minimumHangDuration {
                 // Hang ended
                 logHangDuration(message: "Main thread hang ended.", currentTime: now)
+                fireHangEvent(Watchdog.Event.uiHangRecovered, currentTime: now)
 
                 hangState = .responsive
                 hangStartTime = nil
             } else if timeSinceLastCheck > maximumHangDuration {
                 hangState = .timeout
                 logHangDuration(message: "Main thread hang timeout reached.", currentTime: now)
+                fireHangEvent(Watchdog.Event.uiHangNotRecovered, currentTime: now)
             } else {
                 // Still hanging
                 logHangDuration(message: "Ongoing main thread hang.", currentTime: now)
@@ -182,13 +196,6 @@ public final class Watchdog {
         }
     }
 
-    private func logHangDuration(message: String, currentTime: Date) {
-        guard let hangStartTime else { return }
-
-        let hangDuration = currentTime.timeIntervalSince(hangStartTime)
-        Self.logger.info("\(message) Duration: \(self.formattedHangDuration(duration: hangDuration))s")
-    }
-
     private func killApp(timeout: TimeInterval) {
         // Log before crashing to help with debugging
         Self.logger.critical("Watchdog is terminating the app due to main thread hang")
@@ -197,8 +204,33 @@ public final class Watchdog {
         fatalError("Main thread hang detected by Watchdog (timeout: \(maximumHangDuration)s). This crash is intentional to provide debugging information.")
     }
 
+    // MARK: Event firing
+
+    private func fireHangEvent(_ eventFactory: (Int) -> Watchdog.Event, currentTime: Date) {
+        let actualHangDuration = currentHangDuration(currentTime: currentTime)
+        let nearestSecond = hangDurationToNearestSecond(duration: actualHangDuration)
+        eventMapper?.fire(eventFactory(nearestSecond))
+    }
+
+    // MARK: Duration handling
+
+    private func currentHangDuration(currentTime: Date) -> TimeInterval {
+        return hangStartTime.map { currentTime.timeIntervalSince($0) } ?? 0
+    }
+
+    private func hangDurationToNearestSecond(duration: TimeInterval) -> Int {
+        return Int(duration.rounded())
+    }
+
     private func formattedHangDuration(duration: TimeInterval) -> String {
         return String(format: "%.1f", duration)
+    }
+
+    private func logHangDuration(message: String, currentTime: Date) {
+        guard hangStartTime != nil else { return }
+
+        let hangDuration = currentHangDuration(currentTime: currentTime)
+        Self.logger.info("\(message) Duration: \(self.formattedHangDuration(duration: hangDuration))s")
     }
 }
 

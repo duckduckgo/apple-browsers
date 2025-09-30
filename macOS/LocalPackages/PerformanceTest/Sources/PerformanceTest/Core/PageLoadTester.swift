@@ -65,10 +65,11 @@ public class PageLoadTester: NSObject {
     }
 
     deinit {
-        // Safely restore delegate on main thread
-        // PageLoadTester is @MainActor so this should always succeed, but we verify for safety
-        MainActor.assumeIsolated {
-            webView.navigationDelegate = previousNavigationDelegate
+        // Restore delegate on main thread
+        let webView = self.webView
+        let previousDelegate = self.previousNavigationDelegate
+        Task { @MainActor in
+            webView.navigationDelegate = previousDelegate
         }
     }
 

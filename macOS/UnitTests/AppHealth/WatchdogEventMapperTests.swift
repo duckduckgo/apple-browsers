@@ -32,6 +32,7 @@ final class WatchdogEventMapperTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockDiagnosticProvider = MockWatchdogDiagnosticProvider()
+
         eventMapper = WatchdogEventMapper(diagnosticProvider: mockDiagnosticProvider)
         firedPixels = []
 
@@ -40,8 +41,9 @@ final class WatchdogEventMapperTests: XCTestCase {
 
     override func tearDown() {
         PixelKit.tearDown()
-        eventMapper = nil
+        mockDiagnosticProvider?.reset()
         mockDiagnosticProvider = nil
+        eventMapper = nil
         firedPixels = nil
         onPixelFired = nil
 
@@ -79,6 +81,8 @@ final class WatchdogEventMapperTests: XCTestCase {
     }
 
     private func setupMockDiagnostics(isOnBattery: Bool = true) {
+        mockDiagnosticProvider.reset()
+
         mockDiagnosticProvider.diagnosticsToReturn = WatchdogDiagnostics(
             isInForeground: true,
             isAnyWindowVisible: true,

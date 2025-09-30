@@ -107,9 +107,6 @@ public class WatchdogEventMapper: EventMapping<Watchdog.Event> {
             return nil
         }
 
-        if let onBattery = diagnostics.isOnBattery {
-            return onBattery ? .onBattery : .pluggedIn
-        }
-        return nil
+        return onBattery ? .onBattery : .pluggedIn
     }
 }

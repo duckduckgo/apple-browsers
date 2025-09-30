@@ -57,7 +57,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private lazy var bottomLocationSwitchBarBackgroundMaskView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = Constants.backgroundColor
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -186,7 +186,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private func setupView() {
         setUpContentContainer()
 
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = Constants.backgroundColor
     }
 
     private func setUpContentContainer() {
@@ -222,7 +222,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         switchBarVC.view.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
         // Prevent showing scrollable content under the switcher
-        switchBarVC.view.backgroundColor = UIColor(designSystemColor: .background)
+        switchBarVC.view.backgroundColor = Constants.backgroundColor
 
         NSLayoutConstraint.activate([
             switchBarVC.view.leadingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.leadingAnchor),
@@ -478,5 +478,6 @@ private extension OmniBarEditingStateViewController {
     struct Constants {
         // Adjusts for two buttons in the action bar
         static let horizontalMarginForCompactLayout: CGFloat = 108
+        static let backgroundColor = UIColor(designSystemColor: .background)
     }
 }

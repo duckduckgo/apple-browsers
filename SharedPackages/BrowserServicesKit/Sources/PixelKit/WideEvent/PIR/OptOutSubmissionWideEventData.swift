@@ -108,16 +108,7 @@ extension OptOutSubmissionWideEventData {
         }
 
         if let errorData {
-            parameters[WideEventParameter.Feature.errorDomain] = errorData.domain
-            parameters[WideEventParameter.Feature.errorCode] = String(errorData.code)
-
-            if let underlyingDomain = errorData.underlyingDomain {
-                parameters[WideEventParameter.Feature.underlyingErrorDomain] = underlyingDomain
-            }
-
-            if let underlyingCode = errorData.underlyingCode {
-                parameters[WideEventParameter.Feature.underlyingErrorCode] = String(underlyingCode)
-            }
+            parameters.merge(errorData.pixelParameters(), uniquingKeysWith: { _, new in new })
         }
 
         for (index, stage) in stages.enumerated() {

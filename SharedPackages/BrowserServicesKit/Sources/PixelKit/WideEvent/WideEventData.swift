@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Common
+import Foundation
 
 public protocol WideEventData: Codable, WideEventParameterProviding {
     static var pixelName: String { get }
@@ -109,14 +109,17 @@ public struct WideEventGlobalData: Codable {
         self.init(sampleRate: 1.0)
     }
 
-    public init(id: String = UUID().uuidString, platform: String = DevicePlatform.currentPlatform.rawValue, sampleRate: Float) {
+    public init(
+        id: String = UUID().uuidString, platform: String = DevicePlatform.currentPlatform.rawValue,
+        sampleRate: Float
+    ) {
         if sampleRate > 1.0 || sampleRate < 0.0 {
             assertionFailure("Sample rate must be between 0-1")
         }
 
         self.id = id
         self.platform = platform
-        self.type = "app" // Don't allow type to be overridden
+        self.type = "app"  // Don't allow type to be overridden
         self.sampleRate = sampleRate.clamped(to: 0...1)
     }
 }
@@ -149,17 +152,19 @@ public struct WideEventAppData: Codable {
     /// Whether the event was sent by an instance of the app with the internal flag set.
     public var internalUser: Bool?
 
-    public init(name: String = AppVersion.shared.name,
-                version: String = AppVersion.shared.versionNumber,
-                formFactor: String? = nil,
-                internalUser: Bool? = nil) {
+    public init(
+        name: String = AppVersion.shared.name,
+        version: String = AppVersion.shared.versionNumber,
+        formFactor: String? = nil,
+        internalUser: Bool? = nil
+    ) {
         self.name = name
         self.version = version
 
         #if os(iOS)
-        self.formFactor = formFactor ?? DevicePlatform.formFactor
+            self.formFactor = formFactor ?? DevicePlatform.formFactor
         #else
-        self.formFactor = formFactor // Ignore the form factor on macOS, but allow it to be overridden for testing
+            self.formFactor = formFactor  // Ignore the form factor on macOS, but allow it to be overridden for testing
         #endif
         self.internalUser = internalUser
     }
@@ -214,16 +219,67 @@ public struct WideEventErrorData: Codable {
     public var code: Int
     public var underlyingDomain: String?
     public var underlyingCode: Int?
+    public var underlyingErrors: [WideEventErrorData.UnderlyingError]
 
     public init(error: Error) {
         let nsError = error as NSError
         self.domain = nsError.domain
         self.code = nsError.code
 
-        if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
-            self.underlyingDomain = underlyingError.domain
-            self.underlyingCode = underlyingError.code
+        self.underlyingErrors = Self.collectUnderlyingErrors(from: nsError)
+
+        if let primary = underlyingErrors.first {
+            self.underlyingDomain = primary.domain
+            self.underlyingCode = primary.code
         }
     }
 
+}
+
+extension WideEventErrorData {
+    public struct UnderlyingError: Codable {
+        public let domain: String
+        public let code: Int
+    }
+
+    private static func collectUnderlyingErrors(from error: NSError?) -> [UnderlyingError] {
+        guard let error else { return [] }
+
+        var collected: [UnderlyingError] = []
+        var current: NSError? = error
+
+        while let nsError = current {
+            collected.append(UnderlyingError(domain: nsError.domain, code: nsError.code))
+            current = nsError.userInfo[NSUnderlyingErrorKey] as? NSError
+        }
+
+        return collected
+    }
+}
+
+extension WideEventErrorData: WideEventParameterProviding {
+    public func pixelParameters() -> [String: String] {
+        var parameters: [String: String] = [:]
+
+        parameters[WideEventParameter.Feature.errorDomain] = domain
+        parameters[WideEventParameter.Feature.errorCode] = String(code)
+
+        if let underlyingDomain {
+            parameters[WideEventParameter.Feature.underlyingErrorDomain] = underlyingDomain
+        }
+
+        if let underlyingCode {
+            parameters[WideEventParameter.Feature.underlyingErrorCode] = String(underlyingCode)
+        }
+
+        for (index, nested) in underlyingErrors.enumerated() {
+            let suffix = index == 0 ? "" : String(index + 1)
+
+            parameters[WideEventParameter.Feature.underlyingErrorDomain + suffix] = nested.domain
+            parameters[WideEventParameter.Feature.underlyingErrorCode + suffix] = String(
+                nested.code)
+        }
+
+        return parameters
+    }
 }

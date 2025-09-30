@@ -136,7 +136,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     }
 
     private var isRunningUITests: Bool {
-        ProcessInfo.processInfo.arguments.contains("isRunningUITests")
+        ProcessInfo.isRunningUITests
     }
 }
 
@@ -164,5 +164,11 @@ struct NewAddressBarPickerStorage {
     
     func reset() {
         keyValueStore.removeObject(forKey: Key.hasBeenShown)
+    }
+}
+
+extension ProcessInfo {
+    static var isRunningUITests: Bool {
+        Self.processInfo.arguments.contains("isRunningUITests")
     }
 }

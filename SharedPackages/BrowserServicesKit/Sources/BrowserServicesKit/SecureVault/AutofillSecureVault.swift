@@ -137,6 +137,16 @@ public protocol AutofillSecureVault: SecureVault {
     ) throws
     func syncableCreditCardsForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableCreditCard]
 
+    // MARK: - Identities Sync Support
+
+    func modifiedSyncableIdentities() throws -> [SecureVaultModels.SyncableIdentity]
+    func identityTitlesForSyncableIdentities(modifiedBefore date: Date) throws -> [String]
+    func deleteSyncableIdentity(_ syncableIdentity: SecureVaultModels.SyncableIdentity, in database: Database) throws
+    func storeSyncableIdentity(
+        _ syncableIdentity: SecureVaultModels.SyncableIdentity,
+        in database: Database
+    ) throws
+    func syncableIdentitiesForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableIdentity]
 }
 
 public class DefaultAutofillSecureVault<T: AutofillDatabaseProvider>: AutofillSecureVault {
@@ -535,10 +545,21 @@ public class DefaultAutofillSecureVault<T: AutofillDatabaseProvider>: AutofillSe
         }
     }
 
+    public func storeSyncableIdentity(
+        _ syncableIdentity: SecureVaultModels.SyncableIdentity,
+        in database: Database,
+    ) throws {
+        try providers.database.storeSyncableIdentity(syncableIdentity, in: database)
+    }
+
     public func deleteIdentityFor(identityId: Int64) throws {
         try executeThrowingDatabaseOperation {
             try self.providers.database.deleteIdentityForIdentityId(identityId)
         }
+    }
+
+    public func deleteSyncableIdentity(_ syncableIdentity: SecureVaultModels.SyncableIdentity, in database: Database) throws {
+        try providers.database.deleteSyncableIdentity(syncableIdentity, in: database)
     }
 
     public func existingIdentityForAutofill(matching proposedIdentity: SecureVaultModels.Identity) throws -> SecureVaultModels.Identity? {
@@ -547,6 +568,10 @@ public class DefaultAutofillSecureVault<T: AutofillDatabaseProvider>: AutofillSe
         return identities.first { existingIdentity in
             existingIdentity.hasAutofillEquality(comparedTo: proposedIdentity)
         }
+    }
+
+    public func syncableIdentitiesForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableIdentity] {
+        try self.providers.database.syncableIdentitiesForSyncIds(syncIds, in: database)
     }
 
     // MARK: - Credit Cards
@@ -738,6 +763,56 @@ public class DefaultAutofillSecureVault<T: AutofillDatabaseProvider>: AutofillSe
 
     public func syncableCreditCardsForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableCreditCard] {
         try self.providers.database.syncableCreditCardsForSyncIds(syncIds, in: database)
+    }
+
+    public func modifiedSyncableIdentities() throws -> [SecureVaultModels.SyncableIdentity] {
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
+        do {
+            return try providers.database.modifiedSyncableIdentities()
+        } catch {
+            let error = error as? SecureStorageError ?? SecureStorageError.databaseError(cause: error)
+            throw error
+        }
+    }
+
+    public func identityTitlesForSyncableIdentities(modifiedBefore date: Date) throws -> [String] {
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
+        do {
+            let syncableIdentities = try providers.database.modifiedSyncableIdentities(before: date)
+            return syncableIdentities.compactMap { syncableIdentity in
+                guard let identity = syncableIdentity.identity else { return nil }
+
+                // Priority order: Title, First and last name, Street address, Email address
+                if !identity.title.isEmpty {
+                    return identity.title
+                }
+
+                let firstName = identity.firstName ?? ""
+                let lastName = identity.lastName ?? ""
+                if !firstName.isEmpty || !lastName.isEmpty {
+                    return "\(firstName) \(lastName)".trimmingCharacters(in: .whitespaces)
+                }
+
+                if let addressStreet = identity.addressStreet, !addressStreet.isEmpty {
+                    return addressStreet
+                }
+
+                if let emailAddress = identity.emailAddress, !emailAddress.isEmpty {
+                    return emailAddress
+                }
+
+                return identity.title
+            }
+        } catch {
+            let error = error as? SecureStorageError ?? SecureStorageError.databaseError(cause: error)
+            throw error
+        }
     }
 
     // MARK: - Private

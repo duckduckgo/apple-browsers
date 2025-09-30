@@ -113,12 +113,6 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
 
         let duration = transitionDuration(using: transitionContext)
 
-        let logoAnimator = UIViewPropertyAnimator(duration: 0.13, curve: .easeIn) {
-            if !self.isTopBarPosition {
-                fromVC.newTabView?.alpha = 0
-            }
-        }
-
         let animator: UIViewPropertyAnimator
         if isTopBarPosition {
             animator = UIViewPropertyAnimator(duration: duration, dampingRatio: dampingRatio)
@@ -145,7 +139,6 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
             transitionContext.completeTransition(position == .end)
         }
 
-        logoAnimator.startAnimation()
         animator.startAnimation()
     }
 

@@ -129,7 +129,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
             pageContextRequestedSubject.send()
         }
 
-        return PageContextResponse(pageContextData: pageContext)
+        return PageContextResponse(pageContext: pageContext)
     }
 
     @MainActor

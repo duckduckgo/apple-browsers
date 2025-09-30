@@ -29,7 +29,7 @@ struct PageContextCollectionPayload: Codable {
 }
 
 struct PageContextResponse: Codable {
-    let pageContextData: AIChatPageContextData?
+    let pageContext: AIChatPageContextData?
 }
 
 final class PageContextUserScript: NSObject, Subfeature {

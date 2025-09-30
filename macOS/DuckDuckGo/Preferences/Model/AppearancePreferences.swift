@@ -464,6 +464,7 @@ final class AppearancePreferences: ObservableObject {
         isContinueSetUpCardsViewOutdated = persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays
         continueSetUpCardsClosed = persistor.continueSetUpCardsClosed
         themeAppearance = .init(rawValue: persistor.themeAppearance) ?? .systemDefault
+        themeName = .init(rawValue: persistor.themeName) ?? .default
         showFullURL = persistor.showFullURL
         favoritesDisplayMode = persistor.favoritesDisplayMode.flatMap(FavoritesDisplayMode.init) ?? .default
         isOmnibarVisible = persistor.isOmnibarVisible

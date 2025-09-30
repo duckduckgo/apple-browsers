@@ -16,19 +16,21 @@
 //  limitations under the License.
 //
 
-let cumulativeLayoutShift = 0;
-let observer;
+// Use a global variable to persist CLS across script executions
+if (typeof window.__cumulativeLayoutShift === 'undefined') {
+    window.__cumulativeLayoutShift = 0;
 
-// Check for CLS support and start observing
-if (typeof PerformanceObserver !== 'undefined' && PerformanceObserver.supportedEntryTypes.includes('layout-shift')) {
-    observer = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-            if (!entry.hadRecentInput) {
-                cumulativeLayoutShift += entry.value;
+    // Check for CLS support and start observing
+    if (typeof PerformanceObserver !== 'undefined' && PerformanceObserver.supportedEntryTypes.includes('layout-shift')) {
+        const observer = new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) {
+                if (!entry.hadRecentInput) {
+                    window.__cumulativeLayoutShift += entry.value;
+                }
             }
-        }
-    });
-    observer.observe({ type: 'layout-shift', buffered: true });
+        });
+        observer.observe({ type: 'layout-shift', buffered: true });
+    }
 }
 
 function collectPerformanceMetrics() {
@@ -69,7 +71,7 @@ function collectPerformanceMetrics() {
                 fcp: fcp ? fcp.startTime : 0,
                 firstContentfulPaint: fcp ? fcp.startTime : null,
                 largestContentfulPaint: largestContentfulPaint,
-                cumulativeLayoutShift: cumulativeLayoutShift,
+                cumulativeLayoutShift: window.__cumulativeLayoutShift,
 
                 // Network metrics (both naming conventions for compatibility)
                 // Safari WebDriver doesn't provide fetchStart/requestStart properly, so these will be 0

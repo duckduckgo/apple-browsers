@@ -13,7 +13,7 @@
                 type: 'string',
             },
             {
-                key: 'errorDomain', 
+                key: 'errorDomain',
                 description: 'WebKit termination error domain',
                 type: 'string',
             },

@@ -250,7 +250,7 @@ extension WideEventErrorData {
         guard let error else { return [] }
 
         var collected: [UnderlyingError] = []
-        var current: NSError? = error
+        var current = error.userInfo[NSUnderlyingErrorKey] as? NSError
 
         while let nsError = current {
             collected.append(UnderlyingError(domain: nsError.domain, code: nsError.code))

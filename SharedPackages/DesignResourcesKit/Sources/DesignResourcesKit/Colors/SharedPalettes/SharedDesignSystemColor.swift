@@ -20,6 +20,8 @@ import Foundation
 
 #if os(macOS)
 
+public typealias DesignSystemColor = SharedDesignSystemColor
+
 public enum SharedDesignSystemColor {
 
     // Accent

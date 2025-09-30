@@ -77,7 +77,6 @@ final class WideEventTests: XCTestCase {
         let retrievedData = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: subscriptionData.globalData.id)
 
         XCTAssertEqual(retrievedData.purchasePlatform, .appStore)
-        XCTAssertEqual(retrievedData.contextData.id, subscriptionData.contextData.id)
         XCTAssertEqual(retrievedData.contextData.name, "test-flow")
         XCTAssertEqual(retrievedData.subscriptionIdentifier, "test-subscription-id")
     }
@@ -86,7 +85,7 @@ final class WideEventTests: XCTestCase {
         let initialData = makeTestSubscriptionData(platform: .stripe, contextName: "initial")
         wideEvent.startFlow(initialData)
 
-        var updatedData = initialData
+        let updatedData = initialData
         updatedData.failingStep = .accountCreate
         updatedData.subscriptionIdentifier = "updated-subscription"
         updatedData.freeTrialEligible = true
@@ -123,23 +122,9 @@ final class WideEventTests: XCTestCase {
     // MARK: - Error Handling Tests
 
     func testGetFlowDataForNonExistentFlow() {
-        let nonExistentContextID = UUID().uuidString
-        let result = wideEvent.getFlowData(SubscriptionPurchaseWideEventData.self, globalID: nonExistentContextID)
+        let nonExistentGlobalID = UUID().uuidString
+        let result = wideEvent.getFlowData(SubscriptionPurchaseWideEventData.self, globalID: nonExistentGlobalID)
         XCTAssertNil(result)
-    }
-
-    func testUpdateFlowForNonExistentFlow() {
-        let nonExistentContextID = UUID().uuidString
-        let data = makeTestSubscriptionData(contextID: nonExistentContextID)
-
-        wideEvent.updateFlow(data)
-    }
-
-    func testCompleteFlowForNonExistentFlow() {
-        let nonExistentContextID = UUID().uuidString
-        let data = makeTestSubscriptionData(contextID: nonExistentContextID)
-
-        wideEvent.completeFlow(data, status: .success) { _, _ in }
     }
 
     func testDiscardFlowDeletesStoredData() throws {
@@ -161,10 +146,7 @@ final class WideEventTests: XCTestCase {
     }
 
     func testDiscardFlowForNonExistentFlow() {
-        let nonExistentContextID = UUID().uuidString
-        let data = makeTestSubscriptionData(contextID: nonExistentContextID)
-
-        // This should not crash and should handle the missing flow gracefully
+        let data = makeTestSubscriptionData()
         wideEvent.discardFlow(data)
 
         // Verify no pixel was fired
@@ -176,7 +158,7 @@ final class WideEventTests: XCTestCase {
         wideEvent.startFlow(subscriptionData)
 
         // Update the flow multiple times
-        var updatedData = subscriptionData
+        let updatedData = subscriptionData
         updatedData.subscriptionIdentifier = "test-subscription"
         updatedData.freeTrialEligible = true
         wideEvent.updateFlow(updatedData)
@@ -205,7 +187,7 @@ final class WideEventTests: XCTestCase {
         struct NonSerializableData: WideEventData {
             static let pixelName = "non_serializable"
             let closure: () -> Void = { }
-            var contextData: WideEventContextData = WideEventContextData(id: UUID().uuidString)
+            var contextData: WideEventContextData = WideEventContextData()
             var appData: WideEventAppData = WideEventAppData()
             var globalData: WideEventGlobalData = WideEventGlobalData(platform: "", sampleRate: 1.0)
             func pixelParameters() -> [String: String] { [:] }
@@ -248,7 +230,7 @@ final class WideEventTests: XCTestCase {
         let data = makeTestSubscriptionData()
         wideEvent.startFlow(data)
 
-        var started = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
+        let started = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
         started.createAccountDuration = WideEvent.MeasuredInterval.startingNow()
         wideEvent.updateFlow(started)
 
@@ -256,7 +238,7 @@ final class WideEventTests: XCTestCase {
         XCTAssertNotNil(dataAfterStart.createAccountDuration?.start)
         XCTAssertNil(dataAfterStart.createAccountDuration?.end)
 
-        var stopped = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
+        let stopped = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
         stopped.createAccountDuration?.complete()
         wideEvent.updateFlow(stopped)
 
@@ -266,7 +248,7 @@ final class WideEventTests: XCTestCase {
     }
 
     func testInstanceBasedMeasurements() throws {
-        var data = makeTestSubscriptionData()
+        let data = makeTestSubscriptionData()
         wideEvent.startFlow(data)
 
         XCTAssertNil(data.createAccountDuration)
@@ -286,14 +268,15 @@ final class WideEventTests: XCTestCase {
         // Test very short duration
         let shortStart = Date()
         let shortEnd = shortStart.addingTimeInterval(0.001)
-        var short = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
+
+        let short = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
         short.createAccountDuration = WideEvent.MeasuredInterval(start: shortStart, end: shortEnd)
         wideEvent.updateFlow(short)
 
         // Test very long duration
         let longStart = Date(timeIntervalSince1970: 0)
         let longEnd = longStart.addingTimeInterval(3600 * 24)
-        var long = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
+        let long = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
         long.completePurchaseDuration = WideEvent.MeasuredInterval(start: longStart, end: longEnd)
         wideEvent.updateFlow(long)
 
@@ -309,10 +292,6 @@ final class WideEventTests: XCTestCase {
         parameters["feature.name"] = SubscriptionPurchaseWideEventData.pixelName
 
         if let name = typed.contextData.name { parameters["context.name"] = name }
-        if let data = typed.contextData.data {
-            for (key, value) in data { parameters["context.data.\(key)"] = value }
-        }
-
         parameters.merge(typed.pixelParameters(), uniquingKeysWith: { _, new in new })
 
         XCTAssertEqual(parameters["feature.data.ext.account_creation_latency_ms_bucketed"], "1000")
@@ -324,7 +303,7 @@ final class WideEventTests: XCTestCase {
         wideEvent.startFlow(data)
 
         let now = Date()
-        var updated = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
+        let updated = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
         updated.createAccountDuration = WideEvent.MeasuredInterval(start: now, end: now)
         wideEvent.updateFlow(updated)
 
@@ -336,7 +315,6 @@ final class WideEventTests: XCTestCase {
 
     func testComprehensiveParameterFlattening() throws {
         let testError = makeTestError(domain: "TestErrorDomain", code: 12345)
-        let contextID = UUID().uuidString
 
         let subscriptionData = SubscriptionPurchaseWideEventData(
             purchasePlatform: .appStore,
@@ -348,11 +326,7 @@ final class WideEventTests: XCTestCase {
                 end: Date(timeIntervalSince1970: 1002.5)
             ),
             errorData: WideEventErrorData(error: testError),
-            contextData: WideEventContextData(
-                id: contextID,
-                name: "test-funnel",
-                data: ["source": "onboarding", "experiment": "control"]
-            ),
+            contextData: WideEventContextData(name: "test-funnel"),
             appData: WideEventAppData()
         )
 
@@ -368,9 +342,6 @@ final class WideEventTests: XCTestCase {
         if let formFactor = typed.appData.formFactor { parameters["global.form_factor"] = formFactor }
         parameters["feature.name"] = SubscriptionPurchaseWideEventData.pixelName
         if let name = typed.contextData.name { parameters["context.name"] = name }
-        if let data = typed.contextData.data {
-            for (key, value) in data { parameters["context.data.\(key)"] = value }
-        }
 
         parameters.merge(typed.pixelParameters(), uniquingKeysWith: { _, new in new })
 
@@ -389,8 +360,6 @@ final class WideEventTests: XCTestCase {
 
         // Context parameters
         XCTAssertEqual(parameters["context.name"], "test-funnel")
-        XCTAssertEqual(parameters["context.data.source"], "onboarding")
-        XCTAssertNil(parameters["context.id"])
 
         // Global parameters
         XCTAssertNotNil(parameters["global.platform"])
@@ -407,8 +376,7 @@ final class WideEventTests: XCTestCase {
             func pixelParameters() -> [String: String] {
                 return [
                     "app.name": "DuckDuckGo",
-                    "feature.status": "SUCCESS",
-                    "context.id": "onboarding",
+                    "feature.status": "SUCCESS"
                 ]
             }
         }
@@ -423,7 +391,6 @@ final class WideEventTests: XCTestCase {
 
         XCTAssertEqual(app?["name"] as? String, "DuckDuckGo")
         XCTAssertEqual(feature?["status"] as? String, "SUCCESS")
-        XCTAssertEqual(context?["id"] as? String, "onboarding")
     }
 
     func testActiveFlowManagement() throws {
@@ -441,14 +408,12 @@ final class WideEventTests: XCTestCase {
         let data = makeTestSubscriptionData()
         data.subscriptionIdentifier = nil
         data.contextData.name = nil
-        data.contextData.data = nil
 
         wideEvent.startFlow(data)
 
         let retrievedData = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data.globalData.id)
         XCTAssertNil(retrievedData.subscriptionIdentifier)
         XCTAssertNil(retrievedData.contextData.name)
-        XCTAssertNil(retrievedData.contextData.data)
 
         let expectation = XCTestExpectation(description: "completeFlow")
         wideEvent.completeFlow(retrievedData, status: .success) { success, error in
@@ -462,16 +427,14 @@ final class WideEventTests: XCTestCase {
     }
 
     func testFlowRestartWithSameContextID() throws {
-        let contextID = UUID().uuidString
-        let data1 = makeTestSubscriptionData(platform: .appStore, contextID: contextID, contextName: "first")
-
+        let data1 = makeTestSubscriptionData(platform: .appStore, contextName: "first")
         wideEvent.startFlow(data1)
 
         let updated1 = data1
         updated1.subscriptionIdentifier = "subscription"
         wideEvent.updateFlow(updated1)
 
-        let data2 = makeTestSubscriptionData(platform: .stripe, contextID: contextID, contextName: "second")
+        let data2 = makeTestSubscriptionData(platform: .stripe, contextName: "second")
         wideEvent.startFlow(data2)
 
         let retrievedData = try XCTUnwrapFlow(SubscriptionPurchaseWideEventData.self, globalID: data2.globalData.id)
@@ -481,9 +444,7 @@ final class WideEventTests: XCTestCase {
     }
 
     func testSamplingDecisionAtStartSkipsPersistenceWhenNotSampled() throws {
-        let contextID = UUID().uuidString
-
-        let notSampled = makeTestSubscriptionData(contextID: contextID)
+        let notSampled = makeTestSubscriptionData()
         notSampled.globalData.sampleRate = 0.0
 
         wideEvent.startFlow(notSampled)
@@ -505,12 +466,11 @@ final class WideEventTests: XCTestCase {
 
     func makeTestSubscriptionData(
         platform: SubscriptionPurchaseWideEventData.PurchasePlatform = .appStore,
-        contextID: String = UUID().uuidString,
         contextName: String? = nil,
         subscriptionIdentifier: String? = nil,
         freeTrialEligible: Bool? = nil
     ) -> SubscriptionPurchaseWideEventData {
-        let contextData = WideEventContextData(id: contextID, name: contextName)
+        let contextData = WideEventContextData(name: contextName)
         return SubscriptionPurchaseWideEventData(
             purchasePlatform: platform,
             subscriptionIdentifier: subscriptionIdentifier,

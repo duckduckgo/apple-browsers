@@ -93,8 +93,6 @@ public final class OptOutSubmissionWideEventData: WideEventData {
 }
 
 extension OptOutSubmissionWideEventData {
-    private static let latencyBuckets: [Int] = [1_000, 5_000, 10_000, 30_000, 60_000, 300_000, 600_000, 1_200_000]
-
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
@@ -105,8 +103,8 @@ extension OptOutSubmissionWideEventData {
             parameters[WideEventParameter.PIR.OptOutSubmissionFeature.dataBrokerVersion] = dataBrokerVersion
         }
 
-        if let bucketedDuration = submissionInterval?.bucketedMilliseconds(using: Self.latencyBuckets) {
-            parameters[WideEventParameter.PIR.OptOutSubmissionFeature.submissionLatency] = String(bucketedDuration)
+        if let duration = submissionInterval?.durationMilliseconds {
+            parameters[WideEventParameter.PIR.OptOutSubmissionFeature.submissionLatency] = String(duration)
         }
 
         for (index, stage) in stages.enumerated() {

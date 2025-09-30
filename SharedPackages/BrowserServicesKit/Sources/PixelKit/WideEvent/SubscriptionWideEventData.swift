@@ -67,7 +67,7 @@ public class SubscriptionPurchaseWideEventData: WideEventData {
 
 extension SubscriptionPurchaseWideEventData {
 
-    private static let latencyBuckets: [Int] = [1_000, 5_000, 10_000, 30_000, 60_000, 300_000, 600_000]
+    private static let latencyBuckets: [Double] = [1_000, 5_000, 10_000, 30_000, 60_000, 300_000, 600_000]
 
     public enum PurchasePlatform: String, Codable, CaseIterable {
         case appStore = "app_store"

@@ -50,8 +50,6 @@ public final class OptOutConfirmationWideEventData: WideEventData {
 }
 
 extension OptOutConfirmationWideEventData {
-    private static let latencyBuckets: [Int] = [1_000, 5_000, 10_000, 30_000, 60_000, 300_000, 600_000, 1_200_000]
-
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
@@ -62,8 +60,8 @@ extension OptOutConfirmationWideEventData {
             parameters[WideEventParameter.PIR.OptOutConfirmationFeature.dataBrokerVersion] = dataBrokerVersion
         }
 
-        if let bucketedDuration = confirmationInterval?.bucketedMilliseconds(using: Self.latencyBuckets) {
-            parameters[WideEventParameter.PIR.OptOutConfirmationFeature.confirmationLatency] = String(bucketedDuration)
+        if let duration = confirmationInterval?.durationMilliseconds {
+            parameters[WideEventParameter.PIR.OptOutConfirmationFeature.confirmationLatency] = String(duration)
         }
 
         return parameters

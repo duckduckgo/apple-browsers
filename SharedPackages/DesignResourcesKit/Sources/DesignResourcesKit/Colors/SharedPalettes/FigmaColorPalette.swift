@@ -25,8 +25,8 @@ struct FigmaColorPalette: SharedColorPaletteDefinition {
 
     // Accent Colors
     static let accentContentPrimary = DynamicColor(lightHex: 0xffffff, darkHex: 0x051133)
-    static let accentContentSecondary = DynamicColor(lightHex: 0xccdaff, darkHex: 0x03091a)
-    static let accentContentTertiary = DynamicColor(lightHex: 0xadc2fc, darkHex: 0x000000)
+    static let accentContentSecondary = DynamicColor(lightHex: 0xffffff, lightOpacityHex: 0xb2, darkHex: 0x051133, darkOpacityHex: 0xb2)
+    static let accentContentTertiary = DynamicColor(lightHex: 0xffffff, lightOpacityHex: 0x7f, darkHex: 0x051133, darkOpacityHex: 0x7f)
     static let accentGlowPrimary = DynamicColor(lightHex: 0x3969ef, lightOpacityHex: 0x33, darkHex: 0x7295f6, darkOpacityHex: 0x33)
     static let accentGlowSecondary = DynamicColor(lightHex: 0x3969ef, lightOpacityHex: 0x1e, darkHex: 0x7295f6, darkOpacityHex: 0x1e)
     static let accentPrimary = DynamicColor(lightHex: 0x3969ef, darkHex: 0x7295f6)
@@ -75,9 +75,9 @@ struct FigmaColorPalette: SharedColorPaletteDefinition {
     static let containerDecorationPrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x16, darkHex: 0xffffff, darkOpacityHex: 0x1e)
     static let containerDecorationSecondary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x0f, darkHex: 0xffffff, darkOpacityHex: 0x16)
     static let containerDecorationTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x0f, darkHex: 0xffffff, darkOpacityHex: 0x16)
-    static let containerFillPrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x0f, darkHex: 0xffffff, darkOpacityHex: 0x16)
+    static let containerFillPrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x02, darkHex: 0xffffff, darkOpacityHex: 0x07)
     static let containerFillSecondary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x07, darkHex: 0xffffff, darkOpacityHex: 0x0f)
-    static let containerFillTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x02, darkHex: 0xffffff, darkOpacityHex: 0x07)
+    static let containerFillTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x0f, darkHex: 0xffffff, darkOpacityHex: 0x16)
 
     // Controls Colors
     static let controlsBase = DynamicColor(lightHex: 0x1f1f1f, darkHex: 0xf8f8f8)

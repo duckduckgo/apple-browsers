@@ -1,8 +1,19 @@
 //
 //  PageLoadTester.swift
-//  PerformanceTest
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 //
 
 import Foundation
@@ -16,7 +27,8 @@ public class PageLoadTester: NSObject {
     // MARK: - Properties
 
     private let webView: WKWebView
-    private let logger = Logger(subsystem: "com.duckduckgo.macos.browser.performancetest", category: "PageLoadTester")
+    private let logger = Logger(
+        subsystem: "com.duckduckgo.macos.browser.performancetest", category: "PageLoadTester")
 
     /// Progress callback for UI updates (0.0 to 1.0)
     public var progressHandler: ((Double) -> Void)?
@@ -96,7 +108,8 @@ public class PageLoadTester: NSObject {
                 Task {
                     try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
                     if self.continuation != nil {
-                        self.continuation?.resume(throwing: PageLoadError.timeout(duration: timeout))
+                        self.continuation?.resume(
+                            throwing: PageLoadError.timeout(duration: timeout))
                         self.continuation = nil
                     }
                 }
@@ -113,20 +126,20 @@ public class PageLoadTester: NSObject {
     private func collectPerformanceMetrics() async throws -> PerformanceMetrics? {
         // Use JavaScript to collect performance metrics
         let script = """
-            (function() {
-                const perf = performance.getEntriesByType('navigation')[0];
-                const paintEntries = performance.getEntriesByType('paint');
-                const fcp = paintEntries.find(e => e.name === 'first-contentful-paint');
-                const lcp = performance.getEntriesByType('largest-contentful-paint')[0];
+                (function() {
+                    const perf = performance.getEntriesByType('navigation')[0];
+                    const paintEntries = performance.getEntriesByType('paint');
+                    const fcp = paintEntries.find(e => e.name === 'first-contentful-paint');
+                    const lcp = performance.getEntriesByType('largest-contentful-paint')[0];
 
-                return {
-                    loadTime: perf ? perf.loadEventEnd - perf.fetchStart : null,
-                    firstContentfulPaint: fcp ? fcp.startTime : null,
-                    largestContentfulPaint: lcp ? lcp.startTime : null,
-                    timeToFirstByte: perf ? perf.responseStart - perf.fetchStart : null
-                };
-            })();
-        """
+                    return {
+                        loadTime: perf ? perf.loadEventEnd - perf.fetchStart : null,
+                        firstContentfulPaint: fcp ? fcp.startTime : null,
+                        largestContentfulPaint: lcp ? lcp.startTime : null,
+                        timeToFirstByte: perf ? perf.responseStart - perf.fetchStart : null
+                    };
+                })();
+            """
 
         do {
             let result = try await webView.evaluateJavaScript(script)
@@ -153,7 +166,9 @@ public class PageLoadTester: NSObject {
 
 extension PageLoadTester: WKNavigationDelegate {
 
-    public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+    public func webView(
+        _ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!
+    ) {
         logger.debug("Navigation started for: \(self.currentURL?.absoluteString ?? "unknown")")
         progressHandler?(0.1)
     }
@@ -167,7 +182,8 @@ extension PageLoadTester: WKNavigationDelegate {
         progressHandler?(0.9)
 
         guard let startTime = navigationStartTime,
-              let url = currentURL else {
+            let url = currentURL
+        else {
             continuation?.resume(throwing: PageLoadError.invalidURL)
             continuation = nil
             return
@@ -199,11 +215,16 @@ extension PageLoadTester: WKNavigationDelegate {
         }
     }
 
-    public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+    public func webView(
+        _ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error
+    ) {
         handleNavigationError(error)
     }
 
-    public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+    public func webView(
+        _ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!,
+        withError error: Error
+    ) {
         handleNavigationError(error)
     }
 
@@ -211,7 +232,8 @@ extension PageLoadTester: WKNavigationDelegate {
         logger.error("Navigation failed: \(error.localizedDescription)")
 
         guard let startTime = navigationStartTime,
-              let url = currentURL else {
+            let url = currentURL
+        else {
             continuation?.resume(throwing: PageLoadError.invalidURL)
             continuation = nil
             return

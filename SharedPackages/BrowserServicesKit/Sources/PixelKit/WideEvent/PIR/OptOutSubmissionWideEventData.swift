@@ -93,6 +93,8 @@ public final class OptOutSubmissionWideEventData: WideEventData {
 }
 
 extension OptOutSubmissionWideEventData {
+    private static let latencyBuckets: [Int] = [1_000, 5_000, 10_000, 30_000, 60_000, 300_000, 600_000, 1_200_000]
+
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
@@ -103,7 +105,7 @@ extension OptOutSubmissionWideEventData {
             parameters[WideEventParameter.PIR.OptOutSubmissionFeature.dataBrokerVersion] = dataBrokerVersion
         }
 
-        if let bucketedDuration = bucketedDuration(for: submissionInterval) {
+        if let bucketedDuration = submissionInterval?.bucketedMilliseconds(using: Self.latencyBuckets) {
             parameters[WideEventParameter.PIR.OptOutSubmissionFeature.submissionLatency] = String(bucketedDuration)
         }
 
@@ -125,27 +127,5 @@ extension OptOutSubmissionWideEventData {
         }
 
         return parameters
-    }
-
-    private func bucketedDuration(for interval: WideEvent.MeasuredInterval?) -> Int? {
-        guard let interval, let start = interval.start, let end = interval.end else {
-            return nil
-        }
-
-        let ms = max(Int(end.timeIntervalSince(start) * 1000), 0)
-        return bucket(ms)
-    }
-
-    private func bucket(_ ms: Int) -> Int {
-        switch ms {
-        case 0..<1_000: return 1_000
-        case 1_000..<5_000: return 5_000
-        case 5_000..<10_000: return 10_000
-        case 10_000..<30_000: return 30_000
-        case 30_000..<60_000: return 60_000
-        case 60_000..<300_000: return 300_000
-        case 300_000..<600_000: return 600_000
-        default: return 1_200_000
-        }
     }
 }

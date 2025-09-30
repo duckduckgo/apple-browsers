@@ -178,7 +178,6 @@ struct BrokerProfileOptOutSubJob {
             let tries = try? fetchTotalNumberOfOptOutAttempts(database: dependencies.database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1)
 
-            let now = Date()
             wideEventRecorder?.recordError(error)
             switch error {
             case is TimeoutError:

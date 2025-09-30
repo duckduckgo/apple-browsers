@@ -287,3 +287,18 @@ extension WideEventErrorData: WideEventParameterProviding {
         return parameters
     }
 }
+
+extension WideEvent.MeasuredInterval {
+
+    func bucketedMilliseconds(using buckets: [Int]) -> Int? {
+        guard let start, let end else { return nil }
+
+        let milliseconds = max(Int(end.timeIntervalSince(start) * 1000), 0)
+
+        for bucket in buckets where milliseconds < bucket {
+            return bucket
+        }
+
+        return buckets.last
+    }
+}

@@ -185,6 +185,24 @@ final class MockSecureVault<T: AutofillDatabaseProvider>: AutofillSecureVault {
         storedIdentities = storedIdentities.filter { $0.id != identityId }
     }
 
+    func modifiedSyncableIdentities() throws -> [SecureVaultModels.SyncableIdentity] {
+        []
+    }
+
+    func identityTitlesForSyncableIdentities(modifiedBefore date: Date) throws -> [String] {
+        []
+    }
+
+    func deleteSyncableIdentity(_ syncableIdentity: SecureVaultModels.SyncableIdentity, in database: Database) throws {
+    }
+
+    func storeSyncableIdentity(_ syncableIdentity: SecureVaultModels.SyncableIdentity, in database: Database) throws {
+    }
+
+    func syncableIdentitiesForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableIdentity] {
+        []
+    }
+
     func creditCards() throws -> [SecureVaultModels.CreditCard] {
         return storedCards
     }
@@ -472,6 +490,22 @@ class MockDatabaseProvider: AutofillDatabaseProvider {
     func deleteIdentityForIdentityId(_ identityId: Int64) throws {
         _identities.removeValue(forKey: identityId)
     }
+
+    func modifiedSyncableIdentities() throws -> [SecureVaultModels.SyncableIdentity] {
+        []
+    }
+
+    func modifiedSyncableIdentities(before date: Date) throws -> [SecureVaultModels.SyncableIdentity] {
+        []
+    }
+
+    func syncableIdentitiesForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableIdentity] {
+        []
+    }
+
+    func storeSyncableIdentity(_ syncableIdentity: SecureVaultModels.SyncableIdentity, in database: Database) throws {}
+
+    func deleteSyncableIdentity(_ syncableIdentity: SecureVaultModels.SyncableIdentity, in database: Database) throws {}
 
     func creditCards() throws -> [SecureVaultModels.CreditCard] {
         return Array(_creditCards.values)

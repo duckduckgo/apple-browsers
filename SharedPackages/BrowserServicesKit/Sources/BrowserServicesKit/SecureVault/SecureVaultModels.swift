@@ -374,8 +374,8 @@ public struct SecureVaultModels {
 
         public var id: Int64?
         public var title: String
-        public let created: Date
-        public let lastUpdated: Date
+        public var created: Date
+        public var lastUpdated: Date
 
         public var firstName: String? {
             didSet {

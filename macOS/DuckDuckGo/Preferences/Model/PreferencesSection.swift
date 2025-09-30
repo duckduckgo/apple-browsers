@@ -91,21 +91,21 @@ struct PreferencesSection: Hashable, Identifiable {
             }
 
             subscriptionPanes.append(.subscriptionSettings)
-            return PreferencesSection(id: .privacyPro, panes: subscriptionPanes)
+            return PreferencesSection(id: .subscription, panes: subscriptionPanes)
         } else if subscriptionState.shouldHideSubscriptionPurchase {
             // No active subscription and no option to purchase
             return nil
         } else {
             // No active subscription
-            return PreferencesSection(id: .purchasePrivacyPro, panes: [.privacyPro])
+            return PreferencesSection(id: .purchaseSubscription, panes: [.subscription])
         }
     }
 }
 
 enum PreferencesSectionIdentifier: Hashable, CaseIterable {
     case privacyProtections
-    case purchasePrivacyPro
-    case privacyPro
+    case purchaseSubscription
+    case subscription
     case regularPreferencePanes
     case about
 
@@ -113,24 +113,14 @@ enum PreferencesSectionIdentifier: Hashable, CaseIterable {
         switch self {
         case .privacyProtections:
             return UserText.privacyProtections
-        case .purchasePrivacyPro:
+        case .purchaseSubscription:
             return nil
-        case .privacyPro:
-            return UserText.subscriptionDeprecated
+        case .subscription:
+            return UserText.subscriptionSettingsHeader
         case .regularPreferencePanes:
             return UserText.mainSettings
         case .about:
             return nil
-        }
-    }
-
-    @MainActor
-    func displayName(isSubscriptionRebrandingOn: Bool) -> String? {
-        switch self {
-        case .privacyPro:
-            return UserText.subscriptionSettingsHeader(isSubscriptionRebrandingOn: isSubscriptionRebrandingOn)
-        default:
-            return displayName
         }
     }
 
@@ -148,7 +138,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case sync
     case appearance
     case dataClearing
-    case privacyPro
+    case subscription = "privacyPro"
     case vpn
     case personalInformationRemoval
     case paidAIChat
@@ -209,8 +199,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.appearance
         case .dataClearing:
             return UserText.dataClearing
-        case .privacyPro:
-            return UserText.subscriptionDeprecated
+        case .subscription:
+            return UserText.purchaseSubscriptionPaneTitle
         case .vpn:
             return UserText.vpn
         case .personalInformationRemoval:
@@ -236,18 +226,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         }
     }
 
-    /// Returns the display name with context-aware rebranding support
-    @MainActor
-    func displayName(isSubscriptionRebrandingOn: Bool) -> String {
-        switch self {
-        case .privacyPro:
-            return UserText.purchaseSubscriptionPaneTitle(isSubscriptionRebrandingOn: isSubscriptionRebrandingOn)
-        default:
-            return displayName
-        }
-    }
-
-    func preferenceIconName(for settingsIconProvider: SettingsIconsProviding, isSubscriptionRebrandingOn: Bool) -> NSImage {
+    func preferenceIconName(for settingsIconProvider: SettingsIconsProviding) -> NSImage {
         switch self {
         case .defaultBrowser:
             return settingsIconProvider.defaultBrowserIcon
@@ -269,8 +248,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return settingsIconProvider.appearanceIcon
         case .dataClearing:
             return settingsIconProvider.dataClearingIcon
-        case .privacyPro:
-            return settingsIconProvider.privacyProIcon
+        case .subscription:
+            return settingsIconProvider.subscriptionIcon
         case .vpn:
             return settingsIconProvider.vpnIcon
         case .personalInformationRemoval:
@@ -280,7 +259,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         case .identityTheftRestoration:
             return settingsIconProvider.identityTheftRestorationIcon
         case .subscriptionSettings:
-            return settingsIconProvider.privacyProIcon
+            return settingsIconProvider.subscriptionIcon
         case .autofill:
             return settingsIconProvider.passwordsAndAutoFillIcon
         case .accessibility:
@@ -292,10 +271,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         case .otherPlatforms:
             return settingsIconProvider.otherPlatformsIcon
         case .aiChat:
-            if isSubscriptionRebrandingOn {
-                return settingsIconProvider.aiGeneralIcon
-            }
-            return settingsIconProvider.duckAIIcon
+            return settingsIconProvider.aiGeneralIcon
         }
     }
 }

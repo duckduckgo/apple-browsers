@@ -237,9 +237,9 @@ struct OnboardingFinalDialog: View {
 
 }
 
-// MARK: - Privacy Pro Promo
+// MARK: - Subscription Promo
 
-struct PrivacyProPromotionView: View {
+struct SubscriptionPromotionView: View {
 
     let title: String
     let message: NSAttributedString

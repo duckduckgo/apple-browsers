@@ -35,7 +35,7 @@ final class HistoryQueryKindExtensionTests: XCTestCase {
 
     func testDeleteMode() throws {
         XCTAssertEqual(DataModel.HistoryQueryKind.searchTerm("searchTerm").deleteMode, .unspecified)
-        XCTAssertEqual(DataModel.HistoryQueryKind.domainFilter("domain").deleteMode, .unspecified)
+        XCTAssertEqual(DataModel.HistoryQueryKind.domainFilter(["domain"]).deleteMode, .unspecified)
         XCTAssertEqual(DataModel.HistoryQueryKind.rangeFilter(.all).deleteMode, .all)
         XCTAssertEqual(DataModel.HistoryQueryKind.rangeFilter(.today).deleteMode, .today)
         XCTAssertEqual(DataModel.HistoryQueryKind.rangeFilter(.yesterday).deleteMode, .yesterday)
@@ -56,8 +56,8 @@ final class HistoryQueryKindExtensionTests: XCTestCase {
         XCTAssertFalse(DataModel.HistoryQueryKind.rangeFilter(.yesterday).shouldSkipDeleteDialog)
         XCTAssertFalse(DataModel.HistoryQueryKind.rangeFilter(.older).shouldSkipDeleteDialog)
         XCTAssertFalse(DataModel.HistoryQueryKind.searchTerm("searchTerm").shouldSkipDeleteDialog)
-        XCTAssertFalse(DataModel.HistoryQueryKind.domainFilter("domain").shouldSkipDeleteDialog)
+        XCTAssertFalse(DataModel.HistoryQueryKind.domainFilter(["domain"]).shouldSkipDeleteDialog)
         XCTAssertTrue(DataModel.HistoryQueryKind.searchTerm("").shouldSkipDeleteDialog)
-        XCTAssertTrue(DataModel.HistoryQueryKind.domainFilter("").shouldSkipDeleteDialog)
+        XCTAssertTrue(DataModel.HistoryQueryKind.domainFilter([]).shouldSkipDeleteDialog)
     }
 }

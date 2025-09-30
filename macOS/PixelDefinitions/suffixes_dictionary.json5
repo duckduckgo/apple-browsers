@@ -7,6 +7,11 @@
         description: 'Daily pixel schedule type',
         enum: ['daily'],
     },
+    daily_standard: {
+        type: 'string',
+        description: 'Pixel schedule type',
+        enum: ['daily', ''],
+    },
     first_daily_count: {
         type: 'string',
         description: 'Pixel schedule type',
@@ -16,5 +21,10 @@
         type: 'string',
         description: 'Pixel schedule type, legacy suffix',
         enum: ['d', 'c'],
+    },
+    count: {
+        type: 'string',
+        description: 'Count pixel schedule type',
+        enum: ['count'],
     },
 }

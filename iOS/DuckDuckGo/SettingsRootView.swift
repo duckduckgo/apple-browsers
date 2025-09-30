@@ -34,7 +34,7 @@ struct SettingsRootView: View {
     @State var deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection?
     @State var isShowingSubscribeFlow = false
 
-    private var settingPrivacyProRedirectURLComponents: URLComponents? {
+    private var settingSubscriptionRedirectURLComponents: URLComponents? {
         SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.appSettings.rawValue)
     }
 
@@ -61,7 +61,7 @@ struct SettingsRootView: View {
             }
         }
 
-        NavigationLink(destination: navigationDestinationView(for: .subscriptionFlow(redirectURLComponents: settingPrivacyProRedirectURLComponents)),
+        NavigationLink(destination: navigationDestinationView(for: .subscriptionFlow(redirectURLComponents: settingSubscriptionRedirectURLComponents)),
                        isActive: $isShowingSubscribeFlow) { EmptyView() }
 
         List {
@@ -148,16 +148,17 @@ struct SettingsRootView: View {
                                                                  navigationCoordinator: subscriptionNavigationCoordinator,
                                                                  subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
                                                                  subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                                 privacyProDataReporter: viewModel.privacyProDataReporter,
+                                                                 subscriptionDataReporter: viewModel.subscriptionDataReporter,
                                                                  tld: AppDependencyProvider.shared.storageCache.tld,
                                                                  internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                                 dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider)
+                                                                 dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
+                                                                 wideEvent: AppDependencyProvider.shared.wideEvent)
         } else {
             SubscriptionContainerViewFactory.makeSubscribeFlow(redirectURLComponents: redirectURLComponents,
                                                                navigationCoordinator: subscriptionNavigationCoordinator,
                                                                subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
                                                                subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                               privacyProDataReporter: viewModel.privacyProDataReporter,
+                                                               subscriptionDataReporter: viewModel.subscriptionDataReporter,
                                                                tld: AppDependencyProvider.shared.storageCache.tld,
                                                                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                                dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider)
@@ -172,6 +173,7 @@ struct SettingsRootView: View {
                                                              internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                              emailFlow: .restoreFlow,
                                                              dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
+                                                             wideEvent: AppDependencyProvider.shared.wideEvent,
                                                              onDisappear: {})
         } else {
             SubscriptionContainerViewFactory.makeEmailFlow(navigationCoordinator: subscriptionNavigationCoordinator,

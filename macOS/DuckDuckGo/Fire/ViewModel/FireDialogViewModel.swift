@@ -234,12 +234,6 @@ final class FireDialogViewModel: ObservableObject {
         let selectable = visitedETLDPlus1Domains
             .subtracting(fireproofed)
 
-        if visitedETLDPlus1Domains.count == 1, let domain = visitedETLDPlus1Domains.first, fireproofed.contains(domain) {
-            self.hasOnlySingleFireproofDomain = true
-        } else {
-            self.hasOnlySingleFireproofDomain = false
-        }
-
         self.selectable = selectable
             .map { Item(domain: $0, favicon: faviconManagement.getCachedFavicon(forDomainOrAnySubdomain: $0, sizeCategory: .small)?.image) }
             .sorted { $0.domain < $1.domain }

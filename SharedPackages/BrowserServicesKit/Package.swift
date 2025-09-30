@@ -52,7 +52,7 @@ let package = Package(
         .library(name: "WKAbstractions", targets: ["WKAbstractions"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.3.0"),
+        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.3.1"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.0.1"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
@@ -61,6 +61,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.4"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
+        .package(path: "../URLPredictor"),
     ],
     targets: [
         .binaryTarget(
@@ -220,9 +221,7 @@ let package = Package(
             name: "Common",
             dependencies: [
                 .product(name: "Punycode", package: "PunycodeSwift"),
-            ],
-            resources: [
-                .process("TLD/tlds.json")
+                .product(name: "URLPredictor", package: "URLPredictor"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

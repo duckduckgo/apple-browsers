@@ -129,6 +129,7 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
     func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData]
     func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData]
     func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData]
+    func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier>
     func updateOptOutEmailConfirmationLink(_ emailConfirmationLink: String?,
                                            emailConfirmationLinkObtainedOnBEDate: Date?,
                                            profileQueryId: Int64,
@@ -592,6 +593,10 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
     public func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData] {
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
         return try self.providers.database.fetchOptOutEmailConfirmationsWithLink().map(mapper.mapToModel(_:))
+    }
+
+    public func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier> {
+        return try self.providers.database.fetchIdentifiersForActiveEmailConfirmations()
     }
 
     public func updateOptOutEmailConfirmationLink(_ emailConfirmationLink: String?,

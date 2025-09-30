@@ -184,7 +184,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
     }
 
     public func burnAll(completion: @escaping () -> Void) {
-        clean(until: Date()) {
+        clean(until: .distantFuture) {
             self.historyDictionary = [:]
             completion()
         }
@@ -299,7 +299,6 @@ final public class HistoryCoordinator: HistoryCoordinating {
                     entriesToRemove.append(historyEntry)
                 }
             } else {
-                // TODO: Asserts on 2nd burn!
                 assertionFailure("No history entry")
             }
         }

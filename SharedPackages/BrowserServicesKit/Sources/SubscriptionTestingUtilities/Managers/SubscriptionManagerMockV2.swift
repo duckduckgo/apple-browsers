@@ -48,9 +48,9 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
 
     public func refreshCachedSubscription(completion: @escaping (Bool) -> Void) {}
 
-    public var resultSubscription: PrivacyProSubscription?
+    public var resultSubscription: DuckDuckGoSubscription?
 
-    public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> PrivacyProSubscription? {
+    public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> DuckDuckGoSubscription? {
         guard let resultSubscription else {
             throw OAuthClientError.missingTokenContainer
         }
@@ -131,8 +131,8 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
 
     }
 
-    public var confirmPurchaseResponse: Result<PrivacyProSubscription, Error>?
-    public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> PrivacyProSubscription {
+    public var confirmPurchaseResponse: Result<DuckDuckGoSubscription, Error>?
+    public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription {
         switch confirmPurchaseResponse! {
         case .success(let result):
             return result
@@ -150,7 +150,7 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
         }
     }
 
-    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
+    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription {
         guard let resultSubscription else {
             throw SubscriptionEndpointServiceError.noData
         }

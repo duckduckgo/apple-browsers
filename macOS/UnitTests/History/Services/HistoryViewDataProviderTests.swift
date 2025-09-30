@@ -401,7 +401,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(batch.finished, true)
         XCTAssertEqual(batch.visits.count, 5)
 
-        batch = await provider.visitsBatch(for: .domainFilter(""), source: .auto, limit: 6, offset: 0)
+        batch = await provider.visitsBatch(for: .domainFilter([]), source: .auto, limit: 6, offset: 0)
         XCTAssertEqual(batch.finished, true)
         XCTAssertEqual(batch.visits.count, 5)
     }
@@ -448,7 +448,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .make(url: try XCTUnwrap("https://duckduckgo.com".url), title: "abcd.example.com", visits: [.init(date: today)])
         ]
         await provider.refreshData()
-        let batch = await provider.visitsBatch(for: .domainFilter("example.com"), source: .auto, limit: 4, offset: 0)
+        let batch = await provider.visitsBatch(for: .domainFilter(["example.com"]), source: .auto, limit: 4, offset: 0)
         XCTAssertEqual(batch.finished, true)
         XCTAssertEqual(batch.visits.count, 2)
         XCTAssertEqual(Set(batch.visits.map(\.url)), ["https://abcd.example.com/foo", "https://example.com/bar"])
@@ -462,7 +462,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .make(url: try XCTUnwrap("https://abcd.example.com/foo".url), visits: [.init(date: today)])
         ]
         await provider.refreshData()
-        let batch = await provider.visitsBatch(for: .domainFilter("example.com"), source: .auto, limit: 4, offset: 0)
+        let batch = await provider.visitsBatch(for: .domainFilter(["example.com"]), source: .auto, limit: 4, offset: 0)
         XCTAssertEqual(batch.finished, true)
         XCTAssertEqual(batch.visits.count, 1)
     }
@@ -965,13 +965,13 @@ final class HistoryViewDataProviderTests: XCTestCase {
         _ = await provider.visitsBatch(for: .rangeFilter(.all), source: .user, limit: 10, offset: 0)
         _ = await provider.visitsBatch(for: .rangeFilter(.today), source: .user, limit: 10, offset: 0)
         _ = await provider.visitsBatch(for: .searchTerm("foo"), source: .user, limit: 10, offset: 0)
-        _ = await provider.visitsBatch(for: .domainFilter("example.com"), source: .user, limit: 10, offset: 0)
+        _ = await provider.visitsBatch(for: .domainFilter(["example.com"]), source: .user, limit: 10, offset: 0)
 
         XCTAssertEqual(pixelHandler.fireFilterUpdatedPixelCalls, [
             .rangeFilter(.all),
             .rangeFilter(.today),
             .searchTerm("foo"),
-            .domainFilter("example.com")
+            .domainFilter(["example.com"])
         ])
     }
 

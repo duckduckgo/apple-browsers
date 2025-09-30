@@ -23,17 +23,22 @@ import RemoteMessaging
 
 struct NewTabPageView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @Environment(\.isLandscapeOrientation) var isLandscapeOrientation
 
     @ObservedObject private var viewModel: NewTabPageViewModel
     @ObservedObject private var messagesModel: NewTabPageMessagesModel
     @ObservedObject private var favoritesViewModel: FavoritesViewModel
 
-    init(viewModel: NewTabPageViewModel,
+    let narrowLayoutInLandscape: Bool
+
+    init(narrowLayoutInLandscape: Bool = false,
+         viewModel: NewTabPageViewModel,
          messagesModel: NewTabPageMessagesModel,
          favoritesViewModel: FavoritesViewModel) {
         self.viewModel = viewModel
         self.messagesModel = messagesModel
         self.favoritesViewModel = favoritesViewModel
+        self.narrowLayoutInLandscape = narrowLayoutInLandscape
 
         self.messagesModel.load()
     }
@@ -83,7 +88,8 @@ private extension NewTabPageView {
                     FavoritesView(model: favoritesViewModel)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(sectionsViewPadding(in: proxy))
+                .padding(.vertical, sectionsViewPadding(in: proxy))
+                .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
                 .background(Color(designSystemColor: .background))
             }
             .withScrollKeyboardDismiss()
@@ -118,6 +124,14 @@ private extension NewTabPageView {
         }
     }
 
+    private func sectionsViewHorizontalPadding(in geometry: GeometryProxy) -> CGFloat {
+        if UIDevice.current.userInterfaceIdiom == .phone, isLandscapeOrientation, narrowLayoutInLandscape {
+            return Metrics.increasedHorizontalPadding + Metrics.regularPadding
+        } else {
+            return geometry.frame(in: .local).width > Metrics.verySmallScreenWidth ? Metrics.regularPadding : Metrics.smallPadding
+        }
+    }
+
     private func sectionsViewPadding(in geometry: GeometryProxy) -> CGFloat {
         geometry.frame(in: .local).width > Metrics.verySmallScreenWidth ? Metrics.regularPadding : Metrics.smallPadding
     }
@@ -138,6 +152,7 @@ private struct Metrics {
 
     static let smallPadding = 12.0
     static let regularPadding = 24.0
+    static let increasedHorizontalPadding = 108.0
     static let sectionSpacing = 32.0
     static let nonGridSectionTopPadding = -8.0
     static let updatedNonGridSectionHorizontalPadding = -8.0

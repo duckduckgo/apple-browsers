@@ -42,19 +42,26 @@ public class MockHistoryProvider: @preconcurrency HistoryViewDataProviding {
 
     public func visits(matching query: DataModel.HistoryQueryKind) async -> [Visit] {
         switch query {
-        case .rangeFilter(.sites):
-            return allVisits
         case .rangeFilter(.all):
             return allVisits
-        case .rangeFilter(let range):
-            guard let dateRange = range.dateRange(for: date) else {
-                return allVisits
-            }
-            return allVisits.filter { dateRange.contains($0.date) }
+        case .rangeFilter(.today):
+            let today = Calendar.current.startOfDay(for: Date())
+            return allVisits.filter { Calendar.current.startOfDay(for: $0.date) == today }
+        case .rangeFilter(.yesterday):
+            let yesterday = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: -1, to: Date())!)
+            return allVisits.filter { Calendar.current.startOfDay(for: $0.date) == yesterday }
+        case .rangeFilter(.sunday), .rangeFilter(.monday), .rangeFilter(.tuesday), .rangeFilter(.wednesday), .rangeFilter(.thursday), .rangeFilter(.friday), .rangeFilter(.saturday):
+            fatalError("Not implemented")
+        case .rangeFilter(.older):
+            let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+            return allVisits.filter { $0.date < sevenDaysAgo }
+        case .rangeFilter(.sites):
+            fatalError("Not implemented")
         case .dateFilter(let date):
-            return allVisits.filter { Calendar.current.isDate($0.date, inSameDayAs: date) }
-        case .domainFilter(let domain):
-            return allVisits.filter { $0.identifier?.host?.contains(domain) == true }
+            let targetDate = Calendar.current.startOfDay(for: date)
+            return allVisits.filter { Calendar.current.startOfDay(for: $0.date) == targetDate }
+        case .domainFilter(let domains):
+            return allVisits.filter { domains.contains($0.identifier?.host ?? "") }
         case .searchTerm(let term):
             return allVisits.filter { $0.historyEntry?.title?.contains(term) == true || $0.identifier?.absoluteString.contains(term) == true }
         }
@@ -147,45 +154,18 @@ public class MockHistoryProvider: @preconcurrency HistoryViewDataProviding {
     }
 
     public func countVisibleVisits(matching query: DataModel.HistoryQueryKind) async -> Int {
-        return filterVisits(for: query).count
+        return await visits(matching: query).count
     }
 
     public func deleteVisits(for identifiers: [VisitIdentifier]) async {}
 
     public func cookieDomains(matching query: DataModel.HistoryQueryKind) async -> Set<String> {
-        let visits = filterVisits(for: query)
+        let visits = await visits(matching: query)
         let domains = Set(visits.map { $0.historyEntry!.url.host! })
         return domains.intersection(Set(allCookieDomains))
     }
 
     public func preferredURL(forSiteDomain domain: String) -> URL? {
         return URL(string: "https://\(domain)")
-    }
-
-    private func filterVisits(for query: DataModel.HistoryQueryKind) -> [Visit] {
-        switch query {
-        case .rangeFilter(.all):
-            return allVisits
-        case .rangeFilter(.today):
-            let today = Calendar.current.startOfDay(for: Date())
-            return allVisits.filter { Calendar.current.startOfDay(for: $0.date) == today }
-        case .rangeFilter(.yesterday):
-            let yesterday = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: -1, to: Date())!)
-            return allVisits.filter { Calendar.current.startOfDay(for: $0.date) == yesterday }
-        case .rangeFilter(.sunday), .rangeFilter(.monday), .rangeFilter(.tuesday), .rangeFilter(.wednesday), .rangeFilter(.thursday), .rangeFilter(.friday), .rangeFilter(.saturday):
-            fatalError("Not implemented")
-        case .rangeFilter(.older):
-            let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
-            return allVisits.filter { $0.date < sevenDaysAgo }
-        case .rangeFilter(.sites):
-            fatalError("Not implemented")
-        case .dateFilter(let date):
-            let targetDate = Calendar.current.startOfDay(for: date)
-            return allVisits.filter { Calendar.current.startOfDay(for: $0.date) == targetDate }
-        case .domainFilter(let domain):
-            return allVisits.filter { $0.historyEntry?.url.host == domain }
-        case .searchTerm:
-            fatalError("Not implemented")
-        }
     }
 }

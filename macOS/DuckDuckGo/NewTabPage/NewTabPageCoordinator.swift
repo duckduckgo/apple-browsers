@@ -53,7 +53,7 @@ final class NewTabPageCoordinator {
         notificationCenter: NotificationCenter = .default,
         visualizeFireAnimationDecider: VisualizeFireSettingsDecider,
         featureFlagger: FeatureFlagger,
-        windowControllersManager: WindowControllersManagerProtocol,
+        windowControllersManager: WindowControllersManagerProtocol & AIChatTabManaging,
         tabsPreferences: TabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
         fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }

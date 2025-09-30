@@ -24,8 +24,10 @@ import Combine
 import Common
 import History
 import NetworkProtectionIPC
+import NetworkQualityMonitor
 import os.log
 import PixelKit
+import SwiftUI
 import VPN
 
 final class MainViewController: NSViewController {
@@ -504,6 +506,7 @@ final class MainViewController: NSViewController {
 
     private func subscribeToAppearanceChanges() {
         appearanceChangedCancellable = NSApp.publisher(for: \.effectiveAppearance)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.tabCollectionViewModel.newTabPageTabPreloader?.reloadTab(force: true)
             }
@@ -826,6 +829,13 @@ extension MainViewController {
             return event
         }
     }
+
+    // MARK: - Network Quality Testing
+
+    @objc func testNetworkQuality() {
+        let windowController = NetworkQualitySwiftUIWindowController()
+        windowController.showWindow(nil)
+    }
 }
 
 // MARK: - BrowserTabViewControllerDelegate
@@ -891,7 +901,7 @@ extension MainViewController: BrowserTabViewControllerDelegate {
     )
     bkman.loadBookmarks()
 
-    let vc = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()), bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider())
+    let vc = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()), bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()))
     var c: AnyCancellable!
     c = vc.publisher(for: \.view.window).sink { window in
         window?.titlebarAppearsTransparent = true

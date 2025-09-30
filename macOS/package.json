@@ -11,14 +11,9 @@
   },
   "devDependencies": {
     "@duckduckgo/pixel-schema": "github:duckduckgo/pixel-schema#v1.0.8",
-    "@rollup/plugin-json": "^4.1.0",
-    "@rollup/plugin-node-resolve": "^13.0.6",
-    "prettier": "^3.6.2",
-    "rollup": "^2.61.0",
-    "rollup-plugin-terser": "^7.0.2"
+    "prettier": "^3.6.2"
   },
   "dependencies": {
-    "@duckduckgo/autoconsent": "^14.19.0"
   },
   "prettier": {
     "singleQuote": true,

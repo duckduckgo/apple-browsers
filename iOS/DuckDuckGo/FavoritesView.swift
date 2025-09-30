@@ -35,8 +35,6 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
     var body: some View {
         VStack(alignment: .center, spacing: 24) {
 
-            let columns = NewTabPageGrid.columnsCount(for: horizontalSizeClass)
-
             NewTabPageGridView {
                 ReorderableForEach(model.allFavorites, id: \.id, isReorderingEnabled: model.canEditFavorites) { item in
                     viewFor(item)

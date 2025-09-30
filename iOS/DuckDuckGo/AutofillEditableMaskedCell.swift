@@ -33,6 +33,7 @@ struct AutofillEditableMaskedCell: View {
     var keyboardType: UIKeyboardType = .default
     var characterLimit: Int?
     @Binding var selectedCell: UUID?
+    let textFieldAccessibilityIdentifier: String
 
     @FocusState private var isFieldFocused: Bool
     @State private var shouldBeMonospaced: Bool
@@ -47,7 +48,8 @@ struct AutofillEditableMaskedCell: View {
          disableAutoCorrection: Bool = true,
          keyboardType: UIKeyboardType = .default,
          characterLimit: Int? = nil,
-         selectedCell: Binding<UUID?>) {
+         selectedCell: Binding<UUID?>,
+         textFieldAccessibilityIdentifier: String) {
 
         self.title = title
         self.placeholderText = placeholderText
@@ -59,6 +61,7 @@ struct AutofillEditableMaskedCell: View {
         self.keyboardType = keyboardType
         self.characterLimit = characterLimit
         self._selectedCell = selectedCell
+        self.textFieldAccessibilityIdentifier = textFieldAccessibilityIdentifier
 
         // Initialize shouldBeMonospaced based on the initial unmaskedString value
         self._shouldBeMonospaced = State(initialValue: unmaskedString.wrappedValue.count > 0)
@@ -83,7 +86,8 @@ struct AutofillEditableMaskedCell: View {
                             unmaskedString = String(unmaskedString.prefix(limit))
                         }
                     }
-                
+                    .accessibilityIdentifier(textFieldAccessibilityIdentifier)
+
                 Spacer()
                 
                 if unmaskedString.count > 0 {

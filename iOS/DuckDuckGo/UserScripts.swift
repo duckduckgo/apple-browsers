@@ -89,7 +89,8 @@ final class UserScripts: UserScriptsProvider {
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
-        serpSettingsUserScript = SERPSettingsUserScript()
+        serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProvider: SERPSettings(aiChatSettings: AIChatSettings()),
+                                                        featureFlagger: featureFlagger)
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
         subscriptionUserScript = SubscriptionUserScript(

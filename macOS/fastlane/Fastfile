@@ -264,6 +264,77 @@ platform :mac do
 
   end
 
+  desc 'Fetches latest App Store version and uploads metadata to CDN'
+  lane :upload_appstore_version_metadata do |options|
+    # Get latest App Store version using existing lane
+    version_info = fetch_appstore_version_info(options)
+    
+    # Extract values from lane context
+    version = lane_context[SharedValues::LATEST_VERSION]
+    build_number = lane_context[SharedValues::LATEST_BUILD_NUMBER]
+    timestamp = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    is_critical = options[:is_critical] || false
+    
+    UI.message("App Store version: #{version}")
+    UI.message("App Store build: #{build_number}")
+    UI.message("Is critical: #{is_critical}")
+    
+    # Generate metadata JSON
+    metadata = {
+      latest_appstore_version: {
+        latest_version: version,
+        build_number: build_number,
+        release_date: timestamp,
+        is_critical: is_critical
+      }
+    }
+    
+    # Get S3 configuration from environment
+    s3_bucket = ENV['RELEASE_BUCKET_NAME']
+    s3_prefix = ENV['RELEASE_BUCKET_PREFIX']
+    cdn_path = ENV['CDN_PATH']
+    
+    unless s3_bucket && s3_prefix
+      UI.user_error!("Missing required S3 configuration: RELEASE_BUCKET_NAME and RELEASE_BUCKET_PREFIX")
+    end
+    
+    s3_path = "s3://#{s3_bucket}/#{s3_prefix}/"
+    
+    # Download existing metadata (if exists)
+    existing_metadata = {}
+    cdn_url = "#{cdn_path}release_metadata.json"
+    
+    begin
+      UI.message("Checking for existing metadata at #{cdn_url}")
+      existing_content = sh("curl -fLSs '#{cdn_url}'", log: false)
+      existing_metadata = JSON.parse(existing_content)
+      UI.message("Found existing metadata with keys: #{existing_metadata.keys}")
+    rescue => e
+      UI.message("No existing metadata found, will create new file")
+      existing_metadata = {}
+    end
+    
+    # Replace the latest_appstore_version entry (this should overwrite any existing entry)
+    updated_metadata = existing_metadata.dup
+    updated_metadata['latest_appstore_version'] = metadata[:latest_appstore_version]
+    
+    # Write metadata to file
+    File.write('release_metadata.json', JSON.pretty_generate(updated_metadata))
+    UI.message("Generated metadata:")
+    UI.message(JSON.pretty_generate(updated_metadata))
+    
+    # Upload to S3
+    UI.message("Uploading release_metadata.json to S3...")
+    sh("aws s3 cp release_metadata.json '#{s3_path}release_metadata.json' --acl public-read")
+    
+    UI.success("✅ Successfully updated macOS release metadata")
+    UI.message("Version: #{version}")
+    UI.message("Build: #{build_number}")
+    UI.message("Release Date: #{timestamp}")
+    UI.message("Is Critical: #{is_critical}")
+    UI.message("📍 Available at: #{cdn_url}")
+  end
+
   desc 'Creates a new Kechain to use on UI tests'
   lane :create_keychain_ui_tests do |options|
     create_keychain(
@@ -386,6 +457,21 @@ platform :mac do
     )
     build_number
   end
+
+  # Gets the latest App Store version and build number for macOS
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID
+  # @option [Boolean] live (default: true) Whether to get live version or TestFlight version
+  #
+  private_lane :fetch_appstore_version_info do |options|
+    app_store_build_number(
+      api_key: get_api_key,
+      username: get_username(options),
+      platform: 'osx',
+      live: options[:live] || true
+    )
+  end
+
 
   # Updates version and build number in respective config files
   #

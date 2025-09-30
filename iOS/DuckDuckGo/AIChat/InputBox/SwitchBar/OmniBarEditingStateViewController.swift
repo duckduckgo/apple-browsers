@@ -53,28 +53,43 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     var automaticallySelectsTextOnAppear = false
 
     // MARK: - Core Components
+    private lazy var contentContainerView = UIView()
 
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
 
-    lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
-    lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
+    private var isUsingTopBarPosition: Bool {
+        appSettings.currentAddressBarPosition == .top || !featureFlagger.isFeatureOn(.aiSearchBottomBarSupport)
+    }
+    lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler, showsSeparator: !isUsingTopBarPosition)
+
+    private weak var contentContainerViewLeadingConstraint: NSLayoutConstraint?
+    private weak var contentContainerViewTrailingConstraint: NSLayoutConstraint?
+
+    let featureFlagger: FeatureFlagger
+    let appSettings: AppSettings
 
     // MARK: - Manager Components
 
     private var swipeContainerManager: SwipeContainerManager?
     private var navigationActionBarManager: NavigationActionBarManager?
     private var suggestionTrayManager: SuggestionTrayManager?
-    private let daxLogoManager = DaxLogoManager()
+    private let daxLogoManager: DaxLogoManager
     private var notificationCancellable: AnyCancellable?
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
 
     // MARK: - Initialization
 
     internal init(switchBarHandler: any SwitchBarHandling,
-                  switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics()) {
+                  switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
+                  appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+                  featureFlagger: FeatureFlagger) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
+        self.daxLogoManager = DaxLogoManager()
+        self.appSettings = appSettings
+        self.featureFlagger = featureFlagger
+
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -127,10 +142,58 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         daxLogoManager.containerYCenterConstraint?.constant = offset
     }
 
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+
+        adjustLayoutForViewSize(view.bounds.size)
+    }
+
+    private func requiresHorizontallyCompactLayout(for size: CGSize) -> Bool {
+        let isPhone = UIDevice.current.userInterfaceIdiom == .phone
+        return isPhone && size.width > size.height
+    }
+
+    private func adjustLayoutForViewSize(_ size: CGSize) {
+
+        let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: size)
+
+        let horizontalMargin: CGFloat = isHorizontallyCompactLayoutEnabled ? Constants.horizontalMarginForCompactLayout : 0
+        self.contentContainerViewLeadingConstraint?.constant = horizontalMargin
+        self.contentContainerViewTrailingConstraint?.constant = -horizontalMargin
+        self.updateDaxVisibility()
+
+        self.navigationActionBarManager?.navigationActionBarViewController?.isShowingGradient = !isHorizontallyCompactLayoutEnabled && isUsingTopBarPosition
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+
+        coordinator.animate { _ in
+            self.adjustLayoutForViewSize(size)
+            self.view.layoutIfNeeded()
+        }
+    }
+
     // MARK: - Private Methods
 
     private func setupView() {
+        setUpContentContainer()
+
         view.backgroundColor = UIColor(designSystemColor: .background)
+    }
+
+    private func setUpContentContainer() {
+        view.addSubview(contentContainerView)
+        contentContainerView.translatesAutoresizingMaskIntoConstraints = false
+
+        contentContainerViewLeadingConstraint = contentContainerView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor)
+        contentContainerViewLeadingConstraint?.isActive = true
+        contentContainerViewTrailingConstraint = contentContainerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
+        contentContainerViewTrailingConstraint?.isActive = true
+
+        NSLayoutConstraint.activate([
+            contentContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            contentContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
     }
 
     private func installComponents() {
@@ -140,20 +203,29 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         installDaxLogoView()
         installNavigationActionBar()
 
-        view.bringSubviewToFront(switchBarVC.view)
+        contentContainerView.bringSubviewToFront(switchBarVC.view)
     }
 
     private func installSwitchBarVC() {
         addChild(switchBarVC)
-        view.addSubview(switchBarVC.view)
+        let container = contentContainerView
+        container.addSubview(switchBarVC.view)
         switchBarVC.view.translatesAutoresizingMaskIntoConstraints = false
         switchBarVC.view.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
+        // Prevent showing scrollable content under the switcher
+        switchBarVC.view.backgroundColor = UIColor(designSystemColor: .background)
+
         NSLayoutConstraint.activate([
-            switchBarVC.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
-            switchBarVC.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            switchBarVC.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
+            switchBarVC.view.leadingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.leadingAnchor),
+            switchBarVC.view.trailingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.trailingAnchor)
         ])
+
+        if isUsingTopBarPosition {
+            switchBarVC.view.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 8).isActive = true
+        } else {
+            switchBarVC.view.bottomAnchor.constraint(equalTo: container.keyboardLayoutGuide.topAnchor, constant: -8).isActive = true
+        }
 
         switchBarVC.didMove(toParent: self)
         switchBarVC.backButton.addTarget(self, action: #selector(dismissButtonTapped), for: .touchUpInside)
@@ -161,7 +233,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func installSwipeContainer() {
         let manager = SwipeContainerManager(switchBarHandler: switchBarHandler)
-        manager.installInViewController(self, belowView: switchBarVC.view)
+        manager.installInViewController(self, asSubviewOf: contentContainerView, barView: switchBarVC.view, isTopBarPosition: isUsingTopBarPosition)
         manager.delegate = self
         swipeContainerManager = manager
     }
@@ -179,14 +251,19 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func installDaxLogoView() {
         if let view = switchBarVC.segmentedPickerView {
-            daxLogoManager.installInViewController(self, belowView: view)
+            daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, barView: view, isTopBarPosition: isUsingTopBarPosition)
         }
     }
 
     private func installNavigationActionBar() {
         let manager = NavigationActionBarManager(switchBarHandler: switchBarHandler)
         manager.delegate = self
-        manager.installInViewController(self)
+        if isUsingTopBarPosition {
+            // Note this is not installed in contentContainerView - this is floating over content.
+            manager.installInViewController(self)
+        } else {
+            manager.installInViewController(switchBarVC.textEntryViewController, inView: switchBarVC.textEntryViewController.buttonsContainerView)
+        }
         navigationActionBarManager = manager
     }
 
@@ -254,16 +331,40 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     private func handleMicrophoneButtonTapped() {
-        delegate?.onVoiceSearchRequested(from: switchBarHandler.currentToggleState)
+        // Do not dismiss the OmniBar. Just dismiss the keyboard and present Voice Search above.
+        switchBarVC.unfocusTextField()
+        SpeechRecognizer.requestMicAccess { [weak self] permission in
+            guard let self = self else { return }
+            if permission {
+                let preferredTarget: VoiceSearchTarget? = (self.switchBarHandler.currentToggleState == .aiChat) ? .AIChat : .SERP
+                self.showVoiceSearch(preferredTarget: preferredTarget)
+            } else {
+                self.showNoMicrophonePermissionAlert()
+            }
+        }
+    }
+
+    private func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {
+        let voiceSearchController = VoiceSearchViewController(preferredTarget: preferredTarget)
+        voiceSearchController.delegate = self
+        voiceSearchController.modalTransitionStyle = .crossDissolve
+        voiceSearchController.modalPresentationStyle = .overFullScreen
+        present(voiceSearchController, animated: true)
+    }
+
+    private func showNoMicrophonePermissionAlert() {
+        let alertController = NoMicPermissionAlert.buildAlert()
+        present(alertController, animated: true)
     }
 
     private func updateDaxVisibility() {
 
         let shouldDisplaySuggestionTray = suggestionTrayManager?.shouldDisplaySuggestionTray == true
         let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
+        let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
 
-        let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay
-        let isAIDaxVisible = !shouldDisplaySuggestionTray
+        let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
+        let isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
     }
@@ -324,5 +425,38 @@ extension OmniBarEditingStateViewController: NavigationActionBarManagerDelegate 
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             switchBarHandler.submitText(currentText)
         }
+    }
+}
+
+// MARK: - VoiceSearchViewControllerDelegate
+
+extension OmniBarEditingStateViewController: VoiceSearchViewControllerDelegate {
+
+    func voiceSearchViewController(_ controller: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget) {
+        if let text = query {
+            switchBarHandler.updateCurrentText(text)
+        }
+
+        controller.dismiss(animated: true) { [weak self] in
+            guard let self = self, let query = query else { return }
+            self.handleVoiceSearchCompletion(with: query, for: target)
+        }
+    }
+
+    private func handleVoiceSearchCompletion(with query: String, for target: VoiceSearchTarget) {
+        switch target {
+        case .SERP:
+            delegate?.onQuerySubmitted(query)
+
+        case .AIChat:
+            delegate?.onPromptSubmitted(query, tools: nil)
+        }
+    }
+}
+
+private extension OmniBarEditingStateViewController {
+    struct Constants {
+        // Adjusts for two buttons in the action bar
+        static let horizontalMarginForCompactLayout: CGFloat = 108
     }
 }

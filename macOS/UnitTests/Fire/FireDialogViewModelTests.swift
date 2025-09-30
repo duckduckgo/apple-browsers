@@ -25,6 +25,12 @@ import XCTest
 final class FireDialogViewModelTests: XCTestCase {
 
     @MainActor
+    override func setUp() {
+        super.setUp()
+        FireDialogViewModel.resetPersistedDefaults()
+    }
+
+    @MainActor
     private func makeViewModel(with tabCollectionViewModel: TabCollectionViewModel) -> FireDialogViewModel {
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()

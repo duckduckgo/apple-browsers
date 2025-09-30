@@ -110,7 +110,7 @@ final class AIChatTabExtension {
     }
 
     private var temporaryAIChatRestorationData: AIChatRestorationData?
-    func setAIChatRestorationData(data: AIChatRestorationData) {
+    func setAIChatRestorationData(_ data: AIChatRestorationData?) {
         guard let aiChatUserScript else {
             // User script not yet loaded, store the payload and set when ready
             temporaryAIChatRestorationData = data
@@ -178,7 +178,7 @@ extension AIChatTabExtension: NavigationResponder {
 protocol AIChatProtocol: AnyObject, NavigationResponder {
     var aiChatUserScript: AIChatUserScript? { get }
     func setAIChatNativeHandoffData(payload: AIChatPayload)
-    func setAIChatRestorationData(data: AIChatRestorationData)
+    func setAIChatRestorationData(_ data: AIChatRestorationData?)
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitPageContext(_ pageContext: AIChatPageContextData?)
 

@@ -54,9 +54,6 @@ final class SubscriptionRestoreViewModel: ObservableObject {
     @Published private(set) var state = State()
 
     private let featureFlagger: FeatureFlagger
-    var isRebrandingOn: Bool {
-        featureFlagger.isFeatureOn(.subscriptionRebranding)
-    }
 
     init(userScript: SubscriptionPagesUserScript,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
@@ -119,10 +116,10 @@ final class SubscriptionRestoreViewModel: ObservableObject {
         switch state.activationResult {
         case .expired,
              .notFound:
-            DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseStoreFailureNotFound,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseStoreFailureNotFound,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
         case .error:
-            DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseStoreFailureOther,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseStoreFailureOther,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
         default:
             break
@@ -136,14 +133,14 @@ final class SubscriptionRestoreViewModel: ObservableObject {
     
     @MainActor
     func restoreAppstoreTransaction() {
-        DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseStoreStart,
+        DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseStoreStart,
                                      pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
         Task {
             state.transactionStatus = .restoring
             state.activationResult = .unknown
             do {
                 try await subFeature.restoreAccountFromAppStorePurchase()
-                DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseStoreSuccess,
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseStoreSuccess,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
                 state.activationResult = .activated
                 state.transactionStatus = .idle

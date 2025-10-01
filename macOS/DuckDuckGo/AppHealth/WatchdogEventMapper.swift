@@ -103,7 +103,7 @@ public class WatchdogEventMapper: EventMapping<Watchdog.Event> {
     }
 
     private func getBatteryPower(from diagnostics: WatchdogDiagnostics) -> HangPixel.BatteryPower? {
-        guard let onBattery = diagnostics.isOnBattery else{
+        guard let onBattery = diagnostics.isOnBattery else {
             return nil
         }
 

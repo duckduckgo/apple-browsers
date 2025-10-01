@@ -224,6 +224,10 @@ extension Preferences {
 
                         ThemesPickerView()
                             .environmentObject(model)
+<<<<<<< HEAD
+=======
+
+>>>>>>> ba106427e (Preferences: Disables Appearance's Slider Animations)
                     } else {
                         ThemeAppearancePicker()
                             .environmentObject(model)
@@ -347,6 +351,7 @@ private extension SlidingPickerSettings {
             borderColor: Color(designSystemColor: .containerDecorationSecondary),
             selectionBackgroundColor: Color(designSystemColor: .surfaceTertiary),
             selectionBorderColor: Color(designSystemColor: .containerDecorationSecondary),
+            animationsEnabled: false,
             dividerSize: CGSize(width: 1, height: 16))
     }
 }

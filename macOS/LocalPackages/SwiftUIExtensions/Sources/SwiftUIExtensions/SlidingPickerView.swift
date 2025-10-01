@@ -24,6 +24,7 @@ public struct SlidingPickerSettings {
     let borderColor: Color
     let selectionBackgroundColor: Color
     let selectionBorderColor: Color
+    let animationsEnabled: Bool
     let cornerRadius: CGFloat
     let dividerSize: CGSize?
     let elementsPadding: CGFloat
@@ -35,6 +36,7 @@ public struct SlidingPickerSettings {
         borderColor: Color = .clear,
         selectionBackgroundColor: Color = .clear,
         selectionBorderColor: Color = .clear,
+        animationsEnabled: Bool = true,
         cornerRadius: CGFloat = 4,
         dividerSize: CGSize? = nil,
         elementsPadding: CGFloat = .zero,
@@ -45,6 +47,7 @@ public struct SlidingPickerSettings {
         self.borderColor = borderColor
         self.selectionBackgroundColor = selectionBackgroundColor
         self.selectionBorderColor = selectionBorderColor
+        self.animationsEnabled = animationsEnabled
         self.cornerRadius = cornerRadius
         self.dividerSize = dividerSize
         self.elementsPadding = elementsPadding
@@ -160,7 +163,7 @@ private extension SlidingPickerView {
         }
 
         // Note: Avoid animating from Zero Size -> Actual Size
-        animationsEnabled = highlightSize != .zero
+        animationsEnabled = highlightSize != .zero && settings.animationsEnabled
 
         // Note: Our Highlight with Zero Offset appears at the center of the ZStack
         highlightOffset = buttonFrame.minX - (contentSize.width - buttonFrame.width) * 0.5

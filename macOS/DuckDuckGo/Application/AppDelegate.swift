@@ -809,11 +809,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
 
         watchdog = Watchdog()
- #if !DEBUG
-        if featureFlagger.isFeatureOn(.hangReporting) {
-            watchdog.start()
-        }
- #endif
 
         super.init()
 
@@ -867,6 +862,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSWindow.allowsAutomaticWindowTabbing = false
         // Fix SwifUI context menus and its owner View leaking
         SwiftUIContextMenuRetainCycleFix.setUp()
+
+#if !DEBUG
+        // Start UI hang watchdog
+        if featureFlagger.isFeatureOn(.hangReporting) {
+            Task {
+                await watchdog.start()
+            }
+        }
+#endif
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {

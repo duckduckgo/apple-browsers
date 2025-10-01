@@ -243,10 +243,10 @@ final class NavigationActionBarView: UIView {
         microphoneButton.alpha = isEnabled ? 1.0 : 0.5
         microphoneButton.isEnabled = isEnabled
         microphoneButton.setColors(
-            foreground: UIColor(designSystemColor: .accentContentPrimary),
-            background: UIColor(designSystemColor: .accent),
-            pressedForeground: UIColor(designSystemColor: .accentContentPrimary),
-            pressedBackground: UIColor(designSystemColor: .accentTertiary)
+            foreground: UIColor(designSystemColor: .icons),
+            background: UIColor(designSystemColor: .surfaceTertiary),
+            pressedForeground: UIColor(designSystemColor: .icons),
+            pressedBackground: UIColor(designSystemColor: .surface)
         )
     }
 

@@ -19,6 +19,7 @@ class Configuration {
         retryDelay: 500,
         scrollDelay: 500,
         stabilityDelay: 500,
+        sessionRestartDelay: 1000,  // Delay after quitting session before restart
         maxRetries: 3,
         verbose: false
     };
@@ -48,6 +49,7 @@ class Configuration {
         this.retryDelay = options.retryDelay || Configuration.DEFAULT_VALUES.retryDelay;
         this.scrollDelay = options.scrollDelay || Configuration.DEFAULT_VALUES.scrollDelay;
         this.stabilityDelay = options.stabilityDelay || Configuration.DEFAULT_VALUES.stabilityDelay;
+        this.sessionRestartDelay = options.sessionRestartDelay || Configuration.DEFAULT_VALUES.sessionRestartDelay;
         this.maxRetries = options.maxRetries || Configuration.DEFAULT_VALUES.maxRetries;
 
         // Set flags
@@ -132,6 +134,7 @@ class Configuration {
             retryDelay: this.retryDelay,
             scrollDelay: this.scrollDelay,
             stabilityDelay: this.stabilityDelay,
+            sessionRestartDelay: this.sessionRestartDelay,
             maxRetries: this.maxRetries,
             verbose: this.verbose
         };

@@ -36,8 +36,8 @@ class TestExecutor {
                 // Quit current session (destroys ephemeral sandbox)
                 await this.webDriver.quit();
 
-                // Small delay for cleanup
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Delay for cleanup (configurable)
+                await new Promise(resolve => setTimeout(resolve, this.config.sessionRestartDelay));
 
                 // Initialize new session (creates fresh sandbox with clean cache)
                 await this.webDriver.initialize();

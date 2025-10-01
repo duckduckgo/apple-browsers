@@ -59,8 +59,6 @@ function collectPerformanceMetrics() {
                 fcp: fcp ? fcp.startTime : 0,
                 firstContentfulPaint: fcp ? fcp.startTime : null,
                 largestContentfulPaint: largestContentfulPaint,
-                // Note: CLS is not supported in Safari WebDriver
-                cumulativeLayoutShift: null,
 
                 // Network metrics
                 // Note: Safari WebDriver doesn't provide these timing/size properties in automation context

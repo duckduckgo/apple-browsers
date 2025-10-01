@@ -5,23 +5,21 @@
  */
 
 const { By, until } = require('selenium-webdriver');
-const WebDriverPool = require('./WebDriverPool');
+const { Builder } = require('selenium-webdriver');
+const safari = require('selenium-webdriver/safari');
 
 /**
- * Service for managing Safari WebDriver instances with connection pooling
+ * Service for managing Safari WebDriver instances
  */
 class WebDriverService {
-    constructor(logger, usePool = false) { // Disable pooling - we need fresh sessions
+    constructor(logger) {
         this.logger = logger;
-        this.usePool = usePool;
-        this.pool = usePool ? new WebDriverPool(logger, 2) : null;
-        this.currentConnection = null;
         this.driver = null;
         this.isInitialized = false;
     }
 
     /**
-     * Initialize Safari WebDriver (with pooling support)
+     * Initialize Safari WebDriver
      * @returns {Promise<WebDriver>} WebDriver instance
      */
     async initialize() {
@@ -33,23 +31,11 @@ class WebDriverService {
         try {
             this.logger.debug('Initializing Safari WebDriver');
 
-            if (this.usePool) {
-                // Get from pool
-                this.currentConnection = await this.pool.acquire();
-                this.driver = this.currentConnection.driver;
-                this.currentConnection.usageCount++;
-                this.logger.debug(`Using pooled driver (Usage count: ${this.currentConnection.usageCount})`);
-            } else {
-                // Create standalone driver (fallback)
-                const { Builder } = require('selenium-webdriver');
-                const safari = require('selenium-webdriver/safari');
-                const options = new safari.Options();
-
-                this.driver = await new Builder()
-                    .forBrowser('safari')
-                    .setSafariOptions(options)
-                    .build();
-            }
+            const options = new safari.Options();
+            this.driver = await new Builder()
+                .forBrowser('safari')
+                .setSafariOptions(options)
+                .build();
 
             this.isInitialized = true;
             this.logger.debug('Safari WebDriver initialized successfully');
@@ -156,7 +142,7 @@ class WebDriverService {
     }
 
     /**
-     * Close the WebDriver instance (releases to pool if using pooling)
+     * Close the WebDriver instance
      */
     async quit() {
         if (!this.driver) {
@@ -164,36 +150,16 @@ class WebDriverService {
         }
 
         try {
-            if (this.usePool && this.currentConnection) {
-                // Release back to pool
-                this.logger.debug('Releasing WebDriver to pool');
-                await this.pool.release(this.currentConnection);
-                this.currentConnection = null;
-            } else {
-                // Close standalone driver
-                this.logger.debug('Closing standalone Safari WebDriver');
-                await this.driver.quit();
-            }
-
+            this.logger.debug('Closing Safari WebDriver');
+            await this.driver.quit();
             this.driver = null;
             this.isInitialized = false;
-            this.logger.debug('WebDriver released/closed successfully');
+            this.logger.debug('WebDriver closed successfully');
         } catch (error) {
             this.logger.warn('Error during WebDriver cleanup', error);
             // Reset state even if error occurred
             this.driver = null;
             this.isInitialized = false;
-            this.currentConnection = null;
-        }
-    }
-
-    /**
-     * Shutdown the entire pool (call at end of all tests)
-     */
-    async shutdown() {
-        if (this.pool) {
-            await this.pool.shutdown();
-            this.pool = null;
         }
     }
 

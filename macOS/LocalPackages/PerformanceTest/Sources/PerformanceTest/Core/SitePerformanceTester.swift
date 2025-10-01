@@ -219,7 +219,6 @@ public class SitePerformanceTester: NSObject {
                     domContentLoaded: (metrics["domContentLoaded"] as? Double ?? 0) / 1000.0,
                     domInteractive: (metrics["domInteractive"] as? Double ?? 0) / 1000.0,
                     firstContentfulPaint: (metrics["fcp"] as? Double ?? 0) / 1000.0,
-                    largestContentfulPaint: (metrics["largestContentfulPaint"] as? Double ?? 0) / 1000.0,
                     timeToFirstByte: (metrics["ttfb"] as? Double ?? 0) / 1000.0,
                     responseTime: (metrics["responseTime"] as? Double ?? 0) / 1000.0,
                     serverTime: (metrics["serverTime"] as? Double ?? 0) / 1000.0,
@@ -229,7 +228,6 @@ public class SitePerformanceTester: NSObject {
                     resourceCount: metrics["resourceCount"] as? Int ?? 0,
                     totalResourcesSize: metrics["totalResourcesSize"] as? Double ?? 0,
                     timeToInteractive: (metrics["tti"] as? Double ?? 0) / 1000.0,
-                    cumulativeLayoutShift: metrics["cumulativeLayoutShift"] as? Double,
                     protocol: metrics["protocol"] as? String,
                     redirectCount: metrics["redirectCount"] as? Int ?? 0,
                     navigationType: metrics["navigationType"] as? String ?? "navigate"

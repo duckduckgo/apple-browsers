@@ -18,7 +18,6 @@
 
 import Foundation
 import AIChat
-import BrowserServicesKit
 
 /// A wrapper class that represents the AI Chat sidebar contents and its displayed view controller.
 

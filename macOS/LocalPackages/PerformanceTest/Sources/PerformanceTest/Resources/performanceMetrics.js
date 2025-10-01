@@ -79,7 +79,7 @@ function collectPerformanceMetrics() {
 
                 ttfb: (navigation.responseStart - navigation.fetchStart) || 'N/A',
                 timeToFirstByte: (navigation.responseStart - navigation.fetchStart) || 'N/A',
-               responseTime: navigation.responseEnd - navigation.responseStart,
+                responseTime: navigation.responseEnd - navigation.responseStart,
 
                 serverTime: (navigation.responseStart - navigation.requestStart) || 'N/A',
                 // Size metrics (in bytes)

@@ -452,7 +452,7 @@ extension PerformanceTestWindowView {
                 .foregroundColor(.secondary)
             Spacer()
 
-            Text("\(results.iterations - 1)")
+            Text("\(results.iterations)")
                .font(.system(.body, design: .monospaced))
         }
     }

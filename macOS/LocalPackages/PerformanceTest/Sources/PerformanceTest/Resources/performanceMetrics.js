@@ -29,15 +29,8 @@ function collectPerformanceMetrics() {
         // Find FCP
         const fcp = paint.find(p => p.name === 'first-contentful-paint');
 
-        // Get largest contentful paint if available
-        let largestContentfulPaint = null;
-        if (window.PerformanceObserver && PerformanceObserver.supportedEntryTypes &&
-            PerformanceObserver.supportedEntryTypes.includes('largest-contentful-paint')) {
-            const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
-            if (lcpEntries.length > 0) {
-                largestContentfulPaint = lcpEntries[lcpEntries.length - 1].startTime;
-            }
-        }
+        // Note: LCP is not supported in Safari/WebKit - always null
+        const largestContentfulPaint = null;
 
         // Calculate total resource sizes
         const totalResourceSize = resources.reduce((sum, r) => sum + (r.transferSize || 0), 0);

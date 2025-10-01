@@ -16,21 +16,30 @@
 //  limitations under the License.
 //
 
-// Constants for unavailable metrics
 const NOT_AVAILABLE = 'N/A';
+const DOCUMENT_STATE_COMPLETE = 'complete';
+const NAVIGATION_TYPE_NAVIGATE = 'navigate';
+
+// Performance API
+const ENTRY_TYPE_NAVIGATION = 'navigation';
+const ENTRY_TYPE_PAINT = 'paint';
+const ENTRY_TYPE_RESOURCE = 'resource';
+const PAINT_NAME_FCP = 'first-contentful-paint';
+
+
 
 function collectPerformanceMetrics() {
    try {
-        if (document.readyState !== 'complete') {
+        if (document.readyState !== DOCUMENT_STATE_COMPLETE) {
             return null;
         }
 
-        const navigation = performance.getEntriesByType('navigation')[0];
-        const paint = performance.getEntriesByType('paint');
-        const resources = performance.getEntriesByType('resource');
+        const navigation = performance.getEntriesByType(ENTRY_TYPE_NAVIGATION)[0];
+        const paint = performance.getEntriesByType(ENTRY_TYPE_PAINT);
+        const resources = performance.getEntriesByType(ENTRY_TYPE_RESOURCE);
 
         // Find FCP
-        const fcp = paint.find(p => p.name === 'first-contentful-paint');
+        const fcp = paint.find(p => p.name === PAINT_NAME_FCP);
 
         // Note: LCP is not supported in Safari/WebKit - always null
         const largestContentfulPaint = null;
@@ -39,10 +48,6 @@ function collectPerformanceMetrics() {
         const totalResourceSize = resources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
 
         if (navigation) {
-            // Calculate common metrics once
-            const timeToFirstByte = (navigation.responseStart - navigation.fetchStart) || NOT_AVAILABLE;
-            const serverTime = (navigation.responseStart - navigation.requestStart) || NOT_AVAILABLE;
-
             return {
                 // Core timing metrics (in milliseconds)
                 loadComplete: navigation.loadEventEnd - navigation.fetchStart,
@@ -57,15 +62,21 @@ function collectPerformanceMetrics() {
                 // Note: CLS is not supported in Safari WebDriver
                 cumulativeLayoutShift: null,
 
-                // Network metrics (both naming conventions for compatibility)
-                // Safari WebDriver doesn't provide fetchStart/requestStart properly, so these will be 0
-                ttfb: timeToFirstByte,
-                timeToFirstByte: timeToFirstByte,
-                responseTime: navigation.responseEnd - navigation.responseStart,
-                serverTime: serverTime,
-                transferSize: navigation.transferSize || 0,
-                encodedBodySize: navigation.encodedBodySize || 0,
-                decodedBodySize: navigation.decodedBodySize || 0,
+                // Network metrics
+                // Note: Safari WebDriver doesn't provide these timing/size properties in automation context
+                // They return 0, so we mark them as N/A. These work in native WKWebView but not via WebDriver.
+                ttfb: (navigation.responseStart && navigation.fetchStart && navigation.responseStart !== navigation.fetchStart)
+                    ? (navigation.responseStart - navigation.fetchStart)
+                    : NOT_AVAILABLE,
+                responseTime: (navigation.responseEnd && navigation.responseStart && navigation.responseEnd > navigation.responseStart)
+                    ? (navigation.responseEnd - navigation.responseStart)
+                    : NOT_AVAILABLE,
+                serverTime: (navigation.responseStart && navigation.requestStart && navigation.responseStart !== navigation.requestStart)
+                    ? (navigation.responseStart - navigation.requestStart)
+                    : NOT_AVAILABLE,
+                transferSize: navigation.transferSize || NOT_AVAILABLE,
+                encodedBodySize: navigation.encodedBodySize || NOT_AVAILABLE,
+                decodedBodySize: navigation.decodedBodySize || NOT_AVAILABLE,
 
                 // Resource metrics
                 resourceCount: resources.length,
@@ -77,7 +88,7 @@ function collectPerformanceMetrics() {
                 // Additional metadata
                 protocol: navigation.nextHopProtocol || NOT_AVAILABLE,
                redirectCount: navigation.redirectCount || 0,
-                navigationType: navigation.type || 'navigate'
+                navigationType: navigation.type || NAVIGATION_TYPE_NAVIGATE
             };
         }
 

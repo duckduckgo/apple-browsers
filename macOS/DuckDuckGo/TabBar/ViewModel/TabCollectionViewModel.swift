@@ -954,7 +954,7 @@ extension TabCollectionViewModel {
     /// Whether there are any tabs with content other than newtab or with non-empty back/forward history
     /// This is used to determine if the “Close Tabs and Windows” option in the Clear all data dialog should be shown
     var hasTabsWithNonInternalTabContentOrNonEmptyBackForwardHistory: Bool {
-        func isNonInternalTabContent(_ content: Tab.Content) -> Bool {
+        func isInternalTabContent(_ content: Tab.Content) -> Bool {
             switch content {
             case .newtab, .bookmarks, .settings, .history, .url(.blankPage, credential: _, source: _), .onboarding, .releaseNotes, .subscription, .none:
                 return true
@@ -963,8 +963,8 @@ extension TabCollectionViewModel {
             }
         }
         return tabCollection.tabs.contains {
-            return isNonInternalTabContent($0.content) || $0.backHistoryItems.contains(where: { isNonInternalTabContent(.contentFromURL($0.url, source: .historyEntry)) })
-            || $0.forwardHistoryItems.contains(where: { isNonInternalTabContent(.contentFromURL($0.url, source: .historyEntry)) })
+            return !isInternalTabContent($0.content) || $0.backHistoryItems.contains(where: { !isInternalTabContent(.contentFromURL($0.url, source: .historyEntry)) })
+            || $0.forwardHistoryItems.contains(where: { !isInternalTabContent(.contentFromURL($0.url, source: .historyEntry)) })
         }
     }
 }

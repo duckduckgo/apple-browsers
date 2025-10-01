@@ -71,7 +71,6 @@ public enum SyncError: Error, Equatable {
 
     case creditCardsMetadataMissingBeforeFirstSync
     case receivedCreditCardsWithoutUUID
-    case creditCardAlreadyExists
 
     case emailProtectionUsernamePresentButTokenMissing
     case settingsMetadataNotPresent
@@ -178,8 +177,6 @@ public enum SyncError: Error, Equatable {
             return [syncErrorString: "creditCardsMetadataMissingBeforeFirstSync"]
         case .receivedCreditCardsWithoutUUID:
             return [syncErrorString: "receivedCreditCardsWithoutUUID"]
-        case .creditCardAlreadyExists:
-            return [syncErrorString: "creditCardAlreadyExists"]
         }
     }
 }
@@ -237,7 +234,6 @@ extension SyncError: CustomNSError {
 
         case .creditCardsMetadataMissingBeforeFirstSync: return 36
         case .receivedCreditCardsWithoutUUID: return 37
-        case .creditCardAlreadyExists: return 38
         }
     }
 

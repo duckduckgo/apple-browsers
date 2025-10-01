@@ -4,7 +4,7 @@
         description: 'Fires when a user taps a local provisional push notification that was scheduled due to inactivity.',
         owners: ['hanyutang-sandra'],
         triggers: ['other'],
-        suffixes: ['form_factor'],
+        suffixes: ['platform', 'form_factor'],
         parameters: [
             'appVersion',
             'pixelSource',
@@ -19,7 +19,7 @@
         description: 'Fires daily at launch with users current notification center authorization status. Currently accepting authorized and denied as status value.',
         owners: ['hanyutang-sandra'],
         triggers: ['other'],
-        suffixes: ['form_factor', 'daily'],
+        suffixes: ['platform', 'form_factor'],
         parameters: [
             'appVersion',
             'pixelSource',

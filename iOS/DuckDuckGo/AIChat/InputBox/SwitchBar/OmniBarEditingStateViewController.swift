@@ -166,7 +166,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-
+        super.viewWillTransition(to: size, with: coordinator)
+        
         coordinator.animate { _ in
             self.adjustLayoutForViewSize(size)
             self.view.layoutIfNeeded()

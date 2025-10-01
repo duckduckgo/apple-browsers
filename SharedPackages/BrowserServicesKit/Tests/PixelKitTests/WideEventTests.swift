@@ -345,6 +345,7 @@ final class WideEventTests: XCTestCase {
         if let name = typed.contextData.name { parameters["context.name"] = name }
 
         parameters.merge(typed.pixelParameters(), uniquingKeysWith: { _, new in new })
+        parameters.merge(typed.errorData!.pixelParameters(), uniquingKeysWith: { _, new in new })
 
         // Feature parameters
         XCTAssertEqual(parameters["feature.data.ext.purchase_platform"], "app_store")

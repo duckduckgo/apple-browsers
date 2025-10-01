@@ -70,7 +70,7 @@ public final actor Watchdog {
     public private(set) var isRunning: Bool = false
 
     @MainActor
-    private func setIsRunning(_ state: Bool) async {
+    private func setIsRunning(_ state: Bool) {
         isRunning = state
     }
 

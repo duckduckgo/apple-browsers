@@ -50,7 +50,6 @@ final class MainViewController: NSViewController {
     let fireCoordinator: FireCoordinator
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
     private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
-    private let visualStyle: VisualStyleProviding
     private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
 
     let tabCollectionViewModel: TabCollectionViewModel
@@ -71,6 +70,11 @@ final class MainViewController: NSViewController {
 
     private var bookmarksBarIsVisible: Bool {
         return bookmarksBarViewController.parent != nil
+    }
+
+    private let themeManager: ThemeManager
+    private var theme: ThemeDefinition {
+        themeManager.theme
     }
 
     var shouldShowBookmarksBar: Bool {
@@ -103,7 +107,7 @@ final class MainViewController: NSViewController {
          brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
-         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
+         themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
          pixelFiring: PixelFiring? = PixelKit.shared,
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider = NSApp.delegateTyped.visualizeFireSettingsDecider,
@@ -119,7 +123,7 @@ final class MainViewController: NSViewController {
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
         self.fireCoordinator = fireCoordinator
 
         tabBarViewController = TabBarViewController.create(
@@ -423,7 +427,7 @@ final class MainViewController: NSViewController {
 
     private func updateDividerColor(isShowingHomePage isHomePage: Bool) {
         NSAppearance.withAppAppearance {
-            if visualStyle.addToolbarShadow {
+            if theme.addToolbarShadow {
                 if mainView.isBannerViewShown {
                     mainView.divider.backgroundColor = .bannerViewDivider
                 } else {

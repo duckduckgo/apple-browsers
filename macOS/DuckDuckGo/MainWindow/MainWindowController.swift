@@ -30,7 +30,7 @@ final class MainWindowController: NSWindowController {
     let fireWindowSession: FireWindowSession?
     private let appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences
     let fullscreenController = FullscreenController()
-    private let visualStyle: VisualStyleProviding
+    private let themeManager: ThemeManager
 
     var mainViewController: MainViewController {
         // swiftlint:disable force_cast
@@ -47,7 +47,7 @@ final class MainWindowController: NSWindowController {
          mainViewController: MainViewController,
          fireWindowSession: FireWindowSession? = nil,
          fireViewModel: FireViewModel,
-         visualStyle: VisualStyleProviding) {
+         themeManager: ThemeManager) {
 
         // Compute initial window frame
         let frame = InitialWindowFrameProvider.initialFrame()
@@ -66,7 +66,7 @@ final class MainWindowController: NSWindowController {
         self.fireWindowSession = fireWindowSession
         fireWindowSession?.addWindow(window)
 
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
 
         super.init(window: window)
 
@@ -77,6 +77,9 @@ final class MainWindowController: NSWindowController {
         subscribeToResolutionChange()
         subscribeToFullScreenToolbarChanges()
         subscribeToKeyWindow()
+        subscribeToThemeChanges()
+
+        refreshStyle(theme: themeManager.theme)
 
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
             webExtensionManager.eventsListener.didOpenWindow(self)
@@ -123,9 +126,6 @@ final class MainWindowController: NSWindowController {
     private func setupWindow(_ window: NSWindow) {
         window.delegate = self
 
-        // Prevent a 2px white line from appearing above the tab bar on macOS 26
-        window.backgroundColor = visualStyle.colorsProvider.baseBackgroundColor
-
         if shouldShowOnboarding {
             mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.startOnboarding()
         }
@@ -161,6 +161,20 @@ final class MainWindowController: NSWindowController {
                 self?.windowDidResignKeyNotification(notification)
             }
             .store(in: &cancellables)
+    }
+
+    private func subscribeToThemeChanges() {
+        themeManager.$theme
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] theme in
+                self?.refreshStyle(theme: theme)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func refreshStyle(theme: ThemeDefinition) {
+        // Prevent a 2px white line from appearing above the tab bar on macOS 26
+        window?.backgroundColor = theme.colorsProvider.baseBackgroundColor
     }
 
     @objc

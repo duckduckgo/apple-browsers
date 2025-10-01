@@ -121,7 +121,6 @@ extension Preferences {
         }
     }
 
-<<<<<<< HEAD
     // MARK: - Theme View
     //
     struct ThemeView: View {
@@ -207,8 +206,6 @@ extension Preferences {
 
     // MARK: - Appearance Container View
     //
-=======
->>>>>>> origin/main
     struct AppearanceView: View {
         @ObservedObject var model: AppearancePreferences
         @ObservedObject var aiChatModel: AIChatPreferences
@@ -223,14 +220,11 @@ extension Preferences {
                     if isThemeSwitcherEnabled {
                         ThemeAppearancePickerV2()
                             .environmentObject(model)
-<<<<<<< HEAD
                             .padding(.bottom, 16)
 
                         ThemesPickerView()
                             .environmentObject(model)
-=======
 
->>>>>>> origin/main
                     } else {
                         ThemeAppearancePicker()
                             .environmentObject(model)
@@ -354,6 +348,7 @@ private extension SlidingPickerSettings {
             borderColor: Color(designSystemColor: .containerDecorationSecondary),
             selectionBackgroundColor: Color(designSystemColor: .surfaceTertiary),
             selectionBorderColor: Color(designSystemColor: .containerDecorationSecondary),
+            animationsEnabled: false,
             dividerSize: CGSize(width: 1, height: 16))
     }
 }

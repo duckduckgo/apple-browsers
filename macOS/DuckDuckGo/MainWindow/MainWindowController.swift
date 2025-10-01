@@ -30,7 +30,7 @@ final class MainWindowController: NSWindowController {
     let fireWindowSession: FireWindowSession?
     private let appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences
     let fullscreenController = FullscreenController()
-    private let themeManager: ThemeManager
+    private let themeManager: ThemeManagerProtocol
 
     var mainViewController: MainViewController {
         // swiftlint:disable force_cast
@@ -47,7 +47,7 @@ final class MainWindowController: NSWindowController {
          mainViewController: MainViewController,
          fireWindowSession: FireWindowSession? = nil,
          fireViewModel: FireViewModel,
-         themeManager: ThemeManager) {
+         themeManager: ThemeManagerProtocol) {
 
         // Compute initial window frame
         let frame = InitialWindowFrameProvider.initialFrame()
@@ -164,7 +164,7 @@ final class MainWindowController: NSWindowController {
     }
 
     private func subscribeToThemeChanges() {
-        themeManager.$theme
+        themeManager.themePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] theme in
                 self?.refreshStyle(theme: theme)

@@ -31,7 +31,7 @@ final class MockNewTabPageProtectionsReportVisibleFeedProvider: NewTabPageProtec
 final class NewTabPageShownPixelSenderTests: XCTestCase {
 
     var appearancePreferences: AppearancePreferences!
-    var themeManager: ThemeManagerProtocol = MockThemeManager()
+    var themeManager: ThemeManagerProtocol!
     var visibleFeedProvider: MockNewTabPageProtectionsReportVisibleFeedProvider!
     var customizationModel: NewTabPageCustomizationModel!
     var handler: NewTabPageShownPixelSender!
@@ -50,6 +50,7 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
             featureFlagger: MockFeatureFlagger()
         )
 
+        themeManager = MockThemeManager()
         visibleFeedProvider = MockNewTabPageProtectionsReportVisibleFeedProvider()
 
         customizationModel = NewTabPageCustomizationModel(
@@ -75,6 +76,7 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
         firePixelCalls = []
         handler = nil
         visibleFeedProvider = nil
+        themeManager = nil
     }
 
     func testWhenFirePixelIsCalledThenPixelIsSent() {

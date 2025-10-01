@@ -25,16 +25,25 @@ enum RecordFoundDateResolver {
     /// This resolves the found date for an extracted profile record
     ///
     /// It mirrors DBPUIDataBrokerProfileMatch flow:
-    /// 1. use stored createdDate when valid
+    /// 1. use the opt-out job's stored createdDate when valid
     /// 2. otherwise retrieve the first matches-found timestamp from job or DB history
     /// 3. otherwise defer to the supplied fallback (defaulting to unix epoch zero so we
     /// know it's an outlier)
-    static func resolve(optOutJob: OptOutJobData?,
+    static func resolve(brokerQueryProfileData: BrokerProfileQueryData? = nil,
                         repository: DataBrokerProtectionRepository,
                         brokerId: Int64,
                         profileQueryId: Int64,
                         extractedProfileId: Int64,
                         fallback: Date = Self.defaultDate) -> Date {
+        let optOutJob: OptOutJobData?
+        if let brokerQueryProfileData {
+            optOutJob = brokerQueryProfileData.optOutJobDataMatching(extractedProfileId)
+        } else {
+            optOutJob = try? repository.fetchOptOut(brokerId: brokerId,
+                                                    profileQueryId: profileQueryId,
+                                                    extractedProfileId: extractedProfileId)
+        }
+
         if let createdDate = validCreatedDate(from: optOutJob) {
             return createdDate
         }
@@ -51,20 +60,6 @@ enum RecordFoundDateResolver {
         }
 
         return fallback
-    }
-
-    static func resolve(brokerQueryProfileData: BrokerProfileQueryData,
-                        repository: DataBrokerProtectionRepository,
-                        brokerId: Int64,
-                        profileQueryId: Int64,
-                        extractedProfileId: Int64,
-                        fallback: Date = Self.defaultDate) -> Date {
-        resolve(optOutJob: brokerQueryProfileData.optOutJobDataMatching(extractedProfileId),
-                repository: repository,
-                brokerId: brokerId,
-                profileQueryId: profileQueryId,
-                extractedProfileId: extractedProfileId,
-                fallback: fallback)
     }
 
     private static func validCreatedDate(from optOutJob: OptOutJobData?) -> Date? {

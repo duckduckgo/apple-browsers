@@ -63,9 +63,13 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         self.jobDependencies = jobDependencies
         self.webRunnerForTesting = webRunnerForTesting
         self.webViewHandlerForTesting = webViewHandlerForTesting
-        self.wideEventRecorder = UUID(uuidString: jobData.attemptID).flatMap {
-            OptOutSubmissionWideEventRecorder.resumeIfPossible(wideEvent: jobDependencies.wideEvent, attemptID: $0)
+
+        if let attemptID = UUID(uuidString: jobData.attemptID) {
+            self.wideEventRecorder = OptOutSubmissionWideEventRecorder.resumeIfPossible(wideEvent: jobDependencies.wideEvent, attemptID: attemptID)
+        } else {
+            self.wideEventRecorder = nil
         }
+
         super.init()
     }
 
@@ -138,11 +142,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             vpnConnectionState: jobDependencies.vpnBypassService?.connectionStatus ?? "unknown",
             vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
         )
-        let optOutJob = try? jobDependencies.database.fetchOptOut(brokerId: jobData.brokerId,
-                                                                  profileQueryId: jobData.profileQueryId,
-                                                                  extractedProfileId: jobData.extractedProfileId)
-        let recordFoundDate = RecordFoundDateResolver.resolve(optOutJob: optOutJob,
-                                                              repository: jobDependencies.database,
+        let recordFoundDate = RecordFoundDateResolver.resolve(repository: jobDependencies.database,
                                                               brokerId: jobData.brokerId,
                                                               profileQueryId: jobData.profileQueryId,
                                                               extractedProfileId: jobData.extractedProfileId)

@@ -42,7 +42,7 @@ class SwitchBarViewController: UIViewController {
     let backButton = BrowserChromeButton()
     private lazy var topSeparatorView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(designSystemColor: .shadowTertiary)
+        view.backgroundColor = UIColor(singleUseColor: .inputContentSeparator)
         return view
     }()
 

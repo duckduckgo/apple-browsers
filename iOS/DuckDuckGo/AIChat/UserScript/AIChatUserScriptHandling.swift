@@ -158,25 +158,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return OpenKeyboardResponse(success: false, error: "Missing or empty CSS selector")
         }
 
-        // Sanitize CSS selector to prevent XSS
-        let sanitizedSelector = sanitizeCSSSelector(cssSelector)
-        guard !sanitizedSelector.isEmpty else {
-            Logger.aiChat.error("CSS selector failed validation for openKeyboard")
-            return OpenKeyboardResponse(success: false, error: "CSS selector failed validation")
-        }
-
         guard let webView = webView else {
             Logger.aiChat.error("WebView not available for openKeyboard")
             return OpenKeyboardResponse(success: false, error: "WebView not available")
         }
 
-        // Execute JavaScript and wait for the result
         return await withCheckedContinuation { continuation in
             DispatchQueue.main.async {
                 let javascript = """
                 (function() {
                     try {
-                        const element = document.querySelector('\(sanitizedSelector)');
+                        const element = document.querySelector('\(cssSelector)');
                         element?.focus?.();
                         return true;
                     } catch (error) {
@@ -196,35 +188,5 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 }
             }
         }
-    }
-
-    // MARK: - Private Helper Methods
-
-    private func sanitizeCSSSelector(_ selector: String) -> String {
-        // Remove any potentially dangerous characters that could be used for injection
-        let allowedCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_#.[]():,>+~*= \"")
-
-        // Filter out any characters not in the allowed set
-        let sanitized = selector.components(separatedBy: allowedCharacters.inverted).joined()
-
-        // Additional validation: ensure it looks like a valid CSS selector
-        // Basic validation - starts with valid selector characters
-        guard !sanitized.isEmpty,
-              !sanitized.hasPrefix("javascript:"),
-              !sanitized.contains("expression("),
-              !sanitized.contains("url("),
-              !sanitized.contains("@import") else {
-            Logger.aiChat.error("CSS selector contains potentially dangerous content")
-            return ""
-        }
-
-        // Limit length to prevent extremely long selectors
-        let maxLength = 500
-        if sanitized.count > maxLength {
-            Logger.aiChat.warning("CSS selector truncated due to length")
-            return String(sanitized.prefix(maxLength))
-        }
-
-        return sanitized
     }
 }

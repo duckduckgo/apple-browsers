@@ -82,7 +82,7 @@ final class AddressBarViewController: NSViewController {
     private let suggestionContainerViewModel: SuggestionContainerViewModel
     private let isBurner: Bool
     private let onboardingPixelReporter: OnboardingAddressBarReporting
-    private let themeManager: ThemeManager
+    private let themeManager: ThemeManagerProtocol
     private var tabViewModel: TabViewModel?
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
@@ -153,7 +153,7 @@ final class AddressBarViewController: NSViewController {
           permissionManager: PermissionManagerProtocol,
           burnerMode: BurnerMode,
           popovers: NavigationBarPopovers?,
-          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
+          themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
@@ -442,7 +442,7 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func subscribeToThemeChanges() {
-        themeManager.$theme
+        themeManager.themePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshTheme()

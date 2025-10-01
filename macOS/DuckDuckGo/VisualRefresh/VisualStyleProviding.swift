@@ -25,6 +25,8 @@ import DesignResourcesKit
 import PixelKit
 
 protocol VisualStyleProviding {
+    var name: ThemeName { get }
+
     var toolbarButtonsCornerRadius: CGFloat { get }
     var fireWindowGraphic: NSImage { get }
     var areNavigationBarCornersRound: Bool { get }
@@ -60,6 +62,8 @@ enum AddressBarSizeClass {
 }
 
 struct VisualStyle: VisualStyleProviding {
+    let name: ThemeName
+
     let toolbarButtonsCornerRadius: CGFloat
     let fireWindowGraphic: NSImage
     let areNavigationBarCornersRound: Bool
@@ -75,16 +79,28 @@ struct VisualStyle: VisualStyleProviding {
 
     static var current: VisualStyleProviding {
         let palette = NewColorPalette()
-        return VisualStyle(toolbarButtonsCornerRadius: 9,
-                           fireWindowGraphic: .burnerWindowGraphicNew,
-                           areNavigationBarCornersRound: true,
-                           addressBarStyleProvider: CurrentAddressBarStyleProvider(),
-                           tabStyleProvider: NewlineTabStyleProvider(palette: palette),
-                           colorsProvider: NewColorsProviding(palette: palette),
-                           iconsProvider: CurrentIconsProvider(),
-                           fireButtonSize: 32,
-                           navigationToolbarButtonsSpacing: 2,
-                           tabBarButtonSize: 28,
-                           addToolbarShadow: true)
+        return buildVisualStyle(name: .default, palette: palette)
+    }
+
+    static func buildVisualStyle(themeName: ThemeName) -> VisualStyle {
+        let palette = ThemeColors(themeName: themeName)
+        return buildVisualStyle(name: themeName, palette: palette)
+    }
+
+    private static func buildVisualStyle(name: ThemeName, palette: ColorPalette) -> VisualStyle {
+        VisualStyle(
+            name: name,
+            toolbarButtonsCornerRadius: 9,
+            fireWindowGraphic: .burnerWindowGraphicNew,
+            areNavigationBarCornersRound: true,
+            addressBarStyleProvider: CurrentAddressBarStyleProvider(),
+            tabStyleProvider: NewlineTabStyleProvider(palette: palette),
+            colorsProvider: NewColorsProviding(palette: palette),
+            iconsProvider: CurrentIconsProvider(),
+            fireButtonSize: 32,
+            navigationToolbarButtonsSpacing: 2,
+            tabBarButtonSize: 28,
+            addToolbarShadow: true
+        )
     }
 }

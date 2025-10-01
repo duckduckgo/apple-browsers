@@ -43,11 +43,11 @@ public enum LatestReleaseError: Error, LocalizedError {
 
 public struct ReleaseMetadata: Codable {
     public let latestVersion: String
-    public let buildNumber: String
+    public let buildNumber: Int
     public let releaseDate: String
     public let isCritical: Bool
 
-    public init(latestVersion: String, buildNumber: String, releaseDate: String, isCritical: Bool) {
+    public init(latestVersion: String, buildNumber: Int, releaseDate: String, isCritical: Bool) {
         self.latestVersion = latestVersion
         self.buildNumber = buildNumber
         self.releaseDate = releaseDate

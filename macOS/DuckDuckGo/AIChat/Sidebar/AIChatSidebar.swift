@@ -18,6 +18,7 @@
 
 import Foundation
 import AIChat
+import BrowserServicesKit
 
 /// A wrapper class that represents the AI Chat sidebar contents and its displayed view controller.
 
@@ -77,7 +78,9 @@ final class AIChatSidebar: NSObject {
     /// Call this when the sidebar is hidden from the user.
     public func setHidden(at date: Date = Date()) {
         isPresented = false
-        hiddenAt = date
+        if hiddenAt == nil {
+            hiddenAt = date
+        }
     }
 
     /// Unloads the sidebar view controller after reading and updating the current AI chat URL and restoration data.

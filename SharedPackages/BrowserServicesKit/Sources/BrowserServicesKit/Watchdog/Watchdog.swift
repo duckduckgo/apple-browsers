@@ -34,9 +34,9 @@ public final actor Watchdog {
     /// Events for use with an EventMapper.
     ///
     public enum Event {
-        /// A recovered hang is one that has ended by the time we report it.
-        case uiHangNotRecovered(durationSeconds: Int)
         /// A 'not recovered' hang is one that is still ongoing at the time of reporting.
+        case uiHangNotRecovered(durationSeconds: Int)
+        /// A recovered hang is one that has ended by the time we report it.
         case uiHangRecovered(durationSeconds: Int)
     }
 

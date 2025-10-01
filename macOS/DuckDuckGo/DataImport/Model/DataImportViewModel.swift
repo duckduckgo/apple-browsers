@@ -277,7 +277,14 @@ struct DataImportViewModel {
                 // successful imports are appended above
                 self.summary.append( .init(dataType, result) )
 
-                // show file import screen when import fails or no bookmarks|passwords found
+                if screen.isFileImport,
+                    let dataTypeSelection = screen.fileImportDataTypeSelection,
+                    dataTypeSelection.isMultiple == true,
+                    summary.first(where: { $0.value.isSuccess }) == nil {
+                    nextScreen = .fileImport(dataTypeSelection: dataTypeSelection)
+                }
+
+                // show file import screen when import fails or no bookmarks|passwords foun
                 if !(screen.isFileImport && screen.fileImportDataTypeSelection?.singleDataType == dataType), nextScreen == nil {
                     // switch to file import of the failed data type displaying successful import results
                     nextScreen = .fileImport(dataTypeSelection: .single(dataType), summary: Set(summary.filter({ $0.value.isSuccess }).keys))

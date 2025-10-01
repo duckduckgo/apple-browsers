@@ -20,6 +20,7 @@ import AppKit
 import SwiftUI
 import BrowserServicesKit
 import PixelKit
+import DesignResourcesKitIcons
 
 struct MultiFileImportScreenView: View {
     @Binding var model: DataImportViewModel
@@ -71,6 +72,18 @@ struct MultiFileImportScreenView: View {
                         model.selectFile()
                     } onFileDrop: { url in
                         model.initiateImport(fileURL: url)
+                    }
+
+                    if case .multiple(let dataTypes) = dataTypeSelection,
+                        let firstDataType = dataTypes.first,
+                        let error = model.error(for: firstDataType) as? SafariArchiveImporter.ImportError,
+                        error.type == .unarchive {
+                        HStack {
+                            Image(nsImage: DesignSystemImages.Color.Size16.exclamationHigh)
+                            Text("Incorrect file type or format. Please select a different file.")
+                                .foregroundColor(Color(designSystemColor: .buttonsDeleteGhostText))
+                        }
+                        .padding(.vertical, 8)
                     }
                 }
             }

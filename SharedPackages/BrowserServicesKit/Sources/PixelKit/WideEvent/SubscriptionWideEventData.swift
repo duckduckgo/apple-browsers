@@ -67,8 +67,6 @@ public class SubscriptionPurchaseWideEventData: WideEventData {
 
 extension SubscriptionPurchaseWideEventData {
 
-    private static let latencyBuckets: [Double] = [1_000, 5_000, 10_000, 30_000, 60_000, 300_000, 600_000]
-
     public enum PurchasePlatform: String, Codable, CaseIterable {
         case appStore = "app_store"
         case stripe
@@ -103,17 +101,15 @@ extension SubscriptionPurchaseWideEventData {
 
         parameters[WideEventParameter.SubscriptionFeature.freeTrialEligible] = freeTrialEligible ? "true" : "false"
 
-        if let value = createAccountDuration?.bucketedMilliseconds(using: Self.latencyBuckets) {
-            parameters[WideEventParameter.SubscriptionFeature.accountCreationLatency] = String(value)
+        func emit(_ key: String, interval: WideEvent.MeasuredInterval?) {
+            guard let start = interval?.start, let end = interval?.end else { return }
+            let ms = max(0, Int(end.timeIntervalSince(start) * 1000))
+            parameters[key] = String(bucket(ms))
         }
 
-        if let value = completePurchaseDuration?.bucketedMilliseconds(using: Self.latencyBuckets) {
-            parameters[WideEventParameter.SubscriptionFeature.accountPaymentLatency] = String(value)
-        }
-
-        if let value = activateAccountDuration?.bucketedMilliseconds(using: Self.latencyBuckets) {
-            parameters[WideEventParameter.SubscriptionFeature.accountActivationLatency] = String(value)
-        }
+        emit(WideEventParameter.SubscriptionFeature.accountCreationLatency, interval: createAccountDuration)
+        emit(WideEventParameter.SubscriptionFeature.accountPaymentLatency, interval: completePurchaseDuration)
+        emit(WideEventParameter.SubscriptionFeature.accountActivationLatency, interval: activateAccountDuration)
 
         return parameters
     }
@@ -122,4 +118,17 @@ extension SubscriptionPurchaseWideEventData {
         self.failingStep = step
         self.errorData = WideEventErrorData(error: error)
     }
+
+    private func bucket(_ ms: Int) -> Int {
+        switch ms {
+        case 0..<1000: return 1000
+        case 1000..<5000: return 5000
+        case 5000..<10000: return 10000
+        case 10000..<30000: return 30000
+        case 30000..<60000: return 60000
+        case 60000..<300000: return 300000
+        default: return 600000
+        }
+    }
+
 }

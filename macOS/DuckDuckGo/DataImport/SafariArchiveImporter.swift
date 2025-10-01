@@ -28,6 +28,7 @@ final class SafariArchiveImporter: DataImporter {
     struct ImportError: DataImportError {
         enum OperationType: Int {
             case validateAccess
+            case unarchive
             case readContents
             case createTempFiles
             case importContents
@@ -47,6 +48,8 @@ final class SafariArchiveImporter: DataImporter {
                 return .other
             case .importContents:
                 return .noData
+            case .unarchive:
+                return .other
             }
         }
     }
@@ -166,8 +169,25 @@ final class SafariArchiveImporter: DataImporter {
         var summary = DataImportSummary()
 
         // Extract archive contents
-        let contents = try archiveReader.readContents(from: archiveURL)
-        let tempFiles = try createTemporaryFiles(from: contents, for: types)
+        let contents: ImportArchiveContents
+        do {
+            contents = try archiveReader.readContents(from: archiveURL)
+        } catch {
+            for type in types {
+                summary[type] = DataImportResult.failure(ImportError(action: .generic, type: .unarchive, underlyingError: error))
+            }
+            return summary
+        }
+
+        let tempFiles: TemporaryFiles
+        do {
+            tempFiles = try createTemporaryFiles(from: contents, for: types)
+        } catch {
+            for type in types {
+                summary[type] = .failure(ImportError(action: .generic, type: .createTempFiles, underlyingError: error))
+            }
+            return summary
+        }
         defer {
             cleanupTemporaryFiles(tempFiles)
         }

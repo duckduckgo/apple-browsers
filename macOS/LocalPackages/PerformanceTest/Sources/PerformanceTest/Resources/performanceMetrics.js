@@ -16,6 +16,9 @@
 //  limitations under the License.
 //
 
+// Constants for unavailable metrics
+const NOT_AVAILABLE = 'N/A';
+
 function collectPerformanceMetrics() {
    try {
         if (document.readyState !== 'complete') {
@@ -36,6 +39,10 @@ function collectPerformanceMetrics() {
         const totalResourceSize = resources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
 
         if (navigation) {
+            // Calculate common metrics once
+            const timeToFirstByte = (navigation.responseStart - navigation.fetchStart) || NOT_AVAILABLE;
+            const serverTime = (navigation.responseStart - navigation.requestStart) || NOT_AVAILABLE;
+
             return {
                 // Core timing metrics (in milliseconds)
                 loadComplete: navigation.loadEventEnd - navigation.fetchStart,
@@ -52,13 +59,10 @@ function collectPerformanceMetrics() {
 
                 // Network metrics (both naming conventions for compatibility)
                 // Safari WebDriver doesn't provide fetchStart/requestStart properly, so these will be 0
-
-                ttfb: (navigation.responseStart - navigation.fetchStart) || 'N/A',
-                timeToFirstByte: (navigation.responseStart - navigation.fetchStart) || 'N/A',
+                ttfb: timeToFirstByte,
+                timeToFirstByte: timeToFirstByte,
                 responseTime: navigation.responseEnd - navigation.responseStart,
-
-                serverTime: (navigation.responseStart - navigation.requestStart) || 'N/A',
-                // Size metrics (in bytes)
+                serverTime: serverTime,
                 transferSize: navigation.transferSize || 0,
                 encodedBodySize: navigation.encodedBodySize || 0,
                 decodedBodySize: navigation.decodedBodySize || 0,
@@ -71,7 +75,7 @@ function collectPerformanceMetrics() {
                 tti: navigation.domInteractive - navigation.fetchStart,
 
                 // Additional metadata
-                protocol: navigation.nextHopProtocol || 'N/A',
+                protocol: navigation.nextHopProtocol || NOT_AVAILABLE,
                redirectCount: navigation.redirectCount || 0,
                 navigationType: navigation.type || 'navigate'
             };

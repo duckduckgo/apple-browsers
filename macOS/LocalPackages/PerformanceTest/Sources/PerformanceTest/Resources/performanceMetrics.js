@@ -41,8 +41,8 @@ function collectPerformanceMetrics() {
         // Find FCP
         const fcp = paint.find(p => p.name === PAINT_NAME_FCP);
 
-        // Note: LCP is not supported in Safari/WebKit - always null
-        const largestContentfulPaint = null;
+        // Note: LCP is not supported in Safari/WebKit - always 0
+        const largestContentfulPaint = 0;
 
         // Calculate total resource sizes
         const totalResourceSize = resources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
@@ -60,9 +60,9 @@ function collectPerformanceMetrics() {
                 firstContentfulPaint: fcp ? fcp.startTime : null,
                 largestContentfulPaint: largestContentfulPaint,
 
-                // Network metrics
-                // Note: Safari WebDriver doesn't provide these timing/size properties in automation context
-                // They return 0, so we mark them as N/A. These work in native WKWebView but not via WebDriver.
+                // Network timing metrics
+                // Note: Safari WebDriver doesn't provide timing properties in automation context
+                // Timing values return 0, so we mark them as N/A. These work in native WKWebView but not via WebDriver.
                 ttfb: (navigation.responseStart && navigation.fetchStart && navigation.responseStart !== navigation.fetchStart)
                     ? (navigation.responseStart - navigation.fetchStart)
                     : NOT_AVAILABLE,
@@ -72,9 +72,12 @@ function collectPerformanceMetrics() {
                 serverTime: (navigation.responseStart && navigation.requestStart && navigation.responseStart !== navigation.requestStart)
                     ? (navigation.responseStart - navigation.requestStart)
                     : NOT_AVAILABLE,
-                transferSize: navigation.transferSize || NOT_AVAILABLE,
-                encodedBodySize: navigation.encodedBodySize || NOT_AVAILABLE,
-                decodedBodySize: navigation.decodedBodySize || NOT_AVAILABLE,
+
+                // Size metrics - return 0 as legitimate value (not N/A)
+                // Safari WebDriver doesn't populate these, but 0 is a valid size
+                transferSize: navigation.transferSize || 0,
+                encodedBodySize: navigation.encodedBodySize || 0,
+                decodedBodySize: navigation.decodedBodySize || 0,
 
                 // Resource metrics
                 resourceCount: resources.length,

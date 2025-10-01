@@ -868,6 +868,8 @@ private extension Tab {
 // MARK: - Test Mocks
 
 final class MockVisualStyle: VisualStyleProviding {
+    var name: ThemeName
+
     var toolbarButtonsCornerRadius: CGFloat = 0
 
     var fireWindowGraphic: NSImage = .fireHeader
@@ -884,8 +886,9 @@ final class MockVisualStyle: VisualStyleProviding {
 
     let isNewStyle: Bool
 
-    init(isNewStyle: Bool) {
+    init(isNewStyle: Bool, name: ThemeName = .default) {
         self.isNewStyle = isNewStyle
+        self.name = name
     }
 
     var addressBarStyleProvider: DuckDuckGo_Privacy_Browser.AddressBarStyleProviding {

@@ -223,7 +223,7 @@ public struct WideEventErrorData: Codable {
     public var code: Int
     public var underlyingDomain: String?
     public var underlyingCode: Int?
-    public var underlyingErrors: [WideEventErrorData.UnderlyingError]
+    public var underlyingErrors: [UnderlyingError]
 
     public init(error: Error) {
         let nsError = error as NSError
@@ -278,10 +278,8 @@ extension WideEventErrorData: WideEventParameterProviding {
 
         for (index, nested) in underlyingErrors.enumerated() {
             let suffix = index == 0 ? "" : String(index + 1)
-
             parameters[WideEventParameter.Feature.underlyingErrorDomain + suffix] = nested.domain
-            parameters[WideEventParameter.Feature.underlyingErrorCode + suffix] = String(
-                nested.code)
+            parameters[WideEventParameter.Feature.underlyingErrorCode + suffix] = String(nested.code)
         }
 
         return parameters

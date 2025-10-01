@@ -32,6 +32,7 @@ struct AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
     var isSearchBarVisible: Bool
     var showFullURL: Bool
     var themeAppearance: String
+    var themeName: String
     var favoritesDisplayMode: String?
     var showBookmarksBar: Bool
     var bookmarksBarAppearance: BookmarksBarAppearance
@@ -44,6 +45,7 @@ struct AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
     init(
         showFullURL: Bool = false,
         themeAppearance: String = ThemeAppearance.systemDefault.rawValue,
+        themeName: String = ThemeName.default.rawValue,
         favoritesDisplayMode: String? = FavoritesDisplayMode.displayNative(.desktop).description,
         isContinueSetUpVisible: Bool = true,
         continueSetUpCardsLastDemonstrated: Date? = nil,
@@ -63,6 +65,7 @@ struct AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
     ) {
         self.showFullURL = showFullURL
         self.themeAppearance = themeAppearance
+        self.themeName = themeName
         self.favoritesDisplayMode = favoritesDisplayMode
         self.isContinueSetUpVisible = isContinueSetUpVisible
         self.continueSetUpCardsLastDemonstrated = continueSetUpCardsLastDemonstrated

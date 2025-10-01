@@ -158,7 +158,7 @@ extension Preferences {
                 RoundedRectangle(cornerRadius: innerCornerRadius)
                     .fill(Color(themeColors.surfacePrimary))
                     .frame(width: innerSize.width, height: innerSize.height)
-                    .mask (
+                    .mask(
                         VStack {
                             Rectangle()
                                 .frame(height: 10)
@@ -171,7 +171,7 @@ extension Preferences {
                 RoundedRectangle(cornerRadius: innerCornerRadius)
                     .fill(Color(themeColors.surfaceTertiary))
                     .frame(width: innerSize.width, height: innerSize.height)
-                    .mask (
+                    .mask(
                         VStack {
                             Color.clear
                             Rectangle()

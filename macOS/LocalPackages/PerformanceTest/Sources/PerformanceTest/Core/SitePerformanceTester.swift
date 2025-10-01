@@ -63,9 +63,8 @@ public class SitePerformanceTester: NSObject {
                     loadTimes: loadTimes,
                     detailedMetrics: detailedMetrics,
                     failedAttempts: failedAttempts,
-
                     iterations: loadTimes.count,  // Actual completed tests (excluding warm-up)
-                   cancelled: true
+                    cancelled: true
                 )
             }
 
@@ -108,9 +107,8 @@ public class SitePerformanceTester: NSObject {
             loadTimes: loadTimes,
             detailedMetrics: detailedMetrics,
             failedAttempts: failedAttempts,
-
             iterations: iterations - 1,  // Exclude warm-up iteration from count
-           cancelled: false
+            cancelled: false
         )
     }
 
@@ -165,18 +163,13 @@ public class SitePerformanceTester: NSObject {
         while !delegate.isComplete && elapsed < timeout {
             try? await Task.sleep(nanoseconds: UInt64(checkInterval * 1_000_000_000))
             elapsed += checkInterval
-
-            // Try to get performance metrics after 2 seconds
-            if elapsed > 2.0 {
-                if let metrics = await collectPerformanceMetrics() {
-                    return metrics
-                }
-            }
         }
 
-
         // Only collect metrics if navigation completed successfully
-       if delegate.isComplete && delegate.error == nil {
+        if delegate.isComplete && delegate.error == nil {
+            // Wait additional 2 seconds for page stabilization (lazy content, layout shifts)
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+
             return await collectPerformanceMetrics()
         }
 
@@ -226,9 +219,8 @@ public class SitePerformanceTester: NSObject {
                     domContentLoaded: (metrics["domContentLoaded"] as? Double ?? 0) / 1000.0,
                     domInteractive: (metrics["domInteractive"] as? Double ?? 0) / 1000.0,
                     firstContentfulPaint: (metrics["fcp"] as? Double ?? 0) / 1000.0,
-
                     largestContentfulPaint: (metrics["largestContentfulPaint"] as? Double ?? 0) / 1000.0,
-                   timeToFirstByte: (metrics["ttfb"] as? Double ?? 0) / 1000.0,
+                    timeToFirstByte: (metrics["ttfb"] as? Double ?? 0) / 1000.0,
                     responseTime: (metrics["responseTime"] as? Double ?? 0) / 1000.0,
                     serverTime: (metrics["serverTime"] as? Double ?? 0) / 1000.0,
                     transferSize: metrics["transferSize"] as? Double ?? 0,
@@ -255,7 +247,6 @@ public class SitePerformanceTester: NSObject {
         return nil
     }
 
-    // DetailedMetrics struct removed - using DetailedPerformanceMetrics from Models
 }
 
 private class NavigationDelegate: NSObject, WKNavigationDelegate {

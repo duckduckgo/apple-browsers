@@ -16,24 +16,6 @@
 //  limitations under the License.
 //
 
-// Use a global variable to persist CLS across script executions
-if (typeof window.__cumulativeLayoutShift === 'undefined') {
-    window.__cumulativeLayoutShift = 0;
-
-    // Check for CLS support and start observing
-    if (typeof PerformanceObserver !== 'undefined' && PerformanceObserver.supportedEntryTypes.includes('layout-shift')) {
-        const observer = new PerformanceObserver((list) => {
-            for (const entry of list.getEntries()) {
-                if (!entry.hadRecentInput) {
-                    window.__cumulativeLayoutShift += entry.value;
-                }
-            }
-        });
-        observer.observe({ type: 'layout-shift', buffered: true });
-    }
-}
-
-
 function collectPerformanceMetrics() {
    try {
         if (document.readyState !== 'complete') {
@@ -72,7 +54,8 @@ function collectPerformanceMetrics() {
                 fcp: fcp ? fcp.startTime : 0,
                 firstContentfulPaint: fcp ? fcp.startTime : null,
                 largestContentfulPaint: largestContentfulPaint,
-                cumulativeLayoutShift: window.__cumulativeLayoutShift,
+                // Note: CLS is not supported in Safari WebDriver
+                cumulativeLayoutShift: null,
 
                 // Network metrics (both naming conventions for compatibility)
                 // Safari WebDriver doesn't provide fetchStart/requestStart properly, so these will be 0

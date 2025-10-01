@@ -40,6 +40,7 @@ final class MockPrivacyStats: PrivacyStatsCollecting {
 final class NewTabPageCoordinatorTests: XCTestCase {
     var coordinator: NewTabPageCoordinator!
     var appearancePreferences: AppearancePreferences!
+    var themeManager: ThemeManagerProtocol = MockThemeManager()
     var customizationModel: NewTabPageCustomizationModel!
     var notificationCenter: NotificationCenter!
     var keyValueStore: MockKeyValueFileStore!
@@ -70,7 +71,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             sendPixel: { _ in },
             openFilePanel: { nil },
             showAddImageFailedAlert: {},
-            visualStyle: VisualStyle.current
+            themeManager: themeManager
         )
 
         windowControllersManager = WindowControllersManagerMock()

@@ -154,7 +154,7 @@ final class NavigationBarViewController: NSViewController {
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
     private let showTab: (Tab.TabContent) -> Void
 
-    private let themeManager: ThemeManager
+    private let themeManager: ThemeManagerProtocol
     private var theme: ThemeDefinition {
         themeManager.theme
     }
@@ -215,7 +215,7 @@ final class NavigationBarViewController: NSViewController {
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-                       themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
+                       themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager,
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
                        aiChatSidebarPresenter: AIChatSidebarPresenting,
                        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = NSApp.delegateTyped.vpnUpsellVisibilityManager,
@@ -269,7 +269,7 @@ final class NavigationBarViewController: NSViewController {
         autofillPopoverPresenter: AutofillPopoverPresenter,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger,
-        themeManager: ThemeManager,
+        themeManager: ThemeManagerProtocol,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatSidebarPresenter: AIChatSidebarPresenting,
         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
@@ -1070,7 +1070,7 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func subscribeToThemeChanges() {
-        themeManager.$theme
+        themeManager.themePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.themeDidChange()

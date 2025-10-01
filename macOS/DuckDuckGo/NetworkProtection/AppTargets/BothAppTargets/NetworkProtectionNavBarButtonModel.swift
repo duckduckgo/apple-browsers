@@ -81,7 +81,7 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
          pinningManager: PinningManager = LocalPinningManager.shared,
          vpnGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
          statusReporter: NetworkProtectionStatusReporter,
-         themeManager: ThemeManager,
+         themeManager: ThemeManagerProtocol,
          vpnUpsellVisibilityManager: VPNUpsellVisibilityManager) {
 
         let iconsProvider = themeManager.theme.iconsProvider

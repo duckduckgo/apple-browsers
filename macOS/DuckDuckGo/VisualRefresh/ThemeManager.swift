@@ -22,10 +22,18 @@ import AppKit
 
 typealias ThemeDefinition = VisualStyleProviding
 
-final class ThemeManager: ObservableObject {
+protocol ThemeManagerProtocol {
+    var theme: ThemeDefinition { get }
+    var themePublisher: Published<any ThemeDefinition>.Publisher { get }
+}
 
+final class ThemeManager: ObservableObject, ThemeManagerProtocol {
     private var cancellables = Set<AnyCancellable>()
     @Published private(set) var theme: ThemeDefinition
+
+    var themePublisher: Published<any ThemeDefinition>.Publisher {
+        $theme
+    }
 
     init(appearancePreferences: AppearancePreferences) {
         theme = VisualStyle.buildVisualStyle(themeName: appearancePreferences.themeName)

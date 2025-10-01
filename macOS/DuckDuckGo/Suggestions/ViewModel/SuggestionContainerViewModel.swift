@@ -28,13 +28,13 @@ final class SuggestionContainerViewModel {
     var isHomePage: Bool
     let isBurner: Bool
     let suggestionContainer: SuggestionContainer
-    private let themeManager: ThemeManager
+    private let themeManager: ThemeManagerProtocol
     private var suggestionResultCancellable: AnyCancellable?
 
     init(isHomePage: Bool,
          isBurner: Bool,
          suggestionContainer: SuggestionContainer,
-         themeManager: ThemeManager) {
+         themeManager: ThemeManagerProtocol) {
         self.isHomePage = isHomePage
         self.isBurner = isBurner
         self.suggestionContainer = suggestionContainer

@@ -44,7 +44,7 @@ final class SuggestionViewController: NSViewController {
     @IBOutlet weak var backgroundViewTopConstraint: NSLayoutConstraint!
 
     private let suggestionContainerViewModel: SuggestionContainerViewModel
-    private let themeManager: ThemeManager
+    private let themeManager: ThemeManagerProtocol
     private let isBurner: Bool
 
     required init?(coder: NSCoder) {
@@ -54,7 +54,7 @@ final class SuggestionViewController: NSViewController {
     required init?(coder: NSCoder,
                    suggestionContainerViewModel: SuggestionContainerViewModel,
                    isBurner: Bool,
-                   themeManager: ThemeManager) {
+                   themeManager: ThemeManagerProtocol) {
         self.suggestionContainerViewModel = suggestionContainerViewModel
         self.isBurner = isBurner
         self.themeManager = themeManager
@@ -166,7 +166,7 @@ final class SuggestionViewController: NSViewController {
     }
 
     private func subscribeToThemeChanges() {
-        themeCancellable = themeManager.$theme
+        themeCancellable = themeManager.themePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let `self` else {

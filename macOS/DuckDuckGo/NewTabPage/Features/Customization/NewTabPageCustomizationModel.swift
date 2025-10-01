@@ -57,7 +57,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
     private var customBackgroundPixelCancellable: AnyCancellable?
     private var themeCancellable: AnyCancellable?
 
-    convenience init(themeManager: ThemeManager, appearancePreferences: AppearancePreferences) {
+    convenience init(themeManager: ThemeManagerProtocol, appearancePreferences: AppearancePreferences) {
         self.init(
             appearancePreferences: appearancePreferences,
             userBackgroundImagesManager: UserBackgroundImagesManager(
@@ -88,7 +88,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
         sendPixel: @escaping (PixelKitEvent) -> Void,
         openFilePanel: @escaping () -> URL?,
         showAddImageFailedAlert: @escaping () -> Void,
-        themeManager: ThemeManager
+        themeManager: ThemeManagerProtocol
     ) {
         self.appearancePreferences = appearancePreferences
         self.customImagesManager = userBackgroundImagesManager
@@ -153,8 +153,8 @@ final class NewTabPageCustomizationModel: ObservableObject {
             }
     }
 
-    private func subscribeToThemeChanges(manager: ThemeManager) {
-        themeCancellable = manager.$theme
+    private func subscribeToThemeChanges(manager: ThemeManagerProtocol) {
+        themeCancellable = manager.themePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] theme in
                 self?.themeDidChange(theme: theme)

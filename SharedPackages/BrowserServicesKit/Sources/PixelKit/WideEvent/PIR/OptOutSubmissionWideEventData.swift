@@ -67,24 +67,20 @@ public final class OptOutSubmissionWideEventData: WideEventData {
         case other
     }
 
-    public private(set) var stages: [Stage]
+    private var stages: [Stage] = []
 
     public init(globalData: WideEventGlobalData,
                 contextData: WideEventContextData = WideEventContextData(),
                 appData: WideEventAppData = WideEventAppData(),
                 dataBrokerURL: String,
                 dataBrokerVersion: String?,
-                submissionInterval: WideEvent.MeasuredInterval? = nil,
-                errorData: WideEventErrorData? = nil,
-                stages: [Stage] = []) {
+                submissionInterval: WideEvent.MeasuredInterval? = nil) {
         self.globalData = globalData
         self.contextData = contextData
         self.appData = appData
         self.dataBrokerURL = dataBrokerURL
         self.dataBrokerVersion = dataBrokerVersion
         self.submissionInterval = submissionInterval
-        self.errorData = errorData
-        self.stages = stages
     }
 
     public func appendStage(_ stage: Stage) {
@@ -119,8 +115,8 @@ extension OptOutSubmissionWideEventData {
                 parameters["\(base).tries"] = String(tries)
             }
 
-            if let actionID = stage.actionID, !actionID.isEmpty {
-                parameters["\(base).action_id"] = actionID
+            if let actionID = stage.actionID {
+                parameters["\(base).action_id"] = actionID.isEmpty ? "unknown" : actionID
             }
         }
 

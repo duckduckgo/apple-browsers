@@ -28,9 +28,8 @@ protocol OptOutSubmissionWideEventRecording: AnyObject {
     func markSubmissionCompleted(at date: Date,
                                  tries: Int,
                                  actionID: String?)
-    func recordError(_ error: Error)
-    func complete(status: WideEventStatus)
-    func cancel()
+    func complete(status: WideEventStatus, with error: Error?)
+    func cancel(with error: Error?)
 }
 
 final class OptOutSubmissionWideEventRecorder {
@@ -114,7 +113,8 @@ final class OptOutSubmissionWideEventRecorder {
         }
     }
 
-    private func setError(_ error: Error) {
+    private func setError(_ error: Error?) {
+        guard let error else { return }
         queue.async {
             self.data.errorData = WideEventErrorData(error: error)
             self.updateFlow()
@@ -155,15 +155,13 @@ extension OptOutSubmissionWideEventRecorder: OptOutSubmissionWideEventRecording 
         setSubmissionEnd(date: date)
     }
 
-    func recordError(_ error: Error) {
+    func complete(status: WideEventStatus, with error: Error?) {
         setError(error)
-    }
-
-    func complete(status: WideEventStatus) {
         completeInternal(status: status)
     }
 
-    func cancel() {
+    func cancel(with error: Error?) {
+        setError(error)
         completeInternal(status: .cancelled)
     }
 }

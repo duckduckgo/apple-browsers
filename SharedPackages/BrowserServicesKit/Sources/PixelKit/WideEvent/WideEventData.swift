@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
-import Common
 import Foundation
+import Common
 
 public protocol WideEventData: Codable, WideEventParameterProviding {
     static var pixelName: String { get }
@@ -113,17 +113,14 @@ public struct WideEventGlobalData: Codable {
         self.init(sampleRate: 1.0)
     }
 
-    public init(
-        id: String = UUID().uuidString, platform: String = DevicePlatform.currentPlatform.rawValue,
-        sampleRate: Float
-    ) {
+    public init(id: String = UUID().uuidString, platform: String = DevicePlatform.currentPlatform.rawValue, sampleRate: Float) {
         if sampleRate > 1.0 || sampleRate < 0.0 {
             assertionFailure("Sample rate must be between 0-1")
         }
 
         self.id = id
         self.platform = platform
-        self.type = "app"  // Don't allow type to be overridden
+        self.type = "app" // Don't allow type to be overridden
         self.sampleRate = sampleRate.clamped(to: 0...1)
     }
 }
@@ -156,19 +153,17 @@ public struct WideEventAppData: Codable {
     /// Whether the event was sent by an instance of the app with the internal flag set.
     public var internalUser: Bool?
 
-    public init(
-        name: String = AppVersion.shared.name,
-        version: String = AppVersion.shared.versionNumber,
-        formFactor: String? = nil,
-        internalUser: Bool? = nil
-    ) {
+    public init(name: String = AppVersion.shared.name,
+                version: String = AppVersion.shared.versionNumber,
+                formFactor: String? = nil,
+                internalUser: Bool? = nil) {
         self.name = name
         self.version = version
 
         #if os(iOS)
-            self.formFactor = formFactor ?? DevicePlatform.formFactor
+        self.formFactor = formFactor ?? DevicePlatform.formFactor
         #else
-            self.formFactor = formFactor  // Ignore the form factor on macOS, but allow it to be overridden for testing
+        self.formFactor = formFactor // Ignore the form factor on macOS, but allow it to be overridden for testing
         #endif
         self.internalUser = internalUser
     }

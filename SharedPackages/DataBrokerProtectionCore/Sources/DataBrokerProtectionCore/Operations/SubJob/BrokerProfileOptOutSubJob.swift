@@ -184,10 +184,9 @@ struct BrokerProfileOptOutSubJob {
             let tries = try? fetchTotalNumberOfOptOutAttempts(database: dependencies.database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1)
 
-            wideEventRecorder?.recordError(error)
             switch error {
             case is TimeoutError:
-                wideEventRecorder?.cancel()
+                wideEventRecorder?.cancel(with: error)
                 OptOutConfirmationWideEventEmitter.emitCancelled(
                     wideEvent: dependencies.wideEvent,
                     attemptID: stageDurationCalculator.attemptId,
@@ -196,7 +195,7 @@ struct BrokerProfileOptOutSubJob {
                     error: error
                 )
             case let dbpError as DataBrokerProtectionError where dbpError == .jobTimeout:
-                wideEventRecorder?.cancel()
+                wideEventRecorder?.cancel(with: error)
                 OptOutConfirmationWideEventEmitter.emitCancelled(
                     wideEvent: dependencies.wideEvent,
                     attemptID: stageDurationCalculator.attemptId,
@@ -205,7 +204,7 @@ struct BrokerProfileOptOutSubJob {
                     error: dbpError
                 )
             default:
-                wideEventRecorder?.complete(status: .failure)
+                wideEventRecorder?.complete(status: .failure, with: error)
                 OptOutConfirmationWideEventEmitter.emitFailure(
                     wideEvent: dependencies.wideEvent,
                     attemptID: stageDurationCalculator.attemptId,

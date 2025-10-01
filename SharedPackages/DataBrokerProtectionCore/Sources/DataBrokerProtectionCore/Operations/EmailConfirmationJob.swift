@@ -223,42 +223,35 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                                     recordFoundDate: Date,
                                                     broker: DataBroker,
                                                     attemptUUID: UUID?) {
-        wideEventRecorder?.recordError(error)
         switch error {
         case is TimeoutError:
-            wideEventRecorder?.cancel()
-            if let attemptUUID {
-                OptOutConfirmationWideEventEmitter.emitCancelled(
+            wideEventRecorder?.cancel(with: error)
+            OptOutConfirmationWideEventEmitter.emitCancelled(
+                wideEvent: jobDependencies.wideEvent,
+                attemptID: attemptUUID,
+                dataBrokerURL: broker.url,
+                dataBrokerVersion: broker.version,
+                error: error
+            )
+        case let dbpError as DataBrokerProtectionError where dbpError == .jobTimeout:
+            wideEventRecorder?.cancel(with: error)
+            OptOutConfirmationWideEventEmitter.emitCancelled(
+                wideEvent: jobDependencies.wideEvent,
+                attemptID: attemptUUID,
+                dataBrokerURL: broker.url,
+                dataBrokerVersion: broker.version,
+                error: dbpError
+            )
+        default:
+            if attemptNumber >= Self.maxRetries {
+                wideEventRecorder?.complete(status: .failure, with: error)
+                OptOutConfirmationWideEventEmitter.emitFailure(
                     wideEvent: jobDependencies.wideEvent,
                     attemptID: attemptUUID,
                     dataBrokerURL: broker.url,
                     dataBrokerVersion: broker.version,
                     error: error
                 )
-            }
-        case let dbpError as DataBrokerProtectionError where dbpError == .jobTimeout:
-            wideEventRecorder?.cancel()
-            if let attemptUUID {
-                OptOutConfirmationWideEventEmitter.emitCancelled(
-                    wideEvent: jobDependencies.wideEvent,
-                    attemptID: attemptUUID,
-                    dataBrokerURL: broker.url,
-                    dataBrokerVersion: broker.version,
-                    error: dbpError
-                )
-            }
-        default:
-            if attemptNumber >= Self.maxRetries {
-                wideEventRecorder?.complete(status: .failure)
-                if let attemptUUID {
-                    OptOutConfirmationWideEventEmitter.emitFailure(
-                        wideEvent: jobDependencies.wideEvent,
-                        attemptID: attemptUUID,
-                        dataBrokerURL: broker.url,
-                        dataBrokerVersion: broker.version,
-                        error: error
-                    )
-                }
             }
         }
     }

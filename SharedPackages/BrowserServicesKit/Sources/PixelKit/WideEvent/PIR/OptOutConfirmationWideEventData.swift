@@ -37,15 +37,13 @@ public final class OptOutConfirmationWideEventData: WideEventData {
                 appData: WideEventAppData = WideEventAppData(),
                 dataBrokerURL: String,
                 dataBrokerVersion: String?,
-                confirmationInterval: WideEvent.MeasuredInterval? = nil,
-                errorData: WideEventErrorData? = nil) {
+                confirmationInterval: WideEvent.MeasuredInterval? = nil) {
         self.globalData = globalData
         self.contextData = contextData
         self.appData = appData
         self.dataBrokerURL = dataBrokerURL
         self.dataBrokerVersion = dataBrokerVersion
         self.confirmationInterval = confirmationInterval
-        self.errorData = errorData
     }
 }
 

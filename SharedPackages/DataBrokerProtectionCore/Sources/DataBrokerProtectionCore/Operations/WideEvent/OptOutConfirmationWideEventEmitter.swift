@@ -23,7 +23,7 @@ import PixelKit
 enum OptOutConfirmationWideEventEmitter {
 
     static func emitSuccess(wideEvent: WideEventManaging?,
-                            attemptID: UUID,
+                            attemptID: UUID?,
                             recordFoundDate: Date,
                             confirmationDate: Date,
                             dataBrokerURL: String,
@@ -38,7 +38,7 @@ enum OptOutConfirmationWideEventEmitter {
     }
 
     static func emitFailure(wideEvent: WideEventManaging?,
-                            attemptID: UUID,
+                            attemptID: UUID?,
                             dataBrokerURL: String,
                             dataBrokerVersion: String?,
                             error: Error?) {
@@ -51,7 +51,7 @@ enum OptOutConfirmationWideEventEmitter {
     }
 
     static func emitCancelled(wideEvent: WideEventManaging?,
-                              attemptID: UUID,
+                              attemptID: UUID?,
                               dataBrokerURL: String,
                               dataBrokerVersion: String?,
                               error: Error?) {
@@ -64,14 +64,14 @@ enum OptOutConfirmationWideEventEmitter {
     }
 
     private static func emit(wideEvent: WideEventManaging?,
-                             attemptID: UUID,
+                             attemptID: UUID?,
                              recordFoundDate: Date? = nil,
                              confirmationDate: Date? = nil,
                              dataBrokerURL: String,
                              dataBrokerVersion: String?,
                              status: WideEventStatus,
                              error: Error? = nil) {
-        guard let wideEvent else { return }
+        guard let wideEvent, let attemptID else { return }
 
         let global = WideEventGlobalData(id: attemptID.uuidString, sampleRate: 1.0)
         let interval = confirmationDate.map { WideEvent.MeasuredInterval(start: recordFoundDate, end: $0) }

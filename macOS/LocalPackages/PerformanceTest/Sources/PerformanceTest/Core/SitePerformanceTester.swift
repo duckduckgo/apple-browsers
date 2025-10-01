@@ -63,8 +63,9 @@ public class SitePerformanceTester: NSObject {
                     loadTimes: loadTimes,
                     detailedMetrics: detailedMetrics,
                     failedAttempts: failedAttempts,
-                    iterations: iteration - 1,
-                    cancelled: true
+
+                    iterations: loadTimes.count,  // Actual completed tests (excluding warm-up)
+                   cancelled: true
                 )
             }
 
@@ -107,8 +108,9 @@ public class SitePerformanceTester: NSObject {
             loadTimes: loadTimes,
             detailedMetrics: detailedMetrics,
             failedAttempts: failedAttempts,
-            iterations: iterations,
-            cancelled: false
+
+            iterations: iterations - 1,  // Exclude warm-up iteration from count
+           cancelled: false
         )
     }
 
@@ -142,8 +144,16 @@ public class SitePerformanceTester: NSObject {
         url: URL,
         timeout: TimeInterval
     ) async -> DetailedPerformanceMetrics? {
+        // Store original delegate to restore later
+        let originalDelegate = webView.navigationDelegate
+
         let delegate = NavigationDelegate()
         webView.navigationDelegate = delegate
+
+        defer {
+            // Always restore original delegate
+            webView.navigationDelegate = originalDelegate
+        }
 
         delegate.startMeasurement()
         webView.load(URLRequest(url: url))
@@ -151,6 +161,7 @@ public class SitePerformanceTester: NSObject {
         let checkInterval: TimeInterval = 0.5
         var elapsed: TimeInterval = 0
 
+        // Wait for navigation to complete or timeout
         while !delegate.isComplete && elapsed < timeout {
             try? await Task.sleep(nanoseconds: UInt64(checkInterval * 1_000_000_000))
             elapsed += checkInterval
@@ -163,8 +174,9 @@ public class SitePerformanceTester: NSObject {
             }
         }
 
-        // If delegate completed, collect metrics
-        if delegate.isComplete && delegate.error == nil {
+
+        // Only collect metrics if navigation completed successfully
+       if delegate.isComplete && delegate.error == nil {
             return await collectPerformanceMetrics()
         }
 
@@ -203,8 +215,9 @@ public class SitePerformanceTester: NSObject {
         do {
             // Load the function definition and then call it
             let fullScript = script + "; collectPerformanceMetrics();"
+
             let result: Any? = try await webView.evaluateJavaScript(fullScript)
-            if let metrics = result as? [String: Any] {
+           if let metrics = result as? [String: Any] {
                 logger.debug("Raw metrics collected: \(metrics)")
 
                 let detailedMetrics = DetailedPerformanceMetrics(
@@ -213,8 +226,9 @@ public class SitePerformanceTester: NSObject {
                     domContentLoaded: (metrics["domContentLoaded"] as? Double ?? 0) / 1000.0,
                     domInteractive: (metrics["domInteractive"] as? Double ?? 0) / 1000.0,
                     firstContentfulPaint: (metrics["fcp"] as? Double ?? 0) / 1000.0,
+
                     largestContentfulPaint: (metrics["largestContentfulPaint"] as? Double ?? 0) / 1000.0,
-                    timeToFirstByte: (metrics["ttfb"] as? Double ?? 0) / 1000.0,
+                   timeToFirstByte: (metrics["ttfb"] as? Double ?? 0) / 1000.0,
                     responseTime: (metrics["responseTime"] as? Double ?? 0) / 1000.0,
                     serverTime: (metrics["serverTime"] as? Double ?? 0) / 1000.0,
                     transferSize: metrics["transferSize"] as? Double ?? 0,

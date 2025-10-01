@@ -44,6 +44,7 @@ public class PageLoadTester: NSObject {
 
     private let webView: WKWebView
     private let logger = Logger(subsystem: Constants.loggerSubsystem, category: Constants.loggerCategory)
+    private weak var previousNavigationDelegate: WKNavigationDelegate?
 
     public var progressHandler: ((Double) -> Void)?
 
@@ -59,7 +60,17 @@ public class PageLoadTester: NSObject {
     public init(webView: WKWebView) {
         self.webView = webView
         super.init()
+        self.previousNavigationDelegate = webView.navigationDelegate
         self.webView.navigationDelegate = self
+    }
+
+    deinit {
+        // Restore delegate on main thread
+        let webView = self.webView
+        let previousDelegate = self.previousNavigationDelegate
+        Task { @MainActor in
+            webView.navigationDelegate = previousDelegate
+        }
     }
 
     public func measurePageLoad(

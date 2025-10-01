@@ -255,12 +255,14 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         addItem(helpItem)
 
 #if APPSTORE
-        let checkForAppStoreUpdates = NSMenuItem(title: UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""),
-                                                 action: #selector(checkForUpdates(_:)),
-                                                 keyEquivalent: "")
-            .withImage(DesignSystemImages.Glyphs.Size16.update)
-            .targetting(self)
-        addItem(checkForAppStoreUpdates)
+        if !featureFlagger.isFeatureOn(.appStoreCheckForUpdatesFlow) {
+            let checkForAppStoreUpdates = NSMenuItem(title: UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""),
+                                                     action: #selector(checkForUpdates(_:)),
+                                                     keyEquivalent: "")
+                .withImage(DesignSystemImages.Glyphs.Size16.update)
+                .targetting(self)
+            addItem(checkForAppStoreUpdates)
+        }
 #endif
 
         let preferencesItem = NSMenuItem(title: UserText.settings, action: #selector(openPreferences(_:)), keyEquivalent: "")
@@ -461,40 +463,48 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     private func addUpdateItem() {
-#if SPARKLE
         guard AppVersion.runType != .uiTests,
               let updateController = Application.appDelegate.updateController,
               let update = updateController.latestUpdate else {
             return
         }
 
+        #if SPARKLE
+        guard let updateController = updateController as? SparkleUpdateController else { return }
+
         // Log edge cases where menu item appears but doesn't function
         // To be removed in a future version
         if !update.isInstalled, updateController.updateProgress.isDone {
             updateController.log()
         }
+        #endif
 
         guard updateController.hasPendingUpdate else {
             return
         }
 
         let menuItem: NSMenuItem = {
+            #if SPARKLE
             if featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp) {
-                return UpdateMenuItemFactory.menuItem(for: updateController)
+                return SparkleUpdateMenuItemFactory.menuItem(for: updateController)
             } else {
-                return UpdateMenuItemFactory.menuItem(for: update)
+                return SparkleUpdateMenuItemFactory.menuItem(for: update)
             }
+            #else
+            return AppStoreUpdateMenuItemFactory.menuItem(for: update)
+            #endif
         }()
 
         updateMenuItem = menuItem
         addItem(menuItem)
 
+        #if SPARKLE
         if let releaseNotes = NSApp.mainMenuTyped.releaseNotesMenuItem.copy() as? NSMenuItem {
             addItem(releaseNotes)
         }
+        #endif
 
         addItem(NSMenuItem.separator())
-#endif
     }
 
     private func addWindowItems() {
@@ -710,12 +720,11 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     func menuWillOpen(_ menu: NSMenu) {
-#if SPARKLE
         guard let updateController = Application.appDelegate.updateController else { return }
+
         if updateController.hasPendingUpdate && updateController.needsNotificationDot {
             updateController.needsNotificationDot = false
         }
-#endif
 
         // Increment free trial badge view count if the user is eligible and badge is shown
         if !subscriptionManager.isUserAuthenticated &&

@@ -33,8 +33,9 @@ if (typeof window.__cumulativeLayoutShift === 'undefined') {
     }
 }
 
+
 function collectPerformanceMetrics() {
-    try {
+   try {
         if (document.readyState !== 'complete') {
             return null;
         }
@@ -75,11 +76,12 @@ function collectPerformanceMetrics() {
 
                 // Network metrics (both naming conventions for compatibility)
                 // Safari WebDriver doesn't provide fetchStart/requestStart properly, so these will be 0
+
                 ttfb: (navigation.responseStart - navigation.fetchStart) || 'N/A',
                 timeToFirstByte: (navigation.responseStart - navigation.fetchStart) || 'N/A',
-                responseTime: navigation.responseEnd - navigation.responseStart,
-                serverTime: (navigation.responseStart - navigation.requestStart) || 'N/A',
+               responseTime: navigation.responseEnd - navigation.responseStart,
 
+                serverTime: (navigation.responseStart - navigation.requestStart) || 'N/A',
                 // Size metrics (in bytes)
                 transferSize: navigation.transferSize || 0,
                 encodedBodySize: navigation.encodedBodySize || 0,
@@ -92,9 +94,10 @@ function collectPerformanceMetrics() {
                 // TTI approximation
                 tti: navigation.domInteractive - navigation.fetchStart,
 
-                // Additional metadata
+   }            // Additional metadata
+
                 protocol: navigation.nextHopProtocol || 'N/A',
-                redirectCount: navigation.redirectCount || 0,
+               redirectCount: navigation.redirectCount || 0,
                 navigationType: navigation.type || 'navigate'
             };
         }
@@ -103,4 +106,4 @@ function collectPerformanceMetrics() {
     } catch (e) {
         return { error: 'JavaScript execution error: ' + e.message };
     }
-}
+

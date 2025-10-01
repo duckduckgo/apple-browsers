@@ -1,5 +1,5 @@
 //
-//  SubscriptionWideEventData.swift
+//  SubscriptionPurchaseWideEventData.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PixelKit
 
 public class SubscriptionPurchaseWideEventData: WideEventData {
     #if DEBUG
@@ -142,6 +143,20 @@ extension SubscriptionPurchaseWideEventData {
         case 60000..<300000: return 300000
         default: return 600000
         }
+    }
+
+}
+
+extension WideEventParameter {
+
+    public enum SubscriptionFeature {
+        static let purchasePlatform = "feature.data.ext.purchase_platform"
+        static let failingStep = "feature.data.ext.failing_step"
+        static let subscriptionIdentifier = "feature.data.ext.subscription_identifier"
+        static let freeTrialEligible = "feature.data.ext.free_trial_eligible"
+        static let accountCreationLatency = "feature.data.ext.account_creation_latency_ms_bucketed"
+        static let accountPaymentLatency = "feature.data.ext.account_payment_latency_ms_bucketed"
+        static let accountActivationLatency = "feature.data.ext.account_activation_latency_ms_bucketed"
     }
 
 }

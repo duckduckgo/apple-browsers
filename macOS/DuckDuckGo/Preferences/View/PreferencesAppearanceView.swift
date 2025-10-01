@@ -224,10 +224,7 @@ extension Preferences {
 
                         ThemesPickerView()
                             .environmentObject(model)
-<<<<<<< HEAD
-=======
 
->>>>>>> ba106427e (Preferences: Disables Appearance's Slider Animations)
                     } else {
                         ThemeAppearancePicker()
                             .environmentObject(model)

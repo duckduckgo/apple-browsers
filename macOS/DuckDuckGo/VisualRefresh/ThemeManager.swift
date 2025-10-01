@@ -20,10 +20,12 @@ import Foundation
 import Combine
 import AppKit
 
+typealias ThemeDefinition = VisualStyleProviding
+
 final class ThemeManager: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
-    @Published private(set) var theme: VisualStyleProviding
+    @Published private(set) var theme: ThemeDefinition
 
     init(appearancePreferences: AppearancePreferences) {
         theme = VisualStyle.buildVisualStyle(themeName: appearancePreferences.themeName)

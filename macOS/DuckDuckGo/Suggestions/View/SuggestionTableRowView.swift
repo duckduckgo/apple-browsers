@@ -22,7 +22,7 @@ final class SuggestionTableRowView: NSTableRowView {
 
     static let identifier = "SuggestionTableRowView"
 
-    var theme: VisualStyleProviding?
+    var theme: ThemeDefinition?
 
     override func awakeFromNib() {
         super.awakeFromNib()

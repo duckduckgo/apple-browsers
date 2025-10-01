@@ -102,7 +102,7 @@ final class MainWindowController: NSWindowController {
 
     private var shouldShowOnboarding: Bool {
  #if DEBUG
-        if AppVersion.runType == .unitTests {
+        if AppVersion.runType == .unitTests || AppVersion.runType == .integrationTests {
             return false
         }
         let onboardingIsComplete = OnboardingActionsManager.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked

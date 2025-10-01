@@ -773,9 +773,9 @@ extension AppDelegate {
         Application.appDelegate.configurationManager.forceRefresh(isDebug: true)
     }
 
-    private func setPrivacyConfigurationUrl(_ configurationUrl: URL?) throws {
+    private func setPrivacyConfigurationUrl(_ configurationUrl: URL?) async throws {
         try configurationURLProvider.setCustomURL(configurationUrl, for: .privacyConfiguration)
-        Application.appDelegate.configurationManager.forceRefresh(isDebug: true)
+        await Application.appDelegate.configurationManager.refreshNow(isDebug: true)
         if let configurationUrl {
             Logger.config.debug("New configuration URL set to \(configurationUrl.absoluteString)")
         } else {
@@ -791,6 +791,18 @@ extension AppDelegate {
         alert.runModal()
     }
 
+    private func showConfigurationUpdateCompleteAlert(configurationUrl: URL?) {
+        let alert = NSAlert()
+        alert.messageText = "Configuration Update Complete"
+        if let configurationUrl {
+            alert.informativeText = "Privacy configuration URL has been set to:\n\(configurationUrl.absoluteString)\n\nThe configuration refresh operation has completed. Check the logs for any errors."
+        } else {
+            alert.informativeText = "Privacy configuration has been reset to use the default settings.\n\nThe configuration refresh operation has completed. Check the logs for any errors."
+        }
+        alert.alertStyle = .informational
+        alert.runModal()
+    }
+
     @objc func setCustomPrivacyConfigurationURL(_ sender: Any?) {
         let privacyConfigURL = configurationURLProvider.url(for: .privacyConfiguration).absoluteString
         let alert = NSAlert.customConfigurationAlert(configurationUrl: privacyConfigURL)
@@ -800,19 +812,26 @@ extension AppDelegate {
                 Logger.config.error("Failed to set custom configuration URL")
                 return
             }
-            do {
-                try setPrivacyConfigurationUrl(newConfigurationUrl)
-            } catch let error {
-                showErrorAlert(message: error.localizedDescription)
+
+            Task { @MainActor in
+                do {
+                    try await setPrivacyConfigurationUrl(newConfigurationUrl)
+                    showConfigurationUpdateCompleteAlert(configurationUrl: newConfigurationUrl)
+                } catch let error {
+                    showErrorAlert(message: error.localizedDescription)
+                }
             }
         }
     }
 
     @objc func resetPrivacyConfigurationToDefault(_ sender: Any?) {
-        do {
-            try setPrivacyConfigurationUrl(nil)
-        } catch let error {
-            showErrorAlert(message: error.localizedDescription)
+        Task { @MainActor in
+            do {
+                try await setPrivacyConfigurationUrl(nil)
+                showConfigurationUpdateCompleteAlert(configurationUrl: nil)
+            } catch let error {
+                showErrorAlert(message: error.localizedDescription)
+            }
         }
     }
 

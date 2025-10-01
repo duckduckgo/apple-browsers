@@ -94,8 +94,7 @@ function collectPerformanceMetrics() {
                 // TTI approximation
                 tti: navigation.domInteractive - navigation.fetchStart,
 
-   }            // Additional metadata
-
+                // Additional metadata
                 protocol: navigation.nextHopProtocol || 'N/A',
                redirectCount: navigation.redirectCount || 0,
                 navigationType: navigation.type || 'navigate'
@@ -106,4 +105,4 @@ function collectPerformanceMetrics() {
     } catch (e) {
         return { error: 'JavaScript execution error: ' + e.message };
     }
-
+}

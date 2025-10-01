@@ -28,8 +28,15 @@ protocol OptOutSubmissionWideEventRecording: AnyObject {
     func markSubmissionCompleted(at date: Date,
                                  tries: Int,
                                  actionID: String?)
+    func complete(status: WideEventStatus)
     func complete(status: WideEventStatus, with error: Error?)
     func cancel(with error: Error?)
+}
+
+extension OptOutSubmissionWideEventRecording {
+    func complete(status: WideEventStatus) {
+        complete(status: status, with: nil)
+    }
 }
 
 final class OptOutSubmissionWideEventRecorder {

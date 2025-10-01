@@ -145,8 +145,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                                               repository: jobDependencies.database,
                                                               brokerId: jobData.brokerId,
                                                               profileQueryId: jobData.profileQueryId,
-                                                              extractedProfileId: jobData.extractedProfileId,
-                                                              fallback: stageDurationCalculator.startTime)
+                                                              extractedProfileId: jobData.extractedProfileId)
         stageDurationCalculator.attachWideEventRecorder(wideEventRecorder)
         stageDurationCalculator.setStage(.emailConfirmDecoupled)
 

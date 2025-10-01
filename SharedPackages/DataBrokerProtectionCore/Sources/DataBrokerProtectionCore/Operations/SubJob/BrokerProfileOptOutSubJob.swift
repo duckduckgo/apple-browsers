@@ -83,13 +83,11 @@ struct BrokerProfileOptOutSubJob {
             vpnBypassStatus: vpnBypassStatus
         )
 
-        let matchingOptOutJob = brokerProfileQueryData.optOutJobDataMatching(extractedProfileId)
-        let recordFoundDate = RecordFoundDateResolver.resolve(optOutJob: matchingOptOutJob,
+        let recordFoundDate = RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
                                                               repository: dependencies.database,
                                                               brokerId: brokerId,
                                                               profileQueryId: profileQueryId,
-                                                              extractedProfileId: extractedProfileId,
-                                                              fallback: stageDurationCalculator.startTime)
+                                                              extractedProfileId: extractedProfileId)
         let wideEventRecorder = OptOutSubmissionWideEventRecorder.makeIfPossible(
             wideEvent: dependencies.wideEvent,
             attemptID: stageDurationCalculator.attemptId,
@@ -343,10 +341,4 @@ struct BrokerProfileOptOutSubJob {
         Logger.dataBrokerProtection.error("Error on operation : \(error.localizedDescription, privacy: .public)")
     }
 
-}
-
-extension BrokerProfileQueryData {
-    fileprivate func optOutJobDataMatching(_ extractedProfileId: Int64) -> OptOutJobData? {
-        optOutJobData.first(where: { $0.extractedProfile.id == extractedProfileId })
-    }
 }

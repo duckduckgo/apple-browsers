@@ -20,20 +20,21 @@ import Foundation
 
 enum RecordFoundDateResolver {
 
-    private static let migrationDefaultDate = Date(timeIntervalSince1970: 0)
+    static let defaultDate = Date(timeIntervalSince1970: 0)
 
     /// This resolves the found date for an extracted profile record
     ///
     /// It mirrors DBPUIDataBrokerProfileMatch flow:
     /// 1. use stored createdDate when valid
     /// 2. otherwise retrieve the first matches-found timestamp from job or DB history
-    /// 3. otherwise defer to the supplied fallback
+    /// 3. otherwise defer to the supplied fallback (defaulting to unix epoch zero so we
+    /// know it's an outlier)
     static func resolve(optOutJob: OptOutJobData?,
                         repository: DataBrokerProtectionRepository,
                         brokerId: Int64,
                         profileQueryId: Int64,
                         extractedProfileId: Int64,
-                        fallback: Date) -> Date {
+                        fallback: Date = Self.defaultDate) -> Date {
         if let createdDate = validCreatedDate(from: optOutJob) {
             return createdDate
         }
@@ -52,9 +53,23 @@ enum RecordFoundDateResolver {
         return fallback
     }
 
+    static func resolve(brokerQueryProfileData: BrokerProfileQueryData,
+                        repository: DataBrokerProtectionRepository,
+                        brokerId: Int64,
+                        profileQueryId: Int64,
+                        extractedProfileId: Int64,
+                        fallback: Date = Self.defaultDate) -> Date {
+        resolve(optOutJob: brokerQueryProfileData.optOutJobDataMatching(extractedProfileId),
+                repository: repository,
+                brokerId: brokerId,
+                profileQueryId: profileQueryId,
+                extractedProfileId: extractedProfileId,
+                fallback: fallback)
+    }
+
     private static func validCreatedDate(from optOutJob: OptOutJobData?) -> Date? {
         guard let createdDate = optOutJob?.createdDate else { return nil }
-        return createdDate == migrationDefaultDate ? nil : createdDate
+        return createdDate == defaultDate ? nil : createdDate
     }
 
     private static func firstFoundDate(from events: [HistoryEvent]?) -> Date? {
@@ -76,4 +91,10 @@ enum RecordFoundDateResolver {
         return firstFoundDate(from: events)
     }
 
+}
+
+extension BrokerProfileQueryData {
+    fileprivate func optOutJobDataMatching(_ extractedProfileId: Int64) -> OptOutJobData? {
+        optOutJobData.first(where: { $0.extractedProfile.id == extractedProfileId })
+    }
 }

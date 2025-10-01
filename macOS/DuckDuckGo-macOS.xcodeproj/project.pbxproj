@@ -2620,6 +2620,8 @@
 		9F3910632B68C35600CB5112 /* DownloadsTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3910612B68C35600CB5112 /* DownloadsTabExtensionTests.swift */; };
 		9F3910692B68D87B00CB5112 /* ProgressExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3910682B68D87B00CB5112 /* ProgressExtensionTests.swift */; };
 		9F39106A2B68D87B00CB5112 /* ProgressExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3910682B68D87B00CB5112 /* ProgressExtensionTests.swift */; };
+		9F5003292E8D1B73002F98D1 /* FoundationExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 9F5003282E8D1B73002F98D1 /* FoundationExtensions */; };
+		9F50032B2E8D1B7F002F98D1 /* FoundationExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 9F50032A2E8D1B7F002F98D1 /* FoundationExtensions */; };
 		9F514F912B7D88AD001832A9 /* AddEditBookmarkFolderDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F514F902B7D88AD001832A9 /* AddEditBookmarkFolderDialogView.swift */; };
 		9F514F922B7D88AD001832A9 /* AddEditBookmarkFolderDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F514F902B7D88AD001832A9 /* AddEditBookmarkFolderDialogView.swift */; };
 		9F56CFA92B82DC4300BB7F11 /* AddEditBookmarkFolderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F56CFA82B82DC4300BB7F11 /* AddEditBookmarkFolderView.swift */; };
@@ -6052,6 +6054,7 @@
 				3706FCA9293F65D500E42796 /* ContentBlocking in Frameworks */,
 				4BF97AD12B43C43F00EB4240 /* NetworkProtectionIPC in Frameworks */,
 				7B2366862C09FACD002D393F /* VPNAppLauncher in Frameworks */,
+				9F50032B2E8D1B7F002F98D1 /* FoundationExtensions in Frameworks */,
 				4B9EE35A2D76CA4100DDC75C /* Persistence in Frameworks */,
 				3706FCAA293F65D500E42796 /* UserScript in Frameworks */,
 				5641734D2CFE169400F4B716 /* PixelExperimentKit in Frameworks */,
@@ -6371,6 +6374,7 @@
 				7BA59C9B2AE18B49009A97B1 /* SystemExtensionManager in Frameworks */,
 				7BC26CA42DFC103D00E52480 /* VPN in Frameworks */,
 				4B9EE3202D76C83100DDC75C /* DDGSync in Frameworks */,
+				9F5003292E8D1B73002F98D1 /* FoundationExtensions in Frameworks */,
 				4B9EE3302D76C88300DDC75C /* Persistence in Frameworks */,
 				4B9EE3402D76C91000DDC75C /* SpecialErrorPages in Frameworks */,
 				9FF521462BAA908500B9819B /* Lottie in Frameworks */,
@@ -11553,6 +11557,7 @@
 				D65D0FA02E7239730075A784 /* NetworkQualityMonitor */,
 				379C3E4B2E7238D800058C52 /* URLPredictor */,
 				D66840172E82BDED007DAAB2 /* PerformanceTest */,
+				9F50032A2E8D1B7F002F98D1 /* FoundationExtensions */,
 			);
 			productName = DuckDuckGo;
 			productReference = 3706FD05293F65D500E42796 /* DuckDuckGo App Store.app */;
@@ -12074,6 +12079,7 @@
 				D65D0F9E2E7239680075A784 /* NetworkQualityMonitor */,
 				379C3E4D2E7238E100058C52 /* URLPredictor */,
 				D65D0FA42E7239750075A784 /* PerformanceTest */,
+				9F5003282E8D1B73002F98D1 /* FoundationExtensions */,
 			);
 			productName = DuckDuckGo;
 			productReference = AA585D7E248FD31100E9A3E2 /* DuckDuckGo.app */;
@@ -18824,6 +18830,14 @@
 		9DC70B192AA1FA5B005A844B /* LoginItems */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LoginItems;
+		};
+		9F5003282E8D1B73002F98D1 /* FoundationExtensions */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FoundationExtensions;
+		};
+		9F50032A2E8D1B7F002F98D1 /* FoundationExtensions */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FoundationExtensions;
 		};
 		9FF521452BAA908500B9819B /* Lottie */ = {
 			isa = XCSwiftPackageProductDependency;

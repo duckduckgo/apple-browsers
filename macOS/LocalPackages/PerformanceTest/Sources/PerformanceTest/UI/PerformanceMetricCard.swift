@@ -18,7 +18,7 @@
 
 import SwiftUI
 
-struct PerformanceMetricCard: View {
+struct PerformanceMetricCarda: View {
     let title: String
     let value: String
     let actualValue: Double

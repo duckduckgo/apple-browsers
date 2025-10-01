@@ -2,8 +2,6 @@
  * Logger utility for consistent logging across the application
  *
  * @module utils/Logger
- * @copyright 2024 DuckDuckGo
- * @license Apache-2.0
  */
 
 class Logger {

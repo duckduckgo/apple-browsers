@@ -28,6 +28,8 @@ import Networking
 struct SettingsAIFeaturesView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
 
+    let embedSERPSettings = true
+
     var body: some View {
         List {
 
@@ -138,12 +140,19 @@ struct SettingsAIFeaturesView: View {
 
             if !viewModel.openedFromSERPSettingsButton {
                 Section {
-                    SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
-                                     subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
-                                     image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist),
-                                     action: { viewModel.openAssistSettings() },
-                                     webLinkIndicator: true,
-                                     isButton: true)
+                    if embedSERPSettings {
+                        NavigationLink(destination: SERPSettingsView(page: .aiFeatures).environmentObject(viewModel)) {
+                            SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
+                                             subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle)
+                        }
+                    } else {
+                        SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
+                                         subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
+                                         image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist),
+                                         action: { viewModel.openAssistSettings() },
+                                         webLinkIndicator: true,
+                                         isButton: true)
+                    }
                 }
             }
         }.applySettingsListModifiers(title: UserText.settingsAiFeatures,

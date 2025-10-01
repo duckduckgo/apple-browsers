@@ -22,7 +22,6 @@ import SwiftUI
 import DesignResourcesKit
 
 struct PrivateSearchView: View {
-
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var description: SettingsDescription {
@@ -51,6 +50,7 @@ struct PrivateSearchView: View {
 struct PrivateSearchViewSettings: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
+    let embedSERPSettings = true
 
     var body: some View {
         Section(footer: Text(UserText.settingsAutocompleteSubtitle)) {
@@ -68,11 +68,18 @@ struct PrivateSearchViewSettings: View {
 
         Section {
             // More Search Settings
-            SettingsCellView(label: UserText.moreSearchSettings,
-                             subtitle: UserText.moreSearchSettingsExplanation,
-                             action: { viewModel.openMoreSearchSettings() },
-                             webLinkIndicator: true,
-                             isButton: true)
+            if embedSERPSettings {
+                NavigationLink(destination: SERPSettingsView(page: .main).environmentObject(viewModel)) {
+                    SettingsCellView(label: UserText.moreSearchSettings,
+                                     subtitle: UserText.moreSearchSettingsExplanation)
+                }
+            } else {
+                SettingsCellView(label: UserText.moreSearchSettings,
+                                 subtitle: UserText.moreSearchSettingsExplanation,
+                                 action: { viewModel.openMoreSearchSettings() },
+                                 webLinkIndicator: true,
+                                 isButton: true)
+            }
         }
     }
 }

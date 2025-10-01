@@ -1,5 +1,5 @@
 //
-//  FoundationExtensionsTests.swift
+//  DateExtensionTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,6 +17,6 @@
 //
 
 import Testing
-@testable import UIComponents
+@testable import FoundationExtensions
 
 @Test func example() async throws { }

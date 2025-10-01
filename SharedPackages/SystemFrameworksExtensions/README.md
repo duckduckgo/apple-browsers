@@ -60,11 +60,13 @@ Swift Package Manager doesn't directly support per-target platforms. The solutio
   ],
   .products: [
      ...
-    .library(name: "UIKitExtensions", targets: ["UIKitExtensionsProxy"]),
+    .library(
+       name: "UIKitExtensions", 
+       targets: ["UIKitExtensionsProxy"]
+    ),
   ],
   .target(
       name: "UIKitExtensions", // Actual code lives here
-      dependencies: ["UIKitExtensionsProxy"]
   ),
   .target(
       name: "UIKitExtensionsProxy", // Proxy decides when to include it

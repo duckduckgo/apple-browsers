@@ -180,7 +180,7 @@ final class CreditCardsResponseHandler {
 
         // Find matches by card number
         guard let matched = try findMatchByCardNumber(cardNumberString,
-                                                      in: candidates,
+                                                      in: syncableCreditCards,
                                                       encryptionKey: encryptionKey) else {
             return nil
         }

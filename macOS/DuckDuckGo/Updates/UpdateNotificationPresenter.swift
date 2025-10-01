@@ -61,7 +61,7 @@ final class UpdateNotificationPresenter {
 
     func openUpdatesPage() {
         DispatchQueue.main.async {
-            Application.appDelegate.windowControllersManager.showTab(with: .releaseNotes)
+            Application.appDelegate.updateController.openUpdatesPage()
         }
     }
 }

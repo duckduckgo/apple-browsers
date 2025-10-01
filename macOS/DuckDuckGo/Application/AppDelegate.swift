@@ -253,8 +253,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var didFinishLaunching = false
 
-#if SPARKLE
     var updateController: UpdateController!
+#if SPARKLE
     var dockCustomization: DockCustomization?
 #endif
 
@@ -811,11 +811,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let watchdogDiagnosticProvider = MacWatchdogDiagnosticProvider(windowControllersManager: windowControllersManager)
         let eventMapper = WatchdogEventMapper(diagnosticProvider: watchdogDiagnosticProvider)
         watchdog = Watchdog(eventMapper: eventMapper)
- #if !DEBUG
-        if featureFlagger.isFeatureOn(.hangReporting) {
-            watchdog.start()
-        }
- #endif
 
         super.init()
 
@@ -837,10 +832,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                              keyValueStore: keyValueStore,
                                                              sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
                                                              pixelFiring: PixelKit.shared)
-
-#if SPARKLE
+#if APPSTORE
         if AppVersion.runType != .uiTests {
-            updateController = UpdateController(internalUserDecider: internalUserDecider)
+            updateController = AppStoreUpdateController()
+        }
+#elseif SPARKLE
+        if AppVersion.runType != .uiTests {
+            let updateController = SparkleUpdateController(internalUserDecider: internalUserDecider)
+            self.updateController = updateController
             stateRestorationManager.subscribeToAutomaticAppRelaunching(using: updateController.willRelaunchAppPublisher)
         }
 #endif
@@ -865,6 +864,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSWindow.allowsAutomaticWindowTabbing = false
         // Fix SwifUI context menus and its owner View leaking
         SwiftUIContextMenuRetainCycleFix.setUp()
+
+#if !DEBUG
+        // Start UI hang watchdog
+        if featureFlagger.isFeatureOn(.hangReporting) {
+            Task {
+                await watchdog.start()
+            }
+        }
+#endif
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -1357,7 +1365,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         updateProgressCancellable = updateController.updateProgressPublisher
             .sink { [weak self] progress in
-                self?.updateController.checkNewApplicationVersionIfNeeded(updateProgress: progress)
+                (self?.updateController as? SparkleUpdateController)?.checkNewApplicationVersionIfNeeded(updateProgress: progress)
             }
 #endif
     }

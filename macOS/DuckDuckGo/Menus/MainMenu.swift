@@ -693,8 +693,12 @@ final class MainMenu: NSMenu {
             }
             NSMenuItem(title: "History")
                 .submenu(HistoryDebugMenu(historyCoordinator: historyCoordinator, featureFlagger: featureFlagger))
-            NSMenuItem(title: "Test Network Quality", action: #selector(MainViewController.testNetworkQuality))
-                .withAccessibilityIdentifier("MainMenu.testNetworkQuality")
+            NSMenuItem(title: "Performance Tests") {
+                NSMenuItem(title: "Test Network Quality", action: #selector(MainViewController.testNetworkQuality))
+                    .withAccessibilityIdentifier("MainMenu.testNetworkQuality")
+                NSMenuItem(title: "Test Current Site Performance", action: #selector(MainViewController.testCurrentSitePerformance))
+                    .withAccessibilityIdentifier("MainMenu.testCurrentSitePerformance")
+            }
             NSMenuItem(title: "Content Scopes Experiment") {
                 NSMenuItem(title: "Show Active Experiments", action: #selector(AppDelegate.showContentScopeExperiments))
             }
@@ -764,6 +768,9 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "VPN")
                     .submenu(NetworkProtectionDebugMenu())
             }
+
+            NSMenuItem(title: "AppStore Updates")
+                .submenu(AppStoreUpdatesDebugMenu())
 
             if #available(macOS 13.5, *) {
                 NSMenuItem(title: "Autofill") {
@@ -873,8 +880,13 @@ final class MainMenu: NSMenu {
 
     @MainActor
     private func updateWatchdogMenuItems() {
-        toggleWatchdogMenuItem.state = NSApp.delegateTyped.watchdog.isRunning ? .on : .off
-        toggleWatchdogCrashMenuItem.state = NSApp.delegateTyped.watchdog.crashOnTimeout ? .on : .off
+        Task {
+            let isRunning = NSApp.delegateTyped.watchdog.isRunning
+            let crashOnTimeout = await NSApp.delegateTyped.watchdog.crashOnTimeout
+
+            toggleWatchdogMenuItem.state = isRunning ? .on : .off
+            toggleWatchdogCrashMenuItem.state = crashOnTimeout ? .on : .off
+        }
     }
 
     private func updateRemoteConfigurationInfo() {

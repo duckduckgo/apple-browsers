@@ -31,6 +31,7 @@ final class MockNewTabPageProtectionsReportVisibleFeedProvider: NewTabPageProtec
 final class NewTabPageShownPixelSenderTests: XCTestCase {
 
     var appearancePreferences: AppearancePreferences!
+    var themeManager: ThemeManagerProtocol = MockThemeManager()
     var visibleFeedProvider: MockNewTabPageProtectionsReportVisibleFeedProvider!
     var customizationModel: NewTabPageCustomizationModel!
     var handler: NewTabPageShownPixelSender!
@@ -57,7 +58,7 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
             sendPixel: { _ in },
             openFilePanel: { nil },
             showAddImageFailedAlert: {},
-            visualStyle: VisualStyle.current
+            themeManager: themeManager
         )
 
         handler = NewTabPageShownPixelSender(

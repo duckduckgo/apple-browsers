@@ -34,6 +34,12 @@
         pattern: '^-?\\d+$',
         examples: ['-1009', '42'],
     },
+    isInternalUser: {
+        key: 'is_internal_user',
+        description: 'Whether the user is flagged as internal.  Should ONLY be sent with "true" value',
+        type: 'boolean',
+        enum: [true],
+    },
     underlyingErrorCode: {
         keyPattern: '^ue[0-9]$',
         type: 'string',

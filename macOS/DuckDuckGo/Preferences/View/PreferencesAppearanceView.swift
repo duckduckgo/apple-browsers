@@ -121,6 +121,7 @@ extension Preferences {
         }
     }
 
+<<<<<<< HEAD
     // MARK: - Theme View
     //
     struct ThemeView: View {
@@ -206,6 +207,8 @@ extension Preferences {
 
     // MARK: - Appearance Container View
     //
+=======
+>>>>>>> origin/main
     struct AppearanceView: View {
         @ObservedObject var model: AppearancePreferences
         @ObservedObject var aiChatModel: AIChatPreferences
@@ -220,10 +223,14 @@ extension Preferences {
                     if isThemeSwitcherEnabled {
                         ThemeAppearancePickerV2()
                             .environmentObject(model)
+<<<<<<< HEAD
                             .padding(.bottom, 16)
 
                         ThemesPickerView()
                             .environmentObject(model)
+=======
+
+>>>>>>> origin/main
                     } else {
                         ThemeAppearancePicker()
                             .environmentObject(model)

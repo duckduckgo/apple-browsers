@@ -109,7 +109,7 @@
         description: 'Fires periodically with counts of autoconsent metrics.',
         owners: ['sammacbeth'],
         triggers: ['scheduled'],
-        suffixes: ['form_factor'],
+        suffixes: ['platform', 'form_factor'],
         parameters: [
             'appVersion',
             'pixelSource',

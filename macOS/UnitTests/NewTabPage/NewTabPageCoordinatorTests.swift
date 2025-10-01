@@ -40,7 +40,7 @@ final class MockPrivacyStats: PrivacyStatsCollecting {
 final class NewTabPageCoordinatorTests: XCTestCase {
     var coordinator: NewTabPageCoordinator!
     var appearancePreferences: AppearancePreferences!
-    var themeManager: ThemeManagerProtocol = MockThemeManager()
+    var themeManager: ThemeManagerProtocol!
     var customizationModel: NewTabPageCustomizationModel!
     var notificationCenter: NotificationCenter!
     var keyValueStore: MockKeyValueFileStore!
@@ -64,6 +64,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: featureFlagger
         )
+
+        themeManager = MockThemeManager()
 
         customizationModel = NewTabPageCustomizationModel(
             appearancePreferences: appearancePreferences,
@@ -124,6 +126,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         keyValueStore = nil
         notificationCenter = nil
         tabsPreferences = nil
+        themeManager = nil
         windowControllersManager = nil
     }
 

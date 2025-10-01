@@ -99,7 +99,7 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
-    private var theme: VisualStyleProviding {
+    private var theme: ThemeDefinition {
         themeManager.theme
     }
 

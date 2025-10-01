@@ -155,7 +155,7 @@ final class NavigationBarViewController: NSViewController {
     private let showTab: (Tab.TabContent) -> Void
 
     private let themeManager: ThemeManager
-    private var theme: VisualStyleProviding {
+    private var theme: ThemeDefinition {
         themeManager.theme
     }
 
@@ -1706,7 +1706,7 @@ final class NavigationBarViewController: NSViewController {
 
     /// Provides the menu items to display in the overflow menu for a given pinned view.
     private func overflowMenuItem(for view: PinnableView,
-                                  theme: VisualStyleProviding) -> NSMenuItem {
+                                  theme: ThemeDefinition) -> NSMenuItem {
         switch view {
         case .autofill:
             return NSMenuItem(title: UserText.autofill, action: #selector(overflowMenuRequestedLoginsPopover), keyEquivalent: "")

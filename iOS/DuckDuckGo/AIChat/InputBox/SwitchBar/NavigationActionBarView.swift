@@ -81,7 +81,6 @@ final class NavigationActionBarView: UIView {
     
     // MARK: - Setup
     private func setupUI() {
-        // Setup stack views
         mainStackView.axis = .horizontal
         mainStackView.spacing = Constants.buttonSpacing
         mainStackView.alignment = .fill
@@ -94,12 +93,10 @@ final class NavigationActionBarView: UIView {
 
         solidView.backgroundColor = UIColor(designSystemColor: .surface).withAlphaComponent(0.8)
 
-        // Setup buttons
         setupMicrophoneButton()
         setupNewLineButton()
         setupSearchButton()
         
-        // Add to stack views
         rightStackView.addArrangedSubview(microphoneButton)
         rightStackView.addArrangedSubview(newLineButton)
         rightStackView.addArrangedSubview(searchButton)
@@ -122,7 +119,6 @@ final class NavigationActionBarView: UIView {
         }
         addSubview(mainStackView)
         
-        // Setup constraints
         solidView.translatesAutoresizingMaskIntoConstraints = false
         mainStackView.translatesAutoresizingMaskIntoConstraints = false
         backgroundGradientView.translatesAutoresizingMaskIntoConstraints = false
@@ -130,7 +126,6 @@ final class NavigationActionBarView: UIView {
         let mainStackPadding = isFloating ? Constants.padding : 0
 
         NSLayoutConstraint.activate([
-            // Main stack view constraints
             mainStackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: mainStackPadding),
             mainStackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -mainStackPadding),
             mainStackView.topAnchor.constraint(greaterThanOrEqualTo: safeAreaLayoutGuide.topAnchor, constant: mainStackPadding),
@@ -181,8 +176,10 @@ final class NavigationActionBarView: UIView {
         newLineButton.isShadowHidden = !isFloating
         newLineButton.setIcon(returnImage)
         newLineButton.setColors(
-            foreground: UIColor(designSystemColor: .textPrimary),
-            background: UIColor(designSystemColor: .surface)
+            foreground: UIColor(designSystemColor: .icons),
+            background: UIColor(designSystemColor: .surfaceTertiary),
+            pressedForeground: UIColor(designSystemColor: .icons),
+            pressedBackground: UIColor(designSystemColor: .surface)
         )
         newLineButton.addTarget(self, action: #selector(newLineTapped), for: .touchUpInside)
     }
@@ -264,11 +261,13 @@ final class NavigationActionBarView: UIView {
         microphoneButton.alpha = isEnabled ? 1.0 : 0.5
         microphoneButton.isEnabled = isEnabled
         microphoneButton.setColors(
-            foreground: UIColor(designSystemColor: .textPrimary),
-            background: UIColor(designSystemColor: .surface)
+            foreground: UIColor(designSystemColor: .icons),
+            background: UIColor(designSystemColor: .surfaceTertiary),
+            pressedForeground: UIColor(designSystemColor: .icons),
+            pressedBackground: UIColor(designSystemColor: .surface)
         )
     }
-    
+
     private func updateSearchButton() {
         let hasText = viewModel.hasText
         let isValidURL = viewModel.isCurrentTextValidURL
@@ -285,8 +284,10 @@ final class NavigationActionBarView: UIView {
         searchButton.isShadowHidden = !isFloating
         searchButton.setIcon(icon)
         searchButton.setColors(
-            foreground: hasText ? .white : UIColor(designSystemColor: .textPlaceholder),
-            background: hasText ? UIColor(designSystemColor: .accent) : UIColor(designSystemColor: .surface)
+            foreground: UIColor(designSystemColor: .accentContentPrimary),
+            background: UIColor(designSystemColor: .accent),
+            pressedForeground: UIColor(designSystemColor: .accentContentPrimary),
+            pressedBackground: UIColor(designSystemColor: .accentTertiary)
         )
         searchButton.isEnabled = hasText
         
@@ -338,6 +339,9 @@ private class CircularButton: UIButton {
 
     private let secondShadowLayer = CALayer()
     private var definedBackgroundColor: UIColor?
+    private var definedForegroundColor: UIColor?
+    private var definedPressedBackgroundColor: UIColor?
+    private var definedPressedForegroundColor: UIColor?
 
     var isShadowHidden: Bool = false {
         didSet {
@@ -359,13 +363,11 @@ private class CircularButton: UIButton {
         layer.cornerRadius = NavigationActionBarView.Constants.buttonSize / 2
         layer.masksToBounds = false
         
-        // Add shadows
         layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
         layer.shadowOpacity = 1.0
         layer.shadowOffset = CGSize(width: 0, height: NavigationActionBarView.Constants.shadowOffset1Y)
         layer.shadowRadius = NavigationActionBarView.Constants.shadowRadius1
         
-        // Add second shadow layer
         secondShadowLayer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
         secondShadowLayer.shadowOpacity = 1.0
         secondShadowLayer.shadowOffset = CGSize(width: 0, height: NavigationActionBarView.Constants.shadowOffset2Y)
@@ -392,7 +394,13 @@ private class CircularButton: UIButton {
     override var isHighlighted: Bool {
         didSet {
             UIView.animate(withDuration: 0.15) {
-                self.backgroundColor = self.isHighlighted ? self.definedBackgroundColor?.withAlphaComponent(0.8) : self.definedBackgroundColor
+                if self.isHighlighted {
+                    self.backgroundColor = self.definedPressedBackgroundColor ?? self.definedBackgroundColor?.withAlphaComponent(0.8)
+                    self.imageView?.tintColor = self.definedPressedForegroundColor ?? self.definedForegroundColor
+                } else {
+                    self.backgroundColor = self.definedBackgroundColor
+                    self.imageView?.tintColor = self.definedForegroundColor
+                }
             }
         }
     }
@@ -402,8 +410,12 @@ private class CircularButton: UIButton {
         imageView?.tintColor = UIColor(designSystemColor: .textPrimary)
     }
     
-    func setColors(foreground: UIColor, background: UIColor) {
+    func setColors(foreground: UIColor, background: UIColor, pressedForeground: UIColor? = nil, pressedBackground: UIColor? = nil) {
+        definedForegroundColor = foreground
         definedBackgroundColor = background
+        definedPressedForegroundColor = pressedForeground
+        definedPressedBackgroundColor = pressedBackground
+        
         backgroundColor = background
         imageView?.tintColor = foreground
         setTitleColor(foreground, for: .normal)

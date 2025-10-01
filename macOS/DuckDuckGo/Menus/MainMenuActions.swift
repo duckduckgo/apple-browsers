@@ -1333,15 +1333,20 @@ extension MainViewController {
     }
 
     @objc func toggleWatchdog(_ sender: Any?) {
-        if NSApp.delegateTyped.watchdog.isRunning {
-            NSApp.delegateTyped.watchdog.stop()
-        } else {
-            NSApp.delegateTyped.watchdog.start()
+        Task {
+            if NSApp.delegateTyped.watchdog.isRunning {
+                await NSApp.delegateTyped.watchdog.stop()
+            } else {
+                await NSApp.delegateTyped.watchdog.start()
+            }
         }
     }
 
     @objc func toggleWatchdogCrash(_ sender: Any?) {
-        NSApp.delegateTyped.watchdog.crashOnTimeout.toggle()
+        Task {
+            let crashOnTimeout = await NSApp.delegateTyped.watchdog.crashOnTimeout
+            await NSApp.delegateTyped.watchdog.setCrashOnTimeout(!crashOnTimeout)
+        }
     }
 
     @objc func simulateUIHang(_ sender: NSMenuItem) {

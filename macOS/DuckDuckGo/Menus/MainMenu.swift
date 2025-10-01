@@ -880,8 +880,13 @@ final class MainMenu: NSMenu {
 
     @MainActor
     private func updateWatchdogMenuItems() {
-        toggleWatchdogMenuItem.state = NSApp.delegateTyped.watchdog.isRunning ? .on : .off
-        toggleWatchdogCrashMenuItem.state = NSApp.delegateTyped.watchdog.crashOnTimeout ? .on : .off
+        Task {
+            let isRunning = NSApp.delegateTyped.watchdog.isRunning
+            let crashOnTimeout = await NSApp.delegateTyped.watchdog.crashOnTimeout
+
+            toggleWatchdogMenuItem.state = isRunning ? .on : .off
+            toggleWatchdogCrashMenuItem.state = crashOnTimeout ? .on : .off
+        }
     }
 
     private func updateRemoteConfigurationInfo() {

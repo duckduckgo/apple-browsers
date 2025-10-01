@@ -560,50 +560,6 @@ extension PerformanceTestWindowView {
         }
     }
 
-    private func gradeEmoji(_ grade: String) -> String {
-        switch grade {
-        case "A": return "🟢" // Green circle for Excellent
-        case "B": return "🟡" // Yellow circle for Good
-        case "C": return "🟠" // Orange circle for Fair
-        case "D": return "🔴" // Red circle for Poor
-        default: return "🔴" // Red circle for Very Poor
-        }
-    }
-
-    private func timeQuality(_ time: TimeInterval) -> String {
-        // Based on Google Core Web Vitals LCP thresholds
-        if time < PerformanceTestConstants.Thresholds.goodLCP {
-            return "Good"
-        } else if time < PerformanceTestConstants.Thresholds.poorLCP {
-            return "Needs Improvement"
-        } else {
-            return "Poor"
-        }
-    }
-
-    private func consistencyQuality(_ stdDev: TimeInterval, averageTime: TimeInterval) -> String {
-        guard averageTime > 0 else { return "Poor" }
-        let cv = (stdDev / averageTime) * 100
-        return cvQuality(cv)
-    }
-
-    private func cvQuality(_ cv: Double) -> String {
-        if cv < PerformanceTestConstants.Thresholds.excellentCV {
-            return "Excellent"
-        } else if cv < PerformanceTestConstants.Thresholds.goodCV {
-            return "Good"
-        } else if cv < PerformanceTestConstants.Thresholds.fairCV {
-            return "Fair"
-        } else {
-            return "Poor"
-        }
-    }
-
-    private func formatTime(_ time: TimeInterval) -> String {
-        // Always show in milliseconds as integers to match spec
-        String(format: "%.0f", time * 1000)
-    }
-
     private func formatMetricValue(_ value: Double, isTime: Bool) -> String {
         if isTime {
             // Convert seconds to milliseconds and add "ms" suffix

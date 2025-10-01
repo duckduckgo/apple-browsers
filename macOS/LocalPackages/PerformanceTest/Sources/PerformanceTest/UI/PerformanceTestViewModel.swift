@@ -66,7 +66,6 @@ final class PerformanceTestViewModel: ObservableObject {
                     self?.statusText = status
                     // Progress should reach 1.0 only after the last iteration completes
                     // Use (userIteration - 1) so that iteration N shows progress for N-1 completed
-
                     self?.progress = Double(userIteration - 1) / Double(userTotal)
                }
             }

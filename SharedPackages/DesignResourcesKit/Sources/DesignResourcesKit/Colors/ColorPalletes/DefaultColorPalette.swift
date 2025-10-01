@@ -43,7 +43,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x474747 = Color(0x474747)
     private static let x1C1C1C = Color(0x1C1C1C)
     private static let x7295F6 = Color(0x7295F6)
-    private static let x1E42A4 = Color(0x1E42A4)
 
     // URL bar
     private static let urlBar = DynamicColor(lightColor: .white, darkColor: x474747)

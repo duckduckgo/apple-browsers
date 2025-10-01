@@ -18,6 +18,7 @@
 
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKit
 
 struct TitledButtonAction {
     let title: String

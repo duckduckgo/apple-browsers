@@ -29,7 +29,6 @@ final class SafariArchiveImporter: DataImporter {
         enum OperationType: Int {
             case validateAccess
             case unarchive
-            case readContents
             case createTempFiles
             case importContents
         }
@@ -42,8 +41,6 @@ final class SafariArchiveImporter: DataImporter {
             switch type {
             case .validateAccess:
                 return .other
-            case .readContents:
-                return .noData
             case .createTempFiles:
                 return .other
             case .importContents:
@@ -192,7 +189,12 @@ final class SafariArchiveImporter: DataImporter {
             cleanupTemporaryFiles(tempFiles)
         }
 
-        let dataTypeFraction = 1.0 / Double(types.count)
+        guard !contents.isEmpty else {
+            for type in types {
+                summary[type] = .failure(ImportError(action: .generic, type: .importContents, underlyingError: nil))
+            }
+            return summary
+        }
 
         // Import passwords if requested and available
         if types.contains(.passwords), !contents.passwords.isEmpty {
@@ -202,10 +204,6 @@ final class SafariArchiveImporter: DataImporter {
             let passwordResults = await passwordTask.task.value
             try updateProgress(.importingPasswords(numberOfPasswords: passwordResults.count, fraction: 1.0))
             summary.merge(passwordResults) { _, new in new }
-        } else if types.contains(.passwords) {
-            let passwordsResults: DataImportSummary = [.passwords: .failure(ImportError(action: .passwords, type: .importContents, underlyingError: nil))]
-            try updateProgress(.importingPasswords(numberOfPasswords: 0, fraction: 1.0))
-            summary.merge(passwordsResults) { _, new in new }
         }
 
         // Import bookmarks if requested and available
@@ -215,10 +213,6 @@ final class SafariArchiveImporter: DataImporter {
             let bookmarkResults = await bookmarkTask.task.value
             try updateProgress(.importingBookmarks(numberOfBookmarks: bookmarkResults.count, fraction: 1.0))
             summary.merge(bookmarkResults) { _, new in new }
-        } else if types.contains(.bookmarks) {
-            let bookmarksResults: DataImportSummary = [.bookmarks: .failure(ImportError(action: .bookmarks, type: .importContents, underlyingError: nil))]
-            try updateProgress(.importingBookmarks(numberOfBookmarks: 0, fraction: 1.0))
-            summary.merge(bookmarksResults) { _, new in new }
         }
 
         // Import credit cards if requested and available
@@ -228,10 +222,6 @@ final class SafariArchiveImporter: DataImporter {
             let creditCardResults = await creditCardTask.task.value
             try updateProgress(.importingCreditCards(numberOfCreditCards: creditCardResults.count, fraction: 1.0))
             summary.merge(creditCardResults) { _, new in new }
-        } else if types.contains(.creditCards) {
-            let creditCardsResults: DataImportSummary = [.creditCards: .failure(ImportError(action: .creditCards, type: .importContents, underlyingError: nil))]
-            try updateProgress(.importingCreditCards(numberOfCreditCards: 0, fraction: 1.0))
-            summary.merge(creditCardsResults) { _, new in new }
         }
 
         try updateProgress(.done)

@@ -77,7 +77,7 @@ struct MultiFileImportScreenView: View {
                     if case .multiple(let dataTypes) = dataTypeSelection,
                         let firstDataType = dataTypes.first,
                         let error = model.error(for: firstDataType) as? SafariArchiveImporter.ImportError,
-                        error.type == .unarchive {
+                       error.type == .unarchive || error.type == .importContents {
                         HStack {
                             Image(nsImage: DesignSystemImages.Color.Size16.exclamationHigh)
                             Text("Incorrect file type or format. Please select a different file.")

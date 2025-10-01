@@ -54,6 +54,10 @@ public struct ImportArchiveReader: ImportArchiveReading {
         public let creditCards: [String] // JSON contents
         public var type: ContentType { ContentType(passwords: passwords, bookmarks: bookmarks, creditCards: creditCards) }
 
+        public var isEmpty: Bool {
+            passwords.isEmpty && bookmarks.isEmpty && creditCards.isEmpty
+        }
+
         public init(passwords: [String], bookmarks: [String], creditCards: [String]) {
             self.passwords = passwords
             self.bookmarks = bookmarks

@@ -23,7 +23,7 @@ import BrowserServicesKit
 final class UpdateControllerTests: XCTestCase {
 
     func testSparkleUpdaterErrorReason() {
-        let updateController = UpdateController(
+        let updateController = SparkleUpdateController(
             internalUserDecider: MockInternalUserDecider(),
             featureFlagger: MockFeatureFlagger(),
             updateCheckState: UpdateCheckState()

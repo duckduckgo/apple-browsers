@@ -59,8 +59,8 @@
             {
                 key: 'was_used_before',
                 description: 'Indicates if Duck.ai was used before.',
-                type: 'boolean',
-                examples: ['0', '1'],
+                type: 'integer',
+                enum: [0, 1],
             },
         ],
     },
@@ -74,8 +74,8 @@
             {
                 key: 'was_used_before',
                 description: 'Indicates if Duck.ai was used before.',
-                type: 'boolean',
-                examples: ['0', '1'],
+                type: 'integer',
+                enum: [0, 1],
             },
         ],
     },

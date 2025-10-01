@@ -190,6 +190,7 @@ final class WideEventTests: XCTestCase {
             var contextData: WideEventContextData = WideEventContextData()
             var appData: WideEventAppData = WideEventAppData()
             var globalData: WideEventGlobalData = WideEventGlobalData(platform: "", sampleRate: 1.0)
+            var errorData: WideEventErrorData?
             func pixelParameters() -> [String: String] { [:] }
 
             enum CodingError: Error { case encodingNotSupported }
@@ -387,10 +388,45 @@ final class WideEventTests: XCTestCase {
 
         let app = object?["app"] as? [String: Any]
         let feature = object?["feature"] as? [String: Any]
-        let context = object?["context"] as? [String: Any]
 
         XCTAssertEqual(app?["name"] as? String, "DuckDuckGo")
         XCTAssertEqual(feature?["status"] as? String, "SUCCESS")
+    }
+
+    func testErrorDataCapturesUnderlyingErrors() {
+        let deepError = NSError(domain: "DeepDomain", code: 3)
+
+        let deepErrorData = WideEventErrorData(error: deepError)
+
+        XCTAssertEqual(deepErrorData.domain, "DeepDomain")
+        XCTAssertEqual(deepErrorData.code, 3)
+        XCTAssertNil(deepErrorData.underlyingDomain)
+        XCTAssertNil(deepErrorData.underlyingCode)
+        XCTAssertEqual(deepErrorData.underlyingErrors.count, 0)
+
+        let nestedError = NSError(domain: "NestedDomain", code: 2, userInfo: [NSUnderlyingErrorKey: deepError])
+        let rootError = NSError(domain: "RootDomain", code: 1, userInfo: [NSUnderlyingErrorKey: nestedError])
+
+        let errorData = WideEventErrorData(error: rootError)
+
+        XCTAssertEqual(errorData.domain, "RootDomain")
+        XCTAssertEqual(errorData.code, 1)
+        XCTAssertEqual(errorData.underlyingDomain, "NestedDomain")
+        XCTAssertEqual(errorData.underlyingCode, 2)
+
+        XCTAssertEqual(errorData.underlyingErrors.count, 2)
+        XCTAssertEqual(errorData.underlyingErrors.first?.domain, "NestedDomain")
+        XCTAssertEqual(errorData.underlyingErrors.first?.code, 2)
+        XCTAssertEqual(errorData.underlyingErrors.last?.domain, "DeepDomain")
+        XCTAssertEqual(errorData.underlyingErrors.last?.code, 3)
+
+        let parameters = errorData.pixelParameters()
+        XCTAssertEqual(parameters[WideEventParameter.Feature.errorDomain], "RootDomain")
+        XCTAssertEqual(parameters[WideEventParameter.Feature.errorCode], "1")
+        XCTAssertEqual(parameters[WideEventParameter.Feature.underlyingErrorDomain], "NestedDomain")
+        XCTAssertEqual(parameters[WideEventParameter.Feature.underlyingErrorCode], "2")
+        XCTAssertEqual(parameters[WideEventParameter.Feature.underlyingErrorDomain + "2"], "DeepDomain")
+        XCTAssertEqual(parameters[WideEventParameter.Feature.underlyingErrorCode + "2"], "3")
     }
 
     func testActiveFlowManagement() throws {

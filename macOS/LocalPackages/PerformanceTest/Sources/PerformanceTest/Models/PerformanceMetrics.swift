@@ -1,30 +1,31 @@
 //
 //  PerformanceMetrics.swift
-//  PerformanceTest
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 //
 
 import Foundation
 
-/// Core performance metrics for page load testing
 public struct PerformanceMetrics: Codable, Equatable {
-
-    // MARK: - Properties
-
-    /// Total page load time in seconds
     public let loadTime: TimeInterval
 
-    /// First Contentful Paint in milliseconds
     public let firstContentfulPaint: TimeInterval?
 
-    /// Largest Contentful Paint in milliseconds
     public let largestContentfulPaint: TimeInterval?
 
-    /// Time to First Byte in milliseconds
     public let timeToFirstByte: TimeInterval?
-
-    // MARK: - Initialization
 
     public init(
         loadTime: TimeInterval,
@@ -32,7 +33,7 @@ public struct PerformanceMetrics: Codable, Equatable {
         largestContentfulPaint: TimeInterval? = nil,
         timeToFirstByte: TimeInterval? = nil
     ) {
-        self.loadTime = max(0, loadTime) // Ensure non-negative
+        self.loadTime = max(0, loadTime)
         self.firstContentfulPaint = firstContentfulPaint
         self.largestContentfulPaint = largestContentfulPaint
         self.timeToFirstByte = timeToFirstByte

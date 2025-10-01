@@ -6,7 +6,7 @@
         description: 'Fires when the New Address Bar Picker modal is displayed',
         owners: ['Bunn'],
         triggers: ['other'],
-        suffixes: ['daily', 'platform', 'form_factor'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion', 'pixelSource'],
     },
     m_aichat_new_address_bar_picker_confirmed: {

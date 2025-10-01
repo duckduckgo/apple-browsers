@@ -18,6 +18,7 @@
 
 import SwiftUI
 
+#if os(iOS)
 extension ColorPaletteDefinition {
 
     /// Proxy for retrieving base colors.
@@ -102,3 +103,4 @@ extension ColorPaletteDefinition {
         }
     }
 }
+#endif

@@ -202,7 +202,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         super.viewDidLoad()
 
         shadowView.isHidden = theme.tabStyleProvider.shouldShowSShapedTab
-        backgroundColorView.backgroundColor = theme.colorsProvider.baseBackgroundColor
         scrollView.updateScrollElasticity(with: tabMode)
         observeToScrollNotifications()
         subscribeToSelectionIndex()
@@ -903,6 +902,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private func refreshTheme() {
         let colorsProvider = theme.colorsProvider
+
+        backgroundColorView.backgroundColor = colorsProvider.baseBackgroundColor
 
         fireButton.normalTintColor = colorsProvider.iconsColor
         fireButton.mouseOverColor = colorsProvider.buttonMouseOverColor

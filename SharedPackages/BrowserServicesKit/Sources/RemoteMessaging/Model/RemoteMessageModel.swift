@@ -94,7 +94,7 @@ public struct RemoteMessageModel: Equatable, Codable {
     }
 }
 
-public struct RemoteMessageSurfaceType: OptionSet, Codable, Equatable {
+public struct RemoteMessageSurfaceType: OptionSet, Codable, Hashable, Equatable {
     public var rawValue: Int16
 
     public init(rawValue: Int16) {

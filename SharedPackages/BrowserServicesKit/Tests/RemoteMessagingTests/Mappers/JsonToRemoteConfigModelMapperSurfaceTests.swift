@@ -22,21 +22,14 @@ import RemoteMessagingTestsUtils
 
 @Suite("RMF - Mapping - Surfaces")
 struct JsonToRemoteConfigModelMapperSurfaceTests {
-    let config: RemoteConfigModel
-
-    init() throws {
-        config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-surfaces-items.json", bundle: .module)
-    }
 
     @Test(
-        "Check Surfaces Are Mapped Correctly",
-        arguments: zip(
-            [0, 1, 2, 3],
-            [RemoteMessageSurfaceType.newTabPage, .modal, .dedicatedTab, .allCases]
-        )
+        "Check Messages Without Surfaces Are Mapped Correctly to Supported Surface Default Value",
+        arguments: [0, 1, 2, 3, 4]
     )
-    func checkSurfaceIsMappedCorrectly(index: Int, expectedSurface: RemoteMessageSurfaceType) async throws {
+    func checkSurfaceIsSetToDefaultSupportedWhenNil(index: Int) throws {
         // GIVEN
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-surfaces-default-values.json", bundle: .module)
         #expect(config.messages.count == 5)
 
         // WHEN
@@ -44,20 +37,59 @@ struct JsonToRemoteConfigModelMapperSurfaceTests {
 
         // THEN
         #expect(message.id == String(index+1))
-        #expect(message.surfaces == expectedSurface)
+        #expect(message.surfaces == .newTabPage)
     }
 
-    @Test("Check No Surfaces Value Is Mapped To New Tab Page")
-    func checkNoSurfacesValueIsMappedToNewTabPage() async throws {
+    @Test(
+        "Check Surface Is Mapped Correctly When Message Type Supports It",
+        arguments: [0, 1, 2, 3, 4]
+    )
+    func checkSurfaceIsMappedCorrectlyWhenSupported(index: Int) throws {
         // GIVEN
+        // All messages in remote-messaging-config-surfaces-supported-values.json have newTabPage as surface
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-surfaces-supported-values.json", bundle: .module)
         #expect(config.messages.count == 5)
 
         // WHEN
-        let message = config.messages[4]
+        let message = config.messages[index]
 
         // THEN
-        #expect(message.id == "5")
+        #expect(message.id == String(index+1))
         #expect(message.surfaces == .newTabPage)
+    }
+
+    @Test("Check Messages With Unsupported Surfaces are Dropped")
+    func smallMessagesWithUnsupportedSurfacesAreDropped() async throws {
+        // GIVEN
+        // All messages in remote-messaging-config-surfaces-supported-values.json have either .modal, .dedicatedTab or both
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-surfaces-unsupported-values.json", bundle: .module)
+
+        // WHEN
+        let result = config.messages.count
+
+        // THEN
+        #expect(result == 0)
+    }
+
+    @Test(
+        "Messages with mixed surfaces are filtered to supported ones",
+        arguments: zip(["1", "2", "3", "4", "5"], [RemoteMessageSurfaceType.newTabPage, .newTabPage, nil, nil, .newTabPage])
+    )
+    func messagesWithMixedSurfacesAreFiltered(messageId: String, expectedSurface: RemoteMessageSurfaceType?) async throws {
+        // GIVEN
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-surfaces-mixed-supported-and-unsupported-values.json", bundle: .module)
+        #expect(config.messages.count == 3)
+
+        // WHEN
+        let result = config.messages.first(where: { $0.id == messageId })
+
+        // THEN
+        if expectedSurface == nil {
+            #expect(result == nil) // Message has been filtered out as no surfaces where valid
+        } else {
+            let surface = try #require(expectedSurface)
+            #expect(result?.surfaces == surface)
+        }
     }
 
 }

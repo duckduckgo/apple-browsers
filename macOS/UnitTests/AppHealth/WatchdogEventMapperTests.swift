@@ -53,9 +53,10 @@ final class WatchdogEventMapperTests: XCTestCase {
     private func setupMockPixelKit() {
         let mockFireRequest: PixelKit.FireRequest = { pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete in
             self.firedPixels?.append((name: pixelName, parameters: parameters))
+            self.onPixelFired?()
+            
             DispatchQueue.main.async {
                 onComplete(true, nil)
-                self.onPixelFired?()
             }
         }
 

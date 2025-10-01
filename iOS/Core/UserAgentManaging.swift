@@ -138,9 +138,11 @@ struct UserAgent {
     private let statistics: StatisticsStore
     private let isTesting: Bool = ProcessInfo().arguments.contains("testing")
 
-    init(defaultAgent: String = Constants.fallbackDefaultAgent, statistics: StatisticsStore = StatisticsUserDefaults()) {
-        let defaultAgent: String = UserAgent.shouldUseUpdatedSafariVersions() ? defaultAgent.replacingOccurrences(of: "OS 19_0", with: "OS 18_6") : defaultAgent
-        let version = UserAgent.getVersion(fromAgent: defaultAgent)
+    init(defaultAgent: String = Constants.fallbackDefaultAgent,
+         statistics: StatisticsStore = StatisticsUserDefaults(),
+         privacyConfig: PrivacyConfiguration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig) {
+        let defaultAgent: String = UserAgent.shouldUseUpdatedSafariVersions(forConfig: privacyConfig) ? defaultAgent.replacingOccurrences(of: "OS 19_0", with: "OS 18_6") : defaultAgent
+        let version = UserAgent.getVersion(fromAgent: defaultAgent, privacyConfig: privacyConfig)
         versionComponent = UserAgent.createVersionComponent(withVersion: version)
         baseAgent = UserAgent.createBaseAgent(fromAgent: defaultAgent, versionComponent: versionComponent)
         baseDesktopAgent = UserAgent.createBaseDesktopAgent(fromAgent: defaultAgent, versionComponent: versionComponent)
@@ -149,9 +151,8 @@ struct UserAgent {
         self.statistics = statistics
     }
 
-    private static func shouldUseUpdatedSafariVersions() -> Bool {
+    private static func shouldUseUpdatedSafariVersions(forConfig config: PrivacyConfiguration) -> Bool {
         // Enable iOS 26 Safari UA quirks
-        let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
         let uaSettings = config.settings(for: .customUserAgent)
         return uaSettings[Constants.useUpdatedSafariVersionsKey] as? Bool ?? false
     }
@@ -331,9 +332,9 @@ struct UserAgent {
             .joined(separator: " ")
     }
 
-    private static func getVersion(fromAgent agent: String) -> String {
+    private static func getVersion(fromAgent agent: String, privacyConfig: PrivacyConfiguration) -> String {
         let osVersion = ProcessInfo.processInfo.operatingSystemVersion
-        if osVersion.majorVersion >= 26 && shouldUseUpdatedSafariVersions() {
+        if osVersion.majorVersion >= 26 && shouldUseUpdatedSafariVersions(forConfig: privacyConfig) {
             // Use actual device iOS version major.minor components
             return "\(osVersion.majorVersion).\(osVersion.minorVersion)"
         }

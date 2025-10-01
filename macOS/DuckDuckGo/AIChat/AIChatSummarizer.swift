@@ -85,7 +85,8 @@ final class AIChatSummarizer: AIChatSummarizing {
                 pixelFiring?.fire(
                     AIChatPixel.aiChatSidebarOpened(
                         source: .summarization,
-                        shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue
+                        shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
+                        minutesSinceSidebarHidden: aiChatSidebarPresenter.sidebarHiddenAtForCurrentTab()?.minutesSinceNow()
                     ),
                     frequency: .dailyAndStandard
                 )

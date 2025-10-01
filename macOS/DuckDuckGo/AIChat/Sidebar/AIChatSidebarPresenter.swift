@@ -224,7 +224,8 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
             pixelFiring?.fire(
                 AIChatPixel.aiChatSidebarOpened(
                     source: .serp,
-                    shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue
+                    shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
+                    minutesSinceSidebarHidden: sidebarHiddenAt(for: currentTabID)?.minutesSinceNow()
                 ),
                 frequency: .dailyAndStandard
             )

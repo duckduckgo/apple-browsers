@@ -183,7 +183,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         self.themeManager = themeManager
         if !tabCollectionViewModel.isBurner, let pinnedTabCollection = tabCollectionViewModel.pinnedTabsManager?.tabCollection {
             let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection, fireproofDomains: fireproofDomains, bookmarkManager: bookmarkManager)
-            let pinnedTabsView = PinnedTabsView(model: pinnedTabsViewModel)
+            let pinnedTabsView = PinnedTabsView(model: pinnedTabsViewModel, themeManager: themeManager)
+
             self.pinnedTabsViewModel = pinnedTabsViewModel
             self.pinnedTabsView = pinnedTabsView
             self.pinnedTabsHostingView = PinnedTabsHostingView(rootView: pinnedTabsView)

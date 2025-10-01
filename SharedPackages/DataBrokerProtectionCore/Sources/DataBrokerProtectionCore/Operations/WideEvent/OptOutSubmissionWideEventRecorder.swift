@@ -40,6 +40,8 @@ extension OptOutSubmissionWideEventRecording {
 }
 
 final class OptOutSubmissionWideEventRecorder {
+    static let sampleRate: Float = 1.0
+
     private let wideEvent: WideEventManaging
     private var data: OptOutSubmissionWideEventData
     private let queue = DispatchQueue(label: "com.duckduckgo.dbp.optout-submission-wide-event", qos: .utility)
@@ -60,12 +62,10 @@ final class OptOutSubmissionWideEventRecorder {
                                attemptID: UUID,
                                dataBrokerURL: String,
                                dataBrokerVersion: String?,
-                               recordFoundDate: Date,
-                               sampleRate: Float = 1.0) -> OptOutSubmissionWideEventRecorder? {
+                               recordFoundDate: Date) -> OptOutSubmissionWideEventRecorder? {
         guard let wideEvent else { return nil }
 
-        let global = WideEventGlobalData(id: attemptID.uuidString,
-                                         sampleRate: sampleRate)
+        let global = WideEventGlobalData(id: attemptID.uuidString, sampleRate: sampleRate)
         let submissionInterval = WideEvent.MeasuredInterval(start: recordFoundDate, end: nil)
         let data = OptOutSubmissionWideEventData(globalData: global,
                                                  dataBrokerURL: dataBrokerURL,

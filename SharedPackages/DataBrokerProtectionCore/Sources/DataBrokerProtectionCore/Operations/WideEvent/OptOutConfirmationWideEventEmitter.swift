@@ -21,6 +21,7 @@ import BrowserServicesKit
 import PixelKit
 
 enum OptOutConfirmationWideEventEmitter {
+    static let sampleRate: Float = 1.0
 
     static func emitSuccess(wideEvent: WideEventManaging?,
                             attemptID: UUID?,
@@ -73,7 +74,7 @@ enum OptOutConfirmationWideEventEmitter {
                              error: Error? = nil) {
         guard let wideEvent, let attemptID else { return }
 
-        let global = WideEventGlobalData(id: attemptID.uuidString, sampleRate: 1.0)
+        let global = WideEventGlobalData(id: attemptID.uuidString, sampleRate: Self.sampleRate)
         let interval = confirmationDate.map { WideEvent.MeasuredInterval(start: recordFoundDate, end: $0) }
         let data = OptOutConfirmationWideEventData(globalData: global,
                                                    dataBrokerURL: dataBrokerURL,

@@ -2,7 +2,7 @@
   "name": "@duckduckgo/safari-test-runner",
   "version": "2.0.0",
   "description": "Production-ready Safari performance testing tool",
-  "main": "safari-performance-test.js",
+  "main": "./src/core/PerformanceTestRunner.js",
   "bin": {
     "safari-performance-test": "./bin/safari-performance-test"
   },

@@ -201,6 +201,8 @@ final class AddressBarViewController: NSViewController {
     }
 
     override func viewDidLoad() {
+        super.viewDidLoad()
+
         view.wantsLayer = true
         view.layer?.masksToBounds = false
 
@@ -225,7 +227,7 @@ final class AddressBarViewController: NSViewController {
 
         setupInactiveShadowView()
         setupActiveOuterBorderSize()
-        activeBackgroundViewWithSuggestions.backgroundColor = theme.colorsProvider.suggestionsBackgroundColor
+        refreshSuggestionsAppearance()
     }
 
     deinit {
@@ -653,6 +655,10 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
+    private func refreshSuggestionsAppearance() {
+        activeBackgroundViewWithSuggestions.backgroundColor = theme.colorsProvider.suggestionsBackgroundColor
+    }
+
     private func layoutTextFields(withMinX minX: CGFloat) {
         self.passiveTextFieldMinXConstraint.constant = minX
         // adjust min-x to passive text field when “Search or enter” placeholder is displayed (to prevent placeholder overlapping buttons)
@@ -690,6 +696,7 @@ final class AddressBarViewController: NSViewController {
 
     private func refreshTheme() {
         refreshAddressBarAppearance(nil)
+        refreshSuggestionsAppearance()
         updateView()
     }
 

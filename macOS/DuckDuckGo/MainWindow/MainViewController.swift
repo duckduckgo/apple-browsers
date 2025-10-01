@@ -72,7 +72,7 @@ final class MainViewController: NSViewController {
         return bookmarksBarViewController.parent != nil
     }
 
-    private let themeManager: ThemeManager
+    private let themeManager: ThemeManagerProtocol
     private var theme: ThemeDefinition {
         themeManager.theme
     }

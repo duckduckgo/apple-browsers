@@ -88,7 +88,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var pinnedTabsDiscoveryPopover: NSPopover?
     private weak var crashPopoverViewController: PopoverMessageViewController?
 
-    private let themeManager: ThemeManager
+    private let themeManager: ThemeManagerProtocol
     private var theme: ThemeDefinition {
         themeManager.theme
     }
@@ -893,7 +893,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func subscribeToThemeChanges() {
-        themeManager.$theme
+        themeManager.themePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshTheme()

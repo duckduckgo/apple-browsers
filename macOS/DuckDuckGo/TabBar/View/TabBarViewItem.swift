@@ -123,7 +123,7 @@ final class TabBarItemCellView: NSView {
     }
 
     private var cancellables: Set<AnyCancellable> = []
-    private let themeManager: ThemeManager = NSApp.delegateTyped.themeManager
+    private let themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager
     private var theme: ThemeDefinition {
         themeManager.theme
     }
@@ -465,7 +465,7 @@ final class TabBarItemCellView: NSView {
     }
 
     private func subscribeToThemeChanges() {
-        themeManager.$theme
+        themeManager.themePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshTheme()
@@ -626,7 +626,7 @@ final class TabBarViewItem: NSCollectionViewItem {
     private var cancellables = Set<AnyCancellable>()
 
     private var themeCancellable: AnyCancellable?
-    private let themeManager: ThemeManager = NSApp.delegateTyped.themeManager
+    private let themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager
     private var theme: ThemeDefinition {
         themeManager.theme
     }
@@ -1027,7 +1027,7 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     private func subscribeToThemeChanges() {
-        themeCancellable = themeManager.$theme
+        themeCancellable = themeManager.themePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshTheme()
@@ -1426,7 +1426,7 @@ extension TabBarViewItem {
         var collectionViews = [NSCollectionView]()
 
         init(sections: [[TabBarViewModelMock]],
-             themeManager: ThemeManager = NSApp.delegateTyped.themeManager) {
+             themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager) {
             self.sections = sections
             self.tabVisualProvider = themeManager.theme.tabStyleProvider
             super.init(nibName: nil, bundle: nil)

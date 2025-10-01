@@ -65,7 +65,7 @@ enum UpdateFlowPixels: PixelKitEvent {
      * Parameters:
      * - error: Type of error (network_error, decoding_error, invalid_url, metadata_not_found, unknown_error)
      */
-    case releaseMetadataFetchFailed(error: String)
+    case releaseMetadataFetchFailed(error: Error)
 
     var name: String {
         switch self {
@@ -86,15 +86,17 @@ enum UpdateFlowPixels: PixelKitEvent {
         switch self {
         case .checkForUpdate(let source):
             return ["source": source.rawValue]
-        case .updateNotificationShown, .updateNotificationTapped, .updateDuckDuckGoButtonTapped:
+        case .updateNotificationShown, .updateNotificationTapped, .updateDuckDuckGoButtonTapped, .releaseMetadataFetchFailed:
             return nil
-        case .releaseMetadataFetchFailed(let error):
-            return ["error": error]
         }
     }
 
     var error: (any Error)? {
-        nil
+        switch self {
+        case .releaseMetadataFetchFailed(let error):
+            return error
+        default: return nil
+        }
     }
 
     enum Source: String {

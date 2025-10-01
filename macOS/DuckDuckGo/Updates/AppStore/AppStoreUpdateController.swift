@@ -196,22 +196,7 @@ final class AppStoreUpdateController: NSObject, UpdateController {
             updateProgress = .updateCycleDone(.finishedWithNoUpdateFound)
 
             // Track release metadata fetch failures
-            let errorType: String
-            if let latestReleaseError = error as? LatestReleaseError {
-                switch latestReleaseError {
-                case .networkError:
-                    errorType = "network_error"
-                case .decodingError:
-                    errorType = "decoding_error"
-                case .invalidURL:
-                    errorType = "invalid_url"
-                case .metadataNotFound:
-                    errorType = "metadata_not_found"
-                }
-            } else {
-                errorType = "unknown_error"
-            }
-            PixelKit.fire(UpdateFlowPixels.releaseMetadataFetchFailed(error: errorType))
+            PixelKit.fire(UpdateFlowPixels.releaseMetadataFetchFailed(error: error))
 
             Logger.updates.error("Failed to check for App Store updates: \(error.localizedDescription)")
 

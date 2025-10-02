@@ -1091,6 +1091,8 @@ protocol NewWindowPolicyDecisionMaker {
     func clearNavigationHistory(keepingCurrent: Bool) {
         webView.backForwardList.removeAllItems(includingCurrent: !keepingCurrent)
         invalidateInteractionStateData()
+
+        self.history?.clearNavigationHistory(keepingCurrent: keepingCurrent)
     }
 
     private var webViewCancellables = Set<AnyCancellable>()

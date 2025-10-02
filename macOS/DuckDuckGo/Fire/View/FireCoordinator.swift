@@ -309,6 +309,9 @@ extension FireCoordinator {
 
         case .allData:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
+            if result.includeChatHistory {
+                PixelKit.fire(AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount)
+            }
             // "All" implies history and chat history too; respect includeHistory and includeChatHistory by routing via burnAll or burnEntity
             if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory && result.includeChatHistory {
                 await fireViewModel.fire.burnAll(isBurnOnExit: false, opening: .newtab)

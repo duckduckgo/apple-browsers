@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import SwiftUI
+import AppKit
 import PixelKit
 import Networking
 import Subscription
@@ -30,6 +31,7 @@ protocol UnifiedFeedbackFormViewModelDelegate: AnyObject {
 
 final class UnifiedFeedbackFormViewModel: ObservableObject {
     private static let feedbackEndpoint = URL(string: "https://subscriptions.duckduckgo.com/api/feedback")!
+    private static let supportURL = URL(string: "https://duckduckgo.com/subscription-support")!
     private static let platform = "macos"
     private let featureFlagger: FeatureFlagger
 
@@ -61,6 +63,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         case reportShow
         case reportSubmitShow
         case reportFAQClick
+        case contactSupportClick
     }
 
     struct Payload: Codable {
@@ -120,12 +123,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     @Published var selectedSubcategory = "" {
         didSet {
             updateSubmitShowStatus()
-        }
-    }
-
-    @Published var userEmail = "" {
-        didSet {
-            updateSubmitButtonStatus()
         }
     }
 
@@ -231,9 +228,12 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
                                                          reportType: selectedReportType,
                                                          category: selectedCategory,
                                                          subcategory: selectedSubcategory)
+        case .contactSupportClick:
+            openSupport()
         }
     }
 
+    @MainActor
     private func openFAQ() async {
         guard !selectedReportType.isEmpty, UnifiedFeedbackReportType(rawValue: selectedReportType) == .reportIssue,
               !selectedCategory.isEmpty, let category = UnifiedFeedbackCategory(rawValue: selectedCategory),
@@ -253,7 +253,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         }()
 
         if let url {
-            NSWorkspace.shared.open(url)
+            Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
         }
     }
 
@@ -302,13 +302,11 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     }
 
     private func submitIssue(metadata: UnifiedFeedbackMetadata?) async throws {
-        guard !userEmail.isEmpty else { return }
-
         guard let accessToken = try? await subscriptionManager.getAccessToken() else {
             throw Error.missingAccessToken
         }
 
-        let payload = Payload(userEmail: userEmail,
+        let payload = Payload(userEmail: "",
                               feedbackSource: source.rawValue,
                               platform: Self.platform,
                               problemCategory: selectedCategory,
@@ -328,7 +326,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     }
 
     private func updateSubmitButtonStatus() {
-        self.submitButtonEnabled = viewState.canSubmit && !feedbackFormText.isEmpty && (userEmail.isEmpty || userEmail.isValidEmail)
+        self.submitButtonEnabled = viewState.canSubmit && !feedbackFormText.isEmpty
     }
 
     private func updateSubmitShowStatus() {
@@ -343,11 +341,9 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
             }
         }()
     }
-}
 
-private extension String {
-    var isValidEmail: Bool {
-        guard let regex = try? NSRegularExpression(pattern: #"[^\s]+@[^\s]+\.[^\s]+"#) else { return false }
-        return matches(regex)
+    @MainActor
+    private func openSupport() {
+        Application.appDelegate.windowControllersManager.show(url: Self.supportURL, source: .ui, newTab: true)
     }
 }

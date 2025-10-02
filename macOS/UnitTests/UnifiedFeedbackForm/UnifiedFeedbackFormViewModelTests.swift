@@ -60,28 +60,6 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         XCTAssertEqual(sender.receivedData!.4, text)
     }
 
-    func testGivenEmail_WhenSendingFeedbackSucceeds_ThenFeedbackIsSent() async throws {
-        let collector = MockVPNMetadataCollector()
-        let sender = MockVPNFeedbackSender()
-        let payload = UnifiedFeedbackFormViewModel.Response(message: "something", error: nil)
-        let response = APIResponseV2(data: try! JSONEncoder().encode(payload), httpResponse: HTTPURLResponse())
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
-                                                     apiService: MockAPIService(apiResponse: .success(response)),
-                                                     vpnMetadataCollector: collector,
-                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender,
-                                                     featureFlagger: MockFeatureFlagger())
-        viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
-        viewModel.userEmail = "hello@example.com"
-        let text = "Some feedback report text"
-        viewModel.feedbackFormText = text
-
-        XCTAssertFalse(sender.sentMetadata)
-        await viewModel.process(action: .submit)
-        XCTAssertTrue(sender.sentMetadata)
-        XCTAssertEqual(sender.receivedData!.4, text)
-    }
-
     func testWhenSendingFeedbackFails_ThenFeedbackIsNotSent() async throws {
         let collector = MockVPNMetadataCollector()
         let sender = MockVPNFeedbackSender()
@@ -92,48 +70,6 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
                                                      feedbackSender: sender,
                                                      featureFlagger: MockFeatureFlagger())
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
-        let text = "Some feedback report text"
-        viewModel.feedbackFormText = text
-        sender.throwErrorWhenSending = true
-
-        XCTAssertFalse(sender.sentMetadata)
-        await viewModel.process(action: .submit)
-        XCTAssertFalse(sender.sentMetadata)
-        XCTAssertEqual(viewModel.viewState, .feedbackSendingFailed)
-    }
-
-    func testGivenInvalidEmail_WhenSendingFeedbackFails_ThenFeedbackIsNotSent() async throws {
-        let collector = MockVPNMetadataCollector()
-        let sender = MockVPNFeedbackSender()
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
-                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
-                                                     vpnMetadataCollector: collector,
-                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender,
-                                                     featureFlagger: MockFeatureFlagger())
-        viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
-        viewModel.userEmail = "invalid-email"
-        let text = "Some feedback report text"
-        viewModel.feedbackFormText = text
-        sender.throwErrorWhenSending = true
-
-        XCTAssertFalse(sender.sentMetadata)
-        await viewModel.process(action: .submit)
-        XCTAssertFalse(sender.sentMetadata)
-        XCTAssertEqual(viewModel.viewState, .feedbackSendingFailed)
-    }
-
-    func testGivenValidEmail_WhenSendingFeedbackFails_ThenFeedbackIsNotSent() async throws {
-        let collector = MockVPNMetadataCollector()
-        let sender = MockVPNFeedbackSender()
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
-                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
-                                                     vpnMetadataCollector: collector,
-                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender,
-                                                     featureFlagger: MockFeatureFlagger())
-        viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
-        viewModel.userEmail = "hello@example.com"
         let text = "Some feedback report text"
         viewModel.feedbackFormText = text
         sender.throwErrorWhenSending = true
@@ -262,7 +198,6 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         viewModel.selectedCategory = UnifiedFeedbackCategory.duckAi.rawValue
         viewModel.selectedSubcategory = PaidAIChatFeedbackSubcategory.accessSubscriptionModels.rawValue
-        viewModel.userEmail = "test@example.com"
         let text = "Duck.ai feedback text"
         viewModel.feedbackFormText = text
 

@@ -20,10 +20,13 @@ import Bookmarks
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKit
 
 extension Preferences {
 
-    struct ThemeButton: View {
+    // MARK: - Legacy: Superseded by `ThemeAppearanceViewV2`
+    //
+    struct ThemeAppearanceButton: View {
         let title: String
         let imageName: String
         @Binding var isSelected: Bool
@@ -53,13 +56,15 @@ extension Preferences {
 
     }
 
-    struct ThemePicker: View {
+    // MARK: - Legacy: Superseded by `ThemeAppearancePickerV2`
+    //
+    struct ThemeAppearancePicker: View {
         @EnvironmentObject var model: AppearancePreferences
 
         var body: some View {
             HStack(spacing: 24) {
                 ForEach(ThemeAppearance.allCases, id: \.self) { theme in
-                    ThemeButton(
+                    ThemeAppearanceButton(
                         title: theme.displayName,
                         imageName: theme.imageName,
                         isSelected: isThemeSelected(theme)
@@ -82,9 +87,44 @@ extension Preferences {
         }
     }
 
+    // MARK: - Appearance View (Light / Dark / System)
+    //
+    struct ThemeAppearanceViewV2: View {
+        var appearance: ThemeAppearance
+
+        var body: some View {
+            HStack(spacing: 6) {
+                Image(systemNamed: appearance.icon)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.primary)
+
+                Text(appearance.displayName)
+                    .font(.system(size: 13))
+                    .foregroundColor(.primary)
+            }
+            .frame(width: 139, height: 32)
+        }
+    }
+
+    // MARK: - Picker: Appearance (Light / Dark / System)
+    //
+    struct ThemeAppearancePickerV2: View {
+        @EnvironmentObject var model: AppearancePreferences
+
+        var body: some View {
+            SlidingPickerView(settings: .appearancePickerSettings, allValues: ThemeAppearance.allCases, selectedValue: $model.themeAppearance) { appearance in
+                AnyView(
+                    ThemeAppearanceViewV2(appearance: appearance)
+                )
+            }
+            .frame(height: 32)
+        }
+    }
+
     struct AppearanceView: View {
         @ObservedObject var model: AppearancePreferences
         @ObservedObject var aiChatModel: AIChatPreferences
+        var isThemeSwitcherEnabled: Bool = false
 
         var body: some View {
             PreferencePane(UserText.appearance) {
@@ -92,8 +132,14 @@ extension Preferences {
                 // SECTION 1: Theme
                 PreferencePaneSection(UserText.theme) {
 
-                    ThemePicker()
-                        .environmentObject(model)
+                    if isThemeSwitcherEnabled {
+                        ThemeAppearancePickerV2()
+                            .environmentObject(model)
+
+                    } else {
+                        ThemeAppearancePicker()
+                            .environmentObject(model)
+                    }
                 }
 
                 // SECTION 2: Address Bar
@@ -175,5 +221,35 @@ extension Preferences {
                 }
             }
         }
+    }
+}
+
+// MARK: - ThemeAppearance Helpers
+//
+private extension ThemeAppearance {
+
+    var icon: Image.SystemImageName {
+        switch self {
+        case .light:
+            .sunMax
+        case .dark:
+            .moon
+        case .systemDefault:
+            .circleLeftHalfFilled
+        }
+    }
+}
+
+// MARK: - SlidingPickerSettings Helpers
+//
+private extension SlidingPickerSettings {
+
+    static var appearancePickerSettings: SlidingPickerSettings {
+        SlidingPickerSettings(
+            backgroundColor: Color(designSystemColor: .surfacePrimary),
+            borderColor: Color(designSystemColor: .containerDecorationSecondary),
+            selectionBackgroundColor: Color(designSystemColor: .surfaceTertiary),
+            selectionBorderColor: Color(designSystemColor: .containerDecorationSecondary),
+            dividerSize: CGSize(width: 1, height: 16))
     }
 }

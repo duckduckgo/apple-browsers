@@ -4,7 +4,7 @@
         description: 'Fired when Privacy Pro keychain manager adds data to the backlog because keychain is unavailable',
         owners: ['federicocappelli'],
         triggers: ['other'],
-        suffixes: ['first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: [
             'appVersion',
             'pixelSource',
@@ -19,7 +19,7 @@
         description: 'Fired when Privacy Pro keychain manager is deallocated while still having pending data in the backlog',
         owners: ['federicocappelli'],
         triggers: ['other'],
-        suffixes: ['first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: [
             'appVersion',
             'pixelSource',
@@ -34,7 +34,7 @@
         description: 'Fired when Privacy Pro keychain manager successfully writes data from the backlog to keychain',
         owners: ['federicocappelli'],
         triggers: ['other'],
-        suffixes: ['first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: [
             'appVersion',
             'pixelSource',
@@ -80,7 +80,7 @@
         description: 'Wide pixel sent at the end of a subscription purchase flow',
         owners: ['samsymons'],
         triggers: ['other'],
-        suffixes: ['daily_standard'],
+        suffixes: ['daily'],
         parameters: [
             'widePixelAppName',
             'widePixelAppVersion',
@@ -125,9 +125,8 @@
             },
             {
                 key: 'feature.data.ext.free_trial_eligible',
-                type: 'string',
+                type: 'boolean',
                 description: 'Whether a free trial was available',
-                enum: ['true', 'false'],
             },
             {
                 key: 'feature.data.ext.account_creation_latency_ms_bucketed',

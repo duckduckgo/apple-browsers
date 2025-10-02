@@ -17,11 +17,6 @@
         description: 'Daily pixel suffix',
         enum: ['daily'],
     },
-    daily_standard: {
-        type: 'string',
-        description: 'Pixel schedule type',
-        enum: ['daily', ''],
-    },
     form_factor: {
         type: 'string',
         description: 'Device form-factor',

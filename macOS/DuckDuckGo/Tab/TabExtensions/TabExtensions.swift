@@ -82,6 +82,7 @@ protocol TabExtensionDependencies {
     var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable { get }
     var newTabPageShownPixelSender: NewTabPageShownPixelSender { get }
     var aiChatSidebarProvider: AIChatSidebarProviding { get }
+    var tabCrashAggregator: TabCrashAggregator { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -268,7 +269,8 @@ extension TabExtensionsBuilder {
                 featureFlagger: dependencies.featureFlagger,
                 contentPublisher: args.contentPublisher,
                 webViewPublisher: args.webViewFuture,
-                webViewErrorPublisher: args.errorPublisher
+                webViewErrorPublisher: args.errorPublisher,
+                tabCrashAggregator: dependencies.tabCrashAggregator
             )
         }
 

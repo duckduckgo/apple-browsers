@@ -163,9 +163,7 @@ final class CreditCardsResponseHandler {
                                        encryptionKey: Data) throws -> DeduplicationResult? {
         guard !syncable.isDeleted else { return nil }
 
-        let cardholderName = try syncable.encryptedCardholderName.flatMap(decrypt)
         let cardNumber = try syncable.encryptedCardNumber.flatMap(decrypt)
-        let cardSecurityCode = try syncable.encryptedCardSecurityCode.flatMap(decrypt)
         let expirationMonth = try syncable.encryptedExpirationMonth.flatMap(decrypt)
         let expirationYear = try syncable.encryptedExpirationYear.flatMap(decrypt)
 

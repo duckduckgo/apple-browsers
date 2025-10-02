@@ -44,6 +44,12 @@ protocol AIChatMenuVisibilityConfigurable {
     var shouldDisplayAddressBarShortcut: Bool { get }
 
     /// This property validates user settings to determine if the shortcut
+    /// should be presented to the user when typing.
+    ///
+    /// - Returns: `true` if the address bar shortcut when typing should be displayed; otherwise, `false`.
+    var shouldDisplayAddressBarShortcutWhenTyping: Bool { get }
+
+    /// This property validates user settings to determine if the shortcut
     /// should be presented to the user.
     ///
     /// - Returns: `true` if the application menu shortcut should be displayed; otherwise, `false`.
@@ -140,6 +146,16 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
         shouldDisplayAnyAIChatFeature && storage.showShortcutInAddressBar
     }
 
+    var shouldDisplayAddressBarShortcutWhenTyping: Bool {
+        // Improvements introduce this as a separate setting.
+        // Note: To be removed after release with all related to showShortcutInApplicationMenu (logic, storage etc.)
+        guard shouldShowSettingsImprovements else {
+            return shouldDisplayAddressBarShortcut
+        }
+
+        return shouldDisplayAnyAIChatFeature && storage.showShortcutInAddressBarWhenTyping
+    }
+
     var shouldOpenAIChatInSidebar: Bool {
         shouldDisplayAnyAIChatFeature && storage.openAIChatInSidebar
     }
@@ -168,11 +184,12 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     }
 
     private func subscribeToValuesChanged() {
-        Publishers.Merge6(
+        Publishers.Merge7(
             storage.isAIFeaturesEnabledPublisher.removeDuplicates(),
             storage.showShortcutOnNewTabPagePublisher.removeDuplicates(),
             storage.showShortcutInApplicationMenuPublisher.removeDuplicates(),
             storage.showShortcutInAddressBarPublisher.removeDuplicates(),
+            storage.showShortcutInAddressBarWhenTypingPublisher.removeDuplicates(),
             storage.openAIChatInSidebarPublisher.removeDuplicates(),
             storage.shouldAutomaticallySendPageContextPublisher.removeDuplicates()
         )

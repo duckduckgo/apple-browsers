@@ -45,7 +45,7 @@ final class AIChatPreferences: ObservableObject {
         isAIFeaturesEnabled = storage.isAIFeaturesEnabled
         showShortcutOnNewTabPage = storage.showShortcutOnNewTabPage
         showShortcutInApplicationMenu = storage.showShortcutInApplicationMenu
-        showShortcutInAddressBarWhenTyping = true
+        showShortcutInAddressBarWhenTyping = storage.showShortcutInAddressBarWhenTyping
         showShortcutInAddressBar = storage.showShortcutInAddressBar
         openAIChatInSidebar = storage.openAIChatInSidebar
         shouldAutomaticallySendPageContext = storage.shouldAutomaticallySendPageContext
@@ -76,6 +76,12 @@ final class AIChatPreferences: ObservableObject {
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .assign(to: \.showShortcutInAddressBar, onWeaklyHeld: self)
+            .store(in: &cancellables)
+
+        storage.showShortcutInAddressBarWhenTypingPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.showShortcutInAddressBarWhenTyping, onWeaklyHeld: self)
             .store(in: &cancellables)
 
         storage.openAIChatInSidebarPublisher
@@ -122,7 +128,7 @@ final class AIChatPreferences: ObservableObject {
     }
 
     @Published var showShortcutInAddressBarWhenTyping: Bool {
-        didSet { /* TODO: */ }
+        didSet { storage.showShortcutInAddressBarWhenTyping = showShortcutInAddressBarWhenTyping }
     }
 
     @Published var showShortcutInApplicationMenu: Bool {

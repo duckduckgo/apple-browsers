@@ -265,6 +265,13 @@ final class PasswordManagementViewController: NSViewController {
             )
         }
 
+        if let identitiesAdapter = syncDataProviders.identitiesAdapter {
+            syncPublishers.append(
+                identitiesAdapter.syncDidCompletePublisher
+                    .eraseToAnyPublisher()
+            )
+        }
+
         return Publishers.MergeMany(syncPublishers)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in

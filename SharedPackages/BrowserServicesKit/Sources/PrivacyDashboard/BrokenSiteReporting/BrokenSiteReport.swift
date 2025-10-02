@@ -203,7 +203,7 @@ public struct BrokenSiteReport {
         debugFlags: String,
         privacyExperiments: String,
         isPirEnabled: Bool?,
-        pageLoadTiming: WKPageLoadTiming?
+        pageLoadTiming: WKPageLoadTiming? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category

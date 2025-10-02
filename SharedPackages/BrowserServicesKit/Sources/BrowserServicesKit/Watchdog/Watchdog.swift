@@ -196,7 +196,7 @@ public final actor Watchdog {
                 hangStartTime = nil
             } else if timeSinceLastCheck > maximumHangDuration {
                 hangState = .timeout
-                
+
                 logHangDuration(message: "Main thread hang timeout reached.", currentTime: now)
                 fireHangEvent(Watchdog.Event.uiHangNotRecovered, currentTime: now)
             } else {

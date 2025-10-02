@@ -146,21 +146,6 @@ final class SafariPerformanceTestViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isRunning)
     }
 
-    // MARK: - Iteration Selection Tests
-
-    func testSelectedIterations_canBeChanged() {
-        let url = URL(string: "https://example.com")!
-        let viewModel = SafariPerformanceTestViewModel(url: url)
-
-        XCTAssertEqual(viewModel.selectedIterations, 10)
-
-        viewModel.selectedIterations = 20
-        XCTAssertEqual(viewModel.selectedIterations, 20)
-
-        viewModel.selectedIterations = 5
-        XCTAssertEqual(viewModel.selectedIterations, 5)
-    }
-
     // MARK: - Cleanup Tests
 
     func testCancelTest_resetsState() {

@@ -179,7 +179,6 @@
         parameters: [
             'widePixelAppName',
             'widePixelAppVersion',
-            'widePixelInternalUser',
             'widePixelPlatform',
             'widePixelType',
             'widePixelSampleRate',
@@ -191,13 +190,13 @@
             {
                 key: 'feature.name',
                 type: 'string',
-                description: 'Feature identifier for this wide pixel',
+                description: 'Feature identifier for this wide event',
                 enum: ['authv2-token-refresh'],
             },
             {
                 key: 'feature.status_reason',
                 type: 'string',
-                description: 'Reason string for the current status, when applicable - currently applied to UNKNOWN status pixels',
+                description: 'Reason string for the current status, when applicable - currently applied to UNKNOWN status events',
                 enum: ['partial_data'],
             },
             {
@@ -251,13 +250,13 @@
             {
                 key: 'feature.name',
                 type: 'string',
-                description: 'Feature identifier for this wide pixel',
+                description: 'Feature identifier for this wide event',
                 enum: ['authv2-token-adoption'],
             },
             {
                 key: 'feature.status_reason',
                 type: 'string',
-                description: 'Reason string for the current status, when applicable - currently applied to UNKNOWN status pixels',
+                description: 'Reason string for the current status, when applicable - currently applied to UNKNOWN status events',
                 enum: ['partial_data'],
             },
         ],

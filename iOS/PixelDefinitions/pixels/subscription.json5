@@ -164,7 +164,7 @@
         description: 'Wide pixel sent after an AuthV2 token refresh',
         owners: ['samsymons'],
         triggers: ['other'],
-        suffixes: ['daily'],
+        suffixes: ['daily_standard'],
         parameters: [
             'widePixelAppName',
             'widePixelAppVersion',
@@ -216,7 +216,7 @@
             {
                 key: 'feature.data.ext.fetch_jwks_latency_ms_bucketed',
                 type: 'integer',
-                description: 'Bucketed latency for purchase completion step (ms)',
+                description: 'Bucketed latency for the JWKS fetch step (ms)',
                 enum: [1000, 5000, 10000, 30000, 60000, 300000, 600000],
             },
             {

@@ -22,7 +22,7 @@ import AppKit
 
 typealias ThemeDefinition = VisualStyleProviding
 
-protocol ThemeManagerProtocol: ObservableObject {
+protocol ThemeManagerProtocol {
     var theme: ThemeDefinition { get }
     var themePublisher: Published<any ThemeDefinition>.Publisher { get }
 }

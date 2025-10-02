@@ -32,6 +32,9 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
     public var contextData: WideEventContextData
     public var appData: WideEventAppData
 
+    public var refreshTokenDuration: WideEvent.MeasuredInterval?
+    public var fetchJWKSDuration: WideEvent.MeasuredInterval?
+
     public var failingStep: FailingStep?
     public var errorData: WideEventErrorData?
 
@@ -72,6 +75,15 @@ extension AuthV2TokenRefreshWideEventData {
             parameters[WideEventParameter.AuthV2RefreshFeature.failingStep] = failingStep.rawValue
         }
 
+        func emit(_ key: String, interval: WideEvent.MeasuredInterval?) {
+            guard let start = interval?.start, let end = interval?.end else { return }
+            let ms = max(0, Int(end.timeIntervalSince(start) * 1000))
+            parameters[key] = String(bucket(ms))
+        }
+
+        emit(WideEventParameter.AuthV2RefreshFeature.refreshTokenLatency, interval: refreshTokenDuration)
+        emit(WideEventParameter.AuthV2RefreshFeature.fetchJWKSLatency, interval: fetchJWKSDuration)
+
         return parameters
     }
 
@@ -103,11 +115,21 @@ extension AuthV2TokenRefreshWideEventData {
             wideEvent.startFlow(data)
         case .tokenRefreshRefreshingAccessToken(refreshID: let refreshID):
             wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
+                event.refreshTokenDuration = .startingNow()
                 event.failingStep = .refreshAccessToken
+            }
+        case .tokenRefreshRefreshedAccessToken(refreshID: let refreshID):
+            wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
+                event.refreshTokenDuration?.complete()
             }
         case .tokenRefreshFetchingJWKS(refreshID: let refreshID):
             wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
+                event.fetchJWKSDuration = .startingNow()
                 event.failingStep = .fetchingJWKS
+            }
+        case .tokenRefreshFetchedJWKS(refreshID: let refreshID):
+            wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
+                event.fetchJWKSDuration?.complete()
             }
         case .tokenRefreshVerifyingAccessToken(refreshID: let refreshID):
             wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
@@ -141,6 +163,8 @@ extension WideEventParameter {
 
     public enum AuthV2RefreshFeature {
         static let failingStep = "feature.data.ext.failing_step"
+        static let refreshTokenLatency = "feature.data.ext.refresh_token_latency_ms_bucketed"
+        static let fetchJWKSLatency = "feature.data.ext.fetch_jwks_latency_ms_bucketed"
     }
 
 }

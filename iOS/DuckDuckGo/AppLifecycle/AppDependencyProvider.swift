@@ -167,7 +167,8 @@ final class AppDependencyProvider: DependencyProvider {
         let legacyAccountStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,
                                             legacyTokenStorage: legacyAccountStorage,
-                                            authService: authService)
+                                            authService: authService,
+                                            eventMapping: AuthV2TokenRefreshWideEventData.authEventMapping)
         let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
                                                 pixelHandler: pixelHandler,

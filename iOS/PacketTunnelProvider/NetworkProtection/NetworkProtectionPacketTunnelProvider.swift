@@ -467,7 +467,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             }
             let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                                 legacyTokenStorage: nil, // Only the main app can migrate
-                                                authService: authService)
+                                                authService: authService,
+                                                eventMapping: AuthV2TokenRefreshWideEventData.authEventMapping)
             let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
             let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)

@@ -152,7 +152,9 @@ public protocol OAuthClient {
 public enum OAuthClientEvent {
     case tokenRefreshStarted(refreshID: String)
     case tokenRefreshRefreshingAccessToken(refreshID: String)
+    case tokenRefreshRefreshedAccessToken(refreshID: String)
     case tokenRefreshFetchingJWKS(refreshID: String)
+    case tokenRefreshFetchedJWKS(refreshID: String)
     case tokenRefreshVerifyingAccessToken(refreshID: String)
     case tokenRefreshVerifyingRefreshToken(refreshID: String)
     case tokenRefreshSavingTokens(refreshID: String)
@@ -229,11 +231,12 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
         if let refreshID { eventMapping?.fire(.tokenRefreshFetchingJWKS(refreshID: refreshID)) }
         let jwtSigners = try await authService.getJWTSigners()
+        if let refreshID { eventMapping?.fire(.tokenRefreshFetchedJWKS(refreshID: refreshID)) }
 
         if let refreshID { eventMapping?.fire(.tokenRefreshVerifyingAccessToken(refreshID: refreshID)) }
         let decodedAccessToken = try jwtSigners.verify(accessToken, as: JWTAccessToken.self)
 
-        if let refreshID { eventMapping?.fire(.tokenRefreshVerifyingAccessToken(refreshID: refreshID)) }
+        if let refreshID { eventMapping?.fire(.tokenRefreshVerifyingRefreshToken(refreshID: refreshID)) }
         let decodedRefreshToken = try jwtSigners.verify(refreshToken, as: JWTRefreshToken.self)
 
         return TokenContainer(accessToken: accessToken,
@@ -298,6 +301,8 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             do {
                 eventMapping?.fire(.tokenRefreshRefreshingAccessToken(refreshID: refreshID))
                 let refreshTokenResponse = try await authService.refreshAccessToken(clientID: Constants.clientID, refreshToken: localTokenContainer.refreshToken)
+                eventMapping?.fire(.tokenRefreshRefreshedAccessToken(refreshID: refreshID))
+
                 let refreshedTokens = try await decode(accessToken: refreshTokenResponse.accessToken, refreshToken: refreshTokenResponse.refreshToken)
                 Logger.OAuthClient.log("Tokens refreshed, expiry: \(refreshedTokens.decodedAccessToken.exp.value.description, privacy: .public)")
 

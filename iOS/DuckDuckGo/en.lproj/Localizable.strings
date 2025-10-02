@@ -2549,7 +2549,7 @@ https://duckduckgo.com/mac";
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Manage Credit Cards…";
 
 /* Description for sync credit cards limits exceeded warning */
-"prefrences.sync.creditCards-limit-exceeded-description" = "You've reached the maximum number of credit cards. Please delete some to resume sync.";
+"prefrences.sync.credit-cards-limit-exceeded-description" = "You've reached the maximum number of credit cards. Please delete some to resume sync.";
 
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Sync encountered an error. Try disabling sync on this device and then reconnect using another device or your recovery code.";

@@ -326,9 +326,6 @@ private class MockVPNFeedbackFormViewModelDelegate: UnifiedFeedbackFormViewModel
 
 }
 
-    }
-}
-
 extension SubscriptionManagerMock {
 
     convenience init() {

@@ -3770,7 +3770,8 @@ extension MainViewController: MainViewEditingStateTransitioning {
 
     var logoView: UIView? {
         if newTabPageViewController?.isShowingLogo == true {
-            // Treat w NTP view as logo view, but only if it's visible
+            // Treat NTP view as logo view, but only if it's visible.
+            // This prevents favorites from flickering during transition.
             return newTabPageViewController?.view
         } else {
             return nil

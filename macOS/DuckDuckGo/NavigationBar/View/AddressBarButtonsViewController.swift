@@ -547,7 +547,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 guard let self, change.tabID == tabViewModel?.tab.uuid else {
                     return
                 }
-                updateAIChatButtonForSidebar(change.isShown)
+                updateAIChatButtonStateForSidebar(change.isShown)
                 updateAskAIChatButtonVisibility(isSidebarOpen: change.isShown)
             }
             .store(in: &cancellables)
@@ -914,10 +914,10 @@ final class AddressBarButtonsViewController: NSViewController {
     private func updateAIChatButtonState() {
         guard let tab = tabViewModel?.tab, featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
         let isShowingSidebar = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
-        updateAIChatButtonForSidebar(isShowingSidebar)
+        updateAIChatButtonStateForSidebar(isShowingSidebar)
     }
 
-    private func updateAIChatButtonForSidebar(_ isShowingSidebar: Bool) {
+    private func updateAIChatButtonStateForSidebar(_ isShowingSidebar: Bool) {
         configureContextMenuForAIChatButtons(isSidebarOpen: isShowingSidebar)
         configureAIChatButtonTooltip(isSidebarOpen: isShowingSidebar)
 
@@ -935,7 +935,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private func updateAIChatButtonVisibility() {
         let isDuckAIURL = tabViewModel?.tab.url?.isDuckAIURL ?? false
 
-        aiChatButton.isHidden = !aiChatMenuConfig.shouldDisplayAddressBarShortcut || isInPopUpWindow || isDuckAIURL
+        aiChatButton.isHidden = !shouldShowAIChatButton()
         updateAIChatDividerVisibility()
 
         // Check if the current tab is in the onboarding state and disable the AI chat button if it is
@@ -947,20 +947,20 @@ final class AddressBarButtonsViewController: NSViewController {
     private var isAskAIChatButtonExpanded: Bool = false
 
     private func updateAskAIChatButtonVisibility(isSidebarOpen: Bool? = nil) {
-        // Early return if AI Chat sidebar feature is not enabled or not configured to show
-        guard shouldShowAskAIChatButton() else {
+        if isTextFieldEditorFirstResponder {
+            aiChatButton.isHidden = true
+            askAIChatButton.isHidden = !shouldShowAskAIChatButton()
+        } else {
+            // aiChatButton visibility managed in updateAIChatButtonVisibility
             askAIChatButton.isHidden = true
-            updateAIChatDividerVisibility()
-            return
         }
+
+        updateAIChatDividerVisibility()
 
         let isSidebarOpen: Bool = isSidebarOpen ?? {
             guard let tabID = tabViewModel?.tab.uuid else { return false }
             return aiChatSidebarPresenter.isSidebarOpen(for: tabID)
         }()
-
-        updateAIChatButtonVisibilityForTextFieldState()
-        updateAIChatDividerVisibility()
 
         if shouldExpandAskAIChatButton(isSidebarOpen: isSidebarOpen) {
             expandAskAIChatButton()
@@ -971,20 +971,17 @@ final class AddressBarButtonsViewController: NSViewController {
 
     // MARK: - Ask AI Chat Button Helper Methods
 
-    private func shouldShowAskAIChatButton() -> Bool {
-        return featureFlagger.isFeatureOn(.aiChatSidebar) &&
-               aiChatMenuConfig.shouldDisplayAddressBarShortcut &&
-               !(tabViewModel?.tab.url?.isDuckAIURL ?? false)
+    private func shouldSkipShowingAnyAIChatButton() -> Bool {
+        let isDuckAIURL = tabViewModel?.tab.url?.isDuckAIURL ?? false
+        return isInPopUpWindow || isDuckAIURL || !featureFlagger.isFeatureOn(.aiChatSidebar)
     }
 
-    private func updateAIChatButtonVisibilityForTextFieldState() {
-        if isTextFieldEditorFirstResponder {
-            aiChatButton.isHidden = true
-            askAIChatButton.isHidden = false
-        } else {
-            // aiChatButton visibility managed in updateAIChatButtonVisibility
-            askAIChatButton.isHidden = true
-        }
+    private func shouldShowAIChatButton() -> Bool {
+        aiChatMenuConfig.shouldDisplayAddressBarShortcut && !shouldSkipShowingAnyAIChatButton()
+    }
+
+    private func shouldShowAskAIChatButton() -> Bool {
+        aiChatMenuConfig.shouldDisplayAddressBarShortcutWhenTyping && !shouldSkipShowingAnyAIChatButton()
     }
 
     private func shouldExpandAskAIChatButton(isSidebarOpen: Bool) -> Bool {

@@ -51,6 +51,30 @@ struct UserText {
         )
         return String(format: template, formatted)
     }
+
+    static func fireDialogHistoryItemsSubtitleTab(_ count: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        let formatted = formatter.string(from: NSNumber(value: count)) ?? String(count)
+        let template = NSLocalizedString(
+            "fire.dialog.history.count.tab",
+            value: "Delete %@ items from this tab.",
+            comment: "Subtitle for Tab scope. Shows the exact number of history items to be deleted from current tab. %@ is a localized decimal number."
+        )
+        return String(format: template, formatted)
+    }
+
+    static func fireDialogHistoryItemsSubtitleWindow(_ count: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        let formatted = formatter.string(from: NSNumber(value: count)) ?? String(count)
+        let template = NSLocalizedString(
+            "fire.dialog.history.count.window",
+            value: "Delete %@ items from this window.",
+            comment: "Subtitle for Window scope. Shows the exact number of history items to be deleted from current window. %@ is a localized decimal number."
+        )
+        return String(format: template, formatted)
+    }
     static func fireDialogCookiesCountSubtitle(_ count: Int) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal

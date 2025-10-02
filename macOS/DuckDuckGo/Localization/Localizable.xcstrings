@@ -31929,6 +31929,36 @@
         }
       }
     },
+    "fire.dialog.history.count.tab" : {
+      "comment" : "Subtitle for Tab scope. Shows the exact number of history items to be deleted from current tab. %@ is a localized decimal number.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "%@ Elemente aus diesem Tab löschen." } },
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Delete %@ items from this tab." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Eliminar %@ elementos de esta pestaña." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Supprimer %@ éléments de cet onglet." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Elimina %@ elementi da questa scheda." } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "%@ items uit dit tabblad verwijderen." } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Usuń %@ elementów z tej karty." } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Eliminar %@ itens deste separador." } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Удалить %@ элементов с этой вкладки." } }
+      }
+    },
+    "fire.dialog.history.count.window" : {
+      "comment" : "Subtitle for Window scope. Shows the exact number of history items to be deleted from current window. %@ is a localized decimal number.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "%@ Elemente aus diesem Fenster löschen." } },
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Delete %@ items from this window." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Eliminar %@ elementos de esta ventana." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Supprimer %@ éléments de cette fenêtre." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Elimina %@ elementi da questa finestra." } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "%@ items uit dit venster verwijderen." } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Usuń %@ elementów z tego okna." } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Eliminar %@ itens desta janela." } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Удалить %@ элементов из этого окна." } }
+      }
+    },
     "fire.dialog.history.title" : {
       "comment" : "Section title. Toggle that controls whether browsing history entries are deleted.",
       "localizations" : {

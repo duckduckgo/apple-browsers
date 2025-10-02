@@ -100,7 +100,15 @@ struct FireDialogView: ModalView {
 
     private var historySubtitle: String {
         let count = viewModel.historyItemsCountForCurrentScope
-        return count == 0 ? UserText.none : UserText.fireDialogHistoryItemsSubtitle(count)
+        guard count > 0 else { return UserText.none }
+        switch viewModel.clearingOption {
+        case .currentTab:
+            return UserText.fireDialogHistoryItemsSubtitleTab(count)
+        case .currentWindow:
+            return UserText.fireDialogHistoryItemsSubtitleWindow(count)
+        case .allData:
+            return UserText.fireDialogHistoryItemsSubtitle(count)
+        }
     }
 
     private var cookiesSubtitle: String {

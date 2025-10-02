@@ -115,6 +115,7 @@ extension TabContent {
 }
 extension TabContent {
 
+    // swiftlint:disable:next cyclomatic_complexity
     static func contentFromURL(_ url: URL?, source: URLSource) -> TabContent {
         switch url {
         case URL.newtab, URL.Invalid.aboutNewtab, URL.Invalid.duckHome:
@@ -369,7 +370,7 @@ extension TabContent {
 }
 extension HistoryPaneIdentifier {
     init?(url: URL) {
-        // manually extract path because URLs such as "about:settings" can't figure out their host or path
+        // manually extract path because URLs such as "about:history" can't figure out their host or path
         for urlPrefix in [URL.history, URL.Invalid.aboutHistory] {
             let prefix = urlPrefix.absoluteString + "/"
             guard url.absoluteString.hasPrefix(prefix) else { continue }

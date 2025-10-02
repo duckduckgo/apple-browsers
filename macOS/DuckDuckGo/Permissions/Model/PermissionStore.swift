@@ -54,7 +54,7 @@ final class LocalPermissionStore: PermissionStore {
     }
 
     func loadPermissions() throws -> [PermissionEntity] {
-        guard let context = context else { return [] }
+        guard let context else { return [] }
 
         var entities = [PermissionEntity]()
         var coreDataError: Error?
@@ -79,12 +79,15 @@ final class LocalPermissionStore: PermissionStore {
     }
 
     func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?, completionHandler: ((Error?) -> Void)?) {
-        guard let context = context else { return }
         func mainQueueCompletion(error: Error?) {
             guard completionHandler != nil else { return }
-            DispatchQueue.main.async {
+            DispatchQueue.main.asyncOrNow {
                 completionHandler?(error)
             }
+        }
+        guard let context else {
+            mainQueueCompletion(error: nil)
+            return
         }
 
         context.perform { [context] in
@@ -116,12 +119,15 @@ final class LocalPermissionStore: PermissionStore {
     }
 
     func clear(except exceptions: [StoredPermission], completionHandler: ((Error?) -> Void)?) {
-        guard let context = context else { return }
         func mainQueueCompletion(error: Error?) {
             guard completionHandler != nil else { return }
-            DispatchQueue.main.async {
+            DispatchQueue.main.asyncOrNow {
                 completionHandler?(error)
             }
+        }
+        guard let context else {
+             mainQueueCompletion(error: nil)
+            return
         }
 
         context.perform { [context] in

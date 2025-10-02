@@ -24,11 +24,12 @@ import Configuration
 import Crashes
 import FeatureFlags
 import History
+import HistoryView
+import os.log
 import PixelKit
 import Subscription
-import WebKit
-import os.log
 import SwiftUI
+import WebKit
 
 // Actions are sent to objects of responder chain
 
@@ -178,16 +179,29 @@ extension AppDelegate {
             let visits = await historyViewDataProvider.visits(matching: .rangeFilter(.all))
 
             let presenter = DefaultHistoryViewDialogPresenter()
-            let result = await presenter.showDeleteDialog(for: visits, deleteMode: .all, in: window)
-            guard result != .noAction else { return }
-
-            historyCoordinator.burnAll {
-                // History View doesn't currently support having new data pushed to it
-                // so we need to instruct all open history tabs to reload themselves.
-                let historyTabs = self.windowControllersManager.mainWindowControllers
-                    .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
-                    .filter { $0.content.isHistory }
-                historyTabs.forEach { $0.reload() }
+            switch await presenter.showDeleteDialog(for: .rangeFilter(.all), visits: visits, in: window) {
+            case .burn:
+                guard !featureFlagger.isFeatureOn(.fireDialog) /* FireCoordinator handles burning for Fire Dialog View */ else { break }
+                await fireCoordinator.fireViewModel.fire.burnAll()
+            case .delete:
+                @MainActor func reloadHistoryTabs() {
+                    // History View doesn't currently support having new data pushed to it
+                    // so we need to instruct all open history tabs to reload themselves.
+                    let historyTabs = self.windowControllersManager.mainWindowControllers
+                        .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
+                        .filter { $0.content.isHistory }
+                    historyTabs.forEach { $0.reload() }
+                }
+                // FireCoordinator handles burning for Fire Dialog View
+                if featureFlagger.isFeatureOn(.fireDialog) {
+                    reloadHistoryTabs()
+                } else {
+                    historyCoordinator.burnAll {
+                        reloadHistoryTabs()
+                    }
+                }
+            case .noAction:
+                break
             }
         }
     }
@@ -1070,16 +1084,20 @@ extension MainViewController {
         let visits = sender.getVisits(featureFlagger: featureFlagger)
 
         if featureFlagger.isFeatureOn(.historyView) {
-            let deleteMode: HistoryViewDeleteDialogModel.DeleteMode = switch sender.historyTimeWindow {
-            case .today: .today
-            case .other(date: let date): .date(date)
+            let historyQuery: HistoryView.DataModel.HistoryQueryKind = switch sender.historyTimeWindow {
+            case .today: .rangeFilter(.today)
+            case .other(date: let date): .dateFilter(date)
             }
 
             Task {
                 let presenter = DefaultHistoryViewDialogPresenter()
-                switch await presenter.showDeleteDialog(for: visits, deleteMode: deleteMode, in: window) {
+                let result = await presenter.showDeleteDialog(for: historyQuery, visits: visits, in: window)
+                if featureFlagger.isFeatureOn(.fireDialog) {
+                    return // FireCoordinator handles burning
+                }
+                switch result {
                 case .burn:
-                    self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: deleteMode == .today)
+                    self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: sender.historyTimeWindow == .today)
                 case .delete:
                     historyCoordinator.burnVisits(visits) {}
                 default:

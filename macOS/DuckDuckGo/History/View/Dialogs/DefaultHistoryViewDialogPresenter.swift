@@ -28,10 +28,7 @@ protocol HistoryViewDialogPresenting: AnyObject {
     func showMultipleTabsDialog(for itemsCount: Int, in window: NSWindow?) async -> OpenMultipleTabsWarningDialogModel.Response
 
     @MainActor
-    func showDeleteDialog(for visits: [Visit],
-                          deleteMode: HistoryViewDeleteDialogModel.DeleteMode,
-                          in window: NSWindow?,
-                          scopeCookieDomains: Set<String>?) async -> HistoryViewDeleteDialogModel.Response
+    func showDeleteDialog(for query: DataModel.HistoryQueryKind, visits: [Visit], in window: NSWindow?) async -> HistoryViewDeleteDialogModel.Response
 }
 
 final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
@@ -58,20 +55,14 @@ final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
     }
 
     @MainActor
-    func showDeleteDialog(for visits: [Visit],
-                          deleteMode: HistoryViewDeleteDialogModel.DeleteMode,
-                          in window: NSWindow?,
-                          scopeCookieDomains: Set<String>? = nil) async -> HistoryViewDeleteDialogModel.Response {
+    func showDeleteDialog(for query: DataModel.HistoryQueryKind, visits: [Visit], in window: NSWindow?) async -> HistoryViewDeleteDialogModel.Response {
         if featureFlagger.isFeatureOn(.fireDialog) {
-            return await presentFireDialog(mode: deleteMode,
-                                           visits: visits,
-                                           in: window,
-                                           scopeCookieDomains: scopeCookieDomains)
+            return await presentFireDialog(for: query, visits: visits, in: window)
         }
 
         return await withCheckedContinuation { continuation in
             let parentWindow = window ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
-            let model = HistoryViewDeleteDialogModel(entriesCount: visits.count, mode: deleteMode)
+            let model = HistoryViewDeleteDialogModel(entriesCount: visits.count, mode: query.deleteMode)
             let dialog = HistoryViewDeleteDialog(model: model)
             dialog.show(in: parentWindow) {
                 continuation.resume(returning: model.response ?? .noAction)
@@ -80,10 +71,7 @@ final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
     }
 
     @MainActor
-    private func presentFireDialog(mode: HistoryViewDeleteDialogModel.DeleteMode,
-                                   visits: [Visit],
-                                   in window: NSWindow?,
-                                   scopeCookieDomains: Set<String>?) async -> HistoryViewDeleteDialogModel.Response {
+    private func presentFireDialog(for query: DataModel.HistoryQueryKind, visits: [Visit], in window: NSWindow?) async -> HistoryViewDeleteDialogModel.Response {
         let window = window ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
         var mainWindowController: MainWindowController? {
             guard let mainWindowController = window?.windowController as? MainWindowController else {
@@ -93,20 +81,7 @@ final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
             return mainWindowController
         }
 
-        // Delegate to unified FireCoordinator API; pass precomputed scope to avoid recomputation
-        let mode: FireDialogViewModel.Mode = {
-            switch mode {
-            case .all: return .historyAll
-            case .today: return .historyToday
-            case .yesterday: return .historyYesterday
-            case .sites(let domains): return .historySites(domains)
-            case .date(let date): return .historyDate(date)
-            case .older: return .historyOlder
-            case .unspecified: return .historyVisits
-            }
-        }()
-
-        let response = await fireCoordinator.presentFireDialog(mode: mode, in: window, scopeCookieDomains: scopeCookieDomains, scopeVisits: visits)
+        let response = await fireCoordinator.presentFireDialog(mode: .historyView(query: query), in: window, scopeVisits: visits)
         switch response {
         case .noAction: return .noAction
         case .burn: return .burn

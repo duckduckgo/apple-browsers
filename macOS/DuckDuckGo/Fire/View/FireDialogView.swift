@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Common
 import DesignResourcesKit
 import DesignResourcesKitIcons
@@ -64,7 +63,6 @@ struct FireDialogView: ModalView {
     }
 
     @ObservedObject var viewModel: FireDialogViewModel
-    private let featureFlagger: FeatureFlagger
     private let showIndividualSitesLink: Bool
     private let onConfirm: ((FireDialogView.Response) -> Void)?
     @Environment(\.dismiss) private var dismiss
@@ -73,10 +71,8 @@ struct FireDialogView: ModalView {
 
     init(viewModel: FireDialogViewModel,
          showSitesOverlay: Bool = false,
-         featureFlagger: FeatureFlagger? = nil,
          showIndividualSitesLink: Bool = true,
          onConfirm: ((FireDialogView.Response) -> Void)? = nil) {
-        self.featureFlagger = featureFlagger ?? Application.appDelegate.featureFlagger
         self.viewModel = viewModel
         self._isShowingSitesOverlay = State(initialValue: showSitesOverlay)
         self.showIndividualSitesLink = showIndividualSitesLink
@@ -107,7 +103,7 @@ struct FireDialogView: ModalView {
                         segmentedControlView
                     }
                     sectionsView
-                    if showIndividualSitesLink && featureFlagger.isFeatureOn(.fireDialogIndividualSitesLink) {
+                    if showIndividualSitesLink {
                         individualSitesLink
                     }
                 }
@@ -251,7 +247,7 @@ struct FireDialogView: ModalView {
             .lastKeyMainWindowController?
             .mainViewController
             .browserTabViewController
-            .openNewTab(with: .history(pane: .sites))
+            .openNewTab(with: .history(pane: .allSites))
     }
 
     // MARK: - Sites overlay
@@ -502,9 +498,7 @@ private class MockFireproofDomains: FireproofDomains {
     )
 
     PreviewView(showWindowTitle: false) {
-        FireDialogView(viewModel: vm, featureFlagger: MockFeatureFlagger(featuresStub: [
-            MacOSBrowserConfigSubfeature.fireDialogIndividualSitesLink.rawValue: true
-        ]))
+        FireDialogView(viewModel: vm)
     }
 }
 
@@ -537,7 +531,7 @@ private class MockFireproofDomains: FireproofDomains {
     let vm = FireDialogViewModel(
         fireViewModel: FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider),
         tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
-        historyCoordinating: Application.appDelegate.historyCoordinator,
+        historyCoordinating: history,
         fireproofDomains: fireproofDomains,
         faviconManagement: faviconMock,
         clearingOption: .allData,
@@ -545,9 +539,7 @@ private class MockFireproofDomains: FireproofDomains {
     )
 
     return PreviewView(showWindowTitle: false) {
-        FireDialogView(viewModel: vm, showSitesOverlay: true, featureFlagger: MockFeatureFlagger(featuresStub: [
-            MacOSBrowserConfigSubfeature.fireDialogIndividualSitesLink.rawValue: true
-        ]))
+        FireDialogView(viewModel: vm, showSitesOverlay: true)
     }
 }
 #endif

@@ -1212,10 +1212,6 @@
 		379857FF2D725672008773F6 /* OpenMultipleTabsWarningDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379857FD2D725668008773F6 /* OpenMultipleTabsWarningDialog.swift */; };
 		379858012D72D831008773F6 /* HistoryBurning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379858002D72D826008773F6 /* HistoryBurning.swift */; };
 		379858022D72D831008773F6 /* HistoryBurning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379858002D72D826008773F6 /* HistoryBurning.swift */; };
-		379858072D730336008773F6 /* VisitIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379858062D730333008773F6 /* VisitIdentifier.swift */; };
-		379858082D730336008773F6 /* VisitIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379858062D730333008773F6 /* VisitIdentifier.swift */; };
-		3798580A2D73034E008773F6 /* VisitIdentifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379858092D73034B008773F6 /* VisitIdentifierTests.swift */; };
-		3798580B2D73034E008773F6 /* VisitIdentifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379858092D73034B008773F6 /* VisitIdentifierTests.swift */; };
 		3798580D2D730E32008773F6 /* HistoryQueryKindExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3798580C2D730E2D008773F6 /* HistoryQueryKindExtensionTests.swift */; };
 		3798580E2D730E32008773F6 /* HistoryQueryKindExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3798580C2D730E2D008773F6 /* HistoryQueryKindExtensionTests.swift */; };
 		379858102D730EDA008773F6 /* HistoryViewDeleteDialogModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3798580F2D730ED8008773F6 /* HistoryViewDeleteDialogModel.swift */; };
@@ -4412,8 +4408,6 @@
 		379857F72D7230C8008773F6 /* UserDefaultsHistoryViewOnboardingViewSettingsPersistorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsHistoryViewOnboardingViewSettingsPersistorTests.swift; sourceTree = "<group>"; };
 		379857FD2D725668008773F6 /* OpenMultipleTabsWarningDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenMultipleTabsWarningDialog.swift; sourceTree = "<group>"; };
 		379858002D72D826008773F6 /* HistoryBurning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryBurning.swift; sourceTree = "<group>"; };
-		379858062D730333008773F6 /* VisitIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisitIdentifier.swift; sourceTree = "<group>"; };
-		379858092D73034B008773F6 /* VisitIdentifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisitIdentifierTests.swift; sourceTree = "<group>"; };
 		3798580C2D730E2D008773F6 /* HistoryQueryKindExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryQueryKindExtensionTests.swift; sourceTree = "<group>"; };
 		3798580F2D730ED8008773F6 /* HistoryViewDeleteDialogModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewDeleteDialogModel.swift; sourceTree = "<group>"; };
 		379858122D730EFA008773F6 /* DefaultHistoryViewDialogPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultHistoryViewDialogPresenter.swift; sourceTree = "<group>"; };
@@ -7034,7 +7028,6 @@
 			children = (
 				379857E82D720BA6008773F6 /* Onboarding */,
 				379858152D730F18008773F6 /* Dialogs */,
-				379858062D730333008773F6 /* VisitIdentifier.swift */,
 				379858002D72D826008773F6 /* HistoryBurning.swift */,
 				371BFF5E2D39360E0075DB87 /* HistoryViewActionsManagerExtension.swift */,
 				37EE574D2D5F32BB00D53C7C /* HistoryViewDateFormatter.swift */,
@@ -10303,7 +10296,6 @@
 		AAEC74B02642C48B00C2EFBC /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				379858092D73034B008773F6 /* VisitIdentifierTests.swift */,
 				37598EFF2D5A383600720EAF /* HistoryViewDataProviderTests.swift */,
 				3745DE072D536EF000024FC8 /* HistoryGroupingProviderTests.swift */,
 				AAEC74B52642CC6A00C2EFBC /* HistoryStoringMock.swift */,
@@ -12952,7 +12944,6 @@
 				560EB9332C78946F0080DBC8 /* ContextualOnboardingDialogs.swift in Sources */,
 				3706FABB293F65D500E42796 /* PasswordManagementBitwardenItemView.swift in Sources */,
 				CD2AB5CB2C8225E70019EB49 /* URLTokenValidator.swift in Sources */,
-				379858072D730336008773F6 /* VisitIdentifier.swift in Sources */,
 				1D220BF92B86192200F8BBC6 /* PreferencesEmailProtectionView.swift in Sources */,
 				9FA173E42B7A12B600EE4E6E /* BookmarkDialogFolderManagementView.swift in Sources */,
 				3706FABD293F65D500E42796 /* NSNotificationName+PasswordManager.swift in Sources */,
@@ -13956,7 +13947,6 @@
 				3706FDF1293F661700E42796 /* AtbAndVariantCleanupTests.swift in Sources */,
 				9FFBEE802DDF0AC90058B11A /* DefaultBrowserAndDockPromptStatusUpdateNotifierTests.swift in Sources */,
 				1D1C36E729FB019C001FA40C /* HistoryTabExtensionTests.swift in Sources */,
-				3798580B2D73034E008773F6 /* VisitIdentifierTests.swift in Sources */,
 				1D9FDEBB2B9B5E090040B78C /* WebTrackingProtectionPreferencesTests.swift in Sources */,
 				3706FDF3293F661700E42796 /* ChromiumLoginReaderTests.swift in Sources */,
 				3706FDF4293F661700E42796 /* TabCollectionTests.swift in Sources */,
@@ -15151,7 +15141,6 @@
 				4BA1A6A0258B079600F6F690 /* DataEncryption.swift in Sources */,
 				B6FA8941269C425400588ECD /* PrivacyDashboardPopover.swift in Sources */,
 				B626A76D29928B1600053070 /* TestsClosureNavigationResponder.swift in Sources */,
-				379858082D730336008773F6 /* VisitIdentifier.swift in Sources */,
 				9FFBEE772DDEDE870058B11A /* DefaultBrowserAndDockPromptStoreMigrator.swift in Sources */,
 				F1DA51862BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift in Sources */,
 				B693954C26F04BEB0015B914 /* FocusRingView.swift in Sources */,
@@ -16053,7 +16042,6 @@
 				9F0FFFBB2BCCAEC2007C87DD /* AddEditBookmarkFolderDialogViewModelMock.swift in Sources */,
 				4BBC16A527C488C900E00A38 /* DeviceAuthenticatorTests.swift in Sources */,
 				6590DB562DB7D59F007D6046 /* DuckPlayerTabExtensionTests.swift in Sources */,
-				3798580A2D73034E008773F6 /* VisitIdentifierTests.swift in Sources */,
 				4B3F641E27A8D3BD00E0C118 /* BrowserProfileTests.swift in Sources */,
 				1D69B71A2E2E31AF00258E33 /* NewTabPageSuggestionsProviderTests.swift in Sources */,
 				37DB56EF2C3B31CD0093D4DC /* MockRemoteMessagingAvailabilityProvider.swift in Sources */,

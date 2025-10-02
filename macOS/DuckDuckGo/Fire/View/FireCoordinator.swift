@@ -32,7 +32,6 @@ protocol FireDialogViewPresenting {
 
 struct FireDialogViewConfig {
     let viewModel: FireDialogViewModel
-    let featureFlagger: FeatureFlagger
     let showIndividualSitesLink: Bool
     let onConfirm: (FireDialogView.Response) -> Void
 }
@@ -59,14 +58,16 @@ final class FireCoordinator {
     private let historyProvider: HistoryViewDataProviding
     private let fireDialogViewFactory: FireDialogViewFactory
     private let fireproofDomains: FireproofDomains
+    private let onboardingContextualDialogsManager: () -> ContextualOnboardingStateUpdater
     private let tabViewModelGetter: (NSWindow) -> TabCollectionViewModel?
 
-    init(tld: TLD, featureFlagger: FeatureFlagger, historyProvider: HistoryViewDataProviding, fireViewModel: FireViewModel? = nil, fireDialogViewFactory: FireDialogViewFactory? = nil, fireproofDomains: FireproofDomains? = nil, tabViewModelGetter: ((NSWindow) -> TabCollectionViewModel?)? = nil) {
+    init(tld: TLD, featureFlagger: FeatureFlagger, historyProvider: HistoryViewDataProviding, fireViewModel: FireViewModel? = nil, onboardingContextualDialogsManager: (() -> ContextualOnboardingStateUpdater)? = nil, fireDialogViewFactory: FireDialogViewFactory? = nil, fireproofDomains: FireproofDomains? = nil, tabViewModelGetter: ((NSWindow) -> TabCollectionViewModel?)? = nil) {
 
         self.tld = tld
         self.featureFlagger = featureFlagger
         self.historyProvider = historyProvider
         self.fireproofDomains = fireproofDomains ?? Application.appDelegate.fireproofDomains
+        self.onboardingContextualDialogsManager = onboardingContextualDialogsManager ?? { Application.appDelegate.onboardingContextualDialogsManager }
         self.tabViewModelGetter = tabViewModelGetter ?? { window in
             (window.contentViewController as? MainViewController)?.tabCollectionViewModel
         }
@@ -74,7 +75,6 @@ final class FireCoordinator {
         self.fireDialogViewFactory = fireDialogViewFactory ?? { config in
             let view = FireDialogView(
                 viewModel: config.viewModel,
-                featureFlagger: config.featureFlagger,
                 showIndividualSitesLink: config.showIndividualSitesLink,
                 onConfirm: config.onConfirm
             )
@@ -143,35 +143,33 @@ extension FireCoordinator {
 
     /// Unified Fire dialog presenter for all entry points
     @MainActor
-    func presentFireDialog(mode: FireDialogViewModel.Mode, in window: NSWindow? = nil, scopeCookieDomains: Set<String>? = nil, scopeVisits: [Visit]? = nil) async -> FireDialogView.Response {
+    func presentFireDialog(mode: FireDialogViewModel.Mode, in window: NSWindow? = nil, scopeVisits providedVisits: [Visit]? = nil) async -> FireDialogView.Response {
         let targetWindow = window ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
         guard let parentWindow = targetWindow,
               let tabCollectionViewModel = tabViewModelGetter(parentWindow) else { return .noAction }
 
-        // Use precomputed domains/visits when provided by caller (preferred)
-        var initialCookieDomains: Set<String>? = scopeCookieDomains
-        var initialVisits: [Visit]? = scopeVisits
-
-        // Fallback to provider if not supplied and mode implies a scope
-        if initialCookieDomains == nil || initialVisits == nil {
-            let scopeQuery: DataModel.HistoryQueryKind = switch mode {
-            case .fireButton, .mainMenuAll, .historyAll, .allHistorySites: .rangeFilter(.all)
-            case .historyToday: .rangeFilter(.today)
-            case .historyYesterday: .rangeFilter(.yesterday)
-            case .historyDate(let date): . dateFilter(date)
-            case .historyOlder: .rangeFilter(.older)
-            case .historySites(let domains): .domainFilter(domains)
-            case .historyVisits: .rangeFilter(.all) // fallback to default, visits should be provided
-            }
-
-            if initialVisits == nil {
-                assert(mode != .historyVisits, "Expected visits and domains to be non-nil when mode is .historyVisits")
-                initialVisits = await historyProvider.visits(matching: scopeQuery)
-            }
-            if initialCookieDomains == nil {
-                initialCookieDomains = await historyProvider.cookieDomains(matching: scopeQuery)
-            }
+        let scopeQuery: DataModel.HistoryQueryKind = switch mode {
+        case .fireButton, .mainMenuAll: .rangeFilter(.all)
+        case .historyView(let query): query
         }
+
+        let scopeVisits: [Visit]
+        // Use precomputed domains/visits when provided by caller (preferred)
+        if let providedVisits {
+            scopeVisits = providedVisits
+        } else {
+            // Fallback to querying provider
+            scopeVisits = await historyProvider.visits(matching: scopeQuery)
+        }
+        let scopeCookieDomains: Set<String> = {
+            let hosts = Set(scopeVisits.compactMap { $0.historyEntry?.url.host })
+            let result: [String] = hosts.compactMap {
+                let eTLDplus1 = tld.eTLDplus1($0)
+                guard !fireproofDomains.isFireproof(fireproofDomain: $0) else { return nil }
+                return eTLDplus1
+            }
+            return Set(result)
+        }()
 
         let vm = FireDialogViewModel(
             fireViewModel: self.fireViewModel,
@@ -182,8 +180,8 @@ extension FireCoordinator {
             clearingOption: mode.shouldShowSegmentedControl ? nil /* last selected */ : .allData,
             includeTabsAndWindows: mode.shouldShowCloseTabsToggle ? nil /* last selected */ : false,
             mode: mode,
-            scopeCookieDomains: initialCookieDomains,
-            scopeVisits: initialVisits,
+            scopeCookieDomains: scopeCookieDomains,
+            scopeVisits: scopeVisits,
             tld: tld
         )
 
@@ -199,8 +197,7 @@ extension FireCoordinator {
             let presenter = self.fireDialogViewFactory(
                 FireDialogViewConfig(
                     viewModel: vm,
-                    featureFlagger: Application.appDelegate.featureFlagger,
-                    showIndividualSitesLink: mode == .fireButton,
+                    showIndividualSitesLink: [.fireButton, .mainMenuAll].contains(mode) && featureFlagger.isFeatureOn(.fireDialogIndividualSitesLink),
                     onConfirm: { response in
                         resumeOnce(returning: response)
                     }
@@ -210,40 +207,28 @@ extension FireCoordinator {
                 resumeOnce(returning: .noAction)
             }
         }
-        let isToday = switch mode {
-        case .historyToday: true
-        default: false
-        }
 
         switch response {
         case .noAction:
             return .noAction
+
         case .burn(let options):
-            guard var options else { return .noAction }
-            // Ensure cookie domains from current VM selection are included when not provided
-            options.isToday = isToday
-
-            switch mode {
-            case .fireButton, .mainMenuAll:
-                // Record fire button usage for contextual onboarding flows
-                Application.appDelegate.onboardingContextualDialogsManager.fireButtonUsed()
-            default: break
+            guard var options else {
+                assertionFailure("Received nil burn options")
+                return .noAction
             }
 
-            let isAllHistorySelected: Bool
-            if scopeCookieDomains != nil || scopeVisits != nil {
-                // If there's a specific scope passed from outside, it means we‘re not burning all
-                isAllHistorySelected = false
-            } else {
-                // no specific domains passed initially
-                isAllHistorySelected = options.selectedCookieDomains == nil || options.selectedCookieDomains?.count == vm.selectable.count
-            }
-            if options.selectedCookieDomains == nil {
-                // set actual domains to delete
-                options.selectedCookieDomains = vm.selectedCookieDomainsForScope
-            }
+            options.isToday = (scopeQuery == .rangeFilter(.today))
+
+            let isAllHistorySelected = (options.clearingOption == .allData /* not Current Tab or Window */)
+            && (scopeQuery == .rangeFilter(.all) || scopeQuery == .rangeFilter(.allSites))
 
             await self.handleDialogResult(options, tabCollectionViewModel: tabCollectionViewModel, isAllHistorySelected: isAllHistorySelected)
+
+            if [.fireButton, .mainMenuAll].contains(mode) {
+                // Record fire button usage for contextual onboarding flows
+                onboardingContextualDialogsManager().fireButtonUsed()
+            }
             return .burn(options: options)
         }
     }
@@ -252,9 +237,10 @@ extension FireCoordinator {
     func handleDialogResult(_ result: FireDialogResult, tabCollectionViewModel: TabCollectionViewModel?, isAllHistorySelected: Bool) async {
 
         // If specific visits are provided (e.g., deleting for a day or a selection), burn only those visits
-        if result.clearingOption == .allData,
+        if result.clearingOption == .allData /* not Current Tab or Window */,
            result.includeHistory, !isAllHistorySelected,
            let visits = result.selectedVisits, !visits.isEmpty {
+
             await fireViewModel.fire.burnVisits(visits,
                                                 except: fireViewModel.fire.fireproofDomains,
                                                 isToday: result.isToday,
@@ -266,7 +252,7 @@ extension FireCoordinator {
 
         switch result.clearingOption {
         case .currentTab:
-            guard let tabCollectionViewModel = tabCollectionViewModel,
+            guard let tabCollectionViewModel,
                   let tabViewModel = tabCollectionViewModel.selectedTabViewModel else {
                 assertionFailure("No tab selected")
                 return

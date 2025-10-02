@@ -23,7 +23,7 @@ import History
 
 final class ClearTimeWindowHistoryMenuItem: NSMenuItem {
 
-    enum HistoryTimeWindow {
+    enum HistoryTimeWindow: Equatable {
         case today
         case other(date: Date)
 

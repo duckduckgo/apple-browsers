@@ -21,6 +21,7 @@ import Combine
 import BrowserServicesKit
 import Common
 import History
+import HistoryView
 import PixelKit
 
 @MainActor
@@ -45,36 +46,36 @@ final class FireDialogViewModel: ObservableObject {
     enum Mode: Equatable {
         case fireButton
         case mainMenuAll
-        case historyAll
-        case historyToday
-        case historyYesterday
-        case historyDate(Date)
-        case historyOlder
-        case historySites(Set<String>)
-        case allHistorySites
-        case historyVisits  // For individual selected visits
+        case historyView(query: DataModel.HistoryQueryKind)
 
         /// Show Tab/Window/All Data segmented pill control only for fire button/MainMenu entry point
         var shouldShowSegmentedControl: Bool {
             switch self {
             case .fireButton, .mainMenuAll: return true
-            case .historyAll, .historyToday, .historyYesterday, .historyDate, .historyOlder, .historySites, .allHistorySites, .historyVisits: return false
+            case .historyView: return false
             }
         }
 
         /// Show Close Tabs/Windows toggle?
         var shouldShowCloseTabsToggle: Bool {
             switch self {
-            case .fireButton, .historyToday, .historyAll, .mainMenuAll, .historyOlder: return true
-            case .historyYesterday, .historyDate, .historySites, .allHistorySites, .historyVisits: return false
+            case .fireButton, .mainMenuAll,
+                 .historyView(query: .rangeFilter(.today)),
+                 .historyView(query: .rangeFilter(.all)),
+                 .historyView(query: .rangeFilter(.allSites)):
+                return true
+            case .historyView:
+                return false
             }
         }
 
         /// Hide fireproof section when dialog is scoped to specific site(s)
         var shouldShowFireproofSection: Bool {
             switch self {
-            case .fireButton, .mainMenuAll, .historyAll, .historyToday, .historyYesterday, .historyDate, .historyOlder: return true
-            case .historySites, .allHistorySites, .historyVisits: return false
+            case .historyView(query: .domainFilter), .historyView(query: .visits):
+                return false
+            case .fireButton, .mainMenuAll, .historyView:
+                return true
             }
         }
 
@@ -82,14 +83,15 @@ final class FireDialogViewModel: ObservableObject {
         var dialogTitle: String {
             let title = switch self {
             case .fireButton: UserText.fireDialogTitle
-            case .historyAll, .mainMenuAll: HistoryViewDeleteDialogModel.DeleteMode.all.title
-            case .historyToday: HistoryViewDeleteDialogModel.DeleteMode.today.title
-            case .historyYesterday: HistoryViewDeleteDialogModel.DeleteMode.yesterday.title
-            case .historyDate(let date): HistoryViewDeleteDialogModel.DeleteMode.date(date).title
-            case .historySites(let domains): HistoryViewDeleteDialogModel.DeleteMode.sites(domains).title
-            case .allHistorySites: UserText.fireDialogTitle
-            case .historyOlder: HistoryViewDeleteDialogModel.DeleteMode.older.title
-            case .historyVisits: HistoryViewDeleteDialogModel.DeleteMode.unspecified.title
+            case .mainMenuAll,
+                 .historyView(query: .rangeFilter(.all)),
+                 .historyView(query: .rangeFilter(.allSites)): HistoryViewDeleteDialogModel.DeleteMode.all.title
+            case .historyView(query: .rangeFilter(.today)): HistoryViewDeleteDialogModel.DeleteMode.today.title
+            case .historyView(query: .rangeFilter(.yesterday)): HistoryViewDeleteDialogModel.DeleteMode.yesterday.title
+            case .historyView(query: .dateFilter(let date)): HistoryViewDeleteDialogModel.DeleteMode.date(date).title
+            case .historyView(query: .domainFilter(let domains)): HistoryViewDeleteDialogModel.DeleteMode.sites(domains).title
+            case .historyView(query: .rangeFilter(.older)): HistoryViewDeleteDialogModel.DeleteMode.older.title
+            case .historyView: UserText.fireDialogTitle
             }
             return title.replacingOccurrences(of: #"\n"#, with: " ")
         }

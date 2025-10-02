@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import HistoryView
 import PixelKit
 import SwiftUIExtensions
@@ -46,6 +47,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
     private let tabOpener: HistoryViewTabOpening
     private let dialogPresenter: HistoryViewDialogPresenting
     private let fireCoordinator: FireCoordinator
+    private let featureFlagger: FeatureFlagger
 
     /**
      * A handle to the context menu response. This is returned to FE from `showContextMenu(for:using:)`.
@@ -83,6 +85,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         tabOpener: HistoryViewTabOpening = DefaultHistoryViewTabOpener(),
         bookmarksHandler: HistoryViewBookmarksHandling,
         fireCoordinator: FireCoordinator = Application.appDelegate.fireCoordinator,
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
         firePixel: @escaping (HistoryViewPixel, PixelKit.Frequency) -> Void = { PixelKit.fire($0, frequency: $1) }
     ) {
         self.dataProvider = dataProvider
@@ -91,6 +94,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         self.tabOpener.dialogPresenter = dialogPresenter
         self.bookmarksHandler = bookmarksHandler
         self.fireCoordinator = fireCoordinator
+        self.featureFlagger = featureFlagger
         self.firePixel = firePixel
     }
 
@@ -99,45 +103,34 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
             return .noAction
         }
 
-        // Compute presentation scope and mode
-        let isSitesSelection: Bool = (query == .rangeFilter(.sites))
+        // Load visits matching the query
+        let scopeVisits = await dataProvider.visits(matching: query)
+        guard !scopeVisits.isEmpty else { return .noAction }
 
         // Adjust query when not a range filter and matches all items
-        var adjustedQuery = query
-        if !isSitesSelection {
-            let baseCount = await dataProvider.countVisibleVisits(matching: query)
-            guard baseCount > 0 else { return .noAction }
-            if case .rangeFilter = query {
-                // keep as is
-            } else {
-                let allCount = await dataProvider.countVisibleVisits(matching: .rangeFilter(.all))
-                if allCount == baseCount { adjustedQuery = .rangeFilter(.all) }
+        let adjustedQuery: DataModel.HistoryQueryKind = await {
+            switch query {
+            case .rangeFilter, .dateFilter, .visits:
+                return query
+            default:
+                let allVisitsCount = await dataProvider.visits(matching: .rangeFilter(.all)).count
+                return allVisitsCount == scopeVisits.count ? .rangeFilter(.all) : query
             }
-        }
+        }()
 
-        let scopeQuery: DataModel.HistoryQueryKind = isSitesSelection ? .rangeFilter(.all) : adjustedQuery
-        let deleteMode: HistoryViewDeleteDialogModel.DeleteMode = isSitesSelection ? .all : adjustedQuery.deleteMode
-        let pixelScope: HistoryViewPixel.DeletedBatchKind = isSitesSelection ? .all : .init(adjustedQuery)
+        let result = await dialogPresenter.showDeleteDialog(for: adjustedQuery, visits: scopeVisits, in: window)
 
-        let scopeVisits = await dataProvider.visits(matching: scopeQuery)
-        guard scopeVisits.count > 0 else { return .noAction }
-
-        let scopeCookieDomains = await dataProvider.cookieDomains(matching: scopeQuery)
-        let response = await dialogPresenter.showDeleteDialog(for: scopeVisits,
-                                                              deleteMode: deleteMode,
-                                                              in: window,
-                                                              scopeCookieDomains: scopeCookieDomains)
-        switch response {
+        let pixelScope = HistoryViewPixel.DeletedBatchKind(adjustedQuery)
+        switch result {
         case .burn:
             self.firePixel(.delete, .daily)
             self.firePixel(.multipleItemsDeleted(pixelScope, burn: true), .dailyAndStandard)
         case .delete:
             self.firePixel(.delete, .daily)
             self.firePixel(.multipleItemsDeleted(pixelScope, burn: false), .dailyAndStandard)
-        default:
-            break
+        case .noAction: break
         }
-        return mapDialogResponse(response)
+        return mapDialogResponse(result)
     }
 
     func showDeleteDialog(for entries: [String], in window: NSWindow?) async -> DataModel.DeleteDialogResponse {
@@ -190,7 +183,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
             performDelete = { [weak self] in self?.deleteDomains(Set(siteDomains), window: presenter.window) }
         } else {
             guard !identifiers.isEmpty else { return .noAction }
-            urls = identifiers.map(\.url)
+            urls = identifiers.compactMap(\.url.url)
             deleteTitle = UserText.delete
             performDelete = { [weak self] in self?.delete(identifiers, window: presenter.window) }
         }
@@ -341,30 +334,14 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
             return .noAction
         }
 
-        guard identifiers.count > 1 else {
+        guard featureFlagger.isFeatureOn(.fireDialog) || identifiers.count > 1 else {
             await dataProvider.deleteVisits(for: identifiers)
             firePixel(.delete, .daily)
             firePixel(.singleItemDeleted, .dailyAndStandard)
             return .delete
         }
 
-        let visits = await dataProvider.visits(for: identifiers)
-
-        let response = await dialogPresenter.showDeleteDialog(for: visits,
-                                                              deleteMode: .unspecified,
-                                                              in: window,
-                                                              scopeCookieDomains: nil)
-        switch response {
-        case .burn:
-            self.firePixel(.delete, .daily)
-            self.firePixel(.multipleItemsDeleted(.multiSelect, burn: true), .dailyAndStandard)
-        case .delete:
-            self.firePixel(.delete, .daily)
-            self.firePixel(.multipleItemsDeleted(.multiSelect, burn: false), .dailyAndStandard)
-        default:
-            break
-        }
-        return mapDialogResponse(response)
+        return await showDeleteDialog(for: .visits(identifiers), in: window)
     }
 
     private func mapDialogResponse(_ response: HistoryViewDeleteDialogModel.Response) -> DataModel.DeleteDialogResponse {
@@ -382,18 +359,15 @@ extension DataModel.HistoryQueryKind {
         switch self {
         case .rangeFilter(let range):
             switch range {
-            case .all:
+            case .all, .allSites:
                 return .all
             case .today:
                 return .today
             case .yesterday:
                 return .yesterday
-            case .sites:
-                // Treat Sites section as "All" for dialog presentation to allow showing the Close Tabs/Windows toggle
-                return .all
             case .older:
                 return .older
-            default:
+            case .sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday:
                 guard let date = range.date(for: Date()) else {
                     return .unspecified
                 }
@@ -403,7 +377,7 @@ extension DataModel.HistoryQueryKind {
             return .date(date)
         case .domainFilter(let domains):
             return .sites(domains)
-        case .searchTerm:
+        case .searchTerm, .visits:
             return .unspecified
         }
     }
@@ -412,8 +386,10 @@ extension DataModel.HistoryQueryKind {
         switch self {
         case .searchTerm(let term):
             return term.isEmpty
-        case.domainFilter(let domains):
+        case .domainFilter(let domains):
             return domains.isEmpty
+        case .visits(let visits):
+            return visits.isEmpty
         case .rangeFilter, .dateFilter:
             return false
         }

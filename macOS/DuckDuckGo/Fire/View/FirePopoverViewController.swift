@@ -304,7 +304,10 @@ final class FirePopoverViewController: NSViewController {
             isToday: false
         )
         Task {
-            await Application.appDelegate.fireCoordinator.handleDialogResult(result, tabCollectionViewModel: firePopoverViewModel.tabCollectionViewModel, isAllHistorySelected: true)
+            let isAllHistorySelected = result.selectedCookieDomains == nil || result.selectedCookieDomains?.count == firePopoverViewModel.selectable.count
+            await Application.appDelegate.fireCoordinator.handleDialogResult(result,
+                                                                             tabCollectionViewModel: firePopoverViewModel.tabCollectionViewModel,
+                                                                             isAllHistorySelected: isAllHistorySelected)
             Application.appDelegate.onboardingContextualDialogsManager.fireButtonUsed()
         }
     }

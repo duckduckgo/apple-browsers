@@ -340,10 +340,6 @@ private class PreviewHistoryProvider: HistoryViewDataProviding {
         []
     }
 
-    func countVisibleVisits(matching query: DataModel.HistoryQueryKind) async -> Int {
-        return 0
-    }
-
     func visits(matching query: HistoryView.DataModel.HistoryQueryKind) async -> [History.Visit] { [] }
     func deleteVisits(for identifiers: [VisitIdentifier]) async {}
 

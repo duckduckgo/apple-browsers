@@ -228,7 +228,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
                                                                subcategory: selectedSubcategory)
             }
         case .contactSupportClick:
-            openSupport()
+            await openSupport()
         }
     }
 
@@ -250,7 +250,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         }()
 
         if let url {
-            LaunchTabNotification.postLaunchTabNotification(urlString: url.absoluteString)
+            await UIApplication.shared.open(url)
         }
     }
 
@@ -331,7 +331,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         self.submitButtonEnabled = viewState.canSubmit && !feedbackFormText.isEmpty
     }
 
-    private func openSupport() {
-        LaunchTabNotification.postLaunchTabNotification(urlString: Self.supportURL.absoluteString)
+    private func openSupport() async {
+        await UIApplication.shared.open(Self.supportURL)
     }
 }

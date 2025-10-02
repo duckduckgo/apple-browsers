@@ -21,10 +21,8 @@ import Foundation
 import SecureStorage
 import XCTest
 import PixelKit
-@testable import DataBrokerProtectionCoreTestsUtils
-
 @testable import DataBrokerProtectionCore
-import DataBrokerProtectionCoreTestsUtils
+@testable import DataBrokerProtectionCoreTestsUtils
 
 final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     let handler = MockDataBrokerProtectionPixelsHandler()

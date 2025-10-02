@@ -28,7 +28,6 @@ public final class DistributedNavigationDelegate: NSObject {
     private var customDelegateMethodHandlers = [Selector: any AnyResponderRef]()
     private let isPerformanceReportingEnabled: Bool
 
-
     /// approved navigation before `navigationDidStart` event received (useful for authentication challenge and redirect events)
     @MainActor
     private var navigationExpectedToStart: Navigation? {

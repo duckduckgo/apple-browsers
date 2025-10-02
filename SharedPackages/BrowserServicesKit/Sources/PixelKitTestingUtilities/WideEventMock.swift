@@ -21,6 +21,7 @@ import PixelKit
 import XCTest
 
 public final class WideEventMock: WideEventManaging {
+
     public var started: [WideEventData] = []
     public var updates: [WideEventData] = []
     public var completions: [(WideEventData, WideEventStatus)] = []
@@ -36,14 +37,14 @@ public final class WideEventMock: WideEventManaging {
         updates.append(data)
     }
 
-    public func updateFlow<T: WideEventData>(globalID: String, update: (inout T) throws -> Void) {
+    public func updateFlow<T: WideEventData>(globalID: String, update: (inout T) -> Void) {
         // Try to find existing data in started or updates arrays
         let allData = (started + updates).compactMap { $0 as? T }
         guard var data = allData.first(where: { $0.globalData.id == globalID }) else {
             return
         }
 
-        try? update(&data)
+        update(&data)
         updates.append(data)
     }
 

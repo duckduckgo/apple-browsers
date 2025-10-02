@@ -465,4 +465,8 @@ extension WKWebView {
         return nil
     }
 
+    @MainActor
+    func blurActiveElement() {
+        evaluateJavaScript("document.activeElement?.blur()")
+    }
 }

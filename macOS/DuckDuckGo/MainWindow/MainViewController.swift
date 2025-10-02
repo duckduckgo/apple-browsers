@@ -689,6 +689,10 @@ final class MainViewController: NSViewController {
         let tabContent = tabContent ?? selectedTabViewModel.tab.content
 
         if case .newtab = tabContent {
+            // Blur NTP search box to remove focus from it
+            browserTabViewController.blurActiveElement()
+
+            // Focus the address bar
             navigationBarViewController.addressBarViewController?.addressBarTextField.makeMeFirstResponder()
         } else {
             // ignore published tab switch: BrowserTabViewController

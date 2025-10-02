@@ -884,6 +884,10 @@ final class BrowserTabViewController: NSViewController {
         window.makeFirstResponder(contentView)
     }
 
+    func blurActiveElement() {
+        webView?.blurActiveElement()
+    }
+
     private var viewToMakeFirstResponderAfterAdding: (() -> NSView?)?
     private func adjustFirstResponderAfterAddingContentViewIfNeeded() {
         guard let window = view.window,

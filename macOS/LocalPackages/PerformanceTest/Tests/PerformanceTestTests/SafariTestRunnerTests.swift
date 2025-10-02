@@ -127,11 +127,11 @@ final class SafariTestRunnerTests: XCTestCase {
         let url = URL(string: "https://example.com")!
         let runner = SafariTestRunner(url: url, iterations: 10)
 
-        let logLine = "[INFO] Starting iteration 5 of 10"
+        let logLine = "[INFO] Running iteration 5 of 10"
         let (iteration, status) = runner.parseProgressLog(logLine)
 
         XCTAssertEqual(iteration, 5)
-        XCTAssertTrue(status.contains("Starting iteration"))
+        XCTAssertEqual(status, "Running iteration 5 of 10")
     }
 
     func testParseProgress_extractsStatusFromLog() {
@@ -141,7 +141,7 @@ final class SafariTestRunnerTests: XCTestCase {
         let logLine = "[INFO] Clearing cache..."
         let (_, status) = runner.parseProgressLog(logLine)
 
-        XCTAssertTrue(status.contains("Clearing cache"))
+        XCTAssertEqual(status, "Clearing cache...")
     }
 
     func testParseProgress_handlesInvalidLogFormat() {

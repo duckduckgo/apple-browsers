@@ -50,6 +50,10 @@ public final class SafariPerformanceTestViewModel: ObservableObject {
         self.currentURL = url
     }
 
+    public init() {
+        self.currentURL = nil
+    }
+
     // MARK: - Public Methods
 
     public func runTest() async {
@@ -98,6 +102,10 @@ public final class SafariPerformanceTestViewModel: ObservableObject {
             self.errorMessage = "Node.js not found. Please install Node.js to run Safari performance tests."
             self.statusText = "Error: Node.js not found"
             logger.log("Safari test failed: Node.js not found")
+        } catch SafariTestRunner.RunnerError.npmInstallFailed {
+            self.errorMessage = "Failed to install npm dependencies. Check Console.app for details."
+            self.statusText = "Error: npm install failed"
+            logger.log("Safari test failed: npm install failed")
         } catch SafariTestRunner.RunnerError.scriptNotFound {
             self.errorMessage = "Safari test script not found in bundle."
             self.statusText = "Error: Script not found"
@@ -127,6 +135,23 @@ public final class SafariPerformanceTestViewModel: ObservableObject {
         logger.log("Cancelling Safari performance test")
         isCancelled = true
         statusText = "Cancelling..."
+    }
+
+    public func reset() {
+        logger.log("Resetting Safari performance test state")
+        isRunning = false
+        progress = 0
+        statusText = ""
+        currentIteration = 0
+        isCancelled = false
+        resultsFilePath = nil
+        errorMessage = nil
+    }
+
+    public func cleanup() {
+        logger.log("Cleaning up Safari performance test resources")
+        runner?.cleanup()
+        runner = nil
     }
 
     // MARK: - Internal Methods (for testing)

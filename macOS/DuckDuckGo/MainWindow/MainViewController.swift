@@ -869,14 +869,9 @@ extension MainViewController {
             return
         }
 
-        // For Phase 1, just show an alert with the URL that would be tested
-        // Phase 2 will implement the actual window controller
-        let alert = NSAlert()
-        alert.messageText = "Safari Performance Test"
-        alert.informativeText = "Will test: \(url.absoluteString)\n\n(Full implementation in Phase 2)"
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+        // Launch Safari performance test window
+        let windowController = SafariPerformanceTestWindowController(url: url)
+        windowController.showWindow(nil)
     }
 }
 

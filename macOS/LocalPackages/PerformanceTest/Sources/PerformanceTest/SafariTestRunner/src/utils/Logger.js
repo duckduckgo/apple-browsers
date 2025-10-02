@@ -68,9 +68,9 @@ class Logger {
      * @private
      */
     _formatMessage(level, message) {
-        const timestamp = new Date().toISOString();
+        // Use simple format for better Swift parsing
         const prefix = this.prefix ? `[${this.prefix}] ` : '';
-        return `[${timestamp}] [${level}] ${prefix}${message}`;
+        return `[${level}] ${prefix}${message}`;
     }
 
     /**

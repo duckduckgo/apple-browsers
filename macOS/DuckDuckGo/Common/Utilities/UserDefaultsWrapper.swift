@@ -93,6 +93,7 @@ public struct UserDefaultsWrapper<T> {
         case customHomePageURL = "preferences.startup.customHomePageURL"
         case openFireWindowByDefault = "preferences.startup.open-fire-window-by-default"
         case themeAppearance = "com.duckduckgo.macos.currentThemeNameKey"
+        case themeName = "preferences.appearance.theme-name"
         case showFullURL = "preferences.appearance.show-full-url"
         case showAutocompleteSuggestions = "preferences.appearance.show-autocomplete-suggestions"
         case preferNewTabsToWindows = "preferences.tabs.prefer-new-tabs-to-windows"

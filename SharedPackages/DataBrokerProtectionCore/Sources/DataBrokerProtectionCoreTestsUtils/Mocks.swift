@@ -42,20 +42,23 @@ public extension BrokerProfileQueryData {
                      scanHistoryEvents: [HistoryEvent] = [HistoryEvent](),
                      mirrorSites: [MirrorSite] = [MirrorSite](),
                      deprecated: Bool = false,
-                     optOutJobData: [OptOutJobData]? = nil) -> BrokerProfileQueryData {
-        BrokerProfileQueryData(
-            dataBroker: DataBroker(
-                name: dataBrokerName,
-                url: url,
-                steps: steps,
-                version: "1.0.0",
-                schedulingConfig: DataBrokerScheduleConfig.mock,
-                parent: parentURL,
-                mirrorSites: mirrorSites,
-                optOutUrl: optOutUrl ?? "",
-                eTag: "",
-                removedAt: nil
-            ),
+                     optOutJobData: [OptOutJobData]? = nil,
+                     dataBrokerRemovedAt: Date? = nil) -> BrokerProfileQueryData {
+        let dataBroker = DataBroker(
+            name: dataBrokerName,
+            url: url,
+            steps: steps,
+            version: "1.0.0",
+            schedulingConfig: DataBrokerScheduleConfig.mock,
+            parent: parentURL,
+            mirrorSites: mirrorSites,
+            optOutUrl: optOutUrl ?? "",
+            eTag: "",
+            removedAt: dataBrokerRemovedAt
+        )
+
+        return BrokerProfileQueryData(
+            dataBroker: dataBroker,
             profileQuery: ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 50, deprecated: deprecated),
             scanJobData: ScanJobData(brokerId: 1,
                                      profileQueryId: 1,
@@ -2628,7 +2631,8 @@ public extension DataBroker {
                                  parent: String? = nil,
                                  mirrorSites: [MirrorSite] = [MirrorSite](),
                                  optOutUrl: String = "testbroker.com/optout",
-                                 eTag: String = "") -> DataBroker {
+                                 eTag: String = "",
+                                 removedAt: Date? = nil) -> DataBroker {
         return DataBroker(
             id: id,
             name: name,
@@ -2640,7 +2644,7 @@ public extension DataBroker {
             mirrorSites: mirrorSites,
             optOutUrl: optOutUrl,
             eTag: eTag,
-            removedAt: nil)
+            removedAt: removedAt)
     }
 
     static func mock(withId id: Int64) -> DataBroker {

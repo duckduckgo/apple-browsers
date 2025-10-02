@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
+
 public enum DesignSystemColor {
 
     // Backgrounds
@@ -33,9 +35,7 @@ public enum DesignSystemColor {
     case urlBar
 
     // Various
-    case variousOutline
     case backdrop
-    case backgroundBlur
 
     // Shadows
     case shadowPrimary
@@ -59,6 +59,7 @@ public enum DesignSystemColor {
     case accent
     case accentGlowSecondary
     case accentContentPrimary
+    case accentTertiary
 
     // System
     case lines
@@ -102,7 +103,6 @@ public enum DesignSystemColor {
     case buttonsGhostTextDisabled
 
     // Buttons/Color
-    case buttonsBlack
     case buttonsWhite
 
     // Buttons/DeleteGhost
@@ -117,3 +117,4 @@ public enum DesignSystemColor {
     case decorationTertiary
 
 }
+#endif

@@ -33,12 +33,18 @@ final class CreditCardsResponseHandler {
 
     let allReceivedIDs: Set<String>
     private var creditCardsByUUID: [String: SecureVaultModels.SyncableCreditCard] = [:]
+    private var deduplicatedLocalCardObjectIds: Set<Int64> = []
 
     var incomingModifiedCreditCards = [SecureVaultModels.CreditCard]()
     var incomingDeletedCreditCards = [SecureVaultModels.CreditCard]()
 
     private let decrypt: (String) throws -> String
     private let metricsEvents: EventMapping<MetricsEvent>?
+
+    private struct DeduplicationResult {
+        let card: SecureVaultModels.SyncableCreditCard
+        let oldUUID: String
+    }
 
     init(
         received: [Syncable],
@@ -91,26 +97,33 @@ final class CreditCardsResponseHandler {
 
     // MARK: - Private
 
+    private func isValidCreditCardData(_ syncable: SyncableCreditCardsAdapter) -> Bool {
+        guard let encryptedCardNumber = syncable.encryptedCardNumber,
+              let cardNumber = try? decrypt(encryptedCardNumber),
+              !cardNumber.isEmpty else {
+            return false
+        }
+        return cardNumber.allSatisfy { $0.isASCII && $0.isWholeNumber }
+    }
+
     private func processEntity(with syncable: SyncableCreditCardsAdapter, secureVaultEncryptionKey: Data) throws {
         guard let syncableUUID = syncable.uuid else {
             throw SyncError.receivedCreditCardsWithoutUUID
         }
 
+        if !syncable.isDeleted {
+            guard isValidCreditCardData(syncable) else { return }
+        }
+
         if shouldDeduplicateEntities,
-           var deduplicatedEntity = try deduplicatedCreditCard(with: syncable, secureVaultEncryptionKey: secureVaultEncryptionKey) {
-            let oldUUID = deduplicatedEntity.metadata.uuid
-            if let decryptedTitle = try syncable.encryptedTitle.flatMap(decrypt) {
-                deduplicatedEntity.creditCard?.title = decryptedTitle
-            } else {
-                deduplicatedEntity.creditCard?.title = ""
-            }
-            deduplicatedEntity.metadata.uuid = syncableUUID
-            try secureVault.storeSyncableCreditCard(deduplicatedEntity,
+           let deduplicationResult = try deduplicateCreditCard(syncable: syncable,
+                                                               incomingUUID: syncableUUID,
+                                                               encryptionKey: secureVaultEncryptionKey) {
+            try secureVault.storeSyncableCreditCard(deduplicationResult.card,
                                                     in: database,
                                                     encryptedUsing: secureVaultEncryptionKey)
-
-            creditCardsByUUID.removeValue(forKey: oldUUID)
-            creditCardsByUUID[syncableUUID] = deduplicatedEntity
+            creditCardsByUUID.removeValue(forKey: deduplicationResult.oldUUID)
+            creditCardsByUUID[deduplicationResult.card.metadata.uuid] = deduplicationResult.card
 
         } else if var existingEntity = creditCardsByUUID[syncableUUID] {
             let isModifiedAfterSyncTimestamp: Bool = {
@@ -145,49 +158,92 @@ final class CreditCardsResponseHandler {
         }
     }
 
-    private func deduplicatedCreditCard(with syncable: SyncableCreditCardsAdapter,
-                                        secureVaultEncryptionKey: Data) throws -> SecureVaultModels.SyncableCreditCard? {
+    private func deduplicateCreditCard(syncable: SyncableCreditCardsAdapter,
+                                       incomingUUID: String,
+                                       encryptionKey: Data) throws -> DeduplicationResult? {
+        guard !syncable.isDeleted else { return nil }
 
-        guard !syncable.isDeleted else {
-            return nil
-        }
-
-        let cardholderName = try syncable.encryptedCardholderName.flatMap(decrypt)
         let cardNumber = try syncable.encryptedCardNumber.flatMap(decrypt)
-        let cardSecurityCode = try syncable.encryptedCardSecurityCode.flatMap(decrypt)
         let expirationMonth = try syncable.encryptedExpirationMonth.flatMap(decrypt)
         let expirationYear = try syncable.encryptedExpirationYear.flatMap(decrypt)
 
-        let creditCardAlias = TableAlias()
-        let conditions = [
-            !allReceivedIDs.contains(SecureVaultModels.SyncableCreditCardsRecord.Columns.uuid),
-            creditCardAlias[SecureVaultModels.CreditCard.Columns.cardholderName] == cardholderName,
-            creditCardAlias[SecureVaultModels.CreditCard.Columns.cardSecurityCode] == cardSecurityCode,
-            creditCardAlias[SecureVaultModels.CreditCard.Columns.expirationMonth] == expirationMonth,
-            creditCardAlias[SecureVaultModels.CreditCard.Columns.expirationYear] == expirationYear
-        ]
+        guard let cardNumberString = cardNumber else { return nil }
 
+        // Find local cards (excluding those in the received payload)
         let syncableCreditCards = try SecureVaultModels.SyncableCreditCardsRecord
-            .including(optional: SecureVaultModels.SyncableCreditCardsRecord.creditCard.aliased(creditCardAlias))
-            .filter(conditions.joined(operator: .and))
+            .including(optional: SecureVaultModels.SyncableCreditCardsRecord.creditCard)
+            .filter(!allReceivedIDs.contains(SecureVaultModels.SyncableCreditCardsRecord.Columns.uuid))
             .asRequest(of: SecureVaultModels.SyncableCreditCard.self)
             .fetchAll(database)
 
-        guard !syncableCreditCards.isEmpty else {
+        // Find matches by card number
+        guard let matched = try findMatchByCardNumber(cardNumberString,
+                                                      in: syncableCreditCards,
+                                                      encryptionKey: encryptionKey) else {
             return nil
         }
 
-        if let cardNumber, let cardNumberData = cardNumber.data(using: .utf8) {
-            var matchingSyncableCreditCard = try syncableCreditCards.first(where: { creditCard in
-                let decryptedCardNumber = try (creditCard.creditCard?.cardNumberData)
-                    .flatMap { try secureVault.decrypt($0, using: secureVaultEncryptionKey) }
-                return decryptedCardNumber == cardNumberData
-            })
-            // update matched credit card with decrypted card number, as that's what Secure Vault expects
-            matchingSyncableCreditCard?.creditCard?.cardNumberData = cardNumberData
-            return matchingSyncableCreditCard
+        // Check if we already deduplicated this local card
+        if let objectId = matched.metadata.objectId, deduplicatedLocalCardObjectIds.contains(objectId) {
+            return nil
         }
-        return syncableCreditCards.first
+
+        let incomingExpiration = SecureVaultModels.SyncableCreditCard.normalizedExpirationValues(
+            month: expirationMonth,
+            year: expirationYear
+        )
+        let localExpiration = SecureVaultModels.SyncableCreditCard.normalizedExpirationValues(
+            month: matched.creditCard?.expirationMonth.flatMap(String.init),
+            year: matched.creditCard?.expirationYear.flatMap(String.init)
+        )
+
+        let yearComparison = incomingExpiration.value.year > localExpiration.value.year
+        let sameYearNewerOrEqualMonth = (incomingExpiration.value.year == localExpiration.value.year &&
+                                         incomingExpiration.value.month >= localExpiration.value.month)
+        let incomingWins = yearComparison || sameYearNewerOrEqualMonth
+
+        // Mark this local card as processed
+        if let objectId = matched.metadata.objectId {
+            deduplicatedLocalCardObjectIds.insert(objectId)
+        }
+
+        if incomingWins {
+            var card = matched
+            try card.update(with: syncable, decryptedUsing: decrypt)
+            card.metadata.uuid = incomingUUID
+            card.metadata.lastModified = nil
+            return DeduplicationResult(card: card, oldUUID: matched.metadata.uuid)
+        }
+
+        if localExpiration.hasData || incomingExpiration.hasData {
+            var card = matched
+            card.metadata.uuid = incomingUUID
+            card.metadata.lastModified = Date().withMillisecondPrecision
+            return DeduplicationResult(card: card, oldUUID: matched.metadata.uuid)
+        }
+
+        // Neither side had usable expiry info – keep the remote data
+        var card = matched
+        try card.update(with: syncable, decryptedUsing: decrypt)
+        card.metadata.uuid = incomingUUID
+        card.metadata.lastModified = nil
+        return DeduplicationResult(card: card, oldUUID: matched.metadata.uuid)
+    }
+
+    private func findMatchByCardNumber(_ cardNumber: String,
+                                       in syncableCreditCards: [SecureVaultModels.SyncableCreditCard],
+                                       encryptionKey: Data) throws -> SecureVaultModels.SyncableCreditCard? {
+        guard let cardNumberData = cardNumber.data(using: .utf8) else { return nil }
+
+        for creditCard in syncableCreditCards {
+            guard let encryptedCardNumber = creditCard.creditCard?.cardNumberData else { continue }
+
+            let decryptedCardNumberData = try secureVault.decrypt(encryptedCardNumber, using: encryptionKey)
+            if decryptedCardNumberData == cardNumberData {
+                return creditCard
+            }
+        }
+        return nil
     }
 
     private func trackCreditCardChange(of entity: SecureVaultModels.SyncableCreditCard, with syncable: SyncableCreditCardsAdapter) {
@@ -217,9 +273,7 @@ extension SecureVaultModels.SyncableCreditCard {
         let expirationMonth = try syncable.encryptedExpirationMonth.flatMap { try decrypt($0) }
         let expirationYear = try syncable.encryptedExpirationYear.flatMap { try decrypt($0) }
 
-        // Convert string expiration values to Int
-        let expirationMonthInt = expirationMonth.flatMap { Int($0) }
-        let expirationYearInt = expirationYear.flatMap { Int($0) }
+        let (expirationMonthInt, expirationYearInt) = Self.validatedExpirationValues(month: expirationMonth, year: expirationYear)
 
         let creditCard = SecureVaultModels.CreditCard(
             title: title,
@@ -241,9 +295,7 @@ extension SecureVaultModels.SyncableCreditCard {
         let expirationMonth = try syncable.encryptedExpirationMonth.flatMap(decrypt)
         let expirationYear = try syncable.encryptedExpirationYear.flatMap(decrypt)
 
-        // Convert string expiration values to Int
-        let expirationMonthInt = expirationMonth.flatMap { Int($0) }
-        let expirationYearInt = expirationYear.flatMap { Int($0) }
+        let (expirationMonthInt, expirationYearInt) = Self.validatedExpirationValues(month: expirationMonth, year: expirationYear)
 
         if creditCard == nil {
             creditCard = .init(
@@ -266,5 +318,25 @@ extension SecureVaultModels.SyncableCreditCard {
         }
 
         assert(creditCard != nil)
+    }
+}
+
+extension SecureVaultModels.SyncableCreditCard {
+
+    static func normalizedExpirationValues(month: String?, year: String?) -> (value: (month: Int, year: Int), hasData: Bool) {
+        let monthInt = month.flatMap(Int.init) ?? 0
+        let yearInt = year.flatMap(Int.init) ?? 0
+        let hasData = (month != nil && !month!.isEmpty) || (year != nil && !year!.isEmpty)
+        return ((monthInt, yearInt), hasData)
+    }
+
+    static func validatedExpirationValues(month: String?, year: String?) -> (month: Int?, year: Int?) {
+        guard let month,
+              let year,
+              let monthInt = Int(month),
+              let yearInt = Int(year) else {
+            return (nil, nil)
+        }
+        return (monthInt, yearInt)
     }
 }

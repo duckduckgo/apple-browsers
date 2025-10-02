@@ -51,9 +51,9 @@
 			<key>zero</key>
 			<string>Your credit card %2$@ can&apos;t sync because one of its fields exceeds the character limit.</string>
 			<key>one</key>
-			<string>Your credit cards %2$@ and 1 other card can&apos;t sync because some of their fields exceed the character limit.</string>
+			<string>Your credit card %2$@ and 1 other card can&apos;t sync because some of their fields exceed the character limit.</string>
 			<key>other</key>
-			<string>Your credit cards %2$@ and %1$d other cards can&apos;t sync because some of their fields exceed the character limit.</string>
+			<string>Your credit card %2$@ and %1$d other cards can&apos;t sync because some of their fields exceed the character limit.</string>
 		</dict>
 	</dict>
 </dict>

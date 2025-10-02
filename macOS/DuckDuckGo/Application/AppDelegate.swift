@@ -85,6 +85,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let crashReporter: CrashReporter
 #endif
 
+    let watchdog: Watchdog
+
     let keyValueStore: ThrowingKeyValueStoring
 
     let faviconManager: FaviconManager
@@ -804,6 +806,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 #if !APPSTORE
         crashReporter = CrashReporter(internalUserDecider: internalUserDecider)
+#endif
+
+        watchdog = Watchdog()
+
+#if !DEBUG
+        // Start UI hang watchdog
+        if featureFlagger.isFeatureOn(.hangReporting) {
+            Task { [watchdog] in
+                await watchdog.start()
+            }
+        }
 #endif
 
         super.init()

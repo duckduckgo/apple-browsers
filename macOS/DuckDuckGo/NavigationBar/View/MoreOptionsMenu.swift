@@ -337,7 +337,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     @objc func checkForUpdates(_ sender: NSMenuItem) {
-        PixelKit.fire(CheckForUpdatesAppStorePixels.checkForUpdate(source: .moreOptionsMenu))
+        PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .moreOptionsMenu))
         NSWorkspace.shared.open(.appStore)
     }
 

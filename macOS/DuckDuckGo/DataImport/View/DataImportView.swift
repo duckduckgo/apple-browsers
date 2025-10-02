@@ -88,7 +88,7 @@ struct DataImportView: ModalView {
             viewBody()
                 .padding(.leading, 20)
                 .padding(.trailing, 20)
-                .padding(.bottom, 20)
+                .padding(.bottom, 26)
                 .padding(.top, 0)
 
             // if import in progress…
@@ -100,8 +100,7 @@ struct DataImportView: ModalView {
             }
 
             viewFooter()
-                .padding(.top, 16)
-                .padding(.bottom, 16)
+                .padding(.bottom, 26)
                 .padding(.horizontal, 20)
 
             if shouldShowDebugView {
@@ -297,7 +296,7 @@ struct DataImportView: ModalView {
             EmptyView()
         }
         .padding(.bottom, 20)
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading) {
             // manual file import instructions for CSV/HTML
             NewFileImportView(source: model.importSource, dataTypeSelection: dataTypeSelection, isButtonDisabled: model.isSelectFileButtonDisabled) {
                 model.selectFile()
@@ -314,7 +313,7 @@ struct DataImportView: ModalView {
                     Text("Incorrect file type or format. Please select a different file.")
                         .foregroundColor(Color(designSystemColor: .buttonsDeleteGhostText))
                 }
-                .padding(.vertical, 8)
+                .padding(.vertical, 20)
             }
         }
     }

@@ -81,7 +81,7 @@ struct NewFileImportView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 20) {
             NewInstructionsView {
                 newFileImportInstructionsBuilder(source: source, dataTypeSelection: dataTypeSelection, button: self.button)
             }
@@ -346,9 +346,9 @@ struct NewInstructionsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 20) {
             ForEach(instructions.indices, id: \.self) { i in
-                HStack(alignment: .top, spacing: 8) {
+                HStack(alignment: .center, spacing: 8) {
                     ForEach(instructions[i].indices, id: \.self) { j in
                         switch instructions[i][j] {
                         case .lineNumber(let number):

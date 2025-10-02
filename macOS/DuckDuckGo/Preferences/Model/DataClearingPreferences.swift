@@ -71,6 +71,7 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
     var isAutoClearAIChatHistoryEnabled: Bool {
         didSet {
             persistor.autoClearAIChatHistoryEnabled = isAutoClearAIChatHistoryEnabled
+            pixelFiring?.fire(AIChatPixel.aiChatAutoClearHistorySettingToggled(enabled: isAutoClearAIChatHistoryEnabled), frequency: .dailyAndCount)
         }
     }
 

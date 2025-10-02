@@ -23,6 +23,7 @@ import BrowserServicesKit
 
 /// Mock implementation of WatchdogDiagnosticProvider for testing
 ///
+@MainActor
 final class MockWatchdogDiagnosticProvider: WatchdogDiagnosticProvider {
 
     var diagnosticsToReturn: WatchdogDiagnostics = WatchdogDiagnostics(

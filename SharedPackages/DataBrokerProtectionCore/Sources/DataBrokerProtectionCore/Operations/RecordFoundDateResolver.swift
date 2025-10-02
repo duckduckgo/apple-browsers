@@ -44,7 +44,7 @@ enum RecordFoundDateResolver {
                                                     extractedProfileId: extractedProfileId)
         }
 
-        if let createdDate = validCreatedDate(from: optOutJob) {
+        if let createdDate = optOutJob?.validCreatedDate {
             return createdDate
         }
 
@@ -60,11 +60,6 @@ enum RecordFoundDateResolver {
         }
 
         return fallback
-    }
-
-    private static func validCreatedDate(from optOutJob: OptOutJobData?) -> Date? {
-        guard let createdDate = optOutJob?.createdDate else { return nil }
-        return createdDate == defaultDate ? nil : createdDate
     }
 
     private static func firstFoundDate(from events: [HistoryEvent]?) -> Date? {
@@ -91,5 +86,11 @@ enum RecordFoundDateResolver {
 extension BrokerProfileQueryData {
     fileprivate func optOutJobDataMatching(_ extractedProfileId: Int64) -> OptOutJobData? {
         optOutJobData.first(where: { $0.extractedProfile.id == extractedProfileId })
+    }
+}
+
+extension OptOutJobData {
+    fileprivate var validCreatedDate: Date? {
+        createdDate == Date(timeIntervalSince1970: 0) ? nil : createdDate
     }
 }

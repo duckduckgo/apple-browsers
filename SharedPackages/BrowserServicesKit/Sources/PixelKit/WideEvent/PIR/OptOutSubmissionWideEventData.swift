@@ -67,7 +67,7 @@ public final class OptOutSubmissionWideEventData: WideEventData {
         case other
     }
 
-    private var stages: [Stage] = []
+    public var stages: [Stage] = []
 
     public init(globalData: WideEventGlobalData,
                 contextData: WideEventContextData = WideEventContextData(),

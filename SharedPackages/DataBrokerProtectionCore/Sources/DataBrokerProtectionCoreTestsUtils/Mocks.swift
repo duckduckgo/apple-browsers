@@ -22,6 +22,7 @@ import Common
 import Foundation
 import GRDB
 import SecureStorage
+import PixelKit
 
 @testable import DataBrokerProtectionCore
 
@@ -1865,6 +1866,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var vpnBypassService: (any VPNBypassFeatureProvider)?
     public var jobSortPredicate: BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
     public var featureFlagger: DBPFeatureFlagging
+    public var wideEvent: WideEventManaging?
 
     public var mockScanRunner = MockScanSubJobWebRunner()
     public var mockOptOutRunner = MockOptOutSubJobWebRunner()
@@ -2841,6 +2843,28 @@ public final class MockWebViewHandler: NSObject, WebViewHandler {
     }
 
     public func setCookies(_ cookies: [HTTPCookie]) async {
+    }
+}
+
+public final class SubmissionRecorderMock: OptOutSubmissionWideEventRecording {
+    private(set) var recordedStages: [(stage: Stage, duration: Double?, tries: Int, actionID: String?)] = []
+    private(set) var submissionEndMarked = false
+    private(set) var completionStatus: WideEventStatus?
+
+    public func recordStage(_ stage: Stage, duration: Double?, tries: Int, actionID: String?) {
+        recordedStages.append((stage, duration, tries, actionID))
+    }
+
+    public func markSubmissionCompleted(at date: Date, tries: Int, actionID: String?) {
+        submissionEndMarked = true
+    }
+
+    public func complete(status: WideEventStatus, with error: Error?) {
+        completionStatus = status
+    }
+
+    public func cancel(with error: Error?) {
+        completionStatus = .cancelled
     }
 }
 

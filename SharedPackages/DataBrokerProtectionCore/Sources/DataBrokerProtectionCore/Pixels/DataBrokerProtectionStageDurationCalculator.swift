@@ -288,21 +288,16 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     }
 
     func fireOptOutFailure(tries: Int) {
-        let totalDuration = durationSinceStartTime()
         handler.fire(.optOutFailure(dataBroker: dataBroker,
                                     dataBrokerVersion: dataBrokerVersion,
                                     attemptId: attemptId,
-                                    duration: totalDuration,
+                                    duration: durationSinceStartTime(),
                                     stage: stage.rawValue,
                                     tries: tries,
                                     emailPattern: emailPattern,
                                     actionID: actionID,
                                     vpnConnectionState: vpnConnectionState,
                                     vpnBypassStatus: vpnBypassStatus))
-        wideEventRecorder?.recordStage(stage,
-                                       duration: totalDuration,
-                                       tries: tries,
-                                       actionID: actionID)
     }
 
     func fireOptOutConditionFound() {

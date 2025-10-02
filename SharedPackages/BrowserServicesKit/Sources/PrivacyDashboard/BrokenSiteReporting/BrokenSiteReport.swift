@@ -334,22 +334,22 @@ public struct BrokenSiteReport {
         // Calculate all timing data as durations from navigation start (in milliseconds)
         if let firstVisual = timing.firstVisualLayout {
             let duration = firstVisual.timeIntervalSince(navigationStart)
-            result["firstVisualLayoutMs"] = String(Int(duration * 1000))
+            result["webKitFirstVisualLayoutMs"] = String(Int(duration * 1000))
         }
 
         if let firstPaint = timing.firstMeaningfulPaint {
             let duration = firstPaint.timeIntervalSince(navigationStart)
-            result["firstMeaningfulPaintMs"] = String(Int(duration * 1000))
+            result["webKitFirstMeaningfulPaintMs"] = String(Int(duration * 1000))
         }
 
         if let docComplete = timing.documentFinishedLoading {
             let duration = docComplete.timeIntervalSince(navigationStart)
-            result["documentCompleteMs"] = String(Int(duration * 1000))
+            result["webKitDocumentCompleteMs"] = String(Int(duration * 1000))
         }
 
         if let allResources = timing.allSubresourcesFinishedLoading {
             let duration = allResources.timeIntervalSince(navigationStart)
-            result["allResourcesCompleteMs"] = String(Int(duration * 1000))
+            result["webKitAllResourcesCompleteMs"] = String(Int(duration * 1000))
         }
     }
 

@@ -551,7 +551,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     public func adopt(accessToken: String, refreshToken: String) async throws {
         Logger.subscription.log("Adopting and decoding token container")
-        let tokenContainer = try await oAuthClient.decode(accessToken: accessToken, refreshToken: refreshToken)
+        let tokenContainer = try await oAuthClient.decode(accessToken: accessToken, refreshToken: refreshToken, refreshID: nil)
         try await adopt(tokenContainer: tokenContainer)
     }
 

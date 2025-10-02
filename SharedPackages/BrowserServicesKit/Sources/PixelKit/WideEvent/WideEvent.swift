@@ -27,6 +27,7 @@ import UIKit
 public protocol WideEventManaging {
     func startFlow<T: WideEventData>(_ data: T)
     func updateFlow<T: WideEventData>(_ data: T)
+    func updateFlow<T: WideEventData>(globalID: String, update: (inout T) -> Void)
     func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, onComplete: @escaping PixelKit.CompletionBlock)
     func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus) async throws -> Bool
     func discardFlow<T: WideEventData>(_ data: T)
@@ -94,15 +95,32 @@ public final class WideEvent: WideEventManaging {
             try Self.storageQueue.sync { try storage.update(data) }
         } catch {
             if case WideEventError.flowNotFound = error {
-                // Expected if the flow wasn't sampled when it was started
                 Self.logger.info("Wide pixel update ignored for non-existent flow: \(T.pixelName, privacy: .public), global ID: \(globalID, privacy: .public)")
             } else {
                 report(.updateFailed(pixelName: T.pixelName, error: error), error: error, params: nil)
             }
-            return
         }
 
         Self.logger.info("Wide pixel with global ID \(globalID, privacy: .public) updated: \(data.pixelParameters())")
+    }
+
+    public func updateFlow<T: WideEventData>(globalID: String, update: (inout T) -> Void) {
+        do {
+            let updatedData = try Self.storageQueue.sync { () -> T in
+                var data: T = try storage.load(globalID: globalID)
+                update(&data)
+                try storage.update(data)
+                return data
+            }
+
+            Self.logger.info("Wide pixel with global ID \(globalID, privacy: .public) updated: \(updatedData.pixelParameters())")
+        } catch {
+            if case WideEventError.flowNotFound = error {
+                Self.logger.info("Wide pixel update ignored for non-existent flow: \(T.pixelName, privacy: .public), global ID: \(globalID, privacy: .public)")
+            } else {
+                report(.updateFailed(pixelName: T.pixelName, error: error), error: error, params: nil)
+            }
+        }
     }
 
     public func getFlowData<T: WideEventData>(_ type: T.Type, globalID: String) -> T? {

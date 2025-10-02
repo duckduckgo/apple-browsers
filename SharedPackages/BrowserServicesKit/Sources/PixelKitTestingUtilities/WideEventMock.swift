@@ -36,6 +36,17 @@ public final class WideEventMock: WideEventManaging {
         updates.append(data)
     }
 
+    public func updateFlow<T: WideEventData>(globalID: String, update: (inout T) throws -> Void) {
+        // Try to find existing data in started or updates arrays
+        let allData = (started + updates).compactMap { $0 as? T }
+        guard var data = allData.first(where: { $0.globalData.id == globalID }) else {
+            return
+        }
+
+        try? update(&data)
+        updates.append(data)
+    }
+
     public func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, onComplete: @escaping PixelKit.CompletionBlock) {
         completions.append((data, status))
         onComplete(true, nil)

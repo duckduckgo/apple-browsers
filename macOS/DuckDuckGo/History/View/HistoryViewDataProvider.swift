@@ -368,7 +368,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
 
         let items: [DataModel.HistoryItem] = await {
             switch query {
-            case .rangeFilter(.all), .rangeFilter(.allSites), .searchTerm(""):
+            case .rangeFilter(.all), .searchTerm(""):
                 return historyItems
             case .rangeFilter(let range):
                 return groupingsByRange[range]?.items ?? []

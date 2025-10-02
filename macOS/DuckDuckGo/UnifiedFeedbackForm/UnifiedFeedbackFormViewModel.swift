@@ -19,7 +19,6 @@
 import Foundation
 import Combine
 import SwiftUI
-import AppKit
 import PixelKit
 import Subscription
 import BrowserServicesKit

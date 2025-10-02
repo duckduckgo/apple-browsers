@@ -54,6 +54,9 @@ struct FireDialogView: ModalView {
     private var tabsSubtitle: String {
         switch viewModel.clearingOption {
         case .currentTab:
+            if viewModel.isPinnedTabSelected {
+                return UserText.fireDialogPinnedTabWillReload
+            }
             return UserText.fireDialogCloseThisTab
         case .currentWindow:
             return UserText.fireDialogCloseThisWindow

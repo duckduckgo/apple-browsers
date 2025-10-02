@@ -499,8 +499,7 @@ final class MainViewController: NSViewController {
             .$isBookmarksBarVisible
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self = self else { return }
-                self.updateBookmarksBarViewVisibility(visible: self.shouldShowBookmarksBar)
+                self?.updateBookmarksBarViewVisibility(visible: self!.shouldShowBookmarksBar)
             }
     }
 

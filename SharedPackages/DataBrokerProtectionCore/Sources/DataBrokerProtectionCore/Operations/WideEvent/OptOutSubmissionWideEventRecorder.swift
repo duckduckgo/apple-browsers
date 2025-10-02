@@ -111,11 +111,7 @@ final class OptOutSubmissionWideEventRecorder {
 
     private func setSubmissionEnd(date: Date) {
         queue.async {
-            if self.data.submissionInterval == nil {
-                self.data.submissionInterval = WideEvent.MeasuredInterval(start: date, end: date)
-            } else {
-                self.data.submissionInterval?.end = date
-            }
+            self.data.submissionInterval?.end = date
             self.updateFlow()
         }
     }

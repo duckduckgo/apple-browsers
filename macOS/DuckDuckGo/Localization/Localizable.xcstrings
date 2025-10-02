@@ -33777,6 +33777,51 @@
         }
       }
     },
+    "fireproof.domains.add" : {
+      "comment" : "Button adds a new fireproofed website",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Hinzufügen" } },
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Add" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Añadir" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Ajouter" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Aggiungi" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Toevoegen" } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Dodaj" } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Adicionar" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Добавить" } }
+      }
+    },
+    "fireproof.domains.add.title" : {
+      "comment" : "Title for the alert to add a fireproof site",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Feuerfeste Seite hinzufügen" } },
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Add Fireproof Site" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Añadir sitio a prueba de fuego" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Ajouter un site coupe-feu" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Aggiungi sito protetto" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Brandveilig site toevoegen" } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Dodaj chronioną witrynę" } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Adicionar site protegido" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Добавить огнеупорный сайт" } }
+      }
+    },
+    "fireproof.domains.add.current" : {
+      "comment" : "Button adds the current website to the fireproofed list",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Aktuelle hinzufügen" } },
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Add Current" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Añadir actual" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Ajouter l’actuel" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Aggiungi corrente" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Huidige toevoegen" } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Dodaj bieżącą" } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Adicionar atual" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Добавить текущий" } }
+      }
+    },
     "folder.dialog.add" : {
       "comment" : "Button to confim a bookmark folder creation",
       "extractionState" : "extracted_with_value",

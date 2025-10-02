@@ -296,7 +296,10 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                 self?.delegate?.onQueryUpdated(currentText)
                 self?.suggestionTrayManager?.handleQueryUpdate(currentText)
                 self?.updateDaxVisibility()
-                self?.updateSwipeContainerSafeArea()
+                DispatchQueue.main.async {
+                    // Delay to next runloop so the text field size is updated.
+                    self?.updateSwipeContainerSafeArea()
+                }
             }
             .store(in: &cancellables)
 

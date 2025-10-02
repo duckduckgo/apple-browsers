@@ -123,7 +123,7 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
 
         animator.addAnimations {
             if !self.isTopBarPosition {
-                fromVC.newTabView?.alpha = 0
+                fromVC.logoView?.alpha = 0
             }
 
             toVC.view.alpha = 1.0
@@ -179,7 +179,7 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         }
 
         animator.addAnimations({
-            toVC.newTabView?.alpha = 1.0
+            toVC.logoView?.alpha = 1.0
         }, delayFactor: 0.07)
 
         animator.addCompletion { position in

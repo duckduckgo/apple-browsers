@@ -3768,8 +3768,13 @@ extension MainViewController: MainViewEditingStateTransitioning {
         newTabPageViewController?.isShowingLogo == true
     }
 
-    var newTabView: UIView? {
-        newTabPageViewController?.view
+    var logoView: UIView? {
+        if newTabPageViewController?.isShowingLogo == true {
+            // Treat w NTP view as logo view, but only if it's visible
+            return newTabPageViewController?.view
+        } else {
+            return nil
+        }
     }
 
     func hide(with barYOffset: CGFloat, contentYOffset: CGFloat) {

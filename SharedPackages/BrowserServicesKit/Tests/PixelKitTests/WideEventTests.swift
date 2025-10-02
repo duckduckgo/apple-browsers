@@ -73,12 +73,6 @@ final class MockWideEventData: WideEventData {
 
         params["feature.data.ext.test_eligible"] = String(testEligible)
 
-        if let duration = self.duration?.durationMillisecondsBucketed {
-            params["feature.data.ext.duration_ms_bucketed"] = String(duration)
-        }
-
-        errorData?.appendErrorParameters(to: &params)
-
         return params
     }
 }

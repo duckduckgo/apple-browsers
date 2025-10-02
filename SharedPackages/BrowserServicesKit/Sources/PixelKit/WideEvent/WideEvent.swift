@@ -52,19 +52,6 @@ public final class WideEvent: WideEventManaging {
         public mutating func complete(at date: Date = Date()) {
             self.end = date
         }
-
-        public var durationMillisecondsBucketed: Int? {
-            guard let start = start, let end = end else { return nil }
-            let durationMs = Int((end.timeIntervalSince(start) * 1000).rounded())
-
-            let buckets = [100, 500, 1000, 5000, 10000, 30000, 60000, 300000, 600000]
-            for bucket in buckets {
-                if durationMs <= bucket {
-                    return bucket
-                }
-            }
-            return buckets.last
-        }
     }
 
     private static let logger = Logger(subsystem: "PixelKit", category: "Wide Pixel")

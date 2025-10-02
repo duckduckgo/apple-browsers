@@ -43,6 +43,6 @@
         description: 'Fired when a site loading navigation fails.',
         owners: ['diegoreymendez'],
         triggers: ['page_load'],
-        parameters: ['appVersion', 'pixelSource', 'duration', 'navigation_type', 'errorCode', 'errorDomain'],
+        parameters: ['appVersion', 'pixelSource', 'duration', 'navigation_type', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
 }

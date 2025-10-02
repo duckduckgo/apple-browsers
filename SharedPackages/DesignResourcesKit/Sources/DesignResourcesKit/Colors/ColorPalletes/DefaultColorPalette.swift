@@ -18,6 +18,8 @@
 
 import SwiftUI
 
+#if os(iOS)
+
 /// See [Figma](https://www.figma.com/design/3W4vi0zX8hrpQc7zInQQB6/🎨-Global-Colors---Styles?node-id=11-1&p=f&vars=1&var-id=5476-10186&m=dev)
 struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x1F1F1F = Color(0x1F1F1F)
@@ -55,7 +57,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let background = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
     private static let backgroundTertiary = DynamicColor(lightColor: .white, darkColor: x474747)
     private static let backgroundSheets = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
-    private static let backgroundBlur = DynamicColor(staticColor: .gray90.opacity(0.7))
 
     // Shadow
     private static let shadowPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.04), darkColor: .shade(0.16))
@@ -91,9 +92,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Accents
     private static let accentContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
 
-    // Various
-    private static let variousIPadTabs = DynamicColor(lightColor: .gray20, darkColor: .black)
-    private static let variousOutline = DynamicColor(lightColor: .shade(0.24), darkColor: .tint(0.24))
+    private static let accentTertiary = DynamicColor(lightColor: .blue70, darkColor: .blue50)
 
     // Text
     private static let textLink = DynamicColor(lightColor: .blue50, darkColor: .blue30)
@@ -101,7 +100,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Brand
     private static let accent = DynamicColor(lightColor: .blue50, darkColor: .blue30)
-    private static let accentGlowSecondary = DynamicColor(lightColor: x3969EF.opacity(0.12), darkColor: x7295F6.opacity(0.12))
+    private static let accentGlowSecondary = DynamicColor(lightColor: .blue50.opacity(0.12), darkColor: x7295F6.opacity(0.12))
 
     // System
     private static let border = DynamicColor(lightColor: .gray30, darkColor: .gray40)
@@ -139,7 +138,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let buttonsGhostTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
 
     // Buttons/Color
-    private static let buttonsBlack = DynamicColor(lightColor: .black, darkColor: .white)
     private static let buttonsWhite = DynamicColor(lightColor: .white, darkColor: .black)
 
     // Buttons/DeleteGhost
@@ -155,7 +153,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .background: return background
         case .backgroundTertiary: return backgroundTertiary
         case .backgroundSheets: return backgroundSheets
-        case .backgroundBlur: return backgroundBlur
         case .backdrop: return backdrop
         case .panel: return background
         case .icons: return icons
@@ -174,6 +171,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .decorationTertiary: return decorationTertiary
         case .highlightDecoration: return highlightDecoration
         case .accentContentPrimary: return accentContentPrimary
+        case .accentTertiary: return accentTertiary
 
         case .surface: return surface
         case .surfaceTertiary: return surfaceTertiary
@@ -218,11 +216,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .buttonsGhostTextDisabled: return buttonsGhostTextDisabled
 
             // Buttons/Color
-        case .buttonsBlack: return buttonsBlack
         case .buttonsWhite: return buttonsWhite
-
-            // Various
-        case .variousOutline: return variousOutline
 
             // Buttons/DeleteGhost
         case .buttonsDeleteGhostPressedFill: return buttonsDeleteGhostPressedFill
@@ -236,15 +230,14 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         switch singleUseColor {
         case .controlWidgetBackground:
             return DynamicColor(staticColor: .x818387)
-        case .newTabPageItemAccessoryAddBackground:
-            return DynamicColor(lightColor: surface.lightColor, darkColor: .gray85)
         case .unifiedFeedbackFieldBackground:
             return DynamicColor(lightColor: surface.lightColor, darkColor: .x1C1C1E)
-        case .downloadProgressBarBackground: return DynamicColor(lightColor: .gray85, darkColor: .gray70)
         case .privacyDashboardBackground:
             return DynamicColor(lightColor: surface.lightColor, darkColor: background.darkColor)
-        case .duckPlayerPillBackground:
-            return DynamicColor(lightColor: surface.lightColor, darkColor: .tint(0.12))
+        case .inputContentSeparator:
+            return DynamicColor(lightColor: shadowTertiary.lightColor, darkColor: highlightDecoration.darkColor)
         }
     }
 }
+
+#endif

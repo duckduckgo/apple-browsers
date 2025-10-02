@@ -80,7 +80,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private weak var contentContainerViewLeadingConstraint: NSLayoutConstraint?
     private weak var contentContainerViewTrailingConstraint: NSLayoutConstraint?
 
-    let featureFlagger: FeatureFlagger
     let appSettings: AppSettings
 
     // MARK: - Manager Components
@@ -96,14 +95,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     internal init(switchBarHandler: any SwitchBarHandling,
                   switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
-                  appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
-                  featureFlagger: FeatureFlagger) {
+                  appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.daxLogoManager = DaxLogoManager()
         self.appSettings = appSettings
-        self.featureFlagger = featureFlagger
-        self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || !featureFlagger.isFeatureOn(.aiSearchBottomBarSupport) || isLandscapeOrientation
+        self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
         super.init(nibName: nil, bundle: nil)

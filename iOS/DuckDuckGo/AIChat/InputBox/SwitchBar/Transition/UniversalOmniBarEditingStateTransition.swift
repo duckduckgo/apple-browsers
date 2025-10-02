@@ -37,12 +37,13 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         let switcherYOffset = switchBarTextViewHeight * switcherMultiplier
         let contentYOffset: CGFloat = switchBarTextViewHeight * switcherMultiplier
         let barYOffset: CGFloat = isTopBarPosition ? switchBarTextViewHeight : 0
+        let logoYOffset: CGFloat = isTopBarPosition ? switcherYOffset : DefaultOmniBarView.expectedHeight * -0.5
 
         return TransitionOffsets(
             switcherYOffset: switcherYOffset,
             contentYOffset: contentYOffset,
             barYOffset: barYOffset,
-            logoYOffset: 0
+            logoYOffset: logoYOffset
         )
     }
 
@@ -121,6 +122,10 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         }
 
         animator.addAnimations {
+            if !self.isTopBarPosition {
+                fromVC.logoView?.alpha = 0
+            }
+
             toVC.view.alpha = 1.0
             toVC.view.layer.sublayerTransform = CATransform3DIdentity
             toVC.switchBarVC.textEntryViewController.isExpandable = true
@@ -174,7 +179,7 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         }
 
         animator.addAnimations({
-            toVC.newTabView?.alpha = 1.0
+            toVC.logoView?.alpha = 1.0
         }, delayFactor: 0.07)
 
         animator.addCompletion { position in

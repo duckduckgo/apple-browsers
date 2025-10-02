@@ -79,6 +79,15 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
+    var currentTextSelection: UITextRange? {
+        get { textView.selectedTextRange }
+        set { textView.selectedTextRange = newValue }
+    }
+
+    override var isFirstResponder: Bool {
+        textView.isFirstResponder
+    }
+
     // MARK: - Initialization
     init(handler: SwitchBarHandling) {
         self.handler = handler

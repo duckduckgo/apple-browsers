@@ -89,17 +89,16 @@ extension Preferences {
                         ToggleMenuItem(UserText.aiChatShowInAddressBarWhenTypingLabel,
                                        isOn: $model.showShortcutInAddressBarWhenTyping)
                         .accessibilityIdentifier("Preferences.AIChat.showInAddressBarWhenTypingToggle")
-                        .onChange(of: model.showShortcutInAddressBarWhenTyping) { _ in
-                            // TODO: implement new option pixels
-//                            if newValue {
-//                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOn,
-//                                              frequency: .dailyAndCount,
-//                                              includeAppVersionParameter: true)
-//                            } else {
-//                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOff,
-//                                              frequency: .dailyAndCount,
-//                                              includeAppVersionParameter: true)
-//                            }
+                        .onChange(of: model.showShortcutInAddressBarWhenTyping) { newValue in
+                            if newValue {
+                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarTypingShortcutTurnedOn,
+                                              frequency: .dailyAndCount,
+                                              includeAppVersionParameter: true)
+                            } else {
+                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarTypingShortcutTurnedOff,
+                                              frequency: .dailyAndCount,
+                                              includeAppVersionParameter: true)
+                            }
                         }
 
                         ToggleMenuItem(UserText.aiChatShowShortcutInAddressBarLabel,

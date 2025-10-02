@@ -17,6 +17,8 @@
 //
 
 import Foundation
+import Common
+import Networking
 import PixelKit
 
 public class AuthV2TokenRefreshWideEventData: WideEventData {
@@ -50,7 +52,7 @@ extension AuthV2TokenRefreshWideEventData {
 
     public enum FailingStep: String, Codable, CaseIterable {
         case tokenRead = "token_read"
-        case refreshAccessToken = "refreshAccessToken"
+        case refreshAccessToken = "refresh_access_token"
         case fetchingJWKS = "fetch_jwks"
         case verifyingAccessToken = "verify_access_token"
         case verifyingRefreshToken = "verify_refresh_token"
@@ -70,19 +72,6 @@ extension AuthV2TokenRefreshWideEventData {
             parameters[WideEventParameter.AuthV2RefreshFeature.failingStep] = failingStep.rawValue
         }
 
-        if let errorData = errorData {
-            parameters[WideEventParameter.Feature.errorDomain] = errorData.domain
-            parameters[WideEventParameter.Feature.errorCode] = String(errorData.code)
-
-            if let underlyingDomain = errorData.underlyingDomain {
-                parameters[WideEventParameter.Feature.underlyingErrorDomain] = underlyingDomain
-            }
-
-            if let underlyingCode = errorData.underlyingCode {
-                parameters[WideEventParameter.Feature.underlyingErrorCode] = String(underlyingCode)
-            }
-        }
-
         return parameters
     }
 
@@ -95,6 +84,54 @@ extension AuthV2TokenRefreshWideEventData {
         case 30000..<60000: return 60000
         case 60000..<300000: return 300000
         default: return 600000
+        }
+    }
+
+}
+
+extension AuthV2TokenRefreshWideEventData {
+
+    public static let authEventMapping: EventMapping<OAuthClientEvent> = .init { event, _, _, _ in
+        let wideEvent = WideEvent()
+
+        switch event {
+        case .tokenRefreshStarted(let refreshID):
+            let globalData = WideEventGlobalData(id: refreshID)
+            let contextData = WideEventContextData(name: "token-refresh")
+            let data = AuthV2TokenRefreshWideEventData(contextData: contextData, globalData: globalData)
+            data.failingStep = .tokenRead
+            wideEvent.startFlow(data)
+        case .tokenRefreshRefreshingAccessToken(refreshID: let refreshID):
+            wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
+                event.failingStep = .refreshAccessToken
+            }
+        case .tokenRefreshFetchingJWKS(refreshID: let refreshID):
+            wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
+                event.failingStep = .fetchingJWKS
+            }
+        case .tokenRefreshVerifyingAccessToken(refreshID: let refreshID):
+            wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
+                event.failingStep = .verifyingAccessToken
+            }
+        case .tokenRefreshVerifyingRefreshToken(refreshID: let refreshID):
+            wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
+                event.failingStep = .verifyingRefreshToken
+            }
+        case .tokenRefreshSavingTokens(refreshID: let refreshID):
+            wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
+                event.failingStep = .tokenWrite
+            }
+        case .tokenRefreshSucceeded(let refreshID):
+            if let data = wideEvent.getFlowData(AuthV2TokenRefreshWideEventData.self, globalID: refreshID) {
+                data.failingStep = nil
+                wideEvent.completeFlow(data, status: .success(reason: nil))
+            }
+        case .tokenRefreshFailed(let refreshID, let error):
+            if let data = wideEvent.getFlowData(AuthV2TokenRefreshWideEventData.self, globalID: refreshID) {
+                data.errorData = WideEventErrorData(error: error)
+                wideEvent.updateFlow(data)
+                wideEvent.completeFlow(data, status: .failure)
+            }
         }
     }
 

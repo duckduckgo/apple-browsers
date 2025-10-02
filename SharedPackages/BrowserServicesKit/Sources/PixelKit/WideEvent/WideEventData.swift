@@ -226,19 +226,6 @@ public struct WideEventErrorData: Codable {
         self.underlyingErrors = Self.collectUnderlyingErrors(from: nsError)
     }
 
-    public func appendErrorParameters(to params: inout [String: String]) {
-        params["feature.data.error.domain"] = domain
-        params["feature.data.error.code"] = String(code)
-
-        if let underlyingDomain = underlyingDomain {
-            params["feature.data.error.underlying_domain"] = underlyingDomain
-        }
-
-        if let underlyingCode = underlyingCode {
-            params["feature.data.error.underlying_code"] = String(underlyingCode)
-        }
-    }
-
 }
 
 extension WideEventErrorData {

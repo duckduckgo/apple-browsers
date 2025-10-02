@@ -508,55 +508,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                           frequency: .legacyDailyAndCount)
         }
 
-        let authEventMapping: EventMapping<OAuthClientEvent> = .init { event, _, _, _ in
-            let wideEvent = WideEvent()
-
-            switch event {
-            case .tokenRefreshStarted(let refreshID):
-                let globalData = WideEventGlobalData(id: refreshID)
-                let contextData = WideEventContextData(name: "token-refresh")
-                let data = AuthV2TokenRefreshWideEventData(contextData: contextData, globalData: globalData)
-                data.failingStep = .tokenRead
-                wideEvent.startFlow(data)
-            case .tokenRefreshRefreshingAccessToken(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.failingStep = .refreshAccessToken
-                }
-            case .tokenRefreshFetchingJWKS(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.failingStep = .fetchingJWKS
-                }
-            case .tokenRefreshVerifyingAccessToken(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.failingStep = .verifyingAccessToken
-                }
-            case .tokenRefreshVerifyingRefreshToken(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.failingStep = .verifyingRefreshToken
-                }
-            case .tokenRefreshSavingTokens(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.failingStep = .tokenWrite
-                }
-            case .tokenRefreshSucceeded(let refreshID):
-                if let data = wideEvent.getFlowData(AuthV2TokenRefreshWideEventData.self, globalID: refreshID) {
-                    data.failingStep = nil
-                    wideEvent.completeFlow(data, status: .success(reason: nil))
-                }
-            case .tokenRefreshFailed(let refreshID, let error):
-                if let data = wideEvent.getFlowData(AuthV2TokenRefreshWideEventData.self, globalID: refreshID) {
-                    data.errorData = WideEventErrorData(error: error)
-                    wideEvent.updateFlow(data)
-                    wideEvent.completeFlow(data, status: .failure)
-                }
-            }
-        }
-
         let legacyTokenStorage = SubscriptionTokenKeychainStorage(keychainType: keychainType)
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             legacyTokenStorage: legacyTokenStorage,
                                             authService: authService,
-                                            eventMapping: authEventMapping)
+                                            eventMapping: AuthV2TokenRefreshWideEventData.authEventMapping)
         let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
                                                     pixelHandler: pixelHandler,

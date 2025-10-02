@@ -2612,6 +2612,8 @@
 		9F26060C2B85C20B00819292 /* AddEditBookmarkDialogViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F2606092B85C20400819292 /* AddEditBookmarkDialogViewModelTests.swift */; };
 		9F26060E2B85E17D00819292 /* AddEditBookmarkDialogCoordinatorViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F26060D2B85E17D00819292 /* AddEditBookmarkDialogCoordinatorViewModelTests.swift */; };
 		9F26060F2B85E17D00819292 /* AddEditBookmarkDialogCoordinatorViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F26060D2B85E17D00819292 /* AddEditBookmarkDialogCoordinatorViewModelTests.swift */; };
+		9F33033A2E8E605A00D6F0C9 /* RemoteMessagingTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 9F3303392E8E605A00D6F0C9 /* RemoteMessagingTestsUtils */; };
+		9F33033C2E8E606400D6F0C9 /* RemoteMessagingTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 9F33033B2E8E606400D6F0C9 /* RemoteMessagingTestsUtils */; };
 		9F33445E2BBFA77F0040CBEB /* BookmarksBarVisibilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F33445D2BBFA77F0040CBEB /* BookmarksBarVisibilityManager.swift */; };
 		9F33445F2BBFA77F0040CBEB /* BookmarksBarVisibilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F33445D2BBFA77F0040CBEB /* BookmarksBarVisibilityManager.swift */; };
 		9F3910622B68C35600CB5112 /* DownloadsTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3910612B68C35600CB5112 /* DownloadsTabExtensionTests.swift */; };
@@ -6086,6 +6088,7 @@
 				D668401C2E82BE31007DAAB2 /* PerformanceTest in Frameworks */,
 				F124E0E92D6E122F0035C7BA /* PersistenceTestingUtils in Frameworks */,
 				3706FE89293F661700E42796 /* OHHTTPStubsSwift in Frameworks */,
+				9F33033A2E8E605A00D6F0C9 /* RemoteMessagingTestsUtils in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -6096,6 +6099,7 @@
 				844801702E3BA42800E8A2C1 /* Clocks in Frameworks */,
 				B65CD8D12B316E0C00A595BB /* SnapshotTesting in Frameworks */,
 				F124E0ED2D6E123A0035C7BA /* PersistenceTestingUtils in Frameworks */,
+				9F33033C2E8E606400D6F0C9 /* RemoteMessagingTestsUtils in Frameworks */,
 				9DC5FACF2C6BA23C0011F068 /* AppKitExtensions in Frameworks */,
 				F124E0F12D6E123A0035C7BA /* SubscriptionTestingUtilities in Frameworks */,
 				84B49F0F2CB10F0900FF08BB /* OHHTTPStubsSwift in Frameworks */,
@@ -11583,6 +11587,7 @@
 				84494D242E18211900C9E5E8 /* NoARCObjCTestsExtensions */,
 				8448016D2E3BA42400E8A2C1 /* Clocks */,
 				D668401B2E82BE31007DAAB2 /* PerformanceTest */,
+				9F3303392E8E605A00D6F0C9 /* RemoteMessagingTestsUtils */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = 3706FE99293F661700E42796 /* Unit Tests App Store.xctest */;
@@ -11615,6 +11620,7 @@
 				4B9EE3732D76CB6D00DDC75C /* Common */,
 				84494D262E18211D00C9E5E8 /* NoARCObjCTestsExtensions */,
 				8448016F2E3BA42800E8A2C1 /* Clocks */,
+				9F33033B2E8E606400D6F0C9 /* RemoteMessagingTestsUtils */,
 			);
 			productName = "Integration Tests";
 			productReference = 3706FEB2293F662100E42796 /* Integration Tests App Store.xctest */;
@@ -18824,6 +18830,14 @@
 			productName = RemoteMessagingTestsUtils;
 		};
 		9F0F46A12E865BEC00A9FC4D /* RemoteMessagingTestsUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RemoteMessagingTestsUtils;
+		};
+		9F3303392E8E605A00D6F0C9 /* RemoteMessagingTestsUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RemoteMessagingTestsUtils;
+		};
+		9F33033B2E8E606400D6F0C9 /* RemoteMessagingTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = RemoteMessagingTestsUtils;
 		};

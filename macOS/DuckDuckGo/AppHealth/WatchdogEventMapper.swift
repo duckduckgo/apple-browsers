@@ -63,7 +63,7 @@ public class WatchdogEventMapper: EventMapping<Watchdog.Event> {
 
         super.init { _, _, _, _ in }
 
-        self.eventMapper = { [weak self] event, _, _, _ in
+        self.eventMapper = { [weak self] event, _, _, onComplete in
             switch event {
             case .uiHangNotRecovered(let durationSeconds):
                 Task {
@@ -82,7 +82,9 @@ public class WatchdogEventMapper: EventMapping<Watchdog.Event> {
                         stackTrace: nil
                     )
 
-                    self.pixelKit?.fire(pixel, frequency: .dailyAndCount)
+                    self.pixelKit?.fire(pixel, frequency: .dailyAndCount) { _, error in
+                        onComplete(error)
+                    }
                 }
             case .uiHangRecovered(let durationSeconds):
                 Task {
@@ -101,7 +103,9 @@ public class WatchdogEventMapper: EventMapping<Watchdog.Event> {
                         stackTrace: nil
                     )
 
-                    self.pixelKit?.fire(pixel, frequency: .dailyAndCount)
+                    self.pixelKit?.fire(pixel, frequency: .dailyAndCount) { _, error in
+                        onComplete(error)
+                    }
                 }
             }
         }

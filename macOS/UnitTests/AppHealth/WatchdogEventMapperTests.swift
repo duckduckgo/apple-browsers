@@ -28,7 +28,6 @@ final class WatchdogEventMapperTests: XCTestCase {
     var mockDiagnosticProvider: MockWatchdogDiagnosticProvider!
     var eventMapper: WatchdogEventMapper!
     var firedPixels: [(name: String, parameters: [String: String]?)]? = []
-    var onPixelFired: (() -> Void)?
 
     override func setUp() {
         super.setUp()
@@ -45,15 +44,15 @@ final class WatchdogEventMapperTests: XCTestCase {
         pixelKit = nil
         eventMapper = nil
         firedPixels = nil
-        onPixelFired = nil
 
         super.tearDown()
     }
 
     private func setupMockPixelKit() {
-        let mockFireRequest: PixelKit.FireRequest = { pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete in
+        let mockFireRequest: PixelKit.FireRequest = { [weak self] pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete in
+            guard let self else { return }
+
             self.firedPixels?.append((name: pixelName, parameters: parameters))
-            self.onPixelFired?()
 
             DispatchQueue.main.async {
                 onComplete(true, nil)
@@ -72,22 +71,6 @@ final class WatchdogEventMapperTests: XCTestCase {
     }
 
     // MARK: - Helper methods
-
-    private func waitForPixelFired(timeout: TimeInterval = 1.0) -> XCTestExpectation {
-        let expectation = XCTestExpectation(description: "Pixel fired")
-        onPixelFired = {
-            expectation.fulfill()
-        }
-        return expectation
-    }
-
-    private func waitForDiagnosticsCollected(timeout: TimeInterval = 1.0) -> XCTestExpectation {
-        let expectation = XCTestExpectation(description: "Diagnostics collected")
-        mockDiagnosticProvider.onDiagnosticsCollected = {
-            expectation.fulfill()
-        }
-        return expectation
-    }
 
     private func setupMockDiagnostics(isOnBattery: Bool = true) {
         mockDiagnosticProvider.reset()
@@ -109,16 +92,18 @@ final class WatchdogEventMapperTests: XCTestCase {
         setupMockDiagnostics()
 
         // When
-        let pixelExpectation = waitForPixelFired()
-        let diagnosticsExpectation = waitForDiagnosticsCollected()
-        eventMapper.fire(event)
-        wait(for: [pixelExpectation, diagnosticsExpectation], timeout: 1.0)
+        let expectation = XCTestExpectation(description: "Pixel fired")
+        eventMapper.fire(event) { _ in
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
 
         // Then
         guard let pixel = firedPixels?.first else {
             XCTFail("No pixel fired")
             return
         }
+
         XCTAssertEqual(mockDiagnosticProvider.collectDiagnosticsCallCount, 1)
         XCTAssert(pixel.name.hasPrefix("m_mac_ui_hang_recovered"))
         XCTAssertEqual(pixel.parameters?["duration_seconds"], "1")
@@ -135,10 +120,11 @@ final class WatchdogEventMapperTests: XCTestCase {
         setupMockDiagnostics()
 
         // When
-        let pixelExpectation = waitForPixelFired()
-        let diagnosticsExpectation = waitForDiagnosticsCollected()
-        eventMapper.fire(event)
-        wait(for: [pixelExpectation, diagnosticsExpectation], timeout: 1.0)
+        let expectation = XCTestExpectation(description: "Pixel fired")
+        eventMapper.fire(event) { _ in
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
 
         // Then
         guard let pixel = firedPixels?.first else {
@@ -156,10 +142,11 @@ final class WatchdogEventMapperTests: XCTestCase {
         setupMockDiagnostics(isOnBattery: true)
 
         // When
-        let pixelExpectation = waitForPixelFired()
-        let diagnosticsExpectation = waitForDiagnosticsCollected()
-        eventMapper.fire(event)
-        wait(for: [pixelExpectation, diagnosticsExpectation], timeout: 1.0)
+        let expectation = XCTestExpectation(description: "Pixel fired")
+        eventMapper.fire(event) { _ in
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
 
         // Then
         guard let pixel = firedPixels?.first else {
@@ -177,10 +164,11 @@ final class WatchdogEventMapperTests: XCTestCase {
         setupMockDiagnostics(isOnBattery: false)
 
         // When
-        let pixelExpectation = waitForPixelFired()
-        let diagnosticsExpectation = waitForDiagnosticsCollected()
-        eventMapper.fire(event)
-        wait(for: [pixelExpectation, diagnosticsExpectation], timeout: 1.0)
+        let expectation = XCTestExpectation(description: "Pixel fired")
+        eventMapper.fire(event) { _ in
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
 
         // Then
         guard let pixel = firedPixels?.first else {

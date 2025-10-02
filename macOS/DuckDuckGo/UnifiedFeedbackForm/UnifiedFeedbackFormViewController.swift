@@ -50,7 +50,6 @@ final class UnifiedFeedbackFormViewController: NSViewController {
          featureFlagger: FeatureFlagger) {
         self.feedbackSender = feedbackSender
         self.viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
-                                                      apiService: DefaultAPIService(userAgent: UserAgent.duckDuckGoUserAgent()),
                                                       vpnMetadataCollector: DefaultVPNMetadataCollector(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
                                                       dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                       feedbackSender: feedbackSender,

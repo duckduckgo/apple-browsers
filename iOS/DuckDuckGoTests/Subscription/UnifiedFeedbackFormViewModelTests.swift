@@ -18,10 +18,8 @@
 //
 
 import Testing
-import Networking
 import Subscription
 import SubscriptionTestingUtilities
-import NetworkingTestingUtils
 @testable import DuckDuckGo
 import Foundation
 
@@ -35,25 +33,14 @@ struct UnifiedFeedbackFormViewModelTests {
     private func makeViewModel(
         subscriptionFeatures: [Entitlement.ProductName] = [],
         isPaidAIChatFeatureEnabled: Bool = false,
-        apiResponse: Result<APIResponseV2, Swift.Error> = .failure(TestError.generic),
         source: UnifiedFeedbackFormViewModel.Source = .unknown,
         feedbackSender: MockFeedbackSender = MockFeedbackSender()
     ) -> UnifiedFeedbackFormViewModel {
 
         let subscriptionManager = makeSubscriptionManager(features: subscriptionFeatures)
 
-        // Configure API service with requestHandler
-        let apiService = MockAPIService { request in
-            // Only respond to feedback endpoint requests
-            if request.url!.absoluteString.contains("feedback") {
-                return apiResponse
-            }
-            return .failure(TestError.generic)
-        }
-
         let viewModel = UnifiedFeedbackFormViewModel(
             subscriptionManager: subscriptionManager,
-            apiService: apiService,
             vpnMetadataCollector: MockUnifiedMetadataCollector(),
             dbpMetadataCollector: MockUnifiedMetadataCollector(),
             defaultMetadatCollector: MockUnifiedMetadataCollector(),
@@ -84,18 +71,6 @@ struct UnifiedFeedbackFormViewModelTests {
 
         manager.subscriptionFeatures = features
         return manager
-    }
-
-    private func makeSuccessfulAPIResponse() throws -> Result<APIResponseV2, Swift.Error> {
-        struct TestResponse: Codable {
-            let message: String?
-            let error: String?
-        }
-
-        let responseData = TestResponse(message: "Success", error: nil)
-        let data = try JSONEncoder().encode(responseData)
-        let response = APIResponseV2(data: data, httpResponse: HTTPURLResponse())
-        return .success(response)
     }
 
     // MARK: - Initialization Tests
@@ -432,8 +407,7 @@ struct UnifiedFeedbackFormViewModelTests {
     }
 
     @Test func testSubmitFeedback_WhenSuccessful_UpdatesStateToSent() async throws {
-        let successfulResponse = try makeSuccessfulAPIResponse()
-        let viewModel = makeViewModel(apiResponse: successfulResponse)
+        let viewModel = makeViewModel()
 
         viewModel.selectedReportType = UnifiedFeedbackReportType.general.rawValue
         viewModel.feedbackFormText = "Test feedback"

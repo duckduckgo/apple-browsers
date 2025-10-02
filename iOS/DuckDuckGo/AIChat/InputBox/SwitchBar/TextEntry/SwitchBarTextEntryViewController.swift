@@ -37,6 +37,11 @@ class SwitchBarTextEntryViewController: UIViewController {
         set { textEntryView.isExpandable = newValue }
     }
 
+    var isUsingIncreasedButtonPadding: Bool {
+        get { textEntryView.isUsingIncreasedButtonPadding }
+        set { textEntryView.isUsingIncreasedButtonPadding = newValue }
+    }
+
     // MARK: - Initialization
     init(handler: SwitchBarHandling) {
         self.handler = handler

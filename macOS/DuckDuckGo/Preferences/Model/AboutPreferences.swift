@@ -85,6 +85,8 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     @Published var updateState = UpdateState.upToDate
 
     func runUpdate() {
+        // Track Update DuckDuckGo button tapped in About preferences
+        PixelKit.fire(UpdateFlowPixels.updateDuckDuckGoButtonTapped)
         updateController?.runUpdate()
     }
 
@@ -205,7 +207,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     @MainActor func checkForAppStoreUpdate() {
-        PixelKit.fire(CheckForUpdatesAppStorePixels.checkForUpdate(source: .aboutMenu))
+        PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .aboutMenu))
         NSWorkspace.shared.open(.appStore)
     }
 

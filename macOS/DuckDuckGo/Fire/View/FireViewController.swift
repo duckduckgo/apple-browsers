@@ -32,7 +32,12 @@ final class FireViewController: NSViewController {
 
     private(set) var fireViewModel: FireViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
-    private let visualStyle: VisualStyleProviding
+
+    private let themeManager: ThemeManagerProtocol
+    private var theme: ThemeDefinition {
+        themeManager.theme
+    }
+
     private let visualizeFireAnimationDecider: VisualizeFireSettingsDecider
     private var cancellables = Set<AnyCancellable>()
 
@@ -64,11 +69,11 @@ final class FireViewController: NSViewController {
 
     init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
           fireViewModel: FireViewModel,
-          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
+          themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager,
           visualizeFireAnimationDecider: VisualizeFireSettingsDecider) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.fireViewModel = fireViewModel
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
         self.visualizeFireAnimationDecider = visualizeFireAnimationDecider
 
         super.init(coder: coder)
@@ -88,9 +93,9 @@ final class FireViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        fakeFireButton.image = visualStyle.iconsProvider.fireButtonStyleProvider.icon
-        fakeFireButtonWidthConstraint.constant = visualStyle.tabBarButtonSize
-        fakeFireButtonHeightConstraint.constant = visualStyle.tabBarButtonSize
+        fakeFireButton.image = theme.iconsProvider.fireButtonStyleProvider.icon
+        fakeFireButtonWidthConstraint.constant = theme.tabBarButtonSize
+        fakeFireButtonHeightConstraint.constant = theme.tabBarButtonSize
         deletingDataLabel.stringValue = UserText.fireDialogDelitingData
         if case .normal = AppVersion.runType {
             fireAnimationViewLoadingTask = Task.detached(priority: .userInitiated) {

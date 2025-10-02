@@ -447,7 +447,7 @@ final class AddressBarViewController: NSViewController {
         themeManager.themePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.refreshTheme()
+                self?.applyThemeStyles()
             }
             .store(in: &cancellables)
     }
@@ -694,7 +694,7 @@ final class AddressBarViewController: NSViewController {
 
     // MARK: - Themes
 
-    private func refreshTheme() {
+    private func applyThemeStyles() {
         refreshAddressBarAppearance(nil)
         refreshSuggestionsAppearance()
         updateView()

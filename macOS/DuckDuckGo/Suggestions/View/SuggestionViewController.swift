@@ -81,7 +81,7 @@ final class SuggestionViewController: NSViewController {
         subscribeToSelectionIndex()
         subscribeToThemeChanges()
 
-        refreshInterface()
+        applyThemeStyles()
     }
 
     override func viewWillAppear() {
@@ -173,14 +173,18 @@ final class SuggestionViewController: NSViewController {
                     return
                 }
 
-                self.refreshInterface()
+                self.applyThemeStyles()
                 self.tableView.reloadData()
             }
     }
 
-    private func refreshInterface() {
-        let barStyleProvider = themeManager.theme.addressBarStyleProvider
-        let colorsProvider = themeManager.theme.colorsProvider
+    private func applyThemeStyles() {
+        applyThemeStyles(theme: themeManager.theme)
+    }
+
+    private func applyThemeStyles(theme: ThemeDefinition) {
+        let barStyleProvider = theme.addressBarStyleProvider
+        let colorsProvider = theme.colorsProvider
 
         backgroundViewTopConstraint.constant = barStyleProvider.topSpaceForSuggestionWindow
         backgroundView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadius)

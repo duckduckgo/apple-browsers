@@ -157,11 +157,11 @@ final class NewTabPageCustomizationModel: ObservableObject {
         themeCancellable = manager.themePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] theme in
-                self?.themeDidChange(theme: theme)
+                self?.applyThemeStyles(theme: theme)
             }
     }
 
-    private func themeDidChange(theme: ThemeDefinition) {
+    private func applyThemeStyles(theme: ThemeDefinition) {
         backgroundColors = DefaultBackgroundColorStyle(theme: theme)
     }
 

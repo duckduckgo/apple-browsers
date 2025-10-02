@@ -1073,7 +1073,7 @@ final class NavigationBarViewController: NSViewController {
         themeManager.themePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.themeDidChange()
+                self?.applyThemeStyles()
             }
             .store(in: &cancellables)
     }
@@ -1203,7 +1203,7 @@ final class NavigationBarViewController: NSViewController {
 
     // MARK: - Themes
 
-    private func themeDidChange() {
+    private func applyThemeStyles() {
         setupNavigationButtons()
         setupBackgroundViewsAndColors()
     }

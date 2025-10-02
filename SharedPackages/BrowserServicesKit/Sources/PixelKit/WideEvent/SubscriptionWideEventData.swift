@@ -101,19 +101,6 @@ extension SubscriptionPurchaseWideEventData {
 
         parameters[WideEventParameter.SubscriptionFeature.freeTrialEligible] = freeTrialEligible ? "true" : "false"
 
-        if let errorData = errorData {
-            parameters[WideEventParameter.Feature.errorDomain] = errorData.domain
-            parameters[WideEventParameter.Feature.errorCode] = String(errorData.code)
-
-            if let underlyingDomain = errorData.underlyingDomain {
-                parameters[WideEventParameter.Feature.underlyingErrorDomain] = underlyingDomain
-            }
-
-            if let underlyingCode = errorData.underlyingCode {
-                parameters[WideEventParameter.Feature.underlyingErrorCode] = String(underlyingCode)
-            }
-        }
-
         func emit(_ key: String, interval: WideEvent.MeasuredInterval?) {
             guard let start = interval?.start, let end = interval?.end else { return }
             let ms = max(0, Int(end.timeIntervalSince(start) * 1000))

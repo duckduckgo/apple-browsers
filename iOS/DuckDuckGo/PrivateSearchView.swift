@@ -50,7 +50,6 @@ struct PrivateSearchView: View {
 struct PrivateSearchViewSettings: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
-    let embedSERPSettings = true
 
     var body: some View {
         Section(footer: Text(UserText.settingsAutocompleteSubtitle)) {
@@ -68,7 +67,7 @@ struct PrivateSearchViewSettings: View {
 
         Section {
             // More Search Settings
-            if embedSERPSettings {
+            if viewModel.embedSERPSettings {
                 NavigationLink(destination: SERPSettingsView(page: .main).environmentObject(viewModel)) {
                     SettingsCellView(label: UserText.moreSearchSettings,
                                      subtitle: UserText.moreSearchSettingsExplanation)

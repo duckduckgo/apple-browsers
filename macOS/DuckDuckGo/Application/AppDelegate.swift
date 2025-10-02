@@ -812,6 +812,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let eventMapper = WatchdogEventMapper(diagnosticProvider: watchdogDiagnosticProvider)
         watchdog = Watchdog(eventMapper: eventMapper)
 
+#if !DEBUG
+        // Start UI hang watchdog
+        if featureFlagger.isFeatureOn(.hangReporting) {
+            Task { [watchdog] in
+                await watchdog.start()
+            }
+        }
+#endif
+
         super.init()
 
         appContentBlocking?.userContentUpdating.userScriptDependenciesProvider = self

@@ -38,6 +38,9 @@ class SwitchBarTextEntryView: UIView {
         // Placeholder positioning
         static let placeholderTopOffset: CGFloat = 12
         static let placeholderHorizontalOffset: CGFloat = 16
+
+        // Increased buttons spacing
+        static let additionalVerticalButtonsPadding: CGFloat = 6
     }
 
     private let handler: SwitchBarHandling
@@ -56,6 +59,7 @@ class SwitchBarTextEntryView: UIView {
     private var cancellables = Set<AnyCancellable>()
 
     private var heightConstraint: NSLayoutConstraint?
+    private var buttonsTrailingConstraint: NSLayoutConstraint?
 
     var hasBeenInteractedWith = false
     var isURL: Bool {
@@ -66,6 +70,12 @@ class SwitchBarTextEntryView: UIView {
     var isExpandable: Bool = false {
         didSet {
             updateTextViewHeight()
+        }
+    }
+
+    var isUsingIncreasedButtonPadding: Bool = false {
+        didSet {
+            updateButtonsPadding()
         }
     }
 
@@ -122,6 +132,7 @@ class SwitchBarTextEntryView: UIView {
         updateButtonState()
         updateForCurrentMode()
         updateTextViewHeight()
+        updateButtonsPadding()
 
         textView.onTouchesBeganHandler = self.onTextViewTouchesBegan
     }
@@ -142,7 +153,14 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
+    private func updateButtonsPadding() {
+        buttonsTrailingConstraint?.constant = isUsingIncreasedButtonPadding ? -Constants.additionalVerticalButtonsPadding : 0
+    }
+
     private func setupConstraints() {
+
+        buttonsTrailingConstraint = buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
+        buttonsTrailingConstraint?.isActive = true
 
         NSLayoutConstraint.activate([
             textView.topAnchor.constraint(equalTo: topAnchor),
@@ -154,8 +172,7 @@ class SwitchBarTextEntryView: UIView {
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
             placeholderLabel.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -Constants.placeholderHorizontalOffset),
 
-            buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
-            buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
+            buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor)
         ])
     }
 

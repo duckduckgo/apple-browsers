@@ -37,15 +37,12 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         let switcherYOffset = switchBarTextViewHeight * switcherMultiplier
         let contentYOffset: CGFloat = switchBarTextViewHeight * switcherMultiplier
         let barYOffset: CGFloat = isTopBarPosition ? switchBarTextViewHeight : 0
-        let baseLogoOffset: CGFloat = isTopBarPosition ? 0 : -DefaultOmniBarView.expectedHeight
-
-        let logoYOffsetWithSwitcher = baseLogoOffset + (isTopBarPosition ? switcherYOffset : 0)
 
         return TransitionOffsets(
             switcherYOffset: switcherYOffset,
             contentYOffset: contentYOffset,
             barYOffset: barYOffset,
-            logoYOffset: logoYOffsetWithSwitcher
+            logoYOffset: 0
         )
     }
 
@@ -57,9 +54,9 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
 
     func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
         if isPresenting {
-            return Constants.expandDuration
+            return isTopBarPosition ? Constants.TopTransition.expandDuration : Constants.BottomTransition.expandDuration
         } else {
-            return Constants.collapseDuration
+            return isTopBarPosition ? Constants.TopTransition.collapseDuration : Constants.BottomTransition.collapseDuration
         }
     }
 
@@ -75,10 +72,11 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
     }
 
     private var dampingRatio: CGFloat {
+        // Only used for top bar position - bottom bar uses ease-in-out curve
         if isPresenting {
-            return isTopBarPosition ? Constants.TopTransition.expandDampingRatio : Constants.BottomTransition.expandDampingRatio
+            return Constants.TopTransition.expandDampingRatio
         } else {
-            return isTopBarPosition ? Constants.TopTransition.collapseDampingRatio : Constants.BottomTransition.collapseDampingRatio
+            return Constants.TopTransition.collapseDampingRatio
         }
     }
 
@@ -115,14 +113,14 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
 
         let duration = transitionDuration(using: transitionContext)
 
-        let logoAnimator = UIViewPropertyAnimator(duration: 0.13, curve: .easeIn) {
-            if !self.isTopBarPosition {
-                fromVC.newTabView?.alpha = 0
-            }
+        let animator: UIViewPropertyAnimator
+        if isTopBarPosition {
+            animator = UIViewPropertyAnimator(duration: duration, dampingRatio: dampingRatio)
+        } else {
+            animator = UIViewPropertyAnimator(duration: duration, curve: .easeInOut)
         }
 
-        let animator = UIViewPropertyAnimator(duration: duration, dampingRatio: dampingRatio) {
-
+        animator.addAnimations {
             toVC.view.alpha = 1.0
             toVC.view.layer.sublayerTransform = CATransform3DIdentity
             toVC.switchBarVC.textEntryViewController.isExpandable = true
@@ -141,7 +139,6 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
             transitionContext.completeTransition(position == .end)
         }
 
-        logoAnimator.startAnimation()
         animator.startAnimation()
     }
 
@@ -158,8 +155,14 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
 
         // Dismissing animation
         let duration = transitionDuration(using: transitionContext)
-        let animator = UIViewPropertyAnimator(duration: duration, dampingRatio: dampingRatio) {
+        let animator: UIViewPropertyAnimator
+        if isTopBarPosition {
+            animator = UIViewPropertyAnimator(duration: duration, dampingRatio: dampingRatio)
+        } else {
+            animator = UIViewPropertyAnimator(duration: duration, curve: .easeInOut)
+        }
 
+        animator.addAnimations {
             fromVC.view.layer.sublayerTransform = CATransform3DMakeTranslation(0, -offsets.switcherYOffset, 0)
             fromVC.switchBarVC.textEntryViewController.isExpandable = false
             fromVC.setLogoYOffset(offsets.logoYOffset)
@@ -187,18 +190,18 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
     }
 
     private struct Constants {
-        static let expandDuration: TimeInterval = 0.6
-        static let collapseDuration: TimeInterval = 0.5
         static let toolbarHeight: CGFloat = 49
 
         struct BottomTransition {
-            static let collapseDampingRatio: CGFloat = 0.75
-            static let expandDampingRatio: CGFloat = 0.7
+            static let expandDuration: TimeInterval = 0.25
+            static let collapseDuration: TimeInterval = 0.25
         }
 
         struct TopTransition {
             static let expandDampingRatio: CGFloat = 0.65
             static let collapseDampingRatio: CGFloat = 0.7
+            static let expandDuration: TimeInterval = 0.6
+            static let collapseDuration: TimeInterval = 0.5
         }
     }
 }

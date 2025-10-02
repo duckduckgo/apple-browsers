@@ -95,6 +95,7 @@ public final actor Watchdog {
     ///   - killAppFunction: A closure to be executed when the maximum hang duration has been reached (used for testing purposes)
     ///
     public init(minimumHangDuration: TimeInterval = 1.0, maximumHangDuration: TimeInterval = 10.0, checkInterval: TimeInterval = 0.5, eventMapper: EventMapping<Watchdog.Event>? = nil, crashOnTimeout: Bool = false, killAppFunction: ((TimeInterval) -> Void)? = nil) {
+
         assert(checkInterval > 0, "checkInterval must be greater than 0")
         assert(minimumHangDuration >= 0, "minimumHangDuration must be greater than or equal to 0")
         assert(maximumHangDuration >= 0, "maximumHangDuration must be greater than or equal to 0")
@@ -195,6 +196,7 @@ public final actor Watchdog {
                 hangStartTime = nil
             } else if timeSinceLastCheck > maximumHangDuration {
                 hangState = .timeout
+                
                 logHangDuration(message: "Main thread hang timeout reached.", currentTime: now)
                 fireHangEvent(Watchdog.Event.uiHangNotRecovered, currentTime: now)
             } else {

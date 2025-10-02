@@ -1,7 +1,7 @@
 //
-//  SingleUseColor.swift
+//  Image+Named.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2021 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,14 +16,17 @@
 //  limitations under the License.
 //
 
-/// Semantic colors used for single use case.
-///
-/// - Important: When used in multiple places, it should be proposed to promote the color to `DesignSystemColor`.
-public enum SingleUseColor {
-    case controlWidgetBackground
-    case unifiedFeedbackFieldBackground
-    case privacyDashboardBackground
+import SwiftUI
 
-    /// Color used for separator line between text input and content
-    case inputContentSeparator
+extension Image {
+
+    public enum SystemImageName: String {
+        case circleLeftHalfFilled = "circle.lefthalf.filled"
+        case moon = "moon"
+        case sunMax = "sun.max"
+    }
+
+    public init(systemNamed: SystemImageName) {
+        self.init(systemName: systemNamed.rawValue)
+    }
 }

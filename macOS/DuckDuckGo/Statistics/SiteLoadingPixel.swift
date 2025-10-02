@@ -28,7 +28,6 @@ enum SiteLoadingPixel: PixelKitEvent {
     /// Navigation failed due to network/server/content issues
     case siteLoadingFailure(duration: TimeInterval, error: Error, navigationType: String)
 
-
     var name: String {
         switch self {
         case .siteLoadingSuccess:

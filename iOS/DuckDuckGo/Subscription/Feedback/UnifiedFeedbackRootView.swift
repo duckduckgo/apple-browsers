@@ -368,11 +368,9 @@ private struct IssueDescriptionTextEditor: View {
                 .textCase(.uppercase)
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 16)
-            TextEditorWithPlaceholder(text: text, placeholder: placeholder)
+            TextEditorWithPlaceholder(text: text, placeholder: placeholder, backgroundColor: editorBackgroundColor)
                 .font(.body)
                 .foregroundColor(.primary)
-                .background(editorBackgroundColor)
-                .clipShape(RoundedRectangle(cornerRadius: 8.0, style: .continuous))
                 .frame(height: 100)
                 .fixedSize(horizontal: false, vertical: true)
                 .onChange(of: text.wrappedValue) { value in
@@ -413,11 +411,14 @@ private struct UnifiedFeedbackFormButtonStyle: ButtonStyle {
 private struct TextEditorWithPlaceholder: View {
     let text: Binding<String>
     let placeholder: String
+    let backgroundColor: Color
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            TextEditor(text: text)
-                .padding(.horizontal, 12)
+            RoundedRectangle(cornerRadius: 8.0, style: .continuous)
+                .fill(backgroundColor)
+            editor
+                .clipShape(RoundedRectangle(cornerRadius: 8.0, style: .continuous))
             if text.wrappedValue.isEmpty {
                 Text(placeholder)
                     .foregroundColor(.secondary)
@@ -425,6 +426,22 @@ private struct TextEditorWithPlaceholder: View {
                     .padding(.top, 10)
                     .padding(.leading, 16)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var editor: some View {
+        if #available(iOS 16.0, *) {
+            TextEditor(text: text)
+                .scrollContentBackground(.hidden)
+                .background(Color.clear)
+                .padding(.horizontal, 12)
+        } else {
+            TextEditor(text: text)
+                .padding(.horizontal, 12)
+                .background(Color.clear)
+                .onAppear { UITextView.appearance().backgroundColor = .clear }
+                .onDisappear { UITextView.appearance().backgroundColor = nil }
         }
     }
 }

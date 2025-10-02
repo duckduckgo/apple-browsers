@@ -51,7 +51,7 @@ final class UserDefaultsHistoryViewDeleteDialogSettingsPersistor: HistoryViewDel
 
 final class HistoryViewDeleteDialogModel: ObservableObject {
     enum Response {
-        case noAction, delete(includeChats: Bool), burn(includeChats: Bool)
+        case noAction, delete, burn(data: Bool, chats: Bool)
     }
 
     enum DeleteMode: Equatable {
@@ -152,10 +152,11 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
     }
 
     func delete() {
-        if shouldBurn {
-            response = .burn(includeChats: shouldClearChatHistory)
-        } else {
-            response = .delete(includeChats: shouldClearChatHistory)
+        switch (shouldBurn, shouldClearChatHistory) {
+        case (false, false):
+            response = .delete
+        default:
+            response = .burn(data: shouldBurn, chats: shouldClearChatHistory)
         }
     }
 

@@ -186,23 +186,24 @@ extension AppDelegate {
 
             let presenter = DefaultHistoryViewDialogPresenter()
             switch await presenter.showDeleteDialog(for: .rangeFilter(.all), visits: visits, in: window) {
-            case let .burn(includeChats):
+            case let .burn(burnData, includeChats):
                 guard !featureFlagger.isFeatureOn(.fireDialog) /* FireCoordinator handles burning for Fire Dialog View */ else { break }
-                let entity = Fire.BurningEntity.allWindows(mainWindowControllers: Application.appDelegate.windowControllersManager.mainWindowControllers,
-                                                           selectedDomains: [],
-                                                           customURLToOpen: nil,
-                                                           close: true)
-                await fireCoordinator.fireViewModel.fire.burnEntity(entity, includingHistory: true, includingChatHistory: includeChats)
-            case let .delete(includeChats):
+                if burnData {
+                    let entity = Fire.BurningEntity.allWindows(mainWindowControllers: Application.appDelegate.windowControllersManager.mainWindowControllers,
+                                                               selectedDomains: [],
+                                                               customURLToOpen: nil,
+                                                               close: true)
+                    await fireCoordinator.fireViewModel.fire.burnEntity(entity, includingHistory: true, includingChatHistory: includeChats)
+                } else {
+                    fireCoordinator.fireViewModel.fire.burnChatHistory()
+                }
+            case .delete:
                 // FireCoordinator handles burning for Fire Dialog View
                 if featureFlagger.isFeatureOn(.fireDialog) {
                     reloadHistoryTabs()
                 } else {
                     historyCoordinator.burnAll {
                         reloadHistoryTabs()
-                    }
-                    if includeChats {
-                        fireCoordinator.fireViewModel.fire.burnChatHistory()
                     }
                 }
             case .noAction:

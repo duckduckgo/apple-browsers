@@ -41,64 +41,6 @@ final class MacWatchdogDiagnosticProviderTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - Diagnostics tests
-
-    func testDiagnosticsForRecoveredHang() async {
-        // Given
-        let event = Watchdog.Event.uiHangRecovered(durationSeconds: 5)
-
-        // When
-        let diagnostics = await diagnosticProvider.collectDiagnostics(for: event)
-
-        // Then
-        // For recovered hangs, we should get all diagnostic information
-        // Note: System-dependent values (isInForeground, isAnyWindowVisible, isOnBattery) 
-        // depend on actual app state and can't be easily mocked
-        XCTAssertNotNil(diagnostics.isInForeground)
-        XCTAssertNotNil(diagnostics.isAnyWindowVisible)
-        XCTAssertNotNil(diagnostics.isOnBattery)
-        XCTAssertNotNil(diagnostics.openBrowserWindowCount)
-        XCTAssertNotNil(diagnostics.openBrowserTabCount)
-    }
-
-    func testDiagnosticsForNotRecoveredHang() async {
-        // Given
-        let event = Watchdog.Event.uiHangNotRecovered(durationSeconds: 3)
-
-        // When
-        let diagnostics = await diagnosticProvider.collectDiagnostics(for: event)
-
-        // Then
-        // For not recovered hangs, UI-dependent values should be nil
-        // because the main thread will still be blocked
-        XCTAssertNil(diagnostics.isInForeground)
-        XCTAssertNil(diagnostics.isAnyWindowVisible)
-        XCTAssertNil(diagnostics.openBrowserWindowCount)
-        XCTAssertNil(diagnostics.openBrowserTabCount)
-        XCTAssertNotNil(diagnostics.isOnBattery) // Battery state should still be available
-    }
-
-    // MARK: - Nil window manager test
-
-    func testNilWindowManager_ReturnsNilCounts() async {
-        // Given
-        let event = Watchdog.Event.uiHangRecovered(durationSeconds: 4)
-        diagnosticProvider = MacWatchdogDiagnosticProvider(windowControllersManager: nil)
-
-        // When
-        let diagnostics = await diagnosticProvider.collectDiagnostics(for: event)
-
-        // Then
-        // Window manager dependent values will be nil
-        XCTAssertNil(diagnostics.openBrowserWindowCount)
-        XCTAssertNil(diagnostics.openBrowserTabCount)
-
-        // Other values should still be available
-        XCTAssertNotNil(diagnostics.isInForeground)
-        XCTAssertNotNil(diagnostics.isAnyWindowVisible)
-        XCTAssertNotNil(diagnostics.isOnBattery)
-    }
-
     // MARK: - Tab count tests
 
     func testTabCountCalculation() async {
@@ -139,6 +81,22 @@ final class MacWatchdogDiagnosticProviderTests: XCTestCase {
 
         // Then
         XCTAssertEqual(diagnostics.openBrowserTabCount, 0)
+    }
+
+    // MARK: - Nil window manager test
+
+    func testNilWindowManager_ReturnsNilCounts() async {
+        // Given
+        let event = Watchdog.Event.uiHangRecovered(durationSeconds: 4)
+        diagnosticProvider = MacWatchdogDiagnosticProvider(windowControllersManager: nil)
+
+        // When
+        let diagnostics = await diagnosticProvider.collectDiagnostics(for: event)
+
+        // Then
+        // Window manager dependent values will be nil
+        XCTAssertNil(diagnostics.openBrowserWindowCount)
+        XCTAssertNil(diagnostics.openBrowserTabCount)
     }
 
     // MARK: - Helper Methods

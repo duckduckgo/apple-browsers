@@ -191,8 +191,7 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
     }
 
     func didGeneratePageLoadTiming(_ timing: WKPageLoadTiming) {
-        guard featureFlagger.isFeatureOn(.webKitPerformanceReporting),
-              let navigationStart = timing.navigationStart else { return }
+        guard let navigationStart = timing.navigationStart else { return }
 
         // Calculate all timing data as durations from navigation start
         var firstVisualLayoutMs: Int?

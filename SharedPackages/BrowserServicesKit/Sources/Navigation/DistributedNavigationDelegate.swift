@@ -26,6 +26,12 @@ public final class DistributedNavigationDelegate: NSObject {
 
     internal var responders = ResponderChain()
     private var customDelegateMethodHandlers = [Selector: any AnyResponderRef]()
+    private let isPerformanceReportingEnabled: Bool
+
+    public init(isPerformanceReportingEnabled: Bool = false) {
+        self.isPerformanceReportingEnabled = isPerformanceReportingEnabled
+        super.init()
+    }
 
     /// approved navigation before `navigationDidStart` event received (useful for authentication challenge and redirect events)
     @MainActor
@@ -961,6 +967,8 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
     @objc(_webView:didGeneratePageLoadTiming:)
     @available(macOS 15.2, *)
     public func webView(_ webView: WKWebView, didGeneratePageLoadTiming timing: NSObject) {
+        guard isPerformanceReportingEnabled else { return }
+
         // Create wrapper that extracts data from WebKit's private _WKPageLoadTiming object
         let pageLoadTiming = WKPageLoadTiming(timing)
 

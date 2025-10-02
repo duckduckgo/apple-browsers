@@ -24,6 +24,7 @@ import PixelKit
 @MainActor
 final class WatchdogEventMapperTests: XCTestCase {
 
+    var pixelKit: PixelKit!
     var mockDiagnosticProvider: MockWatchdogDiagnosticProvider!
     var eventMapper: WatchdogEventMapper!
     var firedPixels: [(name: String, parameters: [String: String]?)]? = []
@@ -32,17 +33,16 @@ final class WatchdogEventMapperTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockDiagnosticProvider = MockWatchdogDiagnosticProvider()
-
-        eventMapper = WatchdogEventMapper(diagnosticProvider: mockDiagnosticProvider)
-        firedPixels = []
-
         setupMockPixelKit()
+
+        eventMapper = WatchdogEventMapper(diagnosticProvider: mockDiagnosticProvider, pixelKit: pixelKit)
+        firedPixels = []
     }
 
     override func tearDown() {
-        PixelKit.tearDown()
         mockDiagnosticProvider?.reset()
         mockDiagnosticProvider = nil
+        pixelKit = nil
         eventMapper = nil
         firedPixels = nil
         onPixelFired = nil
@@ -60,7 +60,7 @@ final class WatchdogEventMapperTests: XCTestCase {
             }
         }
 
-        PixelKit.setUp(
+        pixelKit = PixelKit(
             dryRun: false,
             appVersion: "1.0.0",
             source: "test",

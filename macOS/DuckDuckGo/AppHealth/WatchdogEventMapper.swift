@@ -52,9 +52,14 @@ public protocol WatchdogDiagnosticProvider {
 public class WatchdogEventMapper: EventMapping<Watchdog.Event> {
     /// Provides diagnostic parameters to be included with the pixel, such as browser window count, whether the device is on battery or plugged in, etc.
     let diagnosticProvider: WatchdogDiagnosticProvider
+    private let _pixelKit: PixelKit?
+    private var pixelKit: PixelKit? {
+        _pixelKit ?? PixelKit.shared
+    }
 
-    public init(diagnosticProvider: WatchdogDiagnosticProvider) {
+    public init(diagnosticProvider: WatchdogDiagnosticProvider, pixelKit: PixelKit? = nil) {
         self.diagnosticProvider = diagnosticProvider
+        self._pixelKit = pixelKit
 
         super.init { _, _, _, _ in }
 
@@ -77,7 +82,7 @@ public class WatchdogEventMapper: EventMapping<Watchdog.Event> {
                         stackTrace: nil
                     )
 
-                    PixelKit.fire(pixel, frequency: .dailyAndCount)
+                    self.pixelKit?.fire(pixel, frequency: .dailyAndCount)
                 }
             case .uiHangRecovered(let durationSeconds):
                 Task {
@@ -96,7 +101,7 @@ public class WatchdogEventMapper: EventMapping<Watchdog.Event> {
                         stackTrace: nil
                     )
 
-                    PixelKit.fire(pixel, frequency: .dailyAndCount)
+                    self.pixelKit?.fire(pixel, frequency: .dailyAndCount)
                 }
             }
         }

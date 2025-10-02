@@ -784,6 +784,10 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         aiChatSettings.showShortcutInAddressBar = false
     }
 
+    func addressBarButtonsViewControllerHideAskAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
+        aiChatSettings.showShortcutInAddressBarWhenTyping = false
+    }
+
     func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         _ = escapeKeyDown()
     }

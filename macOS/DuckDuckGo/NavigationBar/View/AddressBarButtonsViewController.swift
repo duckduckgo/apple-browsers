@@ -32,6 +32,7 @@ protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
     func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
+    func addressBarButtonsViewControllerHideAskAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
 }
@@ -537,6 +538,7 @@ final class AddressBarButtonsViewController: NSViewController {
             .receive(on: DispatchQueue.main)
             .sink(receiveValue: { [weak self] in
                 self?.updateAIChatButtonVisibility()
+                self?.updateAskAIChatButtonVisibility()
                 self?.configureAIChatButton()
             }).store(in: &cancellables)
     }
@@ -1096,6 +1098,15 @@ final class AddressBarButtonsViewController: NSViewController {
         delegate?.addressBarButtonsViewControllerHideAIChatButtonClicked(self)
     }
 
+    @objc func hideAskAIChatButtonAction(_ sender: NSMenuItem) {
+        // With the improvement both buttons have separate setting, without both toggle same option.
+        if aiChatMenuConfig.shouldShowSettingsImprovements {
+            delegate?.addressBarButtonsViewControllerHideAskAIChatButtonClicked(self)
+        } else {
+            delegate?.addressBarButtonsViewControllerHideAIChatButtonClicked(self)
+        }
+    }
+
     @objc func openAIChatSettingsContextMenuAction(_ sender: NSMenuItem) {
         delegate?.addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(self)
     }
@@ -1192,18 +1203,7 @@ final class AddressBarButtonsViewController: NSViewController {
         askAIChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.askAIChatButton")
     }
 
-    private func configureContextMenuForAIChatButtons(isSidebarOpen: Bool? = nil) {
-        guard featureFlagger.isFeatureOn(.aiChatSidebar) else {
-
-            aiChatButton.menu = NSMenu {
-                NSMenuItem(title: UserText.aiChatAddressBarHideButton,
-                           action: #selector(hideAIChatButtonAction(_:)),
-                           keyEquivalent: "")
-            }
-
-            return
-        }
-
+    private func createAIChatContextMenu(hideButtonAction: Selector, isSidebarOpen: Bool? = nil) -> NSMenu {
         let shouldShowOpenAIChatButton: Bool = {
             guard let tabContent = tabViewModel?.tab.content, case .url = tabContent else {
                 return false
@@ -1211,7 +1211,7 @@ final class AddressBarButtonsViewController: NSViewController {
             return true
         }()
 
-        let contextMenu = NSMenu {
+        return NSMenu {
             if shouldShowOpenAIChatButton {
                 let contextMenuTitle: String = {
                     if aiChatMenuConfig.shouldOpenAIChatInSidebar {
@@ -1231,16 +1231,29 @@ final class AddressBarButtonsViewController: NSViewController {
                            keyEquivalent: "")
             }
             NSMenuItem(title: UserText.aiChatAddressBarHideButton,
-                       action: #selector(hideAIChatButtonAction(_:)),
+                       action: hideButtonAction,
                        keyEquivalent: "")
             NSMenuItem.separator()
             NSMenuItem(title: UserText.aiChatOpenSettingsButton,
                        action: #selector(openAIChatSettingsContextMenuAction(_:)),
                        keyEquivalent: "")
         }
+    }
 
-        aiChatButton.menu = contextMenu
-        askAIChatButton.menu = contextMenu
+    private func configureContextMenuForAIChatButtons(isSidebarOpen: Bool? = nil) {
+        guard featureFlagger.isFeatureOn(.aiChatSidebar) else {
+
+            aiChatButton.menu = NSMenu {
+                NSMenuItem(title: UserText.aiChatAddressBarHideButton,
+                           action: #selector(hideAIChatButtonAction(_:)),
+                           keyEquivalent: "")
+            }
+
+            return
+        }
+
+        aiChatButton.menu = createAIChatContextMenu(hideButtonAction: #selector(hideAIChatButtonAction(_:)), isSidebarOpen: isSidebarOpen)
+        askAIChatButton.menu = createAIChatContextMenu(hideButtonAction: #selector(hideAskAIChatButtonAction(_:)), isSidebarOpen: isSidebarOpen)
     }
 
     // MARK: - Buttons and Actions

@@ -241,10 +241,6 @@ private struct IssueDescriptionFormView: View {
             }
     }
 
-    private var textFieldBackgroundColor: Color {
-        Color(singleUseColor: .unifiedFeedbackFieldBackground)
-    }
-
     @ViewBuilder
     private func form() -> some View {
         ScrollView {
@@ -260,25 +256,9 @@ private struct IssueDescriptionFormView: View {
                                                    focusState: $isTextEditorFocused,
                                                    scrollViewProxy: scrollView)
                             .padding(.bottom, 10)
-                        Text(UserText.pproFeedbackFormEmailLabel)
-                            .font(.caption)
-                            .textCase(.uppercase)
-                            .foregroundColor(.secondary)
+                        supportLink()
                             .padding(.horizontal, 16)
-                            .padding(.bottom, 4)
-                        TextField(UserText.pproFeedbackFormEmailPlaceholder, text: $viewModel.userEmail)
-                            .font(.body)
-                            .foregroundColor(.primary)
-                            .padding(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                            .clipShape(RoundedRectangle(cornerRadius: 8.0, style: .continuous))
-                            .background(
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 8.0)
-                                        .stroke(textFieldBackgroundColor, lineWidth: 0.4)
-                                    RoundedRectangle(cornerRadius: 8.0)
-                                        .fill(textFieldBackgroundColor)
-                                }
-                            )
+                            .padding(.bottom, 10)
                         footer()
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
@@ -320,6 +300,21 @@ private struct IssueDescriptionFormView: View {
         Spacer()
             .frame(height: 1)
             .id(1)
+    }
+
+    @ViewBuilder
+    private func supportLink() -> some View {
+        Text(.init(UserText.pproFeedbackFormSupportText))
+            .multilineTextAlignment(.leading)
+            .lineLimit(nil)
+            .fixedSize(horizontal: false, vertical: true)
+            .tint(Color(designSystemColor: .accent))
+            .environment(\.openURL, OpenURLAction { _ in
+                Task {
+                    await viewModel.process(action: .contactSupportClick)
+                }
+                return .handled
+            })
     }
 
     @ViewBuilder

@@ -25,6 +25,7 @@ import BrowserServicesKit
 
 final class UnifiedFeedbackFormViewModel: ObservableObject {
     private static let feedbackEndpoint = URL(string: "https://subscriptions.duckduckgo.com/api/feedback")!
+    private static let supportURL = URL(string: "https://duckduckgo.com/subscription-support")!
     private static let platform = "ios"
 
     enum Source: String {
@@ -64,6 +65,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         case reportSubcategory
         case reportFAQClick
         case reportSubmitShow
+        case contactSupportClick
     }
 
     enum Error: String, Swift.Error {
@@ -117,12 +119,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     @Published var selectedSubcategory: String? {
         didSet {
             feedbackFormText = ""
-        }
-    }
-
-    @Published var userEmail = "" {
-        didSet {
-            updateSubmitButtonStatus()
         }
     }
 
@@ -231,6 +227,8 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
                                                                category: selectedCategory,
                                                                subcategory: selectedSubcategory)
             }
+        case .contactSupportClick:
+            openSupport()
         }
     }
 
@@ -252,7 +250,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         }()
 
         if let url {
-            await UIApplication.shared.open(url)
+            LaunchTabNotification.postLaunchTabNotification(urlString: url.absoluteString)
         }
     }
 
@@ -303,13 +301,13 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     }
 
     private func submitIssue(metadata: UnifiedFeedbackMetadata?) async throws {
-        guard !userEmail.isEmpty, let selectedCategory else { return }
+        guard let selectedCategory else { return }
 
         guard let accessToken = try? await subscriptionManager.getAccessToken() else {
             throw Error.missingAccessToken
         }
 
-        let payload = Payload(userEmail: userEmail,
+        let payload = Payload(userEmail: "",
                               feedbackSource: source,
                               platform: Self.platform,
                               problemCategory: selectedCategory,
@@ -330,13 +328,10 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
 
 
     private func updateSubmitButtonStatus() {
-        self.submitButtonEnabled = viewState.canSubmit && !feedbackFormText.isEmpty && (userEmail.isEmpty || userEmail.isValidEmail)
+        self.submitButtonEnabled = viewState.canSubmit && !feedbackFormText.isEmpty
     }
-}
 
-private extension String {
-    var isValidEmail: Bool {
-        guard let regex = try? NSRegularExpression(pattern: #"[^\s]+@[^\s]+\.[^\s]+"#) else { return false }
-        return matches(regex)
+    private func openSupport() {
+        LaunchTabNotification.postLaunchTabNotification(urlString: Self.supportURL.absoluteString)
     }
 }

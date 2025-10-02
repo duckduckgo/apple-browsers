@@ -109,7 +109,6 @@ struct UnifiedFeedbackFormViewModelTests {
         #expect(viewModel.selectedReportType == nil)
         #expect(viewModel.selectedCategory == nil)
         #expect(viewModel.selectedSubcategory == nil)
-        #expect(viewModel.userEmail.isEmpty)
     }
 
     @Test func testInitialization_DefaultCategoriesIncludeSubscription() async throws {
@@ -347,31 +346,23 @@ struct UnifiedFeedbackFormViewModelTests {
         #expect(viewModel.submitButtonEnabled == false)
     }
 
-    @Test func testSubmitButton_WhenFormHasTextButInvalidEmail_IsDisabled() {
+    @Test func testSubmitButton_WhenFormHasText_IsEnabled() {
         let viewModel = makeViewModel()
 
         viewModel.feedbackFormText = "Some feedback"
-        viewModel.userEmail = "invalid-email"
+
+        #expect(viewModel.submitButtonEnabled == true)
+    }
+
+    @Test func testSubmitButton_WhenFormTextCleared_IsDisabled() {
+        let viewModel = makeViewModel()
+
+        viewModel.feedbackFormText = "Some feedback"
+        #expect(viewModel.submitButtonEnabled == true)
+
+        viewModel.feedbackFormText = ""
 
         #expect(viewModel.submitButtonEnabled == false)
-    }
-
-    @Test func testSubmitButton_WhenFormHasTextAndValidEmail_IsEnabled() {
-        let viewModel = makeViewModel()
-
-        viewModel.feedbackFormText = "Some feedback"
-        viewModel.userEmail = "test@example.com"
-
-        #expect(viewModel.submitButtonEnabled == true)
-    }
-
-    @Test func testSubmitButton_WhenFormHasTextAndNoEmail_IsEnabled() {
-        let viewModel = makeViewModel()
-
-        viewModel.feedbackFormText = "Some feedback"
-        viewModel.userEmail = ""
-
-        #expect(viewModel.submitButtonEnabled == true)
     }
 
     // MARK: - Feedback Submission Tests

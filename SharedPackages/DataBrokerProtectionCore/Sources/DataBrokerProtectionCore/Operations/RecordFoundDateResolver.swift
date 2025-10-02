@@ -91,6 +91,6 @@ extension BrokerProfileQueryData {
 
 extension OptOutJobData {
     fileprivate var validCreatedDate: Date? {
-        createdDate == Date(timeIntervalSince1970: 0) ? nil : createdDate
+        createdDate == RecordFoundDateResolver.defaultDate ? nil : createdDate
     }
 }

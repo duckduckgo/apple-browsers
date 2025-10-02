@@ -66,7 +66,7 @@ enum OptOutConfirmationWideEventEmitter {
 
     private static func emit(wideEvent: WideEventManaging?,
                              attemptID: UUID?,
-                             recordFoundDate: Date? = nil,
+                             recordFoundDate: Date = RecordFoundDateResolver.defaultDate,
                              confirmationDate: Date? = nil,
                              dataBrokerURL: String,
                              dataBrokerVersion: String?,

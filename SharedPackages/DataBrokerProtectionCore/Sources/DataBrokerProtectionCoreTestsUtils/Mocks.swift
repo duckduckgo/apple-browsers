@@ -1166,7 +1166,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         return lastHistoryEventToReturn
     }
 
-    public func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) -> [HistoryEvent] {
+    public func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent] {
         return scanEvents
     }
 

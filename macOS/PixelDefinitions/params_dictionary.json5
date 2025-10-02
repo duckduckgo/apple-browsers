@@ -120,6 +120,6 @@
         key: 'navigation_type',
         type: 'string',
         description: 'Type of navigation that triggered the loading',
-        examples: ['linkActivated', 'formSubmitted', 'backForward', 'reload', 'formResubmitted', 'other'],
+        enum: ['linkActivated', 'formSubmitted', 'formResubmitted', 'backForward', 'reload', 'redirect', 'sessionRestoration', 'alternateHtmlLoad', 'sameDocumentNavigation', 'other', 'custom'],
     },
 }

@@ -87,6 +87,14 @@ struct FireDialogView: ModalView {
         self.onConfirm = onConfirm
     }
 
+    private var isIncludeHistoryEnabled: Bool {
+        viewModel.historyItemsCountForCurrentScope > 0
+    }
+
+    private var isIncludeCookiesAndSiteDataEnabled: Bool {
+        viewModel.cookiesSitesCountForCurrentScope > 0
+    }
+
     private var historySubtitle: String {
         let count = viewModel.historyItemsCountForCurrentScope
         return count == 0 ? UserText.none : UserText.fireDialogHistoryItemsSubtitle(count)
@@ -98,7 +106,9 @@ struct FireDialogView: ModalView {
     }
 
     private var isDeleteEnabled: Bool {
-        viewModel.includeTabsAndWindows || viewModel.includeHistory || viewModel.includeCookiesAndSiteData
+        (viewModel.mode.shouldShowCloseTabsToggle && viewModel.includeTabsAndWindows)
+        || (viewModel.includeHistory && isIncludeHistoryEnabled)
+        || (viewModel.includeCookiesAndSiteData && isIncludeCookiesAndSiteDataEnabled)
     }
 
     var body: some View {
@@ -209,7 +219,11 @@ struct FireDialogView: ModalView {
                 icon: DesignSystemImages.Glyphs.Size16.history,
                 title: UserText.fireDialogHistoryTitle,
                 subtitle: historySubtitle,
-                isOn: $viewModel.includeHistory
+                isOn: Binding {
+                    viewModel.includeHistory && isIncludeHistoryEnabled
+                } set: {
+                    viewModel.includeHistory = $0
+                }
             )
             sectionDivider()
 
@@ -218,10 +232,11 @@ struct FireDialogView: ModalView {
                 icon: DesignSystemImages.Glyphs.Size16.cookie,
                 title: UserText.cookiesAndSiteDataTitle,
                 subtitle: cookiesSubtitle,
-                isOn: $viewModel.includeCookiesAndSiteData,
+                isOn: Binding { viewModel.includeCookiesAndSiteData && isIncludeCookiesAndSiteDataEnabled } set: { viewModel.includeCookiesAndSiteData = $0 },
                 infoAction: { isShowingSitesOverlay = true },
-                infoEnabled: viewModel.includeCookiesAndSiteData && viewModel.cookiesSitesCountForCurrentScope > 0
+                infoEnabled: isIncludeCookiesAndSiteDataEnabled
             )
+            .disabled(!isIncludeCookiesAndSiteDataEnabled)
             sectionDivider(padding: 0)
 
             // Fireproof section

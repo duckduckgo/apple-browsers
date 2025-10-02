@@ -61,23 +61,20 @@ function collectPerformanceMetrics() {
                 largestContentfulPaint: largestContentfulPaint,
 
                 // Network timing metrics
-                // Note: Safari WebDriver doesn't provide timing properties in automation context
-                // Timing values return 0, so we mark them as N/A. These work in native WKWebView but not via WebDriver.
-                ttfb: (navigation.responseStart && navigation.fetchStart && navigation.responseStart !== navigation.fetchStart)
+                ttfb: (typeof navigation.responseStart === 'number' && typeof navigation.fetchStart === 'number')
                     ? (navigation.responseStart - navigation.fetchStart)
                     : NOT_AVAILABLE,
-                responseTime: (navigation.responseEnd && navigation.responseStart && navigation.responseEnd > navigation.responseStart)
+                responseTime: (typeof navigation.responseEnd === 'number' && typeof navigation.responseStart === 'number')
                     ? (navigation.responseEnd - navigation.responseStart)
                     : NOT_AVAILABLE,
-                serverTime: (navigation.responseStart && navigation.requestStart && navigation.responseStart !== navigation.requestStart)
+                serverTime: (typeof navigation.responseStart === 'number' && typeof navigation.requestStart === 'number')
                     ? (navigation.responseStart - navigation.requestStart)
                     : NOT_AVAILABLE,
 
                 // Size metrics - return 0 as legitimate value (not N/A)
-                // Safari WebDriver doesn't populate these, but 0 is a valid size
-                transferSize: navigation.transferSize || 0,
-                encodedBodySize: navigation.encodedBodySize || 0,
-                decodedBodySize: navigation.decodedBodySize || 0,
+                transferSize: typeof navigation.transferSize === 'number' ? navigation.transferSize : 0,
+                encodedBodySize: typeof navigation.encodedBodySize === 'number' ? navigation.encodedBodySize : 0,
+                decodedBodySize: typeof navigation.decodedBodySize === 'number' ? navigation.decodedBodySize : 0,
 
                 // Resource metrics
                 resourceCount: resources.length,

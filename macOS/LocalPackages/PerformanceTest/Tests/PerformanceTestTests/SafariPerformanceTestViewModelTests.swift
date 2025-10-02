@@ -44,15 +44,15 @@ final class SafariPerformanceTestViewModelTests: XCTestCase {
 
     func testRunTest_transitionsToRunningState() async {
         let url = URL(string: "https://example.com")!
-        let viewModel = SafariPerformanceTestViewModel(url: url)
+        let viewModel = SafariPerformanceTestViewModel(url: url, runnerFactory: { url, iterations in
+            MockSafariTestExecutor(url: url, iterations: iterations)
+        })
 
-        // Run the test (it will fail without Node.js or with invalid URL, but we can test state)
         await viewModel.runTest()
 
-        // After completion, should either have error message or results
-        // In test environment without Node.js, we expect an error
-        let hasErrorOrResults = viewModel.errorMessage != nil || viewModel.resultsFilePath != nil
-        XCTAssertTrue(hasErrorOrResults, "Should have either error message or results after running test")
+        // Should have results from mock
+        XCTAssertNotNil(viewModel.resultsFilePath)
+        XCTAssertEqual(viewModel.resultsFilePath, "/tmp/mock-results.json")
 
         // Should not be running anymore
         XCTAssertFalse(viewModel.isRunning)
@@ -102,7 +102,11 @@ final class SafariPerformanceTestViewModelTests: XCTestCase {
 
     func testRunTest_withInvalidURL_setsErrorMessage() async {
         let invalidURL = URL(string: "not-valid")!
-        let viewModel = SafariPerformanceTestViewModel(url: invalidURL)
+        let viewModel = SafariPerformanceTestViewModel(url: invalidURL, runnerFactory: { url, iterations in
+            let mock = MockSafariTestExecutor(url: url, iterations: iterations)
+            mock.shouldThrowError = SafariTestRunner.RunnerError.invalidURL
+            return mock
+        })
 
         await viewModel.runTest()
 
@@ -112,7 +116,11 @@ final class SafariPerformanceTestViewModelTests: XCTestCase {
 
     func testRunTest_withZeroIterations_setsErrorMessage() async {
         let url = URL(string: "https://example.com")!
-        let viewModel = SafariPerformanceTestViewModel(url: url)
+        let viewModel = SafariPerformanceTestViewModel(url: url, runnerFactory: { url, iterations in
+            let mock = MockSafariTestExecutor(url: url, iterations: iterations)
+            mock.shouldThrowError = SafariTestRunner.RunnerError.invalidIterationCount
+            return mock
+        })
         viewModel.selectedIterations = 0
 
         await viewModel.runTest()
@@ -125,13 +133,17 @@ final class SafariPerformanceTestViewModelTests: XCTestCase {
 
     func testRunTest_onSuccess_storesResultsFilePath() async {
         let url = URL(string: "https://example.com")!
-        let viewModel = SafariPerformanceTestViewModel(url: url)
+        let viewModel = SafariPerformanceTestViewModel(url: url, runnerFactory: { url, iterations in
+            let mock = MockSafariTestExecutor(url: url, iterations: iterations)
+            mock.mockResultsPath = "/tmp/test-results.json"
+            return mock
+        })
 
-        // We can't actually run a successful test without Node.js and Safari
-        // But we can test the property exists and is settable
-        viewModel.resultsFilePath = "/tmp/test-results.json"
+        await viewModel.runTest()
 
         XCTAssertEqual(viewModel.resultsFilePath, "/tmp/test-results.json")
+        XCTAssertNil(viewModel.errorMessage)
+        XCTAssertFalse(viewModel.isRunning)
     }
 
     // MARK: - Iteration Selection Tests

@@ -19,6 +19,39 @@
 import SwiftUI
 
 struct SafariPerformanceTestWindowView: View {
+
+    // MARK: - Constants
+
+    private enum Constants {
+        enum Text {
+            static let title = "Safari Performance Test"
+            static let testFailed = "Test Failed"
+            static let ok = "OK"
+            static let testing = "Testing"
+            static let testConfiguration = "Test Configuration"
+            static let iterations = "Iterations"
+            static let iterationsFormat = "%d iterations"
+            static let startTest = "Start Test"
+            static let testingInProgress = "Testing in Progress"
+            static let iterationProgress = "Iteration %d of %d (%d%% Complete)"
+            static let cancelTest = "Cancel Test"
+            static let testComplete = "Test Complete"
+            static let resultsSaved = "Results have been saved to:"
+            static let checkConsole = "Check the console for detailed output"
+            static let testAgain = "Test Again"
+            static let showInFinder = "Show in Finder"
+        }
+
+        enum Icons {
+            static let gauge = "gauge.high"
+            static let play = "play.fill"
+            static let checkmark = "checkmark.circle.fill"
+            static let refresh = "arrow.clockwise"
+            static let folder = "folder"
+        }
+
+        static let iterationOptions = [1, 3, 5, 10, 20]
+    }
     @ObservedObject var viewModel: SafariPerformanceTestViewModel
 
     var body: some View {
@@ -37,9 +70,9 @@ struct SafariPerformanceTestWindowView: View {
             set: { viewModel.errorMessage = $0?.message }
         )) { error in
             Alert(
-                title: Text("Test Failed"),
+                title: Text(Constants.Text.testFailed),
                 message: Text(error.message),
-                dismissButton: .default(Text("OK"))
+                dismissButton: .default(Text(Constants.Text.ok))
             )
         }
     }
@@ -50,17 +83,17 @@ struct SafariPerformanceTestWindowView: View {
         VStack(spacing: 20) {
             Spacer()
 
-            Image(systemName: "gauge.high")
+            Image(systemName: Constants.Icons.gauge)
                 .font(.system(size: 64))
                 .foregroundColor(.accentColor)
 
-            Text("Safari Performance Test")
+            Text(Constants.Text.title)
                 .font(.largeTitle)
                 .fontWeight(.semibold)
 
             if let url = viewModel.currentURL {
                 VStack(spacing: 8) {
-                    Text("Testing")
+                    Text(Constants.Text.testing)
                         .font(.body)
                         .foregroundColor(.secondary)
                     Text(url.host ?? url.absoluteString)
@@ -74,12 +107,12 @@ struct SafariPerformanceTestWindowView: View {
             }
 
             VStack(spacing: 12) {
-                Text("Test Configuration")
+                Text(Constants.Text.testConfiguration)
                     .font(.headline)
 
-                Picker("Iterations", selection: $viewModel.selectedIterations) {
-                    ForEach([1, 3, 5, 10, 20], id: \.self) { count in
-                        Text("\(count) iterations").tag(count)
+                Picker(Constants.Text.iterations, selection: $viewModel.selectedIterations) {
+                    ForEach(Constants.iterationOptions, id: \.self) { count in
+                        Text(String(format: Constants.Text.iterationsFormat, count)).tag(count)
                     }
                 }
                 .pickerStyle(.menu)
@@ -92,7 +125,7 @@ struct SafariPerformanceTestWindowView: View {
                     await viewModel.runTest()
                 }
             }) {
-                Label("Start Test", systemImage: "play.fill")
+                Label(Constants.Text.startTest, systemImage: Constants.Icons.play)
                     .frame(width: 200)
             }
             .buttonStyle(.bordered)
@@ -108,7 +141,7 @@ struct SafariPerformanceTestWindowView: View {
 
     private var progressView: some View {
         VStack(spacing: 20) {
-            Text("Testing in Progress")
+            Text(Constants.Text.testingInProgress)
                 .font(.title)
                 .fontWeight(.semibold)
 
@@ -122,12 +155,12 @@ struct SafariPerformanceTestWindowView: View {
                 .multilineTextAlignment(.center)
 
             if viewModel.currentIteration > 0 {
-                Text("Iteration \(viewModel.currentIteration) of \(viewModel.totalIterations) (\(Int(viewModel.progress * 100))% Complete)")
+                Text(String(format: Constants.Text.iterationProgress, viewModel.currentIteration, viewModel.totalIterations, Int(viewModel.progress * 100)))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
 
-            Button("Cancel Test") {
+            Button(Constants.Text.cancelTest) {
                 viewModel.cancelTest()
             }
             .buttonStyle(.bordered)
@@ -141,16 +174,16 @@ struct SafariPerformanceTestWindowView: View {
         VStack(spacing: 20) {
             Spacer()
 
-            Image(systemName: "checkmark.circle.fill")
+            Image(systemName: Constants.Icons.checkmark)
                 .font(.system(size: 64))
                 .foregroundColor(.green)
 
-            Text("Test Complete")
+            Text(Constants.Text.testComplete)
                 .font(.largeTitle)
                 .fontWeight(.semibold)
 
             VStack(spacing: 12) {
-                Text("Results have been saved to:")
+                Text(Constants.Text.resultsSaved)
                     .font(.body)
                     .foregroundColor(.secondary)
 
@@ -163,7 +196,7 @@ struct SafariPerformanceTestWindowView: View {
             }
             .padding()
 
-            Text("Check the console for detailed output")
+            Text(Constants.Text.checkConsole)
                 .font(.caption)
                 .foregroundColor(.secondary)
 
@@ -171,14 +204,14 @@ struct SafariPerformanceTestWindowView: View {
                 Button(action: {
                     viewModel.reset()
                 }) {
-                    Label("Test Again", systemImage: "arrow.clockwise")
+                    Label(Constants.Text.testAgain, systemImage: Constants.Icons.refresh)
                 }
                 .buttonStyle(.bordered)
 
                 Button(action: {
                     NSWorkspace.shared.selectFile(resultsPath, inFileViewerRootedAtPath: "")
                 }) {
-                    Label("Show in Finder", systemImage: "folder")
+                    Label(Constants.Text.showInFinder, systemImage: Constants.Icons.folder)
                 }
                 .buttonStyle(.bordered)
             }

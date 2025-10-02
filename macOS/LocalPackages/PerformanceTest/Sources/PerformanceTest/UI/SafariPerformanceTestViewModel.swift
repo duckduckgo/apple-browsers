@@ -38,7 +38,8 @@ public final class SafariPerformanceTestViewModel: ObservableObject {
 
     // MARK: - Private Properties
 
-    private var runner: SafariTestRunner?
+    private var runner: SafariTestExecuting?
+    private let runnerFactory: @MainActor (URL, Int) -> SafariTestExecuting
     private let logger = Logger(
         subsystem: "com.duckduckgo.macos.browser.performancetest",
         category: "SafariPerformanceTestViewModel"
@@ -46,12 +47,14 @@ public final class SafariPerformanceTestViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    public init(url: URL) {
+    public init(url: URL, runnerFactory: (@MainActor (URL, Int) -> SafariTestExecuting)? = nil) {
         self.currentURL = url
+        self.runnerFactory = runnerFactory ?? { url, iterations in SafariTestRunner(url: url, iterations: iterations) }
     }
 
-    public init() {
+    public init(runnerFactory: (@MainActor (URL, Int) -> SafariTestExecuting)? = nil) {
         self.currentURL = nil
+        self.runnerFactory = runnerFactory ?? { url, iterations in SafariTestRunner(url: url, iterations: iterations) }
     }
 
     // MARK: - Public Methods
@@ -72,8 +75,8 @@ public final class SafariPerformanceTestViewModel: ObservableObject {
 
         logger.log("Starting Safari performance test for \(url.absoluteString)")
 
-        // Create runner
-        let runner = SafariTestRunner(url: url, iterations: selectedIterations)
+        // Create runner using factory
+        var runner = runnerFactory(url, selectedIterations)
         self.runner = runner
 
         // Set up progress handler

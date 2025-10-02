@@ -19,12 +19,8 @@
 import Foundation
 import os.log
 
-func NSLogPublic(_ message: String) {
-    NSLog("%@", message)
-}
-
 @MainActor
-public class SafariTestRunner {
+public class SafariTestRunner: SafariTestExecuting {
 
     // MARK: - Public Properties
 
@@ -53,8 +49,8 @@ public class SafariTestRunner {
     // MARK: - Computed Properties
 
     public var scriptPath: String? {
-        // Try Bundle.module first (SPM)
         #if SWIFT_PACKAGE
+        // SPM test environment
         if let resourceURL = Bundle.module.resourceURL {
             let scriptURL = resourceURL
                 .appendingPathComponent("SafariTestRunner")
@@ -67,37 +63,20 @@ public class SafariTestRunner {
         }
         #endif
 
-        // Try finding via Bundle(for:)
+        // App bundle environment
         let bundle = Bundle(for: SafariTestRunner.self)
-
-        // First try direct resource URL
-        if let resourceURL = bundle.resourceURL {
-            let scriptURL = resourceURL
-                .appendingPathComponent("SafariTestRunner")
-                .appendingPathComponent("bin")
-                .appendingPathComponent("safari-performance-test")
-
-            if FileManager.default.fileExists(atPath: scriptURL.path) {
-                return scriptURL.path
-            }
+        guard let resourcePath = bundle.resourcePath,
+              let performanceBundle = Bundle(path: "\(resourcePath)/PerformanceTest_PerformanceTest.bundle"),
+              let resourceURL = performanceBundle.resourceURL else {
+            return nil
         }
 
-        // Try looking in app bundle's PerformanceTest_PerformanceTest.bundle
-        if let resourcePath = bundle.resourcePath,
-           let performanceBundle = Bundle(path: "\(resourcePath)/PerformanceTest_PerformanceTest.bundle"),
-           let resourceURL = performanceBundle.resourceURL {
-            let scriptURL = resourceURL
-                .appendingPathComponent("SafariTestRunner")
-                .appendingPathComponent("bin")
-                .appendingPathComponent("safari-performance-test")
+        let scriptURL = resourceURL
+            .appendingPathComponent("SafariTestRunner")
+            .appendingPathComponent("bin")
+            .appendingPathComponent("safari-performance-test")
 
-            if FileManager.default.fileExists(atPath: scriptURL.path) {
-                return scriptURL.path
-            }
-        }
-
-        logger.log("Failed to find safari-performance-test script in bundle")
-        return nil
+        return FileManager.default.fileExists(atPath: scriptURL.path) ? scriptURL.path : nil
     }
 
     public var outputDirectory: URL {
@@ -126,18 +105,12 @@ public class SafariTestRunner {
         }
 
         guard let scriptPath = scriptPath else {
-            NSLogPublic("ERROR: Safari test script not found in bundle")
+            logger.log("ERROR: Safari test script not found in bundle")
             throw RunnerError.scriptNotFound
         }
 
-        // Check if script is actually executable
-        let fileManager = FileManager.default
-        let isExecutable = fileManager.isExecutableFile(atPath: scriptPath)
-        NSLogPublic("Script exists and is executable: \(isExecutable)")
-
         // Check for Node.js
         let nodePath = try await findNodePath()
-        NSLogPublic("Found Node.js at: \(nodePath)")
 
         // Check for npm dependencies and install if needed
         try await ensureNpmDependencies(nodePath: nodePath, scriptPath: scriptPath)
@@ -145,9 +118,8 @@ public class SafariTestRunner {
         // Create output directory
         let outputDir = outputDirectory
         try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
-        NSLogPublic("Output directory: \(outputDir.path)")
 
-        NSLogPublic("Starting Safari performance test: \(self.url.absoluteString), \(self.iterations) iterations")
+        logger.log("Starting Safari performance test: \(self.url.absoluteString), \(self.iterations) iterations")
 
         // Create and configure process
         let process = Process()
@@ -156,9 +128,6 @@ public class SafariTestRunner {
         process.executableURL = URL(fileURLWithPath: nodePath)
         let args = buildProcessArguments(scriptPath: scriptPath, outputPath: outputDir.path)
         process.arguments = args
-
-        NSLogPublic("Script path: \(scriptPath)")
-        NSLogPublic("Command: \(nodePath) \(args.joined(separator: " "))")
 
         // Set up pipes for output
         self.outputPipe = Pipe()
@@ -183,9 +152,8 @@ public class SafariTestRunner {
         // Run the process
         do {
             try process.run()
-            NSLogPublic("Process started successfully")
         } catch {
-            NSLogPublic("ERROR: Failed to start Safari test process: \(error.localizedDescription)")
+            logger.log("Failed to start Safari test process: \(error.localizedDescription)")
             throw RunnerError.processExecutionFailed(error.localizedDescription)
         }
 
@@ -220,13 +188,13 @@ public class SafariTestRunner {
         // Check exit code
         let exitCode = process.terminationStatus
         if exitCode != 0 {
-            NSLogPublic("Safari test process failed with exit code: \(exitCode)")
+            logger.log("Safari test process failed with exit code: \(exitCode)")
             throw RunnerError.processFailedWithExitCode(Int(exitCode))
         }
 
         // Find the results JSON file
         let resultsPath = try findResultsFile(in: outputDir)
-        NSLogPublic("Safari test completed successfully. Results at: \(resultsPath)")
+        logger.log("Safari test completed successfully. Results at: \(resultsPath)")
 
         return resultsPath
     }
@@ -315,6 +283,7 @@ public class SafariTestRunner {
 
     // MARK: - Private Methods
 
+    // Makes sure Node and NPM are installed and the dependencies are installed
     private func ensureNpmDependencies(nodePath: String, scriptPath: String) async throws {
         // Get the SafariTestRunner directory (parent of bin/)
         let scriptURL = URL(fileURLWithPath: scriptPath)
@@ -322,22 +291,18 @@ public class SafariTestRunner {
         let nodeModulesPath = safariTestRunnerDir.appendingPathComponent("node_modules")
         let packageJsonPath = safariTestRunnerDir.appendingPathComponent("package.json")
 
-        NSLogPublic("Checking for npm dependencies at: \(nodeModulesPath.path)")
-
         // Check if package.json exists
         guard FileManager.default.fileExists(atPath: packageJsonPath.path) else {
-            NSLogPublic("No package.json found, skipping npm install")
             return
         }
 
         // Check if node_modules exists
         if FileManager.default.fileExists(atPath: nodeModulesPath.path) {
-            NSLogPublic("npm dependencies already installed")
             return
         }
 
         // Need to install dependencies
-        NSLogPublic("Installing npm dependencies...")
+        logger.log("Installing npm dependencies...")
         progressHandler?(0, iterations, "Installing npm dependencies...")
 
         // Find npm (should be in same directory as node)
@@ -357,53 +322,24 @@ public class SafariTestRunner {
         do {
             try process.run()
 
-            // Monitor output
-            Task {
-                let handle = outputPipe.fileHandleForReading
-                while process.isRunning {
-                    let data = handle.availableData
-                    if !data.isEmpty, let output = String(data: data, encoding: .utf8) {
-                        for line in output.components(separatedBy: .newlines) where !line.isEmpty {
-                            NSLogPublic("npm: \(line)")
-                        }
-                    }
-                    try? await Task.sleep(nanoseconds: 100_000_000)
-                }
-            }
-
             process.waitUntilExit()
 
             let exitCode = process.terminationStatus
             if exitCode != 0 {
                 let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
                 let errorOutput = String(data: errorData, encoding: .utf8) ?? "Unknown error"
-                NSLogPublic("npm install failed: \(errorOutput)")
+                logger.log("npm install failed: \(errorOutput)")
                 throw RunnerError.npmInstallFailed
             }
 
-            NSLogPublic("npm dependencies installed successfully")
+            logger.log("npm dependencies installed successfully")
         } catch {
-            NSLogPublic("ERROR: Failed to install npm dependencies: \(error.localizedDescription)")
+            logger.log("Failed to install npm dependencies: \(error.localizedDescription)")
             throw RunnerError.npmInstallFailed
         }
     }
 
     private func findNodePath() async throws -> String {
-        // Try common Node.js installation paths
-        let commonPaths = [
-            "/usr/local/bin/node",
-            "/opt/homebrew/bin/node",
-            "/usr/bin/node",
-            "/opt/local/bin/node"
-        ]
-
-        for path in commonPaths {
-            if FileManager.default.fileExists(atPath: path) {
-                return path
-            }
-        }
-
-        // Try using 'which node'
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/which")
         process.arguments = ["node"]
@@ -450,8 +386,8 @@ public class SafariTestRunner {
                     let lines = buffer.components(separatedBy: .newlines)
                     buffer = lines.last ?? ""
 
-                    for line in lines.dropLast() where !line.isEmpty {
-                        NSLogPublic("Safari Test: \(line)")
+                    for line in lines.dropLast().filter({ !$0.isEmpty }) {
+                        logger.log("\(line)")
 
                         let (iteration, status) = parseProgressLog(line)
                         if let iteration = iteration {
@@ -492,8 +428,8 @@ public class SafariTestRunner {
                     let lines = buffer.components(separatedBy: .newlines)
                     buffer = lines.last ?? ""
 
-                    for line in lines.dropLast() where !line.isEmpty {
-                        NSLogPublic("Safari Test ERROR: \(line)")
+                    for line in lines.dropLast().filter({ !$0.isEmpty }) {
+                        logger.log("ERROR: \(line)")
                     }
                 }
 

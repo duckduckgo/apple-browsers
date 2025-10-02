@@ -55,7 +55,7 @@ final class SwipeContainerViewController: UIViewController {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -65,11 +65,13 @@ final class SwipeContainerViewController: UIViewController {
         configureInitialPosition()
     }
 
-    override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)  {
         super.viewWillTransition(to: size, with: coordinator)
 
         coordinator.animate { _ in
             self.updateLayout(viewBounds: CGRect(origin: .zero, size: size))
+        } completion: { _ in
+            self.syncScrollProgress()
         }
     }
 
@@ -169,6 +171,13 @@ final class SwipeContainerViewController: UIViewController {
     private func updateScrollProgress(_ progress: CGFloat) {
         scrollProgress = progress
         delegate?.swipeContainerViewController(self, didUpdateScrollProgress: progress)
+    }
+
+    private func syncScrollProgress() {
+        let pageWidth = swipeScrollView.frame.width
+        guard pageWidth > 0 else { return }
+        let progress = max(0, min(1, swipeScrollView.contentOffset.x / pageWidth))
+        updateScrollProgress(progress)
     }
 }
 

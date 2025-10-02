@@ -49810,6 +49810,66 @@
         }
       }
     },
+    "notification.manual.update.action.app.store" : {
+      "comment" : "App Store users action to take when a manual update is available.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klicke hier, um im App Store zu aktualisieren."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Click here to update in the App Store."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz clic aquí para actualizar en la App Store."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cliquez ici pour mettre à jour dans l'App Store."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clicca qui per aggiornare nell'App Store."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klik hier om te updaten in de App Store."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kliknij tutaj, aby zaktualizować w App Store."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clica aqui para atualizar na App Store."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновить через App Store"
+          }
+        }
+      }
+    },
     "notification.update.available" : {
       "comment" : "Notification informing user the a version of app is available.",
       "extractionState" : "extracted_with_value",
@@ -83099,6 +83159,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Доступно обновление – установить сейчас"
+          }
+        }
+      }
+    },
+    "update.available.menu.item.app.store" : {
+      "comment" : "Title of the menu item that informs user that a new update is available in the App Store. Clicking on the menu item takes the user to the App Store",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update verfügbar – Update im App Store"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Update Available - Update in the App Store"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualización disponible - Actualiza en la App Store"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mise à jour disponible - Mise à jour dans l'App Store"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiornamento disponibile - Aggiorna nell'App Store"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update beschikbaar - Werk de app bij in de App Store"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dostępna aktualizacja - zaktualizuj w App Store"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualização disponível – Atualização na App Store"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступно обновление: посетите App Store"
           }
         }
       }

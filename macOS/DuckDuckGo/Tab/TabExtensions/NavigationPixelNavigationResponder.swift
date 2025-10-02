@@ -83,8 +83,31 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
             return "sameDocumentNavigation"
         case .other:
             return "other"
-        case .custom:
-            return "custom"
+        case .custom(let customType):
+            // Only include known safe custom types to avoid PII
+            switch customType.rawValue {
+            case "userEnteredUrl":
+                return "custom.userEnteredUrl"
+            case "loadedByStateRestoration":
+                return "custom.loadedByStateRestoration"
+            case "appOpenUrl":
+                return "custom.appOpenUrl"
+            case "historyEntry":
+                return "custom.historyEntry"
+            case "bookmark":
+                return "custom.bookmark"
+            case "ui":
+                return "custom.ui"
+            case "link":
+                return "custom.link"
+            case "webViewUpdated":
+                return "custom.webViewUpdated"
+            case "userRequestedPageDownload":
+                return "custom.userRequestedPageDownload"
+            default:
+                // Unknown custom type - return generic "custom" to avoid PII
+                return "custom.unknown"
+            }
         }
     }
 

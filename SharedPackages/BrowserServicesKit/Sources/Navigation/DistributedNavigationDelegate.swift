@@ -28,7 +28,7 @@ public final class DistributedNavigationDelegate: NSObject {
     private var customDelegateMethodHandlers = [Selector: any AnyResponderRef]()
     private let isPerformanceReportingEnabled: Bool
 
-    public init(isPerformanceReportingEnabled: Bool = false) {
+    public init(isPerformanceReportingEnabled: Bool) {
         self.isPerformanceReportingEnabled = isPerformanceReportingEnabled
         super.init()
     }

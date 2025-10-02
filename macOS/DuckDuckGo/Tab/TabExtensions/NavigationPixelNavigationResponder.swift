@@ -44,7 +44,6 @@ final class NavigationPixelNavigationResponder {
     private let pixelFiring: PixelFiring?
     private let featureFlagger: FeatureFlagger
     fileprivate var previousSameDocumentNavigation: SameDocumentNavigation?
-    private weak var currentNavigation: Navigation?
 
     init(pixelFiring: PixelFiring? = PixelKit.shared, featureFlagger: FeatureFlagger) {
         self.pixelFiring = pixelFiring
@@ -137,7 +136,6 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
         if shouldFireNavigationPixel {
             pixelFiring?.fire(GeneralPixel.navigation(.regular))
             navigation.siteLoadingStartTime = Date()
-            currentNavigation = navigation
         }
     }
 

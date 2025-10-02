@@ -65,7 +65,14 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
 
-    private let isUsingTopBarPosition: Bool
+    private var isUsingTopBarPosition: Bool
+    private var isLandscapeOrientation: Bool = false {
+        didSet {
+            isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || !featureFlagger.isFeatureOn(.aiSearchBottomBarSupport) || isLandscapeOrientation
+        }
+    }
+    private var isAdjustedForTopBar: Bool
+
     lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler,
                                                    showsSeparator: !isUsingTopBarPosition,
                                                    reduceTopPaddings: !isUsingTopBarPosition)
@@ -96,7 +103,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         self.daxLogoManager = DaxLogoManager()
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
-        self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || !featureFlagger.isFeatureOn(.aiSearchBottomBarSupport)
+        self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || !featureFlagger.isFeatureOn(.aiSearchBottomBarSupport) || isLandscapeOrientation
+        self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -165,11 +173,13 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private func adjustLayoutForViewSize(_ size: CGSize) {
 
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: size)
+        self.isLandscapeOrientation = isHorizontallyCompactLayoutEnabled
 
         let horizontalMargin: CGFloat = isHorizontallyCompactLayoutEnabled ? Constants.horizontalMarginForCompactLayout : 0
         self.contentContainerViewLeadingConstraint?.constant = horizontalMargin
         self.contentContainerViewTrailingConstraint?.constant = -horizontalMargin
         self.updateDaxVisibility()
+        self.updateLayoutForCurrentOrientation()
 
         self.navigationActionBarManager?.navigationActionBarViewController?.isShowingGradient = !isHorizontallyCompactLayoutEnabled && isUsingTopBarPosition
     }
@@ -341,9 +351,36 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         if isUsingTopBarPosition {
             swipeContainerManager?.swipeContainerViewController.additionalSafeAreaInsets.bottom = 0
         } else {
+            switchBarVC.view.layoutIfNeeded()
             let barHeigthAboveSafeArea = switchBarVC.view.bounds.height - switchBarVC.view.safeAreaInsets.bottom
             swipeContainerManager?.swipeContainerViewController.additionalSafeAreaInsets.bottom = barHeigthAboveSafeArea
         }
+    }
+
+    private func updateLayoutForCurrentOrientation() {
+
+        guard isUsingTopBarPosition != isAdjustedForTopBar else { return }
+
+        var currentSelection: UITextRange?
+        if switchBarVC.textEntryViewController.isFocused {
+            currentSelection = switchBarVC.textEntryViewController.currentTextSelection
+        }
+
+        contentContainerView.subviews.forEach { $0.removeFromSuperview() }
+        navigationActionBarManager?.navigationActionBarViewController?.willMove(toParent: nil)
+        navigationActionBarManager?.navigationActionBarViewController?.view.removeFromSuperview()
+        navigationActionBarManager?.navigationActionBarViewController?.removeFromParent()
+
+        switchBarVC.showsSeparator = !isUsingTopBarPosition
+
+        installComponents()
+
+        if let currentSelection {
+            switchBarVC.textEntryViewController.focusTextField()
+            switchBarVC.textEntryViewController.currentTextSelection = currentSelection
+        }
+
+        isAdjustedForTopBar = isUsingTopBarPosition
     }
 
     private func observeRemoteMessagesChanges() {

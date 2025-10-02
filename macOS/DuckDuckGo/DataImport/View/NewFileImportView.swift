@@ -39,9 +39,8 @@ func newFileImportMultipleTypeInstructionsBuilder(source: DataImport.Source) -> 
     case .safari, .safariTechnologyPreview:
         NSLocalizedString("import.html.instructions.safari", value: """
         %d Open %@ **Safari → File → Export → Bookmarks**
-        %d Select from **Bookmarks, Passwords, and Credit Cards → Export** and save the file
-        %d Save the passwords file someplace you can find it (e.g., Desktop)
-        %d Upload the exported ZIP file to DuckDuckGo
+        %d Choose any of **Bookmarks, Passwords**, and **Credit Cards** and click **Export** (Save it somewhere easy (e.g., Desktop))
+        %d Add the exported ZIP file below
         """, comment: """
         Instructions to import Bookmarks exported as HTML from Safari.
         %N$d - step number

@@ -220,7 +220,7 @@
             {
                 key: 'feature.data.ext.fetch_jwks_latency_ms_bucketed',
                 type: 'integer',
-                description: 'Bucketed latency for purchase completion step (ms)',
+                description: 'Bucketed latency for fetch JWKS step (ms)',
                 enum: [1000, 5000, 10000, 30000, 60000, 300000, 600000],
             },
             {

@@ -328,7 +328,7 @@ final class TabBarItemCellView: NSView {
         addSubview(rightSeparatorView)
 
         subscribeToThemeChanges()
-        refreshTheme()
+        applyThemeStyles()
     }
 
     required init?(coder: NSCoder) {
@@ -467,13 +467,17 @@ final class TabBarItemCellView: NSView {
     private func subscribeToThemeChanges() {
         themeManager.themePublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.refreshTheme()
+            .sink { [weak self] theme in
+                self?.applyThemeStyles(theme: theme)
             }
             .store(in: &cancellables)
     }
 
-    private func refreshTheme() {
+    private func applyThemeStyles() {
+        applyThemeStyles(theme: theme)
+    }
+
+    private func applyThemeStyles(theme: ThemeDefinition) {
         let tabStyleProvider = theme.tabStyleProvider
         let colorsProvider = theme.colorsProvider
 
@@ -1030,11 +1034,11 @@ final class TabBarViewItem: NSCollectionViewItem {
         themeCancellable = themeManager.themePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.refreshTheme()
+                self?.applyThemeStyles()
             }
     }
 
-    private func refreshTheme() {
+    private func applyThemeStyles() {
         updateSubviews()
         view.needsDisplay = true
     }

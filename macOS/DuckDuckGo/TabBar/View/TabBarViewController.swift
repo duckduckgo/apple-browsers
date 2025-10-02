@@ -216,7 +216,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         setupTabsContainersHeight()
         subscribeToThemeChanges()
 
-        refreshTheme()
+        applyThemeStyles()
     }
 
     override func viewWillAppear() {
@@ -895,13 +895,17 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func subscribeToThemeChanges() {
         themeManager.themePublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.refreshTheme()
+            .sink { [weak self] theme in
+                self?.applyThemeStyles(theme: theme)
             }
             .store(in: &cancellables)
     }
 
-    private func refreshTheme() {
+    private func applyThemeStyles() {
+        applyThemeStyles(theme: theme)
+    }
+
+    private func applyThemeStyles(theme: ThemeDefinition) {
         let colorsProvider = theme.colorsProvider
 
         backgroundColorView.backgroundColor = colorsProvider.baseBackgroundColor

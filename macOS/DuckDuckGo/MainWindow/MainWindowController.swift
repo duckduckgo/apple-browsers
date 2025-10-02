@@ -79,7 +79,7 @@ final class MainWindowController: NSWindowController {
         subscribeToKeyWindow()
         subscribeToThemeChanges()
 
-        refreshStyle(theme: themeManager.theme)
+        applyThemeStyles()
 
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
             webExtensionManager.eventsListener.didOpenWindow(self)
@@ -167,12 +167,16 @@ final class MainWindowController: NSWindowController {
         themeManager.themePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] theme in
-                self?.refreshStyle(theme: theme)
+                self?.applyThemeStyles(theme: theme)
             }
             .store(in: &cancellables)
     }
 
-    private func refreshStyle(theme: ThemeDefinition) {
+    private func applyThemeStyles() {
+        applyThemeStyles(theme: themeManager.theme)
+    }
+
+    private func applyThemeStyles(theme: ThemeDefinition) {
         // Prevent a 2px white line from appearing above the tab bar on macOS 26
         window?.backgroundColor = theme.colorsProvider.baseBackgroundColor
     }

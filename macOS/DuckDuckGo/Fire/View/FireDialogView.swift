@@ -67,7 +67,15 @@ struct FireDialogView: ModalView {
     private let onConfirm: ((FireDialogView.Response) -> Void)?
     @Environment(\.dismiss) private var dismiss
 
-    @State private var isShowingSitesOverlay: Bool = false
+    @State private var isShowingSitesOverlay: Bool = false {
+        didSet {
+            isAnimatingSitesOverlay = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                isAnimatingSitesOverlay = false
+            }
+        }
+    }
+    @State private var isAnimatingSitesOverlay: Bool = false
 
     init(viewModel: FireDialogViewModel,
          showSitesOverlay: Bool = false,
@@ -130,7 +138,7 @@ struct FireDialogView: ModalView {
                 }
             }
             .animation(.easeOut(duration: NSAnimationContext.current.duration),
-                       value: isShowingSitesOverlay)
+                       value: isAnimatingSitesOverlay)
 
             footerView
                 .zIndex(11)

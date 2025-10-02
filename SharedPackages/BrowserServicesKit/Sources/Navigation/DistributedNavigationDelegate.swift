@@ -28,10 +28,6 @@ public final class DistributedNavigationDelegate: NSObject {
     private var customDelegateMethodHandlers = [Selector: any AnyResponderRef]()
     private let isPerformanceReportingEnabled: Bool
 
-    public init(isPerformanceReportingEnabled: Bool) {
-        self.isPerformanceReportingEnabled = isPerformanceReportingEnabled
-        super.init()
-    }
 
     /// approved navigation before `navigationDidStart` event received (useful for authentication challenge and redirect events)
     @MainActor
@@ -82,8 +78,10 @@ public final class DistributedNavigationDelegate: NSObject {
     private var currentHistoryItemIdentity: HistoryItemIdentity? { nil }
 #endif
 
-    public override init() {
+    public init(isPerformanceReportingEnabled: Bool) {
         dispatchPrecondition(condition: .onQueue(.main))
+        self.isPerformanceReportingEnabled = isPerformanceReportingEnabled
+        super.init()
 #if !_MAIN_FRAME_NAVIGATION_ENABLED
         _=WKWebView.swizzleLoadMethodOnce
 #endif

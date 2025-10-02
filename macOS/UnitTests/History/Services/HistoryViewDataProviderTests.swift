@@ -132,14 +132,14 @@ final class HistoryViewDataProviderTests: XCTestCase {
         dataSource.history = nil
         await provider.refreshData()
         XCTAssertEqual(provider.ranges, [
-            .init(id: .sites, count: 0),
+            .init(id: .allSites, count: 0),
             .init(id: .all, count: 0)
         ])
 
         dataSource.history = []
         await provider.refreshData()
         XCTAssertEqual(provider.ranges, [
-            .init(id: .sites, count: 0),
+            .init(id: .allSites, count: 0),
             .init(id: .all, count: 0)
         ])
     }
@@ -155,7 +155,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         ]
         await provider.refreshData()
         XCTAssertEqual(provider.ranges, [
-            .init(id: .sites, count: 1),
+            .init(id: .allSites, count: 1),
             .init(id: .all, count: 1),
             .init(id: .today, count: 1)
         ])
@@ -173,7 +173,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         ]
         await provider.refreshData()
         XCTAssertEqual(provider.ranges, [
-            .init(id: .sites, count: 1),
+            .init(id: .allSites, count: 1),
             .init(id: .all, count: 2),
             .init(id: .today, count: 1),
             .init(id: .yesterday, count: 1)
@@ -191,7 +191,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         ]
         await provider.refreshData()
         XCTAssertEqual(provider.ranges, [
-            .init(id: .sites, count: 1),
+            .init(id: .allSites, count: 1),
             .init(id: .all, count: 1),
             .init(id: .today, count: 0),
             .init(id: .yesterday, count: 0),
@@ -213,7 +213,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         ]
         await provider.refreshData()
         XCTAssertEqual(provider.ranges, [
-            .init(id: .sites, count: 1),
+            .init(id: .allSites, count: 1),
             .init(id: .all, count: 1),
             .init(id: .today, count: 0),
             .init(id: .yesterday, count: 0),
@@ -241,7 +241,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
 
         try await populateHistory(for: date(year: 2025, month: 2, day: 24)) // Monday
         XCTAssertEqual(provider.ranges, [
-            .init(id: .sites, count: 1),
+            .init(id: .allSites, count: 1),
             .init(id: .all, count: 3),
             .init(id: .today, count: 0),
             .init(id: .yesterday, count: 0),
@@ -252,7 +252,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
 
         try await populateHistory(for: date(year: 2025, month: 2, day: 25)) // Tuesday
         XCTAssertEqual(provider.ranges, [
-            .init(id: .sites, count: 1),
+            .init(id: .allSites, count: 1),
             .init(id: .all, count: 3),
             .init(id: .today, count: 0),
             .init(id: .yesterday, count: 0),
@@ -263,7 +263,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
 
         try await populateHistory(for: date(year: 2025, month: 2, day: 26)) // Wednesday
         XCTAssertEqual(provider.ranges, [
-            .init(id: .sites, count: 1),
+            .init(id: .allSites, count: 1),
             .init(id: .all, count: 3),
             .init(id: .today, count: 0),
             .init(id: .yesterday, count: 0),
@@ -274,7 +274,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
 
         try await populateHistory(for: date(year: 2025, month: 2, day: 27)) // Thursday
         XCTAssertEqual(provider.ranges, [
-            .init(id: .sites, count: 1),
+            .init(id: .allSites, count: 1),
             .init(id: .all, count: 3),
             .init(id: .today, count: 0),
             .init(id: .yesterday, count: 0),
@@ -285,7 +285,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
 
         try await populateHistory(for: date(year: 2025, month: 2, day: 28)) // Friday
         XCTAssertEqual(provider.ranges, [
-            .init(id: .sites, count: 1),
+            .init(id: .allSites, count: 1),
             .init(id: .all, count: 3),
             .init(id: .today, count: 0),
             .init(id: .yesterday, count: 0),
@@ -296,7 +296,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
 
         try await populateHistory(for: date(year: 2025, month: 3, day: 1)) // Saturday
         XCTAssertEqual(provider.ranges, [
-            .init(id: .sites, count: 1),
+            .init(id: .allSites, count: 1),
             .init(id: .all, count: 3),
             .init(id: .today, count: 0),
             .init(id: .yesterday, count: 0),
@@ -307,7 +307,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
 
         try await populateHistory(for: date(year: 2025, month: 3, day: 2)) // Sunday
         XCTAssertEqual(provider.ranges, [
-            .init(id: .sites, count: 1),
+            .init(id: .allSites, count: 1),
             .init(id: .all, count: 3),
             .init(id: .today, count: 0),
             .init(id: .yesterday, count: 0),
@@ -512,24 +512,24 @@ final class HistoryViewDataProviderTests: XCTestCase {
             ])
         ]
         await provider.refreshData()
-        let allCount = await provider.countVisibleVisits(matching: .rangeFilter(.all))
-        let todayCount = await provider.countVisibleVisits(matching: .rangeFilter(.today))
-        let yesterdayCount = await provider.countVisibleVisits(matching: .rangeFilter(.yesterday))
-        let saturdayCount = await provider.countVisibleVisits(matching: .rangeFilter(.saturday))
-        let fridayCount = await provider.countVisibleVisits(matching: .rangeFilter(.friday))
-        let thursdayCount = await provider.countVisibleVisits(matching: .rangeFilter(.thursday))
-        let wednesdayCount = await provider.countVisibleVisits(matching: .rangeFilter(.wednesday))
-        let tuesdayCount = await provider.countVisibleVisits(matching: .rangeFilter(.tuesday))
-        let olderCount = await provider.countVisibleVisits(matching: .rangeFilter(.older))
-        XCTAssertEqual(allCount, 19)
-        XCTAssertEqual(todayCount, 2)
-        XCTAssertEqual(yesterdayCount, 2)
-        XCTAssertEqual(saturdayCount, 2)
-        XCTAssertEqual(fridayCount, 1)
-        XCTAssertEqual(thursdayCount, 2)
-        XCTAssertEqual(wednesdayCount, 3)
-        XCTAssertEqual(tuesdayCount, 1)
-        XCTAssertEqual(olderCount, 6)
+        let allVisits = await provider.visits(matching: .rangeFilter(.all))
+        let todayVisits = await provider.visits(matching: .rangeFilter(.today))
+        let yesterdayVisits = await provider.visits(matching: .rangeFilter(.yesterday))
+        let saturdayVisits = await provider.visits(matching: .rangeFilter(.saturday))
+        let fridayVisits = await provider.visits(matching: .rangeFilter(.friday))
+        let thursdayVisits = await provider.visits(matching: .rangeFilter(.thursday))
+        let wednesdayVisits = await provider.visits(matching: .rangeFilter(.wednesday))
+        let tuesdayVisits = await provider.visits(matching: .rangeFilter(.tuesday))
+        let olderVisits = await provider.visits(matching: .rangeFilter(.older))
+        XCTAssertEqual(allVisits.count, 19)
+        XCTAssertEqual(todayVisits.count, 2)
+        XCTAssertEqual(yesterdayVisits.count, 2)
+        XCTAssertEqual(saturdayVisits.count, 2)
+        XCTAssertEqual(fridayVisits.count, 1)
+        XCTAssertEqual(thursdayVisits.count, 2)
+        XCTAssertEqual(wednesdayVisits.count, 3)
+        XCTAssertEqual(tuesdayVisits.count, 1)
+        XCTAssertEqual(olderVisits.count, 6)
     }
 
     // MARK: - deleteVisitsMatchingQuery

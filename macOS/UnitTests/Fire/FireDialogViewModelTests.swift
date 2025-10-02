@@ -55,7 +55,7 @@ final class FireDialogViewModelTests: XCTestCase {
     @MainActor
     private func handle(_ vm: FireDialogViewModel,
                         _ result: FireDialogResult,
-                        onboarding: ContextualOnboardingStateUpdater? = nil) {
+                        onboarding: ContextualOnboardingStateUpdater? = nil) -> Task<Void, Never> {
         let coordinator = FireCoordinator(
             tld: Application.appDelegate.tld,
             featureFlagger: Application.appDelegate.featureFlagger,
@@ -70,12 +70,12 @@ final class FireDialogViewModelTests: XCTestCase {
             isAllHistorySelected = result.selectedCookieDomains == nil || result.selectedCookieDomains?.count == vm.selectable.count
         }
 
-        Task {
+        return Task {
             await coordinator.handleDialogResult(result, tabCollectionViewModel: vm.tabCollectionViewModel, isAllHistorySelected: isAllHistorySelected)
         }
     }
 
-    @MainActor func testOnBurn_OnboardingContextualDialogsManagerFireButtonUsedCalled() {
+    @MainActor func testOnBurn_OnboardingContextualDialogsManagerFireButtonUsedCalled() async throws {
         // Scenario: Pressing Fire triggers onboarding context hook.
         // Action: Call burn() on the view model.
         // Expectation: Only fireButtonUsed is recorded; no other onboarding actions occur.
@@ -91,7 +91,25 @@ final class FireDialogViewModelTests: XCTestCase {
                                       includeHistory: vm.includeHistory,
                                       includeTabsAndWindows: vm.includeTabsAndWindows,
                                       includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
-        handle(vm, result, onboarding: onboardingContextualDialogsManager)
+
+        let coordinator = FireCoordinator(
+            tld: Application.appDelegate.tld,
+            featureFlagger: Application.appDelegate.featureFlagger,
+            historyProvider: MockHistoryProvider(),
+            fireViewModel: vm.fireViewModel,
+            onboardingContextualDialogsManager: { onboardingContextualDialogsManager },
+            fireDialogViewFactory: { config in
+                return TestPresenter { _, completion in
+                    config.onConfirm(.burn(options: result))
+                    completion?()
+                }
+            },
+            tabViewModelGetter: { _ in
+                TabCollectionViewModel(isPopup: false)
+            })
+
+        let window = MockWindow()
+        _=await coordinator.presentFireDialog(mode: .fireButton, in: window)
 
         // Then
         XCTAssertNil(onboardingContextualDialogsManager.updatedForTab)
@@ -99,7 +117,7 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertTrue(onboardingContextualDialogsManager.fireButtonUsedCalled)
     }
 
-    @MainActor func testBurn_WithIncludeHistoryFalse_DoesNotCallBurnHistory() {
+    @MainActor func testBurn_WithIncludeHistoryFalse_DoesNotCallBurnHistory() async throws {
         // Scenario: User disables history clearing.
         // Action: Burn with includeHistory=false.
         // Expectation: No history API is invoked (all burn* flags remain false).
@@ -131,14 +149,19 @@ final class FireDialogViewModelTests: XCTestCase {
                                        includeHistory: viewModel.includeHistory,
                                        includeTabsAndWindows: viewModel.includeTabsAndWindows,
                                        includeCookiesAndSiteData: viewModel.includeCookiesAndSiteData)
-        handle(viewModel, result2)
+        let task = handle(viewModel, result2)
+
+        try await withTimeout(1) {
+            await task.value
+        }
+        withExtendedLifetime(tabCollectionVM) {}
 
         XCTAssertFalse(historyCoordinator.burnAllCalled)
         XCTAssertFalse(historyCoordinator.burnVisitsCalled)
         XCTAssertFalse(historyCoordinator.burnDomainsCalled)
     }
 
-    @MainActor func testClearingOption_UpdatesSelectableAndFireproofed() {
+    @MainActor func testClearingOption_UpdatesSelectableAndFireproofed() async throws {
         // Scenario: Changing scope updates sections.
         // Action: Set clearingOption to .currentWindow.
         // Expectation: Selectable first, fireproofed second; no crashes during refresh.
@@ -206,7 +229,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
-        handle(vm, r1)
+        _=handle(vm, r1)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -242,7 +265,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
-        handle(vm, r2)
+        _=handle(vm, r2)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -280,7 +303,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
-        handle(vm, r3)
+        _=handle(vm, r3)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -314,7 +337,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
-        handle(vm, r4)
+        _=handle(vm, r4)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -348,7 +371,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
-        handle(vm, r5)
+        _=handle(vm, r5)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -381,7 +404,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
-        handle(vm, r6)
+        _=handle(vm, r6)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -419,7 +442,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
-        handle(vm, r7)
+        _=handle(vm, r7)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -457,7 +480,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
-        handle(vm, r8)
+        _=handle(vm, r8)
         wait(for: [exp], timeout: 2.0)
     }
 
@@ -493,11 +516,11 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
-        handle(vm, r9)
+        _=handle(vm, r9)
         wait(for: [exp], timeout: 2.0)
     }
 
-    @MainActor func testBurn_CurrentTab_WithIncludeHistoryFalse_DoesNotBurnHistory() {
+    @MainActor func testBurn_CurrentTab_WithIncludeHistoryFalse_DoesNotBurnHistory() async throws {
         // Scenario: Current Tab but history disabled.
         // Action: Burn with includeHistory=false.
         // Expectation: No history clearing occurs.
@@ -524,13 +547,19 @@ final class FireDialogViewModelTests: XCTestCase {
                                       includeHistory: vm.includeHistory,
                                       includeTabsAndWindows: vm.includeTabsAndWindows,
                                       includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
-        handle(vm, result)
+        let task = handle(vm, result)
+
+        try await withTimeout(1) {
+            await task.value
+        }
+        withExtendedLifetime(tabCollectionVM) {}
+
         XCTAssertFalse(historyCoordinator.burnAllCalled)
         XCTAssertFalse(historyCoordinator.burnVisitsCalled)
         XCTAssertFalse(historyCoordinator.burnDomainsCalled)
     }
 
-    @MainActor func testBurn_CurrentWindow_WithIncludeHistoryFalse_DoesNotBurnHistory() {
+    @MainActor func testBurn_CurrentWindow_WithIncludeHistoryFalse_DoesNotBurnHistory() async throws {
         // Scenario: Current Window but history disabled.
         // Action: Burn with includeHistory=false.
         // Expectation: No history clearing occurs.
@@ -556,7 +585,12 @@ final class FireDialogViewModelTests: XCTestCase {
                                        includeHistory: vm.includeHistory,
                                        includeTabsAndWindows: vm.includeTabsAndWindows,
                                        includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
-        handle(vm, resultB)
+        let task = handle(vm, resultB)
+        try await withTimeout(1) {
+            await task.value
+        }
+        withExtendedLifetime(tabCollectionVM) {}
+
         XCTAssertFalse(historyCoordinator.burnAllCalled)
         XCTAssertFalse(historyCoordinator.burnVisitsCalled)
         XCTAssertFalse(historyCoordinator.burnDomainsCalled)
@@ -630,4 +664,10 @@ class CapturingContextualOnboardingStateUpdater: ContextualOnboardingStateUpdate
 
     func turnOffFeature() {}
 
+}
+
+private final class TestPresenter: FireDialogViewPresenting {
+    private let handler: (NSWindow?, (() -> Void)?) -> Void
+    init(handler: @escaping (NSWindow?, (() -> Void)?) -> Void) { self.handler = handler }
+    func present(in window: NSWindow, completion: (() -> Void)?) { handler(window, completion) }
 }

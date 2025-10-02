@@ -46,11 +46,6 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
         burnVisitsForIdentifiersCalls.append(identifiers)
     }
 
-    func countVisibleVisits(matching query: DataModel.HistoryQueryKind) async -> Int {
-        countVisibleVisitsCalls.append(query)
-        return await countVisibleVisits(query)
-    }
-
     func deleteVisits(matching query: DataModel.HistoryQueryKind) async {
         deleteVisitsMatchingQueryCalls.append(query)
     }
@@ -79,11 +74,6 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
         return await visitsMatchingQuery(query)
     }
 
-    func visits(for identifiers: [DuckDuckGo_Privacy_Browser.VisitIdentifier]) async -> [History.Visit] {
-        visitsForIdentifiersCalls.append(identifiers)
-        return await visitsForIdentifiers(identifiers)
-    }
-
     func preferredURL(forSiteDomain domain: String) -> URL? {
         URL(string: "https://\(domain)")
     }
@@ -94,9 +84,6 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
     var _ranges: [DataModel.HistoryRangeWithCount] = []
     var rangesCallCount: Int = 0
     var resetCacheCallCount: Int = 0
-
-    var countVisibleVisitsCalls: [DataModel.HistoryQueryKind] = []
-    var countVisibleVisits: (DataModel.HistoryQueryKind) async -> Int = { _ in return 0 }
 
     var deleteVisitsMatchingQueryCalls: [DataModel.HistoryQueryKind] = []
     var burnVisitsMatchingQueryCalls: [DataModel.HistoryQueryKind] = []
@@ -119,15 +106,54 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
     var visitsMatchingQueryCalls: [DataModel.HistoryQueryKind] = []
     var visitsMatchingQuery: (DataModel.HistoryQueryKind) async -> [Visit] = { _ in return [] }
 
-    var visitsForIdentifiersCalls: [[DuckDuckGo_Privacy_Browser.VisitIdentifier]] = []
-    var visitsForIdentifiers: ([DuckDuckGo_Privacy_Browser.VisitIdentifier]) async -> [Visit] = { _ in return [] }
-
-    // Removed call capture for dialog-result forwarding
-
     struct VisitsBatchCall: Equatable {
         let query: DataModel.HistoryQueryKind
         let source: DataModel.HistoryQuerySource
         let limit: Int
         let offset: Int
+    }
+}
+
+extension CapturingHistoryViewDataProvider {
+
+    /// Generate deterministic test data and return it.
+    /// - Parameters:
+    ///   - domainsCount: Number of distinct domains to generate (minimum 1).
+    ///   - visitsPerDomain: Number of visits to generate per domain (minimum 1).
+    /// - Returns: Tuple with generated entries and visits.
+    @MainActor
+    func configureWithGeneratedTestData(domainsCount: Int, visitsPerDomain: Int) -> (historyEntries: [HistoryEntry], visits: [Visit]) {
+        let domainCount = max(1, domainsCount)
+        let perDomain = max(1, visitsPerDomain)
+
+        let today = Date()
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today)!
+        let twoDaysAgo = Calendar.current.date(byAdding: .day, value: -2, to: today)!
+        let dayBuckets: [Date] = [today, yesterday, twoDaysAgo]
+
+        // Domains: site1.com, site2.com, ...
+        let domains: [String] = (1...domainCount).map { "site\($0).com" }
+
+        // Build entries and visits
+        var entries: [HistoryEntry] = []
+        var visits: [Visit] = []
+        var titlesByURL: [URL: String] = [:]
+
+        for (idx, domain) in domains.enumerated() {
+            let lastVisit = dayBuckets[idx % dayBuckets.count]
+            let url = URL(string: "https://\(domain)")!
+            let title = "\(domain) Home"
+            var entry = HistoryEntry(identifier: UUID(), url: url, failedToLoad: false, numberOfTotalVisits: perDomain, lastVisit: lastVisit, visits: [], numberOfTrackersBlocked: 0, blockedTrackingEntities: [], trackersFound: false)
+            entry.title = title
+            entries.append(entry)
+            titlesByURL[url] = title
+
+            for i in 0..<perDomain {
+                let d = dayBuckets[i % dayBuckets.count]
+                visits.append(Visit(date: d, identifier: url, historyEntry: entry))
+            }
+        }
+
+        return (entries, visits)
     }
 }

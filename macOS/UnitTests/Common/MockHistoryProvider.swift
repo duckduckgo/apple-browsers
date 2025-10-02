@@ -42,7 +42,7 @@ public class MockHistoryProvider: @preconcurrency HistoryViewDataProviding {
 
     public func visits(matching query: DataModel.HistoryQueryKind) async -> [Visit] {
         switch query {
-        case .rangeFilter(.all):
+        case .rangeFilter(.all), .rangeFilter(.allSites):
             return allVisits
         case .rangeFilter(.today):
             let today = Calendar.current.startOfDay(for: Date())
@@ -55,8 +55,6 @@ public class MockHistoryProvider: @preconcurrency HistoryViewDataProviding {
         case .rangeFilter(.older):
             let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
             return allVisits.filter { $0.date < sevenDaysAgo }
-        case .rangeFilter(.sites):
-            fatalError("Not implemented")
         case .dateFilter(let date):
             let targetDate = Calendar.current.startOfDay(for: date)
             return allVisits.filter { Calendar.current.startOfDay(for: $0.date) == targetDate }
@@ -64,11 +62,13 @@ public class MockHistoryProvider: @preconcurrency HistoryViewDataProviding {
             return allVisits.filter { domains.contains($0.identifier?.host ?? "") }
         case .searchTerm(let term):
             return allVisits.filter { $0.historyEntry?.title?.contains(term) == true || $0.identifier?.absoluteString.contains(term) == true }
+        case .visits(let identifiers):
+            return visits(for: identifiers)
         }
     }
 
-    public func visits(for identifiers: [DuckDuckGo_Privacy_Browser.VisitIdentifier]) async -> [History.Visit] {
-        let identifiers = Set(identifiers.map(\.url))
+    private func visits(for identifiers: [VisitIdentifier]) -> [History.Visit] {
+        let identifiers = Set(identifiers.compactMap(\.url.url))
         return allVisits.filter { identifiers.contains($0.identifier ?? .empty) }
     }
 
@@ -153,11 +153,9 @@ public class MockHistoryProvider: @preconcurrency HistoryViewDataProviding {
         return [:]
     }
 
-    public func countVisibleVisits(matching query: DataModel.HistoryQueryKind) async -> Int {
-        return await visits(matching: query).count
-    }
+    public func deleteVisits(for identifiers: [VisitIdentifier]) async {
 
-    public func deleteVisits(for identifiers: [VisitIdentifier]) async {}
+    }
 
     public func cookieDomains(matching query: DataModel.HistoryQueryKind) async -> Set<String> {
         let visits = await visits(matching: query)

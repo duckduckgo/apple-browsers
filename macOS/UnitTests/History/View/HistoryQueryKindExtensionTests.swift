@@ -35,11 +35,11 @@ final class HistoryQueryKindExtensionTests: XCTestCase {
 
     func testDeleteMode() throws {
         XCTAssertEqual(DataModel.HistoryQueryKind.searchTerm("searchTerm").deleteMode, .unspecified)
-        XCTAssertEqual(DataModel.HistoryQueryKind.domainFilter(["domain"]).deleteMode, .unspecified)
+        XCTAssertEqual(DataModel.HistoryQueryKind.domainFilter(["domain"]).deleteMode, .sites(["domain"]))
         XCTAssertEqual(DataModel.HistoryQueryKind.rangeFilter(.all).deleteMode, .all)
         XCTAssertEqual(DataModel.HistoryQueryKind.rangeFilter(.today).deleteMode, .today)
         XCTAssertEqual(DataModel.HistoryQueryKind.rangeFilter(.yesterday).deleteMode, .yesterday)
-        XCTAssertEqual(DataModel.HistoryQueryKind.rangeFilter(.older).deleteMode, .unspecified)
+        XCTAssertEqual(DataModel.HistoryQueryKind.rangeFilter(.older).deleteMode, .older)
 
         XCTAssertTrue(DataModel.HistoryQueryKind.rangeFilter(.sunday).deleteMode.isDate)
         XCTAssertTrue(DataModel.HistoryQueryKind.rangeFilter(.monday).deleteMode.isDate)

@@ -18,6 +18,7 @@
 
 import AppKit
 import History
+import HistoryView
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -30,26 +31,17 @@ final class CapturingHistoryViewDeleteDialogPresenter: HistoryViewDialogPresenti
     var showDeleteDialogCalls: [ShowDialogCall] = []
 
     struct ShowDialogCall: Equatable {
-        let itemsCount: Int
-        let deleteMode: HistoryViewDeleteDialogModel.DeleteMode
+        let query: HistoryView.DataModel.HistoryQueryKind
+        let visits: [History.Visit]
 
-        init(_ itemsCount: Int, _ deleteMode: HistoryViewDeleteDialogModel.DeleteMode) {
-            self.itemsCount = itemsCount
-            self.deleteMode = deleteMode
+        init(_ query: HistoryView.DataModel.HistoryQueryKind, _ visits: [History.Visit]) {
+            self.query = query
+            self.visits = visits
         }
     }
 
-    func showDeleteDialog(forVisitsCount itemsCount: Int, deleteMode: DuckDuckGo_Privacy_Browser.HistoryViewDeleteDialogModel.DeleteMode, in window: NSWindow?) async -> DuckDuckGo_Privacy_Browser.HistoryViewDeleteDialogModel.Response {
-        showDeleteDialogCalls.append(.init(itemsCount, deleteMode))
-        return deleteDialogResponse
-    }
-
-    @MainActor
-    func showDeleteDialog(for visits: [History.Visit],
-                          deleteMode: DuckDuckGo_Privacy_Browser.HistoryViewDeleteDialogModel.DeleteMode,
-                          in window: NSWindow?,
-                          scopeCookieDomains: Set<String>?) async -> DuckDuckGo_Privacy_Browser.HistoryViewDeleteDialogModel.Response {
-        showDeleteDialogCalls.append(.init(visits.count, deleteMode))
+    func showDeleteDialog(for query: HistoryView.DataModel.HistoryQueryKind, visits: [History.Visit], in window: NSWindow?) async -> DuckDuckGo_Privacy_Browser.HistoryViewDeleteDialogModel.Response {
+        showDeleteDialogCalls.append(.init(query, visits))
         return deleteDialogResponse
     }
 

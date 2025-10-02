@@ -18,7 +18,6 @@
 
 import Foundation
 import WebKit
-import BrowserServicesKit
 
 public protocol NavigationResponder {
 

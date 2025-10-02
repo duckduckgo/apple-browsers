@@ -501,7 +501,8 @@ final class MainViewController: NSViewController {
             .$isBookmarksBarVisible
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.updateBookmarksBarViewVisibility(visible: self!.shouldShowBookmarksBar)
+                guard let self = self else { return }
+                self.updateBookmarksBarViewVisibility(visible: self.shouldShowBookmarksBar)
             }
     }
 
@@ -855,6 +856,29 @@ extension MainViewController {
         // Use the package to handle everything
         let windowController = PerformanceTestWindowController(webView: currentTab.webView)
         windowController.showWindow(nil)
+    }
+
+    @objc func testCurrentSitePerformanceWithSafari() {
+        // Get the current tab's URL
+        guard let currentTab = tabCollectionViewModel.selectedTabViewModel?.tab,
+              let url = currentTab.url else {
+            let alert = NSAlert()
+            alert.messageText = "No Active Page"
+            alert.informativeText = "Please navigate to a webpage first to test its performance with Safari."
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+            return
+        }
+
+        // For Phase 1, just show an alert with the URL that would be tested
+        // Phase 2 will implement the actual window controller
+        let alert = NSAlert()
+        alert.messageText = "Safari Performance Test"
+        alert.informativeText = "Will test: \(url.absoluteString)\n\n(Full implementation in Phase 2)"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 }
 

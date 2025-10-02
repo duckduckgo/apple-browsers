@@ -112,6 +112,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var emailCancellables = Set<AnyCancellable>()
     var privacyDashboardWindow: NSWindow?
 
+    let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
     let subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
 

@@ -20,6 +20,7 @@ import AppKit
 import SwiftUI
 import BrowserServicesKit
 import PixelKit
+import DesignResourcesKitIcons
 
 @MainActor
 struct DataImportView: ModalView {
@@ -78,25 +79,17 @@ struct DataImportView: ModalView {
 
     var body: some View {
         VStack(alignment: alignment, spacing: 0) {
-            switch model.screen {
-            case .fileImport(let typeSelection, let summary) where typeSelection.isMultiple:
-                MultiFileImportScreenView(model: $model,
-                                          dataTypeSelection: typeSelection,
-                                          summaryTypes: summary,
-                                          dismiss: dismiss.callAsFunction)
-            default:
-                viewHeader()
-                    .padding(.top, 30)
-                    .padding(.leading, 20)
-                    .padding(.trailing, 20)
-                    .padding(.bottom, 0)
+            viewHeader()
+                .padding(.top, 30)
+                .padding(.leading, 20)
+                .padding(.trailing, 20)
+                .padding(.bottom, 0)
 
-                viewBody()
-                    .padding(.leading, 20)
-                    .padding(.trailing, 20)
-                    .padding(.bottom, 20)
-                    .padding(.top, 0)
-            }
+            viewBody()
+                .padding(.leading, 20)
+                .padding(.trailing, 20)
+                .padding(.bottom, 20)
+                .padding(.top, 0)
 
             // if import in progress…
             if let importProgress = model.importProgress {
@@ -187,12 +180,13 @@ struct DataImportView: ModalView {
             case .getReadPermission(let url):
                 // give request to Safari folder, select Bookmarks.plist using open panel
                 getReadPermissionBody(url: url)
-            case .fileImport(.multiple, let summaryTypes):
-                fileImportBody(dataType: .bookmarks, summaryTypes: summaryTypes).onAppear {
-                    assert(false, "Multiple file imports are not supported yet")
+            case .fileImport(let typeSelection, let summaryTypes):
+                switch typeSelection {
+                case .single(let dataType):
+                    fileImportBody(dataType: dataType, summaryTypes: summaryTypes)
+                case .multiple:
+                    multifileImportBody(dataTypeSelection: typeSelection)
                 }
-            case .fileImport(.single(let dataType), let summaryTypes):
-                fileImportBody(dataType: dataType, summaryTypes: summaryTypes)
             case .summary(let dataTypes, let isFileImport):
                 DataImportSummaryView(model, dataTypes: dataTypes, isFileImport: isFileImport)
             case .feedback:
@@ -297,14 +291,44 @@ struct DataImportView: ModalView {
 
     }
 
-    private func importPickerPanel<Content: View>(_ content: () -> Content) -> some View {
+    @ViewBuilder
+    private func multifileImportBody(dataTypeSelection: DataImport.TypeSelection) -> some View {
+        importPickerPanel(bottomPadding: 4) {
+            EmptyView()
+        }
+        .padding(.bottom, 20)
+        VStack(alignment: .leading, spacing: 20) {
+            // manual file import instructions for CSV/HTML
+            NewFileImportView(source: model.importSource, dataTypeSelection: dataTypeSelection, isButtonDisabled: model.isSelectFileButtonDisabled) {
+                model.selectFile()
+            } onFileDrop: { url in
+                model.initiateImport(fileURL: url)
+            }
+
+            if case .multiple(let dataTypes) = dataTypeSelection,
+                let firstDataType = dataTypes.first,
+                let error = model.error(for: firstDataType) as? SafariArchiveImporter.ImportError,
+               error.type == .unarchive || error.type == .importContents {
+                HStack {
+                    Image(nsImage: DesignSystemImages.Color.Size16.exclamationHigh)
+                    Text("Incorrect file type or format. Please select a different file.")
+                        .foregroundColor(Color(designSystemColor: .buttonsDeleteGhostText))
+                }
+                .padding(.vertical, 8)
+            }
+        }
+    }
+
+    private func importPickerPanel<Content: View>(bottomPadding: CGFloat = 12, _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             importSourceDataTitle
             importSourcePicker
             content()
         }
         .frame(idealWidth: .infinity, maxWidth: .infinity, alignment: .topLeading)
-        .padding(12)
+        .padding(.bottom, bottomPadding)
+        .padding(.top, 12)
+        .padding(.horizontal, 12)
         .background(Color.surfaceSecondary)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(

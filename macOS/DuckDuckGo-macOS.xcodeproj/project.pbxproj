@@ -3700,8 +3700,6 @@
 		EECA36BA2E869885005A42EE /* ImportArchiveReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECA36B82E869885005A42EE /* ImportArchiveReader.swift */; };
 		EECA36BC2E869E49005A42EE /* SafariArchiveImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECA36BB2E869E3B005A42EE /* SafariArchiveImporter.swift */; };
 		EECA36BD2E869E49005A42EE /* SafariArchiveImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECA36BB2E869E3B005A42EE /* SafariArchiveImporter.swift */; };
-		EECA36BF2E86D466005A42EE /* MultiFileImportScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECA36BE2E86D466005A42EE /* MultiFileImportScreenView.swift */; };
-		EECA36C02E86D466005A42EE /* MultiFileImportScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECA36BE2E86D466005A42EE /* MultiFileImportScreenView.swift */; };
 		EED4D3D82C874AE200C79EEA /* PopoverInfoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EED4D3D72C874AE200C79EEA /* PopoverInfoViewController.swift */; };
 		EED4D3D92C874AE200C79EEA /* PopoverInfoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EED4D3D72C874AE200C79EEA /* PopoverInfoViewController.swift */; };
 		EED4D3DF2C8A298D00C79EEA /* AutofillPixelEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = EED4D3DE2C8A298D00C79EEA /* AutofillPixelEvent.swift */; };
@@ -5845,7 +5843,6 @@
 		EEC7BE2D2BC6C09400F86835 /* AddressBarKeyboardShortcutsTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddressBarKeyboardShortcutsTests.swift; sourceTree = "<group>"; };
 		EECA36B82E869885005A42EE /* ImportArchiveReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportArchiveReader.swift; sourceTree = "<group>"; };
 		EECA36BB2E869E3B005A42EE /* SafariArchiveImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariArchiveImporter.swift; sourceTree = "<group>"; };
-		EECA36BE2E86D466005A42EE /* MultiFileImportScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiFileImportScreenView.swift; sourceTree = "<group>"; };
 		EED4D3D72C874AE200C79EEA /* PopoverInfoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverInfoViewController.swift; sourceTree = "<group>"; };
 		EED4D3DE2C8A298D00C79EEA /* AutofillPixelEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillPixelEvent.swift; sourceTree = "<group>"; };
 		EED735352BB46B6000F173D6 /* AutocompleteTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutocompleteTests.swift; sourceTree = "<group>"; };
@@ -7760,7 +7757,6 @@
 				B6B5F5832B03580A008DB58A /* RequestFilePermissionView.swift */,
 				B677FC4E2B06376B0099EB04 /* ReportFeedbackView.swift */,
 				C16127ED2BDFB46400966BB9 /* DataImportShortcutsView.swift */,
-				EECA36BE2E86D466005A42EE /* MultiFileImportScreenView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -13596,7 +13592,6 @@
 				F1B33DF32BAD929D001128B3 /* SubscriptionAppStoreRestorer.swift in Sources */,
 				3706FC1F293F65D500E42796 /* BookmarksBarViewController.swift in Sources */,
 				1DDC85042B83903E00670238 /* PreferencesWebTrackingProtectionView.swift in Sources */,
-				EECA36BF2E86D466005A42EE /* MultiFileImportScreenView.swift in Sources */,
 				BB3229062D08644400DA92E9 /* TabBarRemoteMessageView.swift in Sources */,
 				3706FC20293F65D500E42796 /* PreferencesAutofillView.swift in Sources */,
 				CD2AB5C22C8222F50019EB49 /* MaliciousSiteProtectionPreferences.swift in Sources */,
@@ -15061,7 +15056,6 @@
 				3701C9CE29BD040C00305B15 /* FirefoxBerkeleyDatabaseReader.swift in Sources */,
 				37054FCE2876472D00033B6F /* WebViewSnapshotView.swift in Sources */,
 				1D39F7262DCA29A500F258F0 /* InitialWindowFrameProvider.swift in Sources */,
-				EECA36C02E86D466005A42EE /* MultiFileImportScreenView.swift in Sources */,
 				560EB9392C789A450080DBC8 /* OnboardingSuggestedSearchesProvider.swift in Sources */,
 				4BBC16A027C4859400E00A38 /* DeviceAuthenticationService.swift in Sources */,
 				CB24F70C29A3D9CB006DCC58 /* AppConfigurationURLProvider.swift in Sources */,

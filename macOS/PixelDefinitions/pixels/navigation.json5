@@ -35,13 +35,13 @@
     },
     siteLoadingSuccess: {
         description: 'Fired when a site loading navigation completes successfully.',
-        owners: ['ddg'],
+        owners: ['diegoreymendez'],
         triggers: ['page_load'],
         parameters: ['appVersion', 'pixelSource', 'duration', 'navigation_type'],
     },
     siteLoadingFailure: {
         description: 'Fired when a site loading navigation fails.',
-        owners: ['ddg'],
+        owners: ['diegoreymendez'],
         triggers: ['page_load'],
         parameters: ['appVersion', 'pixelSource', 'duration', 'navigation_type', 'errorCode', 'errorDomain'],
     },

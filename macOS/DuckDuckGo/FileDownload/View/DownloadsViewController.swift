@@ -430,11 +430,11 @@ final class DownloadsViewController: NSViewController {
         themeCancellable = themeManager.$theme
             .receive(on: DispatchQueue.main)
             .sink { [weak self] style in
-                self?.refreshTheme(theme: style)
+                self?.applyThemeStyle(theme: style)
             }
     }
 
-    private func refreshTheme(theme: ThemeDefinition) {
+    private func applyThemeStyle(theme: ThemeDefinition) {
         guard let contentView = view as? ColorView else {
             assertionFailure()
             return

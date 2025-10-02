@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import UIComponents
 
 struct SettingsAIExperimentalPickerView: View {
     @Binding var isDuckAISelected: Bool
@@ -30,7 +31,8 @@ struct SettingsAIExperimentalPickerView: View {
                 isSelected: !isDuckAISelected,
                 selectedImage: .searchExperimentalOn,
                 unselectedImage: .searchExperimentalOff,
-                title: UserText.settingsAIPickerSearchOnly
+                title: UserText.settingsAIPickerSearchOnly,
+                showNewBadge: false
             ) {
                 isDuckAISelected = false
             }
@@ -39,7 +41,8 @@ struct SettingsAIExperimentalPickerView: View {
                 isSelected: isDuckAISelected,
                 selectedImage: .aiExperimentalOn,
                 unselectedImage: .aiExperimentalOff,
-                title: UserText.settingsAIPickerSearchAndDuckAI
+                title: UserText.settingsAIPickerSearchAndDuckAI,
+                showNewBadge: true
             ) {
                 isDuckAISelected = true
             }
@@ -54,6 +57,7 @@ private struct PickerOptionView: View {
     let selectedImage: ImageResource
     let unselectedImage: ImageResource
     let title: String
+    let showNewBadge: Bool
     let action: () -> Void
 
     var body: some View {
@@ -63,9 +67,14 @@ private struct PickerOptionView: View {
                     .resizable()
                     .scaledToFit()
 
-                Text(title)
-                .daxFootnoteRegular()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
+                HStack(spacing: 6) {
+                    Text(title)
+                        .daxFootnoteRegular()
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                    if showNewBadge {
+                        BadgeView(text: UserText.settingsItemNewBadge)
+                    }
+                }
 
                 CheckmarkView(isSelected: isSelected)
                     .scaledToFit()

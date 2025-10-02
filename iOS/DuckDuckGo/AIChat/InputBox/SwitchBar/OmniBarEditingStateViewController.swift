@@ -68,7 +68,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private var isUsingTopBarPosition: Bool
     private var isLandscapeOrientation: Bool = false {
         didSet {
-            isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || !featureFlagger.isFeatureOn(.aiSearchBottomBarSupport) || isLandscapeOrientation
+            isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
         }
     }
     private var isAdjustedForTopBar: Bool

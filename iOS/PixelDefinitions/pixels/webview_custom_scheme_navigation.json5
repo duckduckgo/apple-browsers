@@ -1,0 +1,12 @@
+{
+    m_webview_external-scheme-navigation_x-safari-https: {
+        description: 'Fires when the WebView attempts to navigate to an external scheme (non-http/https) that cannot be handled by the browser',
+        owners: ['dus7'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        parameters: [
+            'appVersion'
+        ],
+        expires: '2025-11-03',
+    }
+}

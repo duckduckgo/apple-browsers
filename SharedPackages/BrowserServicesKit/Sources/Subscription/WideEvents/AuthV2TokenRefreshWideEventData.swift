@@ -21,6 +21,10 @@ import Common
 import Networking
 import PixelKit
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 public class AuthV2TokenRefreshWideEventData: WideEventData {
     #if DEBUG
     public static let pixelName = "auth_v2_token_refresh_debug"
@@ -28,9 +32,16 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
     public static let pixelName = "auth_v2_token_refresh"
     #endif
 
+    public enum ApplicationState: String, Codable {
+        case foreground
+        case background
+    }
+
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData
     public var appData: WideEventAppData
+
+    public var applicationState: ApplicationState?
 
     public var refreshTokenDuration: WideEvent.MeasuredInterval?
     public var fetchJWKSDuration: WideEvent.MeasuredInterval?
@@ -48,6 +59,12 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
+
+        #if os(iOS)
+        self.applicationState = UIApplication.shared.applicationState == .background ? .background : .foreground
+        #else
+        self.applicationState = nil
+        #endif
     }
 }
 
@@ -71,8 +88,12 @@ extension AuthV2TokenRefreshWideEventData {
 
         parameters[WideEventParameter.Feature.name] = "authv2-token-refresh"
 
-        if let failingStep = failingStep {
+        if let failingStep {
             parameters[WideEventParameter.AuthV2RefreshFeature.failingStep] = failingStep.rawValue
+        }
+
+        if let applicationState {
+            parameters[WideEventParameter.AuthV2RefreshFeature.applicationState] = applicationState.rawValue
         }
 
         func emit(_ key: String, interval: WideEvent.MeasuredInterval?) {
@@ -163,6 +184,7 @@ extension WideEventParameter {
 
     public enum AuthV2RefreshFeature {
         static let failingStep = "feature.data.ext.failing_step"
+        static let applicationState = "feature.data.ext.application_state"
         static let refreshTokenLatency = "feature.data.ext.refresh_token_latency_ms_bucketed"
         static let fetchJWKSLatency = "feature.data.ext.fetch_jwks_latency_ms_bucketed"
     }

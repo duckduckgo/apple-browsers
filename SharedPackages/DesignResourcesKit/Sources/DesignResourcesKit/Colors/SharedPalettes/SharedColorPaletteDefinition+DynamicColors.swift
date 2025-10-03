@@ -166,8 +166,6 @@ extension SharedColorPaletteDefinition {
             return highlightPrimary
 
         /// Icons Colors
-        case .icons:
-            return icons
         case .iconsPrimary:
             return iconsPrimary
         case .iconsSecondary:

@@ -108,7 +108,6 @@ protocol SharedColorPaletteDefinition {
     static var highlightPrimary: DynamicColor { get }
 
     // MARK: - Icons Colors
-    static var icons: DynamicColor { get }
     static var iconsPrimary: DynamicColor { get }
     static var iconsSecondary: DynamicColor { get }
     static var iconsTertiary: DynamicColor { get }

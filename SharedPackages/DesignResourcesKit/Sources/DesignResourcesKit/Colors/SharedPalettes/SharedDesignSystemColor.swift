@@ -105,7 +105,6 @@ public enum SharedDesignSystemColor {
     case highlightPrimary
 
     // Icons
-    case icons
     case iconsPrimary
     case iconsSecondary
     case iconsTertiary

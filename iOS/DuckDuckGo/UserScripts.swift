@@ -52,7 +52,6 @@ final class UserScripts: UserScriptsProvider {
     var specialErrorPageUserScript: SpecialErrorPageUserScript?
 
     private(set) var faviconScript = FaviconUserScript()
-    private(set) var navigatorPatchScript = NavigatorSharePatchUserScript()
     private(set) var findInPageScript = FindInPageUserScript()
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
     private(set) var printingUserScript = PrintingUserScript()
@@ -117,7 +116,6 @@ final class UserScripts: UserScriptsProvider {
         debugScript,
         autoconsentUserScript,
         findInPageScript,
-        navigatorPatchScript,
         surrogatesScript,
         contentBlockerUserScript,
         faviconScript,

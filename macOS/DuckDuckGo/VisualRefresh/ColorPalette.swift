@@ -26,7 +26,10 @@ protocol ColorPalette {
     var surfaceSecondary: NSColor { get }
     var surfaceTertiary: NSColor { get }
 
+    var surfaceDecorationPrimary: NSColor { get }
+    var surfaceDecorationSecondary: NSColor { get }
     var surfaceDecorationTertiary: NSColor { get }
+
     var textPrimary: NSColor { get }
     var textSecondary: NSColor { get }
     var textTertiary: NSColor { get }

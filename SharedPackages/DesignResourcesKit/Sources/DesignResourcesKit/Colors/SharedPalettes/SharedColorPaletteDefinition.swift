@@ -80,11 +80,6 @@ protocol SharedColorPaletteDefinition {
     static var controlsFillSecondary: DynamicColor { get }
     static var controlsFillTertiary: DynamicColor { get }
 
-    // MARK: - Decoration Colors
-    static var decorationPrimary: DynamicColor { get }
-    static var decorationSecondary: DynamicColor { get }
-    static var decorationTertiary: DynamicColor { get }
-
     // MARK: - Destructive Colors
     static var destructiveContentPrimary: DynamicColor { get }
     static var destructiveContentSecondary: DynamicColor { get }
@@ -114,12 +109,16 @@ protocol SharedColorPaletteDefinition {
     static var shadowTertiary: DynamicColor { get }
 
     // MARK: - Surface Colors
-    static var surface: DynamicColor { get }
     static var surfaceBackdrop: DynamicColor { get }
     static var surfaceCanvas: DynamicColor { get }
     static var surfacePrimary: DynamicColor { get }
     static var surfaceSecondary: DynamicColor { get }
     static var surfaceTertiary: DynamicColor { get }
+
+    // MARK: - Surface Decoration
+    static var surfaceDecorationPrimary: DynamicColor { get }
+    static var surfaceDecorationSecondary: DynamicColor { get }
+    static var surfaceDecorationTertiary: DynamicColor { get }
 
     // MARK: - Text Colors
     static var textPrimary: DynamicColor { get }
@@ -128,7 +127,6 @@ protocol SharedColorPaletteDefinition {
 
     // MARK: - Tone Colors
     static var toneShadePrimary: DynamicColor { get }
-    static var toneTintPrimary: DynamicColor { get }
 }
 
 #endif

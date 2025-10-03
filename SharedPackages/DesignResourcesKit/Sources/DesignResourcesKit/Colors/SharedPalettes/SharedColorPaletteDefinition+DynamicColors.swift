@@ -210,8 +210,6 @@ extension SharedColorPaletteDefinition {
         /// Tone Colors
         case .toneShadePrimary:
             return toneShadePrimary
-        case .toneTintPrimary:
-            return toneTintPrimary
         }
     }
 }

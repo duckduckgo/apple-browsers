@@ -35,7 +35,6 @@ protocol ColorPalette {
     var iconsSecondary: NSColor { get }
     var iconsTertiary: NSColor { get }
 
-    var toneTintPrimary: NSColor { get }
     var toneShadePrimary: NSColor { get }
 
     var accentPrimary: NSColor { get }

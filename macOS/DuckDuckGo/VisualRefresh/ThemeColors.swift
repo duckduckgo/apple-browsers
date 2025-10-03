@@ -73,7 +73,6 @@ struct ThemeColors: ColorPalette {
     let textSecondary: NSColor
     let textTertiary: NSColor
     let toneShadePrimary: NSColor
-    let toneTintPrimary: NSColor
 }
 
 extension ThemeColors {
@@ -133,7 +132,6 @@ extension ThemeColors {
         textSecondary = NSColor(designSystemColor: .textSecondary, palette: palette)
         textTertiary = NSColor(designSystemColor: .textTertiary, palette: palette)
         toneShadePrimary = NSColor(designSystemColor: .toneShadePrimary, palette: palette)
-        toneTintPrimary = NSColor(designSystemColor: .toneTintPrimary, palette: palette)
     }
 
     private static func designColorPalette(for themeName: ThemeName) -> DesignResourcesKit.ColorPalette {

@@ -61,7 +61,7 @@ enum AddressBarSizeClass {
     }
 }
 
-struct VisualStyle: ThemeStyleProviding {
+struct ThemeStyle: ThemeStyleProviding {
     let name: ThemeName
 
     let toolbarButtonsCornerRadius: CGFloat
@@ -79,16 +79,16 @@ struct VisualStyle: ThemeStyleProviding {
 
     static var current: ThemeStyleProviding {
         let palette = NewColorPalette()
-        return buildVisualStyle(name: .default, palette: palette)
+        return buildThemeStyle(name: .default, palette: palette)
     }
 
-    static func buildVisualStyle(themeName: ThemeName) -> VisualStyle {
+    static func buildThemeStyle(themeName: ThemeName) -> ThemeStyle {
         let palette = ThemeColors(themeName: themeName)
-        return buildVisualStyle(name: themeName, palette: palette)
+        return buildThemeStyle(name: themeName, palette: palette)
     }
 
-    private static func buildVisualStyle(name: ThemeName, palette: ColorPalette) -> VisualStyle {
-        VisualStyle(
+    private static func buildThemeStyle(name: ThemeName, palette: ColorPalette) -> ThemeStyle {
+        ThemeStyle(
             name: name,
             toolbarButtonsCornerRadius: 9,
             fireWindowGraphic: .burnerWindowGraphicNew,

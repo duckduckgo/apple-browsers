@@ -22,7 +22,7 @@ import Foundation
 
 class MockThemeManager: ThemeManagerProtocol {
 
-    @Published var theme: ThemeDefinition = VisualStyle.buildVisualStyle(themeName: .default)
+    @Published var theme: ThemeDefinition = ThemeStyle.buildThemeStyle(themeName: .default)
 
     var themePublisher: Published<any ThemeDefinition>.Publisher {
         $theme

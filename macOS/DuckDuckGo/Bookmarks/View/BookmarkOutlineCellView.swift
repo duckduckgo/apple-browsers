@@ -428,7 +428,7 @@ extension BookmarkOutlineCellView {
 
             translatesAutoresizingMaskIntoConstraints = true
 
-            let theme = VisualStyle.buildVisualStyle(themeName: .default)
+            let theme = ThemeStyle.buildThemeStyle(themeName: .default)
             let cells = [
                 BookmarkOutlineCellView(identifier: .init(""), theme: theme),
                 BookmarkOutlineCellView(identifier: .init(""), theme: theme),

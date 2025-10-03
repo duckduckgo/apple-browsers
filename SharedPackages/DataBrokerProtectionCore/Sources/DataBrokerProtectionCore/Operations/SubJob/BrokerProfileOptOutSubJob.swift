@@ -94,11 +94,6 @@ struct BrokerProfileOptOutSubJob {
                                     showWebView: showWebView,
                                     shouldRunNextStep: shouldRunNextStep)
 
-            try await runner.optOut(profileQuery: brokerProfileQueryData,
-                                    extractedProfile: extractedProfile,
-                                    showWebView: showWebView,
-                                    shouldRunNextStep: shouldRunNextStep)
-
             if dependencies.featureFlagger.isEmailConfirmationDecouplingFeatureOn,
                brokerProfileQueryData.dataBroker.requiresEmailConfirmationDuringOptOut() {
                 try handleEmailConfirmationDecoupling(database: dependencies.database,

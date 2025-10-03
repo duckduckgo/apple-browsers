@@ -22,6 +22,18 @@ import BrowserServicesKit
 import RemoteMessaging
 import UIKit
 
+enum HomeSupportedModelDisplayType {
+    case small(titleText: String, descriptionText: String)
+    case medium(titleText: String, descriptionText: String, placeholder: RemotePlaceholder)
+    case bigSingleAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
+                         primaryActionText: String, primaryAction: RemoteAction)
+    case bigTwoAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
+                      primaryActionText: String, primaryAction: RemoteAction, secondaryActionText: String,
+                      secondaryAction: RemoteAction)
+    case promoSingleAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
+                           actionText: String, action: RemoteAction)
+}
+
 struct HomeMessageViewModel {
 
     enum ButtonAction {
@@ -33,7 +45,7 @@ struct HomeMessageViewModel {
 
     let messageId: String
     let sendPixels: Bool
-    let modelType: RemoteMessageModelType
+    let modelType: HomeSupportedModelDisplayType
     let navigator: MessageNavigator
 
     var image: String? {

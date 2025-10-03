@@ -166,7 +166,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testThatSubscriptionIsNotPresentWhenUnauthenticatedAndPurchaseNotAllowedOnAppStore () {
+    func testThatSubscriptionIsNotPresentWhenUnauthenticatedAndPurchaseNotAllowedOnAppStore() {
         subscriptionManager.canPurchase = false
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
 
@@ -177,7 +177,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testThatSubscriptionIsPresentWhenUnauthenticatedAndPurchaseAllowedOnAppStore () {
+    func testThatSubscriptionIsPresentWhenUnauthenticatedAndPurchaseAllowedOnAppStore() {
         subscriptionManager.canPurchase = true
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
 
@@ -188,7 +188,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testThatSubscriptionIsPresentDespiteCanPurchaseFlagOnStripe () {
+    func testThatSubscriptionIsPresentDespiteCanPurchaseFlagOnStripe() {
         subscriptionManager.canPurchase = false
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
 

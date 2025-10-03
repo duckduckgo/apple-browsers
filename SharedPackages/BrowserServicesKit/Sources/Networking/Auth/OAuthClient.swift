@@ -303,7 +303,9 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 let refreshTokenResponse = try await authService.refreshAccessToken(clientID: Constants.clientID, refreshToken: localTokenContainer.refreshToken)
                 eventMapping?.fire(.tokenRefreshRefreshedAccessToken(refreshID: refreshID))
 
-                let refreshedTokens = try await decode(accessToken: refreshTokenResponse.accessToken, refreshToken: refreshTokenResponse.refreshToken)
+                let refreshedTokens = try await decode(accessToken: refreshTokenResponse.accessToken,
+                                                       refreshToken: refreshTokenResponse.refreshToken,
+                                                       refreshID: refreshID)
                 Logger.OAuthClient.log("Tokens refreshed, expiry: \(refreshedTokens.decodedAccessToken.exp.value.description, privacy: .public)")
 
                 eventMapping?.fire(.tokenRefreshSavingTokens(refreshID: refreshID))

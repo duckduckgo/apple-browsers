@@ -93,6 +93,7 @@ public final class WideEvent: WideEventManaging {
 
         do {
             try Self.storageQueue.sync { try storage.update(data) }
+            Self.logger.info("Wide pixel with global ID \(globalID, privacy: .public) updated: \(data.pixelParameters())")
         } catch {
             if case WideEventError.flowNotFound = error {
                 Self.logger.info("Wide pixel update ignored for non-existent flow: \(T.pixelName, privacy: .public), global ID: \(globalID, privacy: .public)")
@@ -100,8 +101,6 @@ public final class WideEvent: WideEventManaging {
                 report(.updateFailed(pixelName: T.pixelName, error: error), error: error, params: nil)
             }
         }
-
-        Self.logger.info("Wide pixel with global ID \(globalID, privacy: .public) updated: \(data.pixelParameters())")
     }
 
     public func updateFlow<T: WideEventData>(globalID: String, update: (inout T) -> Void) {

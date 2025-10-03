@@ -3,7 +3,7 @@
         description: 'Fires when the modal for inactive users to set DDG as the default browser is prompted.',
         owners: ['alessandroboron'],
         triggers: ['other'],
-        suffixes: ['form_factor'],
+        suffixes: ['platform', 'form_factor'],
         parameters: [
             // Commonly used param, defined in params_dictionary.json.
             'appVersion',
@@ -14,7 +14,7 @@
         description: 'Fires when the button to dismiss the modal for inactive users is tapped.',
         owners: ['alessandroboron'],
         triggers: ['other'],
-        suffixes: ['form_factor'],
+        suffixes: ['platform', 'form_factor'],
         parameters: [
             // Commonly used param, defined in params_dictionary.json.
             'appVersion',
@@ -25,7 +25,7 @@
         description: 'Fires when the button to set the browser as the default browser is tapped.',
         owners: ['alessandroboron'],
         triggers: ['other'],
-        suffixes: ['form_factor'],
+        suffixes: ['platform', 'form_factor'],
         parameters: [
             // Commonly used param, defined in params_dictionary.json.
             'appVersion',
@@ -36,7 +36,7 @@
         description: 'Fires when the Even more protections... that opens a website to compare privacy protections is tapped.',
         owners: ['alessandroboron'],
         triggers: ['other'],
-        suffixes: ['form_factor'],
+        suffixes: ['platform', 'form_factor'],
         parameters: [
             // Commonly used param, defined in params_dictionary.json.
             'appVersion',
@@ -47,7 +47,7 @@
         description: 'Fires when we fail to retrieve the flag to decide whether we already shown the prompt from the persistence store.',
         owners: ['alessandroboron'],
         triggers: ['other'],
-        suffixes: ['form_factor', 'first_daily_count'],
+        suffixes: ['first_daily_count', 'form_factor', 'platform'],
         parameters: [
             // Commonly used param, defined in params_dictionary.json.
             'appVersion',
@@ -69,7 +69,7 @@
         description: 'Fires when we fail to save to the persistence store the flag to indicate whether we already shown the prompt.',
         owners: ['alessandroboron'],
         triggers: ['other'],
-        suffixes: ['form_factor', 'first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: [
             // Commonly used param, defined in params_dictionary.json.
             'appVersion',

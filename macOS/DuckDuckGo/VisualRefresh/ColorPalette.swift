@@ -66,7 +66,7 @@ protocol ColorPalette {
     var controlsDecorationSecondary: NSColor { get }
     var controlsDecorationTertiary: NSColor { get }
 
-    var highlightDecoration: NSColor { get }
+    var highlightPrimary: NSColor { get }
 
     var decorationPrimary: NSColor { get }
     var decorationSecondary: NSColor { get }
@@ -128,7 +128,7 @@ final class NewColorPalette: ColorPalette {
     let controlsDecorationPrimary: NSColor = .controlsDecorationPrimary
     let controlsDecorationSecondary: NSColor = .controlsDecorationSecondary
     let controlsDecorationTertiary: NSColor = .controlsDecorationTertiary
-    let highlightDecoration: NSColor = .highlightDecoration
+    let highlightPrimary: NSColor = .highlightDecoration
     let decorationPrimary: NSColor = .decorationPrimary
     let decorationSecondary: NSColor = .decorationSecondary
     let decorationTertiary: NSColor = .decorationTertiary

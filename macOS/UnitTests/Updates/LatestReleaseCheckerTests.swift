@@ -52,7 +52,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
         // Given
         let expectedMetadata = ReleaseMetadata(
             latestVersion: "1.156.0",
-            buildNumber: "540",
+            buildNumber: 540,
             releaseDate: "2025-09-11T10:30:00Z",
             isCritical: false
         )
@@ -61,7 +61,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
         {
             "latest_appstore_version": {
                 "latest_version": "1.156.0",
-                "build_number": "540",
+                "build_number": 540,
                 "release_date": "2025-09-11T10:30:00Z",
                 "is_critical": false
             }
@@ -94,7 +94,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
         {
             "latest_appstore_version": {
                 "latest_version": "1.157.0",
-                "build_number": "541",
+                "build_number": 541,
                 "release_date": "2025-09-12T14:15:00Z",
                 "is_critical": true
             }
@@ -116,7 +116,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(result.latestVersion, "1.157.0")
-        XCTAssertEqual(result.buildNumber, "541")
+        XCTAssertEqual(result.buildNumber, 541)
         XCTAssertEqual(result.releaseDate, "2025-09-12T14:15:00Z")
         XCTAssertTrue(result.isCritical)
     }
@@ -331,7 +331,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
         {
             "wrong_key": {
                 "latest_version": "1.156.0",
-                "build_number": "540",
+                "build_number": 540,
                 "release_date": "2025-09-11T10:30:00Z",
                 "is_critical": false
             }
@@ -441,7 +441,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
         {
             "latest_appstore_version": {
                 "latest_version": null,
-                "build_number": "540",
+                "build_number": 540,
                 "release_date": "2025-09-11T10:30:00Z",
                 "is_critical": false
             }
@@ -481,7 +481,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
         {
             "latest_appstore_version": {
                 "latest_version": "\(longVersionString)",
-                "build_number": "540",
+                "build_number": 540,
                 "release_date": "2025-09-11T10:30:00Z",
                 "is_critical": false
             }
@@ -503,7 +503,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(result.latestVersion, longVersionString)
-        XCTAssertEqual(result.buildNumber, "540")
+        XCTAssertEqual(result.buildNumber, 540)
         XCTAssertEqual(result.releaseDate, "2025-09-11T10:30:00Z")
         XCTAssertFalse(result.isCritical)
     }
@@ -520,7 +520,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
             {
                 "latest_appstore_version": {
                     "latest_version": "1.156.0",
-                    "build_number": "540",
+                    "build_number": 540,
                     "release_date": "2025-09-11T10:30:00Z",
                     "is_critical": false
                 }

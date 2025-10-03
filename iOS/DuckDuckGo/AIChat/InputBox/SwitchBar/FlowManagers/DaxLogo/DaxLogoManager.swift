@@ -65,7 +65,7 @@ final class DaxLogoManager {
         } else {
             NSLayoutConstraint.activate([
                 parentView.topAnchor.constraint(equalTo: centeringGuide.topAnchor),
-                barView.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor)
+                parentView.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor, constant: DefaultOmniBarView.expectedHeight)
             ])
         }
 

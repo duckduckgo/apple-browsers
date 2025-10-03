@@ -18,6 +18,8 @@
 
 import SwiftUI
 
+#if os(iOS)
+
 /// Color palette definition that logically collects all colors that work properly with each other.
 protocol ColorPaletteDefinition {
 
@@ -30,3 +32,5 @@ protocol ColorPaletteDefinition {
     /// Returns a base color.
     static func color(for baseColor: BaseColor) -> Color
 }
+
+#endif

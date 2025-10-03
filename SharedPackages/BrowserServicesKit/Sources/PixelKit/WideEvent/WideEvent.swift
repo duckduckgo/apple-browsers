@@ -194,6 +194,10 @@ public final class WideEvent: WideEventManaging {
         parameters.merge(typed.contextData.pixelParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(typed.pixelParameters(), uniquingKeysWith: { _, new in new })
 
+        if let errorData = typed.errorData {
+            parameters.merge(errorData.pixelParameters(), uniquingKeysWith: { _, new in new })
+        }
+
         parameters[WideEventParameter.Feature.status] = status.description
 
         if case let .unknown(reason) = status {

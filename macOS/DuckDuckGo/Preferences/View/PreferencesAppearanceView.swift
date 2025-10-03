@@ -150,7 +150,7 @@ extension Preferences {
                     .frame(width: outerSize, height: outerSize)
                     .overlay(
                         RoundedRectangle(cornerRadius: outerCornerRadius)
-                        .stroke(Color(themeColors.decorationPrimary), lineWidth: 1)
+                        .stroke(Color(themeColors.surfaceDecorationPrimary), lineWidth: 1)
                         .frame(width: outerSize, height: outerSize)
                     )
 

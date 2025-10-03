@@ -139,14 +139,6 @@ extension SharedColorPaletteDefinition {
         case .controlsFillTertiary:
             return controlsFillTertiary
 
-        /// Decoration Colors
-        case .decorationPrimary:
-            return decorationPrimary
-        case .decorationSecondary:
-            return decorationSecondary
-        case .decorationTertiary:
-            return decorationTertiary
-
         /// Destructive Colors
         case .destructiveContentPrimary:
             return destructiveContentPrimary
@@ -208,6 +200,14 @@ extension SharedColorPaletteDefinition {
             return surfaceSecondary
         case .surfaceTertiary:
             return surfaceTertiary
+
+        /// Surface Decoration
+        case .surfaceDecorationPrimary:
+            return surfaceDecorationPrimary
+        case .surfaceDecorationSecondary:
+            return surfaceDecorationSecondary
+        case .surfaceDecorationTertiary:
+            return surfaceDecorationTertiary
 
         /// Text Colors
         case .textPrimary:

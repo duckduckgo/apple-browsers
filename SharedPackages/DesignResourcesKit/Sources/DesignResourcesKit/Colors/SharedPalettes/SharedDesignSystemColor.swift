@@ -89,11 +89,6 @@ public enum SharedDesignSystemColor {
     case controlsFillSecondary
     case controlsFillTertiary
 
-    // Decorations
-    case decorationPrimary
-    case decorationSecondary
-    case decorationTertiary
-
     // Destructive
     case destructiveContentPrimary
     case destructiveContentSecondary
@@ -130,6 +125,11 @@ public enum SharedDesignSystemColor {
     case surfacePrimary
     case surfaceSecondary
     case surfaceTertiary
+
+    // Surface Decoration
+    case surfaceDecorationPrimary
+    case surfaceDecorationSecondary
+    case surfaceDecorationTertiary
 
     // Text
     case textPrimary

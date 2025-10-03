@@ -26,6 +26,7 @@ protocol ColorPalette {
     var surfaceSecondary: NSColor { get }
     var surfaceTertiary: NSColor { get }
 
+    var surfaceDecorationTertiary: NSColor { get }
     var textPrimary: NSColor { get }
     var textSecondary: NSColor { get }
     var textTertiary: NSColor { get }
@@ -67,10 +68,6 @@ protocol ColorPalette {
     var controlsDecorationTertiary: NSColor { get }
 
     var highlightPrimary: NSColor { get }
-
-    var decorationPrimary: NSColor { get }
-    var decorationSecondary: NSColor { get }
-    var decorationTertiary: NSColor { get }
 
     var shadowPrimary: NSColor { get }
     var shadowSecondary: NSColor { get }
@@ -129,9 +126,9 @@ final class NewColorPalette: ColorPalette {
     let controlsDecorationSecondary: NSColor = .controlsDecorationSecondary
     let controlsDecorationTertiary: NSColor = .controlsDecorationTertiary
     let highlightPrimary: NSColor = .highlightDecoration
-    let decorationPrimary: NSColor = .decorationPrimary
-    let decorationSecondary: NSColor = .decorationSecondary
-    let decorationTertiary: NSColor = .decorationTertiary
+    let surfaceDecorationPrimary: NSColor = .decorationPrimary
+    let surfaceDecorationSecondary: NSColor = .decorationSecondary
+    let surfaceDecorationTertiary: NSColor = .decorationTertiary
     let shadowPrimary: NSColor = .shadowPrimary
     let shadowSecondary: NSColor = .shadowSecondary
     let shadowTertiary: NSColor = .shadowTertiary

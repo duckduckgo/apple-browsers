@@ -44,7 +44,7 @@ final class MaliciousSiteProtectionTests: XCTestCase {
 
     override func setUp() async throws {
         featureFlagger.enabledFeatureFlags = [.maliciousSiteProtection]
-        apiService = MockAPIService(apiResponse: .failure(CancellationError()))
+        apiService = MockAPIService { _ in .failure(CancellationError()) }
         let mockFileStore = MockMaliciousSiteFileStore()
         mockDataProvider = MockMaliciousSiteDataProvider()
         dataManager = MaliciousSiteProtection.DataManager(fileStore: mockFileStore, embeddedDataProvider: mockDataProvider, fileNameProvider: { _ in "file.json" })

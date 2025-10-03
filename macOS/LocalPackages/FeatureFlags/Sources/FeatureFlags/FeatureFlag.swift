@@ -201,6 +201,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211396583578252?focus=true
     case unifiedURLPredictorMetrics
+
+    /// https://app.asana.com/1/137249556945/task/1211354430557015?focus=true
+    case subscriptionRestoreWidePixelMeasurement
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -290,7 +293,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .themes,
                 .appStoreCheckForUpdatesFlow,
                 .unifiedURLPredictor,
-                .unifiedURLPredictorMetrics:
+                .unifiedURLPredictorMetrics,
+                .subscriptionRestoreWidePixelMeasurement:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -440,6 +444,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .unifiedURLPredictorMetrics:
             return .disabled
+        case .subscriptionRestoreWidePixelMeasurement:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         }
     }
 }

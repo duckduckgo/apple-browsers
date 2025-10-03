@@ -203,6 +203,25 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled)
     }
 
+    func testIsSubscriptionRestoreWidePixelMeasurementDisabledWhenProviderDefaultReturnsFalse() {
+        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                     purchasePlatform: .appStore,
+                                                                                     paidAIChatFlagStatusProvider: { false },
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
+                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
+        XCTAssertFalse(subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled)
+    }
+
+    func testIsSubscriptionRestoreWidePixelMeasurementEnabledWhenProviderReturnsTrue() {
+        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                     purchasePlatform: .appStore,
+                                                                                     paidAIChatFlagStatusProvider: { false },
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
+                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false },
+                                                                                     isSubscriptionRestoreWidePixelMeasurementEnabledProvider: { true })
+        XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled)
+    }
+
     // MARK: - Helper
 
     private func makeSubfeatureEnabledCheck(for enabledSubfeatures: [PrivacyProSubfeature]) -> (any PrivacySubfeature) -> Bool {

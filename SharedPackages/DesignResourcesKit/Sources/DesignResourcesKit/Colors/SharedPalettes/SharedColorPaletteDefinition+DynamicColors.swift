@@ -172,8 +172,6 @@ extension SharedColorPaletteDefinition {
             return shadowTertiary
 
         /// Surface Colors
-        case .surface:
-            return surface
         case .surfaceBackdrop:
             return surfaceBackdrop
         case .surfaceCanvas:

@@ -66,14 +66,31 @@ struct AppConfiguration {
 
     private func clearTemporaryDirectory() {
         let tmp = FileManager.default.temporaryDirectory
+        removeTempDirectory(at: tmp)
+        recreateTempDirectory(at: tmp)
+    }
+
+    private func removeTempDirectory(at url: URL) {
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            Logger.general.info("ℹ️ Temp directory did not exist, nothing to remove")
+            return
+        }
+
         do {
-            try FileManager.default.removeItem(at: tmp)
-            Logger.general.info("🧹 Removed temp directory at: \(tmp.path)")
-            // https://app.asana.com/1/137249556945/project/1201392122292466/task/1210925187026095?focus=true
-            try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true, attributes: nil)
-            Logger.general.info("📁 Recreated temp directory at: \(tmp.path)")
+            try FileManager.default.removeItem(at: url)
+            Logger.general.info("🧹 Removed temp directory at: \(url.path)")
         } catch {
-            Logger.general.error("❌ Failed to reset tmp dir: \(error.localizedDescription)")
+            Logger.general.error("⚠️ Failed to remove tmp dir: \(error.localizedDescription)")
+        }
+    }
+
+    private func recreateTempDirectory(at url: URL) {
+        do {
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
+            Logger.general.info("📁 Recreated temp directory at: \(url.path)")
+        } catch {
+            Logger.general.error("❌ Failed to recreate tmp dir: \(error.localizedDescription)")
+            Pixel.fire(pixel: .failedToRecreateTmpDir)
         }
     }
 

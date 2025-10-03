@@ -119,7 +119,6 @@ public enum SharedDesignSystemColor {
     case shadowTertiary
 
     // Surface
-    case surface
     case surfaceBackdrop
     case surfaceCanvas
     case surfacePrimary

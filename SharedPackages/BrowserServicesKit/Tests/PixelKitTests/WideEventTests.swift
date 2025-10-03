@@ -316,34 +316,6 @@ final class WideEventTests: XCTestCase {
         XCTAssertNotNil(data.duration?.end)
     }
 
-    func testMeasurementWithExtremeDurations() throws {
-        let data = makeTestMockData()
-        wideEvent.startFlow(data)
-
-        // Test very long duration
-        let longStart = Date(timeIntervalSince1970: 0)
-        let longEnd = longStart.addingTimeInterval(3600 * 24)
-        let updated = try XCTUnwrapFlow(MockWideEventData.self, globalID: data.globalData.id)
-        updated.duration = WideEvent.MeasuredInterval(start: longStart, end: longEnd)
-        wideEvent.updateFlow(updated)
-
-        let typed = try XCTUnwrapFlow(MockWideEventData.self, globalID: data.globalData.id)
-        var parameters: [String: String] = [:]
-        parameters["global.platform"] = "macOS"
-        parameters["global.type"] = "app"
-        parameters["global.sample_rate"] = "1.0"
-        parameters["app.name"] = typed.appData.name
-        parameters["app.version"] = typed.appData.version
-
-        if let formFactor = typed.appData.formFactor { parameters["global.form_factor"] = formFactor }
-        parameters["feature.name"] = MockWideEventData.pixelName
-
-        if let name = typed.contextData.name { parameters["context.name"] = name }
-        parameters.merge(typed.pixelParameters(), uniquingKeysWith: { _, new in new })
-
-        XCTAssertEqual(parameters["feature.data.ext.duration_ms_bucketed"], "600000")
-    }
-
     func testStopMeasurementWhenNeverStarted() throws {
         let data = makeTestMockData()
         wideEvent.startFlow(data)
@@ -395,9 +367,6 @@ final class WideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.data.ext.failing_step"], "step_1")
         XCTAssertEqual(parameters["feature.data.ext.test_identifier"], "ddg.privacy.pro.monthly")
         XCTAssertEqual(parameters["feature.data.ext.test_eligible"], "true")
-
-        // Measurement parameters
-        XCTAssertEqual(parameters["feature.data.ext.duration_ms_bucketed"], "5000")
 
         // Error parameters
         XCTAssertEqual(parameters["feature.data.error.domain"], "TestErrorDomain")

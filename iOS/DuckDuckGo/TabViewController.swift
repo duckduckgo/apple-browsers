@@ -2136,9 +2136,7 @@ extension TabViewController: WKNavigationDelegate {
                                  completion: completion)
 
         case .external(let action):
-            if url.scheme == "x-safari-https" {
-                DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationXSafariHTTPS)
-            }
+            reportExternalSchemePixelIfNeeded(url: url)
             performExternalNavigationFor(url: url, action: action)
             completion(.cancel)
 
@@ -3737,6 +3735,12 @@ private extension TabViewController {
         }
 
         return didRestoreWebViewState
+    }
+
+    private func reportExternalSchemePixelIfNeeded(url: URL) {
+        if url.scheme == "x-safari-https" {
+            DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationXSafariHTTPS)
+        }
     }
 }
 

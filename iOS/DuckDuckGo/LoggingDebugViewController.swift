@@ -22,8 +22,6 @@ import Core
 
 class LoggingDebugViewController: UITableViewController {
 
-    // Row cases no longer needed since we're using section-based indexing
-
     let defaults = AppUserDefaults()
 
     override func viewDidLoad() {

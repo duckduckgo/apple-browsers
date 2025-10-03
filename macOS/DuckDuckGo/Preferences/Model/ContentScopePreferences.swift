@@ -42,6 +42,7 @@ final class ContentScopePreferences: ObservableObject, PreferencesTabOpening {
     var isDebugStateEnabled: Bool {
         didSet {
             persistor.debugStateEnabled = isDebugStateEnabled
+            NotificationCenter.default.post(name: .contentScopeDebugStateDidChange, object: nil)
         }
     }
 

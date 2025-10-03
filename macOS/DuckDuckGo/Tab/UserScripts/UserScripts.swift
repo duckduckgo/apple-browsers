@@ -61,8 +61,11 @@ final class UserScripts: UserScriptsProvider {
     let serpSettingsUserScript: SERPSettingsUserScript?
     let faviconScript = FaviconUserScript()
 
+    private let contentScopePreferences: ContentScopePreferences
+
     // swiftlint:disable:next cyclomatic_complexity
-    init(with sourceProvider: ScriptSourceProviding) {
+    init(with sourceProvider: ScriptSourceProviding, contentScopePreferences: ContentScopePreferences = .shared) {
+        self.contentScopePreferences = contentScopePreferences
         clickToLoadScript = ClickToLoadUserScript()
         contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
@@ -92,7 +95,7 @@ final class UserScripts: UserScriptsProvider {
                                            sessionKey: sessionKey,
                                            messageSecret: messageSecret,
                                            isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser,
-                                           debug: ContentScopePreferences.shared.isDebugStateEnabled,
+                                           debug: contentScopePreferences.isDebugStateEnabled,
                                            featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
                                            currentCohorts: currentCohorts)
         do {

@@ -126,6 +126,7 @@ final class MainMenu: NSMenu {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let appVersion: AppVersion
     private let configurationURLProvider: CustomConfigurationURLProviding
+    private let contentScopePreferences: ContentScopePreferences
 
     private lazy var webExtensionsMenuItem: NSMenuItem? = {
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
@@ -149,7 +150,8 @@ final class MainMenu: NSMenu {
          privacyConfigurationManager: PrivacyConfigurationManaging,
          appVersion: AppVersion = .shared,
          isFireWindowDefault: Bool,
-         configurationURLProvider: CustomConfigurationURLProviding) {
+         configurationURLProvider: CustomConfigurationURLProviding,
+         contentScopePreferences: ContentScopePreferences = .shared) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
@@ -161,6 +163,7 @@ final class MainMenu: NSMenu {
         self.aiChatMenuConfig = aiChatMenuConfig
         self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, featureFlagger: featureFlagger)
         self.configurationURLProvider = configurationURLProvider
+        self.contentScopePreferences = contentScopePreferences
         super.init(title: UserText.duckDuckGo)
 
         buildItems {
@@ -925,7 +928,7 @@ final class MainMenu: NSMenu {
     }
 
     private func updateContentScopeDebugStateMenuItem() {
-        contentScopeDebugStateMenuItem.state = ContentScopePreferences.shared.isDebugStateEnabled ? .on : .off
+        contentScopeDebugStateMenuItem.state = contentScopePreferences.isDebugStateEnabled ? .on : .off
     }
 
     @MainActor
@@ -959,8 +962,7 @@ final class MainMenu: NSMenu {
     }
 
     @objc private func toggleContentScopeStateDebugSettingsAction(_ sender: NSMenuItem) {
-        ContentScopePreferences.shared.isDebugStateEnabled = !ContentScopePreferences.shared.isDebugStateEnabled
-        NotificationCenter.default.post(name: .contentScopeDebugStateDidChange, object: nil)
+        contentScopePreferences.isDebugStateEnabled = !contentScopePreferences.isDebugStateEnabled
         updateContentScopeDebugStateMenuItem()
     }
 

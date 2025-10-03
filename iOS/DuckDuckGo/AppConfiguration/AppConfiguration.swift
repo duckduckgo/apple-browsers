@@ -85,12 +85,17 @@ struct AppConfiguration {
     }
 
     private func recreateTempDirectory(at url: URL) {
+        guard !FileManager.default.fileExists(atPath: url.path) else {
+            Logger.general.info("ℹ️ Temp directory exists, skipping recreation")
+            return
+        }
+
         do {
             try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
             Logger.general.info("📁 Recreated temp directory at: \(url.path)")
         } catch {
             Logger.general.error("❌ Failed to recreate tmp dir: \(error.localizedDescription)")
-            Pixel.fire(pixel: .failedToRecreateTmpDir)
+            Pixel.fire(pixel: .failedToRecreateTmpDir, error: error)
         }
     }
 

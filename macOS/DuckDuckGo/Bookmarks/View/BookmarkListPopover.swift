@@ -26,7 +26,7 @@ protocol BookmarkListPopoverDelegate: NSPopoverDelegate {
 
 final class BookmarkListPopover: NSPopover {
 
-    private var theme: ThemeDefinition {
+    private var theme: ThemeStyleProviding {
         NSApp.delegateTyped.themeManager.theme
     }
 

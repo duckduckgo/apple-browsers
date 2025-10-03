@@ -20,7 +20,7 @@ import AppKit
 
 final class DownloadsPopover: NSPopover {
 
-    private var theme: ThemeDefinition {
+    private var theme: ThemeStyleProviding {
         NSApp.delegateTyped.themeManager.theme
     }
 

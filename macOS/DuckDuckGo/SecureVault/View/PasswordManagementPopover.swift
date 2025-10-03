@@ -23,7 +23,7 @@ import SwiftUI
 
 final class PasswordManagementPopover: NSPopover {
 
-    private var theme: ThemeDefinition {
+    private var theme: ThemeStyleProviding {
         NSApp.delegateTyped.themeManager.theme
     }
 

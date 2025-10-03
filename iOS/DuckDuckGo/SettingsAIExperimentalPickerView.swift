@@ -59,20 +59,45 @@ private struct PickerOptionView: View {
     let title: String
     let showNewBadge: Bool
     let action: () -> Void
+    
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: SettingsAIExperimentalPickerViewLayout.optionContentVerticalSpacing) {
-                Image(isSelected ? selectedImage : unselectedImage)
-                    .resizable()
-                    .scaledToFit()
+                Group {
+                    if shouldUseVerticalLayout {
+                        Image(isSelected ? selectedImage : unselectedImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: SettingsAIExperimentalPickerViewLayout.imageHeight)
+                    } else {
+                        Image(isSelected ? selectedImage : unselectedImage)
+                            .resizable()
+                            .scaledToFit()
+                    }
+                }
 
-                HStack(spacing: 6) {
-                    Text(title)
-                        .daxFootnoteRegular()
-                        .foregroundColor(Color(designSystemColor: .textPrimary))
-                    if showNewBadge {
-                        BadgeView(text: UserText.settingsItemNewBadge)
+                Group {
+                    if shouldUseVerticalLayout {
+                        VStack(spacing: 4) {
+                            Text(title)
+                                .daxFootnoteRegular()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+                                .multilineTextAlignment(.center)
+                            if showNewBadge {
+                                BadgeView(text: UserText.settingsItemNewBadge)
+                            }
+                        }
+                    } else {
+                        HStack(spacing: 6) {
+                            Text(title)
+                                .daxFootnoteRegular()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+                            if showNewBadge {
+                                BadgeView(text: UserText.settingsItemNewBadge)
+                            }
+                        }
                     }
                 }
 
@@ -83,6 +108,10 @@ private struct PickerOptionView: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
+    }
+    
+    private var shouldUseVerticalLayout: Bool {
+        dynamicTypeSize.isAccessibilitySize || dynamicTypeSize > .large
     }
 }
 
@@ -111,4 +140,5 @@ private enum SettingsAIExperimentalPickerViewLayout {
     static let viewHeight: CGFloat = 152
     static let maxViewWidth: CGFloat = 380
     static let checkmarkHeight: CGFloat = 20
+    static let imageHeight: CGFloat = 88
 }

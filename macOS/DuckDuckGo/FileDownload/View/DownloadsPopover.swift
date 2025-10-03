@@ -20,11 +20,16 @@ import AppKit
 
 final class DownloadsPopover: NSPopover {
 
+    private var theme: ThemeDefinition {
+        NSApp.delegateTyped.themeManager.theme
+    }
+
     init(fireWindowSession: FireWindowSessionRef?) {
         super.init()
 
         self.animates = false
         self.behavior = .semitransient
+        self.backgroundColor = theme.colorsProvider.popoverBackgroundColor
 
         setupContentController(fireWindowSession: fireWindowSession)
     }

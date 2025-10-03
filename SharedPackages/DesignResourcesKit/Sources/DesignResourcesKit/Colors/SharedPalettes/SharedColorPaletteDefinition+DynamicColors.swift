@@ -124,14 +124,6 @@ extension SharedColorPaletteDefinition {
             return containerFillTertiary
 
         /// Controls Colors
-        case .controlsDecorationPrimary:
-            return controlsDecorationPrimary
-        case .controlsDecorationSecondary:
-            return controlsDecorationSecondary
-        case .controlsDecorationTertiary:
-            return controlsDecorationTertiary
-        case .controlsDecorationQuaternary:
-            return controlsDecorationQuaternary
         case .controlsFillPrimary:
             return controlsFillPrimary
         case .controlsFillSecondary:

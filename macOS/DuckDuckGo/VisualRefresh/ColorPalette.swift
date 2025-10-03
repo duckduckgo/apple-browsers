@@ -63,9 +63,6 @@ protocol ColorPalette {
     var controlsFillPrimary: NSColor { get }
     var controlsFillSecondary: NSColor { get }
     var controlsFillTertiary: NSColor { get }
-    var controlsDecorationPrimary: NSColor { get }
-    var controlsDecorationSecondary: NSColor { get }
-    var controlsDecorationTertiary: NSColor { get }
 
     var highlightPrimary: NSColor { get }
 

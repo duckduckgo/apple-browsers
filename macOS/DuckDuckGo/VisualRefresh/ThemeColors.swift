@@ -41,9 +41,6 @@ struct ThemeColors: ColorPalette {
     let accentTextPrimary: NSColor
     let accentTextSecondary: NSColor
     let accentTextTertiary: NSColor
-    let controlsDecorationPrimary: NSColor
-    let controlsDecorationSecondary: NSColor
-    let controlsDecorationTertiary: NSColor
     let controlsFillPrimary: NSColor
     let controlsFillSecondary: NSColor
     let controlsFillTertiary: NSColor
@@ -104,9 +101,6 @@ extension ThemeColors {
         accentTextPrimary = NSColor(designSystemColor: .accentTextPrimary, palette: palette)
         accentTextSecondary = NSColor(designSystemColor: .accentTextSecondary, palette: palette)
         accentTextTertiary = NSColor(designSystemColor: .accentTextTertiary, palette: palette)
-        controlsDecorationPrimary = NSColor(designSystemColor: .controlsDecorationPrimary, palette: palette)
-        controlsDecorationSecondary = NSColor(designSystemColor: .controlsDecorationSecondary, palette: palette)
-        controlsDecorationTertiary = NSColor(designSystemColor: .controlsDecorationTertiary, palette: palette)
         controlsFillPrimary = NSColor(designSystemColor: .controlsFillPrimary, palette: palette)
         controlsFillSecondary = NSColor(designSystemColor: .controlsFillSecondary, palette: palette)
         controlsFillTertiary = NSColor(designSystemColor: .controlsFillTertiary, palette: palette)

@@ -81,10 +81,6 @@ public enum SharedDesignSystemColor {
     case containerFillTertiary
 
     // Controls
-    case controlsDecorationPrimary
-    case controlsDecorationSecondary
-    case controlsDecorationTertiary
-    case controlsDecorationQuaternary
     case controlsFillPrimary
     case controlsFillSecondary
     case controlsFillTertiary

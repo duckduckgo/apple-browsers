@@ -334,8 +334,12 @@ final class WatchdogTests: XCTestCase {
     // MARK: - State Transitions
 
     func testHangStateTransitions() async throws {
+        let minimumDuration = 0.2
+        let maximumDuration = 0.4
+        let checkInterval   = 0.1
+        
         let mockKill = MockKillAppFunction()
-        let watchdog = Watchdog(minimumHangDuration: 0.2, maximumHangDuration: 0.4, checkInterval: 0.1, killAppFunction: mockKill.killApp)
+        let watchdog = Watchdog(minimumHangDuration: minimumDuration, maximumHangDuration: maximumDuration, checkInterval: checkInterval, killAppFunction: mockKill.killApp)
 
         var receivedStates: [(hangState: Watchdog.HangState, duration: TimeInterval?)] = []
         let cancellable = await watchdog.hangStatePublisher
@@ -380,16 +384,16 @@ final class WatchdogTests: XCTestCase {
         let responsiveState = receivedStates.first { $0.hangState == .responsive }
         XCTAssertNotNil(responsiveState, "Should recover to responsive state")
         XCTAssertNotNil(responsiveState?.duration, "Responsive state includes the previous hang duration")
-        XCTAssertLessThan(responsiveState?.duration ?? 0, 0.5, "Duration should not exceed maximum + check interval")
+        XCTAssertLessThan(responsiveState?.duration ?? 0, maximumDuration + checkInterval, "Duration should not exceed maximum + padding")
 
         // Test 3: Responsive -> Hanging -> Timeout
-        blockMainThread(for: 0.5) // Exceeds maximum
+        blockMainThread(for: maximumDuration + (checkInterval * 2)) // Exceeds maximum
         await waitForState(.timeout)
 
         let timeoutState = receivedStates.first { $0.hangState == .timeout }
         XCTAssertNotNil(timeoutState, "Should transition to timeout state")
         XCTAssertNotNil(timeoutState?.duration, "Should include hang duration")
-        XCTAssertGreaterThan(timeoutState?.duration ?? 0, 0.3, "Duration should exceed maximum")
+        XCTAssertGreaterThan(timeoutState?.duration ?? 0, maximumDuration, "Duration should exceed maximum")
 
         // Test 4: Verify state sequence
         let stateSequence = receivedStates.map { $0.hangState }

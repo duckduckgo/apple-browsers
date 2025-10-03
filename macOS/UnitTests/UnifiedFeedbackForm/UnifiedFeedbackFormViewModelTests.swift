@@ -169,8 +169,6 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
 
     func testGivenDuckAiCategorWhenSendingFeedbackSucceeds_ThenCorrectFeedbackIsSent() async throws {
         let sender = MockVPNFeedbackSender()
-        let payload = UnifiedFeedbackFormViewModel.Response(message: "success", error: nil)
-        let response = APIResponseV2(data: try! JSONEncoder().encode(payload), httpResponse: HTTPURLResponse())
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),

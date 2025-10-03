@@ -121,6 +121,91 @@ extension Preferences {
         }
     }
 
+    // MARK: - Theme View
+    //
+    struct ThemeView: View {
+
+        // MARK: - Constants
+        private let outerSize: CGFloat = 42
+        private let outerCornerRadius: CGFloat = 8
+        private let innerSize = CGSize(width: 40, height: 31)
+        private let innerCornerRadius: CGFloat = 7
+        private let knobSize = CGSize(width: 28, height: 8)
+        private let knobRadius: CGFloat = 7
+
+        /// MARK: - Properties
+        private let themeColors: ThemeColors
+
+        /// Designated Initializer
+        ///
+        init(themeName: ThemeName) {
+            themeColors = ThemeColors(themeName: themeName)
+        }
+
+        var body: some View {
+            ZStack(alignment: .bottom) {
+                // Background
+                RoundedRectangle(cornerRadius: outerCornerRadius)
+                    .fill(Color(themeColors.surfaceBackdrop))
+                    .frame(width: outerSize, height: outerSize)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: outerCornerRadius)
+                        .stroke(Color(themeColors.decorationPrimary), lineWidth: 1)
+                        .frame(width: outerSize, height: outerSize)
+                    )
+
+                // Inner Top
+                RoundedRectangle(cornerRadius: innerCornerRadius)
+                    .fill(Color(themeColors.surfacePrimary))
+                    .frame(width: innerSize.width, height: innerSize.height)
+                    .mask(
+                        VStack {
+                            Rectangle()
+                                .frame(height: 10)
+                            Color.clear
+                        }
+                    )
+                    .padding(.bottom, 1)
+
+                // Inner Bottom
+                RoundedRectangle(cornerRadius: innerCornerRadius)
+                    .fill(Color(themeColors.surfaceTertiary))
+                    .frame(width: innerSize.width, height: innerSize.height)
+                    .mask(
+                        VStack {
+                            Color.clear
+                            Rectangle()
+                                .frame(height: 21)
+                        }
+                    )
+                    .padding(.bottom, 1)
+
+                // Knob
+                RoundedRectangle(cornerRadius: knobRadius)
+                    .fill(Color(themeColors.accentPrimary))
+                    .frame(width: knobSize.width, height: knobSize.height)
+                    .padding(.bottom, 6)
+            }
+        }
+    }
+
+    // MARK: - Picker: Themes
+    //
+    struct ThemesPickerView: View {
+        @EnvironmentObject var model: AppearancePreferences
+
+        var body: some View {
+            SlidingPickerView(settings: .themesPickerSettings, allValues: ThemeName.allCases, selectedValue: $model.themeName) { themeName in
+                AnyView(
+                    ThemeView(themeName: themeName)
+                )
+            }
+            .frame(height: 32)
+        }
+    }
+
+    // MARK: - Appearance Container View
+    //
     struct AppearanceView: View {
         @ObservedObject var model: AppearancePreferences
         @ObservedObject var aiChatModel: AIChatPreferences
@@ -134,6 +219,10 @@ extension Preferences {
 
                     if isThemeSwitcherEnabled {
                         ThemeAppearancePickerV2()
+                            .environmentObject(model)
+                            .padding(.bottom, 16)
+
+                        ThemesPickerView()
                             .environmentObject(model)
 
                     } else {
@@ -244,12 +333,22 @@ private extension ThemeAppearance {
 //
 private extension SlidingPickerSettings {
 
+    static var themesPickerSettings: SlidingPickerSettings {
+        SlidingPickerSettings(
+            selectionBorderColor: Color(designSystemColor: .accentPrimary),
+            cornerRadius: 8,
+            elementsPadding: 12,
+            sliderInset: 1,
+            sliderLineWidth: 2)
+    }
+
     static var appearancePickerSettings: SlidingPickerSettings {
         SlidingPickerSettings(
             backgroundColor: Color(designSystemColor: .surfacePrimary),
             borderColor: Color(designSystemColor: .containerDecorationSecondary),
             selectionBackgroundColor: Color(designSystemColor: .surfaceTertiary),
             selectionBorderColor: Color(designSystemColor: .containerDecorationSecondary),
+            animationsEnabled: false,
             dividerSize: CGSize(width: 1, height: 16))
     }
 }

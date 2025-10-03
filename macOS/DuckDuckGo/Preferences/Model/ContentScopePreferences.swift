@@ -36,8 +36,6 @@ extension NSNotification.Name {
 
 final class ContentScopePreferences: ObservableObject, PreferencesTabOpening {
 
-    static let shared = ContentScopePreferences()
-
     @Published
     var isDebugStateEnabled: Bool {
         didSet {

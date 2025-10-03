@@ -58,7 +58,7 @@ final class Application: NSApplication {
             privacyConfigurationManager: delegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
             isFireWindowDefault: delegate.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
             configurationURLProvider: delegate.configurationURLProvider,
-            contentScopePreferences: .shared
+            contentScopePreferences: delegate.contentScopePreferences
         )
         self.mainMenu = mainMenu
 

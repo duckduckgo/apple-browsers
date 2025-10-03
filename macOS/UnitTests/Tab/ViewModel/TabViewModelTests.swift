@@ -863,7 +863,7 @@ private extension Tab {
 
 // MARK: - Test Mocks
 
-final class MockVisualStyle: ThemeStyleProviding {
+final class MockThemeStyle: ThemeStyleProviding {
     var name: ThemeName
 
     var toolbarButtonsCornerRadius: CGFloat = 0

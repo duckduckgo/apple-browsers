@@ -96,6 +96,9 @@ extension NSPopover {
         Self.$mainWindow.withValue(positioningView.window) {
             self.show(relativeTo: positioningRect, of: positioningView, preferredEdge: preferredEdge)
         }
+
+        /// Hook up the BG View in this spot, since we need the Popover to be attached to an actual Window
+        ensureBackgroundViewFrame()
     }
 
     /// Shows the popover below the specified view with the popover's pin positioned in the middle of the view
@@ -171,5 +174,60 @@ extension NSPopover {
         }
         self.positioningView = positioningView
         self.swizzled_show(relativeTo: positioningRect, of: positioningView, preferredEdge: preferredEdge)
+    }
+}
+
+
+// MARK: - Background Color
+//
+extension NSPopover {
+
+    private static let backgroundViewKey = UnsafeRawPointer(bitPattern: "backgroundViewKey".hashValue)!
+    private var storageBackgroundView: ColorView? {
+        get {
+            objc_getAssociatedObject(self, Self.backgroundViewKey) as? ColorView
+        }
+        set {
+            objc_setAssociatedObject(self, Self.backgroundViewKey, newValue, .OBJC_ASSOCIATION_RETAIN)
+        }
+    }
+
+    private var backgroundView: ColorView {
+        if let storageBackgroundView {
+            return storageBackgroundView
+        }
+
+        let targetView = ColorView(frame: .zero, backgroundColor: .clear)
+        storageBackgroundView = targetView
+
+        return targetView
+    }
+
+    private var popoverWindow: NSWindow? {
+        contentViewController?.view.window
+    }
+
+    private var popoverFrameView: NSView? {
+        popoverWindow?.contentView?.superview
+    }
+
+    private func ensureBackgroundViewFrame() {
+        guard let popoverFrameView else {
+            return
+        }
+
+        backgroundView.frame = popoverFrameView.bounds
+        popoverFrameView.addSubview(backgroundView, positioned: .below, relativeTo: nil)
+    }
+
+    /// Extends thru the entire visible area of the Popover, including the triangle area
+    ///
+    var backgroundColor: NSColor? {
+        get {
+            backgroundView.backgroundColor
+        }
+        set {
+            backgroundView.backgroundColor = newValue
+        }
     }
 }

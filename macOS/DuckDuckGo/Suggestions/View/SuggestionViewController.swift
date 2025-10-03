@@ -182,7 +182,7 @@ final class SuggestionViewController: NSViewController {
         applyThemeStyles(theme: themeManager.theme)
     }
 
-    private func applyThemeStyles(theme: ThemeDefinition) {
+    private func applyThemeStyles(theme: ThemeStyleProviding) {
         let barStyleProvider = theme.addressBarStyleProvider
         let colorsProvider = theme.colorsProvider
 

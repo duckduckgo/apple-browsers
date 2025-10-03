@@ -81,7 +81,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     private var themeCancellable: AnyCancellable?
     private let themeManager: ThemeManaging
-    private var theme: ThemeDefinition {
+    private var theme: ThemeStyleProviding {
         themeManager.theme
     }
 
@@ -357,7 +357,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             }
     }
 
-    private func applyThemeStyle(theme: ThemeDefinition) {
+    private func applyThemeStyle(theme: ThemeStyleProviding) {
         guard let contentView = view as? ColorView else {
             assertionFailure()
             return

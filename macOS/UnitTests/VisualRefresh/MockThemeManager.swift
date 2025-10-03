@@ -22,9 +22,9 @@ import Foundation
 
 class MockThemeManager: ThemeManaging {
 
-    @Published var theme: ThemeDefinition = ThemeStyle.buildThemeStyle(themeName: .default)
+    @Published var theme: ThemeStyleProviding = ThemeStyle.buildThemeStyle(themeName: .default)
 
-    var themePublisher: Published<any ThemeDefinition>.Publisher {
+    var themePublisher: Published<any ThemeStyleProviding>.Publisher {
         $theme
     }
 }

@@ -53,7 +53,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private let permissionManager: PermissionManagerProtocol
 
     private let themeManager: ThemeManaging
-    private var theme: ThemeDefinition {
+    private var theme: ThemeStyleProviding {
         themeManager.theme
     }
 

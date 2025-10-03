@@ -30,7 +30,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
         NSUserInterfaceItemIdentifier("\(mode)_\(self.className())")
     }
 
-    static func sizingCell(theme: ThemeDefinition) -> BookmarkOutlineCellView {
+    static func sizingCell(theme: ThemeStyleProviding) -> BookmarkOutlineCellView {
         let cell = BookmarkOutlineCellView(identifier: BookmarkOutlineCellView.sizingCellIdentifier, theme: theme)
         cell.highlight = true // include menu button width
         return cell
@@ -78,9 +78,9 @@ final class BookmarkOutlineCellView: NSTableCellView {
 
     weak var delegate: BookmarkOutlineCellViewDelegate?
 
-    private let theme: ThemeDefinition
+    private let theme: ThemeStyleProviding
 
-    init(identifier: NSUserInterfaceItemIdentifier, theme: ThemeDefinition) {
+    init(identifier: NSUserInterfaceItemIdentifier, theme: ThemeStyleProviding) {
         self.theme = theme
         super.init(frame: .zero)
         self.identifier = identifier
@@ -296,7 +296,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
 
     // MARK: - Public
 
-    static func preferredContentWidth(for object: Any?, theme: ThemeDefinition) -> CGFloat {
+    static func preferredContentWidth(for object: Any?, theme: ThemeStyleProviding) -> CGFloat {
         guard let representedObject = (object as? BookmarkNode)?.representedObject ?? object else { return 0 }
         let extraWidth: CGFloat
         let minWidth: CGFloat

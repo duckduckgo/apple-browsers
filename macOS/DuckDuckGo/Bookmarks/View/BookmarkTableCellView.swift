@@ -50,7 +50,7 @@ final class BookmarkTableCellView: NSTableCellView {
         }
     }
 
-    private var theme: ThemeDefinition
+    private var theme: ThemeStyleProviding
     private var entity: BaseBookmarkEntity?
     private var trackingArea: NSTrackingArea?
     private var mouseInside: Bool = false {
@@ -71,7 +71,7 @@ final class BookmarkTableCellView: NSTableCellView {
         }
     }
 
-    init(identifier: NSUserInterfaceItemIdentifier, entity: BaseBookmarkEntity? = nil, theme: ThemeDefinition) {
+    init(identifier: NSUserInterfaceItemIdentifier, entity: BaseBookmarkEntity? = nil, theme: ThemeStyleProviding) {
         self.theme = theme
         super.init(frame: NSRect(x: 0, y: 0, width: 462, height: 84))
         self.identifier = identifier

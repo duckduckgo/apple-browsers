@@ -124,7 +124,7 @@ final class TabBarItemCellView: NSView {
 
     private var cancellables: Set<AnyCancellable> = []
     private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
-    private var theme: ThemeDefinition {
+    private var theme: ThemeStyleProviding {
         themeManager.theme
     }
 
@@ -477,7 +477,7 @@ final class TabBarItemCellView: NSView {
         applyThemeStyles(theme: theme)
     }
 
-    private func applyThemeStyles(theme: ThemeDefinition) {
+    private func applyThemeStyles(theme: ThemeStyleProviding) {
         let tabStyleProvider = theme.tabStyleProvider
         let colorsProvider = theme.colorsProvider
 
@@ -631,7 +631,7 @@ final class TabBarViewItem: NSCollectionViewItem {
 
     private var themeCancellable: AnyCancellable?
     private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
-    private var theme: ThemeDefinition {
+    private var theme: ThemeStyleProviding {
         themeManager.theme
     }
 

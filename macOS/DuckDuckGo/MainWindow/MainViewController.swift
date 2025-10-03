@@ -71,7 +71,7 @@ final class MainViewController: NSViewController {
     }
 
     private let themeManager: ThemeManaging
-    private var theme: ThemeDefinition {
+    private var theme: ThemeStyleProviding {
         themeManager.theme
     }
 

@@ -172,7 +172,7 @@ final class PasswordManagementViewController: NSViewController {
 
     private var themeCancellable: AnyCancellable??
     private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
-    private var theme: ThemeDefinition {
+    private var theme: ThemeStyleProviding {
         themeManager.theme
     }
 
@@ -1137,7 +1137,7 @@ final class PasswordManagementViewController: NSViewController {
         applyThemeStyle(theme: themeManager.theme)
     }
 
-    private func applyThemeStyle(theme: ThemeDefinition) {
+    private func applyThemeStyle(theme: ThemeStyleProviding) {
         let colorsProvider = theme.colorsProvider
         boxView.fillColor = colorsProvider.passwordManagerBackgroundColor
         backgroundView.backgroundColor = colorsProvider.passwordManagerLockScreenBackgroundColor

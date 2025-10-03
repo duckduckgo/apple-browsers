@@ -321,7 +321,7 @@ final class AIChatSidebarViewController: NSViewController {
             }
     }
 
-    private func applyThemeStyle(theme: ThemeDefinition) {
+    private func applyThemeStyle(theme: ThemeStyleProviding) {
         guard let contentView = view as? ColorView else {
             assertionFailure()
             return

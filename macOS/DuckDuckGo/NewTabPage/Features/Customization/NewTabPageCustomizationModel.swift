@@ -36,7 +36,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
         let lightBackgroundColor: String
         let darkBackgroundColor: String
 
-        init(theme: ThemeDefinition) {
+        init(theme: ThemeStyleProviding) {
             let colors = theme.colorsProvider
             lightBackgroundColor = colors.ntpLightBackgroundColor
             darkBackgroundColor = colors.ntpDarkBackgroundColor
@@ -162,7 +162,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
             }
     }
 
-    private func applyThemeStyles(theme: ThemeDefinition) {
+    private func applyThemeStyles(theme: ThemeStyleProviding) {
         backgroundColors = DefaultBackgroundColorStyle(theme: theme)
     }
 

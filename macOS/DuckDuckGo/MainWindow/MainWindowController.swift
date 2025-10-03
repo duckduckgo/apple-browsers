@@ -180,7 +180,7 @@ final class MainWindowController: NSWindowController {
         applyThemeStyles(theme: themeManager.theme)
     }
 
-    private func applyThemeStyles(theme: ThemeDefinition) {
+    private func applyThemeStyles(theme: ThemeStyleProviding) {
         // Prevent a 2px white line from appearing above the tab bar on macOS 26
         window?.backgroundColor = theme.colorsProvider.baseBackgroundColor
     }

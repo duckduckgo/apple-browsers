@@ -52,7 +52,7 @@ final class BookmarksBarViewController: NSViewController {
 
     private var themeCancellable: AnyCancellable?
     private let themeManager: ThemeManaging
-    private var theme: ThemeDefinition {
+    private var theme: ThemeStyleProviding {
         themeManager.theme
     }
 
@@ -451,7 +451,7 @@ extension BookmarksBarViewController: BookmarksBarViewModelDelegate {
         applyThemeStyle(theme: themeManager.theme)
     }
 
-    private func applyThemeStyle(theme: ThemeDefinition) {
+    private func applyThemeStyle(theme: ThemeStyleProviding) {
         let navigationBackgroundColor = theme.colorsProvider.navigationBackgroundColor
 
         backgroundColorView.backgroundColor = navigationBackgroundColor

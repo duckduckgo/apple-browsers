@@ -34,7 +34,7 @@ final class FireViewController: NSViewController {
     private let tabCollectionViewModel: TabCollectionViewModel
 
     private let themeManager: ThemeManaging
-    private var theme: ThemeDefinition {
+    private var theme: ThemeStyleProviding {
         themeManager.theme
     }
 

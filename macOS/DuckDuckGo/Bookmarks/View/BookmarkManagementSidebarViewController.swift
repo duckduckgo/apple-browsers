@@ -49,7 +49,7 @@ final class BookmarkManagementSidebarViewController: NSViewController {
 
     private var themeCancellable: AnyCancellable?
     private let themeManager: ThemeManaging
-    private var theme: ThemeDefinition {
+    private var theme: ThemeStyleProviding {
         themeManager.theme
     }
 
@@ -310,7 +310,7 @@ final class BookmarkManagementSidebarViewController: NSViewController {
             }
     }
 
-    private func applyThemeStyle(theme: ThemeDefinition) {
+    private func applyThemeStyle(theme: ThemeStyleProviding) {
         guard let contentView = view as? ColorView else {
             assertionFailure()
             return

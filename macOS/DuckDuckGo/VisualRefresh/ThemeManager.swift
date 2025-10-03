@@ -20,18 +20,16 @@ import Foundation
 import Combine
 import AppKit
 
-typealias ThemeDefinition = ThemeStyleProviding
-
 protocol ThemeManaging {
-    var theme: ThemeDefinition { get }
-    var themePublisher: Published<any ThemeDefinition>.Publisher { get }
+    var theme: ThemeStyleProviding { get }
+    var themePublisher: Published<any ThemeStyleProviding>.Publisher { get }
 }
 
 final class ThemeManager: ObservableObject, ThemeManaging {
     private var cancellables = Set<AnyCancellable>()
-    @Published private(set) var theme: ThemeDefinition
+    @Published private(set) var theme: ThemeStyleProviding
 
-    var themePublisher: Published<any ThemeDefinition>.Publisher {
+    var themePublisher: Published<any ThemeStyleProviding>.Publisher {
         $theme
     }
 

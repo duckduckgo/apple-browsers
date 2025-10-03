@@ -4,9 +4,7 @@
         owners: ['dus7'],
         triggers: ['other'],
         suffixes: ['platform', 'form_factor', 'first_daily_count'],
-        parameters: [
-            'appVersion'
-        ],
+        parameters: ['appVersion'],
         expires: '2025-11-03',
-    }
+    },
 }

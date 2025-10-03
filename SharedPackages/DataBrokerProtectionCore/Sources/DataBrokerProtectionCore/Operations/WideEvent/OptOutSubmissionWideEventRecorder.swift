@@ -135,7 +135,12 @@ final class OptOutSubmissionWideEventRecorder {
     }
 
     private func mapStageName(_ stage: Stage) -> OptOutSubmissionWideEventData.StageName {
-        return OptOutSubmissionWideEventData.StageName(rawValue: stage.rawValue) ?? .other
+        if let mapped = OptOutSubmissionWideEventData.StageName(rawValue: stage.rawValue) {
+            return mapped
+        } else {
+            assertionFailure("Unknown stage name")
+            return .other
+        }
     }
 }
 

@@ -240,7 +240,7 @@ struct BrokerProfileOptOutSubJob {
             profileQueryId: identifiers.profileQueryId,
             type: .optOutSubmittedAndAwaitingEmailConfirmation
         ))
-        dependencies.pixelHandler.fire(
+        pixelHandler.fire(
             .optOutStageSubmitAwaitingEmailConfirmation(
                 dataBrokerURL: brokerProfileQueryData.dataBroker.url,
                 brokerVersion: brokerProfileQueryData.dataBroker.version,

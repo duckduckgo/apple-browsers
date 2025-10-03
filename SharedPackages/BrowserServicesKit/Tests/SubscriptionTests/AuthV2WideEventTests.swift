@@ -228,4 +228,3 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.data.ext.refresh_token_latency_ms_bucketed"], "1000")
     }
 }
-

@@ -23,6 +23,10 @@ import SwiftUI
 
 final class PasswordManagementPopover: NSPopover {
 
+    private var theme: ThemeDefinition {
+        NSApp.delegateTyped.themeManager.theme
+    }
+
     override init() {
         super.init()
 
@@ -30,6 +34,8 @@ final class PasswordManagementPopover: NSPopover {
         // Prevent Popover detaching on Alert appearance
         self.behavior = .semitransient
         self.delegate = self
+
+        self.backgroundColor = theme.colorsProvider.popoverBackgroundColor
 
         setupContentController()
     }

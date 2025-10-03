@@ -73,9 +73,6 @@ public enum SharedDesignSystemColor {
     case buttonsWhite
 
     // Container
-    case containerDecorationPrimary
-    case containerDecorationSecondary
-    case containerDecorationTertiary
     case containerFillPrimary
     case containerFillSecondary
     case containerFillTertiary

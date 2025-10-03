@@ -110,12 +110,6 @@ extension SharedColorPaletteDefinition {
             return buttonsWhite
 
         /// Container Colors
-        case .containerDecorationPrimary:
-            return containerDecorationPrimary
-        case .containerDecorationSecondary:
-            return containerDecorationSecondary
-        case .containerDecorationTertiary:
-            return containerDecorationTertiary
         case .containerFillPrimary:
             return containerFillPrimary
         case .containerFillSecondary:

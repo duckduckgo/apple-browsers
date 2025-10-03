@@ -64,6 +64,7 @@ protocol NewWindowPolicyDecisionMaker {
         var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
         var newTabPageShownPixelSender: NewTabPageShownPixelSender
         var aiChatSidebarProvider: AIChatSidebarProviding
+        var tabCrashAggregator: TabCrashAggregator
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -140,7 +141,8 @@ protocol NewWindowPolicyDecisionMaker {
                      pageRefreshMonitor: PageRefreshMonitoring = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern),
                      aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil,
                      aiChatSidebarProvider: AIChatSidebarProviding? = nil,
-                     newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil
+                     newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil,
+                     tabCrashAggregator: TabCrashAggregator? = nil
     ) {
 
         let duckPlayer = duckPlayer
@@ -199,7 +201,8 @@ protocol NewWindowPolicyDecisionMaker {
                   pageRefreshMonitor: pageRefreshMonitor,
                   aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
                   aiChatSidebarProvider: aiChatSidebarProvider ?? NSApp.delegateTyped.aiChatSidebarProvider,
-                  newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender
+                  newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender,
+                  tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator
         )
     }
 
@@ -245,7 +248,8 @@ protocol NewWindowPolicyDecisionMaker {
          pageRefreshMonitor: PageRefreshMonitoring,
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
          aiChatSidebarProvider: AIChatSidebarProviding,
-         newTabPageShownPixelSender: NewTabPageShownPixelSender
+         newTabPageShownPixelSender: NewTabPageShownPixelSender,
+         tabCrashAggregator: TabCrashAggregator
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -332,7 +336,8 @@ protocol NewWindowPolicyDecisionMaker {
                                                        contentScopeExperimentsManager: contentScopeExperimentsManager,
                                                        aiChatMenuConfiguration: aiChatMenuConfiguration,
                                                        newTabPageShownPixelSender: newTabPageShownPixelSender,
-                                                       aiChatSidebarProvider: aiChatSidebarProvider)
+                                                       aiChatSidebarProvider: aiChatSidebarProvider,
+                                                       tabCrashAggregator: tabCrashAggregator)
             )
         super.init()
         tabGetter = { [weak self] in self }
@@ -1169,6 +1174,7 @@ protocol NewWindowPolicyDecisionMaker {
 
 extension Tab {
     static let crashTabMenuOptionTitle = "Crash Tab"
+    static let crashTabMenuOptionTitleMultipleTimes = "Crash Tab Multiple Times in a Row"
 
     private enum Selector {
         static let killWebContentProcessAndResetState = NSSelectorFromString("_killWebContentProcessAndResetState")
@@ -1181,6 +1187,18 @@ extension Tab {
     func killWebContentProcess() {
         if webView.responds(to: Selector.killWebContentProcessAndResetState) {
             webView.perform(Selector.killWebContentProcessAndResetState)
+        }
+    }
+
+    func killWebContentProcessMultipleTimes() {
+        if webView.responds(to: Selector.killWebContentProcessAndResetState) {
+            Task { @MainActor [weak self] in
+                for _ in 0..<50 {
+                    guard let self else { return }
+                    self.webView.perform(Selector.killWebContentProcessAndResetState)
+                    try await Task.sleep(nanoseconds: 20 * NSEC_PER_MSEC)
+                }
+            }
         }
     }
 }

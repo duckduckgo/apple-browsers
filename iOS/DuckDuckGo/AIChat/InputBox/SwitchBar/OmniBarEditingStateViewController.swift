@@ -55,18 +55,31 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     // MARK: - Core Components
     private lazy var contentContainerView = UIView()
 
+    private lazy var bottomLocationSwitchBarBackgroundMaskView: UIView = {
+        let view = UIView()
+        view.backgroundColor = Constants.backgroundColor
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
 
-    private var isUsingTopBarPosition: Bool {
-        appSettings.currentAddressBarPosition == .top || !featureFlagger.isFeatureOn(.aiSearchBottomBarSupport)
+    private var isUsingTopBarPosition: Bool
+    private var isLandscapeOrientation: Bool = false {
+        didSet {
+            isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
+        }
     }
-    lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler, showsSeparator: !isUsingTopBarPosition)
+    private var isAdjustedForTopBar: Bool
+
+    lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler,
+                                                   showsSeparator: !isUsingTopBarPosition,
+                                                   reduceTopPaddings: !isUsingTopBarPosition)
 
     private weak var contentContainerViewLeadingConstraint: NSLayoutConstraint?
     private weak var contentContainerViewTrailingConstraint: NSLayoutConstraint?
 
-    let featureFlagger: FeatureFlagger
     let appSettings: AppSettings
 
     // MARK: - Manager Components
@@ -82,13 +95,13 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     internal init(switchBarHandler: any SwitchBarHandling,
                   switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
-                  appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
-                  featureFlagger: FeatureFlagger) {
+                  appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.daxLogoManager = DaxLogoManager()
         self.appSettings = appSettings
-        self.featureFlagger = featureFlagger
+        self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
+        self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -110,6 +123,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         suggestionTrayManager?.showInitialSuggestions()
 
         updateDaxVisibility()
+        updateSwipeContainerSafeArea()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -156,17 +170,20 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private func adjustLayoutForViewSize(_ size: CGSize) {
 
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: size)
+        self.isLandscapeOrientation = isHorizontallyCompactLayoutEnabled
 
         let horizontalMargin: CGFloat = isHorizontallyCompactLayoutEnabled ? Constants.horizontalMarginForCompactLayout : 0
         self.contentContainerViewLeadingConstraint?.constant = horizontalMargin
         self.contentContainerViewTrailingConstraint?.constant = -horizontalMargin
         self.updateDaxVisibility()
+        self.updateLayoutForCurrentOrientation()
 
         self.navigationActionBarManager?.navigationActionBarViewController?.isShowingGradient = !isHorizontallyCompactLayoutEnabled && isUsingTopBarPosition
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-
+        super.viewWillTransition(to: size, with: coordinator)
+        
         coordinator.animate { _ in
             self.adjustLayoutForViewSize(size)
             self.view.layoutIfNeeded()
@@ -178,7 +195,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private func setupView() {
         setUpContentContainer()
 
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = Constants.backgroundColor
     }
 
     private func setUpContentContainer() {
@@ -214,7 +231,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         switchBarVC.view.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
         // Prevent showing scrollable content under the switcher
-        switchBarVC.view.backgroundColor = UIColor(designSystemColor: .background)
+        switchBarVC.view.backgroundColor = Constants.backgroundColor
 
         NSLayoutConstraint.activate([
             switchBarVC.view.leadingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.leadingAnchor),
@@ -224,9 +241,21 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         if isUsingTopBarPosition {
             switchBarVC.view.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 8).isActive = true
         } else {
+
             switchBarVC.view.bottomAnchor.constraint(equalTo: container.keyboardLayoutGuide.topAnchor, constant: -8).isActive = true
+
+            // Add content mask
+            // Prevents content overflow from being visible under text input.
+            container.addSubview(bottomLocationSwitchBarBackgroundMaskView)
+            NSLayoutConstraint.activate([
+                bottomLocationSwitchBarBackgroundMaskView.topAnchor.constraint(equalTo: switchBarVC.view.bottomAnchor),
+                bottomLocationSwitchBarBackgroundMaskView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+                bottomLocationSwitchBarBackgroundMaskView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+                bottomLocationSwitchBarBackgroundMaskView.trailingAnchor.constraint(equalTo: container.trailingAnchor)
+            ])
         }
 
+        switchBarVC.textEntryViewController.isUsingIncreasedButtonPadding = !isUsingTopBarPosition
         switchBarVC.didMove(toParent: self)
         switchBarVC.backButton.addTarget(self, action: #selector(dismissButtonTapped), for: .touchUpInside)
     }
@@ -274,6 +303,10 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                 self?.delegate?.onQueryUpdated(currentText)
                 self?.suggestionTrayManager?.handleQueryUpdate(currentText)
                 self?.updateDaxVisibility()
+                DispatchQueue.main.async {
+                    // Delay to next runloop so the text field size is updated.
+                    self?.updateSwipeContainerSafeArea()
+                }
             }
             .store(in: &cancellables)
 
@@ -309,6 +342,42 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                 self?.handleMicrophoneButtonTapped()
             }
             .store(in: &cancellables)
+    }
+
+    private func updateSwipeContainerSafeArea() {
+        if isUsingTopBarPosition {
+            swipeContainerManager?.swipeContainerViewController.additionalSafeAreaInsets.bottom = 0
+        } else {
+            switchBarVC.view.layoutIfNeeded()
+            let barHeigthAboveSafeArea = switchBarVC.view.bounds.height - switchBarVC.view.safeAreaInsets.bottom
+            swipeContainerManager?.swipeContainerViewController.additionalSafeAreaInsets.bottom = barHeigthAboveSafeArea
+        }
+    }
+
+    private func updateLayoutForCurrentOrientation() {
+
+        guard isUsingTopBarPosition != isAdjustedForTopBar else { return }
+
+        var currentSelection: UITextRange?
+        if switchBarVC.textEntryViewController.isFocused {
+            currentSelection = switchBarVC.textEntryViewController.currentTextSelection
+        }
+
+        contentContainerView.subviews.forEach { $0.removeFromSuperview() }
+        navigationActionBarManager?.navigationActionBarViewController?.willMove(toParent: nil)
+        navigationActionBarManager?.navigationActionBarViewController?.view.removeFromSuperview()
+        navigationActionBarManager?.navigationActionBarViewController?.removeFromParent()
+
+        switchBarVC.showsSeparator = !isUsingTopBarPosition
+
+        installComponents()
+
+        if let currentSelection {
+            switchBarVC.textEntryViewController.focusTextField()
+            switchBarVC.textEntryViewController.currentTextSelection = currentSelection
+        }
+
+        isAdjustedForTopBar = isUsingTopBarPosition
     }
 
     private func observeRemoteMessagesChanges() {
@@ -458,5 +527,6 @@ private extension OmniBarEditingStateViewController {
     struct Constants {
         // Adjusts for two buttons in the action bar
         static let horizontalMarginForCompactLayout: CGFloat = 108
+        static let backgroundColor = UIColor(designSystemColor: .background)
     }
 }

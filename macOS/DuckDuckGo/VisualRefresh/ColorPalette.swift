@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKit
 
 protocol ColorPalette {
     var surfaceBackdrop: NSColor { get }
@@ -33,13 +34,13 @@ protocol ColorPalette {
     var iconsSecondary: NSColor { get }
     var iconsTertiary: NSColor { get }
 
-    var toneTint: NSColor { get }
-    var toneShade: NSColor { get }
+    var toneTintPrimary: NSColor { get }
+    var toneShadePrimary: NSColor { get }
 
     var accentPrimary: NSColor { get }
     var accentSecondary: NSColor { get }
     var accentTertiary: NSColor { get }
-    var accentGlow: NSColor { get }
+    var accentGlowPrimary: NSColor { get }
     var accentTextPrimary: NSColor { get }
     var accentTextSecondary: NSColor { get }
     var accentTextTertiary: NSColor { get }
@@ -50,7 +51,7 @@ protocol ColorPalette {
     var accentAltPrimary: NSColor { get }
     var accentAltSecondary: NSColor { get }
     var accentAltTertiary: NSColor { get }
-    var accentAltGlow: NSColor { get }
+    var accentAltGlowPrimary: NSColor { get }
     var accentAltTextPrimary: NSColor { get }
     var accentAltTextSecondary: NSColor { get }
     var accentAltTextTertiary: NSColor { get }
@@ -65,7 +66,7 @@ protocol ColorPalette {
     var controlsDecorationSecondary: NSColor { get }
     var controlsDecorationTertiary: NSColor { get }
 
-    var highlightDecoration: NSColor { get }
+    var highlightPrimary: NSColor { get }
 
     var decorationPrimary: NSColor { get }
     var decorationSecondary: NSColor { get }
@@ -99,12 +100,12 @@ final class NewColorPalette: ColorPalette {
     let iconsPrimary: NSColor = .iconsPrimary
     let iconsSecondary: NSColor = .iconsSecondary
     let iconsTertiary: NSColor = .iconsTertiary
-    let toneTint: NSColor = .toneTint
-    let toneShade: NSColor = .toneShade
+    let toneTintPrimary: NSColor = .toneTint
+    let toneShadePrimary: NSColor = .toneShade
     let accentPrimary: NSColor = .accentPrimary
     let accentSecondary: NSColor = .accentSecondary
     let accentTertiary: NSColor = .accentTertiary
-    let accentGlow: NSColor = .accentGlow
+    let accentGlowPrimary: NSColor = .accentGlow
     let accentTextPrimary: NSColor = .accentTextPrimary
     let accentTextSecondary: NSColor = .accentTextSecondary
     let accentTextTertiary: NSColor = .accentTextTertiary
@@ -114,7 +115,7 @@ final class NewColorPalette: ColorPalette {
     let accentAltPrimary: NSColor = .accentAltPrimary
     let accentAltSecondary: NSColor = .accentAltSecondary
     let accentAltTertiary: NSColor = .accentAltTertiary
-    let accentAltGlow: NSColor = .accentAltGlow
+    let accentAltGlowPrimary: NSColor = .accentAltGlow
     let accentAltTextPrimary: NSColor = .accentAltTextPrimary
     let accentAltTextSecondary: NSColor = .accentAltTextSecondary
     let accentAltTextTertiary: NSColor = .accentAltTextTertiary
@@ -127,7 +128,7 @@ final class NewColorPalette: ColorPalette {
     let controlsDecorationPrimary: NSColor = .controlsDecorationPrimary
     let controlsDecorationSecondary: NSColor = .controlsDecorationSecondary
     let controlsDecorationTertiary: NSColor = .controlsDecorationTertiary
-    let highlightDecoration: NSColor = .highlightDecoration
+    let highlightPrimary: NSColor = .highlightDecoration
     let decorationPrimary: NSColor = .decorationPrimary
     let decorationSecondary: NSColor = .decorationSecondary
     let decorationTertiary: NSColor = .decorationTertiary

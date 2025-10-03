@@ -31,4 +31,22 @@ struct DynamicColor: Equatable {
         self.lightColor = staticColor
         self.darkColor = staticColor
     }
+
+    init(lightHex: UInt32, lightOpacityHex: UInt32 = 0xFF, darkHex: UInt32, darkOpacityHex: UInt32 = 0xFF) {
+        let lightOpacity = Double(lightOpacityHex) / 255.0
+        let darkOpacity = Double(darkOpacityHex) / 255.0
+
+        self.init(lightHex: lightHex, lightOpacity: lightOpacity, darkHex: darkHex, darkOpacity: darkOpacity)
+    }
+
+    init(lightHex: UInt32, lightOpacity: Double, darkHex: UInt32, darkOpacity: Double) {
+        self.lightColor = Color(lightHex, opacity: lightOpacity)
+        self.darkColor = Color(darkHex, opacity: darkOpacity)
+    }
+
+    init(staticColorHex: UInt32, opacity: Double = 1) {
+        let color = Color(staticColorHex, opacity: opacity)
+        self.lightColor = color
+        self.darkColor = color
+    }
 }

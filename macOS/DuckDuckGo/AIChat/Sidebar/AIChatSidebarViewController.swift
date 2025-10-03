@@ -61,7 +61,7 @@ final class AIChatSidebarViewController: NSViewController {
     }
     private let burnerMode: BurnerMode
     private var themeCancellable: AnyCancellable?
-    private let themeManager: ThemeManagerProtocol
+    private let themeManager: ThemeManaging
 
     private var openInNewTabButton: MouseOverButton!
     private var closeButton: MouseOverButton!
@@ -75,7 +75,7 @@ final class AIChatSidebarViewController: NSViewController {
 
     init(currentAIChatURL: URL,
          burnerMode: BurnerMode,
-         themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager) {
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.currentAIChatURL = currentAIChatURL
         self.burnerMode = burnerMode
         self.themeManager = themeManager

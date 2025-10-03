@@ -171,7 +171,7 @@ final class PasswordManagementViewController: NSViewController {
     private let syncButtonModel = SyncDeviceButtonModel()
 
     private var themeCancellable: AnyCancellable??
-    private let themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager
+    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     private var theme: ThemeDefinition {
         themeManager.theme
     }

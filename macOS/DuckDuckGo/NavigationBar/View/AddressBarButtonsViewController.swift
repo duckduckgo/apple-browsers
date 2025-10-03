@@ -52,7 +52,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let permissionManager: PermissionManagerProtocol
 
-    private let themeManager: ThemeManagerProtocol
+    private let themeManager: ThemeManaging
     private var theme: ThemeDefinition {
         themeManager.theme
     }
@@ -247,7 +247,7 @@ final class AddressBarButtonsViewController: NSViewController {
           aiChatAddressBarPromptExtractor: AIChatAddressBarPromptExtractor = AIChatAddressBarPromptExtractor(),
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
           aiChatSidebarPresenter: AIChatSidebarPresenting,
-          themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager,
+          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
           featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager

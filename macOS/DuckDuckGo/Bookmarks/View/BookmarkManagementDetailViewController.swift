@@ -80,7 +80,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     private let sortBookmarksViewModel: SortBookmarksViewModel
 
     private var themeCancellable: AnyCancellable?
-    private let themeManager: ThemeManagerProtocol
+    private let themeManager: ThemeManaging
     private var theme: ThemeDefinition {
         themeManager.theme
     }
@@ -130,7 +130,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     init(bookmarkManager: BookmarkManager,
          dragDropManager: BookmarkDragDropManager,
-         themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager) {
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         let metrics = BookmarksSearchAndSortMetrics()

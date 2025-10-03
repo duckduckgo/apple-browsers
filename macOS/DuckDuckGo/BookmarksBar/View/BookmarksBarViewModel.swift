@@ -62,7 +62,7 @@ final class BookmarksBarViewModel: NSObject {
     weak var delegate: BookmarksBarViewModelDelegate?
     var isInteractionPrevented = false
 
-    private let themeManager: ThemeManagerProtocol
+    private let themeManager: ThemeManaging
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
     private let tabCollectionViewModel: TabCollectionViewModel
@@ -113,7 +113,7 @@ final class BookmarksBarViewModel: NSObject {
     init(bookmarkManager: BookmarkManager,
          dragDropManager: BookmarkDragDropManager,
          tabCollectionViewModel: TabCollectionViewModel,
-         themeManager: ThemeManagerProtocol) {
+         themeManager: ThemeManaging) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.tabCollectionViewModel = tabCollectionViewModel

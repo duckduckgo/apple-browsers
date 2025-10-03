@@ -82,7 +82,7 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
     private let presentFaviconsFetcherOnboarding: (() -> Void)?
-    private let themeManager: ThemeManagerProtocol
+    private let themeManager: ThemeManaging
 
     init(
         contentMode: ContentMode,
@@ -91,7 +91,7 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         dragDropManager: BookmarkDragDropManager,
         sortMode: BookmarksSortMode,
         presentFaviconsFetcherOnboarding: (() -> Void)? = nil,
-        themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager,
+        themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
     ) {
         self.contentMode = contentMode
         self.bookmarkManager = bookmarkManager

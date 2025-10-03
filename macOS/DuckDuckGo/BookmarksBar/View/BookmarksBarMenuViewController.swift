@@ -52,7 +52,7 @@ final class BookmarksBarMenuViewController: NSViewController {
     private let dragDropManager: BookmarkDragDropManager
     private let treeControllerDataSource: BookmarkListTreeControllerDataSource
     private let treeController: BookmarkTreeController
-    private let themeManager: ThemeManagerProtocol
+    private let themeManager: ThemeManaging
 
     private var submenuPopover: BookmarksBarMenuPopover?
     private(set) var preferredContentOffset: CGPoint = .zero
@@ -93,7 +93,7 @@ final class BookmarksBarMenuViewController: NSViewController {
     init(bookmarkManager: BookmarkManager,
          dragDropManager: BookmarkDragDropManager,
          rootFolder: BookmarkFolder? = nil,
-         themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager) {
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.treeControllerDataSource = BookmarkListTreeControllerDataSource(bookmarkManager: bookmarkManager)

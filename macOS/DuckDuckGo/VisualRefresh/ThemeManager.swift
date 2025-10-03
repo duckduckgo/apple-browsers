@@ -22,12 +22,12 @@ import AppKit
 
 typealias ThemeDefinition = ThemeStyleProviding
 
-protocol ThemeManagerProtocol {
+protocol ThemeManaging {
     var theme: ThemeDefinition { get }
     var themePublisher: Published<any ThemeDefinition>.Publisher { get }
 }
 
-final class ThemeManager: ObservableObject, ThemeManagerProtocol {
+final class ThemeManager: ObservableObject, ThemeManaging {
     private var cancellables = Set<AnyCancellable>()
     @Published private(set) var theme: ThemeDefinition
 

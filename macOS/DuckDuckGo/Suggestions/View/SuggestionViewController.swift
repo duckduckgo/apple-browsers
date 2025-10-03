@@ -44,7 +44,7 @@ final class SuggestionViewController: NSViewController {
     @IBOutlet weak var backgroundViewTopConstraint: NSLayoutConstraint!
 
     private let suggestionContainerViewModel: SuggestionContainerViewModel
-    private let themeManager: ThemeManagerProtocol
+    private let themeManager: ThemeManaging
     private let isBurner: Bool
 
     required init?(coder: NSCoder) {
@@ -54,7 +54,7 @@ final class SuggestionViewController: NSViewController {
     required init?(coder: NSCoder,
                    suggestionContainerViewModel: SuggestionContainerViewModel,
                    isBurner: Bool,
-                   themeManager: ThemeManagerProtocol) {
+                   themeManager: ThemeManaging) {
         self.suggestionContainerViewModel = suggestionContainerViewModel
         self.isBurner = isBurner
         self.themeManager = themeManager

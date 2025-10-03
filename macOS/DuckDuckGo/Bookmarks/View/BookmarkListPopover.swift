@@ -26,11 +26,16 @@ protocol BookmarkListPopoverDelegate: NSPopoverDelegate {
 
 final class BookmarkListPopover: NSPopover {
 
+    private var theme: ThemeDefinition {
+        NSApp.delegateTyped.themeManager.theme
+    }
+
     init(bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager) {
         super.init()
 
         self.animates = false
         self.behavior = .transient
+        self.backgroundColor = theme.colorsProvider.popoverBackgroundColor
 
         setupContentController(using: bookmarkManager, dragDropManager: dragDropManager)
     }

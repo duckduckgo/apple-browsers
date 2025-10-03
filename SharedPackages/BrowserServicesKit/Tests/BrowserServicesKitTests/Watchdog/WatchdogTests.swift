@@ -337,7 +337,7 @@ final class WatchdogTests: XCTestCase {
         let minimumDuration = 0.2
         let maximumDuration = 0.4
         let checkInterval   = 0.1
-        
+
         let mockKill = MockKillAppFunction()
         let watchdog = Watchdog(minimumHangDuration: minimumDuration, maximumHangDuration: maximumDuration, checkInterval: checkInterval, killAppFunction: mockKill.killApp)
 

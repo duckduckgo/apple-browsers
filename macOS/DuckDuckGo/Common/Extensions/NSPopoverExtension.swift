@@ -98,7 +98,7 @@ extension NSPopover {
         }
 
         /// Hook up the BG View in this spot, since we need the Popover to be attached to an actual Window
-        ensureBackgroundViewFrame()
+        ensureBackgroundViewFrameIsVisible()
     }
 
     /// Shows the popover below the specified view with the popover's pin positioned in the middle of the view
@@ -211,7 +211,7 @@ extension NSPopover {
         popoverWindow?.contentView?.superview
     }
 
-    private func ensureBackgroundViewFrame() {
+    private func ensureBackgroundViewFrameIsVisible() {
         guard let popoverFrameView else {
             return
         }

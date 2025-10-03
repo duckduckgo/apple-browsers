@@ -177,7 +177,6 @@ extension NSPopover {
     }
 }
 
-
 // MARK: - Background Color
 //
 extension NSPopover {

@@ -1,5 +1,5 @@
 //
-//  VisualStyleProviding.swift
+//  ThemeStyleProviding.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -24,7 +24,7 @@ import NetworkProtectionUI
 import DesignResourcesKit
 import PixelKit
 
-protocol VisualStyleProviding {
+protocol ThemeStyleProviding {
     var name: ThemeName { get }
 
     var toolbarButtonsCornerRadius: CGFloat { get }
@@ -61,7 +61,7 @@ enum AddressBarSizeClass {
     }
 }
 
-struct VisualStyle: VisualStyleProviding {
+struct VisualStyle: ThemeStyleProviding {
     let name: ThemeName
 
     let toolbarButtonsCornerRadius: CGFloat
@@ -77,7 +77,7 @@ struct VisualStyle: VisualStyleProviding {
     let tabBarButtonSize: CGFloat
     let addToolbarShadow: Bool
 
-    static var current: VisualStyleProviding {
+    static var current: ThemeStyleProviding {
         let palette = NewColorPalette()
         return buildVisualStyle(name: .default, palette: palette)
     }

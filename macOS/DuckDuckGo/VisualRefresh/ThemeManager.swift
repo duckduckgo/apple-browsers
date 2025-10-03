@@ -20,7 +20,7 @@ import Foundation
 import Combine
 import AppKit
 
-typealias ThemeDefinition = VisualStyleProviding
+typealias ThemeDefinition = ThemeStyleProviding
 
 protocol ThemeManagerProtocol {
     var theme: ThemeDefinition { get }

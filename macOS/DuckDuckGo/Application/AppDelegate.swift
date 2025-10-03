@@ -178,7 +178,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
     let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let themeManager: ThemeManager
-    var visualStyle: VisualStyleProviding {
+    var visualStyle: ThemeStyleProviding {
         themeManager.theme
     }
 

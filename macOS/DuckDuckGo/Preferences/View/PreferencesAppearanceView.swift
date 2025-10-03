@@ -345,9 +345,9 @@ private extension SlidingPickerSettings {
     static var appearancePickerSettings: SlidingPickerSettings {
         SlidingPickerSettings(
             backgroundColor: Color(designSystemColor: .surfacePrimary),
-            borderColor: Color(designSystemColor: .containerDecorationSecondary),
+            borderColor: Color(designSystemColor: .surfaceDecorationPrimary),
             selectionBackgroundColor: Color(designSystemColor: .surfaceTertiary),
-            selectionBorderColor: Color(designSystemColor: .containerDecorationSecondary),
+            selectionBorderColor: Color(designSystemColor: .accentPrimary),
             animationsEnabled: false,
             dividerSize: CGSize(width: 1, height: 16))
     }

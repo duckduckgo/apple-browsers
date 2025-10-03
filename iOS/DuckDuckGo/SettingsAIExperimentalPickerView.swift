@@ -65,41 +65,12 @@ private struct PickerOptionView: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: SettingsAIExperimentalPickerViewLayout.optionContentVerticalSpacing) {
-                Group {
-                    if shouldUseVerticalLayout {
-                        Image(isSelected ? selectedImage : unselectedImage)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: SettingsAIExperimentalPickerViewLayout.imageHeight)
-                    } else {
-                        Image(isSelected ? selectedImage : unselectedImage)
-                            .resizable()
-                            .scaledToFit()
-                    }
-                }
+                Image(isSelected ? selectedImage : unselectedImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: shouldUseVerticalLayout ? SettingsAIExperimentalPickerViewLayout.imageHeight : nil)
 
-                Group {
-                    if shouldUseVerticalLayout {
-                        VStack(spacing: 4) {
-                            Text(title)
-                                .daxFootnoteRegular()
-                                .foregroundColor(Color(designSystemColor: .textPrimary))
-                                .multilineTextAlignment(.center)
-                            if showNewBadge {
-                                BadgeView(text: UserText.settingsItemNewBadge)
-                            }
-                        }
-                    } else {
-                        HStack(spacing: 6) {
-                            Text(title)
-                                .daxFootnoteRegular()
-                                .foregroundColor(Color(designSystemColor: .textPrimary))
-                            if showNewBadge {
-                                BadgeView(text: UserText.settingsItemNewBadge)
-                            }
-                        }
-                    }
-                }
+                textAndBadgeView
 
                 CheckmarkView(isSelected: isSelected)
                     .scaledToFit()
@@ -108,6 +79,30 @@ private struct PickerOptionView: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
+    }
+    
+    @ViewBuilder
+    private var textAndBadgeView: some View {
+        if shouldUseVerticalLayout {
+            VStack(spacing: 4) {
+                Text(title)
+                    .daxFootnoteRegular()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .multilineTextAlignment(.center)
+                if showNewBadge {
+                    BadgeView(text: UserText.settingsItemNewBadge)
+                }
+            }
+        } else {
+            HStack(spacing: 6) {
+                Text(title)
+                    .daxFootnoteRegular()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                if showNewBadge {
+                    BadgeView(text: UserText.settingsItemNewBadge)
+                }
+            }
+        }
     }
     
     private var shouldUseVerticalLayout: Bool {

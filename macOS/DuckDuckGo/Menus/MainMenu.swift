@@ -126,6 +126,13 @@ final class MainMenu: NSMenu {
     private let appVersion: AppVersion
     private let configurationURLProvider: CustomConfigurationURLProviding
 
+    private lazy var webExtensionsMenuItem: NSMenuItem? = {
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            return NSMenuItem(title: "Web Extensions").submenu(WebExtensionsDebugMenu(webExtensionManager: webExtensionManager))
+        }
+        return nil
+    }()
+
     // MARK: - Initialization
 
     @MainActor
@@ -496,6 +503,16 @@ final class MainMenu: NSMenu {
         updateAutofillDebugScriptMenuItem()
         updateShowToolbarsOnFullScreenMenuItem()
         updateWatchdogMenuItems()
+        updateWebExtensionsMenuItem()
+    }
+
+    private func updateWebExtensionsMenuItem() {
+        if let webExtensionsMenuItem,
+           webExtensionsMenuItem.parent == nil,
+           let debugMenuItem = items.first(where: { item in item.title == Self.debugMenuTitle }),
+           let debugSubmenu = debugMenuItem.submenu {
+            debugSubmenu.insertItem(webExtensionsMenuItem, at: max(0, debugSubmenu.items.count - 3))
+        }
     }
 
     private func updateAppAboutDDGMenuItem() {
@@ -679,9 +696,11 @@ final class MainMenu: NSMenu {
 
     let internalUserItem = NSMenuItem(title: "Set Internal User State", action: #selector(AppDelegate.internalUserState))
 
+    static let debugMenuTitle = "Debug"
+
     @MainActor
     private func setupDebugMenu(featureFlagger: FeatureFlagger, historyCoordinator: HistoryCoordinating) -> NSMenu {
-        let debugMenu = NSMenu(title: "Debug") {
+        let debugMenu = NSMenu(title: Self.debugMenuTitle) {
             NSMenuItem(title: "Feature Flag Overrides")
                 .submenu(FeatureFlagOverridesMenu(featureFlagOverrides: featureFlagger))
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
@@ -839,12 +858,6 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu())
             if AppVersion.runType.requiresEnvironment {
                 NSMenuItem(title: "SAD/ATT Prompts").submenu(DefaultBrowserAndDockPromptDebugMenu())
-            }
-
-            if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-                NSMenuItem.separator()
-                NSMenuItem(title: "Web Extensions").submenu(WebExtensionsDebugMenu(webExtensionManager: webExtensionManager))
-                NSMenuItem.separator()
             }
         }
 

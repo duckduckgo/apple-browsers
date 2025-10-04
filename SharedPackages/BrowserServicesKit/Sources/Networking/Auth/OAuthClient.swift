@@ -165,6 +165,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     private var tokenStorage: any AuthTokenStoring
     private var legacyTokenStorage: (any LegacyAuthTokenStoring)?
     private var migrationOngoingTask: Task<Void, Error>?
+    private var refreshOngoingTask: Task<TokenContainer, Error>?
 
     public init(tokensStorage: any AuthTokenStoring,
                 legacyTokenStorage: (any LegacyAuthTokenStoring)?,
@@ -273,22 +274,36 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 Logger.OAuthClient.log("Tokens not found")
                 throw OAuthClientError.missingTokenContainer
             }
-            do {
-                let refreshTokenResponse = try await authService.refreshAccessToken(clientID: Constants.clientID, refreshToken: localTokenContainer.refreshToken)
-                let refreshedTokens = try await decode(accessToken: refreshTokenResponse.accessToken, refreshToken: refreshTokenResponse.refreshToken)
-                Logger.OAuthClient.log("Tokens refreshed, expiry: \(refreshedTokens.decodedAccessToken.exp.value.description, privacy: .public)")
-                try tokenStorage.saveTokenContainer(refreshedTokens)
-                return refreshedTokens
-            } catch OAuthServiceError.authAPIError(let code) where code == .invalidTokenRequest {
-                Logger.OAuthClient.error("Failed to refresh token: invalidTokenRequest")
-                throw OAuthClientError.invalidTokenRequest
-            } catch OAuthServiceError.authAPIError(let code) where code == .unknownAccount {
-                Logger.OAuthClient.error("Failed to refresh token: unknownAccount")
-                throw OAuthClientError.unknownAccount
-            } catch {
-                Logger.OAuthClient.error("Failed to refresh token: \(String(describing: error), privacy: .public)")
-                throw error
+
+            if let task = refreshOngoingTask {
+                return try await task.value
             }
+
+            let task = Task {
+                defer {
+                    self.refreshOngoingTask = nil
+                }
+
+                do {
+                    let refreshTokenResponse = try await authService.refreshAccessToken(clientID: Constants.clientID, refreshToken: localTokenContainer.refreshToken)
+                    let refreshedTokens = try await decode(accessToken: refreshTokenResponse.accessToken, refreshToken: refreshTokenResponse.refreshToken)
+                    Logger.OAuthClient.log("Tokens refreshed, expiry: \(refreshedTokens.decodedAccessToken.exp.value.description, privacy: .public)")
+                    try tokenStorage.saveTokenContainer(refreshedTokens)
+                    return refreshedTokens
+                } catch OAuthServiceError.authAPIError(let code) where code == .invalidTokenRequest {
+                    Logger.OAuthClient.error("Failed to refresh token: invalidTokenRequest")
+                    throw OAuthClientError.invalidTokenRequest
+                } catch OAuthServiceError.authAPIError(let code) where code == .unknownAccount {
+                    Logger.OAuthClient.error("Failed to refresh token: unknownAccount")
+                    throw OAuthClientError.unknownAccount
+                } catch {
+                    Logger.OAuthClient.error("Failed to refresh token: \(String(describing: error), privacy: .public)")
+                    throw error
+                }
+            }
+
+            refreshOngoingTask = task
+            return try await task.value
 
         case .createIfNeeded:
             do {

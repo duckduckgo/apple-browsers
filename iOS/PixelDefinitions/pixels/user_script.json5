@@ -27,7 +27,6 @@
                     'fullscreenvideo',
                     'internal-feedback-autofiller',
                     'login-form-detection',
-                    'navigatorsharepatch',
                     'surrogates',
                 ],
             },

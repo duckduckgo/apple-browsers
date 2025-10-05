@@ -2242,7 +2242,7 @@ extension Pixel.Event {
         case .syncCreditCardsRequestSizeLimitExceededDaily: return "m_sync_credit_cards_request_size_limit_exceeded_daily"
         case .syncBookmarksTooManyRequestsDaily: return "m_sync_bookmarks_too_many_requests_daily"
         case .syncCredentialsTooManyRequestsDaily: return "m_sync_credentials_too_many_requests_daily"
-        case .syncCreditCardsTooManyRequestsDaily: return "m_sync_creditcards_too_many_requests_daily"
+        case .syncCreditCardsTooManyRequestsDaily: return "m_sync_credit_cards_too_many_requests_daily"
         case .syncSettingsTooManyRequestsDaily: return "m_sync_settings_too_many_requests_daily"
         case .syncBookmarksValidationErrorDaily: return "m_sync_bookmarks_validation_error_daily"
         case .syncCredentialsValidationErrorDaily: return "m_sync_credentials_validation_error_daily"

@@ -68,7 +68,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         switch error {
         case .credentialsCountLimitExceeded, .credentialsRequestSizeLimitExceeded:
             return UserText.credentialsLimitExceededDescription
-        case .badRequestBookmarks:
+        case .badRequestCredentials:
             return UserText.badRequestErrorDescriptionPasswords
         default:
             assertionFailure("Sync Bookmarks Paused error should be one of those listed")

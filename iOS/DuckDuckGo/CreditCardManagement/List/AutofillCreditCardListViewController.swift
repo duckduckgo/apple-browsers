@@ -46,7 +46,7 @@ final class AutofillCreditCardListViewController: UIViewController {
         self.secureVault = secureVault
         self.syncService = syncService
 
-        self.viewModel = AutofillCreditCardListViewModel(secureVault: secureVault, source: source)
+        self.viewModel = AutofillCreditCardListViewModel(secureVault: secureVault, syncService: syncService, source: source)
         self.selectedCard = selectedCard
         
         super.init(nibName: nil, bundle: nil)

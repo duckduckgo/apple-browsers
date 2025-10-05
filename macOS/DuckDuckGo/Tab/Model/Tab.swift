@@ -64,6 +64,7 @@ protocol NewWindowPolicyDecisionMaker {
         var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
         var newTabPageShownPixelSender: NewTabPageShownPixelSender
         var aiChatSidebarProvider: AIChatSidebarProviding
+        var tabCrashAggregator: TabCrashAggregator
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -140,7 +141,8 @@ protocol NewWindowPolicyDecisionMaker {
                      pageRefreshMonitor: PageRefreshMonitoring = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern),
                      aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil,
                      aiChatSidebarProvider: AIChatSidebarProviding? = nil,
-                     newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil
+                     newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil,
+                     tabCrashAggregator: TabCrashAggregator? = nil
     ) {
 
         let duckPlayer = duckPlayer
@@ -199,7 +201,8 @@ protocol NewWindowPolicyDecisionMaker {
                   pageRefreshMonitor: pageRefreshMonitor,
                   aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
                   aiChatSidebarProvider: aiChatSidebarProvider ?? NSApp.delegateTyped.aiChatSidebarProvider,
-                  newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender
+                  newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender,
+                  tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator
         )
     }
 
@@ -245,7 +248,8 @@ protocol NewWindowPolicyDecisionMaker {
          pageRefreshMonitor: PageRefreshMonitoring,
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
          aiChatSidebarProvider: AIChatSidebarProviding,
-         newTabPageShownPixelSender: NewTabPageShownPixelSender
+         newTabPageShownPixelSender: NewTabPageShownPixelSender,
+         tabCrashAggregator: TabCrashAggregator
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -332,7 +336,8 @@ protocol NewWindowPolicyDecisionMaker {
                                                        contentScopeExperimentsManager: contentScopeExperimentsManager,
                                                        aiChatMenuConfiguration: aiChatMenuConfiguration,
                                                        newTabPageShownPixelSender: newTabPageShownPixelSender,
-                                                       aiChatSidebarProvider: aiChatSidebarProvider)
+                                                       aiChatSidebarProvider: aiChatSidebarProvider,
+                                                       tabCrashAggregator: tabCrashAggregator)
             )
         super.init()
         tabGetter = { [weak self] in self }

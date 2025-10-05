@@ -33,4 +33,25 @@
         ],
         expires: '2025-10-31',
     },
+    siteLoadingSuccess: {
+        description: 'Fired when a site loading navigation completes successfully.',
+        owners: ['diegoreymendez'],
+        triggers: ['page_load'],
+        parameters: ['appVersion', 'pixelSource', 'duration', 'navigation_type'],
+    },
+    siteLoadingFailure: {
+        description: 'Fired when a site loading navigation fails.',
+        owners: ['diegoreymendez'],
+        triggers: ['page_load'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            'duration',
+            'navigation_type',
+            'errorCode',
+            'errorDomain',
+            'underlyingErrorCode',
+            'underlyingErrorDomain',
+        ],
+    },
 }

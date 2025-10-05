@@ -189,7 +189,6 @@ extension AutofillCreditCardListViewController: AutofillCreditCardDetailsViewCon
     
     func autofillCreditCardDetailsViewControllerDelete(card: SecureVaultModels.CreditCard) {
         viewModel.deleteCard(card)
-        syncService.scheduler.notifyDataChanged()
     }
     
 }

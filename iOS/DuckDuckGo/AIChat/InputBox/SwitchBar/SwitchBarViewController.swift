@@ -46,7 +46,15 @@ class SwitchBarViewController: UIViewController {
         return view
     }()
 
-    private let showsSeparator: Bool
+    var isFocused: Bool {
+        textEntryViewController.isFocused
+    }
+
+    var showsSeparator: Bool {
+        didSet {
+            updateSeparatorVisibility()
+        }
+    }
     private let usesReducedTopPadding: Bool
 
     private let switchBarHandler: SwitchBarHandling
@@ -202,6 +210,39 @@ class SwitchBarViewController: UIViewController {
             backButton.heightAnchor.constraint(equalToConstant: Constants.backButtonSize),
             backButton.widthAnchor.constraint(equalToConstant: Constants.backButtonSize)
         ])
+    }
+
+    private func updateSeparatorVisibility() {
+        guard let segmentedPickerView = segmentedPickerHostingController?.view else { return }
+
+        var selection: UITextRange?
+        if textEntryViewController.isFirstResponder {
+            selection = textEntryViewController.currentTextSelection
+        }
+
+        // For simplicity, just remove from superviews and recreate constraints.
+        // It should animate to new position automatically, preserving state
+        segmentedPickerView.removeFromSuperview()
+        view.addSubview(segmentedPickerView)
+
+        backButton.removeFromSuperview()
+        view.addSubview(backButton)
+
+        textEntryViewController.view.removeFromSuperview()
+        view.addSubview(textEntryViewController.view)
+
+        topSeparatorView.removeFromSuperview()
+        if showsSeparator {
+            view.addSubview(topSeparatorView)
+        }
+
+        setupConstraints()
+
+        if let selection {
+            textEntryViewController.focusTextField()
+            textEntryViewController.currentTextSelection = selection
+        }
+
     }
 
     // MARK: - Actions

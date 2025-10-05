@@ -168,9 +168,9 @@ extension ReleaseNotesValues {
                     if currentVersion == cachedVersion {
                         return ReleaseNotesValues.Status.loaded
                     } else if updateController.hasPendingUpdate {
-                        return .updateReady
+                        return updateController.latestUpdate?.type == .critical ? .criticalUpdateReady : .updateReady
                     } else {
-                        return .loading
+                        return updateController.updateProgress.toStatus
                     }
                 }()
 

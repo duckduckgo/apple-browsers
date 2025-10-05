@@ -212,7 +212,7 @@
                 enum: ['token_read', 'refresh_access_token', 'fetch_jwks', 'verify_access_token', 'verify_refresh_token', 'token_write'],
             },
             {
-                key: 'feature.data.ext.refresh_access_token_latency_ms_bucketed',
+                key: 'feature.data.ext.refresh_token_latency_ms_bucketed',
                 type: 'integer',
                 description: 'Bucketed latency for token refresh step (ms)',
                 enum: [1000, 5000, 10000, 30000, 60000, 300000, 600000],

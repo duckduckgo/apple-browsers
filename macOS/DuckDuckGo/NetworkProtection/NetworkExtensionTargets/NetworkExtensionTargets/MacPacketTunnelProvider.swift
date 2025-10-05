@@ -120,6 +120,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
     }
 
     private let notificationCenter: NetworkProtectionNotificationCenter = DistributedNotificationCenter.default()
+    private let wideEvent: WideEventManaging = WideEvent()
 
     // MARK: - PacketTunnelProvider.Event reporting
 
@@ -466,7 +467,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let authClient = DefaultOAuthClient(tokensStorage: tokenStoreV2,
                                             legacyTokenStorage: nil,
                                             authService: authService,
-                                            refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: WideEvent()))
+                                            refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: self.wideEvent, isFeatureEnabled: { true }))
 
         let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
                                                                                  baseURL: subscriptionEnvironment.serviceEnvironment.url)
@@ -476,7 +477,9 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                subscriptionEndpointService: subscriptionEndpointServiceV2,
                                                                subscriptionEnvironment: subscriptionEnvironment,
                                                                pixelHandler: pixelHandler,
-                                                               initForPurchase: false)
+                                                               initForPurchase: false,
+                                                               wideEvent: self.wideEvent,
+                                                               isAuthV2WideEventEnabled: { true })
 
         let entitlementsCheck: (() async -> Result<Bool, Error>) = {
             Logger.networkProtection.log("Subscription Entitlements check...")

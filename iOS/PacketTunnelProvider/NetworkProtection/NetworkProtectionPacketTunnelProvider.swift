@@ -43,6 +43,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
     private let configurationStore = ConfigurationStore()
     private let configurationManager: ConfigurationManager
+    private let wideEvent: WideEventManaging = WideEvent()
 
     // MARK: - PacketTunnelProvider.Event reporting
 
@@ -469,7 +470,10 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                                 legacyTokenStorage: nil, // Only the main app can migrate
                                                 authService: authService,
-                                                refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: WideEvent()))
+                                                refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: self.wideEvent, isFeatureEnabled: {
+                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true)
+            }))
+
             let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
             let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
@@ -479,7 +483,12 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                                                    subscriptionEndpointService: subscriptionEndpointService,
                                                                    subscriptionEnvironment: subscriptionEnvironment,
                                                                    pixelHandler: pixelHandler,
-                                                                   initForPurchase: false)
+                                                                   initForPurchase: false,
+                                                                   wideEvent: self.wideEvent,
+                                                                   isAuthV2WideEventEnabled: {
+                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true)
+            })
+
             self.subscriptionManager = subscriptionManager
 
             entitlementsCheck = {

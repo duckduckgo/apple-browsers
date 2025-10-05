@@ -165,10 +165,14 @@ final class AppDependencyProvider: DependencyProvider {
         let authService = DefaultOAuthService(baseURL: authEnvironment.url,
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
         let legacyAccountStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
+        let refreshEventMapper = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
+            return featureFlagger.isFeatureOn(.authV2WideEventEnabled)
+        })
+
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,
                                             legacyTokenStorage: legacyAccountStorage,
                                             authService: authService,
-                                            refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent))
+                                            refreshEventMapping: refreshEventMapper)
         let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
                                                 pixelHandler: pixelHandler,

@@ -141,10 +141,15 @@ extension DefaultSubscriptionManagerV2 {
                                                                              authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
+
+        let wideEvent: WideEventManaging = WideEvent()
+        let authRefreshEventMapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
+            return featureFlagger?.isFeatureOn(.authV2WideEventEnabled) ?? false
+        })
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             legacyTokenStorage: nil, // Can't migrate
                                             authService: authService,
-                                            refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: WideEvent()))
+                                            refreshEventMapping: authRefreshEventMapping)
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
         let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
                                                                                baseURL: environment.serviceEnvironment.url)

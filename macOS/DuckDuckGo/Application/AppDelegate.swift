@@ -509,10 +509,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let legacyTokenStorage = SubscriptionTokenKeychainStorage(keychainType: keychainType)
+        let authRefreshWideEventMapper = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
+            return featureFlagger.isFeatureOn(.authV2WideEventEnabled)
+        })
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             legacyTokenStorage: legacyTokenStorage,
                                             authService: authService,
-                                            refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent))
+                                            refreshEventMapping: authRefreshWideEventMapper)
         let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
                                                     pixelHandler: pixelHandler,

@@ -1735,10 +1735,7 @@
 		F1134ECE1F40EA9C00B73467 /* AtbParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1134ECC1F40EA2000B73467 /* AtbParserTests.swift */; };
 		F1134ED61F40F29F00B73467 /* StatisticsUserDefaultsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1134ED41F40F15800B73467 /* StatisticsUserDefaultsTests.swift */; };
 		F114C55B1E66EB020018F95F /* NibLoading.swift in Sources */ = {isa = PBXBuildFile; fileRef = F114C55A1E66EB020018F95F /* NibLoading.swift */; };
-		F11595CD2E854C6200CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595CC2E854C6200CC0481 /* AttributedMetric */; };
-		F11595CF2E854C6C00CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595CE2E854C6C00CC0481 /* AttributedMetric */; };
 		F11595D12E854C7400CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D02E854C7400CC0481 /* AttributedMetric */; };
-		F11595D32E856FC400CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D22E856FC400CC0481 /* AttributedMetric */; };
 		F11595D72E8570AF00CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D62E8570AF00CC0481 /* AttributedMetric */; };
 		F11595D92E8570B500CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D82E8570B500CC0481 /* AttributedMetric */; };
 		F130D73A1E5776C500C45811 /* OmniBarDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F130D7391E5776C500C45811 /* OmniBarDelegate.swift */; };
@@ -4156,7 +4153,6 @@
 				9F8FE9492BAE50E50071E372 /* Lottie in Frameworks */,
 				9F0727882E2F2967005894C8 /* SystemSettingsPiPTutorial in Frameworks */,
 				7BC26CA02DFC0CAC00E52480 /* VPN in Frameworks */,
-				F11595D32E856FC400CC0481 /* AttributedMetric in Frameworks */,
 				316AC7872DC28DD1003D9770 /* UIComponents in Frameworks */,
 				4BC95E7D2D7416B2002FAB32 /* Onboarding in Frameworks */,
 				853273B624FFE0BB00E3C778 /* WidgetKit.framework in Frameworks */,
@@ -4187,7 +4183,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				9FE59CDA2E309A4F00C4B65D /* SystemSettingsPiPTutorialTestSupport in Frameworks */,
-				F11595CD2E854C6200CC0481 /* AttributedMetric in Frameworks */,
 				F486D3362506A037002D07D7 /* OHHTTPStubs in Frameworks */,
 				BD408CED2DCDB17900265476 /* ZIPFoundation in Frameworks */,
 				7BC26CB22DFC155500E52480 /* VPNTestUtils in Frameworks */,
@@ -4237,7 +4232,6 @@
 				1E1D8B632995143200C96994 /* OHHTTPStubs in Frameworks */,
 				1E1D8B652995143200C96994 /* OHHTTPStubsSwift in Frameworks */,
 				C1B441E52E2990F7005E2BA9 /* PersistenceTestingUtils in Frameworks */,
-				F11595CF2E854C6C00CC0481 /* AttributedMetric in Frameworks */,
 				4BC95EB72D7417DC002FAB32 /* Common in Frameworks */,
 				4BC95EBD2D7417F0002FAB32 /* SubscriptionTestingUtilities in Frameworks */,
 				4BC95EBB2D7417E9002FAB32 /* Subscription in Frameworks */,
@@ -9169,7 +9163,6 @@
 				9FB6272D2E08251D00CBDEED /* SetDefaultBrowserUI */,
 				9F0727872E2F2967005894C8 /* SystemSettingsPiPTutorial */,
 				9F82BC1D2E20A51200943D44 /* MetricBuilder */,
-				F11595D22E856FC400CC0481 /* AttributedMetric */,
 			);
 			productName = DuckDuckGo;
 			productReference = 84E341921E2F7EFB00BDBA6F /* DuckDuckGo.app */;
@@ -9206,7 +9199,6 @@
 				9F5412762E3998B000DBF008 /* SetDefaultBrowserTestSupport */,
 				4BB88F3E2E5D701200DE539A /* PixelKitTestingUtilities */,
 				31C71A772E6F4F5B004D503F /* RemoteMessagingTestsUtils */,
-				F11595CC2E854C6200CC0481 /* AttributedMetric */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = 84E341A61E2F7EFB00BDBA6F /* UnitTests.xctest */;
@@ -9276,7 +9268,6 @@
 				4BC95EBC2D7417F0002FAB32 /* SubscriptionTestingUtilities */,
 				986CD5342DE8F4FA00AFA98A /* RemoteMessaging */,
 				C1B441E42E2990F7005E2BA9 /* PersistenceTestingUtils */,
-				F11595CE2E854C6C00CC0481 /* AttributedMetric */,
 			);
 			productName = IntegrationTests;
 			productReference = 85D33FCB25C97B6E002B91A6 /* IntegrationTests.xctest */;
@@ -15138,19 +15129,7 @@
 			package = 854007E52B57FB020001BD98 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
 			productName = ZIPFoundation;
 		};
-		F11595CC2E854C6200CC0481 /* AttributedMetric */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = AttributedMetric;
-		};
-		F11595CE2E854C6C00CC0481 /* AttributedMetric */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = AttributedMetric;
-		};
 		F11595D02E854C7400CC0481 /* AttributedMetric */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = AttributedMetric;
-		};
-		F11595D22E856FC400CC0481 /* AttributedMetric */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AttributedMetric;
 		};

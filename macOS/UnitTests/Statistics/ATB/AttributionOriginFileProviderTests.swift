@@ -18,10 +18,9 @@
 
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
-import AttributedMetric
 
 final class AttributionOriginFileProviderTests: XCTestCase {
-    private var sut: AttributedMetricOriginFileProvider!
+    private var sut: AttributionOriginFileProvider!
 
     override func tearDown() {
         sut = nil
@@ -29,7 +28,7 @@ final class AttributionOriginFileProviderTests: XCTestCase {
 
     func testWhenFileAndValueExistThenReturnOriginValue() {
         // GIVEN
-        sut = AttributedMetricOriginFileProvider(bundle: .test)
+        sut = AttributionOriginFileProvider(bundle: .test)
 
         // WHEN
         let result = sut.origin
@@ -40,7 +39,7 @@ final class AttributionOriginFileProviderTests: XCTestCase {
 
     func testWhenFileDoesNotExistThenReturnNil() {
         // GIVEN
-        sut = AttributedMetricOriginFileProvider(resourceName: #function, bundle: .test)
+        sut = AttributionOriginFileProvider(resourceName: #function, bundle: .test)
 
         // WHEN
         let result = sut.origin
@@ -51,7 +50,7 @@ final class AttributionOriginFileProviderTests: XCTestCase {
 
     func testWhenFileExistAndIsEmptyThenReturnNil() {
         // GIVEN
-        sut = AttributedMetricOriginFileProvider(resourceName: "Origin-empty", bundle: .test)
+        sut = AttributionOriginFileProvider(resourceName: "Origin-empty", bundle: .test)
 
         // WHEN
         let result = sut.origin

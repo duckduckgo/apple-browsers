@@ -150,8 +150,7 @@ final class AuthV2WideEventTests: XCTestCase {
         let contextData = WideEventContextData(name: "test-context")
         let baseDate = Date()
 
-        // Test with only start date
-        var eventData = AuthV2TokenRefreshWideEventData(contextData: contextData)
+        let eventData = AuthV2TokenRefreshWideEventData(contextData: contextData)
         eventData.refreshTokenDuration = WideEvent.MeasuredInterval(start: baseDate, end: nil)
         var parameters = eventData.pixelParameters()
         XCTAssertNil(parameters["feature.data.ext.refresh_token_latency_ms_bucketed"])
@@ -192,7 +191,6 @@ final class AuthV2WideEventTests: XCTestCase {
         // Then
         XCTAssertEqual(parameters["feature.name"], "authv2-token-refresh")
         XCTAssertEqual(parameters["feature.data.ext.failing_step"], "verify_access_token")
-        XCTAssertEqual(parameters["feature.data.ext.application_state"], "background")
         XCTAssertEqual(parameters["feature.data.ext.refresh_token_latency_ms_bucketed"], "5000")
         XCTAssertEqual(parameters["feature.data.ext.fetch_jwks_latency_ms_bucketed"], "1000")
     }

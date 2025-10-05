@@ -22,8 +22,8 @@ import Common
 @testable import Networking
 import JWTKit
 
-extension OAuthClientEvent: Equatable {
-    public static func == (lhs: OAuthClientEvent, rhs: OAuthClientEvent) -> Bool {
+extension OAuthClientRefreshEvent: Equatable {
+    public static func == (lhs: OAuthClientRefreshEvent, rhs: OAuthClientRefreshEvent) -> Bool {
         switch (lhs, rhs) {
         case (.tokenRefreshStarted(_), .tokenRefreshStarted(_)),
              (.tokenRefreshRefreshingAccessToken(_), .tokenRefreshRefreshingAccessToken(_)),
@@ -43,9 +43,9 @@ extension OAuthClientEvent: Equatable {
 }
 
 class OAuthEventCapture {
-    private(set) var capturedEvents: [OAuthClientEvent] = []
+    private(set) var capturedEvents: [OAuthClientRefreshEvent] = []
 
-    var eventMapping: EventMapping<OAuthClientEvent> {
+    var eventMapping: EventMapping<OAuthClientRefreshEvent> {
         EventMapping { [weak self] event, _, _, _ in
             self?.capturedEvents.append(event)
         }
@@ -72,7 +72,7 @@ final class OAuthClientTests: XCTestCase {
         oAuthClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                          legacyTokenStorage: legacyTokenStorage,
                                          authService: mockOAuthService,
-                                         eventMapping: eventCapture.eventMapping)
+                                         refreshEventMapping: eventCapture.eventMapping)
     }
 
     override func tearDown() async throws {
@@ -317,7 +317,7 @@ final class OAuthClientTests: XCTestCase {
 
         _ = try await oAuthClient.getTokens(policy: .localForceRefresh)
 
-        let expectedEventSequence: [OAuthClientEvent] = [
+        let expectedEventSequence: [OAuthClientRefreshEvent] = [
             .tokenRefreshStarted(refreshID: ""),
             .tokenRefreshRefreshingAccessToken(refreshID: ""),
             .tokenRefreshRefreshedAccessToken(refreshID: ""),

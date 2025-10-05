@@ -94,10 +94,10 @@ public final class WideEvent: WideEventManaging {
 
         do {
             try Self.storageQueue.sync { try storage.update(data) }
-            Self.logger.info("Wide pixel with global ID \(globalID, privacy: .public) updated: \(data.pixelParameters())")
+            Self.logger.info("Wide event \(globalID, privacy: .public) updated: \(data.pixelParameters())")
         } catch {
             if case WideEventError.flowNotFound = error {
-                Self.logger.info("Wide pixel update ignored for non-existent flow: \(T.pixelName, privacy: .public), global ID: \(globalID, privacy: .public)")
+                Self.logger.info("Wide event update ignored for non-existent flow: \(T.pixelName, privacy: .public), global ID: \(globalID, privacy: .public)")
             } else {
                 report(.updateFailed(pixelName: T.pixelName, error: error), error: error, params: nil)
             }
@@ -113,10 +113,10 @@ public final class WideEvent: WideEventManaging {
                 return data
             }
 
-            Self.logger.info("Wide pixel with global ID \(globalID, privacy: .public) updated: \(updatedData.pixelParameters())")
+            Self.logger.info("Wide event \(globalID, privacy: .public) updated: \(updatedData.pixelParameters())")
         } catch {
             if case WideEventError.flowNotFound = error {
-                Self.logger.info("Wide pixel update ignored for non-existent flow: \(T.pixelName, privacy: .public), global ID: \(globalID, privacy: .public)")
+                Self.logger.info("Wide event update ignored for non-existent flow: \(T.pixelName, privacy: .public), global ID: \(globalID, privacy: .public)")
             } else {
                 report(.updateFailed(pixelName: T.pixelName, error: error), error: error, params: nil)
             }

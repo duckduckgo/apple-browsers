@@ -168,7 +168,7 @@ final class AppDependencyProvider: DependencyProvider {
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,
                                             legacyTokenStorage: legacyAccountStorage,
                                             authService: authService,
-                                            eventMapping: AuthV2TokenRefreshWideEventData.authEventMapping(wideEvent: wideEvent))
+                                            refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent))
         let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
                                                 pixelHandler: pixelHandler,

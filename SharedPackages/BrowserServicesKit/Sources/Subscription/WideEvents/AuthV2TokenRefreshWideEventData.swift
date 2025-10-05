@@ -124,7 +124,7 @@ extension AuthV2TokenRefreshWideEventData {
 
 extension AuthV2TokenRefreshWideEventData {
 
-    public static func authEventMapping(wideEvent: WideEventManaging) -> EventMapping<OAuthClientEvent> {
+    public static func authV2RefreshEventMapping(wideEvent: WideEventManaging) -> EventMapping<OAuthClientRefreshEvent> {
         return .init { event, _, _, _ in
             switch event {
             case .tokenRefreshStarted(let refreshID):

@@ -144,7 +144,7 @@ extension DefaultSubscriptionManagerV2 {
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             legacyTokenStorage: nil, // Can't migrate
                                             authService: authService,
-                                            eventMapping: AuthV2TokenRefreshWideEventData.authEventMapping(wideEvent: WideEvent()))
+                                            refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: WideEvent()))
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
         let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
                                                                                baseURL: environment.serviceEnvironment.url)

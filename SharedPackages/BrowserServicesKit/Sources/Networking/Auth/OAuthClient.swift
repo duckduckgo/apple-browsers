@@ -149,7 +149,7 @@ public protocol OAuthClient {
     func removeLocalAccount() throws
 }
 
-public enum OAuthClientEvent {
+public enum OAuthClientRefreshEvent {
     case tokenRefreshStarted(refreshID: String)
     case tokenRefreshRefreshingAccessToken(refreshID: String)
     case tokenRefreshRefreshedAccessToken(refreshID: String)
@@ -178,16 +178,16 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     private var tokenStorage: any AuthTokenStoring
     private var legacyTokenStorage: (any LegacyAuthTokenStoring)?
     private var migrationOngoingTask: Task<Void, Error>?
-    private let eventMapping: EventMapping<OAuthClientEvent>?
+    private let refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?
 
     public init(tokensStorage: any AuthTokenStoring,
                 legacyTokenStorage: (any LegacyAuthTokenStoring)?,
                 authService: OAuthService,
-                eventMapping: EventMapping<OAuthClientEvent>? = nil) {
+                refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?) {
         self.tokenStorage = tokensStorage
         self.legacyTokenStorage = legacyTokenStorage
         self.authService = authService
-        self.eventMapping = eventMapping
+        self.refreshEventMapping = refreshEventMapping
     }
 
     // MARK: - Internal
@@ -229,14 +229,14 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
 #endif
 
-        if let refreshID { eventMapping?.fire(.tokenRefreshFetchingJWKS(refreshID: refreshID)) }
+        if let refreshID { refreshEventMapping?.fire(.tokenRefreshFetchingJWKS(refreshID: refreshID)) }
         let jwtSigners = try await authService.getJWTSigners()
-        if let refreshID { eventMapping?.fire(.tokenRefreshFetchedJWKS(refreshID: refreshID)) }
+        if let refreshID { refreshEventMapping?.fire(.tokenRefreshFetchedJWKS(refreshID: refreshID)) }
 
-        if let refreshID { eventMapping?.fire(.tokenRefreshVerifyingAccessToken(refreshID: refreshID)) }
+        if let refreshID { refreshEventMapping?.fire(.tokenRefreshVerifyingAccessToken(refreshID: refreshID)) }
         let decodedAccessToken = try jwtSigners.verify(accessToken, as: JWTAccessToken.self)
 
-        if let refreshID { eventMapping?.fire(.tokenRefreshVerifyingRefreshToken(refreshID: refreshID)) }
+        if let refreshID { refreshEventMapping?.fire(.tokenRefreshVerifyingRefreshToken(refreshID: refreshID)) }
         let decodedRefreshToken = try jwtSigners.verify(refreshToken, as: JWTRefreshToken.self)
 
         return TokenContainer(accessToken: accessToken,
@@ -292,41 +292,44 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
         case .localForceRefresh:
             let refreshID = UUID().uuidString
-            eventMapping?.fire(.tokenRefreshStarted(refreshID: refreshID))
+            refreshEventMapping?.fire(.tokenRefreshStarted(refreshID: refreshID))
 
             guard let localTokenContainer else {
                 Logger.OAuthClient.log("Tokens not found")
-                throw OAuthClientError.missingTokenContainer
+                let error = OAuthClientError.missingTokenContainer
+                refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
+                throw error
             }
+
             do {
-                eventMapping?.fire(.tokenRefreshRefreshingAccessToken(refreshID: refreshID))
+                refreshEventMapping?.fire(.tokenRefreshRefreshingAccessToken(refreshID: refreshID))
                 let refreshTokenResponse = try await authService.refreshAccessToken(clientID: Constants.clientID, refreshToken: localTokenContainer.refreshToken)
-                eventMapping?.fire(.tokenRefreshRefreshedAccessToken(refreshID: refreshID))
+                refreshEventMapping?.fire(.tokenRefreshRefreshedAccessToken(refreshID: refreshID))
 
                 let refreshedTokens = try await decode(accessToken: refreshTokenResponse.accessToken,
                                                        refreshToken: refreshTokenResponse.refreshToken,
                                                        refreshID: refreshID)
                 Logger.OAuthClient.log("Tokens refreshed, expiry: \(refreshedTokens.decodedAccessToken.exp.value.description, privacy: .public)")
 
-                eventMapping?.fire(.tokenRefreshSavingTokens(refreshID: refreshID))
+                refreshEventMapping?.fire(.tokenRefreshSavingTokens(refreshID: refreshID))
                 try tokenStorage.saveTokenContainer(refreshedTokens)
 
-                eventMapping?.fire(.tokenRefreshSucceeded(refreshID: refreshID))
+                refreshEventMapping?.fire(.tokenRefreshSucceeded(refreshID: refreshID))
 
                 return refreshedTokens
             } catch OAuthServiceError.authAPIError(let code) where code == .invalidTokenRequest {
                 Logger.OAuthClient.error("Failed to refresh token: invalidTokenRequest")
                 let error = OAuthClientError.invalidTokenRequest
-                eventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
+                refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
                 throw error
             } catch OAuthServiceError.authAPIError(let code) where code == .unknownAccount {
                 Logger.OAuthClient.error("Failed to refresh token: unknownAccount")
                 let error = OAuthClientError.unknownAccount
-                eventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
+                refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
                 throw error
             } catch {
                 Logger.OAuthClient.error("Failed to refresh token: \(String(describing: error), privacy: .public)")
-                eventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
+                refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
                 throw error
             }
 

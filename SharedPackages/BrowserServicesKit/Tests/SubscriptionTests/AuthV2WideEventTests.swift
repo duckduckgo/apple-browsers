@@ -76,21 +76,6 @@ final class AuthV2WideEventTests: XCTestCase {
         }
     }
 
-    func testPixelParameters_withApplicationState() {
-        let contextData = WideEventContextData(name: "test-context")
-
-        // Test foreground
-        var eventData = AuthV2TokenRefreshWideEventData(contextData: contextData)
-        eventData.applicationState = .foreground
-        var parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.data.ext.application_state"], "foreground")
-
-        // Test background
-        eventData.applicationState = .background
-        parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.data.ext.application_state"], "background")
-    }
-
     func testPixelParameters_withRefreshTokenDuration_bucketing() {
         let contextData = WideEventContextData(name: "test-context")
         let baseDate = Date()
@@ -190,11 +175,12 @@ final class AuthV2WideEventTests: XCTestCase {
             failingStep: .verifyingAccessToken,
             contextData: contextData
         )
-        eventData.applicationState = .background
+
         eventData.refreshTokenDuration = WideEvent.MeasuredInterval(
             start: baseDate,
             end: baseDate.addingTimeInterval(2.5) // 2500ms → bucket 5000
         )
+
         eventData.fetchJWKSDuration = WideEvent.MeasuredInterval(
             start: baseDate,
             end: baseDate.addingTimeInterval(0.5) // 500ms → bucket 1000

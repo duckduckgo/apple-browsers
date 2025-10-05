@@ -169,6 +169,8 @@ extension ReleaseNotesValues {
                         return ReleaseNotesValues.Status.loaded
                     } else if updateController.hasPendingUpdate {
                         return updateController.latestUpdate?.type == .critical ? .criticalUpdateReady : .updateReady
+                    } else if case .updateCycleNotStarted = updateController.updateProgress {
+                        return .loading
                     } else {
                         return updateController.updateProgress.toStatus
                     }

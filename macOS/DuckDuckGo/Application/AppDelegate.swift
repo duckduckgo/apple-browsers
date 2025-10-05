@@ -512,7 +512,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             legacyTokenStorage: legacyTokenStorage,
                                             authService: authService,
-                                            eventMapping: AuthV2TokenRefreshWideEventData.authEventMapping)
+                                            eventMapping: AuthV2TokenRefreshWideEventData.authEventMapping(wideEvent: wideEvent))
         let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
                                                     pixelHandler: pixelHandler,

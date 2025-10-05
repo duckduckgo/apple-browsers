@@ -124,9 +124,7 @@ extension AuthV2TokenRefreshWideEventData {
 
 extension AuthV2TokenRefreshWideEventData {
 
-    public static let authEventMapping: EventMapping<OAuthClientEvent> = {
-        let wideEvent = WideEvent()
-
+    public static func authEventMapping(wideEvent: WideEventManaging) -> EventMapping<OAuthClientEvent> {
         return .init { event, _, _, _ in
             switch event {
             case .tokenRefreshStarted(let refreshID):
@@ -168,17 +166,17 @@ extension AuthV2TokenRefreshWideEventData {
             case .tokenRefreshSucceeded(let refreshID):
                 if let data = wideEvent.getFlowData(AuthV2TokenRefreshWideEventData.self, globalID: refreshID) {
                     data.failingStep = nil
-                    wideEvent.completeFlow(data, status: .success(reason: nil))
+                    wideEvent.completeFlow(data, status: .success(reason: nil), onComplete: { _, _ in })
                 }
             case .tokenRefreshFailed(let refreshID, let error):
                 if let data = wideEvent.getFlowData(AuthV2TokenRefreshWideEventData.self, globalID: refreshID) {
                     data.errorData = WideEventErrorData(error: error)
                     wideEvent.updateFlow(data)
-                    wideEvent.completeFlow(data, status: .failure)
+                    wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
                 }
             }
         }
-    }()
+    }
 
 }
 

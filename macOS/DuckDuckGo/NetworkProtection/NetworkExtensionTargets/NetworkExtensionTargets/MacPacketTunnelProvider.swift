@@ -466,7 +466,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let authClient = DefaultOAuthClient(tokensStorage: tokenStoreV2,
                                             legacyTokenStorage: nil,
                                             authService: authService,
-                                            eventMapping: AuthV2TokenRefreshWideEventData.authEventMapping)
+                                            eventMapping: AuthV2TokenRefreshWideEventData.authEventMapping(wideEvent: WideEvent()))
 
         let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
                                                                                  baseURL: subscriptionEnvironment.serviceEnvironment.url)

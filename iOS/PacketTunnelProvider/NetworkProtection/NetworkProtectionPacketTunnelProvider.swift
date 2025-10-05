@@ -30,6 +30,7 @@ import Subscription
 import WidgetKit
 import WireGuard
 import BrowserServicesKit
+import PixelKit
 
 final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
@@ -468,7 +469,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                                 legacyTokenStorage: nil, // Only the main app can migrate
                                                 authService: authService,
-                                                eventMapping: AuthV2TokenRefreshWideEventData.authEventMapping)
+                                                eventMapping: AuthV2TokenRefreshWideEventData.authEventMapping(wideEvent: WideEvent()))
             let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
             let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)

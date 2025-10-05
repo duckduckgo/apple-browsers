@@ -591,14 +591,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             updateCachedIsUserAuthenticated(true)
             updateCachedUserEntitlements(refreshedTokenContainer.decodedAccessToken.subscriptionEntitlements)
 
-            if isAuthV2WideEventEnabled(), let wideEvent,
-               let data = wideEvent.getFlowData(AuthV2TokenAdoptionWideEventData.self, globalID: adoptionID) {
+            if isAuthV2WideEventEnabled(), let wideEvent, let data = wideEvent.getFlowData(AuthV2TokenAdoptionWideEventData.self, globalID: adoptionID) {
                 data.failingStep = nil
                 wideEvent.completeFlow(data, status: .success(reason: nil), onComplete: { _, _ in })
             }
         } catch {
-            if isAuthV2WideEventEnabled(), let wideEvent,
-               let data = wideEvent.getFlowData(AuthV2TokenAdoptionWideEventData.self, globalID: adoptionID) {
+            if isAuthV2WideEventEnabled(), let wideEvent, let data = wideEvent.getFlowData(AuthV2TokenAdoptionWideEventData.self, globalID: adoptionID) {
                 data.errorData = WideEventErrorData(error: error)
                 wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
             }

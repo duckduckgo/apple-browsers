@@ -112,6 +112,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var emailCancellables = Set<AnyCancellable>()
     var privacyDashboardWindow: NSWindow?
 
+    let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
     let subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
 
@@ -808,7 +809,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         crashReporter = CrashReporter(internalUserDecider: internalUserDecider)
 #endif
 
-        watchdog = Watchdog()
+        let watchdogDiagnosticProvider = MacWatchdogDiagnosticProvider(windowControllersManager: windowControllersManager)
+        let eventMapper = WatchdogEventMapper(diagnosticProvider: watchdogDiagnosticProvider)
+        watchdog = Watchdog(eventMapper: eventMapper)
 
 #if !DEBUG
         // Start UI hang watchdog
@@ -826,12 +829,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // swiftlint:enable cyclomatic_complexity
 
     func applicationWillFinishLaunching(_ notification: Notification) {
-#if DEBUG
-        // Workaround for Xcode 26 crash: https://developer.apple.com/forums/thread/787365?answerId=846043022#846043022
-        // This is a known issue in Xcode 26 betas 1 and 2, if the issue is fixed in beta 3 onward then this can be removed
-        nw_tls_create_options()
-#endif
-
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
 
         stateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
@@ -871,6 +868,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSWindow.allowsAutomaticWindowTabbing = false
         // Fix SwifUI context menus and its owner View leaking
         SwiftUIContextMenuRetainCycleFix.setUp()
+
+#if !DEBUG
+        // Start UI hang watchdog
+        if featureFlagger.isFeatureOn(.hangReporting) {
+            Task {
+                await watchdog.start()
+            }
+        }
+#endif
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {

@@ -86,7 +86,7 @@ final class AutofillSettingsViewController: UIViewController {
         self.bookmarksDatabase = bookmarksDatabase
         self.favoritesDisplayMode = favoritesDisplayMode
         self.keyValueStore = keyValueStore
-        self.viewModel = AutofillSettingsViewModel(appSettings: appSettings, source: source)
+        self.viewModel = AutofillSettingsViewModel(appSettings: appSettings, source: source, syncService: syncService, syncDataProviders: syncDataProviders)
         
         super.init(nibName: nil, bundle: nil)
     }
@@ -110,7 +110,7 @@ final class AutofillSettingsViewController: UIViewController {
         
         Pixel.fire(pixel: .autofillSettingsOpened)
     }
-    
+
     private func setupView() {
         viewModel.delegate = self
         

@@ -29,7 +29,7 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
     #if DEBUG
     public static let pixelName = "auth_v2_token_refresh_debug"
     #else
-    public static let pixelName = "auth_v2_token_refresh_debug" // Replace with non-debug version before merging
+    public static let pixelName = "auth_v2_token_refresh"
     #endif
 
     public enum ApplicationState: String, Codable {

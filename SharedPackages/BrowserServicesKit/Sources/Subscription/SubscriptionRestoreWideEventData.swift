@@ -16,12 +16,11 @@
 //  limitations under the License.
 //
 
-
 import Foundation
 import PixelKit
 
 public class SubscriptionRestoreWideEventData: WideEventData {
-    
+
     #if DEBUG
     public static let pixelName = "subscription_restore_debug"
     #else
@@ -56,7 +55,7 @@ public class SubscriptionRestoreWideEventData: WideEventData {
         self.appData = appData
         self.globalData = globalData
     }
-    
+
     static let name = "restore-purchase"
 }
 
@@ -74,8 +73,8 @@ extension SubscriptionRestoreWideEventData {
         case activationFlowAddEmailOTP = "activation_flow_add_email_otp"
         case activationFlowLinkViaEmail = "activation_flow_link_via_email"
         case activationFlowSuccess = "activation_flow_success"
-        
-        func from(_ subscriptionURL: SubscriptionURL) -> Self? {
+
+        public static func from(_ subscriptionURL: SubscriptionURL) -> Self? {
             switch subscriptionURL {
             case .activationFlow:
                 return .activationFlow
@@ -101,7 +100,7 @@ extension SubscriptionRestoreWideEventData {
         case partialData = "partial_data"
         case timeout
     }
-    
+
     public func pixelParameters() -> [String: String] {
         var params: [String: String] = [:]
 
@@ -126,7 +125,7 @@ extension SubscriptionRestoreWideEventData {
 }
 
 private extension SubscriptionRestoreWideEventData {
-    
+
     func setBucketedLatency(_ interval: WideEvent.MeasuredInterval?,
                             key: String,
                             bucket: (Int) -> Int,

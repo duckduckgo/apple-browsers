@@ -23,6 +23,7 @@ import Combine
 import Core
 import Subscription
 import BrowserServicesKit
+import PixelKit
 
 final class SubscriptionRestoreViewModel: ObservableObject {
     
@@ -54,14 +55,19 @@ final class SubscriptionRestoreViewModel: ObservableObject {
     @Published private(set) var state = State()
 
     private let featureFlagger: FeatureFlagger
+    
+    // Wide Pixel
+    private let wideEvent: WideEventManaging
 
     init(userScript: SubscriptionPagesUserScript,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
          isAddingDevice: Bool = false,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent) {
         self.userScript = userScript
         self.subFeature = subFeature
         self.featureFlagger = featureFlagger
+        self.wideEvent = wideEvent
     }
     
     func onAppear() {
@@ -135,7 +141,18 @@ final class SubscriptionRestoreViewModel: ObservableObject {
     func restoreAppstoreTransaction() {
         DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseStoreStart,
                                      pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+        
+        let data = SubscriptionRestoreWideEventData(
+            restorePlatform: .appleAccount,
+            contextData: WideEventContextData(name: SubscriptionFunnelOrigin.appSettings.rawValue)
+        )
+        
         Task {
+            if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
+                data.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
+                wideEvent.startFlow(data)
+            }
+            
             state.transactionStatus = .restoring
             state.activationResult = .unknown
             do {
@@ -143,11 +160,26 @@ final class SubscriptionRestoreViewModel: ObservableObject {
                 DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseStoreSuccess,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
                 state.activationResult = .activated
+                
+                if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
+                    data.appleAccountRestoreDuration?.complete()
+                    wideEvent.completeFlow(data, status: .success(reason: nil), onComplete: { _, _ in })
+                }
+                
                 state.transactionStatus = .idle
             } catch let error {
                 if let specificError = error as? UseSubscriptionError {
                     handleRestoreError(error: specificError)
+                    data.errorData = .init(error: specificError)
+                } else {
+                    data.errorData = .init(error: error)
                 }
+                
+                if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
+                    data.appleAccountRestoreDuration?.complete()
+                    wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+                }
+                
                 state.transactionStatus = .idle
             }
         }

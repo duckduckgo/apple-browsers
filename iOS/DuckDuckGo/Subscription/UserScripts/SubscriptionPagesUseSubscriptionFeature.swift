@@ -592,6 +592,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     private let internalUserDecider: InternalUserDecider
     private let wideEvent: WideEventManaging
     private var wideEventData: SubscriptionPurchaseWideEventData?
+    private var subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData?
 
     init(subscriptionManager: SubscriptionManagerV2,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
@@ -637,6 +638,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     ])
 
     var originalMessage: WKScriptMessage?
+    
+    var currentSubscriptionRestoreWidePixelEventData: SubscriptionRestoreWideEventData?
 
     func with(broker: UserScriptMessageBroker) {
         self.broker = broker
@@ -707,6 +710,13 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
         guard let subscriptionValues: SubscriptionValuesV2 = CodableHelper.decode(from: params) else {
             Logger.subscription.fault("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
+            
+            if subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled, let restoreWideEventData = self.currentSubscriptionRestoreWidePixelEventData {
+                restoreWideEventData.emailAddressRestoreDuration?.complete()
+                restoreWideEventData.errorData = .init(error: UseSubscriptionError.generalError)
+                wideEvent.completeFlow(restoreWideEventData, status: .failure, onComplete: { _, _ in })
+                
+            }
             assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
             setTransactionError(.generalError)
             return nil
@@ -717,6 +727,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
         guard !subscriptionValues.accessToken.isEmpty, !subscriptionValues.refreshToken.isEmpty else {
             Logger.subscription.fault("Empty access token or refresh token provided")
+            if subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled, let restoreWideEventData = self.currentSubscriptionRestoreWidePixelEventData {
+                restoreWideEventData.emailAddressRestoreDuration?.complete()
+                wideEvent.completeFlow(restoreWideEventData, status: .failure, onComplete: { _, _ in })
+                
+            }
             return nil
         }
 
@@ -724,8 +739,22 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             try await subscriptionManager.adopt(accessToken: subscriptionValues.accessToken, refreshToken: subscriptionValues.refreshToken)
             try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
             Logger.subscription.log("Subscription retrieved")
+            
+            if subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled, let restoreWideEventData = self.currentSubscriptionRestoreWidePixelEventData {
+                restoreWideEventData.emailAddressRestoreDuration?.complete()
+                wideEvent.completeFlow(restoreWideEventData, status: .success, onComplete: { _, _ in })
+                
+            }
         } catch {
             Logger.subscription.error("Failed to adopt V2 tokens: \(error, privacy: .public)")
+            
+            if subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled, let restoreWideEventData = self.currentSubscriptionRestoreWidePixelEventData {
+                restoreWideEventData.emailAddressRestoreDuration?.complete()
+                restoreWideEventData.errorData = .init(error: UseSubscriptionError.failedToSetSubscription)
+                wideEvent.completeFlow(restoreWideEventData, status: .failure, onComplete: { _, _ in })
+                
+            }
+            
             setTransactionError(.failedToSetSubscription)
         }
         return nil

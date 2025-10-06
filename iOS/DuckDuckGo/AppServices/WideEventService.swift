@@ -48,6 +48,11 @@ final class WideEventService {
             return
         }
         
+        guard featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) else {
+            completion()
+            return
+        }
+        
         sendQueue.async { [weak self] in
             guard let self else { return }
 
@@ -137,4 +142,8 @@ final class WideEventService {
             return false
         }
     }
+    
+    // MARK: - Subscription Restore
+    // TODO: htang | sendAbandonedSubscriptionRestorePixels
+    // TODO: htang | sendDelayedSubscriptionRestorePixels
 }

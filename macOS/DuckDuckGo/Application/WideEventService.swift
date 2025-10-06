@@ -46,6 +46,11 @@ final class WideEventService {
             completion()
             return
         }
+        
+        guard featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) else {
+            completion()
+            return
+        }
 
         sendQueue.async { [weak self] in
             guard let self else { return }
@@ -63,6 +68,11 @@ final class WideEventService {
     // Sends pixels which are currently incomplete but may complete later.
     func sendDelayedPixels(completion: @escaping () -> Void) {
         guard featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) else {
+            completion()
+            return
+        }
+        
+        guard featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) else {
             completion()
             return
         }
@@ -136,4 +146,8 @@ final class WideEventService {
             return false
         }
     }
+    
+    // MARK: - Subscription Restore
+    // TODO: htang | sendAbandonedSubscriptionRestorePixels
+    // TODO: htang | sendDelayedSubscriptionRestorePixels
 }

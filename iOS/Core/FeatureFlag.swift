@@ -181,6 +181,9 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211245201777978?focus=true
     case serpSettingsFollowUpQuestions
+    
+    /// https://app.asana.com/1/137249556945/task/1211354430557015?focus=true
+    case subscriptionRestoreWidePixelMeasurement
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -252,7 +255,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .showAIChatAddressBarChoiceScreen,
              .refreshButtonPosition,
              .newDeviceSyncPrompt,
-             .serpSettingsFollowUpQuestions:
+             .serpSettingsFollowUpQuestions,
+             .subscriptionRestoreWidePixelMeasurement:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -446,6 +450,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
         case .serpSettingsFollowUpQuestions:
             return .remoteReleasable(.subfeature(AIChatSubfeature.serpSettingsFollowUpQuestions))
+        case .subscriptionRestoreWidePixelMeasurement:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         }
     }
 }

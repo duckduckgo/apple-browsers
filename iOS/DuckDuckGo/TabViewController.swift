@@ -1333,7 +1333,8 @@ class TabViewController: UIViewController {
                                                                      openerContext: inferredOpenerContext,
                                                                      vpnOn: netPConnected,
                                                                      userRefreshCount: refreshCountSinceLoad,
-                                                                     performanceMetrics: performanceMetrics)
+                                                                     performanceMetrics: performanceMetrics,
+                                                                     breakageReportingSubfeature: breakageReportingSubfeature)
     }
 
     public func print() {

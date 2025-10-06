@@ -20,7 +20,7 @@ import Foundation
 import PixelKit
 
 /// Tracks site loading performance metrics received via push notifications from Content Scope Scripts
-enum SiteLoadingPerformancePixel: PixelKitEvent {
+enum SiteLoadingPerformancePixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
 
     // MARK: - Parameter Names
 
@@ -50,8 +50,22 @@ enum SiteLoadingPerformancePixel: PixelKitEvent {
     var name: String {
         switch self {
         case .performanceMetricsReceived:
-            return "m_mac_site_loading_performance"
+            return "site_loading_performance"
         }
+    }
+
+    var namePrefix: String {
+#if os(iOS)
+        switch self {
+        case .performanceMetricsReceived:
+            return "m_"
+        }
+#elseif os(macOS)
+        switch self {
+        case .performanceMetricsReceived:
+            return "m_mac_"
+        }
+#endif
     }
 
     var parameters: [String: String]? {

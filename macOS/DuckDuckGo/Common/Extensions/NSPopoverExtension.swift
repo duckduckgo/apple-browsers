@@ -98,7 +98,9 @@ extension NSPopover {
         }
 
         /// Hook up the BG View in this spot, since we need the Popover to be attached to an actual Window
-        ensureBackgroundViewFrameIsVisible()
+        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.themes) {
+            ensureBackgroundViewFrameIsVisible()
+        }
     }
 
     /// Shows the popover below the specified view with the popover's pin positioned in the middle of the view

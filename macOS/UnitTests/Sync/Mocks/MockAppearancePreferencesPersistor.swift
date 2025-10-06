@@ -30,6 +30,8 @@ class MockAppearancePreferencesPersistor: AppearancePreferencesPersistor {
 
     var themeAppearance: String = ""
 
+    var themeName: String = ""
+
     var defaultPageZoom: CGFloat = 1.0
 
     var favoritesDisplayMode: String?

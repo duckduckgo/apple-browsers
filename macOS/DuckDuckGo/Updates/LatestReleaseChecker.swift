@@ -16,18 +16,29 @@
 //  limitations under the License.
 //
 import Foundation
+import BrowserServicesKit
+import Common
 
 public enum LatestReleaseMetadataType {
     case macOSAppStore
 }
 
-public enum LatestReleaseError: Error, LocalizedError {
+public enum LatestReleaseError: DDGError {
     case invalidURL
     case networkError(Error)
     case decodingError(Error)
     case metadataNotFound
 
-    public var errorDescription: String? {
+    public var errorCode: Int {
+        switch self {
+        case .invalidURL: return 1
+        case .networkError(let error): return 2
+        case .decodingError(let error): return 3
+        case .metadataNotFound: return 4
+        }
+    }
+
+    public var description: String {
         switch self {
         case .invalidURL:
             return "Invalid release metadata URL"
@@ -39,15 +50,27 @@ public enum LatestReleaseError: Error, LocalizedError {
             return "Release metadata not found"
         }
     }
+
+    public var underlyingError: (any Error)? {
+        switch self {
+        case .networkError(let error): return error
+        case .decodingError(let error): return error
+        default: return nil
+        }
+    }
+
+    public static func == (lhs: LatestReleaseError, rhs: LatestReleaseError) -> Bool {
+        return lhs.errorCode == rhs.errorCode
+    }
 }
 
 public struct ReleaseMetadata: Codable {
     public let latestVersion: String
-    public let buildNumber: String
+    public let buildNumber: Int
     public let releaseDate: String
     public let isCritical: Bool
 
-    public init(latestVersion: String, buildNumber: String, releaseDate: String, isCritical: Bool) {
+    public init(latestVersion: String, buildNumber: Int, releaseDate: String, isCritical: Bool) {
         self.latestVersion = latestVersion
         self.buildNumber = buildNumber
         self.releaseDate = releaseDate

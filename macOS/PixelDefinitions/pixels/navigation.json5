@@ -33,4 +33,54 @@
         ],
         expires: '2025-10-31',
     },
+    siteLoadingSuccess: {
+        description: 'Fired when a site loading navigation completes successfully.',
+        owners: ['diegoreymendez'],
+        triggers: ['page_load'],
+        parameters: ['appVersion', 'pixelSource', 'duration', 'navigation_type'],
+    },
+    siteLoadingFailure: {
+        description: 'Fired when a site loading navigation fails.',
+        owners: ['diegoreymendez'],
+        triggers: ['page_load'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            'duration',
+            'navigation_type',
+            'errorCode',
+            'errorDomain',
+            'underlyingErrorCode',
+            'underlyingErrorDomain',
+        ],
+    },
+    siteLoadingTiming: {
+        description: 'Fired when WKPageLoadTiming data is available for a site loading navigation. Provides detailed performance timing metrics.',
+        owners: ['diegoreymendez'],
+        triggers: ['page_load'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'webKitFirstVisualLayoutMs',
+                type: 'integer',
+                description: 'Time in milliseconds from navigation start to first visual layout',
+            },
+            {
+                key: 'webKitFirstMeaningfulPaintMs',
+                type: 'integer',
+                description: 'Time in milliseconds from navigation start to first meaningful paint',
+            },
+            {
+                key: 'webKitDocumentCompleteMs',
+                type: 'integer',
+                description: 'Time in milliseconds from navigation start to document complete',
+            },
+            {
+                key: 'webKitAllResourcesCompleteMs',
+                type: 'integer',
+                description: 'Time in milliseconds from navigation start to all resources complete',
+            },
+        ],
+    },
 }

@@ -83,6 +83,7 @@ public enum PrivacyFeature: String {
     case htmlNewTabPage
     case daxEasterEggLogos
     case openFireWindowByDefault
+    case behaviorMetrics
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -123,6 +124,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211260578559159?focus=true
     case unifiedURLPredictor
+
+    /// Enable WebKit page load timing performance reporting
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/XXXXXXXXX?focus=true
+    case webKitPerformanceReporting
 
     // Gradual rollout for new Fire dialog replacing the legacy popover
     // https://app.asana.com/1/137249556945/project/72649045549333/task/1210417832822045
@@ -435,4 +440,10 @@ public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .experimentalTheming }
 
     case visualUpdates // Rollout
+}
+
+public enum BehaviorMetricsSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .behaviorMetrics }
+
+    case behaviorMetricsEnabled
 }

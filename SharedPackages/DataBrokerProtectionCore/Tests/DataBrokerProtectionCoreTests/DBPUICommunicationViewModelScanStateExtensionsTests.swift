@@ -484,6 +484,42 @@ final class DBPUICommunicationViewModelScanStateExtensionsTests: XCTestCase {
         let parentProfile = state.inProgressOptOuts.first { $0.dataBroker.name == "ParentBroker" }
         XCTAssertEqual(parentProfile?.dataBroker.optOutUrl, "parent.com/optout")
     }
+
+    func testWhenBrokerMarkedAsRemoved_thenInitialScanProgressExcludesIt() {
+        let brokerProfileQueryData: [BrokerProfileQueryData] = [
+            .mock(dataBrokerName: "Removed Broker",
+                  lastRunDate: Date(),
+                  extractedProfile: .mockWithoutRemovedDate,
+                  dataBrokerRemovedAt: Date()),
+            .mock(dataBrokerName: "Active Broker",
+                  lastRunDate: Date(),
+                  extractedProfile: .mockWithoutRemovedDate)
+        ]
+
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
+
+        XCTAssertEqual(result.scanProgress.totalScans, 1)
+        XCTAssertEqual(result.scanProgress.currentScans, 1)
+        XCTAssertEqual(result.scanProgress.scannedBrokers.map { $0.name }, ["Active Broker"])
+
+        // removed brokers should still be represented in resultsFound
+        XCTAssertEqual(result.resultsFound.count, 2)
+    }
+
+    func testWhenBrokerMarkedAsRemoved_thenMaintenanceNextScanExcludesIt() {
+        let brokerProfileQueryData: [BrokerProfileQueryData] = [
+            .mock(dataBrokerName: "Removed Broker",
+                  preferredRunDate: Date().tomorrow,
+                  dataBrokerRemovedAt: Date()),
+            .mock(dataBrokerName: "Active Broker",
+                  preferredRunDate: Date().tomorrow)
+        ]
+
+        let result = DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
+
+        XCTAssertEqual(result.scanSchedule.nextScan.dataBrokers.count, 1)
+        XCTAssertEqual(result.scanSchedule.nextScan.dataBrokers.first?.name, "Active Broker")
+    }
 }
 
 extension DBPUIScanProgress.ScannedBroker {

@@ -33,6 +33,7 @@ final class BrokenSiteInfoTabExtension {
     private(set) var refreshCountSinceLoad: Int = 0
 
     private(set) var performanceMetrics: PerformanceMetricsSubfeature?
+    private(set) var lastPageLoadTiming: WKPageLoadTiming?
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -121,6 +122,10 @@ extension BrokenSiteInfoTabExtension: NavigationResponder {
         lastWebError = error
     }
 
+    func didGeneratePageLoadTiming(_ timing: WKPageLoadTiming) {
+        lastPageLoadTiming = timing
+    }
+
 }
 
 protocol BrokenSiteInfoTabExtensionProtocol: AnyObject, NavigationResponder {
@@ -131,6 +136,7 @@ protocol BrokenSiteInfoTabExtensionProtocol: AnyObject, NavigationResponder {
     var refreshCountSinceLoad: Int { get }
 
     var performanceMetrics: PerformanceMetricsSubfeature? { get }
+    var lastPageLoadTiming: WKPageLoadTiming? { get }
 
     func tabReloadRequested()
 }

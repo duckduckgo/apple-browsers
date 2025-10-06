@@ -102,7 +102,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
 extension DistributedNavigationDelegateTestsBase {
 
     static func makeNavigationDelegateProxy() -> NavigationDelegateProxy {
-        NavigationDelegateProxy(delegate: DistributedNavigationDelegate())
+        NavigationDelegateProxy(delegate: DistributedNavigationDelegate(isPerformanceReportingEnabled: false))
     }
 
     func makeWebView(testURLSchemeHandler: TestNavigationSchemeHandler? = nil) -> WKWebView {

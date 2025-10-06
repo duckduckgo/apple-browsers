@@ -303,7 +303,6 @@ extension PrivacyDashboardViewController {
                 }
             })
         }
-        
 
         return webVitalsResult
     }

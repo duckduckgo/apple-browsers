@@ -91,10 +91,8 @@ final class AIChatSidebar: NSObject {
     /// Subscribes to restoration data updates from the sidebar view controller.
     /// This method is called automatically when the sidebarViewController is set.
     private func subscribeToRestorationDataUpdates() {
-        // Cancel existing subscriptions
         cancellables.removeAll()
 
-        // Subscribe to restoration data updates if the publisher is available
         sidebarViewController?.chatRestorationDataPublisher?
             .sink { [weak self] restorationData in
                 self?.restorationData = restorationData
@@ -118,7 +116,6 @@ final class AIChatSidebar: NSObject {
             self.sidebarViewController = nil
         }
 
-        // Cancel all subscriptions when unloading
         cancellables.removeAll()
 
         setHidden()

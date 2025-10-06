@@ -338,6 +338,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionPurchaseWidePixelMeasurement
     case subscriptionRestoreWidePixelMeasurement
     case authV2WideEventEnabled
+    case winBackOffer
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

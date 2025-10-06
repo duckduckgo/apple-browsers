@@ -144,7 +144,7 @@ final class SafariArchiveImporter: DataImporter {
 
         } catch {
             // Return a generic error for each requested type if archive reading fails
-            return Dictionary(uniqueKeysWithValues: types.map { ($0, GenericImportError(underlyingError: error)) })
+            return Dictionary(uniqueKeysWithValues: types.map { ($0, ImportError(action: .generic, type: .validateAccess, underlyingError: error)) })
         }
     }
 
@@ -238,15 +238,12 @@ final class SafariArchiveImporter: DataImporter {
 
     private func cleanupTemporaryFile(_ tempFile: URL) {
         let fileManager = FileManager.default
-        var parentDirectories = Set<URL>()
 
-        parentDirectories.insert(tempFile.deletingLastPathComponent())
+        let parentDirectory = tempFile.deletingLastPathComponent()
         try? fileManager.removeItem(at: tempFile)
 
-        // Clean up parent directories if they're empty
-        for directory in parentDirectories {
-            try? fileManager.removeItem(at: directory)
-        }
+        // Clean up parent directory if empty. Throws if not
+        try? fileManager.removeItem(at: parentDirectory)
     }
 
     private func importPasswords(_ contents: ImportArchiveContents, _ types: Set<DataImport.DataType>, _ updateProgress: DataImportProgressCallback, _ cumulativeFraction: inout Double) async throws -> DataImportSummary {
@@ -304,19 +301,5 @@ final class SafariArchiveImporter: DataImporter {
         }
         let creditCardResults = await creditCardTask.task.value
         return creditCardResults
-    }
-}
-
-// MARK: - Helper Error Type
-
-private struct GenericImportError: DataImportError {
-    let underlyingError: Error?
-
-    var action: DataImportAction { .generic }
-    var type: OperationType { OperationType(rawValue: (underlyingError as NSError?)?.code ?? 0) }
-    var errorType: DataImport.ErrorType { .other }
-
-    struct OperationType: RawRepresentable {
-        let rawValue: Int
     }
 }

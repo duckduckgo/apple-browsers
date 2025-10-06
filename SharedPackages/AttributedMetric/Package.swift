@@ -39,7 +39,7 @@ let package = Package(
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit")
-            ],
+            ]
         ),
         .testTarget(
             name: "AttributedMetricTests",

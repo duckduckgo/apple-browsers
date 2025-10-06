@@ -192,7 +192,11 @@ struct FeatureCardView: View {
     @ViewBuilder
     private var iconPlaceholder: some View {
         Circle()
+#if os(iOS)
+            .fill(Color(designSystemColor: .surface))
+#else
             .fill(Color(designSystemColor: .surfacePrimary))
+#endif
             .frame(width: LayoutConstants.iconContainerSize, height: LayoutConstants.iconContainerSize)
             .overlay(
                 Circle()

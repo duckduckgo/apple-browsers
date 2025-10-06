@@ -440,7 +440,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .themes:
             return .internalOnly()
         case .appStoreCheckForUpdatesFlow:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.appStoreUpdateFlow))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .unifiedURLPredictorMetrics:

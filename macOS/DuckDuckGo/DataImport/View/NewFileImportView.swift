@@ -92,10 +92,6 @@ struct NewFileImportView: View {
                     .frame(width: 54, height: 54)
                 VStack(alignment: .center, spacing: 0) {
                     Text(UserText.importDragAndDropFile).font(.system(size: 14, weight: .bold))
-                    Text(UserText.importOr)
-                        .font(.system(size: 13))
-                        .foregroundColor(Color(designSystemColor: .textPlaceholder))
-                        .padding(.top, 7)
                     button(UserText.importDataSelectFileButtonTitle)
                         .padding(.top, 10)
                 }

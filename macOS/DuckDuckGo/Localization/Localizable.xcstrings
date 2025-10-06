@@ -40050,7 +40050,7 @@
       }
     },
     "import.drag-and-drop-file" : {
-      "comment" : "Drag-and-drop instruction for importing a file\nSeparates import.data.select-file.button.title and import.drag-and-drop-file with the word 'or'. E.g 'Drag % drop your file here or Select File'.",
+      "comment" : "Drag-and-drop instruction for importing a file",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {

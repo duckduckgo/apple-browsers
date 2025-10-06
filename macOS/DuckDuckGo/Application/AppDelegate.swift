@@ -177,7 +177,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
     let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
-    let visualStyle: VisualStyleProviding
+    let themeManager: ThemeManager
+    var visualStyle: VisualStyleProviding {
+        themeManager.theme
+    }
 
     let wideEvent: WideEventManaging
     let isUsingAuthV2: Bool
@@ -624,7 +627,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
-        visualStyle = VisualStyle.current
+        themeManager = ThemeManager(appearancePreferences: appearancePreferences)
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
@@ -653,7 +656,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         visualizeFireSettingsDecider = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
         startupPreferences = StartupPreferences(persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore), appearancePreferences: appearancePreferences)
-        newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
+        newTabPageCustomizationModel = NewTabPageCustomizationModel(themeManager: themeManager, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld)
 
@@ -764,7 +767,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 subscriptionManager: subscriptionAuthV1toV2Bridge,
                 featureFlagger: self.featureFlagger,
                 configurationURLProvider: configurationURLProvider,
-                visualStyle: self.visualStyle
+                themeManager: themeManager
             )
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
                 windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))

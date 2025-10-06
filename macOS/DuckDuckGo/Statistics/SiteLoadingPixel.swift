@@ -19,14 +19,31 @@
 import Foundation
 import PixelKit
 
-/// Tracks user navigation journey outcomes to measure site loading success rates.
+/// Tracks user navigation journey outcomes to measure site loading success rates and rendering performance.
 /// Complements GeneralPixel.navigation (attempt tracking) with outcome-specific data.
 enum SiteLoadingPixel: PixelKitEvent {
+
+    // MARK: - Parameter Names
+
+    private enum ParameterNames {
+        static let firstVisualLayout = "first_visual_layout_ms"
+        static let firstMeaningfulPaint = "first_meaningful_paint_ms"
+        static let documentComplete = "document_complete_ms"
+        static let allResourcesComplete = "all_resources_complete_ms"
+        static let navigationType = "navigation_type"
+    }
 
     /// Navigation completed successfully from user perspective
     case siteLoadingSuccess(duration: TimeInterval, navigationType: String)
     /// Navigation failed due to network/server/content issues
     case siteLoadingFailure(duration: TimeInterval, error: Error, navigationType: String)
+    /// Comprehensive site loading timing data from WebKit - all durations relative to navigation start
+    case siteLoadingTiming(
+        firstVisualLayoutMs: Int?,
+        firstMeaningfulPaintMs: Int?,
+        documentCompleteMs: Int?,
+        allResourcesCompleteMs: Int?
+    )
 
     var name: String {
         switch self {
@@ -34,6 +51,8 @@ enum SiteLoadingPixel: PixelKitEvent {
             return "m_mac_site_loading_success"
         case .siteLoadingFailure:
             return "m_mac_site_loading_failure"
+        case .siteLoadingTiming:
+            return "m_mac_site_loading_timing"
         }
     }
 
@@ -42,13 +61,32 @@ enum SiteLoadingPixel: PixelKitEvent {
         case .siteLoadingSuccess(let duration, let navigationType):
             return [
                 PixelKit.Parameters.duration: String(Int(duration * 1000)), // Milliseconds for precision
-                "navigation_type": navigationType
+                ParameterNames.navigationType: navigationType
             ]
         case .siteLoadingFailure(let duration, _, let navigationType):
             return [
                 PixelKit.Parameters.duration: String(Int(duration * 1000)),
-                "navigation_type": navigationType
+                ParameterNames.navigationType: navigationType
             ]
+        case .siteLoadingTiming(let firstVisualLayoutMs, let firstMeaningfulPaintMs, let documentCompleteMs, let allResourcesCompleteMs):
+            var params: [String: String] = [:]
+
+            // Add all timing data as individual parameters (only if available)
+            // All durations are relative to navigation start
+            if let firstVisualLayoutMs = firstVisualLayoutMs {
+                params[ParameterNames.firstVisualLayout] = String(firstVisualLayoutMs)
+            }
+            if let firstMeaningfulPaintMs = firstMeaningfulPaintMs {
+                params[ParameterNames.firstMeaningfulPaint] = String(firstMeaningfulPaintMs)
+            }
+            if let documentCompleteMs = documentCompleteMs {
+                params[ParameterNames.documentComplete] = String(documentCompleteMs)
+            }
+            if let allResourcesCompleteMs = allResourcesCompleteMs {
+                params[ParameterNames.allResourcesComplete] = String(allResourcesCompleteMs)
+            }
+
+            return params
         }
     }
 
@@ -58,6 +96,8 @@ enum SiteLoadingPixel: PixelKitEvent {
             return nil
         case .siteLoadingFailure(_, let error, _):
             return error as NSError
+        case .siteLoadingTiming:
+            return nil
         }
     }
 }

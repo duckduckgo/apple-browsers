@@ -1,7 +1,7 @@
 {
   "name": "PeopleFinders",
   "url": "peoplefinders.com",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "addedDatetime": 1677132000000,
   "optOutUrl": "https://www.peoplefinders.com/opt-out",
   "steps": [
@@ -28,7 +28,7 @@
               "findElements": true
             },
             "age": {
-              "selector": ".col-lg-1"
+              "selector": ".col-lg-3 > .text-dark"
             },
             "addressCityStateList": {
               "selector": ".//div[@class='col-lg-2 col-xl-3']//li[@class='text-dark']",
@@ -55,6 +55,17 @@
           "actionType": "navigate",
           "id": "da658a1f-254b-42c6-b78a-f93655048db8",
           "url": "https://www.peoplefinders.com/opt-out"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": ".opt-out-body",
+              "failSilently": true
+            }
+          ],
+          "id": "623b0022-8c67-4cef-8a11-4481c34229b7"
         },
         {
           "actionType": "click",

@@ -436,7 +436,7 @@ final class ContextualMenuTests: XCTestCase {
             window: window,
             mainViewController: mainViewController,
             fireViewModel: fireCoordinator.fireViewModel,
-            visualStyle: NSApp.delegateTyped.visualStyle
+            themeManager: MockThemeManager()
         )
 
         // WHEN
@@ -475,7 +475,7 @@ final class ContextualMenuTests: XCTestCase {
             window: window,
             mainViewController: mainViewController,
             fireViewModel: fireCoordinator.fireViewModel,
-            visualStyle: NSApp.delegateTyped.visualStyle
+            themeManager: MockThemeManager()
         )
 
         // WHEN

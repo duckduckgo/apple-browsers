@@ -89,7 +89,7 @@ public enum WideEventParameter {
     }
 
     public enum Feature {
-        static let name = "feature.name"
+        public static let name = "feature.name"
         static let status = "feature.status"
         static let statusReason = "feature.status_reason"
 
@@ -107,6 +107,13 @@ public enum WideEventParameter {
         static let accountCreationLatency = "feature.data.ext.account_creation_latency_ms_bucketed"
         static let accountPaymentLatency = "feature.data.ext.account_payment_latency_ms_bucketed"
         static let accountActivationLatency = "feature.data.ext.account_activation_latency_ms_bucketed"
+    }
+
+    public enum SubscriptionRestoreFeature {
+        public static let restorePlatform = "feature.data.ext.restore_platform"
+        public static let appleAccountRestoreLatency = "feature.data.ext.apple_account_restore_latency_ms_bucketed"
+        public static let emailAddressRestoreLatency = "feature.data.ext.email_address_restore_latency_ms_bucketed"
+        public static let emailAddressRestoreLastURL = "feature.data.ext.email_address_restore_last_url"
     }
 
 }

@@ -293,4 +293,12 @@
         suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
+
+    'm_debug_failed-to-recreate-tmp-dir': {
+        description: 'Fires when tmp dir does not exist and yet we cannot recreate it.',
+        owners: ['jaceklyp', 'bwaresiak'],
+        triggers: ['startup'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+    },
 }

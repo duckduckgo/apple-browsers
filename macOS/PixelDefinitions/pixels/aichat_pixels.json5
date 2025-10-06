@@ -20,6 +20,11 @@
                 type: 'string',
                 enum: ['true', 'false'],
             },
+            {
+                key: 'minutesSinceSidebarHidden',
+                description: 'Number of minutes since sidebar was last hidden. Omitted if sidebar is opened for the first time on a given tab',
+                type: 'integer',
+            },
         ],
     },
     m_mac_aichat_translate_text: {

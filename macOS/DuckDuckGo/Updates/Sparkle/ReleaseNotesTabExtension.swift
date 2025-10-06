@@ -96,7 +96,7 @@ final class ReleaseNotesTabExtension: NavigationResponder {
         guard AppVersion.runType != .uiTests else {
             return
         }
-        let updateController = Application.appDelegate.updateController!
+        guard let updateController = Application.appDelegate.updateController as? SparkleUpdateController else { return }
         Publishers.CombineLatest(updateController.updateProgressPublisher, updateController.latestUpdatePublisher)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -148,7 +148,7 @@ extension ReleaseNotesValues {
         self.automaticUpdate = automaticUpdate
     }
 
-    init(from updateController: UpdateController, pixelKit: PixelKit? = PixelKit.shared) {
+    init(from updateController: SparkleUpdateController, pixelKit: PixelKit? = PixelKit.shared) {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
@@ -157,8 +157,8 @@ extension ReleaseNotesValues {
         // or when the appcast hasn't finished loading by the time the Release Notes screen shows up
         guard let latestUpdate = updateController.latestUpdate else {
             let keyValueStore = Application.appDelegate.keyValueStore
-            if let data = try? keyValueStore.object(forKey: UpdateController.Constants.pendingUpdateInfoKey) as? Data,
-               let cached = try? JSONDecoder().decode(UpdateController.PendingUpdateInfo.self, from: data) {
+            if let data = try? keyValueStore.object(forKey: SparkleUpdateController.Constants.pendingUpdateInfoKey) as? Data,
+               let cached = try? JSONDecoder().decode(SparkleUpdateController.PendingUpdateInfo.self, from: data) {
                 let formatter = DateFormatter()
                 formatter.dateFormat = "MMMM dd yyyy"
                 let releaseTitle = formatter.string(from: cached.date)

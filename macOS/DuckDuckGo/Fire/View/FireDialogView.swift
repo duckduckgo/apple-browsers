@@ -96,7 +96,7 @@ struct FireDialogView: ModalView {
                         sitesOverlay
 
                         // Separator above the footer
-                        Color(singleUseColor: .fireDialogSectionBorder)
+                        Color(designSystemColor: .fireDialogSectionBorder)
                             .frame(height: 1)
                     }
                     .zIndex(10)
@@ -111,7 +111,7 @@ struct FireDialogView: ModalView {
                 .padding(.bottom, 10) // presenter sheet crops the padding 🤷‍♂️
         }
         .frame(maxWidth: Constants.viewSize.width, maxHeight: .infinity)
-        .background(Color(singleUseColor: .fireDialogBackground))
+        .background(Color(designSystemColor: .fireDialogBackground))
     }
 
     private var headerView: some View {
@@ -138,20 +138,20 @@ struct FireDialogView: ModalView {
                 .init(id: FireDialogViewModel.ClearingOption.currentWindow.rawValue, title: UserText.fireDialogSegmentWindow, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.window)),
                 .init(id: FireDialogViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogSegmentEverything, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.windowsAndTabs))
             ],
-            containerBackground: Color(singleUseColor: .fireDialogPillBackground),
-            containerBorder: Color(singleUseColor: .fireDialogPillBorder),
-            selectedForeground: Color(designSystemColor: .accent),
+            containerBackground: Color(designSystemColor: .fireDialogPillBackground),
+            containerBorder: Color(designSystemColor: .fireDialogPillBorder),
+            selectedForeground: Color(designSystemColor: .accentPrimary),
             unselectedForeground: Color(designSystemColor: .buttonsSecondaryFillText),
-            selectedIconBackground: Color(singleUseColor: .fireDialogPillSelectedSegmentIconBackground),
-            selectedSegmentFill: Color(singleUseColor: .fireDialogPillSelectedSegmentBackground),
-            selectedSegmentStroke: Color(singleUseColor: .fireDialogPillSelectedSegmentBorder),
+            selectedIconBackground: Color(designSystemColor: .fireDialogPillSelectedSegmentIconBackground),
+            selectedSegmentFill: Color(designSystemColor: .fireDialogPillSelectedSegmentBackground),
+            selectedSegmentStroke: Color(designSystemColor: .fireDialogPillSelectedSegmentBorder),
             selectedSegmentShadowColor: Color(designSystemColor: .shadowTertiary),
             selectedSegmentShadowRadius: 0,
             selectedSegmentShadowY: 1,
-            selectedSegmentTopStroke: Color(singleUseColor: .fireDialogPillSelectedSegmentTopStroke),
-            hoverSegmentBackground: Color(singleUseColor: .fireDialogPillSegmentMouseOver),
-            pressedSegmentBackground: Color(singleUseColor: .fireDialogPillSegmentMouseDown),
-            hoverOverlay: Color(singleUseColor: .fireDialogPillHoverOverlay)
+            selectedSegmentTopStroke: Color(designSystemColor: .fireDialogPillSelectedSegmentTopStroke),
+            hoverSegmentBackground: Color(designSystemColor: .fireDialogPillSegmentMouseOver),
+            pressedSegmentBackground: Color(designSystemColor: .fireDialogPillSegmentMouseDown),
+            hoverOverlay: Color(designSystemColor: .fireDialogPillHoverOverlay)
         )
         .frame(height: 84)
     }
@@ -192,10 +192,10 @@ struct FireDialogView: ModalView {
         }
         .background(
             RoundedRectangle(cornerRadius: 12.0, style: .continuous)
-                .fill(Color(singleUseColor: .fireDialogSectionBackground))
+                .fill(Color(designSystemColor: .fireDialogSectionBackground))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12.0, style: .continuous)
-                        .stroke(Color(singleUseColor: .fireDialogSectionBorder), lineWidth: 1)
+                        .stroke(Color(designSystemColor: .fireDialogSectionBorder), lineWidth: 1)
                 )
         )
         .padding(.top, 4)
@@ -309,7 +309,7 @@ struct FireDialogView: ModalView {
         }
         .background(
             CustomRoundedCornersShape(tl: 8, tr: 8, bl: 0, br: 0)
-                .fill(Color(singleUseColor: .fireDialogBackground))
+                .fill(Color(designSystemColor: .fireDialogBackground))
         )
     }
 
@@ -342,7 +342,7 @@ struct FireDialogView: ModalView {
                     .padding(.trailing, 4)
                 }
                 Toggle(isOn: isOn)
-                    .toggleStyle(FireToggleStyle(onFill: Color(designSystemColor: .accent), knobFill: Color(singleUseColor: .fireDialogToggleKnob)))
+                    .toggleStyle(FireToggleStyle(onFill: Color(designSystemColor: .accentPrimary), knobFill: Color(designSystemColor: .fireDialogToggleKnob)))
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
@@ -353,7 +353,7 @@ struct FireDialogView: ModalView {
 
     private func sectionDivider(padding: CGFloat = 16) -> some View {
         HStack(spacing: 0) {
-            Rectangle().fill(Color(singleUseColor: .fireDialogSectionBorder)).frame(height: 1)
+            Rectangle().fill(Color(designSystemColor: .fireDialogSectionBorder)).frame(height: 1)
                 .padding(.horizontal, padding)
         }
     }
@@ -389,14 +389,14 @@ struct FireDialogView: ModalView {
     private var individualSitesLink: some View {
         HStack(spacing: 8) {
             Image(nsImage: DesignSystemImages.Glyphs.Size16.globeBlocked
-                .tinted(with: NSColor(designSystemColor: .textLink)))
+                .tinted(with: .linkBlue))
             TextButton(UserText.fireDialogManageIndividualSitesLink, fontSize: 11) {
-                    presentIndividualSites()
+                presentIndividualSites()
             }
 
             Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight
                 .resized(to: NSSize(width: 12, height: 12))
-                .tinted(with: NSColor(designSystemColor: .textLink)))
+                .tinted(with: .linkBlue))
 
         }
     }
@@ -435,7 +435,7 @@ struct FireDialogView: ModalView {
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 16)
-        .background(Color(singleUseColor: .fireDialogBackground))
+        .background(Color(designSystemColor: .fireDialogBackground))
     }
 
 }

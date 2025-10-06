@@ -23,19 +23,8 @@ public enum SingleUseColor {
     case controlWidgetBackground
     case unifiedFeedbackFieldBackground
     case privacyDashboardBackground
-    // Fire Dialog View
-    case fireDialogBackground
-    case fireDialogPillBackground
-    case fireDialogPillBorder
-    case fireDialogPillSelectedSegmentBackground
-    case fireDialogPillSelectedSegmentBorder
-    case fireDialogPillSelectedSegmentShadow
-    case fireDialogPillSelectedSegmentTopStroke
-    case fireDialogPillSelectedSegmentIconBackground
-    case fireDialogPillSegmentMouseOver
-    case fireDialogPillSegmentMouseDown
-    case fireDialogPillHoverOverlay
-    case fireDialogToggleKnob
-    case fireDialogSectionBackground
-    case fireDialogSectionBorder
+
+    /// Color used for separator line between text input and content
+    case inputContentSeparator
+
 }

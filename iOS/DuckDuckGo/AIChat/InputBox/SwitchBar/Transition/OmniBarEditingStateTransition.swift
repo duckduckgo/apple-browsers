@@ -120,7 +120,7 @@ final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTra
 
         let logoAnimator = UIViewPropertyAnimator(duration: 0.13, curve: .easeIn) {
             if !self.isTopBarPosition {
-                fromVC.newTabView?.alpha = 0
+                fromVC.logoView?.alpha = 0
             }
         }
 
@@ -174,7 +174,7 @@ final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTra
         }
 
         animator.addAnimations({
-            toVC.newTabView?.alpha = 1.0
+            toVC.logoView?.alpha = 1.0
         }, delayFactor: 0.07)
 
         animator.addCompletion { position in

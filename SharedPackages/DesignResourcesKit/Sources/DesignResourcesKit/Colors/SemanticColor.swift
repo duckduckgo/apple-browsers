@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
+
 public enum DesignSystemColor {
 
     // Backgrounds
@@ -57,6 +59,7 @@ public enum DesignSystemColor {
     case accent
     case accentGlowSecondary
     case accentContentPrimary
+    case accentTertiary
 
     // System
     case lines
@@ -114,3 +117,4 @@ public enum DesignSystemColor {
     case decorationTertiary
 
 }
+#endif

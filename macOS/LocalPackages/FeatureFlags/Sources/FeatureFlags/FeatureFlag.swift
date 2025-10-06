@@ -48,6 +48,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/1201048563534612/1208850443048685/f
     case historyView
 
+    /// Enable WebKit page load timing performance reporting
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/XXXXXXXXX?focus=true
+    case webKitPerformanceReporting
+
     case autoUpdateInDEBUG
 
     /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1210099321661462?focus=true
@@ -193,6 +197,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1208865987567163?focus=true
     case themes
 
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211258257937392?focus=true
+    case appStoreCheckForUpdatesFlow
+
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1211260578559159?focus=true
     case unifiedURLPredictor
 
@@ -290,8 +297,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .subscriptionPurchaseWidePixelMeasurement,
                 .syncFeatureLevel3,
                 .themes,
+                .appStoreCheckForUpdatesFlow,
                 .unifiedURLPredictor,
                 .unifiedURLPredictorMetrics,
+                .webKitPerformanceReporting,
                 .fireDialog:
             return true
         case .debugMenu,
@@ -441,10 +450,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
         case .themes:
             return .internalOnly()
+        case .appStoreCheckForUpdatesFlow:
+            return .internalOnly()
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .unifiedURLPredictorMetrics:
             return .disabled
+        case .webKitPerformanceReporting:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webKitPerformanceReporting))
         }
     }
 }

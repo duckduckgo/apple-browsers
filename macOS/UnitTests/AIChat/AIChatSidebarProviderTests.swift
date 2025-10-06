@@ -423,7 +423,7 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
         // Manually set the hiddenAt to simulate a very old session (more than 60 minutes ago)
         let oldDate = Date().addingTimeInterval(-4000) // ~67 minutes ago, exceeds default 60 minute timeout
-        keepSessionProvider.sidebarsByTab[tabID]?.setHidden(at: oldDate)
+        keepSessionProvider.sidebarsByTab[tabID]?.updateHiddenAt(oldDate)
 
         // When - Create a new view controller (which calls getCurrentSidebar internally)
         let newViewController = keepSessionProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)

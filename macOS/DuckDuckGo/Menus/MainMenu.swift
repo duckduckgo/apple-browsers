@@ -126,6 +126,13 @@ final class MainMenu: NSMenu {
     private let appVersion: AppVersion
     private let configurationURLProvider: CustomConfigurationURLProviding
 
+    private lazy var webExtensionsMenuItem: NSMenuItem? = {
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            return NSMenuItem(title: "Web Extensions").submenu(WebExtensionsDebugMenu(webExtensionManager: webExtensionManager))
+        }
+        return nil
+    }()
+
     // MARK: - Initialization
 
     @MainActor
@@ -496,6 +503,16 @@ final class MainMenu: NSMenu {
         updateAutofillDebugScriptMenuItem()
         updateShowToolbarsOnFullScreenMenuItem()
         updateWatchdogMenuItems()
+        updateWebExtensionsMenuItem()
+    }
+
+    private func updateWebExtensionsMenuItem() {
+        if let webExtensionsMenuItem,
+           webExtensionsMenuItem.parent == nil,
+           let debugMenuItem = items.first(where: { item in item.title == Self.debugMenuTitle }),
+           let debugSubmenu = debugMenuItem.submenu {
+            debugSubmenu.insertItem(webExtensionsMenuItem, at: max(0, debugSubmenu.items.count - 3))
+        }
     }
 
     private func updateAppAboutDDGMenuItem() {
@@ -550,12 +567,38 @@ final class MainMenu: NSMenu {
     }
 
     var aiChatCancellable: AnyCancellable?
+    var privacyConfigCancellable: AnyCancellable?
+    var featureFlagCancellable: AnyCancellable?
     private func subscribeToAIChatPreferences(aiChatMenuConfig: AIChatMenuVisibilityConfigurable) {
         aiChatCancellable = aiChatMenuConfig.valuesChangedPublisher
             .receive(on: DispatchQueue.main)
             .sink(receiveValue: { [weak self] in
                 self?.setupAIChatMenu()
             })
+
+        // Required to support toggle of .aiChatImprovements feature flag, to be removed after release
+        privacyConfigCancellable = privacyConfigurationManager.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { [weak self] in
+                guard let self else { return }
+
+                let isAIChatMenuHidden = self.aiChatMenu.isHidden
+                let shouldHideAIChatMenu = !aiChatMenuConfig.shouldDisplayApplicationMenuShortcut
+
+                if isAIChatMenuHidden != shouldHideAIChatMenu {
+                    self.setupAIChatMenu()
+                }
+            })
+
+        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+
+        featureFlagCancellable = overridesHandler.flagDidChangePublisher
+            .filter { $0.0 == .aiChatImprovements }
+            .sink { [weak self] _ in
+                self?.setupAIChatMenu()
+            }
     }
 
     // Nested recursing functions cause body length
@@ -679,9 +722,11 @@ final class MainMenu: NSMenu {
 
     let internalUserItem = NSMenuItem(title: "Set Internal User State", action: #selector(AppDelegate.internalUserState))
 
+    static let debugMenuTitle = "Debug"
+
     @MainActor
     private func setupDebugMenu(featureFlagger: FeatureFlagger, historyCoordinator: HistoryCoordinating) -> NSMenu {
-        let debugMenu = NSMenu(title: "Debug") {
+        let debugMenu = NSMenu(title: Self.debugMenuTitle) {
             NSMenuItem(title: "Feature Flag Overrides")
                 .submenu(FeatureFlagOverridesMenu(featureFlagOverrides: featureFlagger))
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
@@ -839,12 +884,6 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu())
             if AppVersion.runType.requiresEnvironment {
                 NSMenuItem(title: "SAD/ATT Prompts").submenu(DefaultBrowserAndDockPromptDebugMenu())
-            }
-
-            if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-                NSMenuItem.separator()
-                NSMenuItem(title: "Web Extensions").submenu(WebExtensionsDebugMenu(webExtensionManager: webExtensionManager))
-                NSMenuItem.separator()
             }
         }
 

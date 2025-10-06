@@ -73,7 +73,8 @@ struct SettingsMainSettingsView: View {
         @ViewBuilder func buildAIFeatures(viewModel: SettingsViewModel) -> AnyView {
             AnyView(NavigationLink(destination: SettingsAIFeaturesView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.settingsAiFeatures,
-                                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiGeneral))
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiGeneral),
+                                 isNew: viewModel.isUpdatedAIFeaturesSettingsEnabled)
             })
         }
 

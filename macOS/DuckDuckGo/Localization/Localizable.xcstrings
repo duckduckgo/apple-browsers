@@ -22930,6 +22930,66 @@
         }
       }
     },
+    "duckai.open-sidebar-when-viewing-websites.toggle-setting" : {
+      "comment" : "Settings option to toggle Duck.ai in sidebar when viewing websites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai in der Seitenleiste ein-/ausblenden, wenn du Websites ansiehst"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Toggle Duck.ai in sidebar when viewing websites"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alterna Duck.ai en la barra lateral al ver sitios web"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basculez Duck.ai dans la barre latérale lorsque vous consultez des sites Internet"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attiva Duck.ai nella barra laterale durante la visualizzazione di siti web"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schakel Duck.ai in de zijbalk in bij het bekijken van websites"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przełącz Duck.ai na pasku bocznym podczas przeglądania witryn internetowych"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alternar o Duck.ai na barra lateral ao visualizar sites"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включайте Duck.ai на боковой панели при просмотре веб-сайтов"
+          }
+        }
+      }
+    },
     "duckai.search-assist-settings" : {
       "comment" : "The section name in preferences for Search Assist Settings",
       "extractionState" : "extracted_with_value",
@@ -23166,6 +23226,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ярлыки Duck.ai"
+          }
+        }
+      }
+    },
+    "duckai.show-in-address-bar-when-typing.label" : {
+      "comment" : "Label for showing 'Ask Duck.ai' option when typing in address bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beim Tippen in der Adressleiste die Option „Frag Duck.ai“ anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show \"Ask Duck.ai\" option when typing in the address bar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar la opción «Pregúntale a Duck.ai» al escribir en la barra de direcciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Affichez l'option « Demander à Duck.ai » lorsque vous saisissez dans la barre d'adresse"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra l'opzione \"Chiedi a Duck.ai\" quando digiti nella barra degli indirizzi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Optie \"Ask Duck.ai\" tonen bij typen in de adresbalk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż opcję „Zapytaj Duck.ai” podczas wpisywania w pasku adresu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar a opção \"Pergunta ao Duck.ai\" ao escrever na barra de endereços"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать опцию «Спросить у Duck.ai» при вводе текста в адресной строке"
           }
         }
       }
@@ -23470,9 +23590,69 @@
         }
       }
     },
+    "duckai.show-on-new-tab-page-search-box.toggle" : {
+      "comment" : "A checkbox to control AI Chat shortcut visibility on the New Tab Page search box",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Option „Duck.ai“ im Suchfeld „Neue Tab-Seite“ anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Duck.ai option on New Tab Page search box"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar la opción Duck.ai en el cuadro de búsqueda la página de nueva pestaña"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher l'option Duck.ai dans le champ de recherche de la page du nouvel onglet"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra l'opzione Duck.ai nella casella di ricerca della pagina Nuova scheda"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toon de Duck.ai-optie in het zoekvak van de nieuwe tabbladpagina"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż opcję Duck.ai w polu wyszukiwania na stronie nowej karty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar a opção Duck.ai na caixa de pesquisa da página do novo separador"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать вариант Duck.ai в поисковом поле на странице новой вкладки"
+          }
+        }
+      }
+    },
     "duckai.show-on-new-tab-page.toggle" : {
       "comment" : "A checkbox to control AI Chat shortcut visibility on the New Tab Page",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -23526,6 +23706,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показывать в новой вкладке"
+          }
+        }
+      }
+    },
+    "duckai.show-shortcut-in-address-bar.label" : {
+      "comment" : "Label for showing Duck.ai shortcut in address bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Shortcut in der Adressleiste anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Duck.ai shortcut in the address bar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar el acceso directo a Duck.ai en la barra de direcciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher le raccourci Duck.ai dans la barre d'adresse"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra la scorciatoia Duck.ai nella barra degli indirizzi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-snelkoppeling weergeven in de adresbalk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż skrót Duck.ai na pasku adresu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar atalho Duck.ai na barra de endereço"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать ярлык Duck.ai в адресной строке"
           }
         }
       }

@@ -270,12 +270,13 @@ extension NetworkProtectionNavBarButtonModelTests {
         let statusReporter = TestNetworkProtectionStatusReporter()
         let iconProvider = NavigationBarIconProvider()
 
+        let themeManager = MockThemeManager()
         return NetworkProtectionNavBarButtonModel(
             popoverManager: popoverManager,
             pinningManager: pinningManager,
             vpnGatekeeper: vpnGatekeeper,
             statusReporter: statusReporter,
-            iconProvider: iconProvider,
+            themeManager: themeManager,
             vpnUpsellVisibilityManager: upsellManager
         )
     }

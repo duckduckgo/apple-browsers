@@ -254,6 +254,8 @@
 		1E5921C52CF47A0F00E15CCA /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 1E5921C42CF47A0F00E15CCA /* FeatureFlags */; };
 		1E5FA8A62DD394EB0082FA72 /* DuckDuckGoUserAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF0E5112AD25A2600FFEC9E /* DuckDuckGoUserAgent.swift */; };
 		1E5FA8A72DD394EB0082FA72 /* DuckDuckGoUserAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF0E5112AD25A2600FFEC9E /* DuckDuckGoUserAgent.swift */; };
+		1E66454B2E93F3FB000C8E35 /* AIChatSidebarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E66454A2E93F3FB000C8E35 /* AIChatSidebarTests.swift */; };
+		1E66454C2E93F3FB000C8E35 /* AIChatSidebarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E66454A2E93F3FB000C8E35 /* AIChatSidebarTests.swift */; };
 		1E6783F02E156DA200AE465A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783EF2E156DA200AE465A /* Localizable.xcstrings */; };
 		1E6783F12E156DA200AE465A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783EF2E156DA200AE465A /* Localizable.xcstrings */; };
 		1E6783F32E156DA200AE465A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783EF2E156DA200AE465A /* Localizable.xcstrings */; };
@@ -4254,6 +4256,7 @@
 		1E4EDA272DE9ED2D0019B6E8 /* AIChatSidebarProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSidebarProvider.swift; sourceTree = "<group>"; };
 		1E4EDA2D2DE9ED710019B6E8 /* AIChatSidebarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSidebarViewController.swift; sourceTree = "<group>"; };
 		1E559BB02BBCA9F1002B4AF6 /* RedirectNavigationResponder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedirectNavigationResponder.swift; sourceTree = "<group>"; };
+		1E66454A2E93F3FB000C8E35 /* AIChatSidebarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSidebarTests.swift; sourceTree = "<group>"; };
 		1E6783EF2E156DA200AE465A /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = Localizable.xcstrings; path = DuckDuckGo/NetworkProtection/NetworkExtensionTargets/NetworkExtensionAndNotificationTargets/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
 		1E6783F42E156DA200AE465A /* AppStoreInfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = AppStoreInfoPlist.xcstrings; path = NetworkProtectionSystemExtension/AppStoreInfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
 		1E6783F62E156DA200AE465A /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = InfoPlist.xcstrings; path = NetworkProtectionSystemExtension/InfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
@@ -6801,6 +6804,7 @@
 				31031EB62CC94C6C00684340 /* AIChatRemoteSettingsTests.swift */,
 				31F25EFE2CC3CA00002F9084 /* AIChatMenuConfigurationTests.swift */,
 				1E2A88792E2E477A00C29AC0 /* AIChatSidebarProviderTests.swift */,
+				1E66454A2E93F3FB000C8E35 /* AIChatSidebarTests.swift */,
 				1E2A887F2E2E532600C29AC0 /* AIChatSidebarPresenterTests.swift */,
 			);
 			path = AIChat;
@@ -14292,6 +14296,7 @@
 				84D0B9822E0BD7EA00E3256A /* MockFeatureFlagger.swift in Sources */,
 				3706FE39293F661700E42796 /* TabTests.swift in Sources */,
 				9FAD623E2BD09DE5007F3A65 /* WebsiteInfoTests.swift in Sources */,
+				1E66454C2E93F3FB000C8E35 /* AIChatSidebarTests.swift in Sources */,
 				3767319A2C7F36B300EB097B /* UserBackgroundImageTests.swift in Sources */,
 				3706FE3A293F661700E42796 /* MockVariantManager.swift in Sources */,
 				BB349A4F2E3B8B0E0028AFE1 /* MockDefaultBrowserProvider.swift in Sources */,
@@ -16071,6 +16076,7 @@
 				84A37DF02DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift in Sources */,
 				9F6434702BECBA2800D2D8A0 /* SubscriptionRedirectManagerTests.swift in Sources */,
 				142879DA24CE1179005419BB /* SuggestionViewModelTests.swift in Sources */,
+				1E66454B2E93F3FB000C8E35 /* AIChatSidebarTests.swift in Sources */,
 				4B9292BC2667103100AD2C21 /* BookmarkSidebarTreeControllerTests.swift in Sources */,
 				37697D802D4A0D12004C0CBB /* NewTabPageShownPixelSenderTests.swift in Sources */,
 				9F97B31F2DE8311000653C0D /* DefaultBrowserAndDockPromptFeatureFlaggerTests.swift in Sources */,

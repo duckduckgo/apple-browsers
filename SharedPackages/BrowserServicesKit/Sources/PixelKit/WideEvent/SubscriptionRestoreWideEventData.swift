@@ -1,12 +1,23 @@
 //
 //  SubscriptionRestoreWideEventData.swift
-//  BrowserServicesKit
 //
-//  Created by Hanyu Tang on 03/10/2025.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 //
 
+
 import Foundation
-import Subscription
 
 public class SubscriptionRestoreWideEventData: WideEventData {
     #if DEBUG
@@ -18,12 +29,12 @@ public class SubscriptionRestoreWideEventData: WideEventData {
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData
     public var appData: WideEventAppData
-    
+
     public let restorePlatform: RestorePlatform
     public var appleAccountRestoreDuration: WideEvent.MeasuredInterval?
     public var emailAddressRestoreDuration: WideEvent.MeasuredInterval?
     public var emailAddressRestoreLastURL: EmailAddressRestoreURL?
-    
+
     public var errorData: WideEventErrorData?
 
     public init(restorePlatform: RestorePlatform,
@@ -46,7 +57,7 @@ public class SubscriptionRestoreWideEventData: WideEventData {
 }
 
 extension SubscriptionRestoreWideEventData {
-    
+
     public enum RestorePlatform: String, Codable, CaseIterable {
         case appleAccount = "apple_account"
         case emailAddress = "email_address"
@@ -98,11 +109,6 @@ extension SubscriptionRestoreWideEventData {
             params[WideEventParameter.SubscriptionRestoreFeature.emailAddressRestoreLatency] = String(emailAddressBucket(ms))
         }
 
-        // Failure-only: set status_reason (UNKNOWN reasons are handled by WideEvent via the status value)
-        if let statusReason {
-            params[WideEventParameter.Feature.statusReason] = statusReason.rawValue
-        }
-
         return params
     }
 
@@ -117,7 +123,7 @@ extension SubscriptionRestoreWideEventData {
         default: return 600000
         }
     }
-    
+
     private func emailAddressBucket(_ ms: Int) -> Int {
         switch ms {
         case 0..<10000: return 10000

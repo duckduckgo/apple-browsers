@@ -43,12 +43,16 @@ extension ThemeUpdateListening {
         themeManager.theme
     }
 
-    func subscribeToThemeChanges() {
-        themeUpdateCancellable = themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                self?.applyThemeStyle(theme: theme)
-            }
+    /// By marking this API as nonisolated, we're preventing an error triggered when called from within initializers
+    ///
+    nonisolated func subscribeToThemeChanges() {
+        Task { @MainActor in
+            themeUpdateCancellable = themeManager.themePublisher
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] theme in
+                    self?.applyThemeStyle(theme: theme)
+                }
+        }
     }
 
     func applyThemeStyle() {

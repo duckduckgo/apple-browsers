@@ -35,6 +35,9 @@ struct DataImportViewModel {
     var successfulImportHappened: Bool?
 
     let availableImportSources: [DataImport.Source]
+
+    let selectableImportTypes: Set<DataType>
+
     /// Browser to import data from
     let importSource: Source
     /// BrowserProfileList loader (factory method) - used
@@ -101,7 +104,8 @@ struct DataImportViewModel {
     }
 
     var dataTypesSelection: DataTypeSelection {
-        if selectedDataTypes.count == [DataType.passwords, .bookmarks].count {
+        // Credit cards cannot be selected yet
+        if selectedDataTypes.count == selectableImportTypes.count {
             return .all
         }
         guard let selectedDataType = selectedDataTypes.first else {
@@ -180,6 +184,7 @@ struct DataImportViewModel {
         self.browserProfiles = ThirdPartyBrowser.browser(for: importSource).map(loadProfiles)
         self.selectedProfile = browserProfiles?.defaultProfile
 
+        self.selectableImportTypes = importSource.supportedDataTypes
         self.selectedDataTypes = importSource.supportedDataTypes
 
         self.summary = summary

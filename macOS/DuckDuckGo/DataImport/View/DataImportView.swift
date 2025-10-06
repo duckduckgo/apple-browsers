@@ -425,7 +425,7 @@ struct DataImportView: ModalView {
                     .padding(.top, 10)
                     .padding(.leading, 20)
 
-                ForEach(DataImport.DataType.allCases.filter(model.selectedDataTypes.contains), id: \.self) { selectedDataType in
+                ForEach(model.selectableImportTypes.filter(model.selectedDataTypes.contains), id: \.self) { selectedDataType in
                     failureReasonPicker(for: selectedDataType)
                         .padding(.leading, 20)
                         .padding(.trailing, 20)

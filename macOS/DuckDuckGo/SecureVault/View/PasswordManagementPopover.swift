@@ -23,9 +23,8 @@ import SwiftUI
 
 final class PasswordManagementPopover: NSPopover {
 
-    private var theme: ThemeStyleProviding {
-        NSApp.delegateTyped.themeManager.theme
-    }
+    private var themeCancellable: AnyCancellable?
+    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
 
     override init() {
         super.init()
@@ -35,9 +34,10 @@ final class PasswordManagementPopover: NSPopover {
         self.behavior = .semitransient
         self.delegate = self
 
-        self.backgroundColor = theme.colorsProvider.popoverBackgroundColor
-
         setupContentController()
+
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     required init?(coder: NSCoder) {
@@ -67,7 +67,25 @@ final class PasswordManagementPopover: NSPopover {
         let controller = PasswordManagementViewController.create()
         contentViewController = controller
     }
+}
 
+private extension PasswordManagementPopover {
+
+    func subscribeToThemeChanges() {
+        themeCancellable = themeManager.themePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] style in
+                self?.applyThemeStyle(theme: style)
+            }
+    }
+
+    func applyThemeStyle() {
+        applyThemeStyle(theme: themeManager.theme)
+    }
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        backgroundColor = theme.colorsProvider.popoverBackgroundColor
+    }
 }
 
 extension PasswordManagementPopover: NSPopoverDelegate {

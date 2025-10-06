@@ -627,6 +627,7 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
             Task { @UpdateCheckActor in await updateCheckState.recordCheckTime() }
         } else if let error {
             Logger.updates.log("Updater did finish update cycle with error: \(error.localizedDescription, privacy: .public) (\(error.pixelParameters, privacy: .public))")
+            updateProgress = .updaterError(error)
         }
     }
 

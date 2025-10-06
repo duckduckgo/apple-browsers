@@ -163,7 +163,7 @@ final class SafariArchiveImporter: DataImporter {
     }
 
     private func importDataSync(types: Set<DataImport.DataType>, updateProgress: @escaping DataImportProgressCallback) async throws -> DataImportSummary {
-        var summary = DataImportSummary()
+        var finalSummary = DataImportSummary()
 
         // Extract archive contents
         let contents: ImportArchiveContents
@@ -171,9 +171,9 @@ final class SafariArchiveImporter: DataImporter {
             contents = try archiveReader.readContents(from: archiveURL)
         } catch {
             for type in types {
-                summary[type] = DataImportResult.failure(ImportError(action: .generic, type: .unarchive, underlyingError: error))
+                finalSummary[type] = DataImportResult.failure(ImportError(action: .generic, type: .unarchive, underlyingError: error))
             }
-            return summary
+            return finalSummary
         }
 
         let tempFiles: TemporaryFiles
@@ -181,9 +181,9 @@ final class SafariArchiveImporter: DataImporter {
             tempFiles = try createTemporaryFiles(from: contents, for: types)
         } catch {
             for type in types {
-                summary[type] = .failure(ImportError(action: .generic, type: .createTempFiles, underlyingError: error))
+                finalSummary[type] = .failure(ImportError(action: .generic, type: .createTempFiles, underlyingError: error))
             }
-            return summary
+            return finalSummary
         }
         defer {
             cleanupTemporaryFiles(tempFiles)
@@ -191,41 +191,33 @@ final class SafariArchiveImporter: DataImporter {
 
         guard !contents.isEmpty else {
             for type in types {
-                summary[type] = .failure(ImportError(action: .generic, type: .importContents, underlyingError: nil))
+                finalSummary[type] = .failure(ImportError(action: .generic, type: .importContents, underlyingError: nil))
             }
-            return summary
+            return finalSummary
         }
+
+        var cumulativeFraction = 0.0
 
         // Import passwords if requested and available
         if types.contains(.passwords), !contents.passwords.isEmpty {
-            let csvContent = contents.passwords.joined(separator: "\n")
-            let csvImporter = CSVImporter(fileURL: nil, csvContent: csvContent, loginImporter: loginImporter, defaultColumnPositions: nil, reporter: secureVaultReporter, tld: tld)
-            let passwordTask = csvImporter.importData(types: [DataImport.DataType.passwords])
-            let passwordResults = await passwordTask.task.value
-            try updateProgress(.importingPasswords(numberOfPasswords: passwordResults.count, fraction: 1.0))
-            summary.merge(passwordResults) { _, new in new }
+            let summary = try await importPasswords(contents, types, updateProgress, &cumulativeFraction)
+            finalSummary.merge(summary) { (_, new) in new }
         }
 
         // Import bookmarks if requested and available
         if types.contains(.bookmarks), let bookmarkFile = tempFiles.bookmarks {
-            let bookmarkHTMLImporter = BookmarkHTMLImporter(fileURL: bookmarkFile, bookmarkImporter: bookmarkImporter)
-            let bookmarkTask = bookmarkHTMLImporter.importData(types: [.bookmarks])
-            let bookmarkResults = await bookmarkTask.task.value
-            try updateProgress(.importingBookmarks(numberOfBookmarks: bookmarkResults.count, fraction: 1.0))
-            summary.merge(bookmarkResults) { _, new in new }
+            let summary = try await importBookmarks(bookmarkFile, types, updateProgress, &cumulativeFraction)
+            finalSummary.merge(summary) { (_, new) in new }
         }
 
         // Import credit cards if requested and available
         if types.contains(.creditCards), let content = contents.creditCards.first {
-            let safariCreditCardImporter = SafariPaymentCardsImporter(fileURL: nil, jsonContent: content, creditCardImporter: creditCardImporter, vault: vault)
-            let creditCardTask = safariCreditCardImporter.importData(types: [.creditCards])
-            let creditCardResults = await creditCardTask.task.value
-            try updateProgress(.importingCreditCards(numberOfCreditCards: creditCardResults.count, fraction: 1.0))
-            summary.merge(creditCardResults) { _, new in new }
+            let summary = try await importCreditCards(content, types, updateProgress, &cumulativeFraction)
+            finalSummary.merge(summary) { (_, new) in new }
         }
 
         try updateProgress(.done)
-        return summary
+        return finalSummary
     }
 
     /// Determines if keychain password is required for any of the selected data types
@@ -280,6 +272,52 @@ final class SafariArchiveImporter: DataImporter {
         for directory in parentDirectories {
             try? fileManager.removeItem(at: directory)
         }
+    }
+
+    private func importPasswords(_ contents: ImportArchiveContents, _ types: Set<DataImport.DataType>, _ updateProgress: DataImportProgressCallback, _ cumulativeFraction: inout Double) async throws -> DataImportSummary {
+        let csvContent = contents.passwords.joined(separator: "\n")
+        let csvImporter = CSVImporter(fileURL: nil, csvContent: csvContent, loginImporter: loginImporter, defaultColumnPositions: nil, reporter: secureVaultReporter, tld: tld)
+        let passwordTask = csvImporter.importData(types: [DataImport.DataType.passwords])
+        let currentTotalFraction = cumulativeFraction
+        for await update in passwordTask.progress {
+            if case .progress(.importingPasswords(let numberOfPasswords, let fraction)) = update {
+                let currentFraction = fraction / Double(types.count)
+                cumulativeFraction = currentTotalFraction + currentFraction
+                try updateProgress(.importingPasswords(numberOfPasswords: numberOfPasswords, fraction: cumulativeFraction))
+            }
+        }
+        let passwordResults = await passwordTask.task.value
+        return passwordResults
+    }
+
+    private func importBookmarks(_ bookmarkFile: URL, _ types: Set<DataImport.DataType>, _ updateProgress: DataImportProgressCallback, _ cumulativeFraction: inout Double) async throws -> DataImportSummary {
+        let bookmarkHTMLImporter = BookmarkHTMLImporter(fileURL: bookmarkFile, bookmarkImporter: bookmarkImporter)
+        let bookmarkTask = bookmarkHTMLImporter.importData(types: [.bookmarks])
+        let currentTotalFraction = cumulativeFraction
+        for await update in bookmarkTask.progress {
+            if case .progress(.importingBookmarks(let numberOfBookmarks, let fraction)) = update {
+                let currentFraction = fraction / Double(types.count)
+                cumulativeFraction = currentTotalFraction + currentFraction
+                try updateProgress(.importingBookmarks(numberOfBookmarks: numberOfBookmarks, fraction: cumulativeFraction))
+            }
+        }
+        let bookmarkResults = await bookmarkTask.task.value
+        return bookmarkResults
+    }
+
+    private func importCreditCards(_ content: String, _ types: Set<DataImport.DataType>, _ updateProgress: DataImportProgressCallback, _ cumulativeFraction: inout Double) async throws -> DataImportSummary {
+        let safariCreditCardImporter = SafariPaymentCardsImporter(fileURL: nil, jsonContent: content, creditCardImporter: creditCardImporter, vault: vault)
+        let creditCardTask = safariCreditCardImporter.importData(types: [.creditCards])
+        let currentTotalFraction = cumulativeFraction
+        for await update in creditCardTask.progress {
+            if case .progress(.importingCreditCards(let numberOfCreditCards, let fraction)) = update {
+                let currentFraction = fraction / Double(types.count)
+                cumulativeFraction = currentTotalFraction + currentFraction
+                try updateProgress(.importingCreditCards(numberOfCreditCards: numberOfCreditCards, fraction: cumulativeFraction))
+            }
+        }
+        let creditCardResults = await creditCardTask.task.value
+        return creditCardResults
     }
 }
 

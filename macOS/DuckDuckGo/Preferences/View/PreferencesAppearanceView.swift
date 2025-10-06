@@ -204,6 +204,27 @@ extension Preferences {
         }
     }
 
+    // MARK: - Reset THeme
+    //
+    struct ThemesResetView: View {
+        @EnvironmentObject var model: AppearancePreferences
+
+        var body: some View {
+            Button {
+                model.themeName = .default
+
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemNamed: .arrowCounterClockWise)
+                    Text(UserText.themeReset)
+                }
+                .foregroundColor(Color.linkBlue)
+                .cursor(.pointingHand)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
     // MARK: - Appearance Container View
     //
     struct AppearanceView: View {
@@ -223,6 +244,10 @@ extension Preferences {
                             .padding(.bottom, 16)
 
                         ThemesPickerView()
+                            .environmentObject(model)
+                            .padding(.bottom, 16)
+
+                        ThemesResetView()
                             .environmentObject(model)
 
                     } else {

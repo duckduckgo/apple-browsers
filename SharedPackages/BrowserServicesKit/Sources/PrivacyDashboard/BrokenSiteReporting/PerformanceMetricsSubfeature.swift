@@ -19,6 +19,7 @@
 import Foundation
 import UserScript
 import WebKit
+import PixelKit
 
 public class PerformanceMetricsSubfeature: Subfeature {
 
@@ -35,9 +36,23 @@ public class PerformanceMetricsSubfeature: Subfeature {
     }
 
     public func handler(forMethodNamed methodName: String) -> Handler? {
-        guard methodName == "vitalsResult" else { return nil }
+        switch methodName {
+        case "vitalsResult":
+            return vitalsResult
+        case "expandedPerformanceMetricsResult":
+            return expandedPerformanceMetricsResult
+        default:
+            return nil
+        }
+    }
 
-        return vitalsResult
+    public func expandedPerformanceMetricsResult(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let payload = params as? [String: Any] else { return nil }
+
+        // Fire pixel with the expanded metrics data
+        firePerformancePixel(with: payload)
+
+        return nil
     }
 
     public func vitalsResult(params: Any, original: WKScriptMessage) async throws -> Encodable? {
@@ -73,5 +88,19 @@ public class PerformanceMetricsSubfeature: Subfeature {
 
     public func with(broker: UserScriptMessageBroker) {
         self.broker = broker
+    }
+
+    private func firePerformancePixel(with payload: [String: Any]) {
+        // expandedPerformanceMetricsResult has metrics under .metrics key
+        guard let metrics = payload["metrics"] as? [String: Any] else {
+            return
+        }
+
+        let performanceMetrics = PerformanceMetrics(from: metrics)
+
+        // Create pixel with available data
+        let pixel = SiteLoadingPerformancePixel.performanceMetricsReceived(metrics: performanceMetrics)
+
+        PixelKit.fire(pixel, frequency: .standard)
     }
 }

@@ -286,6 +286,7 @@ extension PrivacyDashboardViewController {
         let vpnOn: Bool
         let userRefreshCount: Int
         let performanceMetrics: PerformanceMetricsSubfeature?
+        let breakageReportingSubfeature: BreakageReportingSubfeature?
     }
     
     enum BrokenSiteReportError: Error {
@@ -302,8 +303,37 @@ extension PrivacyDashboardViewController {
                 }
             })
         }
+        
+        // Call BreakageReportingSubfeature to get expanded performance metrics
+        if privacyConfig.isEnabled(featureKey: .breakageReporting) {
+            await withCheckedContinuation({ continuation in
+                guard let breakageReportingSubfeature = breakageAdditionalInfo.breakageReportingSubfeature else {
+                    continuation.resume(returning: ())
+                    return
+                }
+                breakageReportingSubfeature.notifyHandler { _ in
+                    continuation.resume(returning: ())
+                }
+            })
+        }
 
         return webVitalsResult
+    }
+
+    private func calculateExpandedWebVitals(breakageAdditionalInfo: BreakageAdditionalInfo, privacyConfig: PrivacyConfiguration) async -> PerformanceMetrics? {
+        if privacyConfig.isEnabled(featureKey: .breakageReporting) {
+            await withCheckedContinuation({ continuation in
+                guard let breakageReportingSubfeature = breakageAdditionalInfo.breakageReportingSubfeature else {
+                    continuation.resume(returning: ())
+                    return
+                }
+                breakageReportingSubfeature.notifyHandler { _ in
+                    continuation.resume(returning: ())
+                }
+            })
+            return breakageAdditionalInfo.breakageReportingSubfeature?.getExpandedPerformanceMetrics()
+        }
+        return nil
     }
 
     private func makeBrokenSiteReport(category: String = "",
@@ -317,6 +347,9 @@ extension PrivacyDashboardViewController {
 
         let webVitalsResult = await calculateWebVitals(breakageAdditionalInfo: breakageAdditionalInfo,
                                                        privacyConfig: privacyConfigurationManager.privacyConfig)
+
+        let expandedWebVitalsResult = await calculateExpandedWebVitals(breakageAdditionalInfo: breakageAdditionalInfo,
+                                                                       privacyConfig: privacyConfigurationManager.privacyConfig)
 
         let blockedTrackerDomains = privacyInfo.trackerInfo.trackersBlocked.compactMap { $0.domain }
         let protectionsState = privacyConfigurationManager.privacyConfig.isFeature(.contentBlocking,
@@ -354,6 +387,7 @@ extension PrivacyDashboardViewController {
                                 openerContext: breakageAdditionalInfo.openerContext,
                                 vpnOn: breakageAdditionalInfo.vpnOn,
                                 jsPerformance: webVitalsResult,
+                                extendedPerformanceMetrics: expandedWebVitalsResult,
                                 userRefreshCount: breakageAdditionalInfo.userRefreshCount,
                                 variant: PixelExperiment.cohort?.rawValue ?? "",
                                 cookieConsentInfo: privacyInfo.cookieConsentManaged,

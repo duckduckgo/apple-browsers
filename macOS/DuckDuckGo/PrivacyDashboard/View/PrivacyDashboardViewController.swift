@@ -332,7 +332,7 @@ extension PrivacyDashboardViewController {
         case failedToFetchTheCurrentURL
     }
 
-    private func calculateWebVitals(performanceMetrics: PerformanceMetricsSubfeature?, privacyConfig: PrivacyConfiguration) async -> [Double]? {
+    private func calculateWebVitals(performanceMetrics: PerformanceMetricsSubfeature?, breakageReportingSubfeature: BreakageReportingSubfeature?, privacyConfig: PrivacyConfiguration) async -> [Double]? {
         var webVitalsResult: [Double]?
         if privacyConfig.isEnabled(featureKey: .performanceMetrics) {
             webVitalsResult = await withCheckedContinuation({ continuation in
@@ -343,7 +343,36 @@ extension PrivacyDashboardViewController {
             })
         }
 
+        // Call BreakageReportingSubfeature to get expanded performance metrics
+        if privacyConfig.isEnabled(featureKey: .breakageReporting) {
+            await withCheckedContinuation({ continuation in
+                guard let breakageReportingSubfeature else {
+                    continuation.resume(returning: ())
+                    return
+                }
+                breakageReportingSubfeature.notifyHandler { _ in
+                    continuation.resume(returning: ())
+                }
+            })
+        }
+
         return webVitalsResult
+    }
+
+    private func calculateExpandedWebVitals(breakageReportingSubfeature: BreakageReportingSubfeature?, privacyConfig: PrivacyConfiguration) async -> PerformanceMetrics? {
+        if privacyConfig.isEnabled(featureKey: .breakageReporting) {
+            await withCheckedContinuation({ continuation in
+                guard let breakageReportingSubfeature else {
+                    continuation.resume(returning: ())
+                    return
+                }
+                breakageReportingSubfeature.notifyHandler { _ in
+                    continuation.resume(returning: ())
+                }
+            })
+            return breakageReportingSubfeature?.getExpandedPerformanceMetrics()
+        }
+        return nil
     }
 
     private func isPirEnabledAndUserHasProfile() async -> Bool {
@@ -374,7 +403,9 @@ extension PrivacyDashboardViewController {
         let configuration = contentBlocking.privacyConfigurationManager.privacyConfig
         let protectionsState = configuration.isFeature(.contentBlocking, enabledForDomain: currentTab.content.urlForWebView?.host)
 
-        let webVitals = await calculateWebVitals(performanceMetrics: currentTab.brokenSiteInfo?.performanceMetrics, privacyConfig: configuration)
+        let webVitals = await calculateWebVitals(performanceMetrics: currentTab.brokenSiteInfo?.performanceMetrics, breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature, privacyConfig: configuration)
+
+        let expandedWebVitals = await calculateExpandedWebVitals(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature, privacyConfig: configuration)
 
         var errors: [Error]?
         var statusCodes: [Int]?
@@ -407,6 +438,7 @@ extension PrivacyDashboardViewController {
                                                openerContext: currentTab.brokenSiteInfo?.inferredOpenerContext,
                                                vpnOn: currentTab.networkProtection?.tunnelController.isConnected ?? false,
                                                jsPerformance: webVitals,
+                                               extendedPerformanceMetrics: expandedWebVitals,
                                                userRefreshCount: currentTab.brokenSiteInfo?.refreshCountSinceLoad ?? -1,
                                                cookieConsentInfo: currentTab.privacyInfo?.cookieConsentManaged,
                                                debugFlags: currentTab.privacyInfo?.debugFlags ?? "",

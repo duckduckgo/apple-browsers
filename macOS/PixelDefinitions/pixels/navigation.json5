@@ -83,4 +83,98 @@
             },
         ],
     },
+    siteLoadingPerformance: {
+        description: 'Fired when CSS pushes performance metrics via expandedPerformanceMetricsResult notification',
+        owners: ['diegoreymendez'],
+        triggers: ['page_load'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'first_contentful_paint_ms',
+                type: 'integer',
+                description: 'First Contentful Paint in milliseconds'
+            },
+            {
+                key: 'largest_contentful_paint_ms',
+                type: 'integer',
+                description: 'Largest Contentful Paint in milliseconds'
+            },
+            {
+                key: 'time_to_first_byte_ms',
+                type: 'integer',
+                description: 'Time to First Byte in milliseconds'
+            },
+            {
+                key: 'load_complete_ms',
+                type: 'integer',
+                description: 'Load Complete time in milliseconds'
+            },
+            {
+                key: 'transfer_size_bytes',
+                type: 'integer',
+                description: 'Total transfer size in bytes'
+            },
+            {
+                key: 'decoded_body_size_bytes',
+                type: 'integer',
+                description: 'Decoded body size in bytes'
+            },
+            {
+                key: 'encoded_body_size_bytes',
+                type: 'integer',
+                description: 'Encoded body size in bytes'
+            },
+            {
+                key: 'resource_count',
+                type: 'integer',
+                description: 'Number of resources loaded'
+            },
+            {
+                key: 'total_resources_size_bytes',
+                type: 'integer',
+                description: 'Total size of all resources in bytes'
+            },
+            {
+                key: 'protocol',
+                type: 'string',
+                description: 'Network protocol used (h2, h3, etc.)'
+            },
+            {
+                key: 'navigation_type',
+                type: 'string',
+                description: 'Type of navigation (navigate, reload, etc.)'
+            },
+            {
+                key: 'dom_interactive_ms',
+                type: 'integer',
+                description: 'DOM Interactive time in milliseconds'
+            },
+            {
+                key: 'dom_complete_ms',
+                type: 'integer',
+                description: 'DOM Complete time in milliseconds'
+            },
+            {
+                key: 'dom_content_loaded_ms',
+                type: 'integer',
+                description: 'DOM Content Loaded time in milliseconds'
+            },
+            {
+                key: 'server_time_ms',
+                type: 'integer',
+                description: 'Server response time in milliseconds'
+            },
+            {
+                key: 'response_time_ms',
+                type: 'integer',
+                description: 'Total response time in milliseconds'
+            },
+            {
+                key: 'redirect_count',
+                type: 'integer',
+                description: 'Number of redirects'
+            }
+        ]
+    },
 }

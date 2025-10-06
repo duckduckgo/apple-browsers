@@ -32,7 +32,6 @@ final class TabViewModel: NSObject {
     private let appearancePreferences: AppearancePreferences
     private let accessibilityPreferences: AccessibilityPreferences
     private let featureFlagger: FeatureFlagger
-    private let visualStyle: VisualStyleProviding
     private var cancellables = Set<AnyCancellable>()
 
     @Published private(set) var canGoForward: Bool = false
@@ -131,13 +130,11 @@ final class TabViewModel: NSObject {
     init(tab: Tab,
          appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
          accessibilityPreferences: AccessibilityPreferences = .shared,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.tab = tab
         self.appearancePreferences = appearancePreferences
         self.accessibilityPreferences = accessibilityPreferences
         self.featureFlagger = featureFlagger
-        self.visualStyle = visualStyle
         zoomLevel = accessibilityPreferences.defaultPageZoom
 
         super.init()
@@ -490,8 +487,7 @@ final class TabViewModel: NSObject {
             error: isShowingErrorPage ? tab.error : nil,
             actualFavicon: tabFavicon ?? tab.favicon,
             isBurner: tab.burnerMode.isBurner,
-            featureFlagger: featureFlagger,
-            visualStyle: visualStyle
+            featureFlagger: featureFlagger
         )
     }
 

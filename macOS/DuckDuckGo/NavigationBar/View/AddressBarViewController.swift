@@ -82,7 +82,7 @@ final class AddressBarViewController: NSViewController {
     private let suggestionContainerViewModel: SuggestionContainerViewModel
     private let isBurner: Bool
     private let onboardingPixelReporter: OnboardingAddressBarReporting
-    private let visualStyle: VisualStyleProviding
+    private let themeManager: ThemeManagerProtocol
     private var tabViewModel: TabViewModel?
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
@@ -97,6 +97,10 @@ final class AddressBarViewController: NSViewController {
         didSet {
             addressBarButtonsViewController?.controllerMode = mode
         }
+    }
+
+    private var theme: ThemeDefinition {
+        themeManager.theme
     }
 
     private(set) var isFirstResponder = false {
@@ -149,9 +153,9 @@ final class AddressBarViewController: NSViewController {
           permissionManager: PermissionManagerProtocol,
           burnerMode: BurnerMode,
           popovers: NavigationBarPopovers?,
+          themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
           aiChatSidebarPresenter: AIChatSidebarPresenting) {
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -168,12 +172,12 @@ final class AddressBarViewController: NSViewController {
                 burnerMode: burnerMode,
                 isUrlIgnored: { _ in false }
             ),
-            visualStyle: visualStyle
+            themeManager: themeManager
         )
         self.isBurner = burnerMode.isBurner
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatSettings = aiChatSettings
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
 
@@ -197,6 +201,8 @@ final class AddressBarViewController: NSViewController {
     }
 
     override func viewDidLoad() {
+        super.viewDidLoad()
+
         view.wantsLayer = true
         view.layer?.masksToBounds = false
 
@@ -221,7 +227,7 @@ final class AddressBarViewController: NSViewController {
 
         setupInactiveShadowView()
         setupActiveOuterBorderSize()
-        activeBackgroundViewWithSuggestions.backgroundColor = visualStyle.colorsProvider.suggestionsBackgroundColor
+        refreshSuggestionsAppearance()
     }
 
     deinit {
@@ -255,6 +261,7 @@ final class AddressBarViewController: NSViewController {
         subscribeToAddressBarValue()
         subscribeToButtonsWidth()
         subscribeForShadowViewUpdates()
+        subscribeToThemeChanges()
     }
 
     override func viewWillDisappear() {
@@ -436,6 +443,15 @@ final class AddressBarViewController: NSViewController {
             .store(in: &cancellables)
     }
 
+    private func subscribeToThemeChanges() {
+        themeManager.themePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applyThemeStyles()
+            }
+            .store(in: &cancellables)
+    }
+
     private func addTrackingArea() {
         let trackingArea = NSTrackingArea(rect: .zero, options: [.activeAlways, .mouseEnteredAndExited, .mouseMoved, .inVisibleRect], owner: self, userInfo: nil)
         self.view.addTrackingArea(trackingArea)
@@ -475,18 +491,18 @@ final class AddressBarViewController: NSViewController {
         let isPassiveTextFieldHidden = isFirstResponder || mode.isEditing
         addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
         passiveTextField.isHidden = isPassiveTextFieldHidden ? true : false
-        passiveTextField.textColor = visualStyle.colorsProvider.textPrimaryColor
+        passiveTextField.textColor = theme.colorsProvider.textPrimaryColor
 
         updateShadowViewPresence(isFirstResponder)
-        inactiveBackgroundView.backgroundColor = visualStyle.colorsProvider.inactiveAddressBarBackgroundColor
+        inactiveBackgroundView.backgroundColor = theme.colorsProvider.inactiveAddressBarBackgroundColor
         inactiveBackgroundView.alphaValue = isFirstResponder ? 0 : 1
         activeBackgroundView.alphaValue = isFirstResponder ? 1 : 0
 
         let isKey = self.view.window?.isKeyWindow == true
 
-        activeOuterBorderView.alphaValue = isKey && isFirstResponder && visualStyle.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
-        activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyle.colorsProvider.addressBarOutlineShadow
-        activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.8) : visualStyle.colorsProvider.accentPrimaryColor
+        activeOuterBorderView.alphaValue = isKey && isFirstResponder && theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
+        activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
+        activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.8) : theme.colorsProvider.accentPrimaryColor
 
         setupAddressBarPlaceHolder()
         setupAddressBarCornerRadius()
@@ -494,21 +510,21 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func setupAddressBarCornerRadius() {
-        activeBackgroundView.setCornerRadius(visualStyle.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
-        inactiveBackgroundView.setCornerRadius(visualStyle.addressBarStyleProvider.addressBarInactiveBackgroundViewRadius)
-        innerBorderView.setCornerRadius(visualStyle.addressBarStyleProvider.addressBarInnerBorderViewRadius)
-        activeOuterBorderView.setCornerRadius(visualStyle.addressBarStyleProvider.addressBarActiveOuterBorderViewRadius)
-        activeBackgroundViewWithSuggestions.setCornerRadius(visualStyle.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
+        activeBackgroundView.setCornerRadius(theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
+        inactiveBackgroundView.setCornerRadius(theme.addressBarStyleProvider.addressBarInactiveBackgroundViewRadius)
+        innerBorderView.setCornerRadius(theme.addressBarStyleProvider.addressBarInnerBorderViewRadius)
+        activeOuterBorderView.setCornerRadius(theme.addressBarStyleProvider.addressBarActiveOuterBorderViewRadius)
+        activeBackgroundViewWithSuggestions.setCornerRadius(theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
     }
 
     private func setupInactiveShadowView() {
-        if visualStyle.addressBarStyleProvider.shouldAddAddressBarShadowWhenInactive {
+        if theme.addressBarStyleProvider.shouldAddAddressBarShadowWhenInactive {
             inactiveAddressBarShadowView.shadowColor = NSColor.shadowPrimary
             inactiveAddressBarShadowView.shadowOpacity = 1
             inactiveAddressBarShadowView.shadowOffset = CGSize(width: 0, height: 0)
             inactiveAddressBarShadowView.shadowRadius = 3
             inactiveAddressBarShadowView.shadowSides = .all
-            inactiveAddressBarShadowView.cornerRadius = visualStyle.addressBarStyleProvider.addressBarInactiveBackgroundViewRadius
+            inactiveAddressBarShadowView.cornerRadius = theme.addressBarStyleProvider.addressBarInactiveBackgroundViewRadius
             inactiveAddressBarShadowView.translatesAutoresizingMaskIntoConstraints = false
 
             view.addSubview(inactiveAddressBarShadowView, positioned: .below, relativeTo: inactiveBackgroundView)
@@ -523,19 +539,19 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func setupActiveOuterBorderSize() {
-        activeOuterBorderTrailingConstraint.constant = visualStyle.addressBarStyleProvider.addressBarActiveOuterBorderSize
-        activeOuterBorderLeadingConstraint.constant = visualStyle.addressBarStyleProvider.addressBarActiveOuterBorderSize
-        activeOuterBorderBottomConstraint.constant = visualStyle.addressBarStyleProvider.addressBarActiveOuterBorderSize
-        activeOuterBorderTopConstraint.constant = visualStyle.addressBarStyleProvider.addressBarActiveOuterBorderSize
+        activeOuterBorderTrailingConstraint.constant = theme.addressBarStyleProvider.addressBarActiveOuterBorderSize
+        activeOuterBorderLeadingConstraint.constant = theme.addressBarStyleProvider.addressBarActiveOuterBorderSize
+        activeOuterBorderBottomConstraint.constant = theme.addressBarStyleProvider.addressBarActiveOuterBorderSize
+        activeOuterBorderTopConstraint.constant = theme.addressBarStyleProvider.addressBarActiveOuterBorderSize
     }
 
     private func setupAddressBarPlaceHolder() {
         let isNewTab = tabViewModel?.tab.content == .newtab
         let addressBarPlaceholder = isNewTab ? UserText.addressBarPlaceholder : ""
 
-        let font = NSFont.systemFont(ofSize: isNewTab ? visualStyle.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize : visualStyle.addressBarStyleProvider.defaultAddressBarFontSize, weight: .regular)
+        let font = NSFont.systemFont(ofSize: isNewTab ? theme.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize : theme.addressBarStyleProvider.defaultAddressBarFontSize, weight: .regular)
         let attributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: visualStyle.colorsProvider.textSecondaryColor,
+            .foregroundColor: theme.colorsProvider.textSecondaryColor,
             .font: font
         ]
         addressBarTextField.placeholderAttributedString = NSAttributedString(string: addressBarPlaceholder, attributes: attributes)
@@ -576,8 +592,8 @@ final class AddressBarViewController: NSViewController {
     private func updateShadowView(_ isSuggestionsWindowVisible: Bool) {
         shadowView.shadowSides = isSuggestionsWindowVisible ? [.left, .top, .right] : []
         shadowView.shadowColor = isSuggestionsWindowVisible ? .suggestionsShadow : .clear
-        shadowView.shadowRadius = isSuggestionsWindowVisible ? visualStyle.addressBarStyleProvider.suggestionShadowRadius : 0.0
-        shadowView.cornerRadius = visualStyle.addressBarStyleProvider.addressBarActiveBackgroundViewRadius
+        shadowView.shadowRadius = isSuggestionsWindowVisible ? theme.addressBarStyleProvider.suggestionShadowRadius : 0.0
+        shadowView.cornerRadius = theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadius
 
         activeOuterBorderView.isHidden = isSuggestionsWindowVisible || view.window?.isKeyWindow != true
         activeBackgroundView.isHidden = isSuggestionsWindowVisible
@@ -614,29 +630,33 @@ final class AddressBarViewController: NSViewController {
         self.addressBarButtonsViewController?.updateButtons()
 
         guard let window = view.window, AppVersion.runType != .unitTests else { return }
-        let navigationBarBackgroundColor = visualStyle.colorsProvider.navigationBackgroundColor
+        let navigationBarBackgroundColor = theme.colorsProvider.navigationBackgroundColor
 
         NSAppearance.withAppAppearance {
             if window.isKeyWindow {
                 activeBackgroundView.borderWidth = 2.0
                 activeBackgroundView.borderColor = accentColor.withAlphaComponent(0.6)
-                activeBackgroundView.backgroundColor = visualStyle.colorsProvider.activeAddressBarBackgroundColor
-                addressBarButtonsViewController?.trailingButtonsBackground.backgroundColor = visualStyle.colorsProvider.activeAddressBarBackgroundColor
+                activeBackgroundView.backgroundColor = theme.colorsProvider.activeAddressBarBackgroundColor
+                addressBarButtonsViewController?.trailingButtonsBackground.backgroundColor = theme.colorsProvider.activeAddressBarBackgroundColor
                 switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .addressBarBackground)
 
-                activeOuterBorderView.isHidden = !visualStyle.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage)
-                activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyle.colorsProvider.addressBarOutlineShadow
-                activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.8) : visualStyle.colorsProvider.accentPrimaryColor
+                activeOuterBorderView.isHidden = !theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage)
+                activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
+                activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.8) : theme.colorsProvider.accentPrimaryColor
             } else {
                 activeBackgroundView.borderWidth = 0
                 activeBackgroundView.borderColor = nil
-                activeBackgroundView.backgroundColor = visualStyle.colorsProvider.inactiveAddressBarBackgroundColor
-                addressBarButtonsViewController?.trailingButtonsBackground.backgroundColor = visualStyle.colorsProvider.inactiveAddressBarBackgroundColor
+                activeBackgroundView.backgroundColor = theme.colorsProvider.inactiveAddressBarBackgroundColor
+                addressBarButtonsViewController?.trailingButtonsBackground.backgroundColor = theme.colorsProvider.inactiveAddressBarBackgroundColor
                 switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .inactiveSearchBarBackground)
 
                 activeOuterBorderView.isHidden = true
             }
         }
+    }
+
+    private func refreshSuggestionsAppearance() {
+        activeBackgroundViewWithSuggestions.backgroundColor = theme.colorsProvider.suggestionsBackgroundColor
     }
 
     private func layoutTextFields(withMinX minX: CGFloat) {
@@ -646,7 +666,7 @@ final class AddressBarViewController: NSViewController {
         let isAddressBarFocused = view.window?.firstResponder == addressBarTextField.currentEditor()
         let adjustedMinX: CGFloat = (!self.isFirstResponder || self.mode.isEditing) ? minX : Constants.defaultActiveTextFieldMinX
 
-        if visualStyle.addressBarStyleProvider.shouldShowNewSearchIcon {
+        if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
             if isAddressBarFocused {
                 self.activeTextFieldMinXConstraint.constant = adjustedMinX - 5
             } else {
@@ -670,6 +690,14 @@ final class AddressBarViewController: NSViewController {
         } else if isFirstResponder {
             isFirstResponder = false
         }
+    }
+
+    // MARK: - Themes
+
+    private func applyThemeStyles() {
+        refreshAddressBarAppearance(nil)
+        refreshSuggestionsAppearance()
+        updateView()
     }
 
     // MARK: - Event handling
@@ -782,6 +810,10 @@ final class AddressBarViewController: NSViewController {
 extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         aiChatSettings.showShortcutInAddressBar = false
+    }
+
+    func addressBarButtonsViewControllerHideAskAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
+        aiChatSettings.showShortcutInAddressBarWhenTyping = false
     }
 
     func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {

@@ -323,10 +323,8 @@ final class TabViewModelTests: XCTestCase {
 
     @MainActor
     func testDisplayedFaviconForNewTabWithBurnerNewStyle() {
-        let mockVisualStyle = MockVisualStyle(isNewStyle: true)
         let tabViewModel = TabViewModel.forTabWithURL(
             URL.newtab,
-            visualStyle: mockVisualStyle,
             burnerMode: BurnerMode(isBurner: true)
         )
 
@@ -824,7 +822,6 @@ extension TabViewModel {
     static func forTabWithURL(
         _ url: URL,
         featureFlagger: FeatureFlagger? = nil,
-        visualStyle: VisualStyleProviding? = nil,
         burnerMode: BurnerMode = .regular
     ) -> TabViewModel {
         let tab = Tab(
@@ -841,11 +838,10 @@ extension TabViewModel {
             return TabViewModel(
                 tab: tab,
                 appearancePreferences: appearancePreferences,
-                featureFlagger: featureFlagger,
-                visualStyle: visualStyle ?? NSApp.delegateTyped.visualStyle
+                featureFlagger: featureFlagger
             )
         } else {
-            return TabViewModel(tab: tab, visualStyle: visualStyle ?? NSApp.delegateTyped.visualStyle)
+            return TabViewModel(tab: tab)
         }
     }
 

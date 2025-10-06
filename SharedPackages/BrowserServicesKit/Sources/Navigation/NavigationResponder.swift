@@ -118,6 +118,12 @@ public protocol NavigationResponder {
     func renderingProgressDidChange(progressEvents: UInt)
 #endif
 
+    // MARK: - Navigation Performance (macOS only)
+#if PRIVATE_NAVIGATION_PERFORMANCE_ENABLED
+    @MainActor
+    func didGeneratePageLoadTiming(_ timing: WKPageLoadTiming)
+#endif
+
     /// Return true to disable stop on decidePolicyForNavigationAction taking longer than 4 secoinds
     @MainActor
     var shouldDisableLongDecisionMakingChecks: Bool { get }
@@ -173,6 +179,11 @@ public extension NavigationResponder {
 
     @MainActor
     func renderingProgressDidChange(progressEvents: UInt) {}
+#endif
+
+#if PRIVATE_NAVIGATION_PERFORMANCE_ENABLED
+    @MainActor
+    func didGeneratePageLoadTiming(_ timing: WKPageLoadTiming) {}
 #endif
 
     var shouldDisableLongDecisionMakingChecks: Bool { false }

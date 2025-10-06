@@ -48,6 +48,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/1201048563534612/1208850443048685/f
     case historyView
 
+    /// Enable WebKit page load timing performance reporting
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/XXXXXXXXX?focus=true
+    case webKitPerformanceReporting
+
     case autoUpdateInDEBUG
 
     /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1210099321661462?focus=true
@@ -294,7 +298,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .appStoreCheckForUpdatesFlow,
                 .unifiedURLPredictor,
                 .unifiedURLPredictorMetrics,
-                .subscriptionRestoreWidePixelMeasurement:
+                .subscriptionRestoreWidePixelMeasurement,
+                .webKitPerformanceReporting:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -446,6 +451,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .subscriptionRestoreWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
+        case .webKitPerformanceReporting:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webKitPerformanceReporting))
         }
     }
 }

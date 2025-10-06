@@ -475,12 +475,12 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidRunUpdate))
 
         guard useLegacyAutoRestartLogic else {
-            userDriver.resume()
+            resumeUpdater()
             return
         }
 
         guard shouldForceUpdateCheck else {
-            userDriver.resume()
+            resumeUpdater()
             return
         }
 
@@ -497,6 +497,12 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
         }
     }
 
+    private func resumeUpdater() {
+        if userDriver?.isResumable == false {
+            PixelKit.fire(DebugEvent(GeneralPixel.updaterAttemptToRestartWithoutResumeBlock))
+        }
+        userDriver?.resume()
+    }
 }
 
 extension SparkleUpdateController: SPUUpdaterDelegate {

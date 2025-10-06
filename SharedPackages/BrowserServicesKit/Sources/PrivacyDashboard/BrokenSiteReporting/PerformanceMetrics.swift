@@ -71,6 +71,7 @@ public struct PerformanceMetrics {
     }
 
     /// Returns a dictionary representation of all performance metrics
+    // swiftlint:disable:next cyclomatic_complexity
     public func toDictionary() -> [String: Any] {
         var dict: [String: Any] = [:]
 

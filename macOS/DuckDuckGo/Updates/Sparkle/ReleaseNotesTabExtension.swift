@@ -167,8 +167,6 @@ extension ReleaseNotesValues {
                 let status = {
                     if currentVersion == cachedVersion {
                         return ReleaseNotesValues.Status.loaded
-                    } else if updateController.hasPendingUpdate {
-                        return .updateReady
                     } else if case .updateCycleNotStarted = updateController.updateProgress {
                         return .loading
                     } else {

@@ -39,7 +39,7 @@ func newFileImportMultipleTypeInstructionsBuilder(source: DataImport.Source) -> 
     case .safari, .safariTechnologyPreview:
         NSLocalizedString("import.html.instructions.safari", value: """
         %d Open %@ **Safari → File → Export Browsing Data to File...**
-        %d Choose **Bookmarks, Passwords,** and/or **Credit Cards**, then click **Export**.
+        %d Choose **Bookmarks, Passwords,** and/or **Credit Cards**, then click **Export**
         %d Add the exported ZIP file below
         """, comment: """
         Instructions to import Bookmarks exported as HTML from Safari.

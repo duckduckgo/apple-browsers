@@ -144,7 +144,11 @@ extension DefaultSubscriptionManagerV2 {
 
         let wideEvent: WideEventManaging = WideEvent()
         let authRefreshEventMapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
+#if DEBUG
+            return (featureFlagger?.isFeatureOn(.authV2WideEventEnabled) ?? false) // Allow the refresh event when using staging in debug mode, for easier testing
+#else
             return (featureFlagger?.isFeatureOn(.authV2WideEventEnabled) ?? false) && environment.serviceEnvironment == .production
+#endif
         })
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             legacyTokenStorage: nil, // Can't migrate

@@ -262,7 +262,7 @@ final class AppStoreUpdateControllerTests: XCTestCase {
             // Given
             let mockFeatureFlagger = MockFeatureFlagger()
             let mockAppStoreOpener = MockAppStoreOpener()
-            mockFeatureFlagger.enabledFeatureFlags = [.appStoreCheckForUpdatesFlow]
+            mockFeatureFlagger.enabledFeatureFlags = [.appStoreUpdateFlow]
 
             let controller = AppStoreUpdateController(
                 featureFlagger: mockFeatureFlagger,
@@ -303,7 +303,7 @@ final class AppStoreUpdateControllerTests: XCTestCase {
             // Given
             let mockFeatureFlagger = MockFeatureFlagger()
             let mockAppStoreOpener = MockAppStoreOpener()
-            mockFeatureFlagger.enabledFeatureFlags = [.appStoreCheckForUpdatesFlow]
+            mockFeatureFlagger.enabledFeatureFlags = [.appStoreUpdateFlow]
 
             let controller = AppStoreUpdateController(
                 featureFlagger: mockFeatureFlagger,
@@ -343,7 +343,7 @@ final class AppStoreUpdateControllerTests: XCTestCase {
             // Given
             let mockFeatureFlagger = MockFeatureFlagger()
             let mockAppStoreOpener = MockAppStoreOpener()
-            mockFeatureFlagger.enabledFeatureFlags = [.appStoreCheckForUpdatesFlow]
+            mockFeatureFlagger.enabledFeatureFlags = [.appStoreUpdateFlow]
 
             // When
             let controller = AppStoreUpdateController(
@@ -379,7 +379,7 @@ final class AppStoreUpdateControllerTests: XCTestCase {
         autoreleasepool {
             // Given
             let mockFeatureFlagger = MockFeatureFlagger()
-            mockFeatureFlagger.enabledFeatureFlags = [.appStoreCheckForUpdatesFlow]
+            mockFeatureFlagger.enabledFeatureFlags = [.appStoreUpdateFlow]
             let mockAppStoreOpener = MockAppStoreOpener()
 
             let controller = AppStoreUpdateController(

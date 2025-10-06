@@ -23,4 +23,7 @@ public enum SingleUseColor {
     case controlWidgetBackground
     case unifiedFeedbackFieldBackground
     case privacyDashboardBackground
+
+    /// Color used for separator line between text input and content
+    case inputContentSeparator
 }

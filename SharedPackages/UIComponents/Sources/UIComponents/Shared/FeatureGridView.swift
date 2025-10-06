@@ -160,7 +160,11 @@ struct FeatureCardView: View {
         }
         .padding(LayoutConstants.cardPadding)
         .frame(minHeight: minHeight, maxHeight: minHeight != nil ? .infinity : nil)
+#if os(iOS)
+        .background(Color(designSystemColor: .surface))
+#else
         .background(Color(designSystemColor: .surfacePrimary))
+#endif
         .cornerRadius(LayoutConstants.cornerRadius)
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cornerRadius)

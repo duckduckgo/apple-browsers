@@ -46,7 +46,7 @@ protocol AIChatUserScriptHandling {
     func getPageContext(params: Any, message: UserScriptMessage) -> Encodable?
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
-    var chatRestorationDataPublisher: AnyPublisher<String?, Never> { get }
+    var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
@@ -66,7 +66,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
     private let pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
-    private let chatRestorationDataSubject = PassthroughSubject<String?, Never>()
+    private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     private let storage: AIChatPreferencesStorage
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter

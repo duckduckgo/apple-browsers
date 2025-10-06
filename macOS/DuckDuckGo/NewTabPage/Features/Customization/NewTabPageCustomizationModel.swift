@@ -106,6 +106,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
 
         subscribeToUserBackgroundImages()
         subscribeToCustomBackground()
+        subscribeToThemeChanges(manager: themeManager)
 
         if let lastPickedCustomColorHexValue, let customColor = NSColor(hex: lastPickedCustomColorHexValue) {
             lastPickedCustomColor = customColor

@@ -81,6 +81,7 @@ final class TabCrashRecoveryExtension {
     private let featureFlagger: FeatureFlagger
     private let crashLoopDetector: TabCrashLoopDetecting
     private let firePixel: (PixelKitEvent, [String: String]) -> Void
+    private let tabCrashAggregator: TabCrashAggregator
 
     private var cancellables = Set<AnyCancellable>()
     private var lastPixelFireTime: Date?
@@ -93,11 +94,13 @@ final class TabCrashRecoveryExtension {
         crashLoopDetector: TabCrashLoopDetecting = TabCrashLoopDetector(),
         firePixel: @escaping (PixelKitEvent, [String: String]) -> Void = { event, parameters in
             PixelKit.fire(event, frequency: .dailyAndStandard, withAdditionalParameters: parameters)
-        }
+        },
+        tabCrashAggregator: TabCrashAggregator
     ) {
         self.featureFlagger = featureFlagger
         self.crashLoopDetector = crashLoopDetector
         self.firePixel = firePixel
+        self.tabCrashAggregator = tabCrashAggregator
 
         contentPublisher.sink { [weak self] content in
             self?.content = content
@@ -159,6 +162,8 @@ extension TabCrashRecoveryExtension: NavigationResponder {
             lastCrashedAt = crashTimestamp
 
             if isCrashLoop {
+                tabCrashAggregator.recordCrash()
+
                 Task.detached(priority: .utility) {
                     self.firePixel(GeneralPixel.webKitTerminationLoop, [:])
                 }
@@ -168,6 +173,10 @@ extension TabCrashRecoveryExtension: NavigationResponder {
         } else {
             // disable auto-reload if tab crash debugging flag is enabled, to allow testing
             shouldAutoReload = featureFlagger.internalUserDecider.isInternalUser && !featureFlagger.isFeatureOn(.tabCrashDebugging)
+
+            if !shouldAutoReload {
+                tabCrashAggregator.recordCrash()
+            }
         }
 
         handleTabCrash(error, in: webView, shouldAutoReload: shouldAutoReload)

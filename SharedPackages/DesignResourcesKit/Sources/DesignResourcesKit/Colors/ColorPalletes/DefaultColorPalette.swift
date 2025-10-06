@@ -234,6 +234,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: surface.lightColor, darkColor: .x1C1C1E)
         case .privacyDashboardBackground:
             return DynamicColor(lightColor: surface.lightColor, darkColor: background.darkColor)
+        case .inputContentSeparator:
+            return DynamicColor(lightColor: shadowTertiary.lightColor, darkColor: highlightDecoration.darkColor)
         }
     }
 }

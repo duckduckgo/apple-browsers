@@ -29,7 +29,6 @@ final class NavigationActionBarView: UIView {
         static let barHeight: CGFloat = 76
         static let buttonSize: CGFloat = 40
         static let padding: CGFloat = 16
-        static let smallPadding: CGFloat = 8
         static let buttonSpacing: CGFloat = 12
         static let cornerRadius: CGFloat = 8
         
@@ -109,35 +108,42 @@ final class NavigationActionBarView: UIView {
         
         mainStackView.addArrangedSubview(rightStackView)
         
-        addSubview(solidView)
-        addSubview(backgroundGradientView)
+        // Add to view
+        if isFloating {
+            addSubview(solidView)
+            addSubview(backgroundGradientView)
+        } else {
+            // If embed in another container,
+            // using layout margins prevents padding from influencing the layout if there are no buttons visible
+            rightStackView.layoutMargins = .init(top: 4, left: 8, bottom: 8, right: 8)
+        }
         addSubview(mainStackView)
         
         solidView.translatesAutoresizingMaskIntoConstraints = false
         mainStackView.translatesAutoresizingMaskIntoConstraints = false
         backgroundGradientView.translatesAutoresizingMaskIntoConstraints = false
 
-        let mainStackPadding = isFloating ? Constants.padding : Constants.smallPadding
+        let mainStackPadding = isFloating ? Constants.padding : 0
 
-        let mainStackMinHeightConstraint = mainStackView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.buttonSize)
         NSLayoutConstraint.activate([
             mainStackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: mainStackPadding),
             mainStackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -mainStackPadding),
-            mainStackView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: mainStackPadding),
-
-            mainStackMinHeightConstraint,
+            mainStackView.topAnchor.constraint(greaterThanOrEqualTo: safeAreaLayoutGuide.topAnchor, constant: mainStackPadding),
 
             // Button size constraints
+            microphoneButton.widthAnchor.constraint(equalTo: microphoneButton.heightAnchor, multiplier: 1.0),
             microphoneButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            microphoneButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            newLineButton.widthAnchor.constraint(equalTo: newLineButton.heightAnchor, multiplier: 1.0),
             newLineButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            newLineButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            searchButton.widthAnchor.constraint(equalTo: searchButton.heightAnchor, multiplier: 1.0),
             searchButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            searchButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize)
         ])
 
         if isFloating {
             NSLayoutConstraint.activate([
+                // Ensure minimum height, so that gradient is visible
+                mainStackView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.buttonSize),
+
                 // Stick to the keyboard's top
                 mainStackView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor, constant: -mainStackPadding),
 
@@ -155,7 +161,7 @@ final class NavigationActionBarView: UIView {
             ])
         } else {
             // Anchor to superview safe area. Not floating means it's in a externally controlled container
-            mainStackView.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor, constant: -mainStackPadding).isActive = true
+            mainStackView.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor).isActive = true
         }
     }
 
@@ -167,6 +173,7 @@ final class NavigationActionBarView: UIView {
     private func setupNewLineButton() {
         let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
         let returnImage = UIImage(systemName: "return", withConfiguration: config)
+        newLineButton.isShadowHidden = !isFloating
         newLineButton.setIcon(returnImage)
         newLineButton.setColors(
             foreground: UIColor(designSystemColor: .icons),
@@ -236,10 +243,21 @@ final class NavigationActionBarView: UIView {
         updateMicrophoneButton()
         updateSearchButton()
         updateButtonVisibility()
+
+        updateButtonsStackVisibility()
+    }
+
+    private func updateButtonsStackVisibility() {
+        guard !isFloating else { return }
+
+        let allButtonsHidden = rightStackView.arrangedSubviews.allSatisfy(\.isHidden)
+        rightStackView.isHidden = allButtonsHidden
+        rightStackView.isLayoutMarginsRelativeArrangement = !allButtonsHidden
     }
 
     private func updateMicrophoneButton() {
         let isEnabled = viewModel.isVoiceSearchEnabled
+        microphoneButton.isShadowHidden = !isFloating
         microphoneButton.alpha = isEnabled ? 1.0 : 0.5
         microphoneButton.isEnabled = isEnabled
         microphoneButton.setColors(
@@ -262,7 +280,8 @@ final class NavigationActionBarView: UIView {
                 return DesignSystemImages.Glyphs.Size24.arrowRightSmall
             }
         }()
-        
+
+        searchButton.isShadowHidden = !isFloating
         searchButton.setIcon(icon)
         searchButton.setColors(
             foreground: UIColor(designSystemColor: .accentContentPrimary),
@@ -324,6 +343,12 @@ private class CircularButton: UIButton {
     private var definedPressedBackgroundColor: UIColor?
     private var definedPressedForegroundColor: UIColor?
 
+    var isShadowHidden: Bool = false {
+        didSet {
+            updateShadowVisibility()
+        }
+    }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupButton()
@@ -352,6 +377,18 @@ private class CircularButton: UIButton {
         
         imageView?.contentMode = .scaleAspectFit
         adjustsImageWhenHighlighted = false
+
+        updateShadowVisibility()
+    }
+
+    private func updateShadowVisibility() {
+        if isShadowHidden {
+            layer.shadowOpacity = 0.0
+            secondShadowLayer.shadowOpacity = 0.0
+        } else {
+            layer.shadowOpacity = 1.0
+            secondShadowLayer.shadowOpacity = 1.0
+        }
     }
 
     override var isHighlighted: Bool {

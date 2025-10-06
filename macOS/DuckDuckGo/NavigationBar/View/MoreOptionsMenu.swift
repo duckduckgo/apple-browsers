@@ -255,7 +255,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         addItem(helpItem)
 
 #if APPSTORE
-        if !featureFlagger.isFeatureOn(.appStoreCheckForUpdatesFlow) {
+        if !featureFlagger.isFeatureOn(.appStoreUpdateFlow) {
             let checkForAppStoreUpdates = NSMenuItem(title: UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""),
                                                      action: #selector(checkForUpdates(_:)),
                                                      keyEquivalent: "")

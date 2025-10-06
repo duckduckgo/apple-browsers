@@ -1,7 +1,7 @@
 {
   "name": "PublicReports",
   "url": "publicreports.com",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "parent": "verecor.com",
   "addedDatetime": 1703052000000,
   "optOutUrl": "https://persontrust.com/ng/control/privacy",
@@ -13,7 +13,7 @@
         {
           "actionType": "navigate",
           "id": "cdd6e94e-ad5d-4331-bb0d-8212e52e0efb",
-          "url": "https://publicreports.com/profile/search?fname=${firstName}&lname=${lastName}&state=${state}&city=${city}&fage=${age|ageRange}",
+          "url": "https://persontrust.com/ng/profile/search?fname=${firstName}&lname=${lastName}&state=${state}&city=${city}&fage=${age|ageRange}",
           "ageRange": [
             "18-30",
             "31-40",
@@ -27,34 +27,33 @@
         {
           "actionType": "extract",
           "id": "64808ea7-0f52-45ef-a374-dafe8b9272e7",
-          "selector": ".card",
+          "selector": ".tm-search-item",
           "profile": {
             "name": {
-              "selector": ".card-title",
-              "beforeText": " ~"
+              "selector": ".tm-title a"
             },
             "alternativeNamesList": {
-              "selector": ".//div[@class='card-body']/dl[dt[text()='Known as:']]/dd/ul[@class='list-inline m-0']/li",
+              "selector": ".//div[@class='tm-item-wrap'][h3[b[normalize-space(.)='Also known as:']]]/div[@class='del-list']",
+              "beforeText": " · ",
               "findElements": true
             },
             "age": {
-              "beforeText": "years old",
-              "selector": ".card-title",
-              "afterText": " ~"
+              "beforeText": "Age: ",
+              "selector": ".age"
             },
             "addressCityStateList": {
-              "selector": ".//div[@class='card-body']/dl[dt[text()='Has lived in:']]/dd/ul[@class='list-inline m-0']/li",
+              "selector": ".//div[@class='tm-item-wrap flx'][h3[@class='lived-in']]/div[@class='del-list']/span",
               "findElements": true
             },
             "relativesList": {
-              "selector": ".//div[@class='card-body']/dl[dt[text()='Related to:']]/dd/ul[@class='list-inline m-0']/li",
+              "selector": ".//div[@class='tm-item-wrap'][h3[@class='related']]/div[@class='del-list']/span",
               "beforeText": ",",
               "findElements": true
             },
             "profileUrl": {
               "selector": "a",
               "identifierType": "path",
-              "identifier": "https://neighbor.report/person/${id}"
+              "identifier": "https://publicreports.com/person/${id}"
             }
           }
         }

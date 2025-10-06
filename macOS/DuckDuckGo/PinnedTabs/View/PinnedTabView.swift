@@ -25,12 +25,15 @@ struct PinnedTabView: View, DropDelegate {
         static let cornerRadius: CGFloat = 10
     }
 
-    let tabStyleProvider: TabStyleProviding
-
     @ObservedObject var model: Tab
     @EnvironmentObject var collectionModel: PinnedTabsViewModel
+    @EnvironmentObject var themeManager: ThemeManager
 
     @Environment(\.controlActiveState) private var controlActiveState
+
+    private var tabStyleProvider: TabStyleProviding {
+        themeManager.theme.tabStyleProvider
+    }
 
     // Hover highlight is disabled while another tab is dragged
     var showsHover: Bool
@@ -57,6 +60,7 @@ struct PinnedTabView: View, DropDelegate {
                 )
                 .environmentObject(model)
                 .environmentObject(model.crashIndicatorModel)
+                .environmentObject(themeManager)
             }
             .buttonStyle(TouchDownButtonStyle())
             .contextMenu { contextMenu }
@@ -274,7 +278,12 @@ struct PinnedTabInnerView: View {
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var model: Tab
     @EnvironmentObject var tabCrashIndicatorModel: TabCrashIndicatorModel
+    @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.controlActiveState) private var controlActiveState
+
+    private var colorsProvider: ColorsProviding {
+        themeManager.theme.colorsProvider
+    }
 
     var body: some View {
         ZStack {
@@ -306,13 +315,13 @@ struct PinnedTabInnerView: View {
             if isSelected && showSShaped {
                 PinnedTabRampView(rampWidth: rampSize,
                                   rampHeight: rampSize,
-                                  foregroundColor: .surfacePrimary)
+                                  foregroundColor: Color(colorsProvider.navigationBackgroundColor))
                 .position(x: 2, y: height - (rampSize / 2))
 
                 PinnedTabRampView(rampWidth: rampSize,
                                   rampHeight: rampSize,
                                   isFlippedHorizontally: true,
-                                  foregroundColor: .surfacePrimary)
+                                  foregroundColor: Color(colorsProvider.navigationBackgroundColor))
                 .position(x: width + rampSize + 2, y: height - (rampSize / 2))
             }
         }
@@ -413,8 +422,7 @@ struct PinnedTabInnerView: View {
             error: model.error,
             actualFavicon: model.favicon,
             isBurner: model.burnerMode.isBurner,
-            featureFlagger: NSApp.delegateTyped.featureFlagger,
-            visualStyle: NSApp.delegateTyped.visualStyle
+            featureFlagger: NSApp.delegateTyped.featureFlagger
         )
     }
 

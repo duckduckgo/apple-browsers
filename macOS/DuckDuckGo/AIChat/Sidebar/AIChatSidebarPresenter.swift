@@ -49,6 +49,12 @@ protocol AIChatSidebarPresenting {
     /// Returns whether the AI Chat sidebar is currently open for the active tab.
     func isSidebarOpenForCurrentTab() -> Bool
 
+    /// Returns the date when the AI Chat sidebar was last hidden for a tab specified by `tabID`.
+    func sidebarHiddenAt(for tabID: TabIdentifier) -> Date?
+
+    /// Returns the date when the AI Chat sidebar was last hidden for the active tab.
+    func sidebarHiddenAtForCurrentTab() -> Date?
+
     /// Emits events whenever sidebar is shown or hidden for a tab.
     var sidebarPresenceWillChangePublisher: AnyPublisher<AIChatSidebarPresenceChange, Never> { get }
 
@@ -127,6 +133,15 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
     func isSidebarOpenForCurrentTab() -> Bool {
         guard let currentTabID = sidebarHost.currentTabID else { return false }
         return isSidebarOpen(for: currentTabID)
+    }
+
+    func sidebarHiddenAt(for tabID: TabIdentifier) -> Date? {
+        sidebarProvider.sidebarsByTab[tabID]?.hiddenAt
+    }
+
+    func sidebarHiddenAtForCurrentTab() -> Date? {
+        guard let currentTabID = sidebarHost.currentTabID else { return nil }
+        return sidebarHiddenAt(for: currentTabID)
     }
 
     private func updateSidebarConstraints(for tabID: TabIdentifier, isShowingSidebar: Bool, withAnimation: Bool) {
@@ -209,7 +224,8 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
             pixelFiring?.fire(
                 AIChatPixel.aiChatSidebarOpened(
                     source: .serp,
-                    shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue
+                    shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
+                    minutesSinceSidebarHidden: sidebarHiddenAt(for: currentTabID)?.minutesSinceNow()
                 ),
                 frequency: .dailyAndStandard
             )

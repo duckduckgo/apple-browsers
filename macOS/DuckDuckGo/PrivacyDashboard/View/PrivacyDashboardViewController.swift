@@ -343,18 +343,6 @@ extension PrivacyDashboardViewController {
             })
         }
 
-        // Call BreakageReportingSubfeature to get expanded performance metrics
-        if privacyConfig.isEnabled(featureKey: .breakageReporting) {
-            await withCheckedContinuation({ continuation in
-                guard let breakageReportingSubfeature else {
-                    continuation.resume(returning: ())
-                    return
-                }
-                breakageReportingSubfeature.notifyHandler { _ in
-                    continuation.resume(returning: ())
-                }
-            })
-        }
 
         return webVitalsResult
     }

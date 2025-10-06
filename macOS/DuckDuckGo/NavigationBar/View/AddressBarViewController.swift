@@ -82,7 +82,6 @@ final class AddressBarViewController: NSViewController {
     private let suggestionContainerViewModel: SuggestionContainerViewModel
     private let isBurner: Bool
     private let onboardingPixelReporter: OnboardingAddressBarReporting
-    private let themeManager: ThemeManaging
     private var tabViewModel: TabViewModel?
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
@@ -99,9 +98,8 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
-    private var theme: ThemeStyleProviding {
-        themeManager.theme
-    }
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
 
     private(set) var isFirstResponder = false {
         didSet {
@@ -443,15 +441,6 @@ final class AddressBarViewController: NSViewController {
             .store(in: &cancellables)
     }
 
-    private func subscribeToThemeChanges() {
-        themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.applyThemeStyles()
-            }
-            .store(in: &cancellables)
-    }
-
     private func addTrackingArea() {
         let trackingArea = NSTrackingArea(rect: .zero, options: [.activeAlways, .mouseEnteredAndExited, .mouseMoved, .inVisibleRect], owner: self, userInfo: nil)
         self.view.addTrackingArea(trackingArea)
@@ -692,14 +681,6 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
-    // MARK: - Themes
-
-    private func applyThemeStyles() {
-        refreshAddressBarAppearance(nil)
-        refreshSuggestionsAppearance()
-        updateView()
-    }
-
     // MARK: - Event handling
 
     func escapeKeyDown() -> Bool {
@@ -805,6 +786,15 @@ final class AddressBarViewController: NSViewController {
         return event
     }
 
+}
+
+extension AddressBarViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        refreshAddressBarAppearance(nil)
+        refreshSuggestionsAppearance()
+        updateView()
+    }
 }
 
 extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {

@@ -79,11 +79,8 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     private let dragDropManager: BookmarkDragDropManager
     private let sortBookmarksViewModel: SortBookmarksViewModel
 
-    private var themeCancellable: AnyCancellable?
-    private let themeManager: ThemeManaging
-    private var theme: ThemeStyleProviding {
-        themeManager.theme
-    }
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
 
     private var selectionState: BookmarkManagementSidebarViewController.SelectionState = .empty {
         didSet {
@@ -349,23 +346,6 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             .store(in: &cancellables)
     }
 
-    private func subscribeToThemeChanges() {
-        themeCancellable = themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] style in
-                self?.applyThemeStyle(theme: style)
-            }
-    }
-
-    private func applyThemeStyle(theme: ThemeStyleProviding) {
-        guard let contentView = view as? ColorView else {
-            assertionFailure()
-            return
-        }
-
-        contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
-    }
-
     override func keyDown(with event: NSEvent) {
         switch Int(event.keyCode) {
         case kVK_Delete, kVK_ForwardDelete:
@@ -548,6 +528,20 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         }
         return .init(syncService: syncService, syncBookmarksAdapter: syncBookmarksAdapter)
     }()
+}
+
+// MARK: - ThemeUpdateListening
+
+extension BookmarkManagementDetailViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        guard let contentView = view as? ColorView else {
+            assertionFailure()
+            return
+        }
+
+        contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
+    }
 }
 
 // MARK: - NSTableView

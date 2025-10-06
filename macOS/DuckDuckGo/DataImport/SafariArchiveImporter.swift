@@ -121,15 +121,17 @@ final class SafariArchiveImporter: DataImporter {
     func validateAccess(for types: Set<DataImport.DataType>) -> [DataImport.DataType: any DataImportError]? {
         do {
             let contents = try archiveReader.readContents(from: archiveURL)
-            let tempFiles = try createTemporaryFiles(from: contents, for: types)
+            let tempFile = try createTemporaryBookmarksFile(from: contents.bookmarks)
             defer {
-                cleanupTemporaryFiles(tempFiles)
+                if let tempFile {
+                    cleanupTemporaryFile(tempFile)
+                }
             }
 
             var errors: [DataImport.DataType: any DataImportError] = [:]
 
             // Validate bookmarks if requested and available
-            if types.contains(.bookmarks), let bookmarkFile = tempFiles.bookmarks {
+            if types.contains(.bookmarks), let bookmarkFile = tempFile {
                 let bookmarkHTMLImporter = BookmarkHTMLImporter(fileURL: bookmarkFile, bookmarkImporter: bookmarkImporter)
                 if let bookmarkErrors = bookmarkHTMLImporter.validateAccess(for: [.bookmarks]) {
                     errors.merge(bookmarkErrors) { _, new in new }
@@ -176,19 +178,6 @@ final class SafariArchiveImporter: DataImporter {
             return finalSummary
         }
 
-        let tempFiles: TemporaryFiles
-        do {
-            tempFiles = try createTemporaryFiles(from: contents, for: types)
-        } catch {
-            for type in types {
-                finalSummary[type] = .failure(ImportError(action: .generic, type: .createTempFiles, underlyingError: error))
-            }
-            return finalSummary
-        }
-        defer {
-            cleanupTemporaryFiles(tempFiles)
-        }
-
         guard !contents.isEmpty else {
             for type in types {
                 finalSummary[type] = .failure(ImportError(action: .generic, type: .importContents, underlyingError: nil))
@@ -205,8 +194,8 @@ final class SafariArchiveImporter: DataImporter {
         }
 
         // Import bookmarks if requested and available
-        if types.contains(.bookmarks), let bookmarkFile = tempFiles.bookmarks {
-            let summary = try await importBookmarks(bookmarkFile, types, updateProgress, &cumulativeFraction)
+        if types.contains(.bookmarks), !contents.bookmarks.isEmpty {
+            let summary = try await importBookmarks(contents.bookmarks, types, updateProgress, &cumulativeFraction)
             finalSummary.merge(summary) { (_, new) in new }
         }
 
@@ -230,43 +219,29 @@ final class SafariArchiveImporter: DataImporter {
 
     // MARK: - Private
 
-    private struct TemporaryFiles {
-        let passwords: URL?
-        let bookmarks: URL?
-
-        var allFiles: [URL] {
-            [passwords, bookmarks].compactMap { $0 }
-        }
-    }
-
-    private func createTemporaryFiles(from contents: ImportArchiveContents, for types: Set<DataImport.DataType>) throws -> TemporaryFiles {
+    private func createTemporaryBookmarksFile(from contents: [String]) throws -> URL? {
         let tempDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
         let sessionDirectory = tempDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: sessionDirectory, withIntermediateDirectories: true)
 
-        var passwordFile: URL?
         var bookmarkFile: URL?
 
         // Create bookmark file if requested and content available
-        if types.contains(.bookmarks), !contents.bookmarks.isEmpty {
-            let htmlContent = contents.bookmarks.joined(separator: "\n")
+        if !contents.isEmpty {
+            let htmlContent = contents.joined(separator: "\n")
             bookmarkFile = sessionDirectory.appendingPathComponent("bookmarks.html")
             try htmlContent.write(to: bookmarkFile!, atomically: true, encoding: .utf8)
         }
 
-        // Passwords are handled directly via CSV content, no temp file needed
-
-        return TemporaryFiles(passwords: passwordFile, bookmarks: bookmarkFile)
+        return bookmarkFile
     }
 
-    private func cleanupTemporaryFiles(_ tempFiles: TemporaryFiles) {
+    private func cleanupTemporaryFile(_ tempFile: URL) {
         let fileManager = FileManager.default
         var parentDirectories = Set<URL>()
 
-        for file in tempFiles.allFiles {
-            parentDirectories.insert(file.deletingLastPathComponent())
-            try? fileManager.removeItem(at: file)
-        }
+        parentDirectories.insert(tempFile.deletingLastPathComponent())
+        try? fileManager.removeItem(at: tempFile)
 
         // Clean up parent directories if they're empty
         for directory in parentDirectories {
@@ -290,7 +265,18 @@ final class SafariArchiveImporter: DataImporter {
         return passwordResults
     }
 
-    private func importBookmarks(_ bookmarkFile: URL, _ types: Set<DataImport.DataType>, _ updateProgress: DataImportProgressCallback, _ cumulativeFraction: inout Double) async throws -> DataImportSummary {
+    private func importBookmarks(_ bookmarkContent: [String], _ types: Set<DataImport.DataType>, _ updateProgress: DataImportProgressCallback, _ cumulativeFraction: inout Double) async throws -> DataImportSummary {
+        let tempBookmarksFile: URL?
+        do {
+            tempBookmarksFile = try createTemporaryBookmarksFile(from: bookmarkContent)
+        } catch {
+            return [.bookmarks: .failure(ImportError(action: .generic, type: .createTempFiles, underlyingError: error))]
+        }
+
+        guard let bookmarkFile = tempBookmarksFile else {
+            return [.bookmarks: .failure(ImportError(action: .generic, type: .createTempFiles, underlyingError: nil))]
+        }
+
         let bookmarkHTMLImporter = BookmarkHTMLImporter(fileURL: bookmarkFile, bookmarkImporter: bookmarkImporter)
         let bookmarkTask = bookmarkHTMLImporter.importData(types: [.bookmarks])
         let currentTotalFraction = cumulativeFraction

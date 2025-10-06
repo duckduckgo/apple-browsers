@@ -309,19 +309,16 @@ extension PrivacyDashboardViewController {
     }
 
     private func calculateExpandedWebVitals(breakageAdditionalInfo: BreakageAdditionalInfo, privacyConfig: PrivacyConfiguration) async -> PerformanceMetrics? {
+        var expandedWebVitalsResult: PerformanceMetrics?
         if privacyConfig.isEnabled(featureKey: .breakageReporting) {
-            await withCheckedContinuation({ continuation in
-                guard let breakageReportingSubfeature = breakageAdditionalInfo.breakageReportingSubfeature else {
-                    continuation.resume(returning: ())
-                    return
-                }
-                breakageReportingSubfeature.notifyHandler { _ in
-                    continuation.resume(returning: ())
+            expandedWebVitalsResult = await withCheckedContinuation({ continuation in
+                guard let breakageReportingSubfeature = breakageAdditionalInfo.breakageReportingSubfeature else { continuation.resume(returning: nil); return }
+                breakageReportingSubfeature.notifyHandler { result in
+                    continuation.resume(returning: result)
                 }
             })
-            return breakageAdditionalInfo.breakageReportingSubfeature?.getExpandedPerformanceMetrics()
         }
-        return nil
+        return expandedWebVitalsResult
     }
 
     private func makeBrokenSiteReport(category: String = "",

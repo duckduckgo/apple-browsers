@@ -343,24 +343,20 @@ extension PrivacyDashboardViewController {
             })
         }
 
-
         return webVitalsResult
     }
 
     private func calculateExpandedWebVitals(breakageReportingSubfeature: BreakageReportingSubfeature?, privacyConfig: PrivacyConfiguration) async -> PerformanceMetrics? {
+        var expandedWebVitalsResult: PerformanceMetrics?
         if privacyConfig.isEnabled(featureKey: .breakageReporting) {
-            await withCheckedContinuation({ continuation in
-                guard let breakageReportingSubfeature else {
-                    continuation.resume(returning: ())
-                    return
-                }
-                breakageReportingSubfeature.notifyHandler { _ in
-                    continuation.resume(returning: ())
+            expandedWebVitalsResult = await withCheckedContinuation({ continuation in
+                guard let breakageReportingSubfeature else { continuation.resume(returning: nil); return }
+                breakageReportingSubfeature.notifyHandler { result in
+                    continuation.resume(returning: result)
                 }
             })
-            return breakageReportingSubfeature?.getExpandedPerformanceMetrics()
         }
-        return nil
+        return expandedWebVitalsResult
     }
 
     private func isPirEnabledAndUserHasProfile() async -> Bool {

@@ -48,9 +48,15 @@ final class BrokenSiteInfoTabExtension {
         }.store(in: &cancellables)
 
         contentScopeUserScriptPublisher.sink { [weak self] contentScopeUserScript in
-            guard let self, let performanceMetrics, let breakageReportingSubfeature else { return }
-            contentScopeUserScript.registerSubfeature(delegate: performanceMetrics)
-            contentScopeUserScript.registerSubfeature(delegate: breakageReportingSubfeature)
+            guard let self else { return }
+
+            if let performanceMetrics {
+                contentScopeUserScript.registerSubfeature(delegate: performanceMetrics)
+            }
+
+            if let breakageReportingSubfeature {
+                contentScopeUserScript.registerSubfeature(delegate: breakageReportingSubfeature)
+            }
         }.store(in: &cancellables)
     }
 

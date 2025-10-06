@@ -1412,6 +1412,8 @@ extension Pixel {
         
         // MARK: - App Intent
         case appIntentPerformed
+
+        case failedToRecreateTmpDir
     }
 
 }
@@ -2750,6 +2752,8 @@ extension Pixel.Event {
             
         // MARK: App Intent
         case .appIntentPerformed: return "m_app-intent_intent-performed"
+
+        case .failedToRecreateTmpDir: return "m_debug_failed-to-recreate-tmp-dir"
         }
     }
 }

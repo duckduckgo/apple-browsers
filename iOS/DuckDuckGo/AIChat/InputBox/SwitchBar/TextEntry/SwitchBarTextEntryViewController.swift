@@ -37,6 +37,20 @@ class SwitchBarTextEntryViewController: UIViewController {
         set { textEntryView.isExpandable = newValue }
     }
 
+    var isUsingIncreasedButtonPadding: Bool {
+        get { textEntryView.isUsingIncreasedButtonPadding }
+        set { textEntryView.isUsingIncreasedButtonPadding = newValue }
+    }
+
+    var currentTextSelection: UITextRange? {
+        get { textEntryView.currentTextSelection }
+        set { textEntryView.currentTextSelection = newValue }
+    }
+
+    var isFocused: Bool {
+        textEntryView.isFirstResponder
+    }
+
     // MARK: - Initialization
     init(handler: SwitchBarHandling) {
         self.handler = handler

@@ -34,8 +34,6 @@ import VPN
 final class MainViewController: NSViewController {
     private(set) lazy var mainView = MainView(frame: NSRect(x: 0, y: 0, width: 600, height: 660))
 
-    static let watchdog = Watchdog()
-
     let tabBarViewController: TabBarViewController
     let navigationBarViewController: NavigationBarViewController
     let browserTabViewController: BrowserTabViewController
@@ -753,7 +751,7 @@ extension MainViewController {
         // Handle Enter
         if event.keyCode == kVK_Return,
            navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true {
-            if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcut {
+            if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcutWhenTyping {
                 navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(self)
             } else {
                 navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()

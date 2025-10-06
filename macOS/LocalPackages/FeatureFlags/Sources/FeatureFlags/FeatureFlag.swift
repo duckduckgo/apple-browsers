@@ -438,7 +438,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncFeatureLevel3:
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
         case .themes:
-            return .internalOnly()
+            return .disabled
         case .appStoreUpdateFlow:
             return .remoteReleasable(.feature(.appStoreUpdateFlow))
         case .unifiedURLPredictor:

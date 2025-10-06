@@ -311,7 +311,7 @@ struct DataImportView: ModalView {
                 HStack {
                     Image(nsImage: DesignSystemImages.Color.Size16.exclamationHigh)
                     Text("Incorrect file type or format. Please select a different file.")
-                        .foregroundColor(Color(designSystemColor: .buttonsDeleteGhostText))
+                        .foregroundColor(Color(designSystemColor: .destructivePrimary))
                 }
                 .padding(.vertical, 20)
             }

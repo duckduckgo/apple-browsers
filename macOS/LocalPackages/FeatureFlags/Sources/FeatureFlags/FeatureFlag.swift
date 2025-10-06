@@ -298,8 +298,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .appStoreCheckForUpdatesFlow,
                 .unifiedURLPredictor,
                 .unifiedURLPredictorMetrics,
-                .subscriptionRestoreWidePixelMeasurement,
-                .webKitPerformanceReporting:
+                .webKitPerformanceReporting,
+                .subscriptionRestoreWidePixelMeasurement:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -453,6 +453,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         case .webKitPerformanceReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webKitPerformanceReporting))
+        case .subscriptionRestoreWidePixelMeasurement:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         }
     }
 }

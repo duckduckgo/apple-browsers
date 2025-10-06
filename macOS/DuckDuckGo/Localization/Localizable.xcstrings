@@ -37015,9 +37015,6 @@
         }
       }
     },
-    "Import from %@" : {
-
-    },
     "Import Passwords" : {
       "comment" : "Title of dialog with instruction for the user to import passwords from another browser",
       "localizations" : {
@@ -40377,7 +40374,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$d Open %2$@ **Safari → File → Export → Bookmarks**\n%3$d Select from **Bookmarks, Passwords, and Credit Cards → Export** and save the file\n%4$d Save the passwords file someplace you can find it (e.g., Desktop)\n%5$d Upload the exported ZIP file to DuckDuckGo"
+            "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Choose **Bookmarks, Passwords,** and/or **Credit Cards**, then click **Export**.\n%4$d Add the exported ZIP file below"
           }
         },
         "es" : {
@@ -41443,6 +41440,9 @@
           }
         }
       }
+    },
+    "Incorrect file type or format. Please select a different file." : {
+
     },
     "invite.dialog.get.started.button" : {
       "comment" : "Get Started button on an invite dialog",

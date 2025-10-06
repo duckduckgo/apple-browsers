@@ -100,6 +100,13 @@ final class AIChatSidebar: NSObject {
 
         setHidden()
     }
+
+#if DEBUG
+    /// Test-only method to set the hiddenAt date for testing session timeout scenarios
+    func updateHiddenAt(_ date: Date?) {
+        hiddenAt = date
+    }
+#endif
 }
 
 // MARK: - NSSecureCoding

@@ -23,6 +23,7 @@ import NewTabPage
 import os.log
 import Persistence
 import PixelKit
+import Common
 
 protocol NewTabPageAIChatShortcutSettingProviding: AnyObject {
     var isAIChatShortcutEnabled: Bool { get set }
@@ -145,7 +146,12 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     var showCustomizePopover: Bool {
         get {
-            if customizePopoverPresentationCount > Constants.maxNumberOfPopoverPresentations.rawValue {
+#if REVIEW
+            if AppVersion.runType == .uiTests {
+                return false
+            }
+#endif
+            if !shouldShowCustomizePopover {
                 return false
             } else {
                 return (try? keyValueStore.object(forKey: Key.showCustomizePopover.rawValue) as? Bool) ?? true
@@ -164,5 +170,11 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     var customizePopoverPresentationCount: Int {
         get { (try? keyValueStore.object(forKey: Key.customizePopoverPresentationCount.rawValue) as? Int) ?? 0 }
         set { try? keyValueStore.set(newValue, forKey: Key.customizePopoverPresentationCount.rawValue) }
+    }
+
+    private var shouldShowCustomizePopover: Bool {
+        customizePopoverPresentationCount <= Constants.maxNumberOfPopoverPresentations.rawValue &&
+        OnboardingActionsManager.isOnboardingFinished &&
+        Application.appDelegate.onboardingContextualDialogsManager.state == .onboardingCompleted
     }
 }

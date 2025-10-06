@@ -83,6 +83,7 @@ public enum PrivacyFeature: String {
     case htmlNewTabPage
     case daxEasterEggLogos
     case openFireWindowByDefault
+    case behaviorMetrics
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -114,6 +115,19 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Displays a restore session prompt after the app closes unexpectedly
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208994157946492?focus=true
     case restoreSessionPrompt
+
+    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
+    case willSoonDropBigSurSupport
+
+    /// Hang reporting feature flag
+    case hangReporting
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211260578559159?focus=true
+    case unifiedURLPredictor
+
+    /// Enable WebKit page load timing performance reporting
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/XXXXXXXXX?focus=true
+    case webKitPerformanceReporting
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -224,6 +238,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Adds context menu action for translating text selected on a website.
     case textTranslation
+
+    /// Adds toggle for controlling  'Ask Follow-Up Questions' setting.
+    case serpSettingsFollowUpQuestions
+
+    /// Rollout feature flag for entry point improvements
+    case improvements
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -284,6 +304,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncSetupBarcodeIsUrlBased
     case refactorOfSyncPreferences
     case newSyncEntryPoints
+    case newDeviceSyncPrompt
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {
@@ -306,7 +327,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProOnboardingPromotion
     case privacyProFreeTrial
     case paidAIChat
-    case subscriptionRebranding
     case vpnToolbarUpsell
     case supportsAlternateStripePaymentFlow
     case subscriptionPurchaseWidePixelMeasurement
@@ -414,4 +434,10 @@ public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .experimentalTheming }
 
     case visualUpdates // Rollout
+}
+
+public enum BehaviorMetricsSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .behaviorMetrics }
+
+    case behaviorMetricsEnabled
 }

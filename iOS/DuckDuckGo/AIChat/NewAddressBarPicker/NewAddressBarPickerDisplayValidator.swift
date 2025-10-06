@@ -69,6 +69,11 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
 
         Logger.addressBarPicker.info("Checking picker display conditions...")
 
+        /// Do not display during automated UI runs
+        /// https://app.asana.com/1/137249556945/project/414709148257752/task/1211474728965506?focus=true
+        guard !isRunningUITests else { return false }
+        Logger.addressBarPicker.info("✓ Not running UI Tests")
+
         guard isMainDuckAIEnabled else { return false }
         Logger.addressBarPicker.info("✓ Main DuckAI is enabled")
 
@@ -129,6 +134,10 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     private var isLaunchedFromExternalSource: Bool {
         launchSourceManager.source != .standard
     }
+
+    private var isRunningUITests: Bool {
+        ProcessInfo.isRunningUITests
+    }
 }
 
 // MARK: - Storage
@@ -155,5 +164,11 @@ struct NewAddressBarPickerStorage {
     
     func reset() {
         keyValueStore.removeObject(forKey: Key.hasBeenShown)
+    }
+}
+
+extension ProcessInfo {
+    static var isRunningUITests: Bool {
+        Self.processInfo.arguments.contains("isRunningUITests")
     }
 }

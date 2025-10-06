@@ -1,7 +1,7 @@
 //
 //  Update.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 //  limitations under the License.
 //
 
-#if SPARKLE
 import Foundation
-import Sparkle
 
+#if SPARKLE
+import Sparkle
+#endif
+
+/// Represents an available app update from any source (Sparkle, App Store, etc.)
 final class Update {
 
     enum UpdateType {
@@ -33,7 +36,7 @@ final class Update {
     let build: String
     let date: Date
     let releaseNotes: [String]
-    let releaseNotesPrivacyPro: [String]
+    let releaseNotesSubscription: [String]
     let needsLatestReleaseNote: Bool
 
     var title: String {
@@ -48,7 +51,7 @@ final class Update {
                   build: String,
                   date: Date,
                   releaseNotes: [String],
-                  releaseNotesPrivacyPro: [String],
+                  releaseNotesSubscription: [String],
                   needsLatestReleaseNote: Bool) {
         self.isInstalled = isInstalled
         self.type = type
@@ -56,19 +59,21 @@ final class Update {
         self.build = build
         self.date = date
         self.releaseNotes = releaseNotes
-        self.releaseNotesPrivacyPro = releaseNotesPrivacyPro
+        self.releaseNotesSubscription = releaseNotesSubscription
         self.needsLatestReleaseNote = needsLatestReleaseNote
     }
-
 }
 
+// MARK: - Sparkle Integration
+
+#if SPARKLE
 extension Update {
     convenience init(appcastItem: SUAppcastItem, isInstalled: Bool, needsLatestReleaseNote: Bool) {
         let isCritical = appcastItem.isCriticalUpdate
         let version = appcastItem.displayVersionString
         let build = appcastItem.versionString
         let date = appcastItem.date ?? Date()
-        let (releaseNotes, releaseNotesPrivacyPro) = ReleaseNotesParser.parseReleaseNotes(from: appcastItem.itemDescription)
+        let (releaseNotes, releaseNotesSubscription) = ReleaseNotesParser.parseReleaseNotes(from: appcastItem.itemDescription)
 
         self.init(isInstalled: isInstalled,
                   type: isCritical ? .critical : .regular,
@@ -76,9 +81,27 @@ extension Update {
                   build: build,
                   date: date,
                   releaseNotes: releaseNotes,
-                  releaseNotesPrivacyPro: releaseNotesPrivacyPro,
+                  releaseNotesSubscription: releaseNotesSubscription,
                   needsLatestReleaseNote: needsLatestReleaseNote)
     }
 }
-
 #endif
+
+// MARK: - App Store Integration
+
+extension Update {
+    convenience init(releaseMetadata: ReleaseMetadata, isInstalled: Bool) {
+        // Parse release date
+        let dateFormatter = ISO8601DateFormatter()
+        let date = dateFormatter.date(from: releaseMetadata.releaseDate) ?? Date()
+
+        self.init(isInstalled: isInstalled,
+                  type: releaseMetadata.isCritical ? .critical : .regular,
+                  version: releaseMetadata.latestVersion,
+                  build: String(releaseMetadata.buildNumber),
+                  date: date,
+                  releaseNotes: [], // App Store doesn't provide detailed release notes via this API
+                  releaseNotesSubscription: [],
+                  needsLatestReleaseNote: false)
+    }
+}

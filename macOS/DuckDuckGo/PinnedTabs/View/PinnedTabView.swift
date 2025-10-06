@@ -99,7 +99,7 @@ struct PinnedTabView: View, DropDelegate {
               ].first(where: { item.registeredTypeIdentifiers.contains($0) }) else { return false }
 
         item.loadItem(forTypeIdentifier: typeIdentifier) { (result, _) in
-            guard let url = result as? URL ?? ((result as? Data)?.utf8String() ?? result as? String).flatMap(URL.makeURL(from:)) else { return }
+            guard let url = result as? URL ?? ((result as? Data)?.utf8String() ?? result as? String).flatMap({ URL.makeURL(from: $0, enableMetrics: false) }) else { return }
             DispatchQueue.main.async {
                 model.setUrl(url, source: .userEntered(url.absoluteString, downloadRequested: false))
             }
@@ -141,6 +141,7 @@ struct PinnedTabView: View, DropDelegate {
             guard let model = model else { return }
             collectionModel?.duplicate(model)
         }
+        .disabled(model.content.canBeDuplicated == false)
 
         Button(UserText.unpinTab) { [weak collectionModel, weak model] in
             guard let model = model else { return }
@@ -172,6 +173,11 @@ struct PinnedTabView: View, DropDelegate {
                 model?.killWebContentProcess()
             } label: {
                 Text(verbatim: Tab.crashTabMenuOptionTitle)
+            }
+            Button { [weak model] in
+                model?.killWebContentProcessMultipleTimes()
+            } label: {
+                Text(verbatim: Tab.crashTabMenuOptionTitleMultipleTimes)
             }
         }
     }

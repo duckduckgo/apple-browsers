@@ -123,13 +123,19 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                 switch item.status {
                 case .ready:
                     if let record = records[email: item.email, attemptId: item.attemptId] {
-                        let brokerName = try? database.fetchBroker(with: record.brokerId)?.name ?? "Unknown"
-                        Logger.service.log("✉️ [EmailConfirmationDataService] Email confirmation link ready for profileQuery: \(record.profileQueryId, privacy: .public), broker: \(brokerName ?? "Unknown", privacy: .public) (\(record.brokerId, privacy: .public))")
+                        let broker = try? database.fetchBroker(with: record.brokerId)
+                        Logger.service.log("✉️ [EmailConfirmationDataService] Email confirmation link ready for profileQuery: \(record.profileQueryId, privacy: .public), broker: \(broker?.url ?? "unknown", privacy: .public) (\(record.brokerId, privacy: .public))")
                         try database.updateOptOutEmailConfirmationLink(item.confirmationLink,
                                                                        emailConfirmationLinkObtainedOnBEDate: item.linkObtainedOnBEDate,
                                                                        profileQueryId: record.profileQueryId,
                                                                        brokerId: record.brokerId,
                                                                        extractedProfileId: record.extractedProfileId)
+                        if let broker, let beDate = item.linkObtainedOnBEDate {
+                            let ageMs = Date().timeIntervalSince(beDate) * 1000
+                            pixelHandler?.fire(.serviceEmailConfirmationLinkClientReceived(dataBrokerURL: broker.url,
+                                                                                           brokerVersion: broker.version,
+                                                                                           linkAgeMs: ageMs))
+                        }
                     }
                 case .pending:
                     Logger.service.log("✉️ [EmailConfirmationDataService] Email still pending for: \(item.email, privacy: .public), attemptId: \(item.attemptId, privacy: .public)")
@@ -138,6 +144,12 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                     // These are unrecoverable errors and we'll need to set it up for future retry
                     Logger.service.error("✉️ [EmailConfirmationDataService] Email confirmation failed for \(item.email, privacy: .public): status=\(item.status.rawValue, privacy: .public), error=\(item.errorCode?.rawValue ?? "", privacy: .public)")
                     if let record = records[email: item.email, attemptId: item.attemptId] {
+                        if let broker = try? database.fetchBroker(with: record.brokerId) {
+                            pixelHandler?.fire(.serviceEmailConfirmationLinkBackendStatusError(dataBrokerURL: broker.url,
+                                                                                               brokerVersion: broker.version,
+                                                                                               status: item.status.rawValue,
+                                                                                               errorCode: item.errorCode?.rawValue))
+                        }
                         try database.deleteOptOutEmailConfirmation(profileQueryId: record.profileQueryId,
                                                                    brokerId: record.brokerId,
                                                                    extractedProfileId: record.extractedProfileId)

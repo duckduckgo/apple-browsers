@@ -1,0 +1,58 @@
+{
+    sync_recovery_prompt_displayed: {
+        description: 'Fired when the Sync Recovery prompt is presented',
+        owners: ['amddg44'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+    sync_recovery_prompt_sync_with_another_device_tapped: {
+        description: 'Fired when user taps Sync with Another Device button on the Sync Recovery prompt',
+        owners: ['amddg44'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+    sync_recovery_prompt_show_alternatives_tapped: {
+        description: 'Fired when user taps Show Alternatives button on the Sync Recovery prompt',
+        owners: ['amddg44'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+    sync_recovery_prompt_dismissed: {
+        description: 'Fired when the Sync Recovery prompt is dismissed',
+        owners: ['amddg44'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+    sync_recovery_alternative_displayed: {
+        description: 'Fired when the Sync Recovery alternative prompt is presented',
+        owners: ['amddg44'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+    sync_recovery_alternative_scan_recovery_code_tapped: {
+        description: 'Fired when user taps Scan Recovery Code button on the Sync Recovery alternative prompt',
+        owners: ['amddg44'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+    sync_recovery_alternative_backup_this_device_tapped: {
+        description: 'Fired when user taps Backup This Device button on the Sync Recovery alternative prompt',
+        owners: ['amddg44'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+    sync_recovery_alternative_dismissed: {
+        description: 'Fired when the Sync Recovery alternative prompt is dismissed',
+        owners: ['amddg44'],
+        triggers: ['other'],
+        suffixes: ['platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
+}

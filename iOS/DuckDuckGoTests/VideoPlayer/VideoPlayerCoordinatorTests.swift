@@ -221,19 +221,20 @@ final class VideoPlayerCoordinatorTests {
     }
 
     @Test(
-        "Check Audio Session Is Configured When Picture In Picture Required",
+        "Check Audio Session Is Configured When Video Is Loaded And Picture In Picture Required",
         arguments: [
             VideoPlayerConfiguration(allowsPictureInPicturePlayback: true),
             VideoPlayerConfiguration(allowsPictureInPicturePlayback: false)
         ]
 
     )
-    func whenPictureInPictureRequiredThenConfigureAudioSession(configuration: VideoPlayerConfiguration) {
+    func whenVideoLoadAndPictureInPictureRequiredThenConfigureAudioSession(configuration: VideoPlayerConfiguration) async {
         // GIVEN
+        let sut = makeSUT(configuration: configuration)
         #expect(!mockAudioSessionManager.didCallSetPlaybackSessionActive)
 
         // WHEN
-        makeSUT(configuration: configuration)
+        await sut.loadAsset(url: videoURL, shouldLoopVideo: false).value
 
         // THEN
         #expect(mockAudioSessionManager.didCallSetPlaybackSessionActive == configuration.allowsPictureInPicturePlayback)

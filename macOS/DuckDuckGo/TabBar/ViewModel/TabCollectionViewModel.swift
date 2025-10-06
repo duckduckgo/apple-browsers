@@ -175,7 +175,6 @@ final class TabCollectionViewModel: NSObject {
         subscribeToTabs()
         subscribeToPinnedTabsManager()
         subscribeToPinnedTabsSettingChanged()
-        subscribeToSelectedTab()
 
         if tabCollection.tabs.isEmpty {
             appendNewTab(with: homePage)
@@ -215,32 +214,6 @@ final class TabCollectionViewModel: NSObject {
             viewModel.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         }
 #endif
-    }
-
-    var selectedTabCancellable: AnyCancellable?
-    private func subscribeToSelectedTab() {
-        selectedTabCancellable = $selectedTabViewModel
-            .compactMap { $0 }
-            .sink { [weak self] model in
-                self?.subscribeToTabError(model)
-            }
-    }
-
-    var selectedTabErrorCancellable: AnyCancellable?
-    private func subscribeToTabError(_ model: TabViewModel) {
-        selectedTabErrorCancellable = model.tab.$error
-            .compactMap { $0 }
-            .sink { [weak self] error in
-                self?.fireErrorPageShownPixel(error)
-        }
-    }
-
-    private func fireErrorPageShownPixel(_ error: WKError) {
-        if error.code == WKError.Code.webContentProcessTerminated {
-            PixelKit.fire(GeneralPixel.errorPageShownWebkitTermination)
-        } else {
-            PixelKit.fire(GeneralPixel.errorPageShownOther)
-        }
     }
 
     func setUpLazyLoadingIfNeeded() {
@@ -305,17 +278,16 @@ final class TabCollectionViewModel: NSObject {
             return true
         }
 
-        guard let index = tabCollection.tabs.firstIndex(where: { $0.content.matchesDisplayableTab(content) })
+        guard let index = indexInAllTabs(where: { $0.content.matchesDisplayableTab(content) }),
+              let tab = tab(at: index),
+              select(at: index)
         else {
             return false
         }
 
-        if selectUnpinnedTab(at: index) {
-            tabCollection.tabs[index].setContent(content)
-            delegate?.tabCollectionViewModel(self, didSelectAt: index)
-            return true
-        }
-        return false
+        tab.setContent(content)
+
+        return true
     }
 
     func selectNext() {

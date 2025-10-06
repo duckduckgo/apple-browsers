@@ -55,7 +55,7 @@ struct SubscriptionSettingsView: View {
     var body: some View {
         optionsView
             .onFirstAppear {
-                Pixel.fire(pixel: .privacyProSubscriptionSettings, debounce: 1)
+                Pixel.fire(pixel: .ddgSubscriptionSettings, debounce: 1)
             }
             .navigationBarTitleDisplayMode(.inline)
             .onChange(of: settingsViewModel.state.subscription.shouldDisplayRestoreSubscriptionError) { value in
@@ -85,7 +85,7 @@ struct SubscriptionSettingsView: View {
     }
 
     private var devicesSection: some View {
-        Section(header: Text(UserText.subscriptionDevicesSectionHeader(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)),
+        Section(header: Text(UserText.subscriptionDevicesSectionHeader),
                 footer: devicesSectionFooter) {
 
             if let email = viewModel.state.subscriptionEmail, !email.isEmpty {
@@ -131,7 +131,7 @@ struct SubscriptionSettingsView: View {
 
     private var devicesSectionFooter: some View {
         let hasEmail = !(viewModel.state.subscriptionEmail ?? "").isEmpty
-        let footerText = hasEmail ? UserText.subscriptionDevicesSectionWithEmailFooter(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled) : UserText.subscriptionDevicesSectionNoEmailFooter(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)
+        let footerText = hasEmail ? UserText.subscriptionDevicesSectionWithEmailFooter : UserText.subscriptionDevicesSectionNoEmailFooter
         return Text(.init("\(footerText)")) // required to parse markdown formatting
             .environment(\.openURL, OpenURLAction { _ in
                 viewModel.displayLearnMoreView(true)
@@ -167,7 +167,7 @@ struct SubscriptionSettingsView: View {
                         Task {
                             if active {
                                 viewModel.manageSubscription()
-                                Pixel.fire(pixel: .privacyProSubscriptionManagementPlanBilling, debounce: 1)
+                                Pixel.fire(pixel: .ddgSubscriptionManagementPlanBilling, debounce: 1)
                             } else {
                                 viewPlans?()
                             }
@@ -208,10 +208,10 @@ struct SubscriptionSettingsView: View {
         .alert(isPresented: $isShowingRemovalNotice) {
             Alert(
                 title: Text(UserText.subscriptionRemoveFromDeviceConfirmTitle),
-                message: Text(UserText.subscriptionRemoveFromDeviceConfirmText(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)),
+                message: Text(UserText.subscriptionRemoveFromDeviceConfirmText),
                 primaryButton: .cancel(Text(UserText.subscriptionRemoveCancel)) {},
                 secondaryButton: .destructive(Text(UserText.subscriptionRemove)) {
-                    Pixel.fire(pixel: .privacyProSubscriptionManagementRemoval)
+                    Pixel.fire(pixel: .ddgSubscriptionManagementRemoval)
                     viewModel.removeSubscription()
                     dismiss()
                 }
@@ -260,7 +260,7 @@ struct SubscriptionSettingsView: View {
             }
         } else {
             Section(header: Text(UserText.subscriptionHelpAndSupport),
-                    footer: Text(UserText.subscriptionFAQFooter(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled))) {
+                    footer: Text(UserText.subscriptionFAQFooter)) {
                 faqButton
             }
         }
@@ -400,7 +400,7 @@ struct SubscriptionSettingsView: View {
         .onChange(of: isShowingManageEmailView) { value in
             if value {
                 if let email = viewModel.state.subscriptionEmail, !email.isEmpty {
-                    Pixel.fire(pixel: .privacyProSubscriptionManagementEmail, debounce: 1)
+                    Pixel.fire(pixel: .ddgSubscriptionManagementEmail, debounce: 1)
                 }
             }
         }
@@ -469,7 +469,7 @@ struct SubscriptionSettingsViewV2: View {
     var body: some View {
         optionsView
             .onFirstAppear {
-                Pixel.fire(pixel: .privacyProSubscriptionSettings, debounce: 1)
+                Pixel.fire(pixel: .ddgSubscriptionSettings, debounce: 1)
             }
             .navigationBarTitleDisplayMode(.inline)
             .onChange(of: settingsViewModel.state.subscription.shouldDisplayRestoreSubscriptionError) { value in
@@ -499,7 +499,7 @@ struct SubscriptionSettingsViewV2: View {
     }
 
     private var devicesSection: some View {
-        Section(header: Text(UserText.subscriptionDevicesSectionHeader(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)),
+        Section(header: Text(UserText.subscriptionDevicesSectionHeader),
                 footer: devicesSectionFooter) {
 
             if let email = viewModel.state.subscriptionEmail, !email.isEmpty {
@@ -521,7 +521,7 @@ struct SubscriptionSettingsViewV2: View {
 
     private var devicesSectionFooter: some View {
         let hasEmail = !(viewModel.state.subscriptionEmail ?? "").isEmpty
-        let footerText = hasEmail ? UserText.subscriptionDevicesSectionWithEmailFooter(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled) : UserText.subscriptionDevicesSectionNoEmailFooter(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)
+        let footerText = hasEmail ? UserText.subscriptionDevicesSectionWithEmailFooter : UserText.subscriptionDevicesSectionNoEmailFooter
         return Text(.init("\(footerText)")) // required to parse markdown formatting
             .environment(\.openURL, OpenURLAction { _ in
                 viewModel.displayLearnMoreView(true)
@@ -557,7 +557,7 @@ struct SubscriptionSettingsViewV2: View {
                         Task {
                             if active {
                                 viewModel.manageSubscription()
-                                Pixel.fire(pixel: .privacyProSubscriptionManagementPlanBilling, debounce: 1)
+                                Pixel.fire(pixel: .ddgSubscriptionManagementPlanBilling, debounce: 1)
                             } else {
                                 viewPlans?()
                             }
@@ -598,10 +598,10 @@ struct SubscriptionSettingsViewV2: View {
         .alert(isPresented: $isShowingRemovalNotice) {
             Alert(
                 title: Text(UserText.subscriptionRemoveFromDeviceConfirmTitle),
-                message: Text(UserText.subscriptionRemoveFromDeviceConfirmText(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)),
+                message: Text(UserText.subscriptionRemoveFromDeviceConfirmText),
                 primaryButton: .cancel(Text(UserText.subscriptionRemoveCancel)) {},
                 secondaryButton: .destructive(Text(UserText.subscriptionRemove)) {
-                    Pixel.fire(pixel: .privacyProSubscriptionManagementRemoval)
+                    Pixel.fire(pixel: .ddgSubscriptionManagementRemoval)
                     viewModel.removeSubscription()
                     dismiss()
                 }
@@ -650,7 +650,7 @@ struct SubscriptionSettingsViewV2: View {
             }
         } else {
             Section(header: Text(UserText.subscriptionHelpAndSupport),
-                    footer: Text(UserText.subscriptionFAQFooter(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled))) {
+                    footer: Text(UserText.subscriptionFAQFooter)) {
                 faqButton
             }
         }
@@ -724,7 +724,7 @@ struct SubscriptionSettingsViewV2: View {
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 emailFlow: .manageEmailFlow,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
-                widePixel: AppDependencyProvider.shared.widePixel,
+                wideEvent: AppDependencyProvider.shared.wideEvent,
                 onDisappear: {
                     Task {
                         await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
@@ -743,7 +743,7 @@ struct SubscriptionSettingsViewV2: View {
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 emailFlow: .activationFlow,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
-                widePixel: AppDependencyProvider.shared.widePixel,
+                wideEvent: AppDependencyProvider.shared.wideEvent,
                 onDisappear: {
                     Task {
                         await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
@@ -848,7 +848,7 @@ struct SubscriptionSettingsViewV2: View {
         .onChange(of: isShowingManageEmailView) { value in
             if value {
                 if let email = viewModel.state.subscriptionEmail, !email.isEmpty {
-                    Pixel.fire(pixel: .privacyProSubscriptionManagementEmail, debounce: 1)
+                    Pixel.fire(pixel: .ddgSubscriptionManagementEmail, debounce: 1)
                 }
             }
         }

@@ -265,7 +265,7 @@ public typealias AuthorisationCode = String
 
 /// https://www.rfc-editor.org/rfc/rfc6749#section-4.2.2
 public struct OAuthTokenResponse: Decodable {
-    /// JWT with encoded account details and entitlements. Can be verified using tokens published on the /api/auth/v2/.well-known/jwks.json endpoint. Used to gain access to Privacy Pro BE service resources (VPN, PIR, ITR). Expires after 4 hours, but can be refreshed with a refresh token.
+    /// JWT with encoded account details and entitlements. Can be verified using tokens published on the /api/auth/v2/.well-known/jwks.json endpoint. Used to gain access to Subscription BE service resources (VPN, PIR, ITR). Expires after 4 hours, but can be refreshed with a refresh token.
     let accessToken: String
     /// JWT which can be used to get a new access token after the access token expires. Expires after 30 days. Can only be used once. Re-using a refresh token will invalidate any access tokens already issued from that refresh token.
     let refreshToken: String

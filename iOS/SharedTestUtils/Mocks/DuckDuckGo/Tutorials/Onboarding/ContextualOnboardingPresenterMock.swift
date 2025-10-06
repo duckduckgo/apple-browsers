@@ -37,7 +37,7 @@ final class ContextualOnboardingPresenterMock: ContextualOnboardingPresenting {
     }
 }
 
-final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyProPromotionCoordinating, ContextualDaxDialogDisabling {
+final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, SubscriptionPromotionCoordinating, ContextualDaxDialogDisabling {
     
     var expectation: XCTestExpectation?
     private(set) var didCallSetTryAnonymousSearchMessageSeen = false
@@ -56,7 +56,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyPro
     var shouldShowPrivacyButtonPulse: Bool = false
     var isShowingSearchSuggestions: Bool = false
     var isShowingSitesSuggestions: Bool = false
-    var isShowingPrivacyProPromotion: Bool = false
+    var isShowingSubscriptionPromotion: Bool = false
     var shouldShowFireButtonPulse: Bool = false
     var isAddFavoriteFlow: Bool = false
 
@@ -97,7 +97,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyPro
         didCallClearedBrowserData = true
     }
 
-    var privacyProPromotionDialogSeen: Bool = false
+    var subscriptionPromotionDialogSeen: Bool = false
 
     func disableContextualDaxDialogs() {
         didCallDisableDaxDialogs = true
@@ -146,9 +146,9 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
 
     var isAddFavoriteFlow: Bool = false
 
-    var isShowingPrivacyProPromotion: Bool = false
+    var isShowingSubscriptionPromotion: Bool = false
 
-    var privacyProPromotionDialogSeen: Bool = false
+    var subscriptionPromotionDialogSeen: Bool = false
 
     func setTryAnonymousSearchMessageSeen() { }
 

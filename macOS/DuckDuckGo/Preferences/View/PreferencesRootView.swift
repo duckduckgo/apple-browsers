@@ -56,15 +56,18 @@ enum Preferences {
         let subscriptionManager: SubscriptionManager
         let subscriptionUIHandler: SubscriptionUIHandling
         let visualStyle: VisualStyleProviding
+        let featureFlagger: FeatureFlagger
 
         init(model: PreferencesSidebarModel,
              subscriptionManager: SubscriptionManager,
              subscriptionUIHandler: SubscriptionUIHandling,
-             visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+             visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
+             featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
             self.visualStyle = visualStyle
+            self.featureFlagger = featureFlagger
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
@@ -118,11 +121,11 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared, isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
                 case .dataClearing:
                     DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences,
                                      startupModel: NSApp.delegateTyped.startupPreferences)
-                case .privacyPro:
+                case .subscription:
                     SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:
                     VPNView(model: VPNPreferencesModel(), status: model.vpnProtectionStatus())
@@ -159,7 +162,7 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .didClickIHaveASubscription:
-                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
+                        PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseClick)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     }
@@ -170,7 +173,7 @@ enum Preferences {
                 openActivateViaEmailURL: {
                     let url = subscriptionManager.url(for: .activationFlow)
                     Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
-                    PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
+                    PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {
                         Task {
@@ -184,7 +187,7 @@ enum Preferences {
                                 uiHandler: subscriptionUIHandler)
                             await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
 
-                            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
+                            PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
                         }
                     }
                 })
@@ -200,12 +203,12 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .openPIR:
-                        PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
+                        PixelKit.fire(SubscriptionPixel.subscriptionPersonalInformationRemovalSettings)
                         Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
-                        PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettingsImpression)
+                        PixelKit.fire(SubscriptionPixel.subscriptionPersonalInformationRemovalSettingsImpression)
                     }
                 }
             }
@@ -219,13 +222,13 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .openITR:
-                        PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
+                        PixelKit.fire(SubscriptionPixel.subscriptionIdentityRestorationSettings)
                         let url = subscriptionManager.url(for: .identityTheftRestoration)
                         Application.appDelegate.windowControllersManager.showTab(with: .identityTheftRestoration(url))
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenITRPreferencePane:
-                        PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettingsImpression)
+                        PixelKit.fire(SubscriptionPixel.subscriptionIdentityRestorationSettingsImpression)
                     }
                 }
             }
@@ -249,13 +252,13 @@ enum Preferences {
                     case .openCustomerPortalURL(let url):
                         Application.appDelegate.windowControllersManager.showTab(with: .url(url, source: .ui))
                     case .didClickManageEmail:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
+                        PixelKit.fire(SubscriptionPixel.subscriptionManagementEmail, frequency: .legacyDailyAndCount)
                     case .didOpenSubscriptionSettings:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                        PixelKit.fire(SubscriptionPixel.subscriptionSettings)
                     case .didClickChangePlanOrBilling:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementPlanBilling)
+                        PixelKit.fire(SubscriptionPixel.subscriptionManagementPlanBilling)
                     case .didClickRemoveSubscription:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementRemoval)
+                        PixelKit.fire(SubscriptionPixel.subscriptionManagementRemoval)
                     }
                 }
             }
@@ -362,10 +365,10 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared, isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
                 case .dataClearing:
                     DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences, startupModel: NSApp.delegateTyped.startupPreferences)
-                case .privacyPro:
+                case .subscription:
                     SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:
                     VPNView(model: VPNPreferencesModel(), status: model.vpnProtectionStatus())
@@ -376,7 +379,7 @@ enum Preferences {
                 case .identityTheftRestoration:
                     SubscriptionUI.PreferencesIdentityTheftRestorationView(model: identityTheftRestorationModel!)
                 case .subscriptionSettings:
-                    SubscriptionUI.PreferencesSubscriptionSettingsViewV2(model: subscriptionSettingsModel!, isSubscriptionRebrandingOn: { featureFlagger.isFeatureOn(.subscriptionRebranding) }, isPaidAIChatOn: { featureFlagger.isFeatureOn(.paidAIChat) })
+                    SubscriptionUI.PreferencesSubscriptionSettingsViewV2(model: subscriptionSettingsModel!, isPaidAIChatOn: { featureFlagger.isFeatureOn(.paidAIChat) })
                 case .autofill:
                     AutofillView(model: AutofillPreferencesModel())
                 case .accessibility:
@@ -402,7 +405,7 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .didClickIHaveASubscription:
-                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
+                        PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseClick)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     }
@@ -413,7 +416,7 @@ enum Preferences {
                 openActivateViaEmailURL: {
                     let url = subscriptionManager.url(for: .activationFlow)
                     showTab(.subscription(url))
-                    PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
+                    PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {
                         Task {
@@ -424,7 +427,7 @@ enum Preferences {
                                                                                                      uiHandler: subscriptionUIHandler)
                             await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
 
-                            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
+                            PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
                         }
                     }
                 })
@@ -440,12 +443,12 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .openPIR:
-                        PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
+                        PixelKit.fire(SubscriptionPixel.subscriptionPersonalInformationRemovalSettings)
                         showTab(.dataBrokerProtection)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
-                        PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettingsImpression)
+                        PixelKit.fire(SubscriptionPixel.subscriptionPersonalInformationRemovalSettingsImpression)
                     }
                 }
             }
@@ -459,33 +462,36 @@ enum Preferences {
                  DispatchQueue.main.async {
                      switch event {
                      case .openAIC:
-                         PixelKit.fire(PrivacyProPixel.privacyProPaidAIChatSettings)
+                         PixelKit.fire(SubscriptionPixel.subscriptionPaidAIChatSettings)
                          let aiChatURL = aiChatURLSettings.aiChatURL
                          showTab(.url(aiChatURL, source: .ui))
                      case .openURL(let url):
                          openURL(subscriptionURL: url)
                      case .didOpenAICPreferencePane:
-                         PixelKit.fire(PrivacyProPixel.privacyProPaidAIChatSettingsImpression)
+                         PixelKit.fire(SubscriptionPixel.subscriptionPaidAIChatSettingsImpression)
+                     case .openAIFeaturesSettings:
+                         model.selectPane(.aiChat)
                      }
                  }
              }
 
-             return PreferencesPaidAIChatModel(userEventHandler: userEventHandler,
-                                                             statusUpdates: model.paidAIChatUpdates)
-         }
+            return PreferencesPaidAIChatModel(userEventHandler: userEventHandler,
+                                              statusUpdates: model.paidAIChatUpdates,
+                                              aiFeaturesEnabledUpdates: model.aiFeaturesEnabledUpdates)
+        }
 
         private func makeIdentityTheftRestorationViewModel() -> PreferencesIdentityTheftRestorationModel {
             let userEventHandler: (PreferencesIdentityTheftRestorationModel.UserEvent) -> Void = { event in
                 DispatchQueue.main.async {
                     switch event {
                     case .openITR:
-                        PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
+                        PixelKit.fire(SubscriptionPixel.subscriptionIdentityRestorationSettings)
                         let url = subscriptionManager.url(for: .identityTheftRestoration)
                         showTab(.identityTheftRestoration(url))
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenITRPreferencePane:
-                        PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettingsImpression)
+                        PixelKit.fire(SubscriptionPixel.subscriptionIdentityRestorationSettingsImpression)
                     }
                 }
             }
@@ -509,13 +515,13 @@ enum Preferences {
                     case .openCustomerPortalURL(let url):
                         showTab(.url(url, source: .ui))
                     case .didClickManageEmail:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
+                        PixelKit.fire(SubscriptionPixel.subscriptionManagementEmail, frequency: .legacyDailyAndCount)
                     case .didOpenSubscriptionSettings:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                        PixelKit.fire(SubscriptionPixel.subscriptionSettings)
                     case .didClickChangePlanOrBilling:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementPlanBilling)
+                        PixelKit.fire(SubscriptionPixel.subscriptionManagementPlanBilling)
                     case .didClickRemoveSubscription:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementRemoval)
+                        PixelKit.fire(SubscriptionPixel.subscriptionManagementRemoval)
                     }
                 }
             }
@@ -523,8 +529,7 @@ enum Preferences {
             return PreferencesSubscriptionSettingsModelV2(userEventHandler: userEventHandler,
                                                           subscriptionManager: subscriptionManager,
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
-                                                          keyValueStore: NSApp.delegateTyped.keyValueStore,
-                                                          isRebrandingOn: { featureFlagger.isFeatureOn(.subscriptionRebranding) })
+                                                          keyValueStore: NSApp.delegateTyped.keyValueStore)
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {
@@ -535,7 +540,7 @@ enum Preferences {
                 showTab(.subscription(url))
 
                 if subscriptionURL == .purchase {
-                    PixelKit.fire(PrivacyProPixel.privacyProOfferScreenImpression)
+                    PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression)
                 }
             }
         }

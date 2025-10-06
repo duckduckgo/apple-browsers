@@ -21,6 +21,21 @@ import Foundation
 import BrowserServicesKit
 import RemoteMessaging
 import AIChat
+import OSLog
+import WebKit
+
+// MARK: - Response Types
+
+/// Response structure for openKeyboard request
+struct OpenKeyboardResponse: Encodable {
+    let success: Bool
+    let error: String?
+
+    init(success: Bool, error: String? = nil) {
+        self.success = success
+        self.error = error
+    }
+}
 
 protocol AIChatMetricReportingHandling {
     func didReportMetric(_ metric: AIChatMetric)
@@ -37,6 +52,7 @@ protocol AIChatUserScriptHandling {
     func hideChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
+    func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -81,7 +97,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 let metric = try decoder.decode(AIChatMetric.self, from: jsonData)
                 metricReportingHandler?.didReportMetric(metric)
             } catch {
-                print("Failed to decode JSON: \(error)")
+                Logger.aiChat.debug("Failed to decode metric JSON in AIChatUserScript: \(error)")
             }
         }
         return nil
@@ -129,5 +145,48 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {
         self.metricReportingHandler = metricHandler
+    }
+
+    // Workaround for WKWebView: see https://app.asana.com/1/137249556945/task/1211361207345641/comment/1211365575147531?focus=true
+    func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable? {
+        guard let paramsDict = params as? [String: Any] else {
+            Logger.aiChat.error("Invalid params format for openKeyboard")
+            return OpenKeyboardResponse(success: false, error: "Invalid parameters format")
+        }
+        guard let cssSelector = paramsDict["selector"] as? String, !cssSelector.isEmpty else {
+            Logger.aiChat.error("Missing or empty CSS selector for openKeyboard")
+            return OpenKeyboardResponse(success: false, error: "Missing or empty CSS selector")
+        }
+
+        guard let webView = webView else {
+            Logger.aiChat.error("WebView not available for openKeyboard")
+            return OpenKeyboardResponse(success: false, error: "WebView not available")
+        }
+
+        return await withCheckedContinuation { continuation in
+            DispatchQueue.main.async {
+                let javascript = """
+                (function() {
+                    try {
+                        const element = document.querySelector('\(cssSelector)');
+                        element?.focus?.();
+                        return true;
+                    } catch (error) {
+                        console.error('Error focusing element:', error);
+                        return false;
+                    }
+                })();
+                """
+
+                webView.evaluateJavaScript(javascript) { _, error in
+                    if let error = error {
+                        Logger.aiChat.error("Failed to execute openKeyboard JavaScript: \(error.localizedDescription)")
+                        continuation.resume(returning: OpenKeyboardResponse(success: false, error: "JavaScript execution failed"))
+                    } else {
+                        continuation.resume(returning: OpenKeyboardResponse(success: true))
+                    }
+                }
+            }
+        }
     }
 }

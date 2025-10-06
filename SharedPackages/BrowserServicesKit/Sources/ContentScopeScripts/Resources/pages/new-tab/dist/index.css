@@ -154,6 +154,8 @@ body {
   user-select: none;
   -webkit-user-select: none;
   cursor: default;
+  -webkit-backdrop-filter: blur(0px);
+  backdrop-filter: blur(0px);
 }
 :root[data-fatal-error] body {
   user-select: auto;
@@ -1510,6 +1512,7 @@ body:not([data-platform-name]) .Button_button:active {
   border: none;
   box-sizing: content-box;
   color: var(--ntp-text-primary);
+  line-height: 16px;
   max-height: 10lh;
   padding: var(--sp-3) var(--sp-3) 0;
   resize: none;

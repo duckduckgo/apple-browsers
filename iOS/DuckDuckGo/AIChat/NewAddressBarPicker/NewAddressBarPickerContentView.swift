@@ -61,11 +61,20 @@ private struct ContentView: View {
                 topSpacer
                 headerView
                     .frame(width: 300)
-                    .padding(.top, 64)
+                    .padding(.top, topPadding)
                 Spacer()
                 AnimationView()
             }
             .padding(.horizontal)
+        }
+    }
+
+    /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1211457477666070?focus=true
+    private var topPadding: CGFloat {
+        if #available(iOS 26.0, *), UIDevice.current.userInterfaceIdiom == .pad {
+            return 25
+        } else {
+            return 64
         }
     }
 

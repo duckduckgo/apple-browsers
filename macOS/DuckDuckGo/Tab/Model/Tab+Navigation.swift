@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Combine
 import Common
 import Foundation
@@ -45,7 +46,7 @@ extension Tab: NavigationResponder {
             .weak(nullable: self.aiChat),
 
             .weak(nullable: self.navigationHotkeyHandler),
-            .strong(NavigationPixelNavigationResponder()),
+            .strong(NavigationPixelNavigationResponder(featureFlagger: featureFlagger)),
             .weak(nullable: self.brokenSiteInfo),
             .weak(nullable: self.tabCrashRecovery),
 
@@ -125,7 +126,7 @@ extension Tab: NavigationResponder {
 
     var redirectNavigationResponder: RedirectNavigationResponder {
         let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
-        let redirectManager = PrivacyProSubscriptionRedirectManager(subscriptionManager: subscriptionManager,
+        let redirectManager = SubscriptionRedirectManager(subscriptionManager: subscriptionManager,
                                                                     baseURL: subscriptionManager.url(for: .baseURL))
         return RedirectNavigationResponder(redirectManager: redirectManager)
     }

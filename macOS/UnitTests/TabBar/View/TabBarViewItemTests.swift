@@ -236,7 +236,7 @@ final class TabBarViewItemTests: XCTestCase {
     }
 
     @MainActor
-    func testSubscriptionTabDisabledItems() {
+    func testSubscriptionTabAllowedItems() {
         // Update url
         let url = SubscriptionURL.purchase.subscriptionURL(environment: .production)
         let tab = Tab(content: .subscription(url))
@@ -250,7 +250,7 @@ final class TabBarViewItemTests: XCTestCase {
         XCTAssertFalse(duplicateItem?.isEnabled ?? true)
 
         let pinItem = menu.items.first { $0.title == UserText.pinTab }
-        XCTAssertFalse(pinItem?.isEnabled ?? true)
+        XCTAssertTrue(pinItem?.isEnabled ?? false)
     }
 
     func testWhenCanBookmarkAllOpenTabsThenBookmarkAllOpenTabsItemIsEnabled() throws {

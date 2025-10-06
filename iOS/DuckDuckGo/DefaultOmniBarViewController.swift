@@ -198,7 +198,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
         editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
         editingStateViewController.automaticallySelectsTextOnAppear = shouldAutoSelectText
-        
+
         switchBarHandler.clearButtonTappedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
@@ -286,12 +286,12 @@ extension DefaultOmniBarViewController: UIViewControllerTransitioningDelegate {
     func animationController(forPresented presented: UIViewController,
                              presenting: UIViewController,
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        return OmniBarEditingStateTransition(isPresenting: true,
-                                             addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+        UniversalOmniBarEditingStateTransition(isPresenting: true,
+                                               addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
     }
 
     func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        return OmniBarEditingStateTransition(isPresenting: false,
-                                             addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+        UniversalOmniBarEditingStateTransition(isPresenting: false,
+                                               addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
     }
 }

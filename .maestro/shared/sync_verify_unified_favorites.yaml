@@ -13,8 +13,8 @@ appId: com.duckduckgo.mobile.ios
         index: 1 
     commands:
         - tapOn:
-            rightOf: 
-              id: "UnifiedFavoritesToggle"
+            text: "0"
+            index: 1
 - tapOn: Settings
 - tapOn: Done
 - tapOn: Bookmarks

@@ -38,6 +38,9 @@ class SwitchBarTextEntryView: UIView {
         // Placeholder positioning
         static let placeholderTopOffset: CGFloat = 12
         static let placeholderHorizontalOffset: CGFloat = 16
+
+        // Increased buttons spacing
+        static let additionalVerticalButtonsPadding: CGFloat = 6
     }
 
     private let handler: SwitchBarHandling
@@ -56,6 +59,7 @@ class SwitchBarTextEntryView: UIView {
     private var cancellables = Set<AnyCancellable>()
 
     private var heightConstraint: NSLayoutConstraint?
+    private var buttonsTrailingConstraint: NSLayoutConstraint?
 
     var hasBeenInteractedWith = false
     var isURL: Bool {
@@ -67,6 +71,21 @@ class SwitchBarTextEntryView: UIView {
         didSet {
             updateTextViewHeight()
         }
+    }
+
+    var isUsingIncreasedButtonPadding: Bool = false {
+        didSet {
+            updateButtonsPadding()
+        }
+    }
+
+    var currentTextSelection: UITextRange? {
+        get { textView.selectedTextRange }
+        set { textView.selectedTextRange = newValue }
+    }
+
+    override var isFirstResponder: Bool {
+        textView.isFirstResponder
     }
 
     // MARK: - Initialization
@@ -83,7 +102,10 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func setupView() {
-        textView.font = UIFont.systemFont(ofSize: Constants.fontSize)
+        let fontMetrics = UIFontMetrics(forTextStyle: .body)
+        let textFont = fontMetrics.scaledFont(for: UIFont.systemFont(ofSize: Constants.fontSize))
+        textView.font = textFont
+        textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = UIColor.clear
         textView.tintColor = UIColor(designSystemColor: .accent)
         textView.textColor = UIColor(designSystemColor: .textPrimary)
@@ -93,7 +115,9 @@ class SwitchBarTextEntryView: UIView {
         textView.isScrollEnabled = false
         textView.showsVerticalScrollIndicator = false
 
-        placeholderLabel.font = UIFont.systemFont(ofSize: Constants.fontSize)
+
+        placeholderLabel.font = textFont
+        placeholderLabel.adjustsFontForContentSizeCategory = true
         placeholderLabel.textColor = UIColor(designSystemColor: .textSecondary)
 
         // Truncate text in case it exceeds single line
@@ -117,6 +141,7 @@ class SwitchBarTextEntryView: UIView {
         updateButtonState()
         updateForCurrentMode()
         updateTextViewHeight()
+        updateButtonsPadding()
 
         textView.onTouchesBeganHandler = self.onTextViewTouchesBegan
     }
@@ -137,7 +162,14 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
+    private func updateButtonsPadding() {
+        buttonsTrailingConstraint?.constant = isUsingIncreasedButtonPadding ? -Constants.additionalVerticalButtonsPadding : 0
+    }
+
     private func setupConstraints() {
+
+        buttonsTrailingConstraint = buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
+        buttonsTrailingConstraint?.isActive = true
 
         NSLayoutConstraint.activate([
             textView.topAnchor.constraint(equalTo: topAnchor),
@@ -149,8 +181,7 @@ class SwitchBarTextEntryView: UIView {
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
             placeholderLabel.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -Constants.placeholderHorizontalOffset),
 
-            buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
-            buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
+            buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor)
         ])
     }
 
@@ -228,6 +259,15 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory {
+            /// Dynamic Type size changed, calculate views layout
+            updateTextViewHeight()
+            adjustTextViewContentInset()
+        }
+    }
+
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
     private func isUnexpandedURL() -> Bool {
         return !hasBeenInteractedWith && isURL
@@ -244,8 +284,10 @@ class SwitchBarTextEntryView: UIView {
         if isUnexpandedURL() ||
             // https://app.asana.com/1/137249556945/project/392891325557410/task/1210916875279070?focus=true
             textView.text.isBlank {
-            
-            heightConstraint?.constant = Constants.minHeight
+
+            /// When empty (or showing an unexpanded URL), size to one line  to avoid clipping at larger accessibility sizes.
+            let requiredEmptyStateHeight = requiredHeightForSingleLineContent()
+            heightConstraint?.constant = max(Constants.minHeight, min(Constants.maxHeight, requiredEmptyStateHeight))
             textView.isScrollEnabled = false
             textView.showsVerticalScrollIndicator = false
             textView.textContainer.lineBreakMode = .byTruncatingTail
@@ -264,6 +306,17 @@ class SwitchBarTextEntryView: UIView {
         }
 
         adjustScrollPosition()
+    }
+
+    /// Computes the min height for one line given current fonts/insets, using the larger of the text view or placeholder font.
+    private func requiredHeightForSingleLineContent() -> CGFloat {
+        let textLineHeight = (textView.font ?? UIFont.systemFont(ofSize: Constants.fontSize)).lineHeight
+        let textNeeded = textLineHeight + Constants.textTopInset + Constants.textBottomInset
+
+        let placeholderLineHeight = placeholderLabel.font.lineHeight
+        let placeholderNeeded = placeholderLineHeight + Constants.placeholderTopOffset + Constants.textBottomInset
+
+        return ceil(max(textNeeded, placeholderNeeded))
     }
 
     private func adjustScrollPosition() {

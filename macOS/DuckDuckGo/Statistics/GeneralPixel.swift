@@ -324,8 +324,6 @@ enum GeneralPixel: PixelKitEvent {
 
     // MARK: - Debug
 
-    case assertionFailure(message: String, file: StaticString, line: UInt)
-
     case keyValueFileStoreInitError
     case dbContainerInitializationError(error: Error)
     case dbInitializationError(error: Error)
@@ -406,6 +404,7 @@ enum GeneralPixel: PixelKitEvent {
     case userViewedWebKitTerminationErrorPage
     case webKitTerminationLoop
     case webKitTerminationIndicatorClicked
+    case webKitDidTerminateNonRecoverableAggregated
 
     case removedInvalidBookmarkManagedObjects
 
@@ -509,10 +508,6 @@ enum GeneralPixel: PixelKitEvent {
 
     case compilationFailed
 
-    // MARK: error page shown
-    case errorPageShownOther
-    case errorPageShownWebkitTermination
-
     // Broken site prompt
 
     case pageRefreshThreeTimesWithin20Seconds
@@ -531,6 +526,8 @@ enum GeneralPixel: PixelKitEvent {
      * - Useful for investigating the underlying error causing the failure.
      */
     case userScriptLoadJSFailed(jsFile: String, error: Error)
+
+    case unifiedURLPredictionMismatch(prediction: String, input: String)
 
     var name: String {
         switch self {
@@ -937,9 +934,6 @@ enum GeneralPixel: PixelKitEvent {
         case .developerToolsOpened: return "m_mac_dev_tools_opened"
 
             // DEBUG
-        case .assertionFailure:
-            return "assertion_failure"
-
         case .keyValueFileStoreInitError:
             return "key_value_file_store_init_error"
         case .dbContainerInitializationError:
@@ -1101,6 +1095,9 @@ enum GeneralPixel: PixelKitEvent {
         /// Event trigger: User clicked WebKit process crash indicator icon
         case .webKitTerminationIndicatorClicked:
             return "webkit_termination_indicator_clicked"
+        /// Event trigger: Aggregated WebKit process crashes (burst detection)
+        case .webKitDidTerminateNonRecoverableAggregated:
+            return "webkit_did_terminate_non_recoverable_aggregated"
 
         case .removedInvalidBookmarkManagedObjects:
             return "removed_invalid_bookmark_managed_objects"
@@ -1230,9 +1227,6 @@ enum GeneralPixel: PixelKitEvent {
         case .bookmarksSearchExecuted: return "m_mac_search_bookmarks_executed"
         case .bookmarksSearchResultClicked: return "m_mac_search_result_clicked"
 
-        case .errorPageShownOther: return "m_mac_errorpageshown_other"
-        case .errorPageShownWebkitTermination: return "m_mac_errorpageshown_webkittermination"
-
             // Broken site prompt
         case .pageRefreshThreeTimesWithin20Seconds: return "m_mac_reload-three-times-within-20-seconds"
         case .siteNotWorkingShown: return "m_mac_site-not-working_shown"
@@ -1244,6 +1238,8 @@ enum GeneralPixel: PixelKitEvent {
             // UserScript
         case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
 
+        case .unifiedURLPredictionMismatch:
+            return "unified_url_prediction_mismatch"
         }
     }
 
@@ -1421,6 +1417,9 @@ enum GeneralPixel: PixelKitEvent {
             var params = error.pixelParameters
             params[PixelKit.Parameters.jsFile] = jsFile
             return params
+
+        case .unifiedURLPredictionMismatch(let prediction, let input):
+            return ["prediction": prediction, "input": input]
 
         default: return nil
         }

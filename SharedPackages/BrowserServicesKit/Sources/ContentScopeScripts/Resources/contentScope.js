@@ -4805,9 +4805,6 @@
       if (this.getFeatureSettingEnabled("modifyCookies")) {
         this.modifyCookies();
       }
-      if (this.getFeatureSettingEnabled("disableDeviceEnumeration")) {
-        this.preventDeviceEnumeration();
-      }
       if (this.getFeatureSettingEnabled("enumerateDevices")) {
         this.deviceEnumerationFix();
       }
@@ -5362,32 +5359,6 @@
           }
         });
         this.forceViewportTag(viewportTag, newContent.join(", "));
-      }
-    }
-    /**
-     * Prevents device enumeration by returning an empty array when enabled
-     */
-    preventDeviceEnumeration() {
-      if (!window.MediaDevices) {
-        return;
-      }
-      let disableDeviceEnumeration = false;
-      const isFrame = window.self !== window.top;
-      if (isFrame) {
-        disableDeviceEnumeration = this.getFeatureSettingEnabled("disableDeviceEnumerationFrames");
-      } else {
-        disableDeviceEnumeration = this.getFeatureSettingEnabled("disableDeviceEnumeration");
-      }
-      if (disableDeviceEnumeration) {
-        const enumerateDevicesProxy = new DDGProxy(this, MediaDevices.prototype, "enumerateDevices", {
-          /**
-           * @returns {Promise<MediaDeviceInfo[]>}
-           */
-          apply() {
-            return Promise.resolve([]);
-          }
-        });
-        enumerateDevicesProxy.overload();
       }
     }
     /**
@@ -9087,9 +9058,9 @@ ul.messages {
     }
     async setup() {
       this.createButtonUI();
+      this.setupTelemetry();
       await this.setupMessageBridge();
       this.setupTextBoxDetection();
-      this.setupTelemetry();
       this.cleanupExistingPrompts();
       this.setupPromptCleanupObserver();
     }
@@ -9617,6 +9588,7 @@ ul.messages {
           this.log.info("Parsed page data:", pageDataParsed);
           if (pageDataParsed.content) {
             this.pageData = pageDataParsed;
+            this.promptTelemetry?.sendContextPixelInfo(pageDataParsed, DuckAiPromptTelemetry.CONTEXT_ATTACH_PIXEL_NAME);
             if (this.contextPromiseResolve) {
               this.contextPromiseResolve(true);
               this.contextPromiseResolve = null;
@@ -9668,7 +9640,7 @@ ul.messages {
     handleSendMessage() {
       this.log.info("handleSendMessage called");
       this.triggerInputEvents();
-      if (this.textBox && this.promptTelemetry) {
+      if (this.textBox && this.promptTelemetry && !this.hasContextBeenUsed) {
         const rawPromptText = this.getRawPromptText();
         const totalPromptText = this.textBox.value;
         const contextSize = this.pageData?.content?.length || 0;
@@ -9807,12 +9779,16 @@ ul.messages {
         if (this.textBox !== element) {
           this.textBox = element;
           this.log.info("Found AI text box");
-          element.addEventListener("keyup", (event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              this.log.info("Enter key pressed");
-              this.handleSendMessage();
-            }
-          });
+          element.addEventListener(
+            "keydown",
+            (event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                this.log.info("Enter key pressed");
+                this.handleSendMessage();
+              }
+            },
+            true
+          );
           this.setupValuePropertyDescriptor(element);
         }
       } else if (this.textBox) {
@@ -10025,11 +10001,11 @@ ${truncatedWarning}
       };
       const telemetryData = {
         totalPrompts: String(totalPrompts),
-        avgRawPromptSize: this.bucketSizeByThousands(avgRawPromptSize),
+        avgRawPromptSize: this.bucketSize(avgRawPromptSize),
         ...createSizeFields("raw", rawSizeBuckets),
-        avgTotalPromptSize: this.bucketSizeByThousands(avgTotalPromptSize),
+        avgTotalPromptSize: this.bucketSize(avgTotalPromptSize),
         ...createSizeFields("total", totalSizeBuckets),
-        avgContextSize: this.bucketSizeByThousands(avgContextSize),
+        avgContextSize: this.bucketSize(avgContextSize),
         contextUsageRate: String(Math.round(contextUsageRate * 100))
       };
       this.log.info("Sending daily telemetry pixel:", telemetryData);
@@ -10057,7 +10033,8 @@ ${truncatedWarning}
       if (!globalThis?.DDG?.pixel) {
         return;
       }
-      globalThis.DDG.pixel._pixels[_DuckAiPromptTelemetry.CONTEXT_PIXEL_NAME] = {};
+      globalThis.DDG.pixel._pixels[_DuckAiPromptTelemetry.CONTEXT_SEND_PIXEL_NAME] = {};
+      globalThis.DDG.pixel._pixels[_DuckAiPromptTelemetry.CONTEXT_ATTACH_PIXEL_NAME] = {};
       globalThis.DDG.pixel._pixels[_DuckAiPromptTelemetry.DAILY_PIXEL_NAME] = {};
     }
     /**
@@ -10066,34 +10043,37 @@ ${truncatedWarning}
      * @param {Object} params - Parameters to send with pixel
      */
     sendPixel(pixelName, params) {
-      if (!globalThis?.DDG?.pixel) {
+      if (!globalThis?.DDG?.pixel?.fire) {
+        this.log.warn("sendPixel: No pixel object found");
         return;
       }
       globalThis.DDG.pixel.fire(pixelName, params);
+      this.log.info("Pixel sent", { pixelName, params });
     }
     /**
-     * Bucket numbers by thousands for privacy-friendly reporting
+     * Bucket numbers by hundreds for privacy-friendly reporting
      * @param {number} number - Number to bucket
-     * @returns {string} Bucket lower bound (e.g., '0', '1000', '2000')
+     * @returns {string} Bucket lower bound (e.g., '0', '100', '200')
      */
-    bucketSizeByThousands(number) {
+    bucketSize(number) {
       if (number <= 0) {
         return "0";
       }
-      const bucketIndex = Math.floor(number / 1e3);
-      return String(bucketIndex * 1e3);
+      const bucketIndex = Math.floor(number / 100);
+      return String(bucketIndex * 100);
     }
     /**
      * Send context pixel info when context is used
      * @param {Object} contextData - Context data object
+     * @param {string} pixelName - Name of pixel to fire
      */
-    sendContextPixelInfo(contextData) {
-      if (!contextData?.content) {
+    sendContextPixelInfo(contextData, pixelName) {
+      if (!contextData?.content || contextData.content.length === 0) {
         this.log.warn("sendContextPixelInfo: No content available for pixel tracking");
         return;
       }
-      this.sendPixel(_DuckAiPromptTelemetry.CONTEXT_PIXEL_NAME, {
-        contextLength: this.bucketSizeByThousands(contextData.content.length)
+      this.sendPixel(pixelName, {
+        contextLength: contextData.fullContentLength
       });
     }
     /**
@@ -10118,14 +10098,15 @@ ${truncatedWarning}
         contextSize
       };
       if (contextData && contextSize > 0) {
-        this.sendContextPixelInfo(contextData);
+        this.sendContextPixelInfo(contextData, _DuckAiPromptTelemetry.CONTEXT_SEND_PIXEL_NAME);
       }
       this.checkShouldFireDailyTelemetry();
       this.storePromptTelemetry(promptData);
     }
   };
   __publicField(_DuckAiPromptTelemetry, "STORAGE_KEY", "aiChatPageContextTelemetry");
-  __publicField(_DuckAiPromptTelemetry, "CONTEXT_PIXEL_NAME", "dc_contextInfo");
+  __publicField(_DuckAiPromptTelemetry, "CONTEXT_ATTACH_PIXEL_NAME", "dc_contextInfoOnAttach");
+  __publicField(_DuckAiPromptTelemetry, "CONTEXT_SEND_PIXEL_NAME", "dc_contextInfoOnSubmit");
   __publicField(_DuckAiPromptTelemetry, "DAILY_PIXEL_NAME", "dc_pageContextDailyTelemetry");
   __publicField(_DuckAiPromptTelemetry, "ONE_DAY_MS", 24 * 60 * 60 * 1e3);
   var DuckAiPromptTelemetry = _DuckAiPromptTelemetry;
@@ -10380,6 +10361,8 @@ ${children}
         metaDescription: this.getMetaDescription(),
         content: mainContent,
         truncated,
+        fullContentLength: this.fullContentLength,
+        // Include full content length before truncation
         headings: this.getHeadings(),
         links: this.getLinks(),
         images: this.getImages(),
@@ -10402,7 +10385,8 @@ ${children}
       return metaDesc ? metaDesc.getAttribute("content") || "" : "";
     }
     getMainContent() {
-      const maxLength = this.getFeatureSetting("maxContentLength") || 950;
+      const maxLength = this.getFeatureSetting("maxContentLength") || 9500;
+      const upperLimit = this.getFeatureSetting("upperLimit") || 5e5;
       let excludeSelectors = this.getFeatureSetting("excludeSelectors") || [".ad", ".sidebar", ".footer", ".nav", ".header"];
       excludeSelectors = excludeSelectors.concat(["script", "style", "link", "meta", "noscript", "svg", "canvas"]);
       let content = "";
@@ -10422,13 +10406,15 @@ ${children}
           elements.forEach((el) => el.remove());
         });
         this.log.info("Calling domToMarkdown", clone.innerHTML);
-        content += domToMarkdown(clone, maxLength);
+        content += domToMarkdown(clone, upperLimit);
       }
+      content = content.trim();
+      this.fullContentLength = content.length;
       if (content.length > maxLength) {
         this.log.info("Truncating content", content);
         content = content.substring(0, maxLength) + "...";
       }
-      return content.trim();
+      return content;
     }
     getHeadings() {
       const headings = [];

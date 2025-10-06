@@ -135,9 +135,10 @@ class MainViewController: UIViewController {
     private var feedbackCancellable: AnyCancellable?
     private var aiChatCancellables = Set<AnyCancellable>()
     private var refreshButtonCancellables = Set<AnyCancellable>()
+    private var syncRecoveryPromptService: SyncRecoveryPromptService?
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
-    let privacyProDataReporter: PrivacyProDataReporting
+    let subscriptionDataReporter: SubscriptionDataReporting
 
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     private lazy var faviconLoader: FavoritesFaviconLoading = FavoritesFaviconLoader()
@@ -250,7 +251,7 @@ class MainViewController: UIViewController {
         previewsSource: TabPreviewsSource,
         tabManager: TabManager,
         syncPausedStateManager: any SyncPausedStateManaging,
-        privacyProDataReporter: PrivacyProDataReporting,
+        subscriptionDataReporter: SubscriptionDataReporting,
         contextualOnboardingLogic: ContextualOnboardingLogic,
         contextualOnboardingPixelReporter: OnboardingPixelReporting,
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
@@ -292,7 +293,7 @@ class MainViewController: UIViewController {
         self.featureDiscovery = featureDiscovery
         self.themeManager = themeManager
         self.syncPausedStateManager = syncPausedStateManager
-        self.privacyProDataReporter = privacyProDataReporter
+        self.subscriptionDataReporter = subscriptionDataReporter
         self.tutorialSettings = tutorialSettings
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.contextualOnboardingPixelReporter = contextualOnboardingPixelReporter
@@ -352,7 +353,7 @@ class MainViewController: UIViewController {
 
         let newTabPageDependencies = SuggestionTrayViewController.NewTabPageDependencies(favoritesModel: favoritesViewModel,
                                                                                          homePageMessagesConfiguration: homePageConfiguration,
-                                                                                         privacyProDataReporting: privacyProDataReporter,
+                                                                                         subscriptionDataReporting: subscriptionDataReporter,
                                                                                          newTabDialogFactory: newTabDaxDialogFactory,
                                                                                          newTabDaxDialogManager: daxDialogsManager,
                                                                                          faviconLoader: faviconLoader,
@@ -457,7 +458,8 @@ class MainViewController: UIViewController {
             showFireButtonPulse()
         }
 
-        presentNewAddressBarPickerIfNeeded()
+       presentSyncRecoveryPromptIfNeeded()
+
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -614,7 +616,7 @@ class MainViewController: UIViewController {
         segueToDaxOnboarding()
     }
     
-    private func presentNewAddressBarPickerIfNeeded() {
+    func presentNewAddressBarPickerIfNeeded() {
         let validator = NewAddressBarPickerDisplayValidator(
             aiChatSettings: aiChatSettings,
             tutorialSettings: tutorialSettings,
@@ -626,12 +628,40 @@ class MainViewController: UIViewController {
         )
         guard validator.shouldDisplayNewAddressBarPicker() else { return }
 
-        let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: aiChatSettings)
-        pickerViewController.modalPresentationStyle = .pageSheet
-        pickerViewController.modalTransitionStyle = .coverVertical
-        pickerViewController.isModalInPresentation = true
-        validator.markPickerDisplayAsSeen()
-        self.present(pickerViewController, animated: true)
+        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
+            let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: aiChatSettings)
+
+            /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1211457477666070?focus=true
+            if #available(iOS 26.0, *), UIDevice.current.userInterfaceIdiom == .pad {
+                pickerViewController.modalPresentationStyle = .formSheet
+            } else {
+                pickerViewController.modalPresentationStyle = .pageSheet
+            }
+            pickerViewController.modalTransitionStyle = .coverVertical
+            pickerViewController.isModalInPresentation = true
+            validator.markPickerDisplayAsSeen()
+
+            self.present(pickerViewController, animated: true)
+        }
+    }
+
+    @discardableResult
+    func presentSyncRecoveryPromptIfNeeded() -> Bool {
+        syncRecoveryPromptService = SyncRecoveryPromptService(
+            featureFlagger: featureFlagger,
+            syncService: syncService,
+            keyValueStore: keyValueStore,
+            isOnboardingComplete: tutorialSettings.hasSeenOnboarding
+        )
+
+        guard let syncRecoveryPromptService = syncRecoveryPromptService else { return false }
+
+        return syncRecoveryPromptService.tryPresentSyncRecoveryPrompt(
+            from: self,
+            onSyncFlowSelected: { [weak self] source in
+                self?.segueToSettingsSync(with: source)
+            }
+        )
     }
 
     func presentNetworkProtectionStatusSettingsModal() {
@@ -640,7 +670,7 @@ class MainViewController: UIViewController {
             if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection), canShowVPNInUI {
                 segueToVPN()
             } else {
-                segueToPrivacyPro()
+                segueToDuckDuckGoSubscription()
             }
         }
     }
@@ -1043,16 +1073,20 @@ class MainViewController: UIViewController {
         tabModel.viewed = true
 
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
+        let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+
         let controller = NewTabPageViewController(tab: tabModel,
                                                   interactionModel: favoritesViewModel,
                                                   homePageMessagesConfiguration: homePageConfiguration,
-                                                  privacyProDataReporting: privacyProDataReporter,
+                                                  subscriptionDataReporting: subscriptionDataReporter,
                                                   newTabDialogFactory: newTabDaxDialogFactory,
                                                   daxDialogsManager: daxDialogsManager,
                                                   faviconLoader: faviconLoader,
                                                   messageNavigationDelegate: self,
                                                   appSettings: appSettings,
-                                                  internalUserCommands: internalUserCommands)
+                                                  internalUserCommands: internalUserCommands,
+                                                  narrowLayoutInLandscape: narrowLayoutInLandscape
+        )
 
         controller.delegate = self
         controller.chromeDelegate = self
@@ -1801,6 +1835,7 @@ class MainViewController: UIViewController {
     private func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {
         // https://app.asana.com/0/0/1201408131067987
         UIMenuController.shared.hideMenu()
+        dismissOmniBar()
         viewCoordinator.omniBar.removeTextSelection()
         
         Pixel.fire(pixel: .openVoiceSearch)
@@ -1833,7 +1868,7 @@ class MainViewController: UIViewController {
     }
 
     private func subscribeToURLInterceptorNotifications() {
-        NotificationCenter.default.publisher(for: .urlInterceptPrivacyPro)
+        NotificationCenter.default.publisher(for: .urlInterceptSubscription)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
@@ -2016,7 +2051,7 @@ class MainViewController: UIViewController {
 
     private func presentExpiredEntitlementAlert() {
         let alertController = CriticalAlerts.makeExpiredEntitlementAlert { [weak self] in
-            self?.segueToPrivacyPro()
+            self?.segueToDuckDuckGoSubscription()
         }
         dismiss(animated: true) {
             self.present(alertController, animated: true, completion: nil)
@@ -3450,7 +3485,7 @@ extension MainViewController: AutoClearWorker {
             transitionCompletion?()
             self.refreshUIAfterClear()
         } completion: {
-            self.privacyProDataReporter.saveFireCount()
+            self.subscriptionDataReporter.saveFireCount()
 
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {
@@ -3733,8 +3768,14 @@ extension MainViewController: MainViewEditingStateTransitioning {
         newTabPageViewController?.isShowingLogo == true
     }
 
-    var newTabView: UIView? {
-        newTabPageViewController?.view
+    var logoView: UIView? {
+        if newTabPageViewController?.isShowingLogo == true {
+            // Treat NTP view as logo view, but only if it's visible.
+            // This prevents favorites from flickering during transition.
+            return newTabPageViewController?.view
+        } else {
+            return nil
+        }
     }
 
     func hide(with barYOffset: CGFloat, contentYOffset: CGFloat) {

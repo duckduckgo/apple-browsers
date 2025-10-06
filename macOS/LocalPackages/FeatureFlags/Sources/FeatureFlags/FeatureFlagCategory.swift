@@ -51,10 +51,13 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .aiChatTextSummarization,
                 .aiChatTextTranslation,
                 .aiChatPageContext,
-                .duckAISearchParameter:
+                .duckAISearchParameter,
+                .aiChatImprovements,
+                .aiChatKeepSession:
             return .duckAI
         case .osSupportForceUnsupportedMessage,
-                .osSupportForceWillSoonDropSupportMessage:
+                .osSupportForceWillSoonDropSupportMessage,
+                .willSoonDropBigSurSupport:
             return .osSupportWarnings
         case .syncSeamlessAccountSwitching,
                 .syncSetupBarcodeIsUrlBased,
@@ -62,7 +65,8 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .exchangeKeysToSyncWithAnotherDevice:
             return .sync
         case .updatesWontAutomaticallyRestartApp,
-                .autoUpdateInDEBUG:
+                .autoUpdateInDEBUG,
+                .appStoreCheckForUpdatesFlow:
             return .updates
         case .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,

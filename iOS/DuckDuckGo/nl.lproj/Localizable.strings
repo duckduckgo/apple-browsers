@@ -1079,7 +1079,7 @@
 "crash.report.dialog.title" = "Automatisch crashrapporten verzenden?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Huidig aantal afwijzingen: %@";
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "Aangepaste celinhoud";
@@ -1311,6 +1311,18 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI-functies zijn privé en optioneel. Je gegevens worden niet gebruikt om AI te trainen.";
+
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "Toon Duck.ai-knoppen en -links in de zoekresultaten van DuckDuckGo.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Sneltoetsen zoeken";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Stel vervolgvragen";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Browsersnelkoppelingen";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adresbalk";
@@ -1709,7 +1721,7 @@
 "feedback.form.submit" = "Verzenden";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Help Privacy Pro te verbeteren";
+"feedback.form.title" = "Help het DuckDuckGo-abonnement te verbeteren";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -1917,6 +1929,9 @@
 
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Je wachtwoorden importeren in DuckDuckGo";
+
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "Vraag privé";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Je moet de VPN inschakelen vanuit de DuckDuckGo-app.";
@@ -2689,9 +2704,6 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Zoek of voer een adres in";
 
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Vraag stellen aan Duck.ai";
-
 /* Search input toggle button title for asking AI Chat */
 "search.input.toggle.aichat.button.title" = "Duck.ai";
 
@@ -2728,9 +2740,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Over";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "Daarnaast bieden we ook [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), een drie-in-één abonnementsservice, geïntegreerd in onze browser. Abonnees van Privacy Pro krijgen nog meer privacybescherming met een snelle en eenvoudige [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) die je online activiteiten beschermt, een dienst die je persoonlijke gegevens opspoort en verwijdert van zoeksites om mensen op internet te vinden, en een dienst die je identiteit herstelt als deze wordt gestolen.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "Daarnaast bieden we het [DuckDuckGo-abonnement](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) ook in onze browser aan. Abonnees profiteren van nog meer privacybescherming met een snel en eenvoudig [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) om je online activiteiten te beschermen, toegang tot geavanceerde AI-modellen in onze privé AI-chatdienst Duck.ai, een functie die je persoonlijke gegevens opspoort en verwijdert van sites om mensen online te zoeken, en een dienst die je identiteit herstelt als deze wordt gestolen.";
 
@@ -2763,6 +2772,9 @@
 
 /* Title for the 'Search Only' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_only" = "Alleen zoeken";
+
+/* Footer under the AI picker, descriptive sentence without link */
+"settings.ai.new.picker.footer" = "Probeer de nieuwe optie om te schakelen tussen zoeken en Duck.ai in de adresbalk.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Snelkoppelingen Duck.ai beheren";
@@ -2846,7 +2858,7 @@
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo op andere platforms";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Je Privacy Pro-abonnement is verlopen";
+"settings.duckduckgo.subscription.expired.title" = "Je DuckDuckGo-abonnement is verlopen";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Blokkeer e-mailtrackers en verberg je adres, zonder van e-mailprovider te wisselen.\n[Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/wat-is-duckduckgo-email-protection/)";
@@ -2935,9 +2947,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "Aan";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Privacybeleid en gebruiksvoorwaarden";
 
@@ -3007,23 +3016,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Ik heb een abonnement";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Je Privacy Pro-abonnement is verlopen";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "DuckDuckGo-abonnement";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Als je identiteit wordt gestolen, helpen we je deze te herstellen";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Privacy Pro kopen";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Abonnementinstellingen";
@@ -3042,9 +3042,6 @@
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Probeer gratis";
-
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Probeer Privacy Pro gratis";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3196,9 +3193,6 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "E-mailadres bewerken";
 
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "Voeg je Privacy Pro-abonnement toe aan dit apparaat";
-
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Annuleren";
 
@@ -3217,9 +3211,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Aan de slag";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Gebruik een e-mailadres om Privacy Pro aan dit apparaat toe te voegen.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "Toevoegen via e-mailadres";
 
@@ -3231,15 +3222,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "E-mailadres toevoegen";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Privacy Pro toevoegen aan andere apparaten";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Voeg Privacy Pro toe aan je andere apparaten via Apple ID of door een e-mailadres te koppelen. **[Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Gebruik dit e-mailadres om je abonnement toe te voegen op je andere apparaten in de DuckDuckGo-app. Ga naar Instellingen > Privacy Pro > Ik heb een abonnement. **[Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Je abonnement is aangeschaft via de Google Play Store. Om je abonnement te verlengen, open je de abonnementsinstellingen van de Google Play Store op een apparaat dat is aangemeld bij hetzelfde Google-account waarmee je het abonnement hebt gekocht.";
@@ -3262,8 +3244,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Chat privé met AI-modellen die exclusief voor abonnees zijn.\n[Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "Configureer Duck.ai in de instellingen voor AI-functies.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Inschakelen in de instellingen voor AI-functies";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Duck.ai openen";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "Beheren in de instellingen voor AI-functies";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";
@@ -3279,9 +3270,6 @@
 
 /* FAQ Button */
 "subscription.faq" = "Veelgestelde vragen en ondersteuning";
-
-/* FAQ Description */
-"subscription.faq.description" = "Krijg antwoorden op veelgestelde vragen of neem contact op met de klantenservice van Privacy Pro via onze helppagina's.";
 
 /* Share Feedback Button */
 "subscription.feedback" = "Feedback delen";
@@ -3316,14 +3304,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Abonnementen bekijken";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Activeer Privacy Pro op je desktop om Personal Information Removal in te stellen.";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "Ga in de DuckDuckGo-browser voor desktop naar '%1$@' en klik op '%2$@' om te beginnen.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "'Instellingen' > 'Privacy Pro'";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Instellingen > Abonneren op DuckDuckGo";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Ik heb een abonnement";
@@ -3348,9 +3333,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Verwijderen van dit apparaat";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "Je hebt niet langer toegang tot je Privacy Pro-abonnement op dit apparaat. Je abonnement wordt niet opgezegd en het blijft actief op je andere apparaten.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Verwijderen van dit apparaat?";
@@ -3424,9 +3406,6 @@
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Je jaarlijkse abonnement wordt verlengd op %@.";
 
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
-
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Gratis proefversie actief";
 
@@ -3462,6 +3441,36 @@
 
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Synchroniseer en maak een back-up van je wachtwoorden";
+
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sync & Backup voor dit apparaat";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Als je je herstelcode opslaat, kun je je wachtwoorden in de toekomst gemakkelijk herstellen.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Gesynchroniseerde wachtwoorden kunnen alleen worden hersteld als je toegang hebt tot een ander apparaat of door de herstelcode te gebruiken die is verstrekt als onderdeel van de Sync & Backup-configuratie.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Herstelcode scannen";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Ander apparaat niet beschikbaar? Scan je herstelcode.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Heb je geen ander apparaat?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "DuckDuckGo-wachtwoorden worden niet overgedragen via iCloud omdat ze versleuteld zijn op je apparaat. Al het andere is er al.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Synchroniseren met een ander apparaat";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Op een nieuw %@? Laten we je wachtwoorden synchroniseren.";
 
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Verwijderen";

@@ -45,7 +45,7 @@ struct SettingsState {
         var shouldDisplayRestoreSubscriptionError: Bool
         var subscriptionFeatures: [Entitlement.ProductName]
         var entitlements: [Entitlement.ProductName]
-        var platform: PrivacyProSubscription.Platform
+        var platform: DuckDuckGoSubscription.Platform
         var isShowingStripeView: Bool
         var isActiveTrialOffer: Bool
         /// Whether the user is eligible for a free trial subscription offer

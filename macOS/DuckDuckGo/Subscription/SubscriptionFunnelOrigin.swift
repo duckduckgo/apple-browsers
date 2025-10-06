@@ -31,4 +31,7 @@ enum SubscriptionFunnelOrigin: String {
 
     /// User entered the funnel via the VPN upsell.
     case vpnUpsell = "funnel_toolbar_macos"
+
+    /// User entered the funnel via the the purchase offer page.
+    case purchaseOfferPage = "funnel_purchase_offser_page_macos"
 }

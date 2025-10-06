@@ -415,6 +415,11 @@ enum Preferences {
             let sheetActionHandler = SubscriptionAccessActionHandlers(
                 openActivateViaEmailURL: {
                     let url = subscriptionManager.url(for: .activationFlow)
+
+                    let subscriptionRestoreWideEventData = SubscriptionRestoreWideEventData(
+                        restorePlatform: .emailAddress,
+                        contextData: WideEventContextData(name: SubscriptionFunnelOrigin.appSettings.rawValue)
+                    )
                     showTab(.subscription(url))
                     PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
@@ -422,9 +427,14 @@ enum Preferences {
                         Task {
                             let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
                                                                                    storePurchaseManager: subscriptionManager.storePurchaseManager())
+                            let subscriptionRestoreWideEventData = SubscriptionRestoreWideEventData(
+                                restorePlatform: .appleAccount,
+                                contextData: WideEventContextData(name: SubscriptionFunnelOrigin.appSettings.rawValue)
+                            )
                             let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: subscriptionManager,
                                                                                                      appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                                                     uiHandler: subscriptionUIHandler)
+                                                                                                     uiHandler: subscriptionUIHandler,
+                                                                                                     subscriptionRestoreWideEventData: subscriptionRestoreWideEventData)
                             await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
 
                             PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)

@@ -75,8 +75,12 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
     private let featureFlagger: FeatureFlagger
     private let aiChatURL: URL
+
+    // Wide Event
     private let wideEvent: WideEventManaging
     private var wideEventData: SubscriptionPurchaseWideEventData?
+    private var restoreEmailOfferPageWideEventData: SubscriptionRestoreWideEventData?
+    private var restoreEmailAppSettingsWideEventData: SubscriptionRestoreWideEventData?
 
     public init(subscriptionManager: SubscriptionManagerV2,
                 subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling = SubscriptionAttributionPixelHandler(),
@@ -159,8 +163,27 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
         PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseEmailSuccess, frequency: .legacyDailyAndCount)
 
+        // Not Ideal
+        let flows = wideEvent.getAllFlowData(SubscriptionRestoreWideEventData.self)
+        if let data = flows.last(where: { $0.restorePlatform == .emailAddress }) {
+            self.restoreEmailAppSettingsWideEventData = data
+        }
+
         guard let subscriptionValues: SubscriptionValuesV2 = CodableHelper.decode(from: params) else {
             Logger.subscription.fault("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
+
+            if subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled {
+                if let restoreEmailOfferPageWideEventData = self.restoreEmailOfferPageWideEventData {
+                    restoreEmailOfferPageWideEventData.emailAddressRestoreDuration?.complete()
+                    wideEvent.completeFlow(restoreEmailOfferPageWideEventData, status: .failure, onComplete: { _, _ in })
+                }
+
+                if let restoreEmailAppSettingsWideEventData = self.restoreEmailAppSettingsWideEventData {
+                    restoreEmailAppSettingsWideEventData.emailAddressRestoreDuration?.complete()
+                    wideEvent.completeFlow(restoreEmailAppSettingsWideEventData, status: .failure, onComplete: { _, _ in })
+                }
+            }
+
             assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
             return nil
         }
@@ -170,14 +193,54 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
         guard !subscriptionValues.accessToken.isEmpty, !subscriptionValues.refreshToken.isEmpty else {
             Logger.subscription.fault("Empty access token or refresh token provided")
+
+            if subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled {
+                if let restoreEmailOfferPageWideEventData = self.restoreEmailOfferPageWideEventData {
+                    restoreEmailOfferPageWideEventData.emailAddressRestoreDuration?.complete()
+                    wideEvent.completeFlow(restoreEmailOfferPageWideEventData, status: .failure, onComplete: { _, _ in })
+                }
+
+                if let restoreEmailAppSettingsWideEventData = self.restoreEmailAppSettingsWideEventData {
+                    restoreEmailAppSettingsWideEventData.emailAddressRestoreDuration?.complete()
+                    wideEvent.completeFlow(restoreEmailAppSettingsWideEventData, status: .failure, onComplete: { _, _ in })
+                }
+            }
+
             return nil
         }
 
         do {
             try await subscriptionManager.adopt(accessToken: subscriptionValues.accessToken, refreshToken: subscriptionValues.refreshToken)
             try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
+
+            if subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled {
+                if let restoreEmailOfferPageWideEventData = self.restoreEmailOfferPageWideEventData {
+                    restoreEmailOfferPageWideEventData.emailAddressRestoreDuration?.complete()
+                    wideEvent.completeFlow(restoreEmailOfferPageWideEventData, status: .success, onComplete: { _, _ in })
+                }
+
+                if let restoreEmailAppSettingsWideEventData = self.restoreEmailAppSettingsWideEventData {
+                    restoreEmailAppSettingsWideEventData.emailAddressRestoreDuration?.complete()
+                    wideEvent.completeFlow(restoreEmailAppSettingsWideEventData, status: .success, onComplete: { _, _ in })
+                }
+            }
+
             Logger.subscription.log("Subscription retrieved")
         } catch {
+            if subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled {
+                if let restoreEmailOfferPageWideEventData = self.restoreEmailOfferPageWideEventData {
+                    restoreEmailOfferPageWideEventData.emailAddressRestoreDuration?.complete()
+                    restoreEmailOfferPageWideEventData.errorData = .init(error: error)
+                    wideEvent.completeFlow(restoreEmailOfferPageWideEventData, status: .failure, onComplete: { _, _ in })
+                }
+
+                if let restoreEmailAppSettingsWideEventData = self.restoreEmailAppSettingsWideEventData {
+                    restoreEmailAppSettingsWideEventData.emailAddressRestoreDuration?.complete()
+                    restoreEmailAppSettingsWideEventData.errorData = .init(error: error)
+                    wideEvent.completeFlow(restoreEmailAppSettingsWideEventData, status: .failure, onComplete: { _, _ in })
+                }
+
+            }
             Logger.subscription.error("Failed to adopt V2 tokens: \(error, privacy: .public)")
         }
         return nil
@@ -638,17 +701,36 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
     func showSubscriptionFoundAlert(originalMessage: WKScriptMessage) async {
 
+        let restorePrePurcahseBackgroundWideEventData = SubscriptionRestoreWideEventData(
+            restorePlatform: .purchaseBackgroundTask,
+            contextData: WideEventContextData(name: "")
+        )
+
         switch await uiHandler.dismissProgressViewAndShow(alertType: .subscriptionFound, text: nil) {
         case .alertFirstButtonReturn:
             if #available(macOS 12.0, *) {
+                if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
+                    restorePrePurcahseBackgroundWideEventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
+                    wideEvent.startFlow(restorePrePurcahseBackgroundWideEventData)
+                }
                 let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
                                                                        storePurchaseManager: subscriptionManager.storePurchaseManager())
                 let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
                 switch result {
                 case .success:
                     PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreSuccess, frequency: .legacyDailyAndCount)
+
+                    if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
+                        restorePrePurcahseBackgroundWideEventData.appleAccountRestoreDuration?.complete()
+                        wideEvent.completeFlow(restorePrePurcahseBackgroundWideEventData, status: .success(reason: nil), onComplete: { _, _ in })
+                    }
                 case .failure(let error):
                     Logger.subscription.error("Failed to restore account from past purchase: \(error, privacy: .public)")
+                    if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
+                        restorePrePurcahseBackgroundWideEventData.appleAccountRestoreDuration?.complete()
+                        restorePrePurcahseBackgroundWideEventData.errorData = .init(error: error)
+                        wideEvent.completeFlow(restorePrePurcahseBackgroundWideEventData, status: .failure, onComplete: { _, _ in })
+                    }
                 }
                 Task { @MainActor in
                     originalMessage.webView?.reload()
@@ -678,9 +760,14 @@ extension SubscriptionPagesUseSubscriptionFeatureV2: SubscriptionAccessActionHan
             Task { @MainActor in
                 let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
                                                                        storePurchaseManager: subscriptionManager.storePurchaseManager())
+                let restoreAppleOfferPageWideEventData = SubscriptionRestoreWideEventData(
+                    restorePlatform: .appleAccount,
+                    contextData: WideEventContextData(name: SubscriptionFunnelOrigin.purchaseOfferPage.rawValue)
+                )
                 let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: self.subscriptionManager,
                                                                                          appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                                         uiHandler: self.uiHandler)
+                                                                                         uiHandler: self.uiHandler,
+                                                                                         subscriptionRestoreWideEventData: restoreAppleOfferPageWideEventData)
                 await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
                 message.webView?.reload()
             }
@@ -688,7 +775,15 @@ extension SubscriptionPagesUseSubscriptionFeatureV2: SubscriptionAccessActionHan
     }
 
     func subscriptionAccessActionOpenURLHandler(url: URL) {
+        let restoreEmailOfferPageWideEventData = SubscriptionRestoreWideEventData(
+            restorePlatform: .emailAddress,
+            contextData: WideEventContextData(name: SubscriptionFunnelOrigin.purchaseOfferPage.rawValue)
+        )
+        self.restoreEmailOfferPageWideEventData = restoreEmailOfferPageWideEventData
+
         Task {
+            restoreEmailOfferPageWideEventData.emailAddressRestoreDuration = WideEvent.MeasuredInterval.startingNow()
+            wideEvent.startFlow(restoreEmailOfferPageWideEventData)
             await self.uiHandler.showTab(with: .subscription(url))
         }
     }

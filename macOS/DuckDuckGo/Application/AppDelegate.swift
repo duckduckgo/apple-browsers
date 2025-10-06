@@ -242,9 +242,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Wide Pixel Service
 
+    lazy var wideEvent: WideEventManaging = {
+        WideEvent()
+    }()
+
     private lazy var wideEventService: WideEventService = {
         return WideEventService(
-            wideEvent: WideEvent(),
+            wideEvent: self.wideEvent,
             featureFlagger: featureFlagger,
             subscriptionBridge: subscriptionAuthV1toV2Bridge
         )

@@ -156,7 +156,10 @@ public enum NavigationTarget: String, Codable, Equatable {
 
 public enum RemoteAction: Codable, Equatable {
     case share(value: String, title: String?)
+    /// Used to open a URL from a browser tab.
     case url(value: String)
+    /// Used to open a URL from an embedded web view.
+    case urlInContext(value: String)
     case survey(value: String)
     case appStore
     case dismiss

@@ -327,7 +327,7 @@ final class TabViewModelTests: XCTestCase {
             URL.newtab,
             burnerMode: BurnerMode(isBurner: true)
         )
-// FIX
+
         XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Glyphs.Size16.fireTab)
     }
 

@@ -198,7 +198,7 @@ public enum FeatureFlag: String, CaseIterable {
     case themes
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211258257937392?focus=true
-    case appStoreCheckForUpdatesFlow
+    case appStoreUpdateFlow
 
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1211260578559159?focus=true
     case unifiedURLPredictor
@@ -292,7 +292,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .subscriptionPurchaseWidePixelMeasurement,
                 .syncFeatureLevel3,
                 .themes,
-                .appStoreCheckForUpdatesFlow,
+                .appStoreUpdateFlow,
                 .unifiedURLPredictor,
                 .unifiedURLPredictorMetrics,
                 .webKitPerformanceReporting:
@@ -439,7 +439,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
         case .themes:
             return .internalOnly()
-        case .appStoreCheckForUpdatesFlow:
+        case .appStoreUpdateFlow:
             return .remoteReleasable(.feature(.appStoreUpdateFlow))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))

@@ -46,7 +46,6 @@ protocol AIChatUserScriptHandling {
     func getPageContext(params: Any, message: UserScriptMessage) -> Encodable?
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
-    var chatRestorationDataPublisher: AnyPublisher<String?, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
@@ -61,12 +60,10 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never>
     public let pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never>
     public let pageContextRequestedPublisher: AnyPublisher<Void, Never>
-    public let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
     private let pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
-    private let chatRestorationDataSubject = PassthroughSubject<String?, Never>()
     private let storage: AIChatPreferencesStorage
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter
@@ -90,7 +87,6 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
         self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
-        self.chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
     }
 
     enum AIChatKeys {
@@ -155,7 +151,6 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         else { return nil }
 
         messageHandling.setData(data, forMessageType: .chatRestorationData)
-        chatRestorationDataSubject.send(data)
         return nil
     }
 
@@ -168,7 +163,6 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     public func removeChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
         messageHandling.setData(nil, forMessageType: .chatRestorationData)
-        chatRestorationDataSubject.send(nil)
         return nil
     }
 

@@ -101,10 +101,6 @@ final class AIChatSidebarViewController: NSViewController {
         aiTab.aiChat?.pageContextRequestedPublisher
     }
 
-    public var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>? {
-        aiTab.aiChat?.chatRestorationDataPublisher
-    }
-
     override func loadView() {
         let container = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.navigationBackgroundColor)
 

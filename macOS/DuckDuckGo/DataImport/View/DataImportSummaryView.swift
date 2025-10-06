@@ -106,12 +106,12 @@ struct DataImportSummaryView: View {
                 case (.failure(let error)) where error.errorType == .noData:
                     importSummaryRow(image: .failed,
                                      text: "Credit Cards:",
-                                     comment: "Data import summary format of how many bookmarks were successfully imported.",
+                                     comment: "Data import summary format of how many credit cards were successfully imported.",
                                      count: zero)
                 case (.failure):
                     importSummaryRow(image: .failed,
                                      text: "Credit card import failed.",
-                                     comment: "Data import summary message of failed bookmarks import.",
+                                     comment: "Data import summary message of failed credit card import.",
                                      count: nil)
                 }
             }.applyConditionalModifiers(!model.resultsFiltered(by: .creditCards).isEmpty)

@@ -204,7 +204,7 @@ extension Preferences {
         }
     }
 
-    // MARK: - Reset THeme
+    // MARK: - Reset Theme
     //
     struct ThemesResetView: View {
         @EnvironmentObject var model: AppearancePreferences

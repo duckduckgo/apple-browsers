@@ -434,6 +434,7 @@ class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplayNewTabPageShortcut = false
     var shouldDisplayApplicationMenuShortcut = false
     var shouldDisplayAddressBarShortcut = false
+    var shouldDisplayAddressBarShortcutWhenTyping = false
     var shouldDisplayAnyAIChatFeature = false
     var shouldOpenAIChatInSidebar = false
     var shouldDisplaySummarizationMenuItem = false

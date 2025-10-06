@@ -169,6 +169,7 @@ final class FireDialogViewModelTests: XCTestCase {
         // simulate local history domains
         let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
         tabCollectionVM.append(tab: exampleTab)
+        tabCollectionVM.select(at: .unpinned(1))
 
         let historyCoordinator = HistoryCoordinatingMock()
         let faviconManager = FaviconManagerMock()
@@ -204,6 +205,8 @@ final class FireDialogViewModelTests: XCTestCase {
         // Ensure selected tab exists
         let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
         tabCollectionVM.append(tab: exampleTab)
+        tabCollectionVM.select(at: .unpinned(1))
+
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllerManager: Application.appDelegate.windowControllersManager,
@@ -241,6 +244,8 @@ final class FireDialogViewModelTests: XCTestCase {
         // Add a tab to populate local history structure
         let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
         tabCollectionVM.append(tab: exampleTab)
+        tabCollectionVM.select(at: .unpinned(1))
+
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllerManager: Application.appDelegate.windowControllersManager,
@@ -290,8 +295,10 @@ final class FireDialogViewModelTests: XCTestCase {
         )
         vm.clearingOption = .currentTab
         // Ensure selected tab exists
-        let exampleTab2 = Tab(content: .url(.duckDuckGo, source: .link))
-        tabCollectionVM.append(tab: exampleTab2)
+        let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
+        tabCollectionVM.append(tab: exampleTab)
+        tabCollectionVM.select(at: .unpinned(1))
+
         let exp = expectation(description: "burnVisits called")
         historyCoordinator.onBurnVisits = { exp.fulfill() }
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
@@ -415,6 +422,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
         tabCollectionVM.append(tab: exampleTab)
+        tabCollectionVM.select(at: .unpinned(1))
+
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllerManager: Application.appDelegate.windowControllersManager,
@@ -453,6 +462,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
         tabCollectionVM.append(tab: exampleTab)
+        tabCollectionVM.select(at: .unpinned(1))
+
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllerManager: Application.appDelegate.windowControllersManager,
@@ -527,6 +538,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
         tabCollectionVM.append(tab: exampleTab)
+        tabCollectionVM.select(at: .unpinned(1))
+
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllerManager: Application.appDelegate.windowControllersManager,
@@ -566,6 +579,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
         tabCollectionVM.append(tab: exampleTab)
+        tabCollectionVM.select(at: .unpinned(1))
+
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllerManager: Application.appDelegate.windowControllersManager,
@@ -636,6 +651,477 @@ final class FireDialogViewModelTests: XCTestCase {
         // With no tabs, expect 0 and selection to reset (still true for empty set)
         XCTAssertEqual(vm.historyItemsCountForCurrentScope, 0)
         XCTAssertTrue(vm.areAllSelected)
+    }
+
+    // MARK: - Domain Selection Tests
+
+    @MainActor func testCurrentTab_SelectsOnlyCurrentTabDomains() {
+        // Scenario: Window with multiple tabs, verify currentTab scope only selects current tab's domains
+        // Setup: Window with 2 tabs, each visiting different domains
+        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
+
+        // Tab 1 (current): visits example.com and test.com
+        let historyMock1 = HistoryTabExtensionMock()
+        let entry1 = makeHistoryEntry(url: "https://example.com")
+        let entry2 = makeHistoryEntry(url: "https://test.com")
+        historyMock1.localHistory = [
+            Visit(date: Date(), identifier: entry1.url, historyEntry: entry1),
+            Visit(date: Date(), identifier: entry2.url, historyEntry: entry2)
+        ]
+        let tab1 = makeTab(url: "https://example.com".url!, historyMock: historyMock1)
+
+        // Tab 2: visits duckduckgo.com
+        let historyMock2 = HistoryTabExtensionMock()
+        let entry3 = makeHistoryEntry(url: "https://duckduckgo.com")
+        historyMock2.localHistory = [
+            Visit(date: Date(), identifier: entry3.url, historyEntry: entry3)
+        ]
+        let tab2 = makeTab(url: "https://duckduckgo.com".url!, historyMock: historyMock2)
+
+        tabCollectionVM.append(tab: tab1)
+        tabCollectionVM.append(tab: tab2)
+        tabCollectionVM.select(at: .unpinned(1))  // Select tab1
+
+        let viewModel = makeViewModel(with: tabCollectionVM, clearingOption: .currentTab)
+
+        // Verify: Selectable should ONLY contain example.com and test.com
+        let selectableDomains = Set(viewModel.selectable.map(\.domain))
+        XCTAssertEqual(selectableDomains, Set(["example.com", "test.com"]),
+                       "CurrentTab scope should only select domains from current tab")
+
+        // Verify: Should NOT include duckduckgo.com from tab2
+        XCTAssertFalse(selectableDomains.contains("duckduckgo.com"),
+                       "CurrentTab scope should not include domains from other tabs")
+    }
+
+    @MainActor func testCurrentTab_ExcludesFireproofedDomains() {
+        // Scenario: Current tab has both regular and fireproofed domains
+        // Expectation: Fireproofed domains should be in separate list, not selectable
+        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
+        let fireproofDomains = makeFireproofDomains(["duckduckgo.com"])
+
+        // Current tab visits both regular and fireproofed domains
+        let historyMock = HistoryTabExtensionMock()
+        let entry1 = makeHistoryEntry(url: "https://example.com")
+        let entry2 = makeHistoryEntry(url: "https://duckduckgo.com")
+        historyMock.localHistory = [
+            Visit(date: Date(), identifier: entry1.url, historyEntry: entry1),
+            Visit(date: Date(), identifier: entry2.url, historyEntry: entry2)
+        ]
+        let tab = makeTab(url: "https://example.com".url!, historyMock: historyMock)
+
+        tabCollectionVM.append(tab: tab)
+        tabCollectionVM.select(at: .unpinned(1))
+
+        let viewModel = makeViewModel(with: tabCollectionVM,
+                                      fireproofDomains: fireproofDomains,
+                                      clearingOption: .currentTab)
+
+        // Verify: Selectable should only contain example.com
+        let selectableDomains = Set(viewModel.selectable.map(\.domain))
+        XCTAssertEqual(selectableDomains, Set(["example.com"]),
+                       "CurrentTab selectable should exclude fireproofed domains")
+
+        // Verify: Fireproofed list should contain duckduckgo.com
+        let fireproofedDomains = Set(viewModel.fireproofed.map(\.domain))
+        XCTAssertEqual(fireproofedDomains, Set(["duckduckgo.com"]),
+                       "Fireproofed list should contain fireproofed domains from current tab")
+    }
+
+    @MainActor func testCurrentWindow_SelectsAllWindowTabsDomains() {
+        // Scenario: Window with multiple tabs, verify currentWindow scope includes all tabs
+        // Setup: Window with 3 tabs visiting different domains
+        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
+
+        // Tab 1: visits example.com
+        let historyMock1 = HistoryTabExtensionMock()
+        let entry1 = makeHistoryEntry(url: "https://example.com")
+        historyMock1.localHistory = [Visit(date: Date(), identifier: entry1.url, historyEntry: entry1)]
+        let tab1 = makeTab(url: "https://example.com".url!, historyMock: historyMock1)
+
+        // Tab 2: visits test.com
+        let historyMock2 = HistoryTabExtensionMock()
+        let entry2 = makeHistoryEntry(url: "https://test.com")
+        historyMock2.localHistory = [Visit(date: Date(), identifier: entry2.url, historyEntry: entry2)]
+        let tab2 = makeTab(url: "https://test.com".url!, historyMock: historyMock2)
+
+        // Tab 3: visits duck.com
+        let historyMock3 = HistoryTabExtensionMock()
+        let entry3 = makeHistoryEntry(url: "https://duck.com")
+        historyMock3.localHistory = [Visit(date: Date(), identifier: entry3.url, historyEntry: entry3)]
+        let tab3 = makeTab(url: "https://duck.com".url!, historyMock: historyMock3)
+
+        tabCollectionVM.append(tab: tab1)
+        tabCollectionVM.append(tab: tab2)
+        tabCollectionVM.append(tab: tab3)
+        tabCollectionVM.select(at: .unpinned(1))
+
+        let viewModel = makeViewModel(with: tabCollectionVM, clearingOption: .currentWindow)
+
+        // Verify: Selectable should contain ALL domains from all tabs in window
+        let selectableDomains = Set(viewModel.selectable.map(\.domain))
+        XCTAssertEqual(selectableDomains, Set(["example.com", "test.com", "duck.com"]),
+                       "CurrentWindow scope should select domains from all tabs in window")
+    }
+
+    @MainActor func testCurrentWindow_ExcludesFireproofedDomains() {
+        // Scenario: Window tabs have mix of regular and fireproofed domains
+        // Expectation: Only non-fireproofed domains in selectable list
+        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
+        let fireproofDomains = makeFireproofDomains(["duckduckgo.com", "github.com"])
+
+        // Tab 1: visits regular domains
+        let historyMock1 = HistoryTabExtensionMock()
+        let entry1 = makeHistoryEntry(url: "https://example.com")
+        let entry2 = makeHistoryEntry(url: "https://test.com")
+        historyMock1.localHistory = [
+            Visit(date: Date(), identifier: entry1.url, historyEntry: entry1),
+            Visit(date: Date(), identifier: entry2.url, historyEntry: entry2)
+        ]
+        let tab1 = makeTab(url: "https://example.com".url!, historyMock: historyMock1)
+
+        // Tab 2: visits fireproofed domains
+        let historyMock2 = HistoryTabExtensionMock()
+        let entry3 = makeHistoryEntry(url: "https://duckduckgo.com")
+        let entry4 = makeHistoryEntry(url: "https://github.com")
+        historyMock2.localHistory = [
+            Visit(date: Date(), identifier: entry3.url, historyEntry: entry3),
+            Visit(date: Date(), identifier: entry4.url, historyEntry: entry4)
+        ]
+        let tab2 = makeTab(url: "https://duckduckgo.com".url!, historyMock: historyMock2)
+
+        tabCollectionVM.append(tab: tab1)
+        tabCollectionVM.append(tab: tab2)
+        tabCollectionVM.select(at: .unpinned(1))
+
+        let viewModel = makeViewModel(with: tabCollectionVM,
+                                      fireproofDomains: fireproofDomains,
+                                      clearingOption: .currentWindow)
+
+        // Verify: Selectable should only contain non-fireproofed domains
+        let selectableDomains = Set(viewModel.selectable.map(\.domain))
+        XCTAssertEqual(selectableDomains, Set(["example.com", "test.com"]),
+                       "CurrentWindow selectable should exclude fireproofed domains")
+
+        // Verify: Fireproofed list should contain both fireproofed domains
+        let fireproofedDomains = Set(viewModel.fireproofed.map(\.domain))
+        XCTAssertEqual(fireproofedDomains, Set(["duckduckgo.com", "github.com"]),
+                       "Fireproofed list should contain all fireproofed domains from window tabs")
+    }
+
+    @MainActor func testAllData_WithScopeCookieDomains_UsesProvidedDomains() {
+        // Scenario: AllData mode with explicit scopeCookieDomains provided
+        // Expectation: Uses provided domains, not tab domains
+        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
+
+        // Tab only has example.com
+        let historyMock = HistoryTabExtensionMock()
+        let entry1 = makeHistoryEntry(url: "https://example.com")
+        historyMock.localHistory = [Visit(date: Date(), identifier: entry1.url, historyEntry: entry1)]
+        let tab = makeTab(url: "https://example.com".url!, historyMock: historyMock)
+        tabCollectionVM.append(tab: tab)
+        tabCollectionVM.select(at: .unpinned(1))
+
+        // But scopeCookieDomains provides a broader set
+        let scopeCookieDomains = Set(["example.com", "test.com", "duck.com"])
+
+        let viewModel = makeViewModel(with: tabCollectionVM,
+                                      clearingOption: .allData,
+                                      scopeCookieDomains: scopeCookieDomains)
+
+        // Verify: Should use scopeCookieDomains, not tab domains
+        let selectableDomains = Set(viewModel.selectable.map(\.domain))
+        XCTAssertEqual(selectableDomains, scopeCookieDomains,
+                       "AllData scope should use provided scopeCookieDomains")
+    }
+
+    @MainActor func testAllData_WithScopeCookieDomains_ExcludesFireproofed() {
+        // Scenario: AllData with scopeCookieDomains including fireproofed domains
+        // Expectation: Fireproofed domains separated from selectable
+        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
+        let fireproofDomains = makeFireproofDomains(["duckduckgo.com"])
+
+        let scopeCookieDomains = Set(["example.com", "duckduckgo.com", "test.com"])
+
+        let viewModel = makeViewModel(with: tabCollectionVM,
+                                      fireproofDomains: fireproofDomains,
+                                      clearingOption: .allData,
+                                      scopeCookieDomains: scopeCookieDomains)
+
+        // Verify: Selectable excludes fireproofed
+        let selectableDomains = Set(viewModel.selectable.map(\.domain))
+        XCTAssertEqual(selectableDomains, Set(["example.com", "test.com"]),
+                       "AllData selectable should exclude fireproofed domains")
+
+        // Verify: Fireproofed contains fireproofed domain
+        let fireproofedDomains = Set(viewModel.fireproofed.map(\.domain))
+        XCTAssertEqual(fireproofedDomains, Set(["duckduckgo.com"]),
+                       "Fireproofed list should contain fireproofed domains from scope")
+    }
+
+    @MainActor func testAllData_WithoutScopeCookieDomains_FallsBackToGlobalHistory() {
+        // Scenario: AllData mode without scopeCookieDomains
+        // Expectation: Falls back to global history domains
+        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
+        let historyCoordinator = HistoryCoordinatingMock()
+
+        // Setup global history with multiple entries
+        let entry1 = makeHistoryEntry(url: "https://example.com")
+        let entry2 = makeHistoryEntry(url: "https://test.com")
+        let entry3 = makeHistoryEntry(url: "https://duck.com")
+        historyCoordinator.history = [entry1, entry2, entry3]
+
+        let viewModel = makeViewModel(with: tabCollectionVM,
+                                      historyCoordinating: historyCoordinator,
+                                      clearingOption: .allData,
+                                      scopeCookieDomains: nil)  // No scope provided
+
+        // Verify: Should use global history domains
+        let selectableDomains = Set(viewModel.selectable.map(\.domain))
+        XCTAssertEqual(selectableDomains, Set(["example.com", "test.com", "duck.com"]),
+                       "AllData without scopeCookieDomains should use global history")
+    }
+
+    @MainActor func testSwitchingScope_UpdatesDomainLists() {
+        // Scenario: Switching between scopes updates domain lists correctly
+        // Expectation: Domain lists reflect current scope
+        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
+        let fireproofDomains = makeFireproofDomains(["duckduckgo.com"])
+
+        // Tab 1 (current): only example.com
+        let historyMock1 = HistoryTabExtensionMock()
+        let entry1 = makeHistoryEntry(url: "https://example.com")
+        historyMock1.localHistory = [Visit(date: Date(), identifier: entry1.url, historyEntry: entry1)]
+        let tab1 = makeTab(url: "https://example.com".url!, historyMock: historyMock1)
+
+        // Tab 2: test.com and duckduckgo.com
+        let historyMock2 = HistoryTabExtensionMock()
+        let entry2 = makeHistoryEntry(url: "https://test.com")
+        let entry3 = makeHistoryEntry(url: "https://duckduckgo.com")
+        historyMock2.localHistory = [
+            Visit(date: Date(), identifier: entry2.url, historyEntry: entry2),
+            Visit(date: Date(), identifier: entry3.url, historyEntry: entry3)
+        ]
+        let tab2 = makeTab(url: "https://test.com".url!, historyMock: historyMock2)
+
+        tabCollectionVM.append(tab: tab1)
+        tabCollectionVM.append(tab: tab2)
+        tabCollectionVM.select(at: .unpinned(1))  // Select tab1
+
+        let viewModel = makeViewModel(with: tabCollectionVM,
+                                      fireproofDomains: fireproofDomains,
+                                      clearingOption: .currentTab)
+
+        // Initially: CurrentTab should only have example.com
+        var selectableDomains = Set(viewModel.selectable.map(\.domain))
+        XCTAssertEqual(selectableDomains, Set(["example.com"]),
+                       "CurrentTab should initially only show current tab's domain")
+
+        // Switch to CurrentWindow
+        viewModel.clearingOption = .currentWindow
+
+        // Now: Should include all window domains except fireproofed
+        selectableDomains = Set(viewModel.selectable.map(\.domain))
+        XCTAssertEqual(selectableDomains, Set(["example.com", "test.com"]),
+                       "CurrentWindow should show all window domains except fireproofed")
+
+        // Verify fireproofed updated too
+        let fireproofedDomains = Set(viewModel.fireproofed.map(\.domain))
+        XCTAssertEqual(fireproofedDomains, Set(["duckduckgo.com"]),
+                       "Fireproofed should update when scope changes")
+    }
+
+    @MainActor func testAllData_ScopeCookieDomainsRemainUnchanged_WhenScopeNotChanged() {
+        // Scenario: When scopeCookieDomains are provided, they should not be altered unless scope changes
+        // Expectation: Original scopeCookieDomains persist across operations
+        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
+
+        // Tab only has example.com
+        let historyMock = HistoryTabExtensionMock()
+        let entry1 = makeHistoryEntry(url: "https://example.com")
+        historyMock.localHistory = [Visit(date: Date(), identifier: entry1.url, historyEntry: entry1)]
+        let tab = makeTab(url: "https://example.com".url!, historyMock: historyMock)
+        tabCollectionVM.append(tab: tab)
+        tabCollectionVM.select(at: .unpinned(1))
+
+        // Coordinator provides broader scope from history query
+        let originalScopeCookieDomains = Set(["example.com", "test.com", "duck.com", "github.com"])
+
+        let viewModel = makeViewModel(with: tabCollectionVM,
+                                      clearingOption: .allData,
+                                      scopeCookieDomains: originalScopeCookieDomains)
+
+        // Verify: Initial state uses provided scope
+        var selectableDomains = Set(viewModel.selectable.map(\.domain))
+        XCTAssertEqual(selectableDomains, originalScopeCookieDomains,
+                       "AllData should use provided scopeCookieDomains initially")
+
+        // Perform selection changes (should not affect scope domains)
+        viewModel.deselect(index: 0)
+        viewModel.select(index: 1)
+
+        // Verify: Scope domains unchanged, still using original set
+        selectableDomains = Set(viewModel.selectable.map(\.domain))
+        XCTAssertEqual(selectableDomains, originalScopeCookieDomains,
+                       "AllData scopeCookieDomains should not change when only selection changes")
+
+        // Verify: Count is still from original scope, not tab
+        XCTAssertEqual(viewModel.cookiesSitesCountForCurrentScope, 4,
+                       "Count should reflect original scope, not tab domains")
+    }
+
+    @MainActor func testAllData_ScopeCookieDomainsPreserved_WhenSwitchingScopesAndBack() {
+        // Scenario: When scopeCookieDomains provided, switching away and back to .allData should preserve them
+        // Expectation: Original scopeCookieDomains are reused when returning to .allData
+        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
+
+        // Tab has example.com
+        let historyMock = HistoryTabExtensionMock()
+        let entry1 = makeHistoryEntry(url: "https://example.com")
+        historyMock.localHistory = [Visit(date: Date(), identifier: entry1.url, historyEntry: entry1)]
+        let tab = makeTab(url: "https://example.com".url!, historyMock: historyMock)
+        tabCollectionVM.append(tab: tab)
+        tabCollectionVM.select(at: .unpinned(1))
+
+        // Original scope from coordinator (broader than tab)
+        let originalScopeCookieDomains = Set(["example.com", "test.com", "duck.com"])
+
+        let viewModel = makeViewModel(with: tabCollectionVM,
+                                      clearingOption: .allData,
+                                      scopeCookieDomains: originalScopeCookieDomains)
+
+        // Verify: Initially uses provided scope (3 domains)
+        var selectableDomains = Set(viewModel.selectable.map(\.domain))
+        XCTAssertEqual(selectableDomains, originalScopeCookieDomains,
+                       "AllData should initially use provided scopeCookieDomains")
+        XCTAssertEqual(viewModel.cookiesSitesCountForCurrentScope, 3)
+
+        // Switch to CurrentTab (should use tab domains - only 1)
+        viewModel.clearingOption = .currentTab
+        selectableDomains = Set(viewModel.selectable.map(\.domain))
+        XCTAssertEqual(selectableDomains, Set(["example.com"]),
+                       "CurrentTab should use only tab domains")
+        XCTAssertEqual(viewModel.cookiesSitesCountForCurrentScope, 1)
+
+        // Switch back to AllData - should restore original scope, not tab scope!
+        viewModel.clearingOption = .allData
+        selectableDomains = Set(viewModel.selectable.map(\.domain))
+        XCTAssertEqual(selectableDomains, originalScopeCookieDomains,
+                       "AllData should restore original scopeCookieDomains, not use tab domains")
+        XCTAssertEqual(viewModel.cookiesSitesCountForCurrentScope, 3,
+                       "Count should be from original scope, proving scopeCookieDomains were preserved")
+    }
+
+    @MainActor func testAllData_ScopeVisitsRemainUnchanged_WhenScopeNotChanged() {
+        // Scenario: When scopeVisits are provided, they should not be altered unless scope changes
+        // Expectation: historyVisits reflects provided scopeVisits for .allData
+        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
+        let historyCoordinator = HistoryCoordinatingMock()
+
+        // Create scope visits from coordinator (representing history query results)
+        let entry1 = makeHistoryEntry(url: "https://example.com")
+        let entry2 = makeHistoryEntry(url: "https://test.com")
+        let scopeVisits = [
+            Visit(date: Date(), identifier: entry1.url, historyEntry: entry1),
+            Visit(date: Date(), identifier: entry2.url, historyEntry: entry2)
+        ]
+
+        let manager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
+        let fire = Fire(cacheManager: manager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        faviconManagement: faviconManager,
+                        tld: Application.appDelegate.tld)
+
+        let viewModel = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
+            faviconManagement: faviconManager,
+            clearingOption: .allData,
+            scopeVisits: scopeVisits,  // Provided by coordinator
+            tld: Application.appDelegate.tld
+        )
+
+        // Verify: historyVisits uses provided scopeVisits
+        XCTAssertNotNil(viewModel.historyVisits)
+        XCTAssertEqual(viewModel.historyVisits?.count, 2,
+                       "AllData should use provided scopeVisits")
+        XCTAssertEqual(viewModel.historyItemsCountForCurrentScope, 2)
+
+        // Perform selection changes (should not affect visits)
+        if !viewModel.selectable.isEmpty {
+            viewModel.deselect(index: 0)
+        }
+
+        // Verify: historyVisits still uses provided scopeVisits
+        XCTAssertEqual(viewModel.historyVisits?.count, 2,
+                       "AllData scopeVisits should not change when only selection changes")
+        XCTAssertEqual(viewModel.historyItemsCountForCurrentScope, 2)
+    }
+
+    // MARK: - Helper Methods for Domain Selection Tests
+
+    @MainActor
+    private func makeViewModel(with tabCollectionViewModel: TabCollectionViewModel,
+                               historyCoordinating: HistoryCoordinating? = nil,
+                               fireproofDomains: FireproofDomains? = nil,
+                               clearingOption: FireDialogViewModel.ClearingOption,
+                               scopeCookieDomains: Set<String>? = nil) -> FireDialogViewModel {
+        let historyCoord = historyCoordinating ?? HistoryCoordinatingMock()
+        let fireproof = fireproofDomains ?? makeFireproofDomains([])
+        let manager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
+        let fire = Fire(cacheManager: manager,
+                        historyCoordinating: historyCoord,
+                        permissionManager: permissionManager,
+                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        faviconManagement: faviconManager,
+                        tld: Application.appDelegate.tld)
+
+        return FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionViewModel,
+            historyCoordinating: historyCoord,
+            fireproofDomains: fireproof,
+            faviconManagement: faviconManager,
+            clearingOption: clearingOption,
+            scopeCookieDomains: scopeCookieDomains,
+            tld: Application.appDelegate.tld
+        )
+    }
+
+    private func makeFireproofDomains(_ domains: [String]) -> FireproofDomains {
+        let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())
+        domains.forEach { fireproofDomains.add(domain: $0) }
+        return fireproofDomains
+    }
+
+    private func makeHistoryEntry(url: String) -> HistoryEntry {
+        HistoryEntry(identifier: UUID(),
+                     url: URL(string: url)!,
+                     failedToLoad: false,
+                     numberOfTotalVisits: 1,
+                     lastVisit: Date(),
+                     visits: [],
+                     numberOfTrackersBlocked: 0,
+                     blockedTrackingEntities: [],
+                     trackersFound: false)
+    }
+
+    @MainActor
+    private func makeTab(url: URL, historyMock: HistoryTabExtensionMock) -> Tab {
+        let extensionBuilder = TestTabExtensionsBuilder(load: [HistoryTabExtensionMock.self]) { builder in { _, _ in
+            builder.override {
+                historyMock
+            }
+        }}
+        return Tab(content: .url(url, source: .link), extensionsBuilder: extensionBuilder)
     }
 }
 

@@ -165,7 +165,6 @@ extension FireCoordinator {
             let hosts = Set(scopeVisits.compactMap { $0.historyEntry?.url.host })
             let result: [String] = hosts.compactMap {
                 let eTLDplus1 = tld.eTLDplus1($0)
-                guard !fireproofDomains.isFireproof(fireproofDomain: $0) else { return nil }
                 return eTLDplus1
             }
             return Set(result)

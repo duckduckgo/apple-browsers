@@ -64,6 +64,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
     var contextMenuPresenter: CapturingContextMenuPresenter!
     var tabOpener: CapturingHistoryViewTabOpener!
     var bookmarksHandler: CapturingHistoryViewBookmarksHandler!
+    var pasteboard: NSPasteboard!
     fileprivate var firePixelCalls: [FirePixelCall] = []
 
     override func setUp() async throws {
@@ -72,13 +73,15 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         contextMenuPresenter = CapturingContextMenuPresenter()
         tabOpener = CapturingHistoryViewTabOpener()
         bookmarksHandler = CapturingHistoryViewBookmarksHandler()
+        pasteboard = NSPasteboard.test()
         firePixelCalls = []
         actionsHandler = HistoryViewActionsHandler(
             dataProvider: dataProvider,
             dialogPresenter: dialogPresenter,
             tabOpener: tabOpener,
             bookmarksHandler: bookmarksHandler,
-            firePixel: { self.firePixelCalls.append(.init($0, $1)) }
+            firePixel: { self.firePixelCalls.append(.init($0, $1)) },
+            pasteboard: pasteboard
         )
     }
 
@@ -89,6 +92,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         dataProvider = nil
         dialogPresenter = nil
         tabOpener = nil
+        pasteboard = nil
         firePixelCalls = []
     }
 
@@ -302,6 +306,25 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertEqual(contextMenuPresenter.showContextMenuCalls.count, 0)
     }
 
+    // MARK: - copy action via injected pasteboard
+
+    @MainActor
+    func testCopyActionUsesInjectedPasteboard() async throws {
+        let url = try XCTUnwrap("https://copy.me".url)
+        let identifiers: [VisitIdentifier] = [ .init(uuid: "id", url: url, date: Date()) ]
+
+        let expectation = expectation(description: "Copy action completed")
+        contextMenuPresenter.onShowContextMenu = { menu in
+            // copy item index is 6 for single selection
+            menu.performActionForItem(at: 6)
+            expectation.fulfill()
+        }
+
+        _ = await actionsHandler.showContextMenu(for: identifiers.map(\.description), using: contextMenuPresenter)
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(pasteboard.url, url)
+    }
+
     func testWhenShowContextMenuIsCalledForSingleItemThenItShowsMenuForSingleItem() async throws {
         let identifiers: [VisitIdentifier] = [
             .init(uuid: "abcd", url: try XCTUnwrap("https://example.com".url), date: Date()),
@@ -313,16 +336,24 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertEqual(menu.items.count, 11)
 
         XCTAssertEqual(menu.items[0].title, UserText.openInNewTab)
+        XCTAssertEqual(menu.items[0].accessibilityIdentifier(), "HistoryView.openInNewTab")
         XCTAssertEqual(menu.items[1].title, UserText.openInNewWindow)
+        XCTAssertEqual(menu.items[1].accessibilityIdentifier(), "HistoryView.openInNewWindow")
         XCTAssertEqual(menu.items[2].title, UserText.openInNewFireWindow)
+        XCTAssertEqual(menu.items[2].accessibilityIdentifier(), "HistoryView.openInNewFireWindow")
         XCTAssertTrue(menu.items[3].isSeparatorItem)
         XCTAssertEqual(menu.items[4].title, UserText.showAllHistoryFromThisSite)
+        XCTAssertEqual(menu.items[4].accessibilityIdentifier(), "HistoryView.showAllHistoryFromThisSite")
         XCTAssertTrue(menu.items[5].isSeparatorItem)
         XCTAssertEqual(menu.items[6].title, UserText.copyLink)
+        XCTAssertEqual(menu.items[6].accessibilityIdentifier(), "HistoryView.copyLink")
         XCTAssertEqual(menu.items[7].title, UserText.addToBookmarks)
+        XCTAssertEqual(menu.items[7].accessibilityIdentifier(), "HistoryView.addBookmark")
         XCTAssertEqual(menu.items[8].title, UserText.addToFavorites)
+        XCTAssertEqual(menu.items[8].accessibilityIdentifier(), "HistoryView.addFavorite")
         XCTAssertTrue(menu.items[9].isSeparatorItem)
         XCTAssertEqual(menu.items[10].title, UserText.delete)
+        XCTAssertEqual(menu.items[10].accessibilityIdentifier(), "HistoryView.delete")
     }
 
     func testWhenURLIsBookmaredThenShowContextMenuPresentsContextMenuWithoutBookmarkItem() async throws {
@@ -335,6 +366,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
 
         XCTAssertEqual(menu.items.count, 10)
+        XCTAssertFalse(menu.items.compactMap({ $0.accessibilityIdentifier() }).contains("HistoryView.addBookmark"))
         XCTAssertFalse(menu.items.map(\.title).contains(UserText.addToBookmarks))
     }
 
@@ -349,6 +381,9 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
 
         XCTAssertEqual(menu.items.count, 9)
+        let ids = menu.items.compactMap({ $0.accessibilityIdentifier() })
+        XCTAssertFalse(ids.contains("HistoryView.addBookmark"))
+        XCTAssertFalse(ids.contains("HistoryView.addFavorite"))
         XCTAssertFalse(menu.items.map(\.title).contains(UserText.addToBookmarks))
         XCTAssertFalse(menu.items.map(\.title).contains(UserText.addToFavorites))
     }
@@ -366,12 +401,17 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertEqual(menu.items.count, 7)
 
         XCTAssertEqual(menu.items[0].title, UserText.openAllInNewTabs)
+        XCTAssertEqual(menu.items[0].accessibilityIdentifier(), "HistoryView.openInNewTab")
         XCTAssertEqual(menu.items[1].title, UserText.openAllTabsInNewWindow)
+        XCTAssertEqual(menu.items[1].accessibilityIdentifier(), "HistoryView.openInNewWindow")
         XCTAssertEqual(menu.items[2].title, UserText.openAllInNewFireWindow)
+        XCTAssertEqual(menu.items[2].accessibilityIdentifier(), "HistoryView.openInNewFireWindow")
         XCTAssertTrue(menu.items[3].isSeparatorItem)
         XCTAssertEqual(menu.items[4].title, UserText.addAllToBookmarks)
+        XCTAssertEqual(menu.items[4].accessibilityIdentifier(), "HistoryView.addBookmark")
         XCTAssertTrue(menu.items[5].isSeparatorItem)
         XCTAssertEqual(menu.items[6].title, UserText.delete)
+        XCTAssertEqual(menu.items[6].accessibilityIdentifier(), "HistoryView.delete")
     }
 
     func testWhenSomeURLsAreBookmaredThenShowContextMenuForMultipleItemsPresentsContextMenuWithBookmarksItem() async throws {
@@ -388,6 +428,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
 
         XCTAssertEqual(menu.items.count, 7)
+        XCTAssertTrue(menu.items.compactMap({ $0.accessibilityIdentifier() }).contains("HistoryView.addBookmark"))
         XCTAssertTrue(menu.items.map(\.title).contains(UserText.addAllToBookmarks))
     }
 
@@ -403,6 +444,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
 
         XCTAssertEqual(menu.items.count, 6)
+        XCTAssertFalse(menu.items.compactMap({ $0.accessibilityIdentifier() }).contains("HistoryView.addBookmark"))
         XCTAssertFalse(menu.items.map(\.title).contains(UserText.addAllToBookmarks))
     }
 
@@ -421,13 +463,17 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         let identifiers: [VisitIdentifier] = [
             .init(uuid: "abcd", url: url, date: Date())
         ]
-        _ = await actionsHandler.showContextMenu(for: identifiers.map(\.description), using: contextMenuPresenter)
-        let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
-        menu.performActionForItem(at: 0) // items[0] is openInNewTab
 
-        // Wait for a short time to allow the async task to complete
-        await Task.megaYield(count: 100)
+        let expectation = expectation(description: "Open in new tab completed")
+        contextMenuPresenter.onShowContextMenu = { menu in
+            menu.performActionForItem(at: 0) // items[0] is openInNewTab
+            expectation.fulfill()
+        }
 
+        let response = await actionsHandler.showContextMenu(for: identifiers.map(\.description), using: contextMenuPresenter)
+        await fulfillment(of: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(response, .noAction)
         XCTAssertEqual(tabOpener.openInNewTabCalls, [[url]])
         XCTAssertEqual(firePixelCalls, [.init(.itemOpened(.single), .dailyAndStandard)])
     }
@@ -438,13 +484,17 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         let identifiers: [VisitIdentifier] = [
             .init(uuid: "abcd", url: url, date: Date())
         ]
-        _ = await actionsHandler.showContextMenu(for: identifiers.map(\.description), using: contextMenuPresenter)
-        let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
-        menu.performActionForItem(at: 1) // items[1] is openInNewWindow
 
-        // Wait for a short time to allow the async task to complete
-        await Task.megaYield(count: 100)
+        let expectation = expectation(description: "Open in new window completed")
+        contextMenuPresenter.onShowContextMenu = { menu in
+            menu.performActionForItem(at: 1) // items[1] is openInNewWindow
+            expectation.fulfill()
+        }
 
+        let response = await actionsHandler.showContextMenu(for: identifiers.map(\.description), using: contextMenuPresenter)
+        await fulfillment(of: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(response, .noAction)
         XCTAssertEqual(tabOpener.openInNewWindowCalls, [[url]])
         XCTAssertEqual(firePixelCalls, [.init(.itemOpened(.single), .dailyAndStandard)])
     }
@@ -455,13 +505,17 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         let identifiers: [VisitIdentifier] = [
             .init(uuid: "abcd", url: url, date: Date())
         ]
-        _ = await actionsHandler.showContextMenu(for: identifiers.map(\.description), using: contextMenuPresenter)
-        let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
-        menu.performActionForItem(at: 2) // items[2] is openInNewFireWindow
 
-        // Wait for a short time to allow the async task to complete
-        await Task.megaYield(count: 100)
+        let expectation = expectation(description: "Open in new fire window completed")
+        contextMenuPresenter.onShowContextMenu = { menu in
+            menu.performActionForItem(at: 2) // items[2] is openInNewFireWindow
+            expectation.fulfill()
+        }
 
+        let response = await actionsHandler.showContextMenu(for: identifiers.map(\.description), using: contextMenuPresenter)
+        await fulfillment(of: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(response, .noAction)
         XCTAssertEqual(tabOpener.openInNewFireWindowCalls, [[url]])
         XCTAssertEqual(firePixelCalls, [.init(.itemOpened(.single), .dailyAndStandard)])
     }
@@ -472,8 +526,12 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
             .init(uuid: "abcd", url: try XCTUnwrap("https://example1.com".url), date: Date()),
             .init(uuid: "efgh", url: try XCTUnwrap("https://example2.com".url), date: Date())
         ]
-        _ = await actionsHandler.showContextMenu(for: identifiers.map(\.description), using: contextMenuPresenter)
+
+        let response = await actionsHandler.showContextMenu(for: identifiers.map(\.description), using: contextMenuPresenter)
+        XCTAssertEqual(response, .noAction)
+
         let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
+
         menu.performActionForItem(at: 0) // items[0] is openInNewTab
         // Wait for a short time to allow the async task to complete
         await Task.megaYield(count: 100)
@@ -614,6 +672,144 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         await Task.megaYield(count: 100)
 
         XCTAssertEqual(dialogPresenter.showDeleteDialogCalls, [.init(.visits(identifiers), data.visits)])
+    }
+
+    // MARK: - site: record actions
+
+    @MainActor
+    func testShowDeleteDialogForSiteEntriesRoutesToDomainFilterAndMapsResponse() async throws {
+        // Given: site entries with visits in data provider
+        // Generate 3 domains, but only request deletion of 2 to test filtering
+        let data = dataProvider.configureWithGeneratedTestData(domainsCount: 3, visitsPerDomain: 5)
+        // Generated domains are: site1.com, site2.com, site3.com
+        // Only request deletion for site1.com and site2.com
+        let domainsToDelete = ["site1.com", "site2.com"]
+        dataProvider.visitsMatchingQuery = { query in
+            // Filter visits to only those matching the domain filter
+            if case .domainFilter(let requestedDomains) = query {
+                return data.visits.filter { visit in
+                    guard let host = visit.historyEntry?.url.host else { return false }
+                    return requestedDomains.contains(host)
+                }
+            }
+            return data.visits
+        }
+        dialogPresenter.deleteDialogResponse = .delete
+
+        // When
+        let response = await actionsHandler.showDeleteDialog(for: domainsToDelete.map { "site:\($0)" })
+
+        // Then
+        XCTAssertEqual(dialogPresenter.showDeleteDialogCalls.count, 1)
+        let call = try XCTUnwrap(dialogPresenter.showDeleteDialogCalls.first)
+        XCTAssertEqual(call.query, .domainFilter(Set(domainsToDelete)))
+        XCTAssertEqual(response, .delete)
+
+        XCTAssertEqual(firePixelCalls, [
+            .init(.delete, .daily),
+            .init(.multipleItemsDeleted(.domain, burn: false), .dailyAndStandard)
+        ])
+    }
+
+    @MainActor
+    func testShowContextMenuForSingleSiteDiffersOnlyInDeleteLabel() async throws {
+        // Given a site selection entry
+        let domain = "example.com"
+        let siteEntry = "site:\(domain)"
+        _ = await actionsHandler.showContextMenu(for: [siteEntry], using: contextMenuPresenter)
+        XCTAssertEqual(contextMenuPresenter.showContextMenuCalls.count, 1)
+        let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
+
+        // Then: same structure as single identifier, but delete item label differs
+        XCTAssertEqual(menu.items[0].title, UserText.openInNewTab)
+        XCTAssertEqual(menu.items[0].accessibilityIdentifier(), "HistoryView.openInNewTab")
+        XCTAssertEqual(menu.items[1].title, UserText.openInNewWindow)
+        XCTAssertEqual(menu.items[1].accessibilityIdentifier(), "HistoryView.openInNewWindow")
+        XCTAssertEqual(menu.items[2].title, UserText.openInNewFireWindow)
+        XCTAssertEqual(menu.items[2].accessibilityIdentifier(), "HistoryView.openInNewFireWindow")
+        XCTAssertTrue(menu.items[3].isSeparatorItem)
+        XCTAssertEqual(menu.items[4].title, UserText.showAllHistoryFromThisSite)
+        XCTAssertEqual(menu.items[4].accessibilityIdentifier(), "HistoryView.showAllHistoryFromThisSite")
+        XCTAssertTrue(menu.items[5].isSeparatorItem)
+        XCTAssertEqual(menu.items[6].title, UserText.copyLink)
+        XCTAssertEqual(menu.items[6].accessibilityIdentifier(), "HistoryView.copyLink")
+        // bookmark/favorite may be present based on mocked handlers; assert last item
+        XCTAssertEqual(menu.items.last?.title, UserText.deleteHistoryAndBrowsingDataMenuItem)
+        XCTAssertEqual(menu.items.last?.accessibilityIdentifier(), "HistoryView.delete")
+    }
+
+    @MainActor
+    func testShowAllHistoryFromThisSiteSetsDomainSearchResponse() async throws {
+        let domain = "example.com"
+        let siteEntry = "site:\(domain)"
+
+        let expectation = expectation(description: "Menu action completed")
+        contextMenuPresenter.onShowContextMenu = { menu in
+            // item[4] is Show All History From This Site
+            menu.performActionForItem(at: 4)
+            expectation.fulfill()
+        }
+
+        let response = await actionsHandler.showContextMenu(for: [siteEntry], using: contextMenuPresenter)
+        await fulfillment(of: [expectation], timeout: 1.0)
+
+        // The handler sets contextMenuResponse internally; ensure returned value is domainSearch
+        XCTAssertEqual(response, .domainSearch)
+    }
+
+    @MainActor
+    func testCopyActionForSiteRecordUsesInjectedPasteboard() async throws {
+        let domain = "example.com"
+        let siteEntry = "site:\(domain)"
+
+        let expectation = expectation(description: "Copy action completed")
+        contextMenuPresenter.onShowContextMenu = { menu in
+            // copy item index is 6 for site selection
+            menu.performActionForItem(at: 6)
+            expectation.fulfill()
+        }
+
+        let response = await actionsHandler.showContextMenu(for: [siteEntry], using: contextMenuPresenter)
+        await fulfillment(of: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(response, .noAction)
+        XCTAssertEqual(pasteboard.string(forType: .string), "https://\(domain)")
+    }
+
+    @MainActor
+    func testDeleteActionForSiteRecordShowsFireDialogAndMapsResponse() async throws {
+        let domain = "site2.com"
+        let data = dataProvider.configureWithGeneratedTestData(domainsCount: 3, visitsPerDomain: 1)
+        dataProvider.visitsMatchingQuery = { query in
+            // Filter visits to only those matching the domain filter
+            if case .domainFilter(let requestedDomains) = query {
+                return data.visits.filter { visit in
+                    guard let host = visit.historyEntry?.url.host else { return false }
+                    return requestedDomains.contains(host)
+                }
+            }
+            return data.visits
+        }
+        dialogPresenter.deleteDialogResponse = .delete
+
+        let expectation = expectation(description: "Delete action completed")
+        contextMenuPresenter.onShowContextMenu = { menu in
+            // Delete item is the last one
+            menu.performActionForItem(at: menu.items.count - 1)
+            expectation.fulfill()
+        }
+
+        let response = await actionsHandler.showContextMenu(for: ["site:\(domain)"], using: contextMenuPresenter)
+        await fulfillment(of: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(response, .delete)
+        XCTAssertEqual(dialogPresenter.showDeleteDialogCalls.count, 1)
+        let call = try XCTUnwrap(dialogPresenter.showDeleteDialogCalls.first)
+        XCTAssertEqual(call.query, .domainFilter(Set([domain])))
+        XCTAssertEqual(firePixelCalls, [
+            .init(.delete, .daily),
+            .init(.multipleItemsDeleted(.domain, burn: false), .dailyAndStandard)
+        ])
     }
 }
 

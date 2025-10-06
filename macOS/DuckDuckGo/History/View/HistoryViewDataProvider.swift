@@ -435,7 +435,6 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
 
 protocol SearchableHistoryEntry {
     func matches(_ searchTerm: String) -> Bool
-    func matchesDomain(_ domain: String) -> Bool
 }
 
 extension HistoryEntry: SearchableHistoryEntry {
@@ -454,10 +453,6 @@ extension HistoryEntry: SearchableHistoryEntry {
      * - `www.example.com`
      * - `www.cdn.example.com`
      */
-    func matchesDomain(_ domain: String) -> Bool {
-        (etldPlusOne ?? url.host) == domain
-    }
-
     func matchesDomains(_ domains: Set<String>) -> Bool {
         guard let host = etldPlusOne ?? url.host else { return false }
         return domains.contains(host)
@@ -467,10 +462,6 @@ extension HistoryEntry: SearchableHistoryEntry {
 extension HistoryView.DataModel.HistoryItem: SearchableHistoryEntry {
     func matches(_ searchTerm: String) -> Bool {
         title.localizedCaseInsensitiveContains(searchTerm) || url.localizedCaseInsensitiveContains(searchTerm)
-    }
-
-    func matchesDomain(_ domain: String) -> Bool {
-        (etldPlusOne ?? self.domain) == domain
     }
 
     func matchesDomains(_ domains: Set<String>) -> Bool {

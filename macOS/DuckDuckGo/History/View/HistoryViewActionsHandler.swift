@@ -78,6 +78,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
      */
     private var deleteDialogTask: Task<DataModel.DeleteDialogResponse, Never>?
     private var firePixel: (HistoryViewPixel, PixelKit.Frequency) -> Void
+    private let pasteboard: NSPasteboard
 
     init(
         dataProvider: HistoryViewDataProviding,
@@ -86,7 +87,8 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         bookmarksHandler: HistoryViewBookmarksHandling,
         fireCoordinator: FireCoordinator = Application.appDelegate.fireCoordinator,
         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
-        firePixel: @escaping (HistoryViewPixel, PixelKit.Frequency) -> Void = { PixelKit.fire($0, frequency: $1) }
+        firePixel: @escaping (HistoryViewPixel, PixelKit.Frequency) -> Void = { PixelKit.fire($0, frequency: $1) },
+        pasteboard: NSPasteboard = .general
     ) {
         self.dataProvider = dataProvider
         self.dialogPresenter = dialogPresenter
@@ -96,6 +98,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         self.fireCoordinator = fireCoordinator
         self.featureFlagger = featureFlagger
         self.firePixel = firePixel
+        self.pasteboard = pasteboard
     }
 
     func showDeleteDialog(for query: DataModel.HistoryQueryKind, in window: NSWindow?) async -> DataModel.DeleteDialogResponse {
@@ -293,7 +296,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         guard let url = sender.representedObject as? URL else {
             return
         }
-        NSPasteboard.general.copy(url)
+        pasteboard.copy(url)
     }
 
     @MainActor

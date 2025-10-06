@@ -479,7 +479,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                pixelHandler: pixelHandler,
                                                                initForPurchase: false,
                                                                wideEvent: self.wideEvent,
-                                                               isAuthV2WideEventEnabled: { true })
+                                                               isAuthV2WideEventEnabled: { return subscriptionEnvironment.serviceEnvironment == .production })
 
         let entitlementsCheck: (() async -> Result<Bool, Error>) = {
             Logger.networkProtection.log("Subscription Entitlements check...")

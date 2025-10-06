@@ -510,7 +510,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let legacyTokenStorage = SubscriptionTokenKeychainStorage(keychainType: keychainType)
         let authRefreshWideEventMapper = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
-            return featureFlagger.isFeatureOn(.authV2WideEventEnabled)
+            return featureFlagger.isFeatureOn(.authV2WideEventEnabled) && subscriptionEnvironment.serviceEnvironment == .production
         })
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             legacyTokenStorage: legacyTokenStorage,

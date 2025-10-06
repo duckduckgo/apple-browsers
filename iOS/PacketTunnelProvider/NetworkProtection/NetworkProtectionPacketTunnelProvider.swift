@@ -471,7 +471,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                                 legacyTokenStorage: nil, // Only the main app can migrate
                                                 authService: authService,
                                                 refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: self.wideEvent, isFeatureEnabled: {
-                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true)
+                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true) && authEnvironment == .production
             }))
 
             let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
@@ -486,7 +486,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                                                    initForPurchase: false,
                                                                    wideEvent: self.wideEvent,
                                                                    isAuthV2WideEventEnabled: {
-                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true)
+                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true) && subscriptionEnvironment.serviceEnvironment == .production
             })
 
             self.subscriptionManager = subscriptionManager

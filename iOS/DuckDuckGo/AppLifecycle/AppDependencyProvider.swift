@@ -166,7 +166,7 @@ final class AppDependencyProvider: DependencyProvider {
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
         let legacyAccountStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
         let refreshEventMapper = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
-            return featureFlagger.isFeatureOn(.authV2WideEventEnabled)
+            return featureFlagger.isFeatureOn(.authV2WideEventEnabled) && authEnvironment == .production
         })
 
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,

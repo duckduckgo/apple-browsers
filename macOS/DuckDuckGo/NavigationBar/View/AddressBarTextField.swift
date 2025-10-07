@@ -754,8 +754,18 @@ extension AddressBarTextField {
         case suggestion(_ suggestionViewModel: SuggestionViewModel)
 
         init(stringValue: String, userTyped: Bool, isSearch: Bool = false) {
-            let shouldUseUnifiedLogic = Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)
-            if let url = URL(trimmedAddressBarString: stringValue, useUnifiedLogic: shouldUseUnifiedLogic), url.isValid || shouldUseUnifiedLogic {
+
+            let url: URL? = {
+                let shouldUseUnifiedLogic = Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)
+                guard shouldUseUnifiedLogic else {
+                    let url = URL(trimmedAddressBarString: stringValue)
+                    return url?.isValid == true ? url : nil
+                }
+                /// unified logic does not require additional `isValid` check
+                return URL(trimmedAddressBarString: stringValue, useUnifiedLogic: true)
+            }()
+
+            if let url {
                 var stringValue = stringValue
                 // display punycoded url in readable form when editing
                 if !userTyped,

@@ -215,7 +215,7 @@ public enum FeatureFlag: String, CaseIterable {
     case fireDialogIndividualSitesLink
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211185922947392?focus=true
-    case clearAIChatHistory
+    case aiChatDataClearing
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -234,7 +234,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .subscriptionPurchaseWidePixelMeasurement,
                 .subscriptionRestoreWidePixelMeasurement,
                 .authV2WideEventEnabled,
-                .clearAIChatHistory:
+                .aiChatDataClearing:
             true
         default:
             false
@@ -312,7 +312,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .authV2WideEventEnabled,
                 .webKitPerformanceReporting,
                 .fireDialog,
-                .clearAIChatHistory:
+                .aiChatDataClearing:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -471,8 +471,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webKitPerformanceReporting))
         case .subscriptionRestoreWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
-        case .clearAIChatHistory:
-            return .internalOnly()
+        case .aiChatDataClearing:
+            return .remoteReleasable(.feature(.aiChatDataClearing))
         }
     }
 }

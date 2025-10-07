@@ -73,9 +73,9 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
         $aiChatWasUsedBefore.combineLatest(aiChatMenuConfiguration.valuesChangedPublisher.prepend(()))
             .map { [weak self] wasUsed, _ in
                 guard let self else { return false }
-                return wasUsed && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.clearAIChatHistory)
+                return wasUsed && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatDataClearing)
             }
-            .prepend(aiChatWasUsedBefore && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.clearAIChatHistory))
+            .prepend(aiChatWasUsedBefore && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatDataClearing))
             .removeDuplicates()
             .assign(to: &$shouldDisplayCleanAIChatHistoryOption)
     }

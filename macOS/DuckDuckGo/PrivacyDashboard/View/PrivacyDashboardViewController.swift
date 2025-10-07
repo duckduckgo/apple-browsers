@@ -332,7 +332,7 @@ extension PrivacyDashboardViewController {
         case failedToFetchTheCurrentURL
     }
 
-    private func calculateWebVitals(performanceMetrics: PerformanceMetricsSubfeature?, breakageReportingSubfeature: BreakageReportingSubfeature?, privacyConfig: PrivacyConfiguration) async -> [Double]? {
+    private func calculateWebVitals(performanceMetrics: PerformanceMetricsSubfeature?, privacyConfig: PrivacyConfiguration) async -> [Double]? {
         var webVitalsResult: [Double]?
         if privacyConfig.isEnabled(featureKey: .performanceMetrics) {
             webVitalsResult = await withCheckedContinuation({ continuation in
@@ -387,7 +387,7 @@ extension PrivacyDashboardViewController {
         let configuration = contentBlocking.privacyConfigurationManager.privacyConfig
         let protectionsState = configuration.isFeature(.contentBlocking, enabledForDomain: currentTab.content.urlForWebView?.host)
 
-        let webVitals = await calculateWebVitals(performanceMetrics: currentTab.brokenSiteInfo?.performanceMetrics, breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature, privacyConfig: configuration)
+        let webVitals = await calculateWebVitals(performanceMetrics: currentTab.brokenSiteInfo?.performanceMetrics, privacyConfig: configuration)
 
         let expandedWebVitals = await calculateExpandedWebVitals(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature, privacyConfig: configuration)
 

@@ -68,6 +68,7 @@ public enum RemoteMessageResponse {
     enum JsonSurface: String, CaseIterable {
         case newTabPage = "new_tab_page"
         case modal
+        // Used for 'What's New' (macOS)
         case dedicatedTab = "dedicated_tab"
     }
 

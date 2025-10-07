@@ -24,6 +24,7 @@ import DDGSync
 import History
 import BrowserServicesKit
 import RemoteMessaging
+import RemoteMessagingTestsUtils
 @testable import Configuration
 import Combine
 import SubscriptionTestingUtilities
@@ -67,7 +68,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             duckPlayerStorage: MockDuckPlayerStorage(),
             configurationURLProvider: MockConfigurationURLProvider()
         )
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: remoteMessagingClient.store, subscriptionDataReporter: MockSubscriptionDataReporter())
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter())
         let tabsModel = TabsModel(desktop: true)
         onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = try TabsModelPersistence()

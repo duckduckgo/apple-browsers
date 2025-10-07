@@ -21,6 +21,7 @@ import Foundation
 public struct RemoteMessageModel: Equatable, Codable {
 
     public let id: String
+    /// Specify the surface area where the message will be displayed. E.g. new tab page, dedicated tab or modal.
     public let surfaces: RemoteMessageSurfaceType
     public var content: RemoteMessageModelType?
     public let matchingRules: [Int]
@@ -101,8 +102,11 @@ public struct RemoteMessageSurfaceType: OptionSet, Codable, Hashable, Equatable 
         self.rawValue = rawValue
     }
 
+    /// Used to show a remote message as widgets in the browser new tab page.
     public static let newTabPage = RemoteMessageSurfaceType(rawValue: 1 << 0)
+    /// Used to show a remote message in a modal prompt.
     public static let modal = RemoteMessageSurfaceType(rawValue: 1 << 1)
+    /// Used to show a remote message in a dedicated tab.
     public static let dedicatedTab = RemoteMessageSurfaceType(rawValue: 1 << 2)
 
     public static let allCases: RemoteMessageSurfaceType = [.newTabPage, .modal, .dedicatedTab]

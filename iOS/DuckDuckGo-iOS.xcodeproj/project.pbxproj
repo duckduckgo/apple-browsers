@@ -1264,6 +1264,7 @@
 		9FB027192C26BC29009EA190 /* BrowsersComparisonModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB027182C26BC29009EA190 /* BrowsersComparisonModel.swift */; };
 		9FB0271B2C2927D0009EA190 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB0271A2C2927D0009EA190 /* OnboardingView.swift */; };
 		9FB0271D2C293619009EA190 /* OnboardingIntroViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB0271C2C293619009EA190 /* OnboardingIntroViewModel.swift */; };
+		9FB19C7E2E94A28700B651B1 /* RemoteMessagingTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 9FB19C7D2E94A28700B651B1 /* RemoteMessagingTestsUtils */; };
 		9FB6272E2E08251D00CBDEED /* SetDefaultBrowserUI in Frameworks */ = {isa = PBXBuildFile; productRef = 9FB6272D2E08251D00CBDEED /* SetDefaultBrowserUI */; };
 		9FB859892E2DD2C900BA68E4 /* SystemSettingsPiPTutorialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB859882E2DD2BB00BA68E4 /* SystemSettingsPiPTutorialService.swift */; };
 		9FBC76672CFE33B5008B21E7 /* MaliciousSiteProtectionNavigationHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FBC76662CFE33B5008B21E7 /* MaliciousSiteProtectionNavigationHandlerTests.swift */; };
@@ -4297,6 +4298,7 @@
 				98E564922DE8DE7500E6E75F /* Configuration in Frameworks */,
 				98E564842DE8DE3F00E6E75F /* Common in Frameworks */,
 				98E5648A2DE8DE5F00E6E75F /* DDGSync in Frameworks */,
+				9FB19C7E2E94A28700B651B1 /* RemoteMessagingTestsUtils in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -9395,6 +9397,7 @@
 				7BC26CB32DFC155E00E52480 /* VPNTestUtils */,
 				9FE59CD72E3097B200C4B65D /* SystemSettingsPiPTutorialTestSupport */,
 				F11595D82E8570B500CC0481 /* AttributedMetric */,
+				9FB19C7D2E94A28700B651B1 /* RemoteMessagingTestsUtils */,
 			);
 			productName = SharedStateTests;
 			productReference = 98E5643E2DE8DDA200E6E75F /* SharedStateTests.xctest */;
@@ -15075,6 +15078,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 9F8FE9472BAE50E50071E372 /* XCRemoteSwiftPackageReference "lottie-spm" */;
 			productName = Lottie;
+		};
+		9FB19C7D2E94A28700B651B1 /* RemoteMessagingTestsUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RemoteMessagingTestsUtils;
 		};
 		9FB6272D2E08251D00CBDEED /* SetDefaultBrowserUI */ = {
 			isa = XCSwiftPackageProductDependency;

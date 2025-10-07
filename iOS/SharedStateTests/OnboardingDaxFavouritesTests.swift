@@ -24,6 +24,7 @@ import DDGSync
 import History
 import BrowserServicesKit
 import RemoteMessaging
+import RemoteMessagingTestsUtils
 @testable import Configuration
 import Core
 import SubscriptionTestingUtilities
@@ -70,7 +71,7 @@ import SystemSettingsPiPTutorialTestSupport
             configurationURLProvider: MockCustomURLProvider(),
             syncService: MockDDGSyncing()
         )
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: remoteMessagingClient.store, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
         let tabsModel = TabsModel(desktop: true)
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()

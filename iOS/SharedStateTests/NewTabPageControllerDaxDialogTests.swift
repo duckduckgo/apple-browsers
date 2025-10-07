@@ -25,6 +25,7 @@ import Core
 import SwiftUI
 import Persistence
 import BrowserServicesKit
+import RemoteMessagingTestsUtils
 @testable import Configuration
 
 private class MockURLBasedDebugCommands: URLBasedDebugCommands {
@@ -57,7 +58,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             duckPlayerStorage: MockDuckPlayerStorage(),
             configurationURLProvider: MockConfigurationURLProvider(),
             syncService: MockDDGSyncing())
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: remoteMessagingClient.store, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { true })
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { true })
         hvc = NewTabPageViewController(
             tab: Tab(),
             interactionModel: MockFavoritesListInteracting(),

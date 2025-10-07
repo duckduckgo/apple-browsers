@@ -40,26 +40,20 @@ struct UserText {
     static let fireDialogCloseAllTabsWindows = NSLocalizedString("fire.dialog.close.all.tabs.windows", value: "Close all tabs and windows.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Everything’. Means: all browser tabs and windows will be closed.")
 
     static func fireDialogHistoryItemsSubtitle(_ count: Int) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        let formatted = formatter.string(from: NSNumber(value: count)) ?? String(count)
         let template = NSLocalizedString(
             "fire.dialog.history.count",
-            value: "Delete %@ items.",
-            comment: "Subtitle. Shows the exact number of browsing history items that will be deleted in this operation. %@ is a localized decimal number."
+            value: "Delete %#@items@.",
+            comment: "Subtitle. Shows the exact number of browsing history items that will be deleted in this operation, using plural substitutions for the count and noun (%#@items@)."
         )
-        return String(format: template, formatted)
+        return String.localizedStringWithFormat(template, count)
     }
     static func fireDialogCookiesCountSubtitle(_ count: Int) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        let formatted = formatter.string(from: NSNumber(value: count)) ?? String(count)
         let template = NSLocalizedString(
             "fire.dialog.cookies.count",
-            value: "Delete from %@ sites. May sign you out of accounts.",
-            comment: "Subtitle. Shows the number of sites whose cookies/site data will be deleted. Warns user that this may sign them out. %@ is a localized decimal number."
+            value: "Delete from %#@sites@. May sign you out of accounts.",
+            comment: "Subtitle. Shows the number of sites whose cookies/site data will be deleted. Uses plural substitutions for the count and noun (%#@sites@)."
         )
-        return String(format: template, formatted)
+        return String.localizedStringWithFormat(template, count)
     }
     static let notNow = NSLocalizedString("notnow", value: "Not Now", comment: "Not Now button")
     static let remove = NSLocalizedString("generic.remove.button", value: "Remove", comment: "Label of a button that allows the user to remove an item")

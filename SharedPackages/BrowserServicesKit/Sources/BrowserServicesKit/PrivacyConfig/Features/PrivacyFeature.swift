@@ -84,6 +84,7 @@ public enum PrivacyFeature: String {
     case daxEasterEggLogos
     case openFireWindowByDefault
     case behaviorMetrics
+    case appStoreUpdateFlow
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.

@@ -293,6 +293,7 @@ enum Preferences {
         let featureFlagger: FeatureFlagger
         let showTab: @MainActor (Tab.TabContent) -> Void
         let aiChatURLSettings: AIChatRemoteSettingsProvider
+        let wideEvent: WideEventManaging
 
         init(
             model: PreferencesSidebarModel,
@@ -300,6 +301,7 @@ enum Preferences {
             subscriptionUIHandler: SubscriptionUIHandling,
             featureFlagger: FeatureFlagger,
             aiChatURLSettings: AIChatRemoteSettingsProvider,
+            wideEvent: WideEventManaging,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
             visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
         ) {
@@ -310,6 +312,7 @@ enum Preferences {
             self.featureFlagger = featureFlagger
             self.visualStyle = visualStyle
             self.aiChatURLSettings = aiChatURLSettings
+            self.wideEvent = wideEvent
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.paidAIChatModel = makePaidAIChatViewModel()
@@ -416,25 +419,30 @@ enum Preferences {
                 openActivateViaEmailURL: {
                     let url = subscriptionManager.url(for: .activationFlow)
 
-                    let subscriptionRestoreWideEventData = SubscriptionRestoreWideEventData(
+                    let subscriptionRestoreEmailSettingsWideEventData = SubscriptionRestoreWideEventData(
                         restorePlatform: .emailAddress,
-                        contextData: WideEventContextData(name: SubscriptionFunnelOrigin.appSettings.rawValue)
+                        contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
                     )
                     showTab(.subscription(url))
+                    
+                    if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
+                        wideEvent.startFlow(subscriptionRestoreEmailSettingsWideEventData)
+                    }
+                    
                     PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {
                         Task {
                             let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
                                                                                    storePurchaseManager: subscriptionManager.storePurchaseManager())
-                            let subscriptionRestoreWideEventData = SubscriptionRestoreWideEventData(
+                            let subscriptionRestoreAppleSettingsWideEventData = SubscriptionRestoreWideEventData(
                                 restorePlatform: .appleAccount,
-                                contextData: WideEventContextData(name: SubscriptionFunnelOrigin.appSettings.rawValue)
+                                contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
                             )
                             let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: subscriptionManager,
                                                                                                      appStoreRestoreFlow: appStoreRestoreFlow,
                                                                                                      uiHandler: subscriptionUIHandler,
-                                                                                                     subscriptionRestoreWideEventData: subscriptionRestoreWideEventData)
+                                                                                                     subscriptionRestoreWideEventData: subscriptionRestoreAppleSettingsWideEventData)
                             await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
 
                             PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)

@@ -129,6 +129,9 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
     // Wide Event
     private let wideEvent: WideEventManaging
     private let subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData?
+    private var isSubscriptionRestoreWidePixelMeasurementEnabled: Bool {
+        featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
+    }
 
     let uiHandler: SubscriptionUIHandling
 
@@ -153,7 +156,7 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
         await uiHandler.presentProgressViewController(withTitle: UserText.restoringSubscriptionTitle)
 
         do {
-            if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement), var data = subscriptionRestoreWideEventData {
+            if isSubscriptionRestoreWidePixelMeasurementEnabled, let data = subscriptionRestoreWideEventData {
                 data.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
                 wideEvent.startFlow(data)
             }
@@ -164,8 +167,7 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
 
             switch error as? StoreKitError {
             case .some(.userCancelled):
-                if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement), var data = subscriptionRestoreWideEventData {
-                    data.appleAccountRestoreDuration?.complete()
+                if isSubscriptionRestoreWidePixelMeasurementEnabled, let data = subscriptionRestoreWideEventData {
                     wideEvent.discardFlow(data)
                 }
             default:
@@ -173,8 +175,8 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
                 if alertResponse == .alertFirstButtonReturn {
                     await uiHandler.presentProgressViewController(withTitle: UserText.restoringSubscriptionTitle)
                     await continueRestore()
-                } else if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement), var data = subscriptionRestoreWideEventData {
-                    data.appleAccountRestoreDuration?.complete()
+                } else if isSubscriptionRestoreWidePixelMeasurementEnabled, let data = subscriptionRestoreWideEventData {
+                    // User clicked cancel on the alert
                     wideEvent.discardFlow(data)
                 }
             }
@@ -187,7 +189,7 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
         switch result {
         case .success:
             PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreSuccess, frequency: .legacyDailyAndCount)
-            if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement), var data = subscriptionRestoreWideEventData {
+            if isSubscriptionRestoreWidePixelMeasurementEnabled, let data = subscriptionRestoreWideEventData {
                 data.appleAccountRestoreDuration?.complete()
                 wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
             }
@@ -195,43 +197,19 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
             switch error {
             case .missingAccountOrTransactions:
                 subscriptionErrorReporter.report(subscriptionActivationError: .restoreFailedDueToNoSubscription)
-
-                if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement), var data = subscriptionRestoreWideEventData {
-                    data.appleAccountRestoreDuration?.complete()
-                    data.errorData = .init(error: error)
-                    wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
-                }
-
+                markSubscriptionRestoreWideEventAsFailure(with: error)
                 await showSubscriptionNotFoundAlert()
             case .subscriptionExpired:
                 subscriptionErrorReporter.report(subscriptionActivationError: .restoreFailedDueToExpiredSubscription)
-
-                if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement), var data = subscriptionRestoreWideEventData {
-                    data.appleAccountRestoreDuration?.complete()
-                    data.errorData = .init(error: error)
-                    wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
-                }
-
+                markSubscriptionRestoreWideEventAsFailure(with: error)
                 await showSubscriptionInactiveAlert()
             case .failedToObtainAccessToken, .failedToFetchAccountDetails, .failedToFetchSubscriptionDetails:
                 subscriptionErrorReporter.report(subscriptionActivationError: .otherRestoreError)
-
-                if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement), var data = subscriptionRestoreWideEventData {
-                    data.appleAccountRestoreDuration?.complete()
-                    data.errorData = .init(error: error)
-                    wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
-                }
-
+                markSubscriptionRestoreWideEventAsFailure(with: error)
                 await showSomethingWentWrongAlert()
             case .pastTransactionAuthenticationError:
                 subscriptionErrorReporter.report(subscriptionActivationError: .otherRestoreError)
-
-                if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement), var data = subscriptionRestoreWideEventData {
-                    data.appleAccountRestoreDuration?.complete()
-                    data.errorData = .init(error: error)
-                    wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
-                }
-
+                markSubscriptionRestoreWideEventAsFailure(with: error)
                 await showSubscriptionNotFoundAlert()
             }
         }
@@ -261,5 +239,14 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
             PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression)
         default: return
         }
+    }
+    
+    // MARK: - Wide Pixel Helper
+    
+    private func markSubscriptionRestoreWideEventAsFailure(with error: Error) {
+        guard isSubscriptionRestoreWidePixelMeasurementEnabled, let data = subscriptionRestoreWideEventData else { return }
+        data.appleAccountRestoreDuration?.complete()
+        data.errorData = .init(error: error)
+        wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
     }
 }

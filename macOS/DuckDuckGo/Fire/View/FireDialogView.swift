@@ -151,7 +151,7 @@ struct FireDialogView: ModalView {
                         sitesOverlay
 
                         // Separator above the footer
-                        Color(singleUseColor: .fireDialogSectionBorder)
+                        Color(designSystemColor: .fireDialogSectionBorder)
                             .frame(height: 1)
                     }
                     .zIndex(10)
@@ -164,10 +164,10 @@ struct FireDialogView: ModalView {
             footerView
                 .zIndex(11)
                 .padding(.bottom, 10) // presenter sheet crops the padding 🤷‍♂️
-                .background(Color(singleUseColor: .fireDialogBackground))
+                .background(Color(designSystemColor: .fireDialogBackground))
         }
         .frame(maxWidth: Constants.viewSize.width, maxHeight: .infinity)
-        .background(Color(singleUseColor: .fireDialogBackground))
+        .background(Color(designSystemColor: .fireDialogBackground))
     }
 
     private var headerView: some View {
@@ -195,20 +195,20 @@ struct FireDialogView: ModalView {
                 .init(id: FireDialogViewModel.ClearingOption.currentWindow.rawValue, title: UserText.fireDialogSegmentWindow, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.window)),
                 .init(id: FireDialogViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogSegmentEverything, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.windowsAndTabs))
             ],
-            containerBackground: Color(singleUseColor: .fireDialogPillBackground),
-            containerBorder: Color(singleUseColor: .fireDialogPillBorder),
-            selectedForeground: Color(designSystemColor: .accent),
+            containerBackground: Color(designSystemColor: .fireDialogPillBackground),
+            containerBorder: Color(designSystemColor: .fireDialogPillBorder),
+            selectedForeground: Color(designSystemColor: .accentPrimary),
             unselectedForeground: Color(designSystemColor: .buttonsSecondaryFillText),
-            selectedIconBackground: Color(singleUseColor: .fireDialogPillSelectedSegmentIconBackground),
-            selectedSegmentFill: Color(singleUseColor: .fireDialogPillSelectedSegmentBackground),
-            selectedSegmentStroke: Color(singleUseColor: .fireDialogPillSelectedSegmentBorder),
+            selectedIconBackground: Color(designSystemColor: .fireDialogPillSelectedSegmentIconBackground),
+            selectedSegmentFill: Color(designSystemColor: .fireDialogPillSelectedSegmentBackground),
+            selectedSegmentStroke: Color(designSystemColor: .fireDialogPillSelectedSegmentBorder),
             selectedSegmentShadowColor: Color(designSystemColor: .shadowTertiary),
             selectedSegmentShadowRadius: 0,
             selectedSegmentShadowY: 1,
-            selectedSegmentTopStroke: Color(singleUseColor: .fireDialogPillSelectedSegmentTopStroke),
-            hoverSegmentBackground: Color(singleUseColor: .fireDialogPillSegmentMouseOver),
-            pressedSegmentBackground: Color(singleUseColor: .fireDialogPillSegmentMouseDown),
-            hoverOverlay: Color(singleUseColor: .fireDialogPillHoverOverlay)
+            selectedSegmentTopStroke: Color(designSystemColor: .fireDialogPillSelectedSegmentTopStroke),
+            hoverSegmentBackground: Color(designSystemColor: .fireDialogPillSegmentMouseOver),
+            pressedSegmentBackground: Color(designSystemColor: .fireDialogPillSegmentMouseDown),
+            hoverOverlay: Color(designSystemColor: .fireDialogPillHoverOverlay)
         )
         .frame(height: 84)
     }
@@ -244,8 +244,10 @@ struct FireDialogView: ModalView {
                 title: UserText.cookiesAndSiteDataTitle,
                 subtitle: cookiesSubtitle,
                 isOn: Binding { viewModel.includeCookiesAndSiteData && isIncludeCookiesAndSiteDataEnabled } set: { viewModel.includeCookiesAndSiteData = $0 },
-                infoAction: { isShowingSitesOverlay = true },
-                infoEnabled: isIncludeCookiesAndSiteDataEnabled
+                // don‘t show the ℹ button when there‘s no site data in scope
+                infoAction: isIncludeCookiesAndSiteDataEnabled ? { isShowingSitesOverlay = true } : nil,
+                // grey-out the ℹ button when the toggle is Off
+                infoEnabled: viewModel.includeCookiesAndSiteData
             )
             .disabled(!isIncludeCookiesAndSiteDataEnabled)
             sectionDivider(padding: 0)
@@ -257,10 +259,10 @@ struct FireDialogView: ModalView {
         }
         .background(
             RoundedRectangle(cornerRadius: 12.0, style: .continuous)
-                .fill(Color(singleUseColor: .fireDialogSectionBackground))
+                .fill(Color(designSystemColor: .fireDialogSectionBackground))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12.0, style: .continuous)
-                        .stroke(Color(singleUseColor: .fireDialogSectionBorder), lineWidth: 1)
+                        .stroke(Color(designSystemColor: .fireDialogSectionBorder), lineWidth: 1)
                 )
         )
         .padding(.top, 4)
@@ -365,7 +367,7 @@ struct FireDialogView: ModalView {
         }
         .background(
             CustomRoundedCornersShape(tl: 8, tr: 8, bl: 0, br: 0)
-                .fill(Color(singleUseColor: .fireDialogBackground))
+                .fill(Color(designSystemColor: .fireDialogBackground))
         )
     }
 
@@ -398,18 +400,19 @@ struct FireDialogView: ModalView {
                     .padding(.trailing, 4)
                 }
                 Toggle(isOn: isOn)
-                    .toggleStyle(FireToggleStyle(onFill: Color(designSystemColor: .accent), knobFill: Color(singleUseColor: .fireDialogToggleKnob)))
+                    .toggleStyle(FireToggleStyle(onFill: Color(designSystemColor: .accentPrimary), knobFill: Color(designSystemColor: .fireDialogToggleKnob)))
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
             .frame(width: Constants.viewSize.width - 32, alignment: .leading)
+            .contentShape(Rectangle()) // allow hit-test in empty rect areas
         }
         .buttonStyle(RowPressButtonStyle())
     }
 
     private func sectionDivider(padding: CGFloat = 16) -> some View {
         HStack(spacing: 0) {
-            Rectangle().fill(Color(singleUseColor: .fireDialogSectionBorder)).frame(height: 1)
+            Rectangle().fill(Color(designSystemColor: .fireDialogSectionBorder)).frame(height: 1)
                 .padding(.horizontal, padding)
         }
     }
@@ -445,14 +448,14 @@ struct FireDialogView: ModalView {
     private var individualSitesLink: some View {
         HStack(spacing: 8) {
             Image(nsImage: DesignSystemImages.Glyphs.Size16.globeBlocked
-                .tinted(with: NSColor(designSystemColor: .textLink)))
+                .tinted(with: .linkBlue))
             TextButton(UserText.fireDialogManageIndividualSitesLink, fontSize: 11) {
-                    presentIndividualSites()
+                presentIndividualSites()
             }
 
             Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight
                 .resized(to: NSSize(width: 12, height: 12))
-                .tinted(with: NSColor(designSystemColor: .textLink)))
+                .tinted(with: .linkBlue))
 
         }
     }

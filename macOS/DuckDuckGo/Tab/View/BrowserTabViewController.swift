@@ -761,7 +761,11 @@ final class BrowserTabViewController: NSViewController {
                 return
             }
             // present contextual onboarding dialog if needed
-            self.presentContextualOnboarding()
+            // Skip for new tab pages only when using per-tab webviews (handled in onNewTabPageDidPresent)
+            let isNewTabPageWithPerTabWebViews = tabViewModel?.tab.content == .newtab && featureFlagger.isFeatureOn(.newTabPagePerTab)
+            if !isNewTabPageWithPerTabWebViews {
+                self.presentContextualOnboarding()
+            }
             self.lastURL = self.tabViewModel?.tab.url
             self.lastTab = self.tabViewModel?.tab
         }.store(in: &tabViewModelCancellables)
@@ -1037,6 +1041,7 @@ final class BrowserTabViewController: NSViewController {
 
         if featureFlagger.isFeatureOn(.newTabPagePerTab) {
             tabViewModel?.tab.newTabPage?.onNewTabPageDidPresent()
+            presentContextualOnboarding()
         } else {
             // If web view is loaded, update load metrics.
             // Otherwise NewTabPageWebViewModel's delegate callback will update load metrics when loading is finished.

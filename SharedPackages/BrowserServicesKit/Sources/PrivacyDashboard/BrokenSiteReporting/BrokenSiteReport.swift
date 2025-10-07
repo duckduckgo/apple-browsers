@@ -17,8 +17,10 @@
 //
 //  Implementation guidelines: https://app.asana.com/0/1198207348643509/1200202563872939/f
 
+import Navigation
 import Foundation
 import Common
+import WebKit
 
 public struct BrokenSiteReport {
 
@@ -101,6 +103,7 @@ public struct BrokenSiteReport {
     let debugFlags: String
     let privacyExperiments: String
     let isPirEnabled: Bool?
+    let pageLoadTiming: WKPageLoadTiming?
 #if os(iOS)
     let siteType: SiteType
     let atb: String
@@ -135,7 +138,8 @@ public struct BrokenSiteReport {
         cookieConsentInfo: CookieConsentInfo?,
         debugFlags: String,
         privacyExperiments: String,
-        isPirEnabled: Bool?
+        isPirEnabled: Bool?,
+        pageLoadTiming: WKPageLoadTiming?
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -163,6 +167,7 @@ public struct BrokenSiteReport {
         self.debugFlags = debugFlags
         self.privacyExperiments = privacyExperiments
         self.isPirEnabled = isPirEnabled
+        self.pageLoadTiming = pageLoadTiming
     }
 #endif
 
@@ -197,7 +202,8 @@ public struct BrokenSiteReport {
         cookieConsentInfo: CookieConsentInfo?,
         debugFlags: String,
         privacyExperiments: String,
-        isPirEnabled: Bool?
+        isPirEnabled: Bool?,
+        pageLoadTiming: WKPageLoadTiming? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -229,6 +235,7 @@ public struct BrokenSiteReport {
         self.debugFlags = debugFlags
         self.privacyExperiments = privacyExperiments
         self.isPirEnabled = isPirEnabled
+        self.pageLoadTiming = pageLoadTiming
     }
 #endif
 
@@ -288,6 +295,10 @@ public struct BrokenSiteReport {
             result["isPirEnabled"] = "true"
         }
 
+        if let pageLoadTiming = pageLoadTiming {
+            addPageLoadTimingParameters(to: &result, timing: pageLoadTiming)
+        }
+
 #if os(iOS)
         result["siteType"] = siteType.rawValue
         result["atb"] = atb
@@ -315,6 +326,31 @@ public struct BrokenSiteReport {
         }
         let jsonString = try? String(data: JSONSerialization.data(withJSONObject: errorDescriptions), encoding: .utf8)!
         return jsonString ?? ""
+    }
+
+    private func addPageLoadTimingParameters(to result: inout [String: String], timing: WKPageLoadTiming) {
+        guard let navigationStart = timing.navigationStart else { return }
+
+        // Calculate all timing data as durations from navigation start (in milliseconds)
+        if let firstVisual = timing.firstVisualLayout {
+            let duration = firstVisual.timeIntervalSince(navigationStart)
+            result["webKitFirstVisualLayoutMs"] = String(Int(duration * 1000))
+        }
+
+        if let firstPaint = timing.firstMeaningfulPaint {
+            let duration = firstPaint.timeIntervalSince(navigationStart)
+            result["webKitFirstMeaningfulPaintMs"] = String(Int(duration * 1000))
+        }
+
+        if let docComplete = timing.documentFinishedLoading {
+            let duration = docComplete.timeIntervalSince(navigationStart)
+            result["webKitDocumentCompleteMs"] = String(Int(duration * 1000))
+        }
+
+        if let allResources = timing.allSubresourcesFinishedLoading {
+            let duration = allResources.timeIntervalSince(navigationStart)
+            result["webKitAllResourcesCompleteMs"] = String(Int(duration * 1000))
+        }
     }
 
 }

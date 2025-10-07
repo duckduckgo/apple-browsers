@@ -20,8 +20,11 @@ import PixelKit
 
 enum HangPixel: PixelKitEvent {
 
+    /// A recovered hang is one that has ended by the time we report it.
     case uiHangRecovered(durationSeconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, batteryPower: BatteryPower?, openBrowserWindowCount: Int?, openBrowserTabCount: Int?, stackTrace: String?)
+    /// A 'not recovered' hang is one that is still ongoing at the time of reporting.
     case uiHangNotRecovered(durationSeconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, batteryPower: BatteryPower?, openBrowserWindowCount: Int?, openBrowserTabCount: Int?, stackTrace: String?)
+    /// A deadlock hang is where we have detected the hang is due to a deadlock situation.
     case uiHangDeadlock(durationSeconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, batteryPower: BatteryPower?, openBrowserWindowCount: Int?, openBrowserTabCount: Int?, stackTrace: String?)
 
     enum BatteryPower: String, CustomStringConvertible {

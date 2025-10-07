@@ -20,12 +20,14 @@ import History
 import HistoryView
 import XCTest
 import Onboarding
+import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ContextualDaxDialogsFactoryTests: XCTestCase {
     private var factory: ContextualDaxDialogsFactory!
     private var delegate: CapturingOnboardingNavigationDelegate!
     private var reporter: CapturingOnboardingPixelReporter!
+    private var featureFlagger: MockFeatureFlagger!
 
     @MainActor
     override func setUpWithError() throws {
@@ -33,12 +35,15 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger, historyProvider: MockHistoryProvider())
         factory = DefaultContextualDaxDialogViewFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
         delegate = CapturingOnboardingNavigationDelegate()
+        featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.contextualOnboarding, .newTabPagePerTab]
     }
 
     @MainActor override func tearDownWithError() throws {
         factory = nil
         delegate = nil
         reporter = nil
+        featureFlagger = nil
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController = nil
     }
 
@@ -252,7 +257,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             window: window,
             mainViewController: mainViewController,
             fireViewModel: fireCoordinator.fireViewModel,
-            visualStyle: NSApp.delegateTyped.visualStyle
+            themeManager: MockThemeManager()
         )
         mainWindowController.window = window
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController

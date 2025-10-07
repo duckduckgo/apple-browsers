@@ -22,9 +22,9 @@ import Combine
 import Foundation
 import os.log
 import PixelKit
-import Sparkle
-
 #if SPARKLE
+import Sparkle
+#endif
 
 enum UpdateState {
     case upToDate
@@ -104,6 +104,7 @@ enum UpdateCycleProgress: CustomStringConvertible {
     }
 }
 
+#if SPARKLE
 final class UpdateUserDriver: NSObject, SPUUserDriver {
     private var internalUserDecider: InternalUserDecider
     var areAutomaticUpdatesEnabled: Bool

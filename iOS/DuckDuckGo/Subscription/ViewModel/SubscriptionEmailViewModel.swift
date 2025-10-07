@@ -253,9 +253,10 @@ final class SubscriptionEmailViewModel: ObservableObject {
                 if self?.isCurrentURL(matching: .welcome) ?? false {
                     self?.state.viewTitle = UserText.subscriptionTitle
                 }
-                if self?.featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) ?? false, var data = self?.restoreWideEventData ?? nil {
-                    if self?.isCurrentURL(matching: .activationFlow) ?? false {
-                        data.emailAddressRestoreLastURL = SubscriptionRestoreWideEventData.EmailAddressRestoreURL.from(.activationFlow)
+                if self?.featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) ?? false, let data = self?.restoreWideEventData ?? nil, let currentURL = self?.webViewModel.url ?? nil {
+                    if let emailRestoreURL = SubscriptionRestoreWideEventData.EmailAddressRestoreURL.from(currentURL) {
+                        data.emailAddressRestoreLastURL = emailRestoreURL
+                        self?.wideEvent.updateFlow(data)
                     }
                 }
             }

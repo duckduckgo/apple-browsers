@@ -205,7 +205,7 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211396583578252?focus=true
     case unifiedURLPredictorMetrics
-    
+
     /// https://app.asana.com/1/137249556945/task/1211354430557015?focus=true
     case subscriptionRestoreWidePixelMeasurement
 }
@@ -223,7 +223,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .supportsAlternateStripePaymentFlow,
                 .restoreSessionPrompt,
                 .refactorOfSyncPreferences,
-                .subscriptionPurchaseWidePixelMeasurement:
+                .subscriptionPurchaseWidePixelMeasurement,
+                .subscriptionRestoreWidePixelMeasurement:
             true
         default:
             false

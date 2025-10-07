@@ -29,8 +29,9 @@ public enum SubscriptionURL {
     case privacyPolicy
     case helpPagesAddingEmail
     case activationFlow
-    case activationFlowThisDeviceAddEmailStep
-    case activationFlowThisDeviceAddEmailOTPStep
+    case activationFlowThisDeviceEmailStep
+    case activationFlowThisDeviceActivateEmailStep
+    case activationFlowThisDeviceActivateEmailOTPStep
     case activationFlowAddEmailStep
     case activationFlowLinkViaEmailStep
     case activationFlowSuccess
@@ -63,9 +64,11 @@ public enum SubscriptionURL {
                 StaticURLs.helpPagesAddingEmailURL
             case .activationFlow:
                 baseURL.appendingPathComponent("activation-flow")
-            case .activationFlowThisDeviceAddEmailStep:
+            case .activationFlowThisDeviceEmailStep:
+                baseURL.appendingPathComponent("activation-flow/this-device/email")
+            case .activationFlowThisDeviceActivateEmailStep:
                 baseURL.appendingPathComponent("activation-flow/this-device/activate-by-email")
-            case .activationFlowThisDeviceAddEmailOTPStep:
+            case .activationFlowThisDeviceActivateEmailOTPStep:
                 baseURL.appendingPathComponent("activation-flow/this-device/activate-by-email/otp")
             case .activationFlowAddEmailStep:
                 baseURL.appendingPathComponent("activation-flow/another-device/add-email")

@@ -31,7 +31,19 @@ enum SubscriptionFunnelOrigin: String {
 
     /// User entered the funnel via the VPN upsell.
     case vpnUpsell = "funnel_toolbar_macos"
+}
 
-    /// User entered the funnel via the the purchase offer page.
-    case purchaseOfferPage = "funnel_purchase_offser_page_macos"
+/// Represents the origin point from which the user enters the subscription restore funnel in the macOS app.
+enum SubscriptionRestoreFunnelOrigin: String {
+    /// User entered the restore funnel via the App Settings screen.
+    case appSettings = "funnel_appsettings_macos"
+
+    /// User entered the restore funnel via the Purchase Offer web page.
+    case purchaseOffer = "funnel_purchaseoffer_macos"
+
+    /// User entered the restore funnel during the pre-purchase check.
+    case prePurchaseCheck = "funnel_prepurchasecheck_macos"
+
+    /// User entered the restore funnel during the on-purchase check.
+    case onPurchaseCheck = "funnel_onpurchasecheck_macos"
 }

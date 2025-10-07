@@ -55,8 +55,6 @@ public class SubscriptionRestoreWideEventData: WideEventData {
         self.appData = appData
         self.globalData = globalData
     }
-
-    static let name = "restore-purchase"
 }
 
 extension SubscriptionRestoreWideEventData {
@@ -69,33 +67,38 @@ extension SubscriptionRestoreWideEventData {
 
     public enum EmailAddressRestoreURL: String, Codable, CaseIterable {
         case activationFlow = "activation_flow"
-        case activationFlowAddEmail = "activation_flow_add_email"
-        case activationFlowAddEmailOTP = "activation_flow_add_email_otp"
-        case activationFlowLinkViaEmail = "activation_flow_link_via_email"
+        case activationFlowEmail = "activation_flow_email"
+        case activationFlowActivateEmail = "activation_flow_activate_email"
+        case activationFlowActivateEmailOTP = "activation_flow_activate_email_otp"
         case activationFlowSuccess = "activation_flow_success"
-
-        public static func from(_ subscriptionURL: SubscriptionURL) -> Self? {
-            switch subscriptionURL {
-            case .activationFlow:
-                return .activationFlow
-            case .activationFlowThisDeviceAddEmailStep:
-                return .activationFlowAddEmail
-            case .activationFlowThisDeviceAddEmailOTPStep:
-                return .activationFlowAddEmailOTP
-            case .activationFlowLinkViaEmailStep:
-                return .activationFlowLinkViaEmail
-            case .activationFlowSuccess:
-                return .activationFlowSuccess
-            default:
-                return nil
-            }
+        
+        public static func from(_ currentURL: URL) -> Self? {
+            let key = currentURL.forComparison().absoluteString
+            return urlLookup()[key]
+        }
+        
+        private static func urlLookup() -> [String: Self] {
+            let pairs: [(SubscriptionURL, Self)] = [
+                (.activationFlow, .activationFlow),
+                (.activationFlowThisDeviceEmailStep, .activationFlowEmail),
+                (.activationFlowThisDeviceActivateEmailStep, .activationFlowActivateEmail),
+                (.activationFlowThisDeviceActivateEmailOTPStep, .activationFlowActivateEmailOTP),
+                (.activationFlowSuccess, .activationFlowSuccess)
+            ]
+            
+#if DEBUG
+            return Dictionary(uniqueKeysWithValues: pairs.map {
+                ($0.0.subscriptionURL(environment: .staging).forComparison().absoluteString, $0.1)
+            })
+#else
+            return Dictionary(uniqueKeysWithValues: pairs.map {
+                ($0.0.subscriptionURL(environment: .production).forComparison().absoluteString, $0.1)
+            })
+#endif
         }
     }
 
     public enum StatusReason: String {
-        // FAILURE reasons
-        case error
-
         // UNKNOWN reasons
         case partialData = "partial_data"
         case timeout
@@ -104,7 +107,7 @@ extension SubscriptionRestoreWideEventData {
     public func pixelParameters() -> [String: String] {
         var params: [String: String] = [:]
 
-        params[WideEventParameter.Feature.name] = Self.name
+        params[WideEventParameter.Feature.name] = Self.pixelName
         params[WideEventParameter.SubscriptionRestoreFeature.restorePlatform] = restorePlatform.rawValue
 
         if let lastURL = emailAddressRestoreLastURL {
@@ -157,5 +160,15 @@ private extension SubscriptionRestoreWideEventData {
         case 600000..<900000: return 900000
         default: return -1
         }
+    }
+}
+
+extension WideEventParameter {
+
+    public enum SubscriptionRestoreFeature {
+        static let restorePlatform = "feature.data.ext.restore_platform"
+        static let appleAccountRestoreLatency = "feature.data.ext.apple_account_restore_latency_ms_bucketed"
+        static let emailAddressRestoreLatency = "feature.data.ext.email_address_restore_latency_ms_bucketed"
+        static let emailAddressRestoreLastURL = "feature.data.ext.email_address_restore_last_url"
     }
 }

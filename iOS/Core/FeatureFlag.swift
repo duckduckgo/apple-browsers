@@ -201,7 +201,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionPurchaseWidePixelMeasurement,
              .askAIChatSuggestion,
              .refreshButtonPosition,
-             .newDeviceSyncPrompt:
+             .newDeviceSyncPrompt,
+             .subscriptionRestoreWidePixelMeasurement:
             true
         default:
             false

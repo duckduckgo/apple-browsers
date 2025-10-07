@@ -414,20 +414,20 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         let privacyDashboardViewController = privacyDashboardPopover.viewController
 
         privacyDashboadPendingUpdatesCancellable = privacyDashboardViewController.rulesUpdateObserver
-            .$pendingUpdates.dropFirst().receive(on: DispatchQueue.main).sink { [weak self] _ in
+            .$pendingUpdates.dropFirst().receive(on: DispatchQueue.main).sink { [weak privacyDashboardPopover, weak self] _ in
                 let isPendingUpdate = privacyDashboardViewController.isPendingUpdates()
-                guard let self else { return }
+
             // Prevent popover from being closed when clicking away, while pending updates
             if isPendingUpdate {
-                self.privacyDashboardPopover?.behavior = .applicationDefined
+                privacyDashboardPopover?.behavior = .applicationDefined
             } else {
-                self.privacyDashboardPopover?.close()
+                privacyDashboardPopover?.close()
 #if DEBUG
-                self.privacyDashboardPopover?.behavior = .semitransient
+                privacyDashboardPopover?.behavior = .semitransient
 #else
-                self.privacyDashboardPopover?.behavior = .transient
+                privacyDashboardPopover?.behavior = .transient
 #endif
-                self.resetPrivacyDashboardPopover()
+                self?.resetPrivacyDashboardPopover()
             }
         }
     }

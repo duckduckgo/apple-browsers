@@ -48,8 +48,8 @@ final class BookmarkManagementSidebarViewController: NSViewController {
     private let treeControllerDataSource: BookmarkSidebarTreeController
 
     private var themeCancellable: AnyCancellable?
-    private let themeManager: ThemeManagerProtocol
-    private var theme: ThemeDefinition {
+    private let themeManager: ThemeManaging
+    private var theme: ThemeStyleProviding {
         themeManager.theme
     }
 
@@ -78,7 +78,7 @@ final class BookmarkManagementSidebarViewController: NSViewController {
 
     init(bookmarkManager: BookmarkManager,
          dragDropManager: BookmarkDragDropManager,
-         themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager) {
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.selectedSortMode = bookmarkManager.sortMode
@@ -310,7 +310,7 @@ final class BookmarkManagementSidebarViewController: NSViewController {
             }
     }
 
-    private func applyThemeStyle(theme: ThemeDefinition) {
+    private func applyThemeStyle(theme: ThemeStyleProviding) {
         guard let contentView = view as? ColorView else {
             assertionFailure()
             return

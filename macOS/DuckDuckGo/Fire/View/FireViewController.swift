@@ -33,8 +33,8 @@ final class FireViewController: NSViewController {
     private(set) var fireViewModel: FireViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
 
-    private let themeManager: ThemeManagerProtocol
-    private var theme: ThemeDefinition {
+    private let themeManager: ThemeManaging
+    private var theme: ThemeStyleProviding {
         themeManager.theme
     }
 
@@ -69,7 +69,7 @@ final class FireViewController: NSViewController {
 
     init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
           fireViewModel: FireViewModel,
-          themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager,
+          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
           visualizeFireAnimationDecider: VisualizeFireSettingsDecider) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.fireViewModel = fireViewModel

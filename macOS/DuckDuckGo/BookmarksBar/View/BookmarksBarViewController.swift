@@ -51,8 +51,8 @@ final class BookmarksBarViewController: NSViewController {
     private let appereancePreferences: AppearancePreferencesPersistor
 
     private var themeCancellable: AnyCancellable?
-    private let themeManager: ThemeManagerProtocol
-    private var theme: ThemeDefinition {
+    private let themeManager: ThemeManaging
+    private var theme: ThemeStyleProviding {
         themeManager.theme
     }
 
@@ -83,7 +83,7 @@ final class BookmarksBarViewController: NSViewController {
           bookmarkManager: BookmarkManager,
           dragDropManager: BookmarkDragDropManager,
           appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore),
-          themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager,
+          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
     ) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
@@ -451,7 +451,7 @@ extension BookmarksBarViewController: BookmarksBarViewModelDelegate {
         applyThemeStyle(theme: themeManager.theme)
     }
 
-    private func applyThemeStyle(theme: ThemeDefinition) {
+    private func applyThemeStyle(theme: ThemeStyleProviding) {
         let navigationBackgroundColor = theme.colorsProvider.navigationBackgroundColor
 
         backgroundColorView.backgroundColor = navigationBackgroundColor

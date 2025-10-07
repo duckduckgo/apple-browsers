@@ -79,7 +79,7 @@ final class BookmarkListViewController: NSViewController {
     private let navigationEngagementMetrics: BookmarksNavigationEngagementMetrics
 
     private var themeCancellable: AnyCancellable?
-    private let themeManager: ThemeManagerProtocol
+    private let themeManager: ThemeManaging
 
     private let treeController: BookmarkTreeController
 
@@ -157,7 +157,7 @@ final class BookmarkListViewController: NSViewController {
          dragDropManager: BookmarkDragDropManager,
          metrics: BookmarksSearchAndSortMetrics = BookmarksSearchAndSortMetrics(),
          navigationEngagementMetrics: BookmarksNavigationEngagementMetrics = .init(),
-         themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager) {
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.treeControllerDataSource = BookmarkListTreeControllerDataSource(bookmarkManager: bookmarkManager)
@@ -768,7 +768,7 @@ final class BookmarkListViewController: NSViewController {
             }
     }
 
-    private func applyThemeStyle(theme: ThemeDefinition) {
+    private func applyThemeStyle(theme: ThemeStyleProviding) {
         guard let contentView = view as? ColorView else {
             assertionFailure()
             return

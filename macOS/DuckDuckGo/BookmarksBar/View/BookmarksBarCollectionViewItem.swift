@@ -90,7 +90,7 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         view.menu = BookmarksContextMenu(delegate: self)
     }
 
-    func updateItem(from entity: BaseBookmarkEntity, isInteractionPrevented: Bool, theme: ThemeDefinition) {
+    func updateItem(from entity: BaseBookmarkEntity, isInteractionPrevented: Bool, theme: ThemeStyleProviding) {
         self.representedObject = entity
         self.title = entity.title
         self.representedObject = entity

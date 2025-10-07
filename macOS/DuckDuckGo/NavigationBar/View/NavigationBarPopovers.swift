@@ -414,19 +414,20 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         let privacyDashboardViewController = privacyDashboardPopover.viewController
 
         privacyDashboadPendingUpdatesCancellable = privacyDashboardViewController.rulesUpdateObserver
-            .$pendingUpdates.dropFirst().receive(on: DispatchQueue.main).sink { [weak privacyDashboardPopover] _ in
+            .$pendingUpdates.dropFirst().receive(on: DispatchQueue.main).sink { [weak self] _ in
                 let isPendingUpdate = privacyDashboardViewController.isPendingUpdates()
-
+                guard let self else { return }
             // Prevent popover from being closed when clicking away, while pending updates
             if isPendingUpdate {
-                privacyDashboardPopover?.behavior = .applicationDefined
+                self.privacyDashboardPopover?.behavior = .applicationDefined
             } else {
-                privacyDashboardPopover?.close()
+                self.privacyDashboardPopover?.close()
 #if DEBUG
-                privacyDashboardPopover?.behavior = .semitransient
+                self.privacyDashboardPopover?.behavior = .semitransient
 #else
-                privacyDashboardPopover?.behavior = .transient
+                self.privacyDashboardPopover?.behavior = .transient
 #endif
+                self.resetPrivacyDashboardPopover()
             }
         }
     }
@@ -604,9 +605,7 @@ extension NavigationBarPopovers: NSPopoverDelegate {
         case privacyDashboardPopover:
             // Prevent popover from being deallocated while pending updates
             if let popover = privacyDashboardPopover, !popover.viewController.isPendingUpdates() {
-                privacyDashboardPopover = nil
-                privacyInfoCancellable = nil
-                privacyDashboadPendingUpdatesCancellable = nil
+                resetPrivacyDashboardPopover()
             }
 
         case zoomPopover:
@@ -615,6 +614,12 @@ extension NavigationBarPopovers: NSPopoverDelegate {
 
         default: break
         }
+    }
+
+    private func resetPrivacyDashboardPopover() {
+        privacyDashboardPopover = nil
+        privacyInfoCancellable = nil
+        privacyDashboadPendingUpdatesCancellable = nil
     }
 
 }

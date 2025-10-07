@@ -37,7 +37,7 @@ struct OpenKeyboardResponse: Encodable {
     }
 }
 
-protocol AIChatMetricReportingHandling {
+protocol AIChatMetricReportingHandling: AnyObject {
     func didReportMetric(_ metric: AIChatMetric)
 }
 
@@ -58,7 +58,7 @@ protocol AIChatUserScriptHandling {
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var payloadHandler: (any AIChatConsumableDataHandling)?
     private var inputBoxHandler: (any AIChatInputBoxHandling)?
-    private var metricReportingHandler: (any AIChatMetricReportingHandling)?
+    private weak var metricReportingHandler: (any AIChatMetricReportingHandling)?
     private let experimentalAIChatManager: ExperimentalAIChatManager
 
     init(experimentalAIChatManager: ExperimentalAIChatManager) {

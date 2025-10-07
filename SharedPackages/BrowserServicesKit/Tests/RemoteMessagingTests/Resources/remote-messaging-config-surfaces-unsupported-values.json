@@ -31,7 +31,7 @@
       "id": "3",
       "surfaces": [
         "modal",
-        "dedicated_tab",
+        "dedicated_tab"
       ],
       "content": {
         "messageType": "big_single_action",
@@ -52,7 +52,7 @@
       "id": "4",
       "surfaces": [
         "modal",
-        "dedicated_tab",
+        "dedicated_tab"
       ],
       "content": {
         "messageType": "big_two_action",
@@ -78,7 +78,7 @@
       "id": "5",
       "surfaces": [
         "modal",
-        "dedicated_tab",
+        "dedicated_tab"
       ],
       "content": {
         "messageType": "promo_single_action",

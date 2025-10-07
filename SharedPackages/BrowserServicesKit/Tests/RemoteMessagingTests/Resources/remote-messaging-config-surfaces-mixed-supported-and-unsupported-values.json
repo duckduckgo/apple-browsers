@@ -5,7 +5,7 @@
       "id": "1",
       "surfaces": [
         "new_tab_page",
-        "modal",
+        "modal"
       ],
       "content": {
         "messageType": "small",
@@ -34,7 +34,7 @@
       "id": "3",
       "surfaces": [
         "modal",
-        "dedicated_tab",
+        "dedicated_tab"
       ],
       "content": {
         "messageType": "big_single_action",
@@ -55,7 +55,7 @@
       "id": "4",
       "surfaces": [
         "dedicated_tab",
-        "unsupported_value",
+        "unsupported_value"
       ],
       "content": {
         "messageType": "big_two_action",
@@ -81,7 +81,7 @@
       "id": "5",
       "surfaces": [
         "new_tab_page",
-        "unsupported_value",
+        "unsupported_value"
       ],
       "content": {
         "messageType": "promo_single_action",

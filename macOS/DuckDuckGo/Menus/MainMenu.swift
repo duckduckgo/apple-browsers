@@ -151,7 +151,7 @@ final class MainMenu: NSMenu {
          appVersion: AppVersion = .shared,
          isFireWindowDefault: Bool,
          configurationURLProvider: CustomConfigurationURLProviding,
-         contentScopePreferences: ContentScopePreferences) {
+         contentScopePreferences: ContentScopePreferences = ContentScopePreferences()) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider

@@ -200,7 +200,13 @@
                 key: 'feature.data.ext.email_address_restore_last_url',
                 type: 'string',
                 description: 'The url at which the email flow, when applicable',
-                enum: ['activation_flow', 'activation_flow_email', 'activation_flow_activate_email', 'activation_flow_activate_email_otp', 'activation_flow_success'],
+                enum: [
+                    'activation_flow',
+                    'activation_flow_email',
+                    'activation_flow_activate_email',
+                    'activation_flow_activate_email_otp',
+                    'activation_flow_success',
+                ],
             },
             {
                 key: 'feature.data.ext.apple_account_restore_latency_ms_bucketed',

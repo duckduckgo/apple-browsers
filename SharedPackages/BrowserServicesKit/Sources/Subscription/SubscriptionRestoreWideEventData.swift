@@ -84,7 +84,7 @@ extension SubscriptionRestoreWideEventData {
                 (.activationFlowThisDeviceActivateEmailOTPStep, .activationFlowActivateEmailOTP),
                 (.activationFlowSuccess, .activationFlowSuccess)
             ]
-            
+
             #if DEBUG
             return Dictionary(uniqueKeysWithValues: pairs.map {
                 ($0.0.subscriptionURL(environment: .staging).forComparison().absoluteString, $0.1)

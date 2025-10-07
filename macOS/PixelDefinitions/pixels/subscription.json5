@@ -211,7 +211,13 @@
                 key: 'feature.data.ext.email_address_restore_last_url',
                 type: 'string',
                 description: 'The url at which the email flow, when applicable',
-                enum: ['activation_flow', 'activation_flow_email', 'activation_flow_activate_email', 'activation_flow_activate_email_otp', 'activation_flow_success'],
+                enum: [
+                    'activation_flow',
+                    'activation_flow_email',
+                    'activation_flow_activate_email',
+                    'activation_flow_activate_email_otp',
+                    'activation_flow_success',
+                ],
             },
             {
                 key: 'feature.data.ext.apple_account_restore_latency_ms_bucketed',
@@ -234,7 +240,12 @@
                 key: 'context.name',
                 type: 'string',
                 description: 'Context name for the flow',
-                enum: ['funnel_appsettings_macos', 'funnel_purchaseoffer_macos', 'funnel_prepurchasecheck_macos', 'funnel_onpurchasecheck_macos'],
+                enum: [
+                    'funnel_appsettings_macos',
+                    'funnel_purchaseoffer_macos',
+                    'funnel_prepurchasecheck_macos',
+                    'funnel_onpurchasecheck_macos',
+                ],
             },
         ],
     },

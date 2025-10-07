@@ -583,33 +583,33 @@ private extension RemoteMessagingStoreTests {
 
     func processorResult(for jsonRemoteMessagingConfig: RemoteMessageResponse.JsonRemoteMessagingConfig) throws -> RemoteMessagingConfigProcessor.ProcessorResult {
         let remoteMessagingConfigMatcher = RemoteMessagingConfigMatcher(
-                appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                userAttributeMatcher: MobileUserAttributeMatcher(
-                    statisticsStore: MockStatisticsStore(),
-                    variantManager: MockVariantManager(),
-                    bookmarksCount: 0,
-                    favoritesCount: 0,
-                    appTheme: "light",
-                    isWidgetInstalled: false,
-                    daysSinceNetPEnabled: -1,
-                    isSubscriptionEligibleUser: false,
-                    isDuckDuckGoSubscriber: false,
-                    subscriptionDaysSinceSubscribed: -1,
-                    subscriptionDaysUntilExpiry: -1,
-                    subscriptionPurchasePlatform: nil,
-                    isSubscriptionActive: false,
-                    isSubscriptionExpiring: false,
-                    isSubscriptionExpired: false,
-                    isDuckPlayerOnboarded: false,
-                    isDuckPlayerEnabled: false,
-                    dismissedMessageIds: [],
-                    shownMessageIds: [],
-                    enabledFeatureFlags: [],
-                    isSyncEnabled: false
-                ),
-                percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: self.defaults),
-                surveyActionMapper: MockRemoteMessagingSurveyActionMapper(),
-                dismissedMessageIds: []
+            appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
+            userAttributeMatcher: MobileUserAttributeMatcher(
+                statisticsStore: MockStatisticsStore(),
+                variantManager: MockVariantManager(),
+                bookmarksCount: 0,
+                favoritesCount: 0,
+                appTheme: "light",
+                isWidgetInstalled: false,
+                daysSinceNetPEnabled: -1,
+                isSubscriptionEligibleUser: false,
+                isDuckDuckGoSubscriber: false,
+                subscriptionDaysSinceSubscribed: -1,
+                subscriptionDaysUntilExpiry: -1,
+                subscriptionPurchasePlatform: nil,
+                isSubscriptionActive: false,
+                isSubscriptionExpiring: false,
+                isSubscriptionExpired: false,
+                isDuckPlayerOnboarded: false,
+                isDuckPlayerEnabled: false,
+                dismissedMessageIds: [],
+                shownMessageIds: [],
+                enabledFeatureFlags: [],
+                isSyncEnabled: false
+            ),
+            percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: self.defaults),
+            surveyActionMapper: MockRemoteMessagingSurveyActionMapper(),
+            dismissedMessageIds: []
         )
 
         let processor = RemoteMessagingConfigProcessor(remoteMessagingConfigMatcher: remoteMessagingConfigMatcher)
@@ -617,7 +617,7 @@ private extension RemoteMessagingStoreTests {
                                                                   invalidate: false,
                                                                   evaluationTimestamp: Date())
 
-        if let processorResult = processor.process(jsonRemoteMessagingConfig: jsonRemoteMessagingConfig, currentConfig: config) {
+        if let processorResult = processor.process(jsonRemoteMessagingConfig: jsonRemoteMessagingConfig, currentConfig: config, supportedSurfacesForMessage: { _ in .newTabPage }) {
             return processorResult
         } else {
             XCTFail("Processor result message is nil")

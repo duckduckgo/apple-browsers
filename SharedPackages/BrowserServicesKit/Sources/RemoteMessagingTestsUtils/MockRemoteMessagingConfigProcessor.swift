@@ -20,11 +20,13 @@ import Foundation
 import RemoteMessaging
 
 public class MockRemoteMessagingConfigProcessor: RemoteMessagingConfigProcessing {
+
     public var shouldProcessConfig: Bool
 
     public var processConfig: (
-        RemoteMessageResponse.JsonRemoteMessagingConfig, RemoteMessagingConfig?
-    ) -> RemoteMessagingConfigProcessor.ProcessorResult? = { _, _ in return nil }
+        RemoteMessageResponse.JsonRemoteMessagingConfig, RemoteMessagingConfig?,
+        (RemoteMessageModelType) -> RemoteMessageSurfaceType
+    ) -> RemoteMessagingConfigProcessor.ProcessorResult? = { _, _, _ in return nil }
 
     public var remoteMessagingConfigMatcher: RemoteMessagingConfigMatcher
 
@@ -39,9 +41,10 @@ public class MockRemoteMessagingConfigProcessor: RemoteMessagingConfigProcessing
 
     public func process(
         jsonRemoteMessagingConfig: RemoteMessageResponse.JsonRemoteMessagingConfig,
-        currentConfig: RemoteMessagingConfig?
+        currentConfig: RemoteMessagingConfig?,
+        supportedSurfacesForMessage: @escaping (RemoteMessageModelType) -> RemoteMessageSurfaceType
     ) -> RemoteMessagingConfigProcessor.ProcessorResult? {
 
-        processConfig(jsonRemoteMessagingConfig, currentConfig)
+        processConfig(jsonRemoteMessagingConfig, currentConfig, supportedSurfacesForMessage)
     }
 }

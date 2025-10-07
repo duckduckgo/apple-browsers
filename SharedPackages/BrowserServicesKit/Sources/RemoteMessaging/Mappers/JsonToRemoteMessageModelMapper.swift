@@ -101,12 +101,13 @@ private enum AttributesKey: String, CaseIterable {
 struct JsonToRemoteMessageModelMapper {
 
     static func maps(jsonRemoteMessages: [RemoteMessageResponse.JsonRemoteMessage],
-                     surveyActionMapper: RemoteMessagingSurveyActionMapping) -> [RemoteMessageModel] {
+                     surveyActionMapper: RemoteMessagingSurveyActionMapping,
+                     supportedSurfacesForMessage: @escaping (RemoteMessageModelType) -> RemoteMessageSurfaceType) -> [RemoteMessageModel] {
         var remoteMessages: [RemoteMessageModel] = []
         jsonRemoteMessages.forEach { message in
             guard
-                let content = mapToContent( content: message.content, surveyActionMapper: surveyActionMapper),
-                let surfaces = mapToSurfaces(surfaces: message.surfaces, messageType: content, messageId: message.id)
+                let content = mapToContent(content: message.content, surveyActionMapper: surveyActionMapper),
+                let surfaces = mapToSurfaces(jsonSurfaces: message.surfaces, supportedSurfacesForMessage: supportedSurfacesForMessage(content), messageId: message.id )
             else {
                 return
             }
@@ -129,55 +130,60 @@ struct JsonToRemoteMessageModelMapper {
         return remoteMessages
     }
 
-    static func mapToSurfaces(surfaces: [String]?, messageType: RemoteMessageModelType, messageId: String) -> RemoteMessageSurfaceType? {
+    static func mapToSurfaces(jsonSurfaces: [String]?, supportedSurfacesForMessage: RemoteMessageSurfaceType, messageId: String) -> RemoteMessageSurfaceType? {
 
-        func mapEligibleSurfaces(_ eligibleSurfaces: Set<RemoteMessageResponse.JsonSurface>) -> RemoteMessageSurfaceType {
-            eligibleSurfaces.reduce(into: RemoteMessageSurfaceType()) { flags, surface in
-                switch surface {
-                case .newTabPage:
-                    flags.insert(.newTabPage)
-                case .modal:
-                    flags.insert(.modal)
-                case .dedicatedTab:
-                    flags.insert(.dedicatedTab)
+        func mapJsonSurfaceToDomain(_ jsonSurface: RemoteMessageResponse.JsonSurface) -> RemoteMessageSurfaceType {
+            switch jsonSurface {
+            case .newTabPage:
+                    .newTabPage
+            case .modal:
+                    .modal
+            case .dedicatedTab:
+                    .dedicatedTab
+            }
+        }
+
+        func mapToEligibleDomainSurfaces(jsonSurfaces: Set<RemoteMessageResponse.JsonSurface>, supportedSurfacesForMessage: RemoteMessageSurfaceType) -> RemoteMessageSurfaceType {
+            jsonSurfaces.reduce(into: RemoteMessageSurfaceType()) { flags, surface in
+                let domainSurface = mapJsonSurfaceToDomain(surface)
+                if supportedSurfacesForMessage.contains(domainSurface) {
+                    flags.insert(domainSurface)
                 }
             }
         }
 
-        func logUnsupportedSurfacesIfNeeded(declaredSurfaces: Set<RemoteMessageResponse.JsonSurface>, supportedSurfacesForMessage: Set<RemoteMessageResponse.JsonSurface>, mappedSurfaceTypes: RemoteMessageSurfaceType, messageId: String) {
-            let droppedSurfaces = declaredSurfaces.subtracting(supportedSurfacesForMessage)
-
-            if mappedSurfaceTypes.isEmpty {
+        func logUnsupportedSurfacesIfNeeded(declaredSurfaces: Set<RemoteMessageResponse.JsonSurface>, eligibleSurfaces: RemoteMessageSurfaceType, messageId: String) {
+            guard !eligibleSurfaces.isEmpty else {
                 Logger.remoteMessaging.debug("No eligible surfaces after validation for message \(messageId, privacy: .public)")
+                return
             }
 
-            if droppedSurfaces.isEmpty == false {
+            let droppedSurfaces = declaredSurfaces.filter { surface in
+                !eligibleSurfaces.contains(mapJsonSurfaceToDomain(surface))
+            }
+
+            if !droppedSurfaces.isEmpty {
                 Logger.remoteMessaging.debug("Dropped unsupported surfaces for message \(messageId, privacy: .public): \(droppedSurfaces.map(\.rawValue), privacy: .public)")
             }
         }
 
-        // Get supported surfaces for message type
-        let supportedSurfacesForMessage = supportedSurfaces(for: messageType)
-
         // If surface is not defined set to supportedSurfacesForMessage for backward compatibility (e.g. `.small` -> `newTabPage`, `promoList` -> `[.modal, .dedicatedTab]`)
-        guard let surfaces else {
+        guard let jsonSurfaces else {
             Logger.remoteMessaging.debug("No surfaces declared for message \(messageId, privacy: .public)")
-            return mapEligibleSurfaces(supportedSurfacesForMessage)
+            return supportedSurfacesForMessage
         }
 
-        // If a surface is not supported by the framework, discard it
-        let declaredSurfaces = Set(surfaces.compactMap(RemoteMessageResponse.JsonSurface.init(rawValue:)))
+        // Parse JSON surfaces and filter unsupported values
+        let declaredJSONSurfaces = Set(jsonSurfaces.compactMap(RemoteMessageResponse.JsonSurface.init(rawValue:)))
 
         // Filter out the surfaces that are not supported by the message type
-        let eligibleSurfaces = declaredSurfaces.intersection(supportedSurfacesForMessage)
-
-        let mappedSurfaceTypes = mapEligibleSurfaces(eligibleSurfaces)
+        let eligibleSurfaces = mapToEligibleDomainSurfaces(jsonSurfaces: declaredJSONSurfaces, supportedSurfacesForMessage: supportedSurfacesForMessage)
 
         // Log surfaces that have been dropped
-        logUnsupportedSurfacesIfNeeded(declaredSurfaces: declaredSurfaces, supportedSurfacesForMessage: supportedSurfacesForMessage, mappedSurfaceTypes: mappedSurfaceTypes, messageId: messageId)
+        logUnsupportedSurfacesIfNeeded(declaredSurfaces: declaredJSONSurfaces, eligibleSurfaces: eligibleSurfaces, messageId: messageId)
 
         // Return nil if none valid (so message gets discarded)
-        return mappedSurfaceTypes.isEmpty ? nil : mappedSurfaceTypes
+        return eligibleSurfaces.isEmpty ? nil : eligibleSurfaces
     }
 
     static func mapToContent(content: RemoteMessageResponse.JsonContent,
@@ -361,15 +367,4 @@ struct JsonToRemoteMessageModelMapper {
 
         return nil
     }
-}
-
-private extension JsonToRemoteMessageModelMapper {
-
-    static func supportedSurfaces(for messageType: RemoteMessageModelType) -> Set<RemoteMessageResponse.JsonSurface> {
-        switch messageType {
-        case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
-            return [.newTabPage]
-        }
-    }
-
 }

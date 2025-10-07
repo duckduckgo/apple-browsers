@@ -29,7 +29,7 @@ struct JsonToRemoteConfigModelMapperSurfaceTests {
     )
     func checkSurfaceIsSetToDefaultSupportedWhenNil(index: Int) throws {
         // GIVEN
-        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-surfaces-default-values.json", bundle: .module)
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-surfaces-default-values.json", bundle: .module, supportedSurfacesForMessage: { _ in .newTabPage })
         #expect(config.messages.count == 5)
 
         // WHEN
@@ -47,7 +47,7 @@ struct JsonToRemoteConfigModelMapperSurfaceTests {
     func checkSurfaceIsMappedCorrectlyWhenSupported(index: Int) throws {
         // GIVEN
         // All messages in remote-messaging-config-surfaces-supported-values.json have newTabPage as surface
-        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-surfaces-supported-values.json", bundle: .module)
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-surfaces-supported-values.json", bundle: .module, supportedSurfacesForMessage: { _ in .newTabPage })
         #expect(config.messages.count == 5)
 
         // WHEN
@@ -62,7 +62,7 @@ struct JsonToRemoteConfigModelMapperSurfaceTests {
     func smallMessagesWithUnsupportedSurfacesAreDropped() async throws {
         // GIVEN
         // All messages in remote-messaging-config-surfaces-supported-values.json have either .modal, .dedicatedTab or both
-        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-surfaces-unsupported-values.json", bundle: .module)
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-surfaces-unsupported-values.json", bundle: .module, supportedSurfacesForMessage: { _ in .newTabPage })
 
         // WHEN
         let result = config.messages.count
@@ -77,7 +77,7 @@ struct JsonToRemoteConfigModelMapperSurfaceTests {
     )
     func messagesWithMixedSurfacesAreFiltered(messageId: String, expectedSurface: RemoteMessageSurfaceType?) async throws {
         // GIVEN
-        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-surfaces-mixed-supported-and-unsupported-values.json", bundle: .module)
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-surfaces-mixed-supported-and-unsupported-values.json", bundle: .module, supportedSurfacesForMessage: { _ in .newTabPage })
         #expect(config.messages.count == 3)
 
         // WHEN

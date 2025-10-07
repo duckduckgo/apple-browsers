@@ -21,14 +21,21 @@ import Foundation
 
 package enum RemoteMessagingConfigDecoder {
 
-    package static func decodeAndMapJson(fileName: String, bundle: Bundle) throws -> RemoteConfigModel {
+    package static func decodeAndMapJson(fileName: String, bundle: Bundle, supportedSurfacesForMessage: @escaping (RemoteMessageModelType) -> RemoteMessageSurfaceType = RemoteMessagingConfigDecoder.supportedSurfaces(for:)) throws -> RemoteConfigModel {
         let resourceURL = bundle.resourceURL!.appendingPathComponent(fileName, conformingTo: .json)
         let validJson = try Data(contentsOf: resourceURL)
         let remoteMessagingConfig = try JSONDecoder().decode(RemoteMessageResponse.JsonRemoteMessagingConfig.self, from: validJson)
         let surveyMapper = MockRemoteMessageSurveyActionMapper()
 
-        let config = JsonToRemoteConfigModelMapper.mapJson(remoteMessagingConfig: remoteMessagingConfig, surveyActionMapper: surveyMapper)
+        let config = JsonToRemoteConfigModelMapper.mapJson(remoteMessagingConfig: remoteMessagingConfig, surveyActionMapper: surveyMapper, supportedSurfacesForMessage: supportedSurfacesForMessage)
         return config
+    }
+
+    package static func supportedSurfaces(for messageType: RemoteMessageModelType) -> RemoteMessageSurfaceType {
+        switch messageType {
+        case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
+            return .newTabPage
+        }
     }
 
 }

@@ -202,10 +202,10 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
                                                                                      isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { true })
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled)
     }
-    
+
     // MARK: - Tests for Subscription Restore Wide Pixel Measurement
 
-    func testIsSubscriptionRestoreWidePixelMeasurementDisabledWhenProviderReturnsFalse() {
+    func testIsSubscriptionRestoreWidePixelMeasurementDisabledWhenProviderDefaultReturnsFalse() {
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
                                                                                      paidAIChatFlagStatusProvider: { false },

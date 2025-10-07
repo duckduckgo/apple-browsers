@@ -165,22 +165,23 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
         // Not Ideal
         let flows = wideEvent.getAllFlowData(SubscriptionRestoreWideEventData.self)
-        if let data = flows.last(where: { $0.restorePlatform == .emailAddress }) {
+        if let data = flows.last(where: { $0.restorePlatform == .emailAddress && $0.emailAddressRestoreDuration?.start != nil && $0.emailAddressRestoreDuration?.end == nil }) {
             self.restoreEmailAppSettingsWideEventData = data
         }
+        
+        let isSubscriptionRestoreWidePixelMeasurementEnabled = subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled
+        let restoreDatas: [SubscriptionRestoreWideEventData] = [
+            self.restoreEmailAppSettingsWideEventData,
+            self.restoreEmailOfferPageWideEventData
+        ].compactMap{ $0 }
 
         guard let subscriptionValues: SubscriptionValuesV2 = CodableHelper.decode(from: params) else {
             Logger.subscription.fault("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
 
-            if subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled {
-                if let restoreEmailOfferPageWideEventData = self.restoreEmailOfferPageWideEventData {
-                    restoreEmailOfferPageWideEventData.emailAddressRestoreDuration?.complete()
-                    wideEvent.completeFlow(restoreEmailOfferPageWideEventData, status: .failure, onComplete: { _, _ in })
-                }
-
-                if let restoreEmailAppSettingsWideEventData = self.restoreEmailAppSettingsWideEventData {
-                    restoreEmailAppSettingsWideEventData.emailAddressRestoreDuration?.complete()
-                    wideEvent.completeFlow(restoreEmailAppSettingsWideEventData, status: .failure, onComplete: { _, _ in })
+            if isSubscriptionRestoreWidePixelMeasurementEnabled {
+                for restoreData in restoreDatas {
+                    restoreData.emailAddressRestoreDuration?.complete()
+                    wideEvent.completeFlow(restoreData, status: .failure, onComplete: { _, _ in })
                 }
             }
 
@@ -194,15 +195,10 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         guard !subscriptionValues.accessToken.isEmpty, !subscriptionValues.refreshToken.isEmpty else {
             Logger.subscription.fault("Empty access token or refresh token provided")
 
-            if subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled {
-                if let restoreEmailOfferPageWideEventData = self.restoreEmailOfferPageWideEventData {
-                    restoreEmailOfferPageWideEventData.emailAddressRestoreDuration?.complete()
-                    wideEvent.completeFlow(restoreEmailOfferPageWideEventData, status: .failure, onComplete: { _, _ in })
-                }
-
-                if let restoreEmailAppSettingsWideEventData = self.restoreEmailAppSettingsWideEventData {
-                    restoreEmailAppSettingsWideEventData.emailAddressRestoreDuration?.complete()
-                    wideEvent.completeFlow(restoreEmailAppSettingsWideEventData, status: .failure, onComplete: { _, _ in })
+            if isSubscriptionRestoreWidePixelMeasurementEnabled {
+                for restoreData in restoreDatas {
+                    restoreData.emailAddressRestoreDuration?.complete()
+                    wideEvent.completeFlow(restoreData, status: .failure, onComplete: { _, _ in })
                 }
             }
 
@@ -213,34 +209,23 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             try await subscriptionManager.adopt(accessToken: subscriptionValues.accessToken, refreshToken: subscriptionValues.refreshToken)
             try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
 
-            if subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled {
-                if let restoreEmailOfferPageWideEventData = self.restoreEmailOfferPageWideEventData {
-                    restoreEmailOfferPageWideEventData.emailAddressRestoreDuration?.complete()
-                    wideEvent.completeFlow(restoreEmailOfferPageWideEventData, status: .success, onComplete: { _, _ in })
-                }
-
-                if let restoreEmailAppSettingsWideEventData = self.restoreEmailAppSettingsWideEventData {
-                    restoreEmailAppSettingsWideEventData.emailAddressRestoreDuration?.complete()
-                    wideEvent.completeFlow(restoreEmailAppSettingsWideEventData, status: .success, onComplete: { _, _ in })
+            if isSubscriptionRestoreWidePixelMeasurementEnabled {
+                for restoreData in restoreDatas {
+                    restoreData.emailAddressRestoreDuration?.complete()
+                    wideEvent.completeFlow(restoreData, status: .success, onComplete: { _, _ in })
                 }
             }
 
             Logger.subscription.log("Subscription retrieved")
         } catch {
-            if subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled {
-                if let restoreEmailOfferPageWideEventData = self.restoreEmailOfferPageWideEventData {
-                    restoreEmailOfferPageWideEventData.emailAddressRestoreDuration?.complete()
-                    restoreEmailOfferPageWideEventData.errorData = .init(error: error)
-                    wideEvent.completeFlow(restoreEmailOfferPageWideEventData, status: .failure, onComplete: { _, _ in })
+            if isSubscriptionRestoreWidePixelMeasurementEnabled {
+                for restoreData in restoreDatas {
+                    restoreData.emailAddressRestoreDuration?.complete()
+                    restoreData.errorData = .init(error: error)
+                    wideEvent.completeFlow(restoreData, status: .failure, onComplete: { _, _ in })
                 }
-
-                if let restoreEmailAppSettingsWideEventData = self.restoreEmailAppSettingsWideEventData {
-                    restoreEmailAppSettingsWideEventData.emailAddressRestoreDuration?.complete()
-                    restoreEmailAppSettingsWideEventData.errorData = .init(error: error)
-                    wideEvent.completeFlow(restoreEmailAppSettingsWideEventData, status: .failure, onComplete: { _, _ in })
-                }
-
             }
+            
             Logger.subscription.error("Failed to adopt V2 tokens: \(error, privacy: .public)")
         }
         return nil
@@ -762,7 +747,7 @@ extension SubscriptionPagesUseSubscriptionFeatureV2: SubscriptionAccessActionHan
                                                                        storePurchaseManager: subscriptionManager.storePurchaseManager())
                 let restoreAppleOfferPageWideEventData = SubscriptionRestoreWideEventData(
                     restorePlatform: .appleAccount,
-                    contextData: WideEventContextData(name: SubscriptionFunnelOrigin.purchaseOfferPage.rawValue)
+                    contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.purchaseOffer.rawValue)
                 )
                 let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: self.subscriptionManager,
                                                                                          appStoreRestoreFlow: appStoreRestoreFlow,
@@ -777,7 +762,7 @@ extension SubscriptionPagesUseSubscriptionFeatureV2: SubscriptionAccessActionHan
     func subscriptionAccessActionOpenURLHandler(url: URL) {
         let restoreEmailOfferPageWideEventData = SubscriptionRestoreWideEventData(
             restorePlatform: .emailAddress,
-            contextData: WideEventContextData(name: SubscriptionFunnelOrigin.purchaseOfferPage.rawValue)
+            contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.purchaseOffer.rawValue)
         )
         self.restoreEmailOfferPageWideEventData = restoreEmailOfferPageWideEventData
 

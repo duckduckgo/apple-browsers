@@ -194,7 +194,7 @@
                 key: 'feature.data.ext.restore_platform',
                 type: 'string',
                 description: 'Platform used to complete the restore',
-                enum: ['apple_account', 'email_address', "purchase_background_task"],
+                enum: ['apple_account', 'email_address', 'purchase_background_task'],
             },
             {
                 key: 'feature.data.ext.email_address_restore_last_url',

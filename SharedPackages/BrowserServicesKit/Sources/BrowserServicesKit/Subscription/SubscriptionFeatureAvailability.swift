@@ -87,7 +87,7 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
     public var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool {
         isSubscriptionPurchaseWidePixelMeasurementEnabledProvider()
     }
-    
+
     public var isSubscriptionRestoreWidePixelMeasurementEnabled: Bool {
         isSubscriptionRestoreWidePixelMeasurementEnabledProvider()
     }

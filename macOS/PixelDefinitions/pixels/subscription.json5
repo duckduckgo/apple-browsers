@@ -205,7 +205,7 @@
                 key: 'feature.data.ext.restore_platform',
                 type: 'string',
                 description: 'Platform used to complete the restore',
-                enum: ['apple_account', 'email_address', "purchase_background_task"],
+                enum: ['apple_account', 'email_address', 'purchase_background_task'],
             },
             {
                 key: 'feature.data.ext.email_address_restore_last_url',
@@ -234,7 +234,7 @@
                 key: 'context.name',
                 type: 'string',
                 description: 'Context name for the flow',
-                enum: ['funnel_appsettings_ios', 'funnel_purchaseoffer_ios', 'funnel_prepurchasecheck_ios', 'funnel_onpurchasecheck_ios'],
+                enum: ['funnel_appsettings_macos', 'funnel_purchaseoffer_macos', 'funnel_prepurchasecheck_macos', 'funnel_onpurchasecheck_macos'],
             },
         ],
     },

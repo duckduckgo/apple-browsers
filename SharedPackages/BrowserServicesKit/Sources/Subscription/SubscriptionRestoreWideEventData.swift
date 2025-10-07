@@ -55,7 +55,11 @@ public class SubscriptionRestoreWideEventData: WideEventData {
         self.appData = appData
         self.globalData = globalData
     }
+
+    private static let featureName = "subscription-restore"
 }
+
+// MARK: - Public
 
 extension SubscriptionRestoreWideEventData {
 
@@ -71,13 +75,8 @@ extension SubscriptionRestoreWideEventData {
         case activationFlowActivateEmail = "activation_flow_activate_email"
         case activationFlowActivateEmailOTP = "activation_flow_activate_email_otp"
         case activationFlowSuccess = "activation_flow_success"
-        
-        public static func from(_ currentURL: URL) -> Self? {
-            let key = currentURL.forComparison().absoluteString
-            return urlLookup()[key]
-        }
-        
-        private static func urlLookup() -> [String: Self] {
+
+        private static let lookup: [String: Self] = {
             let pairs: [(SubscriptionURL, Self)] = [
                 (.activationFlow, .activationFlow),
                 (.activationFlowThisDeviceEmailStep, .activationFlowEmail),
@@ -86,20 +85,24 @@ extension SubscriptionRestoreWideEventData {
                 (.activationFlowSuccess, .activationFlowSuccess)
             ]
             
-#if DEBUG
+            #if DEBUG
             return Dictionary(uniqueKeysWithValues: pairs.map {
                 ($0.0.subscriptionURL(environment: .staging).forComparison().absoluteString, $0.1)
             })
-#else
+            #else
             return Dictionary(uniqueKeysWithValues: pairs.map {
                 ($0.0.subscriptionURL(environment: .production).forComparison().absoluteString, $0.1)
             })
-#endif
+            #endif
+        }()
+
+        public static func from(_ currentURL: URL) -> Self? {
+            let key = currentURL.forComparison().absoluteString
+            return lookup[key]
         }
     }
 
     public enum StatusReason: String {
-        // UNKNOWN reasons
         case partialData = "partial_data"
         case timeout
     }
@@ -107,7 +110,7 @@ extension SubscriptionRestoreWideEventData {
     public func pixelParameters() -> [String: String] {
         var params: [String: String] = [:]
 
-        params[WideEventParameter.Feature.name] = Self.pixelName
+        params[WideEventParameter.Feature.name] = Self.featureName
         params[WideEventParameter.SubscriptionRestoreFeature.restorePlatform] = restorePlatform.rawValue
 
         if let lastURL = emailAddressRestoreLastURL {
@@ -126,6 +129,8 @@ extension SubscriptionRestoreWideEventData {
         return params
     }
 }
+
+// MARK: - Private
 
 private extension SubscriptionRestoreWideEventData {
 
@@ -163,6 +168,7 @@ private extension SubscriptionRestoreWideEventData {
     }
 }
 
+// MARK: - Wide Event Parameters
 extension WideEventParameter {
 
     public enum SubscriptionRestoreFeature {

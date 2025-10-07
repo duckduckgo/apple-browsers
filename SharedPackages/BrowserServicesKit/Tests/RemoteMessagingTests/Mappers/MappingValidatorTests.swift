@@ -185,7 +185,6 @@ extension MappingValidatorTests {
 
 }
 
-
 extension MappingValidatorTests {
 
     @Suite("Not Nil")
@@ -464,9 +463,9 @@ extension MappingValidatorTests {
             // THEN
             #expect(throws: MappingError.emptyValue(\Model.id)) {
                 // WHEN
-                let _ = try sut.notEmpty(\.id)
-                let _ = try sut.mapEnum(\.type, to: ModelType.self)
-                let _ = try sut.notNilOrEmpty(\.items)
+                _ = try sut.notEmpty(\.id)
+                _ = try sut.mapEnum(\.type, to: ModelType.self)
+                _ = try sut.notNilOrEmpty(\.items)
             }
         }
 

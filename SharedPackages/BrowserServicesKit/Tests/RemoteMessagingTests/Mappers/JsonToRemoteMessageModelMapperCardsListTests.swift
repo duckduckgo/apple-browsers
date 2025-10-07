@@ -307,7 +307,6 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         let jsonAction =  RemoteMessageResponse.JsonMessageAction(type: jsonAction.key, value: jsonAction.value, additionalParameters: nil)
         let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [.mockListItem(id: "item", primaryAction: jsonAction)])
 
-
         // WHEN
         let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
 

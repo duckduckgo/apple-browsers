@@ -228,6 +228,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
 
     func togglePrivacyDashboardPopover(for tabViewModel: TabViewModel?, from button: MouseOverButton, entryPoint: PrivacyDashboardEntryPoint) {
         if privacyDashboardPopover?.isShown == true {
+            print("Sabrina: togglePrivacyDashboardPopover")
             closePrivacyDashboard()
         } else if let tabViewModel {
             openPrivacyDashboard(for: tabViewModel, from: button, entryPoint: entryPoint)
@@ -437,6 +438,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
               !popover.viewController.isPendingUpdates() else { return }
 
         popover.close()
+        print("Sabrina: popover.close() from closePrivacyDashboard")
     }
 
     func showPasswordManagementPopover(selectedCategory: SecureVaultSorting.Category?, from button: MouseOverButton, withDelegate delegate: NSPopoverDelegate, source: PasswordManagementSource?) {
@@ -602,7 +604,10 @@ extension NavigationBarPopovers: NSPopoverDelegate {
             bookmarkPopover = nil
 
         case privacyDashboardPopover:
-            closePrivacyDashboard()
+            // Prevent popover from being deallocated while pending updates
+            if let popover = privacyDashboardPopover, !popover.viewController.isPendingUpdates() {
+                privacyDashboardPopover = nil
+            }
             privacyInfoCancellable = nil
             privacyDashboadPendingUpdatesCancellable = nil
 

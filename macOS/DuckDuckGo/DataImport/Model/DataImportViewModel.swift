@@ -262,7 +262,7 @@ struct DataImportViewModel {
         let dataTypes = dataType.map { [$0] }
             // or all the selected data types subtracting the ones that are already imported
             ?? selectedDataTypes.subtracting(self.summary.filter { $0.result.isSuccess }.map(\.dataType))
-        return dataTypes
+        return Set(dataTypes)
     }
 
     /// Called with data import task result to update the state by merging the summary with an existing summary

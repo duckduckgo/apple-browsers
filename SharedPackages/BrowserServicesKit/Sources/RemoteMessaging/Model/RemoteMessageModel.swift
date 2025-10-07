@@ -152,6 +152,7 @@ public enum NavigationTarget: String, Codable, Equatable {
     case settings
     case feedback
     case sync
+    case importPasswords = "import.passwords"
 }
 
 public enum RemoteAction: Codable, Equatable {

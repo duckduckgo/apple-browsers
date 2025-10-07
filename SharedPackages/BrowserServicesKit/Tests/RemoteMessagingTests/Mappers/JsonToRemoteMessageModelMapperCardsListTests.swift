@@ -27,8 +27,8 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
     @Test("Check Valid Cards List Message Maps Successfully")
     func validCardsListMessageMapsSuccessfully() throws {
         // GIVEN
-        let firstJsonItem = RemoteMessageResponse.JsonListItem.mockListItem(id: "item1", titleText: "Feature 1", descriptionText: "Description 1", placeholder: "Announce", primaryAction: .url)
-        let secondJsonItem = RemoteMessageResponse.JsonListItem.mockListItem(id: "item2", titleText: "Feature 2", descriptionText: "Description 2", primaryAction: .url)
+        let firstJsonItem = RemoteMessageResponse.JsonListItem.mockListItem(id: "item1", titleText: "Feature 1", descriptionText: "Description 1", placeholder: "Announce", primaryAction: .urlInContext)
+        let secondJsonItem = RemoteMessageResponse.JsonListItem.mockListItem(id: "item2", titleText: "Feature 2", descriptionText: "Description 2", primaryAction: .urlInContext)
         let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [firstJsonItem, secondJsonItem])
 
         // WHEN
@@ -52,13 +52,13 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         #expect(firstItem.titleText == "Feature 1")
         #expect(firstItem.descriptionText == "Description 1")
         #expect(firstItem.placeholderImage == .announce)
-        #expect(firstItem.action == .url(value: "https://example.com"))
+        #expect(firstItem.action == .urlInContext(value: "https://example.com"))
 
         #expect(secondItem.id == "item2")
         #expect(secondItem.titleText == "Feature 2")
         #expect(secondItem.descriptionText == "Description 2")
         #expect(secondItem.placeholderImage == .announce) // Default placeholder
-        #expect(secondItem.action == .url(value: "https://example.com"))
+        #expect(secondItem.action == .urlInContext(value: "https://example.com"))
     }
 
     @Test("Check Message With Many Valid Items Succeeds", arguments: [1, 5, 50])
@@ -71,7 +71,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
                 titleText: "Feature \(index)",
                 descriptionText: "Description \(index)",
                 placeholder: nil,
-                primaryAction: .url
+                primaryAction: .urlInContext
             )
         }
         let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: listItems)
@@ -193,9 +193,9 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
     @Test("Check Duplicate Item IDs Keeps First Occurrence And Discards Duplicates")
     func duplicateIDsKeepsFirstItemEncountered() {
         // GIVEN
-        let duplicateItem1 = RemoteMessageResponse.JsonListItem.mockListItem(id: "duplicate_id", titleText: "First Item", descriptionText: "First Item Description", primaryAction: .url)
-        let validItem = RemoteMessageResponse.JsonListItem.mockListItem(id: "unique_id", titleText: "Second Item", descriptionText: "Second Item Description", primaryAction: .url)
-        let duplicateItem2 = RemoteMessageResponse.JsonListItem.mockListItem(id: "duplicate_id", titleText: "Third Item", descriptionText: "Third Item Description", primaryAction: .url)
+        let duplicateItem1 = RemoteMessageResponse.JsonListItem.mockListItem(id: "duplicate_id", titleText: "First Item", descriptionText: "First Item Description", primaryAction: .urlInContext)
+        let validItem = RemoteMessageResponse.JsonListItem.mockListItem(id: "unique_id", titleText: "Second Item", descriptionText: "Second Item Description", primaryAction: .urlInContext)
+        let duplicateItem2 = RemoteMessageResponse.JsonListItem.mockListItem(id: "duplicate_id", titleText: "Third Item", descriptionText: "Third Item Description", primaryAction: .urlInContext)
         let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [duplicateItem1, validItem, duplicateItem2])
 
         // WHEN
@@ -297,25 +297,27 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
     }
 
     @Test("Check Different Action Types Map Correctly",
-        arguments: [("url_in_context", RemoteAction.url(value: "https://example.com"))]
+          arguments: [
+            (("url_in_context", "https://example.com"), RemoteAction.urlInContext(value: "https://example.com")),
+            (("navigation", "import.passwords"), RemoteAction.navigation(value: .importPasswords))
+          ]
     )
-    func actionTypesMapCorrectly(actionType: String, expectedAction: RemoteAction) {
+    func actionTypesMapCorrectly(jsonAction: (key: String, value: String), expectedAction: RemoteAction) {
         // GIVEN
-        withKnownIssue {
-            let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [.mockListItem(id: "item", primaryAction: .urlInContext)])
+        let jsonAction =  RemoteMessageResponse.JsonMessageAction(type: jsonAction.key, value: jsonAction.value, additionalParameters: nil)
+        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [.mockListItem(id: "item", primaryAction: jsonAction)])
 
 
-            // WHEN
-            let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
+        // WHEN
+        let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
 
-            // THEN
-            guard case let .cardsList(_, items, _, _) = result else {
-                Issue.record("Expected cardsList message type")
-                return
-            }
-
-            #expect(items.first?.action == expectedAction)
+        // THEN
+        guard case let .cardsList(_, items, _, _) = result else {
+            Issue.record("Expected cardsList message type")
+            return
         }
+
+        #expect(items.first?.action == expectedAction)
     }
 }
 
@@ -370,7 +372,5 @@ private extension RemoteMessageResponse.JsonListItem {
 private extension RemoteMessageResponse.JsonMessageAction {
 
     static let dismiss: RemoteMessageResponse.JsonMessageAction = .init(type: "dismiss", value: "", additionalParameters: nil)
-    static let url: RemoteMessageResponse.JsonMessageAction = .init(type: "url", value: "https://example.com", additionalParameters: nil)
     static let urlInContext: RemoteMessageResponse.JsonMessageAction = .init(type: "url_in_context", value: "https://example.com", additionalParameters: nil)
-
 }

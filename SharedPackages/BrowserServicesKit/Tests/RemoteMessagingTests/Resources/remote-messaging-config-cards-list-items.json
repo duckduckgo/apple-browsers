@@ -16,8 +16,8 @@
             "descriptionText": "Easily hide AI images from your search results",
             "placeholder": "Announce",
             "primaryAction": {
-              "type": "url",
-              "value": "https://duckduckgo.com/settings"
+              "type": "url_in_context",
+              "value": "https://example.com"
             }
           },
           {
@@ -27,8 +27,8 @@
             "descriptionText": "Browse confidently with protection against scam sites",
             "placeholder": "PrivacyShield",
             "primaryAction": {
-              "type": "dismiss",
-              "value": ""
+              "type": "url_in_context",
+              "value": "https://example.com"
             }
           },
           {
@@ -39,7 +39,7 @@
             "placeholder": "Duck.ai",
             "primaryAction": {
               "type": "navigation",
-              "value": "duckai.settings"
+              "value": "import.passwords"
             }
           }
         ],
@@ -64,8 +64,8 @@
             "titleText": "First Occurrence",
             "descriptionText": "This should be kept",
             "primaryAction": {
-              "type": "dismiss",
-              "value": ""
+              "type": "url_in_context",
+              "value": "https://example.com"
             }
           },
           {
@@ -74,8 +74,8 @@
             "titleText": "Duplicate ID",
             "descriptionText": "This should be discarded",
             "primaryAction": {
-              "type": "dismiss",
-              "value": ""
+              "type": "url_in_context",
+              "value": "https://example.com"
             }
           }
         ],
@@ -100,8 +100,8 @@
             "titleText": "Invalid - Empty ID",
             "descriptionText": "Should be discarded",
             "primaryAction": {
-              "type": "dismiss",
-              "value": ""
+              "type": "url_in_context",
+              "value": "https://example.com"
             }
           },
           {
@@ -110,8 +110,8 @@
             "titleText": "Valid Item",
             "descriptionText": "Should be kept",
             "primaryAction": {
-              "type": "dismiss",
-              "value": ""
+              "type": "url_in_context",
+              "value": "https://example.com"
             }
           },
           {
@@ -120,8 +120,8 @@
             "titleText": "Invalid Type",
             "descriptionText": "Should be discarded",
             "primaryAction": {
-              "type": "dismiss",
-              "value": ""
+              "type": "url_in_context",
+              "value": "https://example.com"
             }
           }
         ],
@@ -175,8 +175,8 @@
             "titleText": "Empty ID",
             "descriptionText": "Invalid",
             "primaryAction": {
-              "type": "dismiss",
-              "value": ""
+              "type": "url_in_context",
+              "value": "https://example.com"
             }
           },
           {
@@ -185,8 +185,8 @@
             "titleText": "",
             "descriptionText": "Empty title",
             "primaryAction": {
-              "type": "dismiss",
-              "value": ""
+              "type": "url_in_context",
+              "value": "https://example.com"
             }
           }
         ],
@@ -212,8 +212,8 @@
             "descriptionText": "Default placeholder",
             "placeholder": "Announce",
             "primaryAction": {
-              "type": "dismiss",
-              "value": ""
+              "type": "url_in_context",
+              "value": "https://example.com"
             }
           },
           {
@@ -223,8 +223,8 @@
             "descriptionText": "DDG branded",
             "placeholder": "DDGAnnounce",
             "primaryAction": {
-              "type": "dismiss",
-              "value": ""
+              "type": "url_in_context",
+              "value": "https://example.com"
             }
           },
           {
@@ -233,8 +233,8 @@
             "titleText": "Nil Placeholder",
             "descriptionText": "Should default to Announce",
             "primaryAction": {
-              "type": "dismiss",
-              "value": ""
+              "type": "url_in_context",
+              "value": "https://example.com"
             }
           }
         ],

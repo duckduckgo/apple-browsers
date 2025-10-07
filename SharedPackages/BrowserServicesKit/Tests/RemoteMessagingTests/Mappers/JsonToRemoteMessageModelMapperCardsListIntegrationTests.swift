@@ -61,19 +61,19 @@ struct JsonToRemoteMessageModelMapperCardsListIntegrationTests {
         #expect(items[safe: 0]?.titleText == "Hide AI Images in Search")
         #expect(items[safe: 0]?.descriptionText == "Easily hide AI images from your search results")
         #expect(items[safe: 0]?.placeholderImage == .announce)
-        #expect(items[safe: 0]?.action == .url(value: "https://duckduckgo.com/settings"))
+        #expect(items[safe: 0]?.action == .urlInContext(value: "https://example.com"))
 
         // Verify second item
         #expect(items[safe: 1]?.id == "enhanced_scam_blocker")
         #expect(items[safe: 1]?.titleText == "Enhanced Scam Blocker")
         #expect(items[safe: 1]?.placeholderImage == .privacyShield)
-        #expect(items[safe: 1]?.action == .dismiss)
+        #expect(items[safe: 1]?.action == .urlInContext(value: "https://example.com"))
 
         // Verify third item
         #expect(items[safe: 2]?.id == "duck_ai_chat")
         #expect(items[safe: 2]?.titleText == "Duck AI Chat")
         #expect(items[safe: 2]?.placeholderImage == .aiChat)
-        #expect(items[safe: 2]?.action == .navigation(value: .duckAISettings))
+        #expect(items[safe: 2]?.action == .navigation(value: .importPasswords))
     }
 
     @Test("Check Duplicate Item IDs Are Handled - First Occurrence Kept")

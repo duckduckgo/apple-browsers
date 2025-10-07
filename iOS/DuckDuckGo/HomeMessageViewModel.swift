@@ -150,6 +150,9 @@ struct HomeMessageViewModel {
                 LaunchTabNotification.postLaunchTabNotification(urlString: value)
                 await onDidClose(buttonAction)
             }
+        case .urlInContext:
+            // Handle action when implementing centralised remote action handler
+            return { @MainActor in }
         case .survey(let value):
             return { @MainActor in
                 let refreshedURL = refreshLastSearchState(in: value)

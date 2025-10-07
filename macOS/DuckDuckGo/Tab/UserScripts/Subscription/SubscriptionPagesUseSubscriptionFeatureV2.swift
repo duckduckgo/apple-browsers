@@ -163,7 +163,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
         PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseEmailSuccess, frequency: .legacyDailyAndCount)
 
-        // Not Ideal
         let flows = wideEvent.getAllFlowData(SubscriptionRestoreWideEventData.self)
         if let data = flows.last(where: { $0.restorePlatform == .emailAddress && $0.emailAddressRestoreDuration?.start != nil && $0.emailAddressRestoreDuration?.end == nil }) {
             self.restoreEmailAppSettingsWideEventData = data
@@ -336,7 +335,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                                                                        storePurchaseManager: subscriptionManager.storePurchaseManager())
                 let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
                                                                          storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                         appStoreRestoreFlow: appStoreRestoreFlow)
+                                                                         appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                         wideEvent: wideEvent)
 
                 // 6: Execute App Store purchase (account creation + StoreKit transaction) and handle the result
                 Logger.subscription.log("[Purchase] Purchasing")

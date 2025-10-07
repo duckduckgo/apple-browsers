@@ -21,6 +21,7 @@ import XCTest
 @testable import Networking
 import NetworkingTestingUtils
 import SubscriptionTestingUtilities
+import PixelKitTestingUtilities
 import JWTKit
 
 final class DuckDuckGoSubscriptionV2IntegrationTests: XCTestCase {
@@ -34,6 +35,7 @@ final class DuckDuckGoSubscriptionV2IntegrationTests: XCTestCase {
     var stripePurchaseFlow: DefaultStripePurchaseFlowV2!
     var storePurchaseManager: StorePurchaseManagerMockV2!
     var subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags>!
+    var wideEvent: WideEventMock!
 
     let subscriptionSelectionID = "ios.subscription.1month"
 
@@ -67,7 +69,8 @@ final class DuckDuckGoSubscriptionV2IntegrationTests: XCTestCase {
                                                            storePurchaseManager: storePurchaseManager)
         appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
                                                              storePurchaseManager: storePurchaseManager,
-                                                             appStoreRestoreFlow: appStoreRestoreFlow)
+                                                             appStoreRestoreFlow: appStoreRestoreFlow,
+                                                             wideEvent: wideEvent)
         stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
     }
 
@@ -79,6 +82,7 @@ final class DuckDuckGoSubscriptionV2IntegrationTests: XCTestCase {
         appStorePurchaseFlow = nil
         appStoreRestoreFlow = nil
         stripePurchaseFlow = nil
+        wideEvent = nil
     }
 
     // MARK: - Apple store

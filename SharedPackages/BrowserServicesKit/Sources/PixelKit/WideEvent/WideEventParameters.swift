@@ -108,4 +108,5 @@ public enum WideEventParameter {
         static let accountPaymentLatency = "feature.data.ext.account_payment_latency_ms_bucketed"
         static let accountActivationLatency = "feature.data.ext.account_activation_latency_ms_bucketed"
     }
+
 }

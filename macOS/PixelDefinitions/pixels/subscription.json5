@@ -182,7 +182,6 @@
             'widePixelInternalUser',
             'widePixelPlatform',
             'widePixelType',
-            'widePixelFormFactor',
             'widePixelSampleRate',
             'widePixelFeatureStatus',
             'widePixelErrorDomain',

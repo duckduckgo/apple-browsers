@@ -639,7 +639,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
     var originalMessage: WKScriptMessage?
     
-    var currentSubscriptionRestoreWidePixelEventData: SubscriptionRestoreWideEventData?
+    var subscriptionRestoreEmailAddressWideEventData: SubscriptionRestoreWideEventData?
 
     func with(broker: UserScriptMessageBroker) {
         self.broker = broker
@@ -710,15 +710,9 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
         guard let subscriptionValues: SubscriptionValuesV2 = CodableHelper.decode(from: params) else {
             Logger.subscription.fault("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
-            
-            if subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled, let restoreWideEventData = self.currentSubscriptionRestoreWidePixelEventData {
-                restoreWideEventData.emailAddressRestoreDuration?.complete()
-                restoreWideEventData.errorData = .init(error: UseSubscriptionError.generalError)
-                wideEvent.completeFlow(restoreWideEventData, status: .failure, onComplete: { _, _ in })
-                
-            }
             assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
             setTransactionError(.generalError)
+            markEmailAddressRestoreWideEventFlowAsFailed(with: UseSubscriptionError.generalError)
             return nil
         }
 
@@ -727,11 +721,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
         guard !subscriptionValues.accessToken.isEmpty, !subscriptionValues.refreshToken.isEmpty else {
             Logger.subscription.fault("Empty access token or refresh token provided")
-            if subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled, let restoreWideEventData = self.currentSubscriptionRestoreWidePixelEventData {
-                restoreWideEventData.emailAddressRestoreDuration?.complete()
-                wideEvent.completeFlow(restoreWideEventData, status: .failure, onComplete: { _, _ in })
-                
-            }
+            markEmailAddressRestoreWideEventFlowAsFailed(with: nil)
             return nil
         }
 
@@ -739,23 +729,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             try await subscriptionManager.adopt(accessToken: subscriptionValues.accessToken, refreshToken: subscriptionValues.refreshToken)
             try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
             Logger.subscription.log("Subscription retrieved")
-            
-            if subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled, let restoreWideEventData = self.currentSubscriptionRestoreWidePixelEventData {
-                restoreWideEventData.emailAddressRestoreDuration?.complete()
-                wideEvent.completeFlow(restoreWideEventData, status: .success, onComplete: { _, _ in })
-                
-            }
+            markEmailAddressRestoreWideEventFlowAsSuccess()
         } catch {
             Logger.subscription.error("Failed to adopt V2 tokens: \(error, privacy: .public)")
-            
-            if subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled, let restoreWideEventData = self.currentSubscriptionRestoreWidePixelEventData {
-                restoreWideEventData.emailAddressRestoreDuration?.complete()
-                restoreWideEventData.errorData = .init(error: UseSubscriptionError.failedToSetSubscription)
-                wideEvent.completeFlow(restoreWideEventData, status: .failure, onComplete: { _, _ in })
-                
-            }
-            
             setTransactionError(.failedToSetSubscription)
+            markEmailAddressRestoreWideEventFlowAsFailed(with: UseSubscriptionError.failedToSetSubscription)
         }
         return nil
     }
@@ -1152,6 +1130,29 @@ private extension DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
             return await subscriptionManager.storePurchaseManager().subscriptionOptions()
         }
         return subscriptionOptions
+    }
+}
+
+// MARK: - Wide Pixel
+
+private extension DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
+    
+    func markEmailAddressRestoreWideEventFlowAsSuccess() {
+        guard subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled, let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }
+        restoreWideEventData.emailAddressRestoreDuration?.complete()
+        restoreWideEventData.errorData = .init(error: UseSubscriptionError.generalError)
+        wideEvent.completeFlow(restoreWideEventData, status: .success, onComplete: { _, _ in })
+        self.subscriptionRestoreEmailAddressWideEventData = nil
+    }
+    
+    func markEmailAddressRestoreWideEventFlowAsFailed(with error: Error?) {
+        guard subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled, let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }
+        restoreWideEventData.emailAddressRestoreDuration?.complete()
+        if let error {
+            restoreWideEventData.errorData = .init(error: error)
+        }
+        wideEvent.completeFlow(restoreWideEventData, status: .failure, onComplete: { _, _ in })
+        self.subscriptionRestoreEmailAddressWideEventData = nil
     }
 }
 

@@ -43,7 +43,4 @@ enum SubscriptionRestoreFunnelOrigin: String {
 
     /// User entered the restore funnel during the pre-purchase check.
     case prePurchaseCheck = "funnel_prepurchasecheck_macos"
-
-    /// User entered the restore funnel during the on-purchase check.
-    case onPurchaseCheck = "funnel_onpurchasecheck_macos"
 }

@@ -152,25 +152,11 @@ final class SubscriptionEmailViewModel: ObservableObject {
         state.shouldDismissView = false
 
         let url: URL
-        
-        let data = SubscriptionRestoreWideEventData(
-            restorePlatform: .emailAddress,
-            contextData: WideEventContextData(name: SubscriptionFunnelOrigin.appSettings.rawValue)
-        )
-        self.restoreWideEventData = data
-        if let subFeatureV2 = subFeature as? DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
-            subFeatureV2.currentSubscriptionRestoreWidePixelEventData = data
-        }
 
         switch state.currentFlow {
         case .activationFlow, .restoreFlow:
             url = subscriptionManager.url(for: .activationFlow)
             state.viewTitle = ""
-            
-            if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
-                data.emailAddressRestoreDuration = WideEvent.MeasuredInterval.startingNow()
-                wideEvent.startFlow(data)
-            }
         case .manageEmailFlow:
             url = subscriptionManager.url(for: .manageEmail)
             state.viewTitle = UserText.subscriptionEditEmailTitle
@@ -179,6 +165,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
         // Load the URL unless the user has activated a subscription or is on the welcome page
         if !isCurrentURL(matching: .welcome) && !isCurrentURL(matching: .activationFlowSuccess){
             self.webViewModel.navigationCoordinator.navigateTo(url: url)
+            setupSubscriptionRestoreWideEventData()
         }
     }
     
@@ -253,11 +240,9 @@ final class SubscriptionEmailViewModel: ObservableObject {
                 if self?.isCurrentURL(matching: .welcome) ?? false {
                     self?.state.viewTitle = UserText.subscriptionTitle
                 }
-                if self?.featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) ?? false, let data = self?.restoreWideEventData ?? nil, let currentURL = self?.webViewModel.url ?? nil {
-                    if let emailRestoreURL = SubscriptionRestoreWideEventData.EmailAddressRestoreURL.from(currentURL) {
-                        data.emailAddressRestoreLastURL = emailRestoreURL
-                        self?.wideEvent.updateFlow(data)
-                    }
+                if self?.featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) ?? false, let data = self?.restoreWideEventData, let currentURL = self?.webViewModel.url, let emailRestoreURL = SubscriptionRestoreWideEventData.EmailAddressRestoreURL.from(currentURL) {
+                    data.emailAddressRestoreLastURL = emailRestoreURL
+                    self?.wideEvent.updateFlow(data)
                 }
             }
         
@@ -294,6 +279,20 @@ final class SubscriptionEmailViewModel: ObservableObject {
             state.transactionError = .generalError
         }
         state.isPresentingInactiveError = true
+    }
+    
+    private func setupSubscriptionRestoreWideEventData() {
+        guard featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) && state.currentFlow == .restoreFlow else { return }
+        let data = SubscriptionRestoreWideEventData(
+            restorePlatform: .emailAddress,
+            contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
+        )
+        self.restoreWideEventData = data
+        if let subFeatureV2 = subFeature as? DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
+            subFeatureV2.subscriptionRestoreEmailAddressWideEventData = data
+        }
+        data.emailAddressRestoreDuration = WideEvent.MeasuredInterval.startingNow()
+        wideEvent.startFlow(data)
     }
     
     func dismissView() {

@@ -55,8 +55,6 @@ final class SubscriptionRestoreViewModel: ObservableObject {
     @Published private(set) var state = State()
 
     private let featureFlagger: FeatureFlagger
-    
-    // Wide Pixel
     private let wideEvent: WideEventManaging
 
     init(userScript: SubscriptionPagesUserScript,
@@ -142,13 +140,14 @@ final class SubscriptionRestoreViewModel: ObservableObject {
         DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseStoreStart,
                                      pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
         
+        let isSubscriptionRestoreWidePixelMeasurementEnabled = featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
         let data = SubscriptionRestoreWideEventData(
             restorePlatform: .appleAccount,
-            contextData: WideEventContextData(name: SubscriptionFunnelOrigin.appSettings.rawValue)
+            contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
         )
         
         Task {
-            if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
+            if isSubscriptionRestoreWidePixelMeasurementEnabled {
                 data.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
                 wideEvent.startFlow(data)
             }
@@ -157,13 +156,14 @@ final class SubscriptionRestoreViewModel: ObservableObject {
             state.activationResult = .unknown
             do {
                 try await subFeature.restoreAccountFromAppStorePurchase()
+                
                 DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseStoreSuccess,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
                 state.activationResult = .activated
                 
-                if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
+                if isSubscriptionRestoreWidePixelMeasurementEnabled {
                     data.appleAccountRestoreDuration?.complete()
-                    wideEvent.completeFlow(data, status: .success(reason: nil), onComplete: { _, _ in })
+                    wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
                 }
                 
                 state.transactionStatus = .idle
@@ -175,7 +175,7 @@ final class SubscriptionRestoreViewModel: ObservableObject {
                     data.errorData = .init(error: error)
                 }
                 
-                if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
+                if isSubscriptionRestoreWidePixelMeasurementEnabled {
                     data.appleAccountRestoreDuration?.complete()
                     wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
                 }

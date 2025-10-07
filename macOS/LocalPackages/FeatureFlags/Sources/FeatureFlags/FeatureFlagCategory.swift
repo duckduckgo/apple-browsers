@@ -46,8 +46,7 @@ public protocol FeatureFlagCategorization {
 extension FeatureFlag: FeatureFlagCategorization {
     public var category: FeatureFlagCategory {
         switch self {
-        case .aiChatGlobalSwitch,
-                .aiChatSidebar,
+        case .aiChatSidebar,
                 .aiChatTextSummarization,
                 .aiChatTextTranslation,
                 .aiChatPageContext,
@@ -65,7 +64,8 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .exchangeKeysToSyncWithAnotherDevice:
             return .sync
         case .updatesWontAutomaticallyRestartApp,
-                .autoUpdateInDEBUG:
+                .autoUpdateInDEBUG,
+                .appStoreUpdateFlow:
             return .updates
         case .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,

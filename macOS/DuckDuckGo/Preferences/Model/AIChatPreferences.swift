@@ -45,6 +45,7 @@ final class AIChatPreferences: ObservableObject {
         isAIFeaturesEnabled = storage.isAIFeaturesEnabled
         showShortcutOnNewTabPage = storage.showShortcutOnNewTabPage
         showShortcutInApplicationMenu = storage.showShortcutInApplicationMenu
+        showShortcutInAddressBarWhenTyping = storage.showShortcutInAddressBarWhenTyping
         showShortcutInAddressBar = storage.showShortcutInAddressBar
         openAIChatInSidebar = storage.openAIChatInSidebar
         shouldAutomaticallySendPageContext = storage.shouldAutomaticallySendPageContext
@@ -77,6 +78,12 @@ final class AIChatPreferences: ObservableObject {
             .assign(to: \.showShortcutInAddressBar, onWeaklyHeld: self)
             .store(in: &cancellables)
 
+        storage.showShortcutInAddressBarWhenTypingPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.showShortcutInAddressBarWhenTyping, onWeaklyHeld: self)
+            .store(in: &cancellables)
+
         storage.openAIChatInSidebarPublisher
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
@@ -88,10 +95,6 @@ final class AIChatPreferences: ObservableObject {
 
     var shouldShowAIFeatures: Bool {
         aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
-    }
-
-    var shouldShowAIFeaturesToggle: Bool {
-        featureFlagger.isFeatureOn(.aiChatGlobalSwitch)
     }
 
     var shouldShowOpenAIChatInSidebarToggle: Bool {
@@ -106,6 +109,10 @@ final class AIChatPreferences: ObservableObject {
         featureFlagger.isFeatureOn(.newTabPageOmnibar)
     }
 
+    var shouldShowUpdatedSettings: Bool {
+        aiChatMenuConfiguration.shouldShowSettingsImprovements
+    }
+
     // Properties for managing the current state of AI Chat preference options
 
     @Published var isAIFeaturesEnabled: Bool {
@@ -118,6 +125,10 @@ final class AIChatPreferences: ObservableObject {
 
     @Published var showShortcutOnNewTabPage: Bool {
         didSet { storage.showShortcutOnNewTabPage = showShortcutOnNewTabPage }
+    }
+
+    @Published var showShortcutInAddressBarWhenTyping: Bool {
+        didSet { storage.showShortcutInAddressBarWhenTyping = showShortcutInAddressBarWhenTyping }
     }
 
     @Published var showShortcutInApplicationMenu: Bool {

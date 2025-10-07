@@ -3,28 +3,40 @@
         description: 'Fires when bookmarks database failed to load.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'daily_standard'],
+        suffixes: [
+            ['daily', 'platform', 'form_factor'],
+            ['platform', 'form_factor'],
+        ],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
     m_d_bookmarks_could_not_migrate_database: {
         description: 'Fires when bookmarks database failed to migrate.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'daily_standard'],
+        suffixes: [
+            ['daily', 'platform', 'form_factor'],
+            ['platform', 'form_factor'],
+        ],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
     'm_debug_history-store-load-failed': {
         description: 'Fires when history database failed to load.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'daily_standard'],
+        suffixes: [
+            ['daily', 'platform', 'form_factor'],
+            ['platform', 'form_factor'],
+        ],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
     m_d_database_container_error: {
         description: 'Fires when core database container could not be prepared.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'daily_standard'],
+        suffixes: [
+            ['daily', 'platform', 'form_factor'],
+            ['platform', 'form_factor'],
+        ],
         parameters: [
             'appVersion',
             'errorCode',
@@ -48,7 +60,10 @@
         description: 'Fires when core database stack could not be prepared.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'daily_standard'],
+        suffixes: [
+            ['daily', 'platform', 'form_factor'],
+            ['platform', 'form_factor'],
+        ],
         parameters: [
             'appVersion',
             'errorCode',
@@ -72,49 +87,55 @@
         description: 'Fires when app couldn’t access the Application Support directory.',
         owners: ['bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'daily_standard'],
+        suffixes: ['daily', 'platform', 'form_factor'],
         parameters: ['appVersion'],
     },
     m_debug_key_value_file_store_init_error: {
         description: 'Fires when failed to initialize key-value file store in Application Support directory',
         owners: ['bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'daily_standard'],
+        suffixes: ['daily', 'platform', 'form_factor'],
         parameters: ['appVersion'],
     },
     m_debug_tabs_store_support_dir_access_error: {
         description: 'Fires when app couldn’t access the Application Support directory for tabs persistence.',
         owners: ['bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'daily_standard'],
+        suffixes: ['daily', 'platform', 'form_factor'],
         parameters: ['appVersion'],
     },
     m_debug_tabs_store_init_error: {
         description: 'Fires when failed to initialize tabs persistence store in Application Support directory.',
         owners: ['bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'daily_standard'],
+        suffixes: ['daily', 'platform', 'form_factor'],
         parameters: ['appVersion'],
     },
     m_debug_tabs_store_save_error: {
         description: 'Fires when failed to archive the tabs model to storage.',
         owners: ['bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'daily_standard'],
+        suffixes: [
+            ['daily', 'platform', 'form_factor'],
+            ['platform', 'form_factor'],
+        ],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
     m_debug_tabs_store_read_error: {
         description: 'Fires when failed to unarchive the tabs model from storage.',
         owners: ['bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'daily_standard'],
+        suffixes: [
+            ['daily', 'platform', 'form_factor'],
+            ['platform', 'form_factor'],
+        ],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
     'm_app-did-terminate-with-unhandled-error': {
         description: 'Fires when app failed to handle crash on launch.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
 
@@ -123,7 +144,10 @@
         description: 'Fires when bookmarks database loads but structure is missing/empty with detailed diagnostics.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        suffixes: [
+            ['first_daily_count', 'platform', 'form_factor'],
+            ['platform', 'form_factor'],
+        ],
         parameters: [
             'appVersion',
             {
@@ -159,7 +183,7 @@
         description: 'Fires when structure lost occurs after app crash to identify crash-related corruption.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion'],
     },
 
@@ -168,7 +192,10 @@
         description: 'Fires when sync attempts to delete root folders, indicating potential sync vulnerability.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'daily_standard'],
+        suffixes: [
+            ['daily', 'platform', 'form_factor'],
+            ['platform', 'form_factor'],
+        ],
         parameters: [
             'appVersion',
             {
@@ -186,7 +213,7 @@
         description: 'Fires when unable to get favorites order during database setup.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
 
@@ -194,7 +221,10 @@
         description: 'Fires when database preparation fails during setup.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        suffixes: [
+            ['daily', 'platform', 'form_factor'],
+            ['platform', 'form_factor'],
+        ],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
 
@@ -203,7 +233,7 @@
         description: 'Fires when no database scheme found in legacy bookmarks storage.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
 
@@ -211,7 +241,7 @@
         description: 'Fires when unable to load persistent stores in legacy bookmarks storage.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
 
@@ -219,7 +249,7 @@
         description: 'Fires when unable to create top-level bookmarks folder in legacy storage.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
 
@@ -227,7 +257,7 @@
         description: 'Fires when unable to create top-level favorites folder in legacy storage.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
 
@@ -235,7 +265,7 @@
         description: 'Fires when unable to fix corrupted bookmark folder structure in legacy storage.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
 
@@ -243,7 +273,7 @@
         description: 'Fires when unable to fix corrupted favorite folder structure in legacy storage.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
 
@@ -252,7 +282,7 @@
         description: 'Fires when unable to prepare database structure during migration.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
 
@@ -260,7 +290,15 @@
         description: 'Fires when unable to write to database during migration.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],
-        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
+        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+    },
+
+    'm_debug_failed-to-recreate-tmp-dir': {
+        description: 'Fires when tmp dir does not exist and yet we cannot recreate it.',
+        owners: ['jaceklyp', 'bwaresiak'],
+        triggers: ['startup'],
+        suffixes: ['platform', 'form_factor'],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
 }

@@ -154,9 +154,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210926332858859?focus=true
     case aiFeaturesSettingsUpdate
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210839825079760?focus=true
-    case askAIChatSuggestion
-
     /// Adds kbg=-1 parameter to search URLs when DuckAI is disabled
     case duckAISearchParameter
 
@@ -178,9 +175,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211394727337421?focus=true
     case newDeviceSyncPrompt
-
-    /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1211302776234329?focus=true
-    case aiSearchBottomBarSupport
     
     /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211245201777978?focus=true
     case serpSettingsFollowUpQuestions
@@ -202,7 +196,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .daxEasterEggLogos,
              .subscriptionPurchaseWidePixelMeasurement,
-             .askAIChatSuggestion,
              .refreshButtonPosition,
              .newDeviceSyncPrompt:
             true
@@ -248,7 +241,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .scheduledSetDefaultBrowserPrompts,
              .scheduledSetDefaultBrowserPromptsForInactiveUsers,
-             .askAIChatSuggestion,
              .duckAISearchParameter,
              .inactivityNotification,
              .daxEasterEggLogos,
@@ -302,8 +294,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                .failsafeExamplePlatformSpecificSubfeature,
                .experimentalAddressBar,
                .aiChatKeepSession,
-               .aiFeaturesSettingsUpdate,
-               .aiSearchBottomBarSupport:
+               .aiFeaturesSettingsUpdate:
             return false
         }
     }
@@ -438,8 +429,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .enabled
         case .duckAISearchParameter:
             return .enabled
-        case .askAIChatSuggestion:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.askAIChatSuggestion))
         case .inactivityNotification:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:
@@ -452,8 +441,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
         case .newDeviceSyncPrompt:
             return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
-        case .aiSearchBottomBarSupport:
-            return .internalOnly()
         case .serpSettingsFollowUpQuestions:
             return .remoteReleasable(.subfeature(AIChatSubfeature.serpSettingsFollowUpQuestions))
         case .embeddedSERPSettings:

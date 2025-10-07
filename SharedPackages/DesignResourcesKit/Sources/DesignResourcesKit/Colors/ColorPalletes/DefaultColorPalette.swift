@@ -18,6 +18,8 @@
 
 import SwiftUI
 
+#if os(iOS)
+
 /// See [Figma](https://www.figma.com/design/3W4vi0zX8hrpQc7zInQQB6/🎨-Global-Colors---Styles?node-id=11-1&p=f&vars=1&var-id=5476-10186&m=dev)
 struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x1F1F1F = Color(0x1F1F1F)
@@ -90,13 +92,15 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Accents
     private static let accentContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
 
+    private static let accentTertiary = DynamicColor(lightColor: .blue70, darkColor: .blue50)
+
     // Text
     private static let textLink = DynamicColor(lightColor: .blue50, darkColor: .blue30)
     private static let textSelectionFill = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
 
     // Brand
     private static let accent = DynamicColor(lightColor: .blue50, darkColor: .blue30)
-    private static let accentGlowSecondary = DynamicColor(lightColor: x3969EF.opacity(0.12), darkColor: x7295F6.opacity(0.12))
+    private static let accentGlowSecondary = DynamicColor(lightColor: .blue50.opacity(0.12), darkColor: x7295F6.opacity(0.12))
 
     // System
     private static let border = DynamicColor(lightColor: .gray30, darkColor: .gray40)
@@ -167,6 +171,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .decorationTertiary: return decorationTertiary
         case .highlightDecoration: return highlightDecoration
         case .accentContentPrimary: return accentContentPrimary
+        case .accentTertiary: return accentTertiary
 
         case .surface: return surface
         case .surfaceTertiary: return surfaceTertiary
@@ -229,6 +234,10 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: surface.lightColor, darkColor: .x1C1C1E)
         case .privacyDashboardBackground:
             return DynamicColor(lightColor: surface.lightColor, darkColor: background.darkColor)
+        case .inputContentSeparator:
+            return DynamicColor(lightColor: shadowTertiary.lightColor, darkColor: highlightDecoration.darkColor)
         }
     }
 }
+
+#endif

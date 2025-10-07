@@ -31,15 +31,17 @@ extension Preferences {
         @ObservedObject var model: AboutPreferences
         @State private var areAutomaticUpdatesEnabled: Bool = true
 
-#if SPARKLE
         var autoUpdatesEnabled: Bool {
+#if SPARKLE
 #if DEBUG
             return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
 #else
             return true
 #endif
-        }
+#else
+            return false
 #endif
+        }
 
         var body: some View {
             PreferencePane {
@@ -53,16 +55,14 @@ extension Preferences {
 
                     AboutContentSection(model: model)
 
-#if SPARKLE
+                    #if SPARKLE
                     UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
-#endif
+                    #endif
                 }
             }.task {
-#if SPARKLE
                 if autoUpdatesEnabled && model.mustCheckForUpdatesBeforeUserCanTakeAction {
                     model.checkForUpdate(userInitiated: false)
                 }
-#endif
             }
             .onChange(of: model.featureFlagOverrideToggle) { _ in
                 // Intentional no-op
@@ -100,49 +100,13 @@ extension Preferences {
                 }
                 .padding(.top, 4)
             }
-#if SPARKLE
             .onAppear {
                 model.subscribeToUpdateInfoIfNeeded()
             }
-#endif
         }
 
         private var rightColumnContent: some View {
             Group {
-#if APPSTORE
-                HStack(spacing: 8) {
-                    Text(UserText.duckDuckGoForMacAppStore)
-                        .font(.companyName)
-                    if model.appVersionModel.shouldDisplayPrereleaseLabel {
-                        Text(model.appVersionModel.prereleaseLabel)
-                            .font(.caption2)
-                            .fontWeight(.bold)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 4)
-                            .background(
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color.betaLabelBackground)
-                            )
-                            .foregroundColor(Color.betaLabelForeground)
-                    }
-                }
-
-                Text(UserText.duckduckgoTagline).font(.privacySimplified)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .multilineTextAlignment(.leading)
-
-                Text(model.appVersionModel.versionLabel)
-                    .contextMenu(ContextMenu(menuItems: {
-                        Button(UserText.copy, action: {
-                            model.copy(model.appVersionModel.versionLabel)
-                        })
-                    }))
-
-                Button(UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: "")) {
-                    model.checkForAppStoreUpdate()
-                }
-                .buttonStyle(UpdateButtonStyle(enabled: true))
-#elseif SPARKLE
                 HStack(spacing: 8) {
                     Text(UserText.duckDuckGo)
                         .font(.companyName)
@@ -174,7 +138,6 @@ extension Preferences {
                 .padding(.bottom, 4)
 
                 updateButton
-#endif
             }
         }
 
@@ -210,14 +173,12 @@ extension Preferences {
 #endif
         }
 
-#if SPARKLE
         private var hasPendingUpdate: Bool {
             model.updateController?.hasPendingUpdate == true
         }
         private var hasCriticalUpdate: Bool {
             model.updateController?.latestUpdate?.type == .critical
         }
-#endif
 
         @ViewBuilder
         private var versionText: some View {
@@ -228,26 +189,27 @@ extension Preferences {
                             model.copy(model.appVersionModel.versionLabel)
                         })
                     }))
-#if SPARKLE
-                switch model.updateState {
-                case .upToDate:
-                    Text(" — " + UserText.upToDate)
-                case .updateCycle(let progress):
-                    if hasPendingUpdate {
-                        if hasCriticalUpdate {
-                            Text(" — " + UserText.newerCriticalUpdateAvailable)
+
+                // Only show update status if feature flag is enabled
+                if model.shouldShowUpdateStatus {
+                    switch model.updateState {
+                    case .upToDate:
+                        Text(" — " + UserText.upToDate)
+                    case .updateCycle(let progress):
+                        if hasPendingUpdate {
+                            if hasCriticalUpdate {
+                                Text(" — " + UserText.newerCriticalUpdateAvailable)
+                            } else {
+                                Text(" — " + UserText.newerVersionAvailable)
+                            }
                         } else {
-                            Text(" — " + UserText.newerVersionAvailable)
+                            text(for: progress)
                         }
-                    } else {
-                        text(for: progress)
                     }
                 }
-#endif
             }
         }
 
-#if SPARKLE
         private var formatter: NumberFormatter {
             let formatter = NumberFormatter()
             formatter.numberStyle = .percent
@@ -276,37 +238,47 @@ extension Preferences {
 
         @ViewBuilder
         private var statusIcon: some View {
-            switch model.updateState {
-            case .upToDate:
-                Image(nsImage: .check)
-                    .foregroundColor(.green)
-            case .updateCycle(let progress):
-                if hasPendingUpdate {
-                    if hasCriticalUpdate {
+            // Only show status icon if feature flag is enabled
+            if model.shouldShowUpdateStatus {
+                switch model.updateState {
+                case .upToDate:
+                    Image(nsImage: .check)
+                        .foregroundColor(.green)
+                case .updateCycle(let progress):
+                    if hasPendingUpdate {
+                        if hasCriticalUpdate {
+                            Image(nsImage: .criticalUpdateNotificationInfo)
+                                .foregroundColor(.red)
+                        } else {
+                            Image(nsImage: .updateNotificationInfo)
+                                .foregroundColor(.blue)
+                        }
+                    } else if progress.isFailed {
                         Image(nsImage: .criticalUpdateNotificationInfo)
                             .foregroundColor(.red)
                     } else {
-                        Image(nsImage: .updateNotificationInfo)
-                            .foregroundColor(.blue)
-                    }
-                } else if progress.isFailed {
-                    Image(nsImage: .criticalUpdateNotificationInfo)
-                        .foregroundColor(.red)
-                } else {
-                    if #available(macOS 13.0, *) {
-                        ProgressView()
-                            .scaleEffect(0.6)
-                    } else {
-                        ProgressView()
+                        if #available(macOS 13.0, *) {
+                            ProgressView()
+                                .scaleEffect(0.6)
+                        } else {
+                            ProgressView()
+                        }
                     }
                 }
+            } else {
+                // Empty view when feature flag is off
+                EmptyView()
             }
         }
 
+        @ViewBuilder
         private var lastCheckedText: some View {
-            let lastChecked = model.updateController?.updateProgress.isIdle == true ? lastCheckedFormattedDate(model.lastUpdateCheckDate) : "-"
-            return Text("\(UserText.lastChecked): \(lastChecked)")
-                .foregroundColor(.secondary)
+            // Only show last checked text if feature flag is enabled
+            if model.shouldShowUpdateStatus {
+                let lastChecked = model.updateController?.updateProgress.isIdle == true ? lastCheckedFormattedDate(model.lastUpdateCheckDate) : "-"
+                Text("\(UserText.lastChecked): \(lastChecked)")
+                    .foregroundColor(.secondary)
+            }
         }
 
         private func lastCheckedFormattedDate(_ date: Date?) -> String {
@@ -325,41 +297,49 @@ extension Preferences {
 
         @ViewBuilder
         private var updateButton: some View {
-            if model.useLegacyAutoRestartLogic {
-                switch model.updateState {
-                case .upToDate:
-                    Button(UserText.checkForUpdate) {
-                        model.checkForUpdate(userInitiated: true)
-                    }
-                    .buttonStyle(UpdateButtonStyle(enabled: true))
-                case .updateCycle(let progress):
-                    if hasPendingUpdate {
-                        Button(model.areAutomaticUpdatesEnabled ? UserText.restartToUpdate : UserText.runUpdate) {
-                            model.runUpdate()
-                        }
-                        .buttonStyle(UpdateButtonStyle(enabled: true))
-                    } else if progress.isFailed {
-                        Button(UserText.retryUpdate) {
-                            model.checkForUpdate(userInitiated: true)
-                        }
-                        .buttonStyle(UpdateButtonStyle(enabled: true))
-                    } else {
+            if model.shouldShowUpdateStatus {
+                // Feature flag is ON - show full update functionality
+                if model.useLegacyAutoRestartLogic {
+                    switch model.updateState {
+                    case .upToDate:
                         Button(UserText.checkForUpdate) {
                             model.checkForUpdate(userInitiated: true)
                         }
-                        .buttonStyle(UpdateButtonStyle(enabled: false))
-                        .disabled(true)
+                        .buttonStyle(UpdateButtonStyle(enabled: true))
+                    case .updateCycle(let progress):
+                        if hasPendingUpdate {
+                            Button(model.areAutomaticUpdatesEnabled ? UserText.restartToUpdate : UserText.runUpdate) {
+                                model.runUpdate()
+                            }
+                            .buttonStyle(UpdateButtonStyle(enabled: true))
+                        } else if progress.isFailed {
+                            Button(UserText.retryUpdate) {
+                                model.checkForUpdate(userInitiated: true)
+                            }
+                            .buttonStyle(UpdateButtonStyle(enabled: true))
+                        } else {
+                            Button(UserText.checkForUpdate) {
+                                model.checkForUpdate(userInitiated: true)
+                            }
+                            .buttonStyle(UpdateButtonStyle(enabled: false))
+                            .disabled(true)
+                        }
                     }
+                } else {
+                    let configuration = model.updateButtonConfiguration
+
+                    Button(configuration.title, action: configuration.action)
+                        .buttonStyle(UpdateButtonStyle(enabled: configuration.enabled))
+                        .disabled(!configuration.enabled)
                 }
             } else {
-                let configuration = model.updateButtonConfiguration
-
-                Button(configuration.title, action: configuration.action)
-                    .buttonStyle(UpdateButtonStyle(enabled: configuration.enabled))
-                    .disabled(!configuration.enabled)
+                // Feature flag is OFF - show simple App Store button
+                Button(UserText.checkForUpdate) {
+                    model.checkForAppStoreUpdate()
+                }
+                .buttonStyle(UpdateButtonStyle(enabled: true))
             }
         }
-#endif
     }
 
 #if SPARKLE

@@ -5,6 +5,9 @@
       location = "group:SharedPackages"
       name = "SharedPackages">
       <FileRef
+         location = "group:AttributedMetric">
+      </FileRef>
+      <FileRef
          location = "group:AIChat">
       </FileRef>
       <FileRef

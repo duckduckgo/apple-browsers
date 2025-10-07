@@ -411,7 +411,8 @@ extension PrivacyDashboardViewController {
                                                cookieConsentInfo: currentTab.privacyInfo?.cookieConsentManaged,
                                                debugFlags: currentTab.privacyInfo?.debugFlags ?? "",
                                                privacyExperiments: currentTab.privacyInfo?.privacyExperimentCohorts ?? "",
-                                               isPirEnabled: isPirEnabled)
+                                               isPirEnabled: isPirEnabled,
+                                               pageLoadTiming: currentTab.brokenSiteInfo?.lastPageLoadTiming)
         return websiteBreakage
     }
 }

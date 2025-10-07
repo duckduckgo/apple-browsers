@@ -4,7 +4,7 @@
         description: 'Fired when BrowserServicesKit fails to load the contents of a Javascript file, to help investigate the cause of the failure.',
         owners: ['rachelmcr'],
         triggers: ['other'],
-        suffixes: ['platform', 'form_factor', 'first_daily_count'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: [
             'appVersion',
             'pixelSource',
@@ -27,7 +27,6 @@
                     'fullscreenvideo',
                     'internal-feedback-autofiller',
                     'login-form-detection',
-                    'navigatorsharepatch',
                     'surrogates',
                 ],
             },

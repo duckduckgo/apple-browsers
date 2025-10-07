@@ -24,16 +24,6 @@ import BrowserServicesKit
 import DesignResourcesKit
 
 @NewInstructionsView.InstructionsBuilder
-func newFileImportInstructionsBuilder(source: DataImport.Source, dataTypeSelection: DataImport.TypeSelection, button: @escaping (String) -> AnyView) -> [NewInstructionsView.InstructionsItem] {
-    switch dataTypeSelection {
-    case .multiple:
-        newFileImportMultipleTypeInstructionsBuilder(source: source)
-    case .single:
-        fatalError("Not yet implemented")
-    }
-}
-
-@NewInstructionsView.InstructionsBuilder
 func newFileImportMultipleTypeInstructionsBuilder(source: DataImport.Source) -> [NewInstructionsView.InstructionsItem] {
     switch source {
     case .safari, .safariTechnologyPreview:
@@ -64,7 +54,7 @@ func newFileImportMultipleTypeInstructionsBuilder(source: DataImport.Source) -> 
 struct NewFileImportView: View {
 
     let source: DataImport.Source
-    let dataTypeSelection: DataImport.TypeSelection
+    let allowedFileTypes: [UTType]
     let action: () -> Void
     let onFileDrop: (URL) -> Void
 
@@ -72,9 +62,9 @@ struct NewFileImportView: View {
 
     @State private var isTargeted: Bool = false
 
-    init(source: DataImport.Source, dataTypeSelection: DataImport.TypeSelection, isButtonDisabled: Bool, action: (() -> Void)? = nil, onFileDrop: ((URL) -> Void)? = nil) {
+    init(source: DataImport.Source, allowedFileTypes: [UTType], isButtonDisabled: Bool, action: (() -> Void)? = nil, onFileDrop: ((URL) -> Void)? = nil) {
         self.source = source
-        self.dataTypeSelection = dataTypeSelection
+        self.allowedFileTypes = allowedFileTypes
         self.action = action ?? {}
         self.onFileDrop = onFileDrop ?? { _ in }
         self.isButtonDisabled = isButtonDisabled
@@ -83,7 +73,7 @@ struct NewFileImportView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             NewInstructionsView {
-                newFileImportInstructionsBuilder(source: source, dataTypeSelection: dataTypeSelection, button: self.button)
+                newFileImportMultipleTypeInstructionsBuilder(source: source)
             }
 
             VStack(alignment: .center, spacing: 20) {
@@ -107,7 +97,7 @@ struct NewFileImportView: View {
                     .inset(by: 0.5)
                     .stroke(fileDropStrokeColor, style: StrokeStyle(lineWidth: 1, dash: [2, 2]))
             )
-            .onDrop(of: dataTypeSelection.allowedFileTypes, isTargeted: $isTargeted, perform: onDrop)
+            .onDrop(of: allowedFileTypes, isTargeted: $isTargeted, perform: onDrop)
         }
     }
 
@@ -129,7 +119,7 @@ struct NewFileImportView: View {
     private func onDrop(_ providers: [NSItemProvider], _ location: CGPoint) -> Bool {
         let allowedTypeIdentifiers = providers.reduce(into: Set<String>()) {
             $0.formUnion($1.registeredTypeIdentifiers)
-        }.intersection(dataTypeSelection.allowedFileTypes.map(\.identifier))
+        }.intersection(allowedFileTypes.map(\.identifier))
 
         guard let typeIdentifier = allowedTypeIdentifiers.first,
               let provider = providers.first(where: {
@@ -427,7 +417,7 @@ struct NewCircleNumberView: View {
 
 #Preview {
     HStack {
-        NewFileImportView(source: .onePassword8, dataTypeSelection: .single(.passwords), isButtonDisabled: false)
+        NewFileImportView(source: .onePassword8, allowedFileTypes: [.zip], isButtonDisabled: false)
             .padding()
             .frame(width: 512 - 20)
     }

@@ -19,6 +19,7 @@
 import AppKit
 import BrowserServicesKit
 import Foundation
+import UniformTypeIdentifiers
 
 extension DataImport {
 
@@ -323,14 +324,33 @@ extension DataImport.Source {
 
     var supportedDataTypes: Set<DataImport.DataType> {
         switch self {
-        case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .safari, .safariTechnologyPreview, .vivaldi, .yandex:
+        case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .vivaldi, .yandex:
             return [.bookmarks, .passwords]
+        case .safari, .safariTechnologyPreview:
+            if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
+                return [.bookmarks, .passwords, .creditCards]
+            } else {
+                return [.bookmarks, .passwords]
+            }
         case .tor:
             return [.bookmarks]
         case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv:
             return [.passwords]
         case .bookmarksHTML:
             return [.bookmarks]
+        }
+    }
+
+    var archiveImportSupportedFiles: Set<UTType> {
+        switch self {
+        case .safari, .safariTechnologyPreview:
+            if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
+                return [.zip, .commaSeparatedText, .json, .html]
+            } else {
+                return []
+            }
+        default:
+            return []
         }
     }
 

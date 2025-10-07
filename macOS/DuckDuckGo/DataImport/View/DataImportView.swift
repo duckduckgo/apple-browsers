@@ -21,6 +21,7 @@ import SwiftUI
 import BrowserServicesKit
 import PixelKit
 import DesignResourcesKitIcons
+import UniformTypeIdentifiers
 
 @MainActor
 struct DataImportView: ModalView {
@@ -179,13 +180,10 @@ struct DataImportView: ModalView {
             case .getReadPermission(let url):
                 // give request to Safari folder, select Bookmarks.plist using open panel
                 getReadPermissionBody(url: url)
-            case .fileImport(let typeSelection, let summaryTypes):
-                switch typeSelection {
-                case .single(let dataType):
-                    fileImportBody(dataType: dataType, summaryTypes: summaryTypes)
-                case .multiple:
-                    multifileImportBody(dataTypeSelection: typeSelection)
-                }
+            case .fileImport(let dataType, let summaryTypes):
+                fileImportBody(dataType: dataType, summaryTypes: summaryTypes)
+            case .archiveImport:
+                multifileImportBody(fileTypes: model.importSource.archiveImportSupportedFiles)
             case .summary(let dataTypes, let isFileImport):
                 DataImportSummaryView(model, dataTypes: dataTypes, isFileImport: isFileImport)
             case .feedback:
@@ -291,22 +289,21 @@ struct DataImportView: ModalView {
     }
 
     @ViewBuilder
-    private func multifileImportBody(dataTypeSelection: DataImport.TypeSelection) -> some View {
+    private func multifileImportBody(fileTypes: Set<UTType>) -> some View {
         importPickerPanel(bottomPadding: 4) {
             EmptyView()
         }
         .padding(.bottom, 20)
         VStack(alignment: .leading) {
             // manual file import instructions for CSV/HTML
-            NewFileImportView(source: model.importSource, dataTypeSelection: dataTypeSelection, isButtonDisabled: model.isSelectFileButtonDisabled) {
+            NewFileImportView(source: model.importSource, allowedFileTypes: Array(fileTypes), isButtonDisabled: model.isSelectFileButtonDisabled) {
                 model.selectFile()
             } onFileDrop: { url in
                 model.initiateImport(fileURL: url)
             }
 
-            if case .multiple(let dataTypes) = dataTypeSelection,
-                let firstDataType = dataTypes.first,
-                let error = model.error(for: firstDataType) as? SafariArchiveImporter.ImportError,
+            if case .failure(let error) = model.summary.last?.result,
+               let error = error as? SafariArchiveImporter.ImportError,
                error.type == .unarchive || error.type == .importContents {
                 HStack {
                     Image(nsImage: DesignSystemImages.Color.Size16.exclamationHigh)
@@ -370,7 +367,7 @@ struct DataImportView: ModalView {
                     model.performAction(for: model.buttons[idx],
                                         dismiss: dismiss.callAsFunction)
                 } label: {
-                    Text(model.buttons[idx].title(dataTypeSelection: model.screen.fileImportDataTypeSelection))
+                    Text(model.buttons[idx].title(dataType: model.screen.fileImportDataType))
                         .frame(minWidth: 80 - 16 - 1)
                 }
                 .keyboardShortcut(model.buttons[idx].shortcut)
@@ -564,22 +561,20 @@ extension DataImportViewModel.ButtonType {
 
 extension DataImportViewModel.ButtonType {
 
-    func title(dataTypeSelection: DataImport.TypeSelection?) -> String {
+    func title(dataType: DataImport.DataType?) -> String {
         switch self {
         case .next:
             UserText.next
         case .initiateImport:
             UserText.initiateImport
         case .skip:
-            switch dataTypeSelection {
-            case .single(.bookmarks):
+            switch dataType {
+            case .some(.bookmarks):
                 UserText.skipBookmarksImport
-            case .single(.passwords):
+            case .some(.passwords):
                 UserText.skipPasswordsImport
-            case .multiple, .single(.creditCards): // Shouldn't really happen
+            case .some(.creditCards), nil: // Shouldn't really happen
                 UserText.cancel
-            case nil:
-                UserText.skip
             }
         case .cancel:
             UserText.cancel
@@ -655,11 +650,9 @@ extension DataImportViewModel {
             source == .chrome && selectedDataTypes.contains(.passwords) ? true : false
         }
 
-        init(source: DataImport.Source, dataTypeSelection: DataImport.TypeSelection? = nil) {
+        init(source: DataImport.Source, dataType: DataType? = nil) {
             self.source = source
-            if case .single(let dataType) = dataTypeSelection {
-                self.dataType = dataType
-            }
+            self.dataType = dataType
         }
 
         func importData(types: Set<DataImport.DataType>) -> DataImportTask {
@@ -750,8 +743,8 @@ extension DataImportViewModel {
                       profileURL: URL(fileURLWithPath: "/test/Profile 2")),
             ], validateProfileData: { _ in { .init(logins: .available, bookmarks: .available) } // swiftlint:disable:this opening_brace
             })
-        } dataImporterFactory: { source, typeSelection, _, _ in
-            return MockDataImporter(source: source, dataTypeSelection: typeSelection)
+        } dataImporterFactory: { source, type, _, _ in
+            return MockDataImporter(source: source, dataType: type)
         } requestPrimaryPasswordCallback: { _ in
             print("primary password requested")
             return "password"

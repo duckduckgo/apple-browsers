@@ -21,6 +21,7 @@ import Foundation
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 import BrowserServicesKit
+import UniformTypeIdentifiers
 
 final class DataImportViewModelTests: XCTestCase {
 
@@ -1710,7 +1711,7 @@ final class DataImportViewModelTests: XCTestCase {
 
     // MARK: - Helpers
 
-    var openPanelCallback: ((DataType) -> URL?)?
+    var openPanelCallback: (([UTType]) -> URL?)?
 
     func setupModel(with source: Source, profiles: [(ThirdPartyBrowser) -> BrowserProfile] = [], screen: DataImportViewModel.Screen? = nil, summary: [DataImportViewModel.DataTypeImportResult] = [], dataImporterFactory: DataImportViewModel.DataImporterFactory? = nil, requestPrimaryPasswordCallback: ((DataImportViewModel.Source) -> String?)? = nil) {
         model = DataImportViewModel(importSource: source, screen: screen, summary: summary, loadProfiles: { browser in
@@ -1783,8 +1784,8 @@ final class DataImportViewModelTests: XCTestCase {
             }
 
             if openPanelCallback == nil {
-                openPanelCallback = { dataType in
-                    XCTAssertEqual(dataType, dataTypes.first!, message().with("file import dataType"), file: file, line: line)
+                openPanelCallback = { fileTypes in
+                    XCTAssertEqual(fileTypes, dataTypes.first?.allowedFileTypes, message().with("file import dataType"), file: file, line: line)
                     self.openPanelCallback = nil
                     return url
                 }
@@ -1974,6 +1975,7 @@ extension DataImportViewModel.Screen: CustomStringConvertible {
         case .moreInfo: ".moreInfo"
         case .getReadPermission(let url): "getReadPermission(\(url.path))"
         case .fileImport(dataType: let dataType, summary: let summaryDataTypes): ".fileImport(dataType: .\(dataType)\(!summaryDataTypes.isEmpty ? ", summary: [\(summaryDataTypes.map { "." + $0.rawValue }.sorted().joined(separator: ", "))]" : ""))"
+        case .archiveImport(dataTypes: let dataTypes): ".archiveImport([\(dataTypes.map { "." + $0.rawValue }.sorted().joined(separator: ", "))])"
         case .summary(let dataTypes, isFileImport: false):
             ".summary([\(dataTypes.map { "." + $0.rawValue }.sorted().joined(separator: ", "))])"
         case .summary(let dataTypes, isFileImport: true):

@@ -95,7 +95,7 @@ final class PreferencesSidebarModel: ObservableObject {
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         notificationCenter: NotificationCenter = .default,
         featureFlagger: FeatureFlagger,
-        settingsIconProvider: SettingsIconsProviding = NSApp.delegateTyped.visualStyle.iconsProvider.settingsIconProvider,
+        settingsIconProvider: SettingsIconsProviding = NSApp.delegateTyped.themeManager.theme.iconsProvider.settingsIconProvider,
         isUsingAuthV2: Bool,
         pixelFiring: PixelFiring?,
         aiFeaturesStatusProvider: AIFeaturesStatusProviding

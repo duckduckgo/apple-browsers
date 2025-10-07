@@ -36,7 +36,7 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
                 build: "101",
                 date: Date(),
                 releaseNotes: ["Bug fixes"],
-                releaseNotesPrivacyPro: [],
+                releaseNotesSubscription: [],
                 needsLatestReleaseNote: false
             )
         }

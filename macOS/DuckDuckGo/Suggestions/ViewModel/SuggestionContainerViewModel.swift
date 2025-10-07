@@ -28,17 +28,17 @@ final class SuggestionContainerViewModel {
     var isHomePage: Bool
     let isBurner: Bool
     let suggestionContainer: SuggestionContainer
-    private let visualStyle: VisualStyleProviding
+    private let themeManager: ThemeManagerProtocol
     private var suggestionResultCancellable: AnyCancellable?
 
     init(isHomePage: Bool,
          isBurner: Bool,
          suggestionContainer: SuggestionContainer,
-         visualStyle: VisualStyleProviding) {
+         themeManager: ThemeManagerProtocol) {
         self.isHomePage = isHomePage
         self.isBurner = isBurner
         self.suggestionContainer = suggestionContainer
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
         subscribeToSuggestionResult()
     }
 
@@ -131,7 +131,7 @@ final class SuggestionContainerViewModel {
             return nil
         }
 
-        return SuggestionViewModel(isHomePage: isHomePage, suggestion: items[index], userStringValue: userStringValue ?? "", visualStyle: visualStyle)
+        return SuggestionViewModel(isHomePage: isHomePage, suggestion: items[index], userStringValue: userStringValue ?? "", themeManager: themeManager)
     }
 
     func select(at index: Int) {

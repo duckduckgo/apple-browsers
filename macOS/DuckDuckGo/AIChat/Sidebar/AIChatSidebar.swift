@@ -18,6 +18,7 @@
 
 import Foundation
 import AIChat
+import Combine
 
 /// A wrapper class that represents the AI Chat sidebar contents and its displayed view controller.
 
@@ -44,7 +45,14 @@ final class AIChatSidebar: NSObject {
 
     /// The view controller that displays the sidebar contents.
     /// This property is set by the AIChatSidebarProvider when the view controller is created.
-    var sidebarViewController: AIChatSidebarViewController?
+    var sidebarViewController: AIChatSidebarViewController? {
+        didSet {
+            subscribeToRestorationDataUpdates()
+        }
+    }
+
+    /// Cancellables for Combine subscriptions
+    private var cancellables = Set<AnyCancellable>()
 
     /// The current AI chat URL being displayed.
     public var currentAIChatURL: URL {
@@ -77,7 +85,21 @@ final class AIChatSidebar: NSObject {
     /// Call this when the sidebar is hidden from the user.
     public func setHidden(at date: Date = Date()) {
         isPresented = false
-        hiddenAt = date
+        if hiddenAt == nil {
+            hiddenAt = date
+        }
+    }
+
+    /// Subscribes to restoration data updates from the sidebar view controller.
+    /// This method is called automatically when the sidebarViewController is set.
+    private func subscribeToRestorationDataUpdates() {
+        cancellables.removeAll()
+
+        sidebarViewController?.chatRestorationDataPublisher?
+            .sink { [weak self] restorationData in
+                self?.restorationData = restorationData
+            }
+            .store(in: &cancellables)
     }
 
     /// Unloads the sidebar view controller after reading and updating the current AI chat URL and restoration data.
@@ -96,8 +118,17 @@ final class AIChatSidebar: NSObject {
             self.sidebarViewController = nil
         }
 
+        cancellables.removeAll()
+
         setHidden()
     }
+
+#if DEBUG
+    /// Test-only method to set the hiddenAt date for testing session timeout scenarios
+    func updateHiddenAt(_ date: Date?) {
+        hiddenAt = date
+    }
+#endif
 }
 
 // MARK: - NSSecureCoding

@@ -110,7 +110,7 @@ struct SharedDefaultColorPalette: SharedColorPaletteDefinition {
     // Decorations
     static let decorationPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.3), darkColor: xF9F9F9.opacity(0.36))
     static let decorationSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.48), darkColor: xF9F9F9.opacity(0.64))
-    static let decorationTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.60), darkColor: xF9F9F9.opacity(0.74))
+    static let decorationTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
 
     // Destructive Colors
     static let destructiveContentPrimary = DynamicColor(lightHex: 0xffffff, darkHex: 0x000000)

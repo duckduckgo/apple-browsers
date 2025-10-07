@@ -35,6 +35,9 @@ struct FireDialogView: ModalView {
     private var tabsSubtitle: String {
         switch viewModel.clearingOption {
         case .currentTab:
+            if viewModel.isPinnedTabSelected {
+                return UserText.fireDialogPinnedTabWillReload
+            }
             return UserText.fireDialogCloseThisTab
         case .currentWindow:
             return UserText.fireDialogCloseThisWindow
@@ -47,7 +50,15 @@ struct FireDialogView: ModalView {
     private let featureFlagger: FeatureFlagger
     @Environment(\.dismiss) private var dismiss
 
-    @State private var isShowingSitesOverlay: Bool = false
+    @State private var isShowingSitesOverlay: Bool = false {
+        didSet {
+            isAnimatingSitesOverlay = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                isAnimatingSitesOverlay = false
+            }
+        }
+    }
+    @State private var isAnimatingSitesOverlay: Bool = false
 
     init(viewModel: FireDialogViewModel, showSitesOverlay: Bool = false, featureFlagger: FeatureFlagger? = nil) {
         self.featureFlagger = featureFlagger ?? Application.appDelegate.featureFlagger
@@ -57,7 +68,15 @@ struct FireDialogView: ModalView {
 
     private var historySubtitle: String {
         let count = viewModel.historyItemsCountForCurrentScope
-        return count == 0 ? UserText.none : UserText.fireDialogHistoryItemsSubtitle(count)
+        guard count > 0 else { return UserText.none }
+        switch viewModel.clearingOption {
+        case .currentTab:
+            return UserText.fireDialogHistoryItemsSubtitleTab(count)
+        case .currentWindow:
+            return UserText.fireDialogHistoryItemsSubtitleWindow(count)
+        case .allData:
+            return UserText.fireDialogHistoryItemsSubtitle(count)
+        }
     }
 
     private var cookiesSubtitle: String {
@@ -104,11 +123,12 @@ struct FireDialogView: ModalView {
                 }
             }
             .animation(.easeOut(duration: NSAnimationContext.current.duration),
-                       value: isShowingSitesOverlay)
+                       value: isAnimatingSitesOverlay)
 
             footerView
                 .zIndex(11)
                 .padding(.bottom, 10) // presenter sheet crops the padding 🤷‍♂️
+                .background(Color(designSystemColor: .fireDialogBackground))
         }
         .frame(maxWidth: Constants.viewSize.width, maxHeight: .infinity)
         .background(Color(designSystemColor: .fireDialogBackground))
@@ -120,6 +140,7 @@ struct FireDialogView: ModalView {
                 .padding(.top, 8)
 
             Text(UserText.fireDialogTitle)
+                .multilineText()
                 .multilineTextAlignment(.center)
                 .font(.system(size: 15).weight(.semibold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -182,8 +203,10 @@ struct FireDialogView: ModalView {
                 title: UserText.cookiesAndSiteDataTitle,
                 subtitle: cookiesSubtitle,
                 isOn: $viewModel.includeCookiesAndSiteData,
-                infoAction: { isShowingSitesOverlay = true },
-                infoEnabled: viewModel.includeCookiesAndSiteData && viewModel.cookiesSitesCountForCurrentScope > 0
+                // don‘t show the ℹ button when there‘s no site data in scope
+                infoAction: (viewModel.cookiesSitesCountForCurrentScope > 0) ? { isShowingSitesOverlay = true } : nil,
+                // grey-out the ℹ button when the toggle is Off
+                infoEnabled: viewModel.includeCookiesAndSiteData
             )
             sectionDivider(padding: 0)
 
@@ -254,13 +277,7 @@ struct FireDialogView: ModalView {
 
                     ForEach(viewModel.selectable, id: \.domain) { item in
                         HStack(spacing: 6) {
-                            if let image = item.favicon {
-                                Image(nsImage: image)
-                                    .resizable()
-                                    .frame(width: 16, height: 16)
-                            } else {
-                                Image(nsImage: DesignSystemImages.Glyphs.Size16.globe)
-                            }
+                            FaviconView(url: URL(string: "https://\(item.domain)"), size: 16)
                             Text(item.domain)
                                 .font(.system(size: 13))
                                 .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -283,13 +300,7 @@ struct FireDialogView: ModalView {
 
                         ForEach(viewModel.fireproofed, id: \.domain) { item in
                             HStack(spacing: 6) {
-                                if let image = item.favicon {
-                                    Image(nsImage: image)
-                                        .resizable()
-                                        .frame(width: 16, height: 16)
-                                } else {
-                                    Image(nsImage: DesignSystemImages.Glyphs.Size16.globe)
-                                }
+                                FaviconView(url: URL(string: "https://\(item.domain)"), size: 16)
                                 Text(item.domain)
                                     .font(.system(size: 13))
                                     .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -347,6 +358,7 @@ struct FireDialogView: ModalView {
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
             .frame(width: Constants.viewSize.width - 32, alignment: .leading)
+            .contentShape(Rectangle()) // allow hit-test in empty rect areas
         }
         .buttonStyle(RowPressButtonStyle())
     }
@@ -435,7 +447,6 @@ struct FireDialogView: ModalView {
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 16)
-        .background(Color(designSystemColor: .fireDialogBackground))
     }
 
 }

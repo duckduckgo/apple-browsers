@@ -131,6 +131,10 @@ final class FireDialogViewModel: ObservableObject {
     @Published private(set) var selected: Set<Int> = Set()
     @Published private(set) var historyVisits: [Visit] = []
 
+    var isPinnedTabSelected: Bool {
+        tabCollectionViewModel?.selectedTabViewModel?.tab.isPinned ?? false
+    }
+
     let selectableSectionIndex = 0
     let fireproofedSectionIndex = 1
 

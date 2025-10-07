@@ -41,26 +41,36 @@ struct UserText {
     static let fireDialogCloseAllTabsWindows = NSLocalizedString("fire.dialog.close.all.tabs.windows", value: "Close all tabs and windows.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Everything’. Means: all browser tabs and windows will be closed.")
 
     static func fireDialogHistoryItemsSubtitle(_ count: Int) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        let formatted = formatter.string(from: NSNumber(value: count)) ?? String(count)
         let template = NSLocalizedString(
             "fire.dialog.history.count",
-            value: "Delete %@ items.",
-            comment: "Subtitle. Shows the exact number of browsing history items that will be deleted in this operation. %@ is a localized decimal number."
+            value: "Delete %#@items@.",
+            comment: "Subtitle. Shows the exact number of browsing history items that will be deleted in this operation, using plural substitutions for the count and noun (%#@items@)."
         )
-        return String(format: template, formatted)
+        return String.localizedStringWithFormat(template, count)
+    }
+    static func fireDialogHistoryItemsSubtitleTab(_ count: Int) -> String {
+        let template = NSLocalizedString(
+            "fire.dialog.history.count.tab",
+            value: "Delete %#@items@ from this tab.",
+            comment: "Subtitle for Tab scope. Number of history items to be deleted from current tab, using plural substitutions for the count and noun (%#@items@)."
+        )
+        return String.localizedStringWithFormat(template, count)
+    }
+    static func fireDialogHistoryItemsSubtitleWindow(_ count: Int) -> String {
+        let template = NSLocalizedString(
+            "fire.dialog.history.count.window",
+            value: "Delete %#@items@ from this window.",
+            comment: "Subtitle for Window scope. Number of history items to be deleted from current window, using plural substitutions for the count and noun (%#@items@)."
+        )
+        return String.localizedStringWithFormat(template, count)
     }
     static func fireDialogCookiesCountSubtitle(_ count: Int) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        let formatted = formatter.string(from: NSNumber(value: count)) ?? String(count)
         let template = NSLocalizedString(
             "fire.dialog.cookies.count",
-            value: "Delete from %@ sites. May sign you out of accounts.",
-            comment: "Subtitle. Shows the number of sites whose cookies/site data will be deleted. Warns user that this may sign them out. %@ is a localized decimal number."
+            value: "Delete from %#@sites@. May sign you out of accounts.",
+            comment: "Subtitle. Shows the number of sites whose cookies/site data will be deleted. Uses plural substitutions for the count and noun (%#@sites@)."
         )
-        return String(format: template, formatted)
+        return String.localizedStringWithFormat(template, count)
     }
     static let notNow = NSLocalizedString("notnow", value: "Not Now", comment: "Not Now button")
     static let remove = NSLocalizedString("generic.remove.button", value: "Remove", comment: "Label of a button that allows the user to remove an item")
@@ -442,10 +452,10 @@ struct UserText {
         return String(format: localized, sites)
     }
     static let fireDialogDetails = NSLocalizedString("fire.dialog.details", value: "Details", comment: "Button to show more details")
-    static let fireDialogWindowWillClose = NSLocalizedString("fire.dialog.window-will-close", value: "Current window will close", comment: "Warning label shown in an expanded view of the fire popover")
-    static let fireDialogTabWillClose = NSLocalizedString("fire.dialog.tab-will-close", value: "Current tab will close", comment: "Warning label shown in an expanded view of the fire popover")
-    static let fireDialogPinnedTabWillReload = NSLocalizedString("fire.dialog.tab-will-reload", value: "Pinned tab will reload", comment: "Warning label shown in an expanded view of the fire popover")
-    static let fireDialogAllWindowsWillClose = NSLocalizedString("fire.dialog.all-windows-will-close", value: "All windows will close", comment: "Warning label shown in an expanded view of the fire popover")
+    static let fireDialogWindowWillClose = NSLocalizedString("fire.dialog.window-will-close", value: "Current window will close.", comment: "Warning label shown in an expanded view of the fire popover")
+    static let fireDialogTabWillClose = NSLocalizedString("fire.dialog.tab-will-close", value: "Current tab will close.", comment: "Warning label shown in an expanded view of the fire popover")
+    static let fireDialogPinnedTabWillReload = NSLocalizedString("fire.dialog.tab-will-reload", value: "Pinned tab will reload.", comment: "Warning label shown in an expanded view of the fire popover")
+    static let fireDialogAllWindowsWillClose = NSLocalizedString("fire.dialog.all-windows-will-close", value: "All windows will close.", comment: "Warning label shown in an expanded view of the fire popover")
 
     // Fire Dialog – new concise segment labels and link row
     static let fireDialogTitle = NSLocalizedString("fire.dialog.title", value: "Delete Browsing Data", comment: "Title of the Fire dialog")
@@ -525,12 +535,12 @@ struct UserText {
     static let emailProtectionExplanation = NSLocalizedString("email.protection.explanation", value: "Block email trackers and hide your address without switching your email provider.", comment: "Email protection feature explanation in settings. The feature blocks email trackers and hides original email address.")
 
     // Misc
-
-    static let aiChatShowOnNewTabPageBarToggle = NSLocalizedString("duckai.show-on-new-tab-page.toggle", value: "Show on New Tab Page", comment: "A checkbox to control AI Chat shortcut visibility on the New Tab Page")
     static let aiChatShowInSearchBoxOnNewTabPageBarToggle = NSLocalizedString("duckai.show-in-search-box-on-new-tab-page.toggle", value: "Show in search box on New Tab Page", comment: "A checkbox to control AI Chat shortcut visibility in a search box on the New Tab Page")
+    static let aiChatShowOnNewTabPageSearchBoxToggle = NSLocalizedString("duckai.show-on-new-tab-page-search-box.toggle", value: "Show Duck.ai option on New Tab Page search box", comment: "A checkbox to control AI Chat shortcut visibility on the New Tab Page search box")
     static let aiChatShowInAddressBarToggle = NSLocalizedString("duckai.show-in-address-bar.toggle", value: "Show Duck.ai shortcut in the address bar", comment: "Show AI Chat in the address bar")
     static let aiChatShowInApplicationMenuToggle = NSLocalizedString("duckai.show-in-application-menu.toggle-setting", value: "Show Duck.ai shortcuts in menus", comment: "Show Duck.ai in application menus")
     static let aiChatOpenInSidebarToggle = NSLocalizedString("duckai.open-in-sidebar.toggle-setting", value: "Open Duck.ai in the sidebar", comment: "Settings option to open Duck.ai in the sidebar")
+    static let aiChatOpenSidebarWhenViewingWebsitesToggle = NSLocalizedString("duckai.open-sidebar-when-viewing-websites.toggle-setting", value: "Toggle Duck.ai in sidebar when viewing websites", comment: "Settings option to toggle Duck.ai in sidebar when viewing websites")
     static let aiChatPreferencesCaption = NSLocalizedString("ai-features.preferences.caption", value: "DuckDuckGo AI features are private and optional. Your data is not used to train AI.", comment: "Ai Chat preferences explanation")
     static let aiChatPreferencesLearnMoreButton = NSLocalizedString("ai-chat.preferences.learn-more", value: "Learn More", comment: "AI Chat preferences button to learn more about it")
     static let newAIChatMenuItem = NSLocalizedString("duckai.menu.new", value: "New Duck.ai Chat", comment: "Menu item to launch AI Chat")
@@ -566,6 +576,8 @@ struct UserText {
     static let aiChatShortcutsSectionTitle = NSLocalizedString("duckai.shortcuts.section.title", value: "Duck.ai Shortcuts", comment: "Section title for Duck.ai shortcuts settings")
     static let aiChatShowInBrowserMenusToggle = NSLocalizedString("duckai.show-in-browser-menus.toggle", value: "Show in browser menus", comment: "Toggle for showing Duck.ai in browser menus")
     static let aiChatShowInAddressBarLabel = NSLocalizedString("duckai.show-in-address-bar.label", value: "Show in address bar", comment: "Label for showing Duck.ai in address bar")
+    static let aiChatShowShortcutInAddressBarLabel = NSLocalizedString("duckai.show-shortcut-in-address-bar.label", value: "Show Duck.ai shortcut in the address bar", comment: "Label for showing Duck.ai shortcut in address bar")
+    static let aiChatShowInAddressBarWhenTypingLabel = NSLocalizedString("duckai.show-in-address-bar-when-typing.label", value: "Show \"Ask Duck.ai\" option when typing in the address bar", comment: "Label for showing 'Ask Duck.ai' option when typing in address bar")
     static let aiChatOpenNewChatsSectionTitle = NSLocalizedString("duckai.open-new-chats.section.title", value: "Open New Chats", comment: "Section title for Duck.ai new chat location settings")
     static let aiChatOpenInSidebarOption = NSLocalizedString("duckai.open-in-sidebar.option", value: "Sidebar", comment: "Option to open Duck.ai chats in sidebar")
     static let aiChatOpenInFullPageOption = NSLocalizedString("duckai.open-in-full-page.option", value: "Full page", comment: "Option to open Duck.ai chats in full page")

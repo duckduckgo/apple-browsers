@@ -59,6 +59,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
+    @MainActor
     convenience init(themeManager: ThemeManaging, appearancePreferences: AppearancePreferences) {
         self.init(
             appearancePreferences: appearancePreferences,
@@ -84,6 +85,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
         )
     }
 
+    @MainActor
     init(
         appearancePreferences: AppearancePreferences,
         userBackgroundImagesManager: UserBackgroundImagesManaging?,

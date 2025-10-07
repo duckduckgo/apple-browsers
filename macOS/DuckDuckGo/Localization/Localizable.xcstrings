@@ -31216,55 +31216,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alle Fenster werden geschlossen"
+            "value" : "Alle Fenster werden geschlossen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "All windows will close"
+            "value" : "All windows will close."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Todas las ventanas se cerrarán"
+            "value" : "Todas las ventanas se cerrarán."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toutes les fenêtres se fermeront"
+            "value" : "Toutes les fenêtres se fermeront."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tutte le finestre si chiuderanno"
+            "value" : "Tutte le finestre si chiuderanno."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alle vensters worden gesloten"
+            "value" : "Alle vensters worden gesloten."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wszystkie okna zostaną zamknięte"
+            "value" : "Wszystkie okna zostaną zamknięte."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Serão fechadas todas as janelas"
+            "value" : "Serão fechadas todas as janelas."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Все окна будут закрыты"
+            "value" : "Все окна будут закрыты."
           }
         }
       }
@@ -32590,55 +32590,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aktueller Tab wird geschlossen"
+            "value" : "Aktueller Tab wird geschlossen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Current tab will close"
+            "value" : "Current tab will close."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Se cerrará la pestaña actual"
+            "value" : "Se cerrará la pestaña actual."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "L'onglet actuel se fermera"
+            "value" : "L'onglet actuel se fermera."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La scheda corrente si chiuderà"
+            "value" : "La scheda corrente si chiuderà."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Huidige tabblad wordt gesloten"
+            "value" : "Huidige tabblad wordt gesloten."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bieżąca karta zostanie zamknięta"
+            "value" : "Bieżąca karta zostanie zamknięta."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O separador atual será fechado"
+            "value" : "O separador atual será fechado."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Текущая вкладка будет закрыта"
+            "value" : "Текущая вкладка будет закрыта."
           }
         }
       }
@@ -32650,55 +32650,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Angepinnter Tab wird neu geladen"
+            "value" : "Angepinnter Tab wird neu geladen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Pinned tab will reload"
+            "value" : "Pinned tab will reload."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La pestaña anclada se volverá a cargar"
+            "value" : "La pestaña anclada se volverá a cargar."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "L'onglet épinglé se rechargera"
+            "value" : "L'onglet épinglé se rechargera."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La scheda bloccata si ricaricherà"
+            "value" : "La scheda bloccata si ricaricherà."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vastgezet tabblad wordt opnieuw geladen"
+            "value" : "Vastgezet tabblad wordt opnieuw geladen."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Przypięta karta zostanie załadowana ponownie"
+            "value" : "Przypięta karta zostanie załadowana ponownie."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O separador afixado será recarregado"
+            "value" : "O separador afixado será recarregado."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Закрепленная вкладка будет перезагружена"
+            "value" : "Закрепленная вкладка будет перезагружена."
           }
         }
       }
@@ -32829,55 +32829,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aktuelles Fenster wird geschlossen"
+            "value" : "Aktuelles Fenster wird geschlossen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Current window will close"
+            "value" : "Current window will close."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La ventana actual se cerrará"
+            "value" : "La ventana actual se cerrará."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La fenêtre actuelle se fermera"
+            "value" : "La fenêtre actuelle se fermera."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La finestra corrente sarà chiusa"
+            "value" : "La finestra corrente sarà chiusa."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Huidig venster wordt gesloten"
+            "value" : "Huidig venster wordt gesloten."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bieżące okno zostanie zamknięte"
+            "value" : "Bieżące okno zostanie zamknięte."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A janela atual será fechada"
+            "value" : "A janela atual será fechada."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Текущее окно будет закрыто"
+            "value" : "Текущее окно будет закрыто."
           }
         }
       }

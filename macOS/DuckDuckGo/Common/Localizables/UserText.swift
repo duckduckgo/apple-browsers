@@ -441,10 +441,10 @@ struct UserText {
         return String(format: localized, sites)
     }
     static let fireDialogDetails = NSLocalizedString("fire.dialog.details", value: "Details", comment: "Button to show more details")
-    static let fireDialogWindowWillClose = NSLocalizedString("fire.dialog.window-will-close", value: "Current window will close", comment: "Warning label shown in an expanded view of the fire popover")
-    static let fireDialogTabWillClose = NSLocalizedString("fire.dialog.tab-will-close", value: "Current tab will close", comment: "Warning label shown in an expanded view of the fire popover")
-    static let fireDialogPinnedTabWillReload = NSLocalizedString("fire.dialog.tab-will-reload", value: "Pinned tab will reload", comment: "Warning label shown in an expanded view of the fire popover")
-    static let fireDialogAllWindowsWillClose = NSLocalizedString("fire.dialog.all-windows-will-close", value: "All windows will close", comment: "Warning label shown in an expanded view of the fire popover")
+    static let fireDialogWindowWillClose = NSLocalizedString("fire.dialog.window-will-close", value: "Current window will close.", comment: "Warning label shown in an expanded view of the fire popover")
+    static let fireDialogTabWillClose = NSLocalizedString("fire.dialog.tab-will-close", value: "Current tab will close.", comment: "Warning label shown in an expanded view of the fire popover")
+    static let fireDialogPinnedTabWillReload = NSLocalizedString("fire.dialog.tab-will-reload", value: "Pinned tab will reload.", comment: "Warning label shown in an expanded view of the fire popover")
+    static let fireDialogAllWindowsWillClose = NSLocalizedString("fire.dialog.all-windows-will-close", value: "All windows will close.", comment: "Warning label shown in an expanded view of the fire popover")
 
     // Fire Dialog – new concise segment labels and link row
     static let fireDialogTitle = NSLocalizedString("fire.dialog.title", value: "Delete Browsing Data", comment: "Title of the Fire dialog")

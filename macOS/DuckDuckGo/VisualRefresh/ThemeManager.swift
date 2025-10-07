@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import AppKit
+import DesignResourcesKit
 
 protocol ThemeManaging {
     var theme: ThemeStyleProviding { get }
@@ -51,6 +52,10 @@ final class ThemeManager: ObservableObject, ThemeManaging {
 private extension ThemeManager {
 
     func switchToTheme(named themeName: ThemeName) {
+        /// Required to get `DesignResourcesKit` instantiate new Colors with the new Palette
+        DesignSystemPalette.current = themeName.designColorPalette
+
+        /// Relay the change to all of our observers
         theme = ThemeStyle.buildThemeStyle(themeName: themeName)
     }
 }

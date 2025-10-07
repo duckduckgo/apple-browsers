@@ -45,7 +45,7 @@ final class FirePopoverViewController: NSViewController {
     private let fireViewModel: FireViewModel
     private var firePopoverViewModel: FirePopoverViewModel
     private let historyCoordinating: HistoryCoordinating
-    private let visualStyle: VisualStyleProviding
+    private let themeManager: ThemeManagerProtocol
 
     @IBOutlet weak var closeTabsLabel: NSTextField!
     @IBOutlet weak var openFireWindowsTitleLabel: NSTextField!
@@ -87,10 +87,10 @@ final class FirePopoverViewController: NSViewController {
           fireproofDomains: FireproofDomains = NSApp.delegateTyped.fireproofDomains,
           faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager,
           tld: TLD = NSApp.delegateTyped.tld,
-          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+          themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager) {
         self.fireViewModel = fireViewModel
         self.historyCoordinating = historyCoordinating
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
         self.firePopoverViewModel = FirePopoverViewModel(fireViewModel: fireViewModel,
                                                          tabCollectionViewModel: tabCollectionViewModel,
                                                          historyCoordinating: historyCoordinating,
@@ -126,7 +126,8 @@ final class FirePopoverViewController: NSViewController {
         subscribeToViewModel()
         subscribeToSelected()
 
-        fireGraphic.image = visualStyle.iconsProvider.fireInfoGraphic
+        let iconsProvider = themeManager.theme.iconsProvider
+        fireGraphic.image = iconsProvider.fireInfoGraphic
     }
 
     override func viewWillAppear() {

@@ -50,7 +50,7 @@ final class BookmarkTableCellView: NSTableCellView {
         }
     }
 
-    private var visualStyle: VisualStyleProviding
+    private var theme: ThemeDefinition
     private var entity: BaseBookmarkEntity?
     private var trackingArea: NSTrackingArea?
     private var mouseInside: Bool = false {
@@ -71,8 +71,8 @@ final class BookmarkTableCellView: NSTableCellView {
         }
     }
 
-    init(identifier: NSUserInterfaceItemIdentifier, entity: BaseBookmarkEntity? = nil, visualStyle: VisualStyleProviding) {
-        self.visualStyle = visualStyle
+    init(identifier: NSUserInterfaceItemIdentifier, entity: BaseBookmarkEntity? = nil, theme: ThemeDefinition) {
+        self.theme = theme
         super.init(frame: NSRect(x: 0, y: 0, width: 462, height: 84))
         self.identifier = identifier
 
@@ -211,7 +211,7 @@ final class BookmarkTableCellView: NSTableCellView {
     func update(from bookmark: Bookmark) {
         self.entity = bookmark
 
-        faviconImageView.image = bookmark.favicon(.small) ?? visualStyle.iconsProvider.bookmarksIconsProvider.bookmarkColorIcon
+        faviconImageView.image = bookmark.favicon(.small) ?? theme.iconsProvider.bookmarksIconsProvider.bookmarkColorIcon
 
         faviconImageView.setAccessibilityIdentifier("BookmarkTableCellView.favIconImageView")
         if bookmark.isFavorite {
@@ -229,7 +229,7 @@ final class BookmarkTableCellView: NSTableCellView {
     func update(from folder: BookmarkFolder) {
         self.entity = folder
 
-        faviconImageView.image = visualStyle.iconsProvider.bookmarksIconsProvider.bookmarkFolderColorIcon
+        faviconImageView.image = theme.iconsProvider.bookmarksIconsProvider.bookmarkFolderColorIcon
         accessoryImageView.image = .chevronMediumRight16
         primaryTitleLabelValue = folder.title
         tertiaryTitleLabelValue = nil
@@ -316,7 +316,7 @@ final class BookmarkTableCellView: NSTableCellView {
 #if DEBUG
 @available(macOS 14.0, *)
 #Preview {
-    BookmarkTableCellView.PreviewView(cell: BookmarkTableCellView(identifier: .init("id"), entity: Bookmark(id: "1", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false), visualStyle: VisualStyle.current))
+    BookmarkTableCellView.PreviewView(cell: BookmarkTableCellView(identifier: .init("id"), entity: Bookmark(id: "1", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false), theme: VisualStyle.buildVisualStyle(themeName: .default)))
 }
 
 extension BookmarkTableCellView {

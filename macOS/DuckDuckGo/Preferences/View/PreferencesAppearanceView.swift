@@ -110,9 +110,10 @@ extension Preferences {
     //
     struct ThemeAppearancePickerV2: View {
         @EnvironmentObject var model: AppearancePreferences
+        var theme: ThemeStyleProviding
 
         var body: some View {
-            SlidingPickerView(settings: .appearancePickerSettings, allValues: ThemeAppearance.allCases, selectedValue: $model.themeAppearance) { appearance in
+            SlidingPickerView(settings: .buildAppearancePickerSetting(theme: theme), allValues: ThemeAppearance.allCases, selectedValue: $model.themeAppearance) { appearance in
                 AnyView(
                     ThemeAppearanceViewV2(appearance: appearance)
                 )
@@ -193,9 +194,12 @@ extension Preferences {
     //
     struct ThemesPickerView: View {
         @EnvironmentObject var model: AppearancePreferences
+        var theme: ThemeStyleProviding
 
         var body: some View {
-            SlidingPickerView(settings: .themesPickerSettings, allValues: ThemeName.allCases, selectedValue: $model.themeName) { themeName in
+            SlidingPickerView(settings: .buildThemesPickerSettings(theme: theme),
+                              allValues: ThemeName.allCases,
+                              selectedValue: $model.themeName) { themeName in
                 AnyView(
                     ThemeView(themeName: themeName)
                 )
@@ -230,6 +234,8 @@ extension Preferences {
     struct AppearanceView: View {
         @ObservedObject var model: AppearancePreferences
         @ObservedObject var aiChatModel: AIChatPreferences
+        @ObservedObject var themeManager: ThemeManager
+
         var isThemeSwitcherEnabled: Bool = false
 
         var body: some View {
@@ -239,11 +245,11 @@ extension Preferences {
                 PreferencePaneSection(UserText.theme) {
 
                     if isThemeSwitcherEnabled {
-                        ThemeAppearancePickerV2()
+                        ThemeAppearancePickerV2(theme: themeManager.theme)
                             .environmentObject(model)
                             .padding(.bottom, 16)
 
-                        ThemesPickerView()
+                        ThemesPickerView(theme: themeManager.theme)
                             .environmentObject(model)
                             .padding(.bottom, 16)
 
@@ -358,21 +364,21 @@ private extension ThemeAppearance {
 //
 private extension SlidingPickerSettings {
 
-    static var themesPickerSettings: SlidingPickerSettings {
+    static func buildThemesPickerSettings(theme: ThemeStyleProviding) -> SlidingPickerSettings {
         SlidingPickerSettings(
-            selectionBorderColor: Color(designSystemColor: .accentPrimary),
+            selectionBorderColor: Color(theme.palette.accentPrimary),
             cornerRadius: 8,
             elementsPadding: 12,
             sliderInset: 1,
             sliderLineWidth: 2)
     }
 
-    static var appearancePickerSettings: SlidingPickerSettings {
+    static func buildAppearancePickerSetting(theme: ThemeStyleProviding) -> SlidingPickerSettings {
         SlidingPickerSettings(
-            backgroundColor: Color(designSystemColor: .surfacePrimary),
-            borderColor: Color(designSystemColor: .surfaceDecorationPrimary),
-            selectionBackgroundColor: Color(designSystemColor: .surfaceTertiary),
-            selectionBorderColor: Color(designSystemColor: .accentPrimary),
+            backgroundColor: Color(theme.palette.surfacePrimary),
+            borderColor: Color(theme.palette.surfaceDecorationPrimary),
+            selectionBackgroundColor: Color(theme.palette.surfaceTertiary),
+            selectionBorderColor: Color(theme.palette.accentPrimary),
             animationsEnabled: false,
             dividerSize: CGSize(width: 1, height: 16))
     }

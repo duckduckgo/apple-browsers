@@ -602,7 +602,7 @@ extension NavigationBarPopovers: NSPopoverDelegate {
             bookmarkPopover = nil
 
         case privacyDashboardPopover:
-            privacyDashboardPopover = nil
+            closePrivacyDashboard()
             privacyInfoCancellable = nil
             privacyDashboadPendingUpdatesCancellable = nil
 

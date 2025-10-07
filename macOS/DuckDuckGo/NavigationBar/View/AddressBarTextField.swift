@@ -56,7 +56,7 @@ final class AddressBarTextField: NSTextField {
         tabCollectionViewModel?.isBurner ?? false
     }
 
-    var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
+    private var themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
 
     private var suggestionResultCancellable: AnyCancellable?
     private var selectedSuggestionViewModelCancellable: AnyCancellable?
@@ -144,8 +144,9 @@ final class AddressBarTextField: NSTextField {
             .sink { [weak self] contentType in
                 guard let self else { return }
 
-                let newTabFontSize = visualStyle.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize
-                let defaultFontSize = visualStyle.addressBarStyleProvider.defaultAddressBarFontSize
+                let barStyleProvider = themeManager.theme.addressBarStyleProvider
+                let newTabFontSize = barStyleProvider.newTabOrHomePageAddressBarFontSize
+                let defaultFontSize = barStyleProvider.defaultAddressBarFontSize
                 self.font = .systemFont(ofSize: contentType == .newtab ? newTabFontSize : defaultFontSize)
             }
     }
@@ -211,8 +212,9 @@ final class AddressBarTextField: NSTextField {
 
     private func updateAttributedStringValue() {
         withUndoDisabled {
-            let newTabFontSize = visualStyle.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize
-            let defaultFontSize = visualStyle.addressBarStyleProvider.defaultAddressBarFontSize
+            let barStyleProvider = themeManager.theme.addressBarStyleProvider
+            let newTabFontSize = barStyleProvider.newTabOrHomePageAddressBarFontSize
+            let defaultFontSize = barStyleProvider.defaultAddressBarFontSize
 
             if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner) {
                 self.attributedStringValue = attributedString
@@ -547,7 +549,7 @@ final class AddressBarTextField: NSTextField {
             let suggestionViewController = SuggestionViewController(coder: coder,
                                                                     suggestionContainerViewModel: self.suggestionContainerViewModel!,
                                                                     isBurner: self.isBurner,
-                                                                    visualStyle: self.visualStyle)
+                                                                    themeManager: self.themeManager)
             suggestionViewController?.delegate = self
             return suggestionViewController
         }
@@ -974,7 +976,7 @@ extension AddressBarTextField: NSTextFieldDelegate {
         // don't blink and keep the Suggestion displayed
         if case .userAppendingTextToTheEnd = currentTextDidChangeEvent,
            let suggestion = autocompleteSuggestionBeingTypedOverByUser(with: stringValueWithoutSuffix) {
-            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix, visualStyle: visualStyle))
+            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix, themeManager: themeManager))
 
         } else {
             suggestionContainerViewModel?.clearSelection()

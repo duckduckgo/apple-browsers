@@ -19,6 +19,7 @@
 import Foundation
 import Common
 import BrowserServicesKit
+import PixelKit
 
 public protocol EmailConfirmationJobDependencyProviding {
     var database: DataBrokerProtectionRepository { get }
@@ -30,6 +31,7 @@ public protocol EmailConfirmationJobDependencyProviding {
     var captchaService: CaptchaServiceProtocol { get }
     var vpnBypassService: VPNBypassFeatureProvider? { get }
     var featureFlagger: DBPFeatureFlagging { get }
+    var wideEvent: WideEventManaging? { get }
 }
 
 public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyProviding {
@@ -42,6 +44,7 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
     public let captchaService: CaptchaServiceProtocol
     public let vpnBypassService: VPNBypassFeatureProvider?
     public let featureFlagger: DBPFeatureFlagging
+    public let wideEvent: WideEventManaging?
 
     public init(from brokerDependencies: BrokerProfileJobDependencyProviding) {
         self.database = brokerDependencies.database
@@ -53,6 +56,7 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.captchaService = brokerDependencies.captchaService
         self.vpnBypassService = brokerDependencies.vpnBypassService
         self.featureFlagger = brokerDependencies.featureFlagger
+        self.wideEvent = brokerDependencies.wideEvent
     }
 
     public init(database: DataBrokerProtectionRepository,
@@ -63,7 +67,8 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
                 emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 vpnBypassService: VPNBypassFeatureProvider?,
-                featureFlagger: DBPFeatureFlagging) {
+                featureFlagger: DBPFeatureFlagging,
+                wideEvent: WideEventManaging? = nil) {
         self.database = database
         self.contentScopeProperties = contentScopeProperties
         self.privacyConfig = privacyConfig
@@ -73,5 +78,6 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.captchaService = captchaService
         self.vpnBypassService = vpnBypassService
         self.featureFlagger = featureFlagger
+        self.wideEvent = wideEvent
     }
 }

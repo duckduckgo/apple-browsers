@@ -70,7 +70,7 @@ protocol NewWindowPolicyDecisionMaker {
     fileprivate weak var delegate: TabDelegate?
     func setDelegate(_ delegate: TabDelegate) { self.delegate = delegate }
 
-    private let navigationDelegate = DistributedNavigationDelegate() // swiftlint:disable:this weak_delegate
+    private let navigationDelegate: DistributedNavigationDelegate // swiftlint:disable:this weak_delegate
     private var newWindowPolicyDecisionMakers: [NewWindowPolicyDecisionMaker]?
     private var onNewWindow: ((WKNavigationAction?) -> NavigationDecision)?
 
@@ -78,7 +78,7 @@ protocol NewWindowPolicyDecisionMaker {
     private let onboardingPixelReporter: OnboardingAddressBarReporting
     private let internalUserDecider: InternalUserDecider?
     private let pageRefreshMonitor: PageRefreshMonitoring
-    private let featureFlagger: FeatureFlagger
+    let featureFlagger: FeatureFlagger
     private let fireproofDomains: FireproofDomains
     let crashIndicatorModel = TabCrashIndicatorModel()
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
@@ -257,6 +257,7 @@ protocol NewWindowPolicyDecisionMaker {
         self.fireproofDomains = fireproofDomains
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.featureFlagger = featureFlagger
+        self.navigationDelegate = DistributedNavigationDelegate(isPerformanceReportingEnabled: featureFlagger.isFeatureOn(.webKitPerformanceReporting))
         self.statisticsLoader = statisticsLoader
         self.internalUserDecider = internalUserDecider
         self.title = title

@@ -25,7 +25,7 @@ struct UserText {
     static let duckDuckGo = NSLocalizedString("about.app_name", value: "DuckDuckGo", comment: "Application name to be displayed in the About dialog")
     static let duckDuckGoForMacAppStore = NSLocalizedString("about.app_name_app_store", value: "DuckDuckGo for Mac App Store", comment: "Application name to be displayed in the About dialog in App Store app")
 
-    // MARK: - Dialogs
+    // MARK: - Generic
     static let ok = NSLocalizedString("ok", value: "OK", comment: "OK button")
     static let cancel = NSLocalizedString("cancel", value: "Cancel", comment: "Cancel button")
     static let none = NSLocalizedString("none", value: "None", comment: "Generic 'None' label")
@@ -44,6 +44,22 @@ struct UserText {
             "fire.dialog.history.count",
             value: "Delete %#@items@.",
             comment: "Subtitle. Shows the exact number of browsing history items that will be deleted in this operation, using plural substitutions for the count and noun (%#@items@)."
+        )
+        return String.localizedStringWithFormat(template, count)
+    }
+    static func fireDialogHistoryItemsSubtitleTab(_ count: Int) -> String {
+        let template = NSLocalizedString(
+            "fire.dialog.history.count.tab",
+            value: "Delete %#@items@ from this tab.",
+            comment: "Subtitle for Tab scope. Number of history items to be deleted from current tab, using plural substitutions for the count and noun (%#@items@)."
+        )
+        return String.localizedStringWithFormat(template, count)
+    }
+    static func fireDialogHistoryItemsSubtitleWindow(_ count: Int) -> String {
+        let template = NSLocalizedString(
+            "fire.dialog.history.count.window",
+            value: "Delete %#@items@ from this window.",
+            comment: "Subtitle for Window scope. Number of history items to be deleted from current window, using plural substitutions for the count and noun (%#@items@)."
         )
         return String.localizedStringWithFormat(template, count)
     }

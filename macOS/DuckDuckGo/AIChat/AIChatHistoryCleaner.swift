@@ -88,3 +88,8 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     @Published
     private var aiChatWasUsedBefore: Bool
 }
+
+public extension NSNotification.Name {
+
+    static let aiChatHistoryClearDataRequested = Notification.Name("aiChatHistoryClearDataRequested")
+}

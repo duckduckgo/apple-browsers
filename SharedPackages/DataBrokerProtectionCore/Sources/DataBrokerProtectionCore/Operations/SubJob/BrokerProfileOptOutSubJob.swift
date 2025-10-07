@@ -65,6 +65,7 @@ struct BrokerProfileOptOutSubJob {
         let stageDurationCalculator = createStageDurationContext(for: brokerProfileQueryData,
                                                                  identifiers: identifiers,
                                                                  database: dependencies.database,
+                                                                 wideEvent: dependencies.wideEvent,
                                                                  pixelHandler: dependencies.pixelHandler,
                                                                  vpnConnectionState: vpnConnectionState,
                                                                  vpnBypassStatus: vpnBypassStatus)
@@ -167,6 +168,7 @@ struct BrokerProfileOptOutSubJob {
     internal func createStageDurationContext(for brokerProfileQueryData: BrokerProfileQueryData,
                                              identifiers: OptOutIdentifiers,
                                              database: DataBrokerProtectionRepository,
+                                             wideEvent: WideEventManaging?,
                                              pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                              vpnConnectionState: String,
                                              vpnBypassStatus: String) -> DataBrokerProtectionStageDurationCalculator {
@@ -185,7 +187,7 @@ struct BrokerProfileOptOutSubJob {
                                                               profileQueryId: identifiers.profileQueryId,
                                                               extractedProfileId: identifiers.extractedProfileId)
         let wideEventRecorder = OptOutSubmissionWideEventRecorder.makeIfPossible(
-            wideEvent: dependencies.wideEvent,
+            wideEvent: wideEvent,
             attemptID: stageDurationCalculator.attemptId,
             dataBrokerURL: brokerProfileQueryData.dataBroker.url,
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,

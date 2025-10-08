@@ -153,6 +153,7 @@ final class FireproofDomainsViewController: NSViewController {
             buttonsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             view.bottomAnchor.constraint(equalTo: buttonsStackView.bottomAnchor, constant: 20),
 
+            doneButton.leadingAnchor.constraint(greaterThanOrEqualTo: buttonsStackView.trailingAnchor, constant: 16),
             doneButton.centerYAnchor.constraint(equalTo: buttonsStackView.centerYAnchor),
             view.trailingAnchor.constraint(equalTo: doneButton.trailingAnchor, constant: 20)
         ])
@@ -175,7 +176,9 @@ final class FireproofDomainsViewController: NSViewController {
             self?.selectAllRows() ?? false
         }
         doneButton.keyEquivalent = "\r"
+    }
 
+    override func viewWillAppear() {
         reloadData()
     }
 
@@ -310,7 +313,6 @@ extension FireproofDomainsViewController: NSTableViewDataSource, NSTableViewDele
 
         let domain = visibleFireproofDomains[row]
         cell.update(host: domain)
-        cell.imageView?.image = faviconManager.getCachedFavicon(for: domain, sizeCategory: Favicon.SizeCategory.small)?.image
         return cell
     }
 

@@ -23,38 +23,34 @@ import SwiftUI
 import DesignResourcesKit
 
 struct SERPSettingsView: View {
-
-    enum SERPSettingsPage: String {
-
-        case main
-        case aiFeatures
-
-    }
-
-    /// Used to show the right settings screen on SERP, e.g. pass aifeatures
-    let page: SERPSettingsPage
-    let webViewModel = AsyncHeadlessWebViewViewModel(settings: AsyncHeadlessWebViewSettings())
-
-    var settingsURL: URL {
-        let url = switch page {
-        case .aiFeatures:
-            URL.directAIFeaturesSettings.appendingParameter(
-                name: SERPSettingsConstants.returnParameterKey,
-                value: SERPSettingsConstants.aiFeatures)
-        default:
-            URL.directSearchSettings.appendingParameter(
-                name: SERPSettingsConstants.returnParameterKey,
-                value: SERPSettingsConstants.privateSearch)
-        }
-        return url.appendingParameter(name: "embedded", value: "1")
-    }
+    /// Used to show the right settings screen on SERP
+    let page: Page
+    
+    let webViewModel = AsyncHeadlessWebViewViewModel(settings: AsyncHeadlessWebViewSettings(bounces: false, contentBlocking: false))
 
     var body: some View {
         AsyncHeadlessWebView(viewModel: webViewModel)
+            .ignoresSafeArea(edges: .bottom)
             .background()
             .onAppear {
-                webViewModel.navigationCoordinator.navigateTo(url: settingsURL)
+                webViewModel.navigationCoordinator.navigateTo(url: page.url)
             }
+    }
+
+    enum Page {
+
+        case general
+        case searchAssist
+
+        var url: URL {
+            return switch self {
+            case .searchAssist:
+                URL.embeddedSearchAssistSettings
+            default:
+                URL.embeddedGeneralSERPSettings
+            }
+        }
+
     }
 
 }

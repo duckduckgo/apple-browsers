@@ -139,7 +139,7 @@ struct SettingsAIFeaturesView: View {
             if !viewModel.openedFromSERPSettingsButton {
                 Section {
                     if viewModel.embedSERPSettings {
-                        NavigationLink(destination: SERPSettingsView(page: .aiFeatures).environmentObject(viewModel)) {
+                        NavigationLink(destination: SERPSettingsView(page: .searchAssist).environmentObject(viewModel)) {
                             SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
                                              subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle)
                         }

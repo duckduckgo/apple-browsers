@@ -23,6 +23,7 @@ import Core
 import Networking
 import Configuration
 import Persistence
+import WebKit
 
 struct AppConfiguration {
 
@@ -81,6 +82,7 @@ struct AppConfiguration {
             Logger.general.info("🧹 Removed temp directory at: \(url.path)")
         } catch {
             Logger.general.error("⚠️ Failed to remove tmp dir: \(error.localizedDescription)")
+            Pixel.fire(pixel: .failedToRemoveTmpDir, error: error)
         }
     }
 
@@ -90,12 +92,47 @@ struct AppConfiguration {
             return
         }
 
-        do {
-            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
-            Logger.general.info("📁 Recreated temp directory at: \(url.path)")
-        } catch {
-            Logger.general.error("❌ Failed to recreate tmp dir: \(error.localizedDescription)")
-            Pixel.fire(pixel: .failedToRecreateTmpDir, error: error)
+        let maxAttempts = 5
+        let retryInterval: TimeInterval = 1.0
+        
+        for attempt in 0..<maxAttempts {
+            do {
+                try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
+                Logger.general.info("📁 Recreated temp directory at: \(url.path)")
+                
+                if attempt > 0 {
+                    Pixel.fire(pixel: .recreateTmpSuccessOnRetry(attempt: attempt))
+                }
+                return
+            } catch {
+                Logger.general.error("❌ Failed to recreate tmp dir (attempt \(attempt)): \(error.localizedDescription)")
+                Pixel.fire(pixel: .recreateTmpAttemptFailed(attempt: attempt), error: error)
+
+                let isLastAttempt = attempt == maxAttempts - 1
+                if isLastAttempt {
+                    attemptWebViewTempDirectoryFallback(at: url)
+                    Pixel.fire(pixel: .failedToRecreateTmpDir, error: error)
+                    return
+                } else {
+                    Thread.sleep(forTimeInterval: retryInterval)
+                }
+            }
+        }
+    }
+    
+    private func attemptWebViewTempDirectoryFallback(at url: URL) {
+        Logger.general.info("🌐 Attempting WKWebView fallback for temp directory recreation")
+        // Create a minimal WKWebView to leverage its automatic tmp dir recreation
+        // This may have elevated privileges that could help with directory creation
+        let webView = WKWebView(frame: .zero)
+        let fallbackSucceeded = FileManager.default.fileExists(atPath: url.path)
+
+        if fallbackSucceeded {
+            Logger.general.info("✅ WKWebView fallback successfully recreated temp directory")
+            Pixel.fire(pixel: .recreateTmpWebViewFallbackSucceeded)
+        } else {
+            Logger.general.error("❌ WKWebView fallback failed to recreate temp directory")
+            Pixel.fire(pixel: .recreateTmpWebViewFallbackFailed)
         }
     }
 

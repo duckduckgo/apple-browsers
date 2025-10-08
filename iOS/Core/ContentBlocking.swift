@@ -41,6 +41,12 @@ public final class ContentBlocking {
             contentBlockingManager.onCriticalError = onCriticalError
         }
     }
+    
+    public var onPreCompilationCheck: (() -> Bool)? {
+        didSet {
+            contentBlockingManager.onPreCompilationCheck = onPreCompilationCheck
+        }
+    }
 
     enum PixelParameterName {
         static let experimentName = "experimentName"

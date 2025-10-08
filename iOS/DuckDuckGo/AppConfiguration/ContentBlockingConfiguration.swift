@@ -34,10 +34,36 @@ final class ContentBlockingConfiguration {
                 self.alertAndTerminate()
             }
         }
+        
+        // Check temp directory before starting compilation
+        ContentBlocking.shared.onPreCompilationCheck = {
+            return self.ensureTempDirectoryOrTerminate()
+        }
+        
         // Explicitly prepare ContentBlockingUpdating instance before Tabs are created
         _ = ContentBlockingUpdating.shared
     }
 
+    private func ensureTempDirectoryOrTerminate() -> Bool {
+        let tmpDirectory = FileManager.default.temporaryDirectory
+        
+        guard !FileManager.default.fileExists(atPath: tmpDirectory.path) else {
+            return true // Temp directory exists, proceed with compilation
+        }
+        
+        // Temp directory is missing - this will cause compilation to fail
+        Logger.general.error("❌ Temp directory missing before content blocking compilation: \(tmpDirectory.path)")
+        Pixel.fire(pixel: .contentBlockingCompilationFailedMissingTmpDir)
+        
+        // Show insufficient disk space alert and terminate
+        DispatchQueue.main.async {
+            self.alertAndTerminateForInsufficientDiskSpace()
+        }
+        
+        return false
+    }
+    
+    
     private func alertAndTerminate() {
         let window: UIWindow
         if let existingWindow = application.window {
@@ -48,6 +74,19 @@ final class ContentBlockingConfiguration {
         }
 
         let alertController = CriticalAlerts.makePreemptiveCrashAlert()
+        window.rootViewController?.present(alertController, animated: true, completion: nil)
+    }
+    
+    private func alertAndTerminateForInsufficientDiskSpace() {
+        let window: UIWindow
+        if let existingWindow = application.window {
+            window = existingWindow
+        } else {
+            window = UIWindow.makeBlank()
+            application.setWindow(window)
+        }
+
+        let alertController = CriticalAlerts.makeInsufficientDiskSpaceAlert()
         window.rootViewController?.present(alertController, animated: true, completion: nil)
     }
 

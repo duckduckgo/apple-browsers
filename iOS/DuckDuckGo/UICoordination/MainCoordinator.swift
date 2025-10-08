@@ -86,7 +86,7 @@ final class MainCoordinator {
         self.winBackOfferPresenter = winBackOfferService.presenter
         self.modalPromptCoordinationService = modalPromptCoordinationService
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
-                                                          remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
+                                                          remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()

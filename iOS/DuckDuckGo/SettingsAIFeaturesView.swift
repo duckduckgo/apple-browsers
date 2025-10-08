@@ -141,7 +141,8 @@ struct SettingsAIFeaturesView: View {
                     if viewModel.embedSERPSettings {
                         NavigationLink(destination: SERPSettingsView(page: .searchAssist).environmentObject(viewModel)) {
                             SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
-                                             subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle)
+                                             subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
+                                             image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist))
                         }
                     } else {
                         SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,

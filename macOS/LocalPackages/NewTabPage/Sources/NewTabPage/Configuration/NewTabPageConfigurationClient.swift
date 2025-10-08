@@ -37,6 +37,14 @@ public protocol NewTabPageSectionsVisibilityProviding: AnyObject {
     var isProtectionsReportVisiblePublisher: AnyPublisher<Bool, Never> { get }
 }
 
+public protocol NewTabPageTabIDsProviding: AnyObject {
+
+    @MainActor
+    func getTabIDs() -> NewTabPageDataModel.Tabs
+    var tabIDsChangedPublisher: AnyPublisher<NewTabPageDataModel.Tabs, Never> { get }
+
+}
+
 public protocol NewTabPageLinkOpening {
     func openLink(_ target: NewTabPageDataModel.OpenAction.Target) async
 }
@@ -55,6 +63,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     private let contextMenuPresenter: NewTabPageContextMenuPresenting
     private let linkOpener: NewTabPageLinkOpening
     private let eventMapper: EventMapping<NewTabPageConfigurationEvent>?
+    private let tabIDsProvider: NewTabPageTabIDsProviding
 
     public init(
         sectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding,
@@ -63,7 +72,8 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         customBackgroundProvider: NewTabPageCustomBackgroundProviding,
         contextMenuPresenter: NewTabPageContextMenuPresenting = DefaultNewTabPageContextMenuPresenter(),
         linkOpener: NewTabPageLinkOpening,
-        eventMapper: EventMapping<NewTabPageConfigurationEvent>?
+        eventMapper: EventMapping<NewTabPageConfigurationEvent>?,
+        tabIDsProvider: NewTabPageTabIDsProviding
     ) {
         self.sectionsAvailabilityProvider = sectionsAvailabilityProvider
         self.sectionsVisibilityProvider = sectionsVisibilityProvider
@@ -72,6 +82,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         self.contextMenuPresenter = contextMenuPresenter
         self.linkOpener = linkOpener
         self.eventMapper = eventMapper
+        self.tabIDsProvider = tabIDsProvider
         super.init()
 
         Publishers.Merge3(
@@ -84,6 +95,13 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
                 self?.notifyWidgetConfigsDidChange()
             }
             .store(in: &cancellables)
+
+        tabIDsProvider.tabIDsChangedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] tabs in
+                self?.notifyTabsDidChange(tabIDs: tabs)
+            }
+            .store(in: &cancellables)
     }
 
     enum MessageName: String, CaseIterable {
@@ -94,6 +112,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         case reportPageException
         case widgetsSetConfig = "widgets_setConfig"
         case widgetsOnConfigUpdated = "widgets_onConfigUpdated"
+        case tabsOnDataUpdate = "tabs_onDataUpdate"
     }
 
     public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
@@ -136,9 +155,18 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         return configs
     }
 
+    @MainActor
+    private func fetchTabIDs() -> NewTabPageDataModel.Tabs {
+        return tabIDsProvider.getTabIDs()
+    }
+
     private func notifyWidgetConfigsDidChange() {
         let widgetConfigs = fetchWidgetConfigs()
         pushMessage(named: MessageName.widgetsOnConfigUpdated.rawValue, params: widgetConfigs)
+    }
+
+    private func notifyTabsDidChange(tabIDs: NewTabPageDataModel.Tabs) {
+        pushMessage(named: MessageName.tabsOnDataUpdate.rawValue, params: tabIDs)
     }
 
     private func makeShowDuckAIMenuItem() -> NSMenuItem {
@@ -239,6 +267,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         let widgets = fetchWidgets()
         let widgetConfigs = fetchWidgetConfigs()
         let customizerData = customBackgroundProvider.customizerData
+        let tabs = fetchTabIDs()
         let config = NewTabPageDataModel.NewTabPageConfiguration(
             widgets: widgets,
             widgetConfigs: widgetConfigs,
@@ -246,7 +275,8 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             locale: Bundle.main.preferredLocalizations.first ?? "en",
             platform: .init(name: "macos"),
             settings: .init(customizerDrawer: .init(state: .enabled)),
-            customizer: customizerData
+            customizer: customizerData,
+            tabs: tabs
         )
         return config
     }

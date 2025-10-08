@@ -80,7 +80,10 @@ enum Preferences {
 
         var body: some View {
             HStack(spacing: 0) {
-                Sidebar().environmentObject(model).frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
+                Sidebar()
+                    .environmentObject(model)
+                    .environmentObject(themeManager)
+                    .frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
                     .layoutPriority(1)
                 Color(NSColor.separatorColor).frame(width: 1)
                 ScrollView(.vertical) {
@@ -333,7 +336,10 @@ enum Preferences {
 
         var body: some View {
             HStack(spacing: 0) {
-                Sidebar().environmentObject(model).frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
+                Sidebar()
+                    .environmentObject(model)
+                    .environmentObject(themeManager)
+                    .frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
                     .layoutPriority(1)
                 Color(NSColor.separatorColor).frame(width: 1)
                 ScrollView(.vertical) {

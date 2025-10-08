@@ -12,7 +12,7 @@
             {
                 key: 'pixelName',
                 description: 'The name of the pixel that failed to save',
-                enum: ['subscription_purchase'],
+                enum: ['subscription_purchase', 'pir_opt_out_submission', 'pir_opt_out_confirmation'],
             },
         ],
     },
@@ -29,7 +29,7 @@
             {
                 key: 'pixelName',
                 description: 'The name of the pixel that failed to update',
-                enum: ['subscription_purchase'],
+                enum: ['subscription_purchase', 'pir_opt_out_submission', 'pir_opt_out_confirmation'],
             },
         ],
     },
@@ -46,7 +46,7 @@
             {
                 key: 'pixelName',
                 description: 'The name of the pixel that failed to load',
-                enum: ['subscription_purchase'],
+                enum: ['subscription_purchase', 'pir_opt_out_submission', 'pir_opt_out_confirmation'],
             },
         ],
     },
@@ -63,7 +63,7 @@
             {
                 key: 'pixelName',
                 description: 'The name of the pixel that failed to complete',
-                enum: ['subscription_purchase'],
+                enum: ['subscription_purchase', 'pir_opt_out_submission', 'pir_opt_out_confirmation'],
             },
         ],
     },
@@ -80,7 +80,7 @@
             {
                 key: 'pixelName',
                 description: 'The name of the pixel that failed to discard',
-                enum: ['subscription_purchase'],
+                enum: ['subscription_purchase', 'pir_opt_out_submission', 'pir_opt_out_confirmation'],
             },
         ],
     },

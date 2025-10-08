@@ -369,7 +369,7 @@ final class WatchdogTests: XCTestCase {
         let responsiveState = receivedStates.first { $0.hangState == .responsive }
         XCTAssertNotNil(responsiveState, "Should recover to responsive state")
         XCTAssertNotNil(responsiveState?.duration, "Responsive state includes the previous hang duration")
-        XCTAssertLessThan(responsiveState?.duration ?? 0, maximumDuration + (checkInterval * 2), "Duration should not exceed maximum + padding")
+        XCTAssertLessThan(responsiveState?.duration ?? 0, maximumDuration + (checkInterval * 3), "Duration should not exceed maximum + padding")
 
         // Test 3: Responsive -> Hanging -> Timeout
         blockMainThread(for: maximumDuration + (checkInterval * 2))

@@ -17,7 +17,8 @@
 //
 
 import XCTest
-@testable import PixelKit
+import PixelKit
+@testable import Subscription
 
 final class SubscriptionWideEventTests: XCTestCase {
 

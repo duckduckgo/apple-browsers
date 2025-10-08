@@ -25,7 +25,7 @@ final class TabBarFooter: NSView, NSCollectionViewElement {
 
     private var cancellables = Set<AnyCancellable>()
     private let themeManager = NSApp.delegateTyped.themeManager
-    private var theme: ThemeDefinition {
+    private var theme: ThemeStyleProviding {
         themeManager.theme
     }
 

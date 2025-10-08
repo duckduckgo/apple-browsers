@@ -151,10 +151,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case widgetReporting
 
-    /// Add ask AI chat to end of autocomplete suggestions
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210839825079760?focus=true
-    case askAIChatSuggestion
-
     // Local inactivity provisional notifications delivered to Notification Center.
     // https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
     case inactivityNotification
@@ -337,6 +333,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case vpnToolbarUpsell
     case supportsAlternateStripePaymentFlow
     case subscriptionPurchaseWidePixelMeasurement
+    case authV2WideEventEnabled
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

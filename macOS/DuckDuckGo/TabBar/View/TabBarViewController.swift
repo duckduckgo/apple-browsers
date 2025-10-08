@@ -88,8 +88,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var pinnedTabsDiscoveryPopover: NSPopover?
     private weak var crashPopoverViewController: PopoverMessageViewController?
 
-    private let themeManager: ThemeManagerProtocol
-    private var theme: ThemeDefinition {
+    private let themeManager: ThemeManaging
+    private var theme: ThemeStyleProviding {
         themeManager.theme
     }
 
@@ -905,7 +905,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         applyThemeStyles(theme: theme)
     }
 
-    private func applyThemeStyles(theme: ThemeDefinition) {
+    private func applyThemeStyles(theme: ThemeStyleProviding) {
         let colorsProvider = theme.colorsProvider
 
         backgroundColorView.backgroundColor = colorsProvider.baseBackgroundColor

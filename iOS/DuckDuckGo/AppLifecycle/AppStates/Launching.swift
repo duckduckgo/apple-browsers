@@ -198,7 +198,7 @@ struct Launching: LaunchingHandling {
                                                                    interactionStateSource: mainCoordinator.interactionStateSource,
                                                                    tabManager: mainCoordinator.tabManager))
         
-        // Clean up wide pixel data at launch
+        // Clean up wide event data at launch
         launchTaskManager.register(task: WideEventLaunchCleanupTask(wideEventService: wideEventService))
 
         // MARK: - Final Configuration

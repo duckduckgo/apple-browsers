@@ -28,7 +28,7 @@ class BookmarksBarViewModelTests: XCTestCase {
             bookmarkManager: manager,
             dragDropManager: .init(bookmarkManager: manager),
             tabCollectionViewModel: .mock(),
-            visualStyle: VisualStyle.current
+            themeManager: MockThemeManager()
         )
 
         let clipped = bookmarksBarViewModel.clipLastBarItem()
@@ -47,7 +47,7 @@ class BookmarksBarViewModelTests: XCTestCase {
             bookmarkManager: manager,
             dragDropManager: .init(bookmarkManager: manager),
             tabCollectionViewModel: .mock(),
-            visualStyle: VisualStyle.current
+            themeManager: MockThemeManager()
         )
         bookmarksBarViewModel.update(from: bookmarks, containerWidth: 200)
 
@@ -67,7 +67,7 @@ class BookmarksBarViewModelTests: XCTestCase {
             bookmarkManager: manager,
             dragDropManager: .init(bookmarkManager: manager),
             tabCollectionViewModel: .mock(),
-            visualStyle: VisualStyle.current
+            themeManager: MockThemeManager()
         )
         bookmarksBarViewModel.update(from: bookmarks, containerWidth: 200)
 
@@ -92,7 +92,7 @@ class BookmarksBarViewModelTests: XCTestCase {
             bookmarkManager: manager,
             dragDropManager: .init(bookmarkManager: manager),
             tabCollectionViewModel: .mock(),
-            visualStyle: VisualStyle.current
+            themeManager: MockThemeManager()
         )
         bookmarksBarViewModel.update(from: bookmarks, containerWidth: 0)
 
@@ -109,7 +109,7 @@ class BookmarksBarViewModelTests: XCTestCase {
             bookmarkManager: manager,
             dragDropManager: .init(bookmarkManager: manager),
             tabCollectionViewModel: .mock(),
-            visualStyle: VisualStyle.current
+            themeManager: MockThemeManager()
         )
         bookmarksBarViewModel.update(from: bookmarks, containerWidth: 200)
 
@@ -122,7 +122,12 @@ class BookmarksBarViewModelTests: XCTestCase {
     func testWhenItemFiresClickedActionThenDelegateReceivesClickItemActionAndPreventClickIsFalse() {
         // GIVEN
         let manager = createMockBookmarksManager()
-        let sut = BookmarksBarViewModel(bookmarkManager: manager, dragDropManager: .init(bookmarkManager: manager), tabCollectionViewModel: .mock(), visualStyle: VisualStyle.current)
+        let sut = BookmarksBarViewModel(
+            bookmarkManager: manager,
+            dragDropManager: .init(bookmarkManager: manager),
+            tabCollectionViewModel: .mock(),
+            themeManager: MockThemeManager()
+        )
         let collectionViewItem = BookmarksBarCollectionViewItem()
         let delegateMock = BookmarksBarViewModelDelegateMock()
         sut.delegate = delegateMock

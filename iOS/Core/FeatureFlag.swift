@@ -154,9 +154,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210926332858859?focus=true
     case aiFeaturesSettingsUpdate
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210839825079760?focus=true
-    case askAIChatSuggestion
-
     /// Adds kbg=-1 parameter to search URLs when DuckAI is disabled
     case duckAISearchParameter
 
@@ -181,6 +178,9 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211245201777978?focus=true
     case serpSettingsFollowUpQuestions
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211555469558398?focus=true
+    case authV2WideEventEnabled
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -196,9 +196,9 @@ extension FeatureFlag: FeatureFlagDescribing {
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .daxEasterEggLogos,
              .subscriptionPurchaseWidePixelMeasurement,
-             .askAIChatSuggestion,
              .refreshButtonPosition,
-             .newDeviceSyncPrompt:
+             .newDeviceSyncPrompt,
+             .authV2WideEventEnabled:
             true
         default:
             false
@@ -242,7 +242,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .scheduledSetDefaultBrowserPrompts,
              .scheduledSetDefaultBrowserPromptsForInactiveUsers,
-             .askAIChatSuggestion,
              .duckAISearchParameter,
              .inactivityNotification,
              .daxEasterEggLogos,
@@ -252,7 +251,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .showAIChatAddressBarChoiceScreen,
              .refreshButtonPosition,
              .newDeviceSyncPrompt,
-             .serpSettingsFollowUpQuestions:
+             .serpSettingsFollowUpQuestions,
+             .authV2WideEventEnabled:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -430,8 +430,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .enabled
         case .duckAISearchParameter:
             return .enabled
-        case .askAIChatSuggestion:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.askAIChatSuggestion))
         case .inactivityNotification:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:
@@ -446,6 +444,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
         case .serpSettingsFollowUpQuestions:
             return .remoteReleasable(.subfeature(AIChatSubfeature.serpSettingsFollowUpQuestions))
+        case .authV2WideEventEnabled:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
         }
     }
 }

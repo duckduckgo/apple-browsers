@@ -303,6 +303,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             }
 
             if let task = refreshOngoingTask {
+                Logger.OAuthClient.log("Awaiting result from existing token refresh operation")
                 return try await task.value
             }
 
@@ -310,6 +311,8 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 defer {
                     self.refreshOngoingTask = nil
                 }
+
+                Logger.OAuthClient.log("Starting token refresh")
 
                 do {
                     refreshEventMapping?.fire(.tokenRefreshRefreshingAccessToken(refreshID: refreshID))

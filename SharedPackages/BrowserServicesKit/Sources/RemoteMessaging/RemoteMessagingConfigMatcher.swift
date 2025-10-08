@@ -73,71 +73,11 @@ public struct RemoteMessagingConfigMatcher {
     }
 
     func evaluateMatchingRules(_ matchingRules: [Int], entityID: String, fromRules rules: [RemoteConfigRule]) -> EvaluationResult {
-        var result: EvaluationResult = .match
-
-        for rule in matchingRules {
-            guard let matchingRule = rules.first(where: { $0.id == rule }) else {
-                return .nextMessage
-            }
-
-            if let percentile = matchingRule.targetPercentile, let messagePercentile = percentile.before {
-                let userPercentile = percentileStore.percentile(forEntityId: entityID)
-
-                if userPercentile > messagePercentile {
-                    Logger.remoteMessaging.debug("Matching rule percentile check failed for message with ID \(entityID, privacy: .public)")
-                    return .fail
-                }
-            }
-
-            result = .match
-
-            for attribute in matchingRule.attributes {
-                result = evaluateAttribute(matchingAttribute: attribute)
-                if result == .fail || result == .nextMessage {
-                    Logger.remoteMessaging.debug("First failing matching attribute \(String(describing: attribute), privacy: .public)")
-                    break
-                }
-            }
-
-            if result == .nextMessage || result == .match {
-                return result
-            }
-        }
-        return result
+        evaluateRules(matchingRules, entityID: entityID, fromRules: rules, type: .matching)
     }
 
     func evaluateExclusionRules(_ exclusionRules: [Int], entityID: String, fromRules rules: [RemoteConfigRule]) -> EvaluationResult {
-        var result: EvaluationResult = .fail
-
-        for rule in exclusionRules {
-            guard let matchingRule = rules.first(where: { $0.id == rule }) else {
-                return .nextMessage
-            }
-
-            if let percentile = matchingRule.targetPercentile, let messagePercentile = percentile.before {
-                let userPercentile = percentileStore.percentile(forEntityId: entityID)
-
-                if userPercentile > messagePercentile {
-                    Logger.remoteMessaging.debug("Exclusion rule percentile check failed for message with ID \(entityID, privacy: .public)")
-                    return .fail
-                }
-            }
-
-            result = .fail
-
-            for attribute in matchingRule.attributes {
-                result = evaluateAttribute(matchingAttribute: attribute)
-                if result == .fail || result == .nextMessage {
-                    Logger.remoteMessaging.debug("First failing exclusion attribute \(String(describing: attribute), privacy: .public)")
-                    break
-                }
-            }
-
-            if result == .nextMessage || result == .match {
-                return result
-            }
-        }
-        return result
+        evaluateRules(exclusionRules, entityID: entityID, fromRules: rules, type: .exclusion)
     }
 
     func evaluateAttribute(matchingAttribute: MatchingAttribute) -> EvaluationResult {
@@ -152,6 +92,76 @@ public struct RemoteMessagingConfigMatcher {
         }
 
         return .nextMessage
+    }
+}
+
+private extension RemoteMessagingConfigMatcher {
+
+    enum RuleType {
+        case matching
+        case exclusion
+
+        var defaultResult: EvaluationResult {
+            switch self {
+            case .matching: return .match
+            case .exclusion: return .fail
+            }
+        }
+
+        var percentileFailMessage: String {
+            switch self {
+            case .matching: return "Matching rule percentile check failed"
+            case .exclusion: return "Exclusion rule percentile check failed"
+            }
+        }
+
+        var attributeFailMessage: String {
+            switch self {
+            case .matching: return "First failing matching attribute"
+            case .exclusion: return "First failing exclusion attribute"
+            }
+        }
+    }
+
+    func evaluateRules(
+        _ rules: [Int],
+        entityID: String,
+        fromRules configRules: [RemoteConfigRule],
+        type: RuleType
+    ) -> EvaluationResult {
+        var result: EvaluationResult = type.defaultResult
+
+        for rule in rules {
+            guard let matchingRule = configRules.first(where: { $0.id == rule }) else {
+                return .nextMessage
+            }
+
+            if let percentile = matchingRule.targetPercentile, let messagePercentile = percentile.before {
+                let userPercentile = percentileStore.percentile(forEntityId: entityID)
+
+                if userPercentile > messagePercentile {
+                    Logger.remoteMessaging.debug("\(type.percentileFailMessage) for entity with ID \(entityID, privacy: .public)")
+                    return .fail
+                }
+            }
+
+            result = type.defaultResult
+
+            for attribute in matchingRule.attributes {
+                result = evaluateAttribute(matchingAttribute: attribute)
+                if result == .fail || result == .nextMessage {
+                    Logger.remoteMessaging.debug("\(type.attributeFailMessage) \(String(describing: attribute), privacy: .public)")
+
+                    break
+                }
+            }
+
+            if result == .nextMessage || result == .match {
+                return result
+            }
+        }
+
+        return result
     }
 }
 

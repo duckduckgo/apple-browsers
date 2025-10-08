@@ -22,21 +22,6 @@ import Foundation
 
 public enum DataImport {
 
-    public enum TypeSelection: Hashable {
-        case single(DataType)
-        case multiple(Set<DataType>)
-
-        public var isMultiple: Bool {
-            if case .multiple = self { return true }
-            return false
-        }
-
-        public var singleDataType: DataType? {
-            if case .single(let dataType) = self { return dataType }
-            return nil
-        }
-    }
-
     public enum Source: String, RawRepresentable, CaseIterable, Equatable {
         case brave
         case chrome

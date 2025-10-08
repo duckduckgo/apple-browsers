@@ -270,7 +270,7 @@ extension WideEventErrorData: WideEventParameterProviding {
 }
 
 extension WideEvent.MeasuredInterval {
-    var durationMilliseconds: Double? {
+    public var durationMilliseconds: Double? {
         guard let start, let end else { return nil }
         return max(end.timeIntervalSince(start) * 1000, 0)
     }

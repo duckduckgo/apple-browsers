@@ -79,19 +79,18 @@ extension AuthV2TokenRefreshWideEventData {
             parameters[WideEventParameter.AuthV2RefreshFeature.failingStep] = failingStep.rawValue
         }
 
-        func emit(_ key: String, interval: WideEvent.MeasuredInterval?) {
-            guard let start = interval?.start, let end = interval?.end else { return }
-            let ms = max(0, Int(end.timeIntervalSince(start) * 1000))
-            parameters[key] = String(bucket(ms))
+        if let duration = refreshTokenDuration?.durationMilliseconds {
+            parameters[WideEventParameter.AuthV2RefreshFeature.refreshTokenLatency] = String(bucket(duration))
         }
 
-        emit(WideEventParameter.AuthV2RefreshFeature.refreshTokenLatency, interval: refreshTokenDuration)
-        emit(WideEventParameter.AuthV2RefreshFeature.fetchJWKSLatency, interval: fetchJWKSDuration)
+        if let duration = fetchJWKSDuration?.durationMilliseconds {
+            parameters[WideEventParameter.AuthV2RefreshFeature.fetchJWKSLatency] = String(bucket(duration))
+        }
 
         return parameters
     }
 
-    private func bucket(_ ms: Int) -> Int {
+    private func bucket(_ ms: Double) -> Int {
         switch ms {
         case 0..<1000: return 1000
         case 1000..<5000: return 5000

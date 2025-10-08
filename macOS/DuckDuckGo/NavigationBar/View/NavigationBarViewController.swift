@@ -494,7 +494,7 @@ final class NavigationBarViewController: NSViewController {
             popovers.closeHistoryViewOnboardingViewPopover()
 
             if showHistory {
-                tabCollectionViewModel.insertOrAppendNewTab(.anyHistoryPane, selected: true)
+                tabCollectionViewModel.insertOrAppendNewTab(.history, selected: true)
             }
         }
     }

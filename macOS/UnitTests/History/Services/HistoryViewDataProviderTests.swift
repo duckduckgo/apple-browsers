@@ -64,14 +64,12 @@ final class HistoryViewDataProviderTests: XCTestCase {
         await provider.refreshData()
         XCTAssertEqual(provider.ranges, [
             .init(id: .all, count: 0),
-            .init(id: .allSites, count: 0),
         ])
 
         dataSource.history = []
         await provider.refreshData()
         XCTAssertEqual(provider.ranges, [
             .init(id: .all, count: 0),
-            .init(id: .allSites, count: 0),
         ])
     }
 
@@ -88,7 +86,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(provider.ranges, [
             .init(id: .all, count: 1),
             .init(id: .today, count: 1),
-            .init(id: .allSites, count: 1),
         ])
     }
 
@@ -107,7 +104,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .init(id: .all, count: 2),
             .init(id: .today, count: 1),
             .init(id: .yesterday, count: 1),
-            .init(id: .allSites, count: 1),
         ])
     }
 
@@ -129,7 +125,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .init(id: .friday, count: 0),
             .init(id: .thursday, count: 0),
             .init(id: .wednesday, count: 1),
-            .init(id: .allSites, count: 1),
         ])
     }
 
@@ -153,7 +148,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .init(id: .wednesday, count: 0),
             .init(id: .tuesday, count: 0),
             .init(id: .older, count: 1),
-            .init(id: .allSites, count: 1),
         ])
     }
 
@@ -178,7 +172,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .init(id: .saturday, count: 1),
             .init(id: .friday, count: 1),
             .init(id: .thursday, count: 1),
-            .init(id: .allSites, count: 1),
         ])
 
         try await populateHistory(for: date(year: 2025, month: 2, day: 25)) // Tuesday
@@ -189,7 +182,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .init(id: .sunday, count: 1),
             .init(id: .saturday, count: 1),
             .init(id: .friday, count: 1),
-            .init(id: .allSites, count: 1),
         ])
 
         try await populateHistory(for: date(year: 2025, month: 2, day: 26)) // Wednesday
@@ -200,7 +192,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .init(id: .monday, count: 1),
             .init(id: .sunday, count: 1),
             .init(id: .saturday, count: 1),
-            .init(id: .allSites, count: 1),
         ])
 
         try await populateHistory(for: date(year: 2025, month: 2, day: 27)) // Thursday
@@ -211,7 +202,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .init(id: .tuesday, count: 1),
             .init(id: .monday, count: 1),
             .init(id: .sunday, count: 1),
-            .init(id: .allSites, count: 1),
         ])
 
         try await populateHistory(for: date(year: 2025, month: 2, day: 28)) // Friday
@@ -222,7 +212,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .init(id: .wednesday, count: 1),
             .init(id: .tuesday, count: 1),
             .init(id: .monday, count: 1),
-            .init(id: .allSites, count: 1),
         ])
 
         try await populateHistory(for: date(year: 2025, month: 3, day: 1)) // Saturday
@@ -233,7 +222,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .init(id: .thursday, count: 1),
             .init(id: .wednesday, count: 1),
             .init(id: .tuesday, count: 1),
-            .init(id: .allSites, count: 1),
         ])
 
         try await populateHistory(for: date(year: 2025, month: 3, day: 2)) // Sunday
@@ -244,7 +232,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .init(id: .friday, count: 1),
             .init(id: .thursday, count: 1),
             .init(id: .wednesday, count: 1),
-            .init(id: .allSites, count: 1),
         ])
     }
 
@@ -671,93 +658,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(pixelHandler.fireFilterUpdatedPixelCalls, [])
         _ = await provider.visitsBatch(for: .rangeFilter(.all), source: .initial, limit: 10, offset: 0)
         XCTAssertEqual(pixelHandler.fireFilterUpdatedPixelCalls, [])
-    }
-
-    // MARK: - Sites section and preferred URL
-
-    @MainActor
-    func testPreferredURLPrefersHttpsThenMostRecent() async throws {
-        // Given entries for the same eTLD+1 with both http and https
-        let httpsURL = try XCTUnwrap("https://example.com".url)
-        let httpURL = try XCTUnwrap("http://example.com".url)
-        let newer = Date()
-        let older = newer.addingTimeInterval(-3600)
-
-        let httpsEntry = HistoryEntry.make(url: httpsURL, visits: [.init(date: newer)])
-        let httpEntry = HistoryEntry.make(url: httpURL, visits: [.init(date: older)])
-        dataSource.history = [httpsEntry, httpEntry]
-        await provider.refreshData()
-
-        // When
-        let preferred = provider.preferredURL(forSiteDomain: "example.com")
-
-        // Then
-        XCTAssertEqual(preferred, httpsURL)
-    }
-
-    @MainActor
-    func testSitesSectionTitlePrefersIndexPageTitle() async throws {
-        // Given: root index page and another page under the same domain
-        let indexURL = try XCTUnwrap("https://example.com".url)
-        let otherURL = try XCTUnwrap("https://example.com/page".url)
-        let today = Date()
-
-        let indexEntry = HistoryEntry.make(url: indexURL, title: "Home", visits: [.init(date: today)])
-        let otherEntry = HistoryEntry.make(url: otherURL, title: "Other", visits: [.init(date: today)])
-        dataSource.history = [indexEntry, otherEntry]
-        await provider.refreshData()
-
-        // When: requesting Sites items
-        let batch = await provider.visitsBatch(for: .rangeFilter(.allSites), source: .auto, limit: 20, offset: 0)
-        let items = batch.visits
-        let siteItem = try XCTUnwrap(items.first(where: { $0.etldPlusOne == "example.com" }))
-
-        // Then: title chosen from index page record
-        XCTAssertEqual(siteItem.title, "Home")
-        XCTAssertEqual(siteItem.domain, "example.com")
-    }
-
-    @MainActor
-    func testAllSitesDeduplicatesByETLDPlusOne() async throws {
-        // Given subdomains and base domain for the same eTLD+1 plus another domain
-        let today = Date()
-        dataSource.history = [
-            .make(url: try XCTUnwrap("https://a.example.com".url), visits: [.init(date: today)]),
-            .make(url: try XCTUnwrap("https://b.example.com".url), visits: [.init(date: today)]),
-            .make(url: try XCTUnwrap("https://example.com".url), visits: [.init(date: today)]),
-            .make(url: try XCTUnwrap("https://other.com".url), visits: [.init(date: today)])
-        ]
-        await provider.refreshData()
-
-        // When
-        let ranges = provider.ranges
-
-        // Then: allSites count equals unique eTLD+1 domains (example.com, other.com)
-        let allRange = try XCTUnwrap(ranges.first)
-        let sitesRange = try XCTUnwrap(ranges.last)
-        XCTAssertEqual(allRange.id, .all)
-        XCTAssertEqual(allRange.count, 4)
-        XCTAssertEqual(sitesRange.id, .allSites)
-        XCTAssertEqual(sitesRange.count, 2)
-    }
-
-    @MainActor
-    func testSitesSectionTitleFallsBackToMostRecentVisitWhenNoIndexPage() async throws {
-        // Given: no root page for example.com, two different pages with different visit dates
-        let olderDate = Date().addingTimeInterval(-7200)
-        let newerDate = Date().addingTimeInterval(-3600)
-        let olderURL = try XCTUnwrap("https://example.com/older".url)
-        let newerURL = try XCTUnwrap("https://example.com/newer".url)
-
-        let olderEntry = HistoryEntry.make(url: olderURL, title: "Older Title", visits: [.init(date: olderDate)])
-        let newerEntry = HistoryEntry.make(url: newerURL, title: "Newer Title", visits: [.init(date: newerDate)])
-        dataSource.history = [olderEntry, newerEntry]
-
-        await provider.refreshData()
-        let batch = await provider.visitsBatch(for: .rangeFilter(.allSites), source: .auto, limit: 10, offset: 0)
-        let items = batch.visits
-        let siteItem = try XCTUnwrap(items.first(where: { $0.etldPlusOne == "example.com" }))
-        XCTAssertEqual(siteItem.title, "Newer Title")
     }
 
     // MARK: - helpers

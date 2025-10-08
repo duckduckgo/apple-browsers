@@ -286,7 +286,7 @@ struct FireDialogView: ModalView {
             .lastKeyMainWindowController?
             .mainViewController
             .browserTabViewController
-            .openNewTab(with: .history(pane: .allSites))
+            .openNewTab(with: .history)
     }
 
     // MARK: - Sites overlay

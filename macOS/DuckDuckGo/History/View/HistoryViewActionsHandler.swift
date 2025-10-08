@@ -137,26 +137,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
     }
 
     func showDeleteDialog(for entries: [String], in window: NSWindow?) async -> DataModel.DeleteDialogResponse {
-        // If entries represent site selections (e.g., "site:example.com"),
-        // mirror the context menu behavior and present the Fire dialog for sites.
-        let siteDomains: [String] = entries.compactMap { entry in
-            guard entry.hasPrefix("site:"), let idx = entry.firstIndex(of: ":") else { return nil }
-            let domain = entry[entry.index(after: idx)...]
-            return domain.isEmpty ? nil : String(domain)
-        }
-
-        if !siteDomains.isEmpty {
-            return await showDeleteDialog(for: .domainFilter(Set(siteDomains)), in: window)
-        }
-
         return await showDeleteDialog(for: entries.compactMap(VisitIdentifier.init), in: window)
-    }
-
-    @MainActor
-    private func deleteDomains(_ domains: Set<String>, window: NSWindow?) {
-        deleteDialogTask = Task { @MainActor in
-            await showDeleteDialog(for: .domainFilter(domains), in: window)
-        }
     }
 
     @MainActor
@@ -166,30 +147,16 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         contextMenuResponse = .noAction
 
         let identifiers = entries.compactMap(VisitIdentifier.init)
-        let siteDomains: [String] = entries.compactMap { entry in
-            guard entry.hasPrefix("site:"), let idx = entry.firstIndex(of: ":") else { return nil }
-            let domain = entry[entry.index(after: idx)...]
-            return domain.isEmpty ? nil : String(domain)
-        }
-
-        // Unify sites vs identifiers: compute selection kind and build a single menu differing only by delete item
-        let isSiteSelection = identifiers.isEmpty && !siteDomains.isEmpty
 
         // Resolve URLs and delete behavior
         let urls: [URL]
         let deleteTitle: String
         let performDelete: () -> Void
 
-        if isSiteSelection {
-            urls = siteDomains.compactMap { dataProvider?.preferredURL(forSiteDomain: $0) }
-            deleteTitle = UserText.deleteHistoryAndBrowsingDataMenuItem
-            performDelete = { [weak self] in self?.deleteDomains(Set(siteDomains), window: presenter.window) }
-        } else {
-            guard !identifiers.isEmpty else { return .noAction }
-            urls = identifiers.compactMap(\.url.url)
-            deleteTitle = UserText.delete
-            performDelete = { [weak self] in self?.delete(identifiers, window: presenter.window) }
-        }
+        guard !identifiers.isEmpty else { return .noAction }
+        urls = identifiers.compactMap(\.url.url)
+        deleteTitle = UserText.delete
+        performDelete = { [weak self] in self?.delete(identifiers, window: presenter.window) }
 
         let menu = NSMenu {
             NSMenuItem(title: urls.count == 1 ? UserText.openInNewTab : UserText.openAllInNewTabs) { [weak self] _ in
@@ -209,7 +176,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
 
             NSMenuItem.separator()
 
-            if isSiteSelection || urls.count == 1 {
+            if urls.count == 1 {
                 NSMenuItem(title: UserText.showAllHistoryFromThisSite) { [weak self] _ in
                     self?.showAllHistoryFromThisSite()
                 }
@@ -362,7 +329,7 @@ extension DataModel.HistoryQueryKind {
         switch self {
         case .rangeFilter(let range):
             switch range {
-            case .all, .allSites:
+            case .all:
                 return .all
             case .today:
                 return .today

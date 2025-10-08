@@ -137,7 +137,7 @@ public extension DataModel.HistoryRange {
         let referenceWeekday = calendar.component(.weekday, from: referenceDate)
 
         switch self {
-        case .all, .allSites:
+        case .all:
             return nil
         case .today, .older:
             return referenceWeekday
@@ -190,7 +190,7 @@ public extension DataModel.HistoryRange {
             return .thursday
         case .saturday:
             return .friday
-        case .older, .allSites:
+        case .older:
             return nil
         }
     }

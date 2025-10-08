@@ -178,9 +178,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
     let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let themeManager: ThemeManager
-    var visualStyle: VisualStyleProviding {
-        themeManager.theme
-    }
 
     let wideEvent: WideEventManaging
     let isUsingAuthV2: Bool

@@ -76,7 +76,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         featureFlagger: FeatureFlagger,
         configurationURLProvider: ConfigurationURLProviding,
-        themeManager: ThemeManagerProtocol
+        themeManager: ThemeManaging
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
             database: database,

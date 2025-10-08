@@ -41,7 +41,7 @@ public class AuthV2TokenAdoptionWideEventData: WideEventData {
     public var failingStep: FailingStep?
 
     public init(errorData: WideEventErrorData? = nil,
-                contextData: WideEventContextData,
+                contextData: WideEventContextData = WideEventContextData(),
                 appData: WideEventAppData = WideEventAppData(),
                 globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.errorData = errorData

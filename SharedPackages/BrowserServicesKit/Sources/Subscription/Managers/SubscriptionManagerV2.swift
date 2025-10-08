@@ -567,8 +567,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
         if isAuthV2WideEventEnabled(), let wideEvent {
             let globalData = WideEventGlobalData(id: adoptionID)
-            let contextData = WideEventContextData(name: "token-adoption")
-            let data = AuthV2TokenAdoptionWideEventData(contextData: contextData, globalData: globalData)
+            let data = AuthV2TokenAdoptionWideEventData(globalData: globalData)
             data.failingStep = .adoptingToken
             wideEvent.startFlow(data)
         }

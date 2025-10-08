@@ -97,7 +97,7 @@ extension TabBarFooter: ThemeUpdateListening {
 
         addButton.cornerRadius = theme.toolbarButtonsCornerRadius
         addButton.normalTintColor = colorsProvider.iconsColor
-        addButton.mouseDownColor = .buttonMouseDown
+        addButton.mouseDownColor = colorsProvider.buttonMouseOverColor
         addButton.mouseOverColor = colorsProvider.buttonMouseOverColor
     }
 }

@@ -220,7 +220,8 @@ struct FireDialogView: ModalView {
                     icon: DesignSystemImages.Glyphs.Size16.windowsAndTabs,
                     title: UserText.fireDialogTabsAndWindows,
                     subtitle: tabsSubtitle,
-                    isOn: $viewModel.includeTabsAndWindows
+                    isOn: $viewModel.includeTabsAndWindows,
+                    cornerRadius: .top
                 )
                 sectionDivider()
             }
@@ -234,7 +235,9 @@ struct FireDialogView: ModalView {
                     viewModel.includeHistory && isIncludeHistoryEnabled
                 } set: {
                     viewModel.includeHistory = $0
-                }
+                },
+                isEnabled: isIncludeHistoryEnabled,
+                cornerRadius: viewModel.mode.shouldShowCloseTabsToggle ? .none : .top
             )
             sectionDivider()
 
@@ -247,7 +250,9 @@ struct FireDialogView: ModalView {
                 // don‘t show the ℹ button when there‘s no site data in scope
                 infoAction: isIncludeCookiesAndSiteDataEnabled ? { isShowingSitesOverlay = true } : nil,
                 // grey-out the ℹ button when the toggle is Off
-                infoEnabled: viewModel.includeCookiesAndSiteData
+                infoEnabled: viewModel.includeCookiesAndSiteData,
+                isEnabled: isIncludeCookiesAndSiteDataEnabled,
+                cornerRadius: viewModel.mode.shouldShowFireproofSection ? .none : .bottom
             )
             .disabled(!isIncludeCookiesAndSiteDataEnabled)
             sectionDivider(padding: 0)
@@ -371,8 +376,11 @@ struct FireDialogView: ModalView {
         )
     }
 
-    private func sectionRow(icon: NSImage, title: String, subtitle: String, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true) -> some View {
-        Button(action: { isOn.wrappedValue.toggle() }) {
+    private func sectionRow(icon: NSImage, title: String, subtitle: String, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, cornerRadius: RowCornerRadius = .none) -> some View {
+        Button(action: {
+            guard isEnabled else { return }
+            isOn.wrappedValue.toggle()
+        }) {
             HStack(spacing: 6) {
                 Image(nsImage: icon)
                     .padding(.trailing, 2)
@@ -407,7 +415,8 @@ struct FireDialogView: ModalView {
             .frame(width: Constants.viewSize.width - 32, alignment: .leading)
             .contentShape(Rectangle()) // allow hit-test in empty rect areas
         }
-        .buttonStyle(RowPressButtonStyle())
+        .buttonStyle(RowPressButtonStyle(cornerRadius: cornerRadius))
+        .allowsHitTesting(isEnabled)
     }
 
     private func sectionDivider(padding: CGFloat = 16) -> some View {
@@ -442,7 +451,7 @@ struct FireDialogView: ModalView {
             .padding(.horizontal, 16)
             .frame(width: Constants.viewSize.width - 32, alignment: .leading)
         }
-        .buttonStyle(RowPressButtonStyle())
+        .buttonStyle(RowPressButtonStyle(cornerRadius: .bottom))
     }
 
     private var individualSitesLink: some View {
@@ -502,17 +511,57 @@ struct FireDialogView: ModalView {
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
-        .padding(.bottom, 16)
+        .padding(.bottom, 6)
     }
 
 }
+
+// Corner radius configuration for section rows
+private enum RowCornerRadius {
+    case top
+    case bottom
+    case both
+    case none
+}
+
 // Full-row press highlight style
 private struct RowPressButtonStyle: ButtonStyle {
+    let cornerRadius: RowCornerRadius
+
+    init(cornerRadius: RowCornerRadius = .none) {
+        self.cornerRadius = cornerRadius
+    }
+
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .fixedSize(horizontal: true, vertical: true)
-            .background(configuration.isPressed ? Color.buttonMouseDown : Color.clear)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+        let background = configuration.isPressed ? Color.buttonMouseDown : Color.clear
+
+        Group {
+            switch cornerRadius {
+            case .top:
+                configuration.label
+                    .background(
+                        CustomRoundedCornersShape(tl: 12, tr: 12, bl: 0, br: 0)
+                            .fill(background)
+                    )
+            case .bottom:
+                configuration.label
+                    .background(
+                        CustomRoundedCornersShape(tl: 0, tr: 0, bl: 12, br: 12)
+                            .fill(background)
+                    )
+            case .both:
+                configuration.label
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(background)
+                    )
+            case .none:
+                configuration.label
+                    .background(background)
+            }
+        }
+        .fixedSize(horizontal: true, vertical: true)
+        .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }
 

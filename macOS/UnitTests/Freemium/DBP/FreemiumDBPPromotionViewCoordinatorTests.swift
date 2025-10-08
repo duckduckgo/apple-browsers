@@ -196,9 +196,6 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
     @MainActor
     func testCloseAction_dismissesNoResults_andFiresPixel() async throws {
         // Given
-        // Wait for initial setup to complete
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-
         try await waitForViewModelUpdate {
             mockUserStateManager.firstScanResults = FreemiumDBPMatchResults(matchesCount: 0, brokerCount: 0)
         }

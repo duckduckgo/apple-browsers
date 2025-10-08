@@ -109,9 +109,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/task/1210330600670666
     case removeWWWInCanonicalizationInThreatProtection
 
-    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210702047347360?focus=true
-    case aiChatGlobalSwitch
-
     /// https://app.asana.com/1/137249556945/project/1209671977594486/task/1210012482760771?focus=true
     case aiChatSidebar
 
@@ -198,7 +195,7 @@ public enum FeatureFlag: String, CaseIterable {
     case themes
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211258257937392?focus=true
-    case appStoreCheckForUpdatesFlow
+    case appStoreUpdateFlow
 
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1211260578559159?focus=true
     case unifiedURLPredictor
@@ -208,6 +205,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/task/1211354430557015?focus=true
     case subscriptionRestoreWidePixelMeasurement
+    
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211555469558398?focus=true
+    case authV2WideEventEnabled
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -224,7 +224,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .restoreSessionPrompt,
                 .refactorOfSyncPreferences,
                 .subscriptionPurchaseWidePixelMeasurement,
-                .subscriptionRestoreWidePixelMeasurement:
+                .subscriptionRestoreWidePixelMeasurement,
+                .authV2WideEventEnabled:
             true
         default:
             false
@@ -269,7 +270,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .osSupportForceWillSoonDropSupportMessage,
                 .willSoonDropBigSurSupport,
                 .hangReporting,
-                .aiChatGlobalSwitch,
 				.aiChatSidebar,
                 .aiChatTextSummarization,
                 .aiChatTextTranslation,
@@ -296,11 +296,12 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .subscriptionPurchaseWidePixelMeasurement,
                 .syncFeatureLevel3,
                 .themes,
-                .appStoreCheckForUpdatesFlow,
+                .appStoreUpdateFlow,
                 .unifiedURLPredictor,
                 .unifiedURLPredictorMetrics,
                 .webKitPerformanceReporting,
-                .subscriptionRestoreWidePixelMeasurement:
+                .subscriptionRestoreWidePixelMeasurement,
+                .authV2WideEventEnabled:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -386,8 +387,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
-        case .aiChatGlobalSwitch:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.globalToggle))
         case .aiChatSidebar:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatTextSummarization:
@@ -443,13 +442,15 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncFeatureLevel3:
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
         case .themes:
-            return .internalOnly()
-        case .appStoreCheckForUpdatesFlow:
-            return .internalOnly()
+            return .disabled
+        case .appStoreUpdateFlow:
+            return .remoteReleasable(.feature(.appStoreUpdateFlow))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .unifiedURLPredictorMetrics:
             return .disabled
+        case .authV2WideEventEnabled:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
         case .webKitPerformanceReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webKitPerformanceReporting))
         case .subscriptionRestoreWidePixelMeasurement:

@@ -21,10 +21,14 @@ import PixelKit
 import XCTest
 
 public final class WideEventMock: WideEventManaging {
+
     public var started: [WideEventData] = []
     public var updates: [WideEventData] = []
     public var completions: [(WideEventData, WideEventStatus)] = []
     public var discarded: [WideEventData] = []
+
+    public var onUpdate: ((WideEventData) -> Void)?
+    public var onComplete: ((WideEventData, WideEventStatus) -> Void)?
 
     public init() {}
 
@@ -34,20 +38,38 @@ public final class WideEventMock: WideEventManaging {
 
     public func updateFlow<T: WideEventData>(_ data: T) {
         updates.append(data)
+        onUpdate?(data)
+    }
+
+    public func updateFlow<T: WideEventData>(globalID: String, update: (inout T) -> Void) {
+        // Try to find existing data in started or updates arrays
+        let allData = (started + updates).compactMap { $0 as? T }
+        guard var data = allData.first(where: { $0.globalData.id == globalID }) else {
+            return
+        }
+
+        update(&data)
+        updates.append(data)
     }
 
     public func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, onComplete: @escaping PixelKit.CompletionBlock) {
         completions.append((data, status))
+        self.onComplete?(data, status)
         onComplete(true, nil)
     }
 
     public func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus) async throws -> Bool {
         completions.append((data, status))
+        onComplete?(data, status)
         return true
     }
 
     public func discardFlow<T: WideEventData>(_ data: T) {
         discarded.append(data)
+    }
+
+    public func getFlowData<T: WideEventData>(_ type: T.Type, globalID: String) -> T? {
+        return started.first { ($0 as? T)?.globalData.id == globalID } as? T
     }
 
     public func getAllFlowData<T: WideEventData>(_ type: T.Type) -> [T] {

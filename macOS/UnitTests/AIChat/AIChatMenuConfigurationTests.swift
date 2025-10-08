@@ -272,6 +272,12 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         }
     }
 
+    var showShortcutInAddressBarWhenTyping: Bool = false {
+        didSet {
+            showShortcutInAddressBarWhenTypingSubject.send(showShortcutInAddressBarWhenTyping)
+        }
+    }
+
     var openAIChatInSidebar: Bool = false {
         didSet {
             openAIChatInSidebarSubject.send(openAIChatInSidebar)
@@ -288,6 +294,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     private var showShortcutOnNewTabPageSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutInApplicationMenuSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutInAddressBarSubject = PassthroughSubject<Bool, Never>()
+    private var showShortcutInAddressBarWhenTypingSubject = PassthroughSubject<Bool, Never>()
     private var openAIChatInSidebarSubject = PassthroughSubject<Bool, Never>()
     private var shouldAutomaticallySendPageContextSubject = PassthroughSubject<Bool, Never>()
 
@@ -307,6 +314,10 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         showShortcutInAddressBarSubject.eraseToAnyPublisher()
     }
 
+    var showShortcutInAddressBarWhenTypingPublisher: AnyPublisher<Bool, Never> {
+        showShortcutInAddressBarWhenTypingSubject.eraseToAnyPublisher()
+    }
+
     var openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> {
         openAIChatInSidebarSubject.eraseToAnyPublisher()
     }
@@ -320,6 +331,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         showShortcutOnNewTabPage = false
         showShortcutInApplicationMenu = false
         showShortcutInAddressBar = false
+        showShortcutInAddressBarWhenTyping = false
         didDisplayAIChatAddressBarOnboarding = false
         openAIChatInSidebar = false
         shouldAutomaticallySendPageContext = false

@@ -52,7 +52,7 @@ let package = Package(
         .library(name: "WKAbstractions", targets: ["WKAbstractions"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.3.1"),
+        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.4.0"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.0.1"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
@@ -283,7 +283,8 @@ let package = Package(
                 "Persistence",
                 "BrowserServicesKit",
                 "MaliciousSiteProtection",
-                .product(name: "PrivacyDashboardResources", package: "privacy-dashboard")
+                .product(name: "PrivacyDashboardResources", package: "privacy-dashboard"),
+                "Navigation",
             ],
             path: "Sources/PrivacyDashboard",
             swiftSettings: [

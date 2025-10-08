@@ -183,7 +183,7 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
         XCTAssertTrue(subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled)
     }
 
-    // MARK: - Tests for Wide Pixel Measurement
+    // MARK: - Tests for Wide Event Measurement
 
     func testIsSubscriptionPurchaseWidePixelMeasurementDisabledWhenProviderReturnsFalse() {
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,

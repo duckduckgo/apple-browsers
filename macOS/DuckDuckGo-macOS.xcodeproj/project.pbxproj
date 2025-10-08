@@ -254,6 +254,8 @@
 		1E5921C52CF47A0F00E15CCA /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 1E5921C42CF47A0F00E15CCA /* FeatureFlags */; };
 		1E5FA8A62DD394EB0082FA72 /* DuckDuckGoUserAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF0E5112AD25A2600FFEC9E /* DuckDuckGoUserAgent.swift */; };
 		1E5FA8A72DD394EB0082FA72 /* DuckDuckGoUserAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF0E5112AD25A2600FFEC9E /* DuckDuckGoUserAgent.swift */; };
+		1E66454B2E93F3FB000C8E35 /* AIChatSidebarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E66454A2E93F3FB000C8E35 /* AIChatSidebarTests.swift */; };
+		1E66454C2E93F3FB000C8E35 /* AIChatSidebarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E66454A2E93F3FB000C8E35 /* AIChatSidebarTests.swift */; };
 		1E6783F02E156DA200AE465A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783EF2E156DA200AE465A /* Localizable.xcstrings */; };
 		1E6783F12E156DA200AE465A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783EF2E156DA200AE465A /* Localizable.xcstrings */; };
 		1E6783F32E156DA200AE465A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783EF2E156DA200AE465A /* Localizable.xcstrings */; };
@@ -2867,8 +2869,12 @@
 		B313C0502E1FD91200C34AE6 /* AutoconsentPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B313C04E2E1FD91200C34AE6 /* AutoconsentPixels.swift */; };
 		B541A3542E858041004AEAAD /* ThemeColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B541A3532E858041004AEAAD /* ThemeColors.swift */; };
 		B541A3552E858041004AEAAD /* ThemeColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B541A3532E858041004AEAAD /* ThemeColors.swift */; };
+		B54347A12E8DC7B1009EAE79 /* MockThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5ACEDAB2E8DC635008EC8B9 /* MockThemeManager.swift */; };
+		B54347A22E8DC7E3009EAE79 /* MockThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5ACEDAB2E8DC635008EC8B9 /* MockThemeManager.swift */; };
 		B55C8F742E81A8730024B421 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B55C8F732E81A8730024B421 /* ThemeManager.swift */; };
 		B55C8F752E81A8730024B421 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B55C8F732E81A8730024B421 /* ThemeManager.swift */; };
+		B5ACEDAD2E8DC635008EC8B9 /* MockThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5ACEDAB2E8DC635008EC8B9 /* MockThemeManager.swift */; };
+		B5ACEDAE2E8DC635008EC8B9 /* MockThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5ACEDAB2E8DC635008EC8B9 /* MockThemeManager.swift */; };
 		B5AE99532E84A5D900F45912 /* ThemeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5AE99522E84A5D900F45912 /* ThemeName.swift */; };
 		B5AE99542E84A5D900F45912 /* ThemeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5AE99522E84A5D900F45912 /* ThemeName.swift */; };
 		B5E197EB2E8C645500C447CC /* ThemeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */; };
@@ -3363,8 +3369,8 @@
 		BB486B552E749A060026B972 /* AppStoreUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB486B532E7499FE0026B972 /* AppStoreUpdateController.swift */; };
 		BB486B572E749A1A0026B972 /* SparkleUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB486B562E749A160026B972 /* SparkleUpdateController.swift */; };
 		BB486B582E749A1A0026B972 /* SparkleUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB486B562E749A160026B972 /* SparkleUpdateController.swift */; };
-		BB4EC6952D9B5C8000660600 /* VisualStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4EC6942D9B5C7800660600 /* VisualStyleProviding.swift */; };
-		BB4EC6962D9B5C8000660600 /* VisualStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4EC6942D9B5C7800660600 /* VisualStyleProviding.swift */; };
+		BB4EC6952D9B5C8000660600 /* ThemeStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4EC6942D9B5C7800660600 /* ThemeStyleProviding.swift */; };
+		BB4EC6962D9B5C8000660600 /* ThemeStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4EC6942D9B5C7800660600 /* ThemeStyleProviding.swift */; };
 		BB53CF3E2E26CEED007F0B42 /* RequestNewFeatureFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB53CF3D2E26CEE5007F0B42 /* RequestNewFeatureFormView.swift */; };
 		BB53CF3F2E26CEED007F0B42 /* RequestNewFeatureFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB53CF3D2E26CEE5007F0B42 /* RequestNewFeatureFormView.swift */; };
 		BB5789722B2CA70F0009DFE2 /* DataBrokerProtectionSubscriptionEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB5789712B2CA70F0009DFE2 /* DataBrokerProtectionSubscriptionEventHandler.swift */; };
@@ -4254,6 +4260,7 @@
 		1E4EDA272DE9ED2D0019B6E8 /* AIChatSidebarProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSidebarProvider.swift; sourceTree = "<group>"; };
 		1E4EDA2D2DE9ED710019B6E8 /* AIChatSidebarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSidebarViewController.swift; sourceTree = "<group>"; };
 		1E559BB02BBCA9F1002B4AF6 /* RedirectNavigationResponder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedirectNavigationResponder.swift; sourceTree = "<group>"; };
+		1E66454A2E93F3FB000C8E35 /* AIChatSidebarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSidebarTests.swift; sourceTree = "<group>"; };
 		1E6783EF2E156DA200AE465A /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = Localizable.xcstrings; path = DuckDuckGo/NetworkProtection/NetworkExtensionTargets/NetworkExtensionAndNotificationTargets/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
 		1E6783F42E156DA200AE465A /* AppStoreInfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = AppStoreInfoPlist.xcstrings; path = NetworkProtectionSystemExtension/AppStoreInfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
 		1E6783F62E156DA200AE465A /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = InfoPlist.xcstrings; path = NetworkProtectionSystemExtension/InfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
@@ -5242,6 +5249,7 @@
 		9F97B31E2DE8310C00653C0D /* DefaultBrowserAndDockPromptFeatureFlaggerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptFeatureFlaggerTests.swift; sourceTree = "<group>"; };
 		9F982F0C2B8224BE00231028 /* AddEditBookmarkFolderDialogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditBookmarkFolderDialogViewModel.swift; sourceTree = "<group>"; };
 		9F982F112B82268F00231028 /* AddEditBookmarkFolderDialogViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditBookmarkFolderDialogViewModelTests.swift; sourceTree = "<group>"; };
+		9F9845152E8D35DC004D5C9B /* SystemFrameworksExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SystemFrameworksExtensions; path = ../SharedPackages/SystemFrameworksExtensions; sourceTree = SOURCE_ROOT; };
 		9F9C49F52BC786790099738D /* MoreOptionsMenu+BookmarksTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MoreOptionsMenu+BookmarksTests.swift"; sourceTree = "<group>"; };
 		9F9C49F82BC7BC970099738D /* BookmarkAllTabsDialogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkAllTabsDialogView.swift; sourceTree = "<group>"; };
 		9F9C49FC2BC7E9820099738D /* BookmarkAllTabsDialogViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarkAllTabsDialogViewModel.swift; sourceTree = "<group>"; };
@@ -5423,6 +5431,7 @@
 		B313C04E2E1FD91200C34AE6 /* AutoconsentPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentPixels.swift; sourceTree = "<group>"; };
 		B541A3532E858041004AEAAD /* ThemeColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeColors.swift; sourceTree = "<group>"; };
 		B55C8F732E81A8730024B421 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+		B5ACEDAB2E8DC635008EC8B9 /* MockThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockThemeManager.swift; sourceTree = "<group>"; };
 		B5AE99522E84A5D900F45912 /* ThemeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeName.swift; sourceTree = "<group>"; };
 		B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManagerTests.swift; sourceTree = "<group>"; };
 		B602E7CE2A93A5FF00F12201 /* WKBackForwardListExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKBackForwardListExtension.swift; sourceTree = "<group>"; };
@@ -5742,7 +5751,7 @@
 		BB486B502E74770D0026B972 /* LatestReleaseCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestReleaseCheckerTests.swift; sourceTree = "<group>"; };
 		BB486B532E7499FE0026B972 /* AppStoreUpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreUpdateController.swift; sourceTree = "<group>"; };
 		BB486B562E749A160026B972 /* SparkleUpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdateController.swift; sourceTree = "<group>"; };
-		BB4EC6942D9B5C7800660600 /* VisualStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualStyleProviding.swift; sourceTree = "<group>"; };
+		BB4EC6942D9B5C7800660600 /* ThemeStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeStyleProviding.swift; sourceTree = "<group>"; };
 		BB53CF3D2E26CEE5007F0B42 /* RequestNewFeatureFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestNewFeatureFormView.swift; sourceTree = "<group>"; };
 		BB5789712B2CA70F0009DFE2 /* DataBrokerProtectionSubscriptionEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionSubscriptionEventHandler.swift; sourceTree = "<group>"; };
 		BB5F46A22C8751F6005F72DF /* BookmarkSortTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkSortTests.swift; sourceTree = "<group>"; };
@@ -6801,6 +6810,7 @@
 				31031EB62CC94C6C00684340 /* AIChatRemoteSettingsTests.swift */,
 				31F25EFE2CC3CA00002F9084 /* AIChatMenuConfigurationTests.swift */,
 				1E2A88792E2E477A00C29AC0 /* AIChatSidebarProviderTests.swift */,
+				1E66454A2E93F3FB000C8E35 /* AIChatSidebarTests.swift */,
 				1E2A887F2E2E532600C29AC0 /* AIChatSidebarPresenterTests.swift */,
 			);
 			path = AIChat;
@@ -7061,6 +7071,7 @@
 			isa = PBXGroup;
 			children = (
 				4BCB82792E92E25F004B7543 /* AttributedMetric */,
+				9F9845152E8D35DC004D5C9B /* SystemFrameworksExtensions */,
 				31B649382DB2899500A7AEE0 /* AIChat */,
 				7B3A16402D4B798000D4C869 /* AppInfoRetriever */,
 				9D9DE5712C63A96400D20B15 /* AppKitExtensions */,
@@ -10447,6 +10458,7 @@
 		B5E197EA2E8C645500C447CC /* VisualRefresh */ = {
 			isa = PBXGroup;
 			children = (
+				B5ACEDAB2E8DC635008EC8B9 /* MockThemeManager.swift */,
 				B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */,
 			);
 			path = VisualRefresh;
@@ -10949,7 +10961,7 @@
 				BBB891E52DAEC1B6001A42DF /* MoreOptionsMenuIconsProviding.swift */,
 				BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */,
 				BBDAA9192DAD4E5C00555E1E /* CurrentVPNNavigationBarIconProvider.swift */,
-				BB4EC6942D9B5C7800660600 /* VisualStyleProviding.swift */,
+				BB4EC6942D9B5C7800660600 /* ThemeStyleProviding.swift */,
 				B55C8F732E81A8730024B421 /* ThemeManager.swift */,
 				B5AE99522E84A5D900F45912 /* ThemeName.swift */,
 				B541A3532E858041004AEAAD /* ThemeColors.swift */,
@@ -11543,6 +11555,7 @@
 				D65D0FA02E7239730075A784 /* NetworkQualityMonitor */,
 				379C3E4B2E7238D800058C52 /* URLPredictor */,
 				D66840172E82BDED007DAAB2 /* PerformanceTest */,
+				9F50032A2E8D1B7F002F98D1 /* FoundationExtensions */,
 			);
 			productName = DuckDuckGo;
 			productReference = 3706FD05293F65D500E42796 /* DuckDuckGo App Store.app */;
@@ -12064,6 +12077,7 @@
 				D65D0F9E2E7239680075A784 /* NetworkQualityMonitor */,
 				379C3E4D2E7238E100058C52 /* URLPredictor */,
 				D65D0FA42E7239750075A784 /* PerformanceTest */,
+				9F5003282E8D1B73002F98D1 /* FoundationExtensions */,
 			);
 			productName = DuckDuckGo;
 			productReference = AA585D7E248FD31100E9A3E2 /* DuckDuckGo.app */;
@@ -13152,7 +13166,7 @@
 				560419452DD49BB600818414 /* PreferencesThreatProtectionView.swift in Sources */,
 				3706FAE2293F65D500E42796 /* SequenceExtensions.swift in Sources */,
 				3706FAE3293F65D500E42796 /* ChromiumDataImporter.swift in Sources */,
-				BB4EC6952D9B5C8000660600 /* VisualStyleProviding.swift in Sources */,
+				BB4EC6952D9B5C8000660600 /* ThemeStyleProviding.swift in Sources */,
 				3706FAE6293F65D500E42796 /* BWNotRespondingAlert.swift in Sources */,
 				3706FAE7293F65D500E42796 /* DebugUserScript.swift in Sources */,
 				B6CC26692BAD959500F53F8D /* DownloadProgress.swift in Sources */,
@@ -14292,6 +14306,7 @@
 				84D0B9822E0BD7EA00E3256A /* MockFeatureFlagger.swift in Sources */,
 				3706FE39293F661700E42796 /* TabTests.swift in Sources */,
 				9FAD623E2BD09DE5007F3A65 /* WebsiteInfoTests.swift in Sources */,
+				1E66454C2E93F3FB000C8E35 /* AIChatSidebarTests.swift in Sources */,
 				3767319A2C7F36B300EB097B /* UserBackgroundImageTests.swift in Sources */,
 				3706FE3A293F661700E42796 /* MockVariantManager.swift in Sources */,
 				BB349A4F2E3B8B0E0028AFE1 /* MockDefaultBrowserProvider.swift in Sources */,
@@ -14366,6 +14381,7 @@
 				BBC114662D89E859007A82D8 /* TabCollectionViewModelCloseTabLogicTests.swift in Sources */,
 				9F9C49F72BC786790099738D /* MoreOptionsMenu+BookmarksTests.swift in Sources */,
 				845B43372DB69F2E00D46001 /* SwiftObjectRetainCycleBreakerTests.swift in Sources */,
+				B5ACEDAD2E8DC635008EC8B9 /* MockThemeManager.swift in Sources */,
 				3706FE57293F661700E42796 /* LocalPinningManagerTests.swift in Sources */,
 				3706FE58293F661700E42796 /* HistoryStoreTests.swift in Sources */,
 				3706FE59293F661700E42796 /* EncryptionKeyGeneratorTests.swift in Sources */,
@@ -14516,6 +14532,7 @@
 				3706FE9F293F662100E42796 /* EncryptionKeyStoreMock.swift in Sources */,
 				84537A092C99C203008723BC /* DeallocationTests.swift in Sources */,
 				84524C072D79E6BB00F723D6 /* FireTests.swift in Sources */,
+				B54347A22E8DC7E3009EAE79 /* MockThemeManager.swift in Sources */,
 				3706FEA0293F662100E42796 /* EncryptionMocks.swift in Sources */,
 				3706FEA1293F662100E42796 /* TestNavigationDelegate.swift in Sources */,
 				560C6ED32CCA5C8500D411E2 /* CapturingOnboardingNavigationDelegate.swift in Sources */,
@@ -14587,6 +14604,7 @@
 				B662D3DF275616FF0035D4D6 /* EncryptionKeyStoreMock.swift in Sources */,
 				84537A082C99C203008723BC /* DeallocationTests.swift in Sources */,
 				84524C062D79E6BB00F723D6 /* FireTests.swift in Sources */,
+				B54347A12E8DC7B1009EAE79 /* MockThemeManager.swift in Sources */,
 				4B1AD8E225FC390B00261379 /* EncryptionMocks.swift in Sources */,
 				B6EC37FC29B83E99001ACE79 /* TestsURLExtension.swift in Sources */,
 				560C6ED22CCA5C8500D411E2 /* CapturingOnboardingNavigationDelegate.swift in Sources */,
@@ -15592,7 +15610,7 @@
 				370C23112C7747E200A80A3E /* ImageProcessor.swift in Sources */,
 				373A1AB02842C4EA00586521 /* BookmarkHTMLImporter.swift in Sources */,
 				B6B5F57F2B024105008DB58A /* DataImportSummaryView.swift in Sources */,
-				BB4EC6962D9B5C8000660600 /* VisualStyleProviding.swift in Sources */,
+				BB4EC6962D9B5C8000660600 /* ThemeStyleProviding.swift in Sources */,
 				31C3CE0228EDC1E70002C24A /* CustomRoundedCornersShape.swift in Sources */,
 				56DB9FEC2CD2515F001BEC23 /* OnboardingPixelReporter.swift in Sources */,
 				4B8D9062276D1D880078DB17 /* LocaleExtension.swift in Sources */,
@@ -16071,6 +16089,7 @@
 				84A37DF02DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift in Sources */,
 				9F6434702BECBA2800D2D8A0 /* SubscriptionRedirectManagerTests.swift in Sources */,
 				142879DA24CE1179005419BB /* SuggestionViewModelTests.swift in Sources */,
+				1E66454B2E93F3FB000C8E35 /* AIChatSidebarTests.swift in Sources */,
 				4B9292BC2667103100AD2C21 /* BookmarkSidebarTreeControllerTests.swift in Sources */,
 				37697D802D4A0D12004C0CBB /* NewTabPageShownPixelSenderTests.swift in Sources */,
 				9F97B31F2DE8311000653C0D /* DefaultBrowserAndDockPromptFeatureFlaggerTests.swift in Sources */,
@@ -16496,6 +16515,7 @@
 				B63ED0D826AE729600A9DAD1 /* PermissionModelTests.swift in Sources */,
 				B69B504B2726CA2900758A2B /* MockStatisticsStore.swift in Sources */,
 				CC00A0912E1D52A700750ED3 /* FirefoxPreferencesTests.swift in Sources */,
+				B5ACEDAE2E8DC635008EC8B9 /* MockThemeManager.swift in Sources */,
 				C17CA7AD2B9B52E6008EC3C1 /* NavigationBarPopoversTests.swift in Sources */,
 				37CD54BD27F2ECAE00F1F7B9 /* AutofillPreferencesModelTests.swift in Sources */,
 				CD34F0C12C886482006826BE /* MaliciousSiteProtectionMocks.swift in Sources */,
@@ -18808,6 +18828,14 @@
 		9DC70B192AA1FA5B005A844B /* LoginItems */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LoginItems;
+		};
+		9F5003282E8D1B73002F98D1 /* FoundationExtensions */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FoundationExtensions;
+		};
+		9F50032A2E8D1B7F002F98D1 /* FoundationExtensions */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FoundationExtensions;
 		};
 		9FF521452BAA908500B9819B /* Lottie */ = {
 			isa = XCSwiftPackageProductDependency;

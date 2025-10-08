@@ -18,6 +18,7 @@
 
 import AppKit
 import Foundation
+import Combine
 
 protocol BookmarkListPopoverDelegate: NSPopoverDelegate {
     func openNextBookmarksMenu(_ sender: BookmarkListPopover)
@@ -26,6 +27,9 @@ protocol BookmarkListPopoverDelegate: NSPopoverDelegate {
 
 final class BookmarkListPopover: NSPopover {
 
+    private var themeCancellable: AnyCancellable?
+    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+
     init(bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager) {
         super.init()
 
@@ -33,6 +37,9 @@ final class BookmarkListPopover: NSPopover {
         self.behavior = .transient
 
         setupContentController(using: bookmarkManager, dragDropManager: dragDropManager)
+
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     required init?(coder: NSCoder) {
@@ -58,6 +65,25 @@ final class BookmarkListPopover: NSPopover {
     override func show(relativeTo positioningRect: NSRect, of positioningView: NSView, preferredEdge: NSRectEdge) {
         viewController.adjustPreferredContentSize(positionedRelativeTo: positioningRect, of: positioningView, at: preferredEdge)
         super.show(relativeTo: positioningRect, of: positioningView, preferredEdge: preferredEdge)
+    }
+}
+
+private extension BookmarkListPopover {
+
+    func subscribeToThemeChanges() {
+        themeCancellable = themeManager.themePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] style in
+                self?.applyThemeStyle(theme: style)
+            }
+    }
+
+    func applyThemeStyle() {
+        applyThemeStyle(theme: themeManager.theme)
+    }
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        backgroundColor = theme.colorsProvider.popoverBackgroundColor
     }
 }
 

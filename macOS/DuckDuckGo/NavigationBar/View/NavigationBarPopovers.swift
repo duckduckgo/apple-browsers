@@ -414,7 +414,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         let privacyDashboardViewController = privacyDashboardPopover.viewController
 
         privacyDashboadPendingUpdatesCancellable = privacyDashboardViewController.rulesUpdateObserver
-            .$pendingUpdates.dropFirst().receive(on: DispatchQueue.main).sink { [weak privacyDashboardPopover] _ in
+            .$pendingUpdates.dropFirst().receive(on: DispatchQueue.main).sink { [weak privacyDashboardPopover, weak self] _ in
                 let isPendingUpdate = privacyDashboardViewController.isPendingUpdates()
 
             // Prevent popover from being closed when clicking away, while pending updates
@@ -427,6 +427,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
 #else
                 privacyDashboardPopover?.behavior = .transient
 #endif
+                self?.resetPrivacyDashboardPopover()
             }
         }
     }
@@ -602,9 +603,10 @@ extension NavigationBarPopovers: NSPopoverDelegate {
             bookmarkPopover = nil
 
         case privacyDashboardPopover:
-            privacyDashboardPopover = nil
-            privacyInfoCancellable = nil
-            privacyDashboadPendingUpdatesCancellable = nil
+            // Prevent popover from being deallocated while pending updates
+            if let popover = privacyDashboardPopover, !popover.viewController.isPendingUpdates() {
+                resetPrivacyDashboardPopover()
+            }
 
         case zoomPopover:
             zoomPopoverDelegate?.popoverDidClose?(notification)
@@ -612,6 +614,12 @@ extension NavigationBarPopovers: NSPopoverDelegate {
 
         default: break
         }
+    }
+
+    private func resetPrivacyDashboardPopover() {
+        privacyDashboardPopover = nil
+        privacyInfoCancellable = nil
+        privacyDashboadPendingUpdatesCancellable = nil
     }
 
 }

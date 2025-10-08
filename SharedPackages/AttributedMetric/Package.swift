@@ -1,4 +1,4 @@
-// swift-tools-version: 6.1
+// swift-tools-version: 5.9
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -27,7 +27,8 @@ let package = Package(
     products: [
         .library(
             name: "AttributedMetric",
-            targets: ["AttributedMetric"]),
+            targets: ["AttributedMetric"]
+        ),
     ],
     dependencies: [
         .package(path: "../BrowserServicesKit")
@@ -37,12 +38,12 @@ let package = Package(
             name: "AttributedMetric",
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
-            ],
+                .product(name: "PixelKit", package: "BrowserServicesKit")
+            ]
         ),
         .testTarget(
             name: "AttributedMetricTests",
             dependencies: ["AttributedMetric"]
-        ),
+        )
     ]
 )

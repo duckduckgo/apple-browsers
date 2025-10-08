@@ -168,14 +168,16 @@ final class PasswordManagementViewController: NSViewController {
     private let urlMatcher = AutofillDomainNameUrlMatcher()
     private let tld = NSApp.delegateTyped.tld
     private let urlSort = AutofillDomainNameUrlSort()
-    private let visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
     private let syncButtonModel = SyncDeviceButtonModel()
+
+    private var themeCancellable: AnyCancellable??
+    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    private var theme: ThemeStyleProviding {
+        themeManager.theme
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        boxView.fillColor = visualStyle.colorsProvider.passwordManagerBackgroundColor
-        backgroundView.backgroundColor = visualStyle.colorsProvider.passwordManagerLockScreenBackgroundColor
 
         createListView()
         createLoginItemView()
@@ -208,6 +210,9 @@ final class PasswordManagementViewController: NSViewController {
                 self?.refreshData()
             }
             .store(in: &cancellables)
+
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     private func setUpEmptyStateMessageView() {
@@ -1118,6 +1123,25 @@ final class PasswordManagementViewController: NSViewController {
         syncService.scheduler.requestSyncImmediately()
     }
 
+    // MARK: - Themes
+
+    private func subscribeToThemeChanges() {
+        themeCancellable = themeManager.themePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] style in
+                self?.applyThemeStyle(theme: style)
+            }
+    }
+
+    private func applyThemeStyle() {
+        applyThemeStyle(theme: themeManager.theme)
+    }
+
+    private func applyThemeStyle(theme: ThemeStyleProviding) {
+        let colorsProvider = theme.colorsProvider
+        boxView.fillColor = colorsProvider.passwordManagerBackgroundColor
+        backgroundView.backgroundColor = colorsProvider.passwordManagerLockScreenBackgroundColor
+    }
 }
 
 extension PasswordManagementViewController: NSMenuDelegate {

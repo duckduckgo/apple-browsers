@@ -7,4 +7,11 @@
         suffixes: ['first_daily_count'],
         parameters: ['appVersion', 'pixelSource'],
     },
+    updater_attempt_to_restart_without_resume_block: {
+        description: 'Fires when the Restart to Update when clicked does nothing. Used to measure how often users encounter this anomaly case.',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
 }

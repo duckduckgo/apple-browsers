@@ -127,7 +127,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
-         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
+         themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
          isFireWindowDefault: Bool = NSApp.delegateTyped.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
          isUsingAuthV2: Bool,
          syncDeviceButtonModel: SyncDeviceButtonModel = SyncDeviceButtonModel(),
@@ -155,7 +155,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.featureFlagger = featureFlagger
         self.freeTrialBadgePersistor = freeTrialBadgePersistor
-        self.moreOptionsMenuIconsProvider = visualStyle.iconsProvider.moreOptionsMenuIconsProvider
+        self.moreOptionsMenuIconsProvider = themeManager.theme.iconsProvider.moreOptionsMenuIconsProvider
         self.isFireWindowDefault = isFireWindowDefault
         self.syncDeviceButtonModel = syncDeviceButtonModel
 
@@ -255,7 +255,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         addItem(helpItem)
 
 #if APPSTORE
-        if !featureFlagger.isFeatureOn(.appStoreCheckForUpdatesFlow) {
+        if !featureFlagger.isFeatureOn(.appStoreUpdateFlow) {
             let checkForAppStoreUpdates = NSMenuItem(title: UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""),
                                                      action: #selector(checkForUpdates(_:)),
                                                      keyEquivalent: "")

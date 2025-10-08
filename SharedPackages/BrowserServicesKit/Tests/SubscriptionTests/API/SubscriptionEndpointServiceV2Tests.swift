@@ -92,7 +92,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
             status: .autoRenewable,
             activeOffers: []
         )
-        endpointService.updateCache(with: cachedSubscription)
+        endpointService.updateCache(with: cachedSubscription, cachedSubscription: nil)
 
         let subscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheFirst)
         XCTAssertEqual(subscription, cachedSubscription)
@@ -216,7 +216,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
             status: .autoRenewable,
             activeOffers: []
         )
-        endpointService.updateCache(with: subscription)
+        endpointService.updateCache(with: subscription, cachedSubscription: nil)
 
         let cachedSubscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheFirst)
         XCTAssertEqual(cachedSubscription, subscription)
@@ -244,7 +244,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
             status: .autoRenewable,
             activeOffers: []
         )
-        endpointService.updateCache(with: subscription)
+        endpointService.updateCache(with: subscription, cachedSubscription: nil)
 
         endpointService.clearSubscription()
         do {

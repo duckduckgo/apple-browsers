@@ -402,7 +402,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         mockAIChatTabOpener.openMethodCalledExpectation = expectation(description: "AIChatTabOpener did open a new tab")
 
         // When
-        presenter.didClickOpenInNewTabButton(currentAIChatURL: testURL, aiChatRestorationData: nil)
+        presenter.didClickOpenInNewTabButton()
 
         // Then
         waitForExpectations(timeout: 3)
@@ -423,7 +423,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         mockAIChatTabOpener.openMethodCalledExpectation = expectation(description: "AIChatTabOpener did open a new tab")
 
         // When
-        presenter.didClickOpenInNewTabButton(currentAIChatURL: testURL, aiChatRestorationData: restorationData)
+        presenter.didClickOpenInNewTabButton()
 
         // Then
         waitForExpectations(timeout: 3)

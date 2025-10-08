@@ -111,7 +111,6 @@ struct AppConfiguration {
                 let isLastAttempt = attempt == maxAttempts - 1
                 if isLastAttempt {
                     attemptWebViewTempDirectoryFallback(at: url)
-                    Pixel.fire(pixel: .failedToRecreateTmpDir, error: error)
                     return
                 } else {
                     Thread.sleep(forTimeInterval: retryInterval)

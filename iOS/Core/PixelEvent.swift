@@ -1414,7 +1414,6 @@ extension Pixel {
         case appIntentPerformed
 
         case failedToRemoveTmpDir
-        case failedToRecreateTmpDir
         case recreateTmpAttemptFailed(attempt: Int)
         case recreateTmpSuccessOnRetry(attempt: Int)
         case recreateTmpWebViewFallbackSucceeded
@@ -2759,7 +2758,6 @@ extension Pixel.Event {
         // MARK: App Intent
         case .appIntentPerformed: return "m_app-intent_intent-performed"
 
-        case .failedToRecreateTmpDir: return "m_debug_failed-to-recreate-tmp-dir"
         case .failedToRemoveTmpDir: return "m_debug_failed-to-remove-tmp-dir"
         case .recreateTmpAttemptFailed(let attempt): return "m_debug_recreate-tmp-attempt-failed-\(attempt)"
         case .recreateTmpSuccessOnRetry(let attempt): return "m_debug_recreate-tmp-success-on-retry-\(attempt)"

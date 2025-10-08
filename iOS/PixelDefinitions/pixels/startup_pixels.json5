@@ -62,6 +62,7 @@
             'form_factor',
         ],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+        expires: '2025-11-08',
     },
     'm_debug_recreate-tmp-success-on-retry-': {
         description: 'Fires when temp directory recreation succeeds on a retry attempt during app startup',
@@ -77,6 +78,7 @@
             'form_factor',
         ],
         parameters: ['appVersion'],
+        expires: '2025-11-08',
     },
     'm_debug_recreate-tmp-webview-fallback-succeeded': {
         description: 'Fires when WKWebView fallback successfully recreates temp directory during app startup',
@@ -84,6 +86,7 @@
         triggers: ['startup'],
         suffixes: ['platform', 'form_factor'],
         parameters: ['appVersion'],
+        expires: '2025-11-08',
     },
     'm_debug_recreate-tmp-webview-fallback-failed': {
         description: 'Fires when WKWebView fallback fails to recreate temp directory during app startup',
@@ -91,6 +94,7 @@
         triggers: ['startup'],
         suffixes: ['platform', 'form_factor'],
         parameters: ['appVersion'],
+        expires: '2025-11-08',
     },
     'm_debug_content-blocking-compilation-failed-missing-tmp-dir': {
         description: 'Fires when content blocking compilation is aborted due to missing temp directory',
@@ -98,5 +102,6 @@
         triggers: ['startup'],
         suffixes: ['platform', 'form_factor'],
         parameters: ['appVersion'],
+        expires: '2025-11-08',
     },
 }

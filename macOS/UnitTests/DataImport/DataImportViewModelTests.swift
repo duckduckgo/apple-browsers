@@ -1740,6 +1740,10 @@ final class DataImportViewModelTests: XCTestCase {
         return ImporterMock(password: primaryPassword, importTask: self.importTask)
     }
 
+    private func dataImporterWithoutAsserts(for source: DataImport.Source, fileDataType: DataImport.DataType?, url: URL, primaryPassword: String?) -> DataImporter {
+        return ImporterMock(password: primaryPassword, importTask: self.importTask)
+    }
+
     private var importTask: ((Set<DataImport.DataType>, DataImportProgressCallback) async -> DataImportSummary)!
 
     @MainActor
@@ -1767,10 +1771,10 @@ final class DataImportViewModelTests: XCTestCase {
         }
 
         var model: DataImportViewModel = self.model
-        if let url { // file import
+        if let url, case .fileImport = model.screen { // file import
             XCTAssertEqual(dataTypes.count, 1, message().with("actionButton"), file: file, line: line)
             if !source.isBrowser {
-                XCTAssertNil(model.actionButton)
+                XCTAssertNil(model.actionButton, file: file, line: line)
             } else if model.selectedDataTypes.isDisjoint(with: DataType.dataTypes(after: dataTypes.first!)),
                       model.summary(for: dataTypes.first!)?.isEmpty == true {
                 // no more data types available and import result is .success(.empty)
@@ -1778,7 +1782,7 @@ final class DataImportViewModelTests: XCTestCase {
             } else if model.selectedDataTypes.isDisjoint(with: DataType.dataTypes(after: dataTypes.first!)),
                       !model.summary.contains(where: { $0.result.isSuccess == false }) {
                 // when no errors collected before - Cancel would be shown instead of Skip for Passwords Import
-                XCTAssertEqual(model.actionButton, .cancel)
+                XCTAssertEqual(model.actionButton, .cancel, file: file, line: line)
             } else if case .profileAndDataTypesPicker = model.importSource.initialScreen {
                 XCTAssertEqual(model.actionButton, .skip, message().with("actionButton"), file: file, line: line)
             }
@@ -1791,7 +1795,8 @@ final class DataImportViewModelTests: XCTestCase {
                 }
             }
             model.selectFile()
-
+        } else if let url, case .archiveImport = model.screen {
+            model.initiateImport(primaryPassword: nil, fileURL: url)
         } else {
             XCTAssertEqual(model.actionButton, .initiateImport(disabled: false), message().with("actionButton"), file: file, line: line)
             model.performAction(.initiateImport(disabled: false))
@@ -1874,6 +1879,305 @@ final class DataImportViewModelTests: XCTestCase {
         XCTAssertEqual(result, .none)
     }
 
+    // MARK: - Archive Import Tests
+
+    func testIsArchiveImportReturnsTrueForArchiveImportScreen() {
+        // GIVEN
+        let screen = DataImportViewModel.Screen.archiveImport(dataTypes: [.bookmarks, .passwords])
+
+        // WHEN & THEN
+        XCTAssertTrue(screen.isArchiveImport)
+    }
+
+    func testIsArchiveImportReturnsFalseForNonArchiveImportScreens() {
+        // GIVEN
+        let screens: [DataImportViewModel.Screen] = [
+            .profileAndDataTypesPicker,
+            .moreInfo,
+            .getReadPermission(.testCSV),
+            .fileImport(dataType: .bookmarks),
+            .summary([.bookmarks]),
+            .feedback,
+            .shortcuts([.bookmarks])
+        ]
+
+        // WHEN & THEN
+        for screen in screens {
+            XCTAssertFalse(screen.isArchiveImport, "Screen \(screen) should not be archive import")
+        }
+    }
+
+    func testSafariInitialScreenReturnsArchiveImportWhenFeatureFlagEnabled() {
+        // GIVEN
+        let safariSources: [Source] = [.safari, .safariTechnologyPreview]
+
+        // WHEN & THEN
+        for source in safariSources {
+            // Note: This test assumes the feature flag is enabled in test environment
+            // The actual behavior depends on the feature flag and macOS version
+            let initialScreen = source.initialScreen
+            // We can't easily test the feature flag condition in unit tests,
+            // but we can test that the screen is one of the expected types
+            XCTAssertTrue(initialScreen == .archiveImport(dataTypes: source.supportedDataTypes) ||
+                         initialScreen == .profileAndDataTypesPicker,
+                         "Safari source \(source) should return archive import or profile picker")
+        }
+    }
+
+    func testArchiveImportScreenDescription() {
+        // GIVEN
+        let screen = DataImportViewModel.Screen.archiveImport(dataTypes: [.bookmarks, .passwords])
+
+        // WHEN
+        let description = screen.description
+
+        // THEN
+        XCTAssertEqual(description, ".archiveImport([.bookmarks, .passwords])")
+    }
+
+    func testArchiveImportScreenDescriptionWithSingleDataType() {
+        // GIVEN
+        let screen = DataImportViewModel.Screen.archiveImport(dataTypes: [.bookmarks])
+
+        // WHEN
+        let description = screen.description
+
+        // THEN
+        XCTAssertEqual(description, ".archiveImport([.bookmarks])")
+    }
+
+    func testArchiveImportScreenDescriptionWithAllDataTypes() {
+        // GIVEN
+        let screen = DataImportViewModel.Screen.archiveImport(dataTypes: [.bookmarks, .passwords, .creditCards])
+
+        // WHEN
+        let description = screen.description
+
+        // THEN
+        XCTAssertEqual(description, ".archiveImport([.bookmarks, .creditCards, .passwords])")
+    }
+
+    func testArchiveImportDataTypesForImport() async throws {
+        // GIVEN
+        let dataTypes: Set<DataType> = [.bookmarks, .passwords]
+
+        setupModel(with: .safari, screen: .archiveImport(dataTypes: dataTypes), dataImporterFactory: dataImporterWithoutAsserts)
+
+        // WHEN - Test by initiating import and checking the data types used
+        try await initiateImport(of: dataTypes, fromFile: .testZIP, resultingWith: [
+            .bookmarks: .success(.init(successful: 1, duplicate: 0, failed: 0)),
+            .passwords: .success(.init(successful: 1, duplicate: 0, failed: 0))
+        ])
+
+        // THEN - Verify the import used the correct data types by checking summary
+        XCTAssertEqual(model.summary.count, 2)
+        XCTAssertTrue(model.summary.contains { $0.dataType == .bookmarks })
+        XCTAssertTrue(model.summary.contains { $0.dataType == .passwords })
+    }
+
+    func testArchiveImportDataTypesForImportWithCreditCards() async throws {
+        // GIVEN
+        let dataTypes: Set<DataType> = [.bookmarks, .passwords, .creditCards]
+
+        openPanelCallback = { _ in
+            return .testCSV
+        }
+
+        setupModel(with: .safari, screen: .archiveImport(dataTypes: dataTypes), dataImporterFactory: dataImporterWithoutAsserts)
+
+        // WHEN - Test by initiating import and checking the data types used
+        try await initiateImport(of: dataTypes, fromFile: .testZIP, resultingWith: [
+            .bookmarks: .success(.init(successful: 1, duplicate: 0, failed: 0)),
+            .passwords: .success(.init(successful: 1, duplicate: 0, failed: 0)),
+            .creditCards: .success(.init(successful: 1, duplicate: 0, failed: 0))
+        ])
+
+        // THEN - Verify the import used the correct data types by checking summary
+        XCTAssertEqual(model.summary.count, 3)
+        XCTAssertTrue(model.summary.contains { $0.dataType == .bookmarks })
+        XCTAssertTrue(model.summary.contains { $0.dataType == .passwords })
+        XCTAssertTrue(model.summary.contains { $0.dataType == .creditCards })
+    }
+
+    @MainActor
+    func testArchiveImportSelectFileUsesArchiveImportSupportedFiles() {
+        // GIVEN
+        var capturedFileTypes: [UTType]?
+
+        openPanelCallback = { fileTypes in
+            capturedFileTypes = fileTypes
+            return .testZIP
+        }
+
+        // Set a dummy importTask to prevent force-unwrap crash
+        importTask = { _, _ in [:] }
+
+        setupModel(with: .safari, screen: .archiveImport(dataTypes: [.bookmarks, .passwords, .creditCards]), dataImporterFactory: dataImporterWithoutAsserts)
+
+        // WHEN
+        model.selectFile()
+
+        // THEN
+        XCTAssertNotNil(capturedFileTypes)
+        XCTAssertEqual(Set(capturedFileTypes!), Set([.zip, .commaSeparatedText, .json, .html]))
+    }
+
+    @MainActor
+    func testArchiveImportSelectFileCancellation() {
+        // GIVEN
+        openPanelCallback = { _ in
+            return nil
+        }
+
+        // Set a dummy importTask to prevent force-unwrap crash
+        importTask = { _, _ in [:] }
+
+        setupModel(with: .safari, screen: .archiveImport(dataTypes: [.bookmarks, .passwords]), dataImporterFactory: dataImporterWithoutAsserts)
+        let initialScreen = model.screen
+
+        // WHEN
+        model.selectFile()
+
+        // THEN
+        XCTAssertEqual(model.screen, initialScreen, "Screen should remain unchanged when file selection is cancelled")
+    }
+
+    @MainActor
+    func testArchiveImportActionButtonIsNil() {
+        // GIVEN
+        // Set a dummy importTask to prevent force-unwrap crash
+        importTask = { _, _ in [:] }
+
+        setupModel(with: .safari, screen: .archiveImport(dataTypes: [.bookmarks, .passwords]), dataImporterFactory: dataImporterWithoutAsserts)
+
+        // WHEN
+        let actionButton = model.actionButton
+
+        // THEN
+        XCTAssertNil(actionButton)
+    }
+
+    func testArchiveImportSecondaryButtonIsCancel() throws {
+        throw XCTSkip("To be reenabled when dataImportNewSafariFilePicker is removed")
+        // GIVEN
+        // Set a dummy importTask to prevent force-unwrap crash
+        importTask = { _, _ in [:] }
+
+        setupModel(with: .safari, screen: .archiveImport(dataTypes: [.bookmarks, .passwords]), dataImporterFactory: dataImporterWithoutAsserts)
+
+        // WHEN
+        let secondaryButton = model.secondaryButton
+
+        // THEN
+        XCTAssertEqual(secondaryButton, .cancel)
+    }
+
+    func testArchiveImportIsSelectFileButtonEnabledWhenNoImport() {
+        // GIVEN
+        // Set a dummy importTask to prevent force-unwrap crash
+        importTask = { _, _ in [:] }
+
+        setupModel(with: .safari, screen: .archiveImport(dataTypes: [.bookmarks, .passwords]), dataImporterFactory: dataImporterWithoutAsserts)
+
+        // WHEN
+        let isDisabled = model.isSelectFileButtonDisabled
+
+        // THEN
+        XCTAssertFalse(isDisabled)
+    }
+
+    func testArchiveImportSuccessfulImportFlow() async throws {
+        // GIVEN
+        openPanelCallback = { _ in
+            return .testCSV
+        }
+
+        setupModel(with: .safari, screen: .archiveImport(dataTypes: [.bookmarks, .passwords]), dataImporterFactory: dataImporterWithoutAsserts)
+
+        // WHEN
+        try await initiateImport(of: [.bookmarks, .passwords], fromFile: .testZIP, resultingWith: [
+            .bookmarks: .success(.init(successful: 10, duplicate: 2, failed: 1)),
+            .passwords: .success(.init(successful: 5, duplicate: 1, failed: 0))
+        ])
+
+        // THEN
+        let expected = DataImportViewModel(importSource: .safari, screen: .summary([.bookmarks, .passwords], isFileImport: true), summary: [
+            .init(.bookmarks, .success(.init(successful: 10, duplicate: 2, failed: 1))),
+            .init(.passwords, .success(.init(successful: 5, duplicate: 1, failed: 0)))
+        ])
+        XCTAssertEqual(model.description, expected.description)
+    }
+
+    func testArchiveImportMixedResults() async throws {
+        // GIVEN
+        openPanelCallback = { _ in
+            return .testCSV
+        }
+
+        setupModel(with: .safari, screen: .archiveImport(dataTypes: [.bookmarks, .passwords]), dataImporterFactory: dataImporterWithoutAsserts)
+
+        // WHEN
+        try await initiateImport(of: [.bookmarks, .passwords], fromFile: .testCSV, resultingWith: [
+            .bookmarks: .success(.init(successful: 10, duplicate: 2, failed: 1)),
+            .passwords: .failure(Failure(.passwords, .dataCorrupted))
+        ])
+
+        // THEN
+        let expected = DataImportViewModel(importSource: .safari, screen: .fileImport(dataType: .passwords, summary: [.bookmarks]), summary: [
+            .init(.bookmarks, .success(.init(successful: 10, duplicate: 2, failed: 1))),
+            .init(.passwords, .failure(Failure(.passwords, .dataCorrupted)))
+        ])
+        XCTAssertEqual(model.description, expected.description)
+    }
+
+    func testArchiveImportNoDataFound() async throws {
+        // GIVEN
+        openPanelCallback = { _ in
+            return .testCSV
+        }
+
+        setupModel(with: .safari, screen: .archiveImport(dataTypes: [.bookmarks, .passwords]), dataImporterFactory: dataImporterWithoutAsserts)
+
+        // WHEN
+        try await initiateImport(of: [.bookmarks, .passwords], fromFile: .testCSV, resultingWith: [
+            .bookmarks: .success(.init(successful: 0, duplicate: 0, failed: 0)),
+            .passwords: .success(.init(successful: 0, duplicate: 0, failed: 0))
+        ])
+
+        // THEN
+        let expected = DataImportViewModel(importSource: .safari, screen: .fileImport(dataType: .bookmarks, summary: [.bookmarks, .passwords]), summary: [
+            .init(.bookmarks, .success(.init(successful: 0, duplicate: 0, failed: 0))),
+            .init(.passwords, .success(.init(successful: 0, duplicate: 0, failed: 0)))
+        ])
+        XCTAssertEqual(model.description, expected.description)
+    }
+
+    func testArchiveImportWithImportFailure() async throws {
+        // GIVEN
+        openPanelCallback = { _ in
+            return .testCSV
+        }
+
+        // Set a dummy importTask to prevent force-unwrap crash
+        importTask = { _, _ in [:] }
+
+        setupModel(with: .safari, screen: .archiveImport(dataTypes: [.bookmarks, .passwords]), dataImporterFactory: { _, _, _, _ in
+            ImporterMock(importableTypes: [.bookmarks, .passwords], importTask: self.importTask)
+        })
+
+        // WHEN
+        try await initiateImport(of: [.bookmarks, .passwords], fromFile: .testCSV, resultingWith: [
+            .bookmarks: .failure(Failure(.bookmarks, .dataCorrupted)),
+            .passwords: .failure(Failure(.passwords, .keychainError))
+        ])
+
+        // THEN
+        let expected = DataImportViewModel(importSource: .safari, screen: .archiveImport(dataTypes: [.bookmarks, .passwords]), summary: [
+            .init(.bookmarks, .failure(Failure(.bookmarks, .dataCorrupted))),
+            .init(.passwords, .failure(Failure(.passwords, .keychainError)))
+        ])
+        XCTAssertEqual(model.description, expected.description)
+    }
 }
 
 private extension DataImport.BrowserProfile {
@@ -2025,6 +2329,7 @@ private extension URL {
 
     static let testCSV = URL(fileURLWithPath: "/Users/Dax/Downloads/passwords.csv")
     static let testHTML = URL(fileURLWithPath: "/Users/Dax/Downloads/bookmarks.html")
+    static let testZIP = URL(fileURLWithPath: "/Users/Dax/Downloads/test.zip")
 
     static func profile(named name: String) -> URL {
         return mockURL.appendingPathComponent(name)

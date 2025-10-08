@@ -344,12 +344,9 @@ extension DataImport.Source {
     var archiveImportSupportedFiles: Set<UTType> {
         switch self {
         case .safari, .safariTechnologyPreview:
-            if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
-                return [.zip, .commaSeparatedText, .json, .html]
-            } else {
-                return []
-            }
+            return [.zip, .commaSeparatedText, .json, .html]
         default:
+            // Not implemented for other browsers yet
             return []
         }
     }

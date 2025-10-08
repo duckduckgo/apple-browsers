@@ -100,7 +100,7 @@ extension DataBrokerProtectionError: LocalizedError {
         case .noActionFound:
             return "No action found"
         case .actionFailed(_, let message):
-            return message
+            return "Action failed: \(message)"
         case .parsingErrorObjectFailed:
             return "Parsing error object failed"
         case .unknown(let message):
@@ -110,9 +110,9 @@ extension DataBrokerProtectionError: LocalizedError {
         case .noOptOutStep:
             return "No opt-out step available"
         case .captchaServiceError(let captchaError):
-            return captchaError.localizedDescription
+            return "Captcha service error: \(captchaError.localizedDescription)"
         case .emailError(let emailError?):
-            return emailError.localizedDescription
+            return "Email service error: \(emailError.localizedDescription)"
         case .emailError(nil):
             return "Email error"
         case .cancelled:

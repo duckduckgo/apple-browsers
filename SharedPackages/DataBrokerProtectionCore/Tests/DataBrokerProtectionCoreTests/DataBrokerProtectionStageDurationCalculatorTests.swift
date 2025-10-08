@@ -41,7 +41,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
             switch failurePixel {
             case .scanFailed(let broker, let brokerVersion, _, _, _, _, _):
-                XCTAssertEqual(broker, "broker")
+                XCTAssertEqual(broker, "broker.com")
                 XCTAssertEqual(brokerVersion, "1.1.1")
             default: XCTFail("The scan failed pixel should be fired")
             }

@@ -73,7 +73,6 @@ public enum DataBrokerProtectionSharedPixels {
         public static let profileQueries = "profile_queries"
         public static let hasError = "has_error"
         public static let brokerURL = "broker_url"
-        public static let dataBrokerURL = "data_broker"
         public static let attemptNumber = "attempt_number"
         public static let linkAgeMs = "link_age_ms"
         public static let status = "status"
@@ -503,48 +502,48 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .userScriptLoadJSFailed(let jsFile, _):
             return [Consts.jsFile: jsFile]
         case .serviceEmailConfirmationLinkClientReceived(let dataBrokerURL, let brokerVersion, let linkAgeMs):
-            return [Consts.dataBrokerURL: dataBrokerURL,
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion,
                     Consts.linkAgeMs: String(linkAgeMs.rounded(.towardZero))]
         case .serviceEmailConfirmationLinkBackendStatusError(let dataBrokerURL, let brokerVersion, let status, let errorCode):
-            return [Consts.dataBrokerURL: dataBrokerURL,
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion,
                     Consts.status: status,
                     Consts.errorCode: errorCode ?? "unknown"]
         case .optOutStageSubmitAwaitingEmailConfirmation(let dataBrokerURL, let brokerVersion, let attemptId, let actionId, let duration, let tries):
-            return [Consts.dataBrokerURL: dataBrokerURL,
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion,
                     Consts.attemptIdParamKey: attemptId.uuidString,
                     Consts.actionIDKey: actionId,
                     Consts.durationParamKey: String(duration.rounded(.towardZero)),
                     Consts.triesKey: String(tries)]
         case .serviceEmailConfirmationAttemptStart(let dataBrokerURL, let brokerVersion, let attemptNumber, let attemptId, let actionId):
-            return [Consts.dataBrokerURL: dataBrokerURL,
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion,
                     Consts.attemptNumber: String(attemptNumber),
                     Consts.attemptIdParamKey: attemptId.uuidString,
                     Consts.actionIDKey: actionId ?? "unknown"]
         case .serviceEmailConfirmationAttemptSuccess(let dataBrokerURL, let brokerVersion, let attemptNumber, let duration, let attemptId, let actionId):
-            return [Consts.dataBrokerURL: dataBrokerURL,
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion,
                     Consts.attemptNumber: String(attemptNumber),
                     Consts.durationParamKey: String(duration.rounded(.towardZero)),
                     Consts.attemptIdParamKey: attemptId.uuidString,
                     Consts.actionIDKey: actionId ?? "unknown"]
         case .serviceEmailConfirmationAttemptFailure(let dataBrokerURL, let brokerVersion, let attemptNumber, let duration, let attemptId, let actionId):
-            return [Consts.dataBrokerURL: dataBrokerURL,
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion,
                     Consts.attemptNumber: String(attemptNumber),
                     Consts.durationParamKey: String(duration.rounded(.towardZero)),
                     Consts.attemptIdParamKey: attemptId.uuidString,
                     Consts.actionIDKey: actionId ?? "unknown"]
         case .serviceEmailConfirmationMaxRetriesExceeded(let dataBrokerURL, let brokerVersion, let attemptId, let actionId):
-            return [Consts.dataBrokerURL: dataBrokerURL,
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion,
                     Consts.attemptIdParamKey: attemptId.uuidString,
                     Consts.actionIDKey: actionId ?? "unknown"]
         case .serviceEmailConfirmationJobSuccess(let dataBrokerURL, let brokerVersion):
-            return [Consts.dataBrokerURL: dataBrokerURL,
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion]
         case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt):
             var params = [Consts.dataBrokerJsonFileKey: dataBrokerFileName]

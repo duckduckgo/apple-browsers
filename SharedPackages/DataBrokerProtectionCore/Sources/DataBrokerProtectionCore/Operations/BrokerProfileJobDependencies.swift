@@ -20,6 +20,7 @@ import Foundation
 import Common
 import os.log
 import BrowserServicesKit
+import PixelKit
 
 public protocol BrokerProfileJobDependencyProviding {
     var database: DataBrokerProtectionRepository { get }
@@ -35,6 +36,7 @@ public protocol BrokerProfileJobDependencyProviding {
     var vpnBypassService: VPNBypassFeatureProvider? { get }
     var jobSortPredicate: BrokerJobDataComparators.Predicate { get }
     var featureFlagger: DBPFeatureFlagging { get }
+    var wideEvent: WideEventManaging? { get }
 
     func createScanRunner(profileQuery: BrokerProfileQueryData,
                           stageDurationCalculator: StageDurationCalculator,
@@ -59,6 +61,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public let vpnBypassService: VPNBypassFeatureProvider?
     public let jobSortPredicate: BrokerJobDataComparators.Predicate
     public let featureFlagger: DBPFeatureFlagging
+    public let wideEvent: WideEventManaging?
 
     public init(database: any DataBrokerProtectionRepository,
                 contentScopeProperties: ContentScopeProperties,
@@ -72,7 +75,8 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
                 vpnBypassService: VPNBypassFeatureProvider? = nil,
-                jobSortPredicate: @escaping BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
+                jobSortPredicate: @escaping BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default,
+                wideEvent: WideEventManaging? = nil
     ) {
         self.database = database
         self.contentScopeProperties = contentScopeProperties
@@ -87,6 +91,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         self.vpnBypassService = vpnBypassService
         self.jobSortPredicate = jobSortPredicate
         self.featureFlagger = featureFlagger
+        self.wideEvent = wideEvent
     }
 
     public func createScanRunner(profileQuery: BrokerProfileQueryData,

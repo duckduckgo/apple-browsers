@@ -109,4 +109,22 @@ public enum WideEventParameter {
         static let accountActivationLatency = "feature.data.ext.account_activation_latency_ms_bucketed"
     }
 
+    public enum PIR {
+        public enum OptOutSubmissionFeature {
+            static let dataBrokerURL = "feature.data.ext.data_broker_url"
+            static let dataBrokerVersion = "feature.data.ext.data_broker_version"
+            static let submissionLatency = "feature.data.ext.submission_latency_ms"
+
+            static func stagePrefix(index: Int) -> String {
+                return "feature.data.ext.stages.\(index)"
+            }
+        }
+
+        public enum OptOutConfirmationFeature {
+            static let dataBrokerURL = "feature.data.ext.data_broker_url"
+            static let dataBrokerVersion = "feature.data.ext.data_broker_version"
+            static let confirmationLatency = "feature.data.ext.confirmation_latency_ms"
+        }
+    }
+
 }

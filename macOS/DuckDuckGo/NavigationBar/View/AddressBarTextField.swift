@@ -56,7 +56,7 @@ final class AddressBarTextField: NSTextField {
         tabCollectionViewModel?.isBurner ?? false
     }
 
-    private var themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager
+    private var themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
 
     private var suggestionResultCancellable: AnyCancellable?
     private var selectedSuggestionViewModelCancellable: AnyCancellable?

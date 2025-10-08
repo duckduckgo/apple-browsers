@@ -171,10 +171,8 @@ final class NavigationActionBarView: UIView {
     }
     
     private func setupNewLineButton() {
-        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
-        let returnImage = UIImage(systemName: "return", withConfiguration: config)
         newLineButton.isShadowHidden = !isFloating
-        newLineButton.setIcon(returnImage)
+        newLineButton.setIcon(DesignSystemImages.Glyphs.Size24.enter)
         newLineButton.setColors(
             foreground: UIColor(designSystemColor: .icons),
             background: UIColor(designSystemColor: .surfaceTertiary),

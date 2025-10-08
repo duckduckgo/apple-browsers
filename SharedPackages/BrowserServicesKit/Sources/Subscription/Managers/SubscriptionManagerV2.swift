@@ -21,6 +21,7 @@ import Combine
 import Common
 import os.log
 import Networking
+import PixelKit
 
 public enum SubscriptionManagerError: DDGError {
     /// The app has no `TokenContainer`
@@ -215,6 +216,8 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     private let userDefaults: UserDefaults
     private let canPurchaseSubject = PassthroughSubject<Bool, Never>()
     private var cancellables = Set<AnyCancellable>()
+    private let wideEvent: WideEventManaging?
+    private let isAuthV2WideEventEnabled: () -> Bool
 
     public init(storePurchaseManager: StorePurchaseManagerV2? = nil,
                 oAuthClient: any OAuthClient,
@@ -225,7 +228,9 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 tokenRecoveryHandler: TokenRecoveryHandler? = nil,
                 initForPurchase: Bool = true,
                 legacyAccountStorage: AccountKeychainStorage? = nil,
-                isInternalUserEnabled: @escaping () -> Bool = { false }) {
+                isInternalUserEnabled: @escaping () -> Bool = { false },
+                wideEvent: WideEventManaging? = nil,
+                isAuthV2WideEventEnabled: @escaping () -> Bool = { false }) {
         self._storePurchaseManager = storePurchaseManager
         self.oAuthClient = oAuthClient
         self.userDefaults = userDefaults
@@ -235,6 +240,8 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         self.tokenRecoveryHandler = tokenRecoveryHandler
         self.isInternalUserEnabled = isInternalUserEnabled
         self.legacyAccountStorage = legacyAccountStorage
+        self.wideEvent = wideEvent
+        self.isAuthV2WideEventEnabled = isAuthV2WideEventEnabled
         if initForPurchase {
             switch currentEnvironment.purchasePlatform {
             case .appStore:
@@ -551,19 +558,51 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     public func adopt(accessToken: String, refreshToken: String) async throws {
         Logger.subscription.log("Adopting and decoding token container")
-        let tokenContainer = try await oAuthClient.decode(accessToken: accessToken, refreshToken: refreshToken)
+        let tokenContainer = try await oAuthClient.decode(accessToken: accessToken, refreshToken: refreshToken, refreshID: nil)
         try await adopt(tokenContainer: tokenContainer)
     }
 
     public func adopt(tokenContainer: TokenContainer) async throws {
-        Logger.subscription.log("Adopting token container")
-        try oAuthClient.adopt(tokenContainer: tokenContainer)
-        // It’s important to force refresh the token to immediately branch from the one received.
-        // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
-        let refreshedTokenContainer = try await oAuthClient.getTokens(policy: .localForceRefresh)
-        updateCachedIsUserAuthenticated(true)
-        updateCachedUserEntitlements(refreshedTokenContainer.decodedAccessToken.subscriptionEntitlements)
+        let adoptionID = UUID().uuidString
+
+        if isAuthV2WideEventEnabled(), let wideEvent {
+            let globalData = WideEventGlobalData(id: adoptionID)
+            let data = AuthV2TokenAdoptionWideEventData(globalData: globalData)
+            data.failingStep = .adoptingToken
+            wideEvent.startFlow(data)
         }
+
+        do {
+            Logger.subscription.log("Adopting token container")
+
+            try oAuthClient.adopt(tokenContainer: tokenContainer)
+
+            if isAuthV2WideEventEnabled(), let wideEvent {
+                wideEvent.updateFlow(globalID: adoptionID) { (event: inout AuthV2TokenAdoptionWideEventData) in
+                    event.failingStep = .refreshingToken
+                }
+            }
+
+            // It’s important to force refresh the token to immediately branch from the one received.
+            // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
+            let refreshedTokenContainer = try await oAuthClient.getTokens(policy: .localForceRefresh)
+
+            updateCachedIsUserAuthenticated(true)
+            updateCachedUserEntitlements(refreshedTokenContainer.decodedAccessToken.subscriptionEntitlements)
+
+            if isAuthV2WideEventEnabled(), let wideEvent, let data = wideEvent.getFlowData(AuthV2TokenAdoptionWideEventData.self, globalID: adoptionID) {
+                data.failingStep = nil
+                wideEvent.completeFlow(data, status: .success(reason: nil), onComplete: { _, _ in })
+            }
+        } catch {
+            if isAuthV2WideEventEnabled(), let wideEvent, let data = wideEvent.getFlowData(AuthV2TokenAdoptionWideEventData.self, globalID: adoptionID) {
+                data.errorData = WideEventErrorData(error: error)
+                wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            }
+
+            throw error
+        }
+    }
 
     public func removeLocalAccount() throws {
         Logger.subscription.log("Removing local account")

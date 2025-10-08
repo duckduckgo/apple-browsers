@@ -111,7 +111,7 @@ class MainMenuTests: XCTestCase {
         dockCustomizer.addToDock()
 
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
@@ -138,11 +138,17 @@ class MainMenuTests: XCTestCase {
         let dockCustomizer = DockCustomizerMock()
 
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
-            faviconManagement: FaviconManagerMock(),
+            historyCoordinator: HistoryCoordinatingMock(),
+            faviconManager: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
-            aiChatMenuConfig: DummyAIChatConfig()
+            aiChatMenuConfig: DummyAIChatConfig(),
+            internalUserDecider: MockInternalUserDecider(),
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            isFireWindowDefault: false,
+            configurationURLProvider: MockCustomURLProvider()
         )
 
         sut.update()
@@ -159,11 +165,17 @@ class MainMenuTests: XCTestCase {
         dockCustomizer.dockStatus = true
 
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
-            faviconManagement: FaviconManagerMock(),
+            historyCoordinator: HistoryCoordinatingMock(),
+            faviconManager: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
-            aiChatMenuConfig: DummyAIChatConfig()
+            aiChatMenuConfig: DummyAIChatConfig(),
+            internalUserDecider: MockInternalUserDecider(),
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            isFireWindowDefault: false,
+            configurationURLProvider: MockCustomURLProvider()
         )
 
         sut.update()
@@ -183,7 +195,7 @@ class MainMenuTests: XCTestCase {
         defaultBrowserProvider.isDefault = true
 
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
@@ -210,7 +222,7 @@ class MainMenuTests: XCTestCase {
         defaultBrowserProvider.isDefault = false
 
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
@@ -236,7 +248,7 @@ class MainMenuTests: XCTestCase {
     func testWhenBookmarksMenuIsInitialized_ThenSecondItemIsBookmarkAllTabs() throws {
         // GIVEN
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
@@ -264,7 +276,7 @@ class MainMenuTests: XCTestCase {
         // GIVEN
         let aiChatConfig = DummyAIChatConfig()
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
@@ -294,7 +306,7 @@ class MainMenuTests: XCTestCase {
         aiChatConfig.shouldDisplayAddressBarShortcut = true
 
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
@@ -366,7 +378,7 @@ class MainMenuTests: XCTestCase {
         let isFireWindowDefault = false
 
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
@@ -387,7 +399,7 @@ class MainMenuTests: XCTestCase {
     @MainActor
     func testupdateMenuItemsPositionForFireWindowDefault_worksAsExpected() throws {
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
@@ -409,25 +421,6 @@ class MainMenuTests: XCTestCase {
         XCTAssertEqual(fileMenu.submenu?.item(at: 2)?.title, UserText.newWindowMenuItem)
         XCTAssertEqual(fileMenu.submenu?.item(at: 1)?.title, UserText.newBurnerWindowMenuItem)
     }
-}
-
-private class DummyFeatureFlagger: FeatureFlagger {
-    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
-    var localOverrides: FeatureFlagLocalOverriding?
-
-    func isFeatureOn<Flag: FeatureFlagDescribing>(for: Flag, allowOverride: Bool) -> Bool {
-        false
-    }
-
-    func getCohortIfEnabled(_ subfeature: any PrivacySubfeature) -> CohortID? {
-        return nil
-    }
-
-    func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
-        return nil
-    }
-
-    var allActiveExperiments: Experiments = [:]
 }
 
 class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {

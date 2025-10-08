@@ -96,6 +96,9 @@ public enum WideEventStatus: Codable, Equatable, CustomStringConvertible {
 // MARK: - WideEventGlobalData
 
 public struct WideEventGlobalData: Codable {
+    public static let minimumSampleRate: Float = 0.0
+    public static let maximumSampleRate: Float = 1.0
+
     /// Used for storing event data locally; not included in the event payload.
     public let id: String
 
@@ -113,15 +116,15 @@ public struct WideEventGlobalData: Codable {
         self.init(sampleRate: 1.0)
     }
 
-    public init(id: String = UUID().uuidString, platform: String = DevicePlatform.currentPlatform.rawValue, sampleRate: Float) {
-        if sampleRate > 1.0 || sampleRate < 0.0 {
+    public init(id: String = UUID().uuidString, platform: String = DevicePlatform.currentPlatform.rawValue, sampleRate: Float = Self.maximumSampleRate) {
+        if sampleRate > Self.maximumSampleRate || sampleRate < Self.minimumSampleRate {
             assertionFailure("Sample rate must be between 0-1")
         }
 
         self.id = id
         self.platform = platform
         self.type = "app" // Don't allow type to be overridden
-        self.sampleRate = sampleRate.clamped(to: 0...1)
+        self.sampleRate = sampleRate.clamped(to: Self.minimumSampleRate...Self.maximumSampleRate)
     }
 }
 
@@ -267,7 +270,7 @@ extension WideEventErrorData: WideEventParameterProviding {
 }
 
 extension WideEvent.MeasuredInterval {
-    var durationMilliseconds: Double? {
+    public var durationMilliseconds: Double? {
         guard let start, let end else { return nil }
         return max(end.timeIntervalSince(start) * 1000, 0)
     }

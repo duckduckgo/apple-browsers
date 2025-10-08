@@ -97,15 +97,15 @@ final class MainWindow: NSWindow {
 
     /// Used to observe `childWindows` property which is non-KVO-compliant by-default
     override func addChildWindow(_ childWin: NSWindow, ordered place: NSWindow.OrderingMode) {
-        willChangeValue(forKey: "childWindows")
+        willChangeValue(for: \.childWindows)
         super.addChildWindow(childWin, ordered: place)
-        didChangeValue(forKey: "childWindows")
+        didChangeValue(for: \.childWindows)
     }
     /// Used to observe `childWindows` property which is non-KVO-compliant by-default
     override func removeChildWindow(_ childWin: NSWindow) {
-        willChangeValue(forKey: "childWindows")
+        willChangeValue(for: \.childWindows)
         super.removeChildWindow(childWin)
-        didChangeValue(forKey: "childWindows")
+        didChangeValue(for: \.childWindows)
     }
 
     /// Makes custom Tab Bar visible for VoiceOver (Accessibility Inspector) as the direct window‘s child

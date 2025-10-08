@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Cocoa
 import Common
 import PixelKit
@@ -28,9 +29,11 @@ final class FireCoordinator {
     private(set) lazy var fireViewModel: FireViewModel = FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider)
     private(set) var firePopover: FirePopover?
     private let tld: TLD
+    private let featureFlagger: FeatureFlagger
 
-    init(tld: TLD) {
+    init(tld: TLD, featureFlagger: FeatureFlagger) {
         self.tld = tld
+        self.featureFlagger = featureFlagger
     }
 
     func fireButtonAction() {
@@ -52,7 +55,19 @@ final class FireCoordinator {
             return
         }
 
-        if waitForOpening {
+        // Present dialog gated by feature flag; fallback to legacy popover
+        if featureFlagger.isFeatureOn(.fireDialog) {
+            let vm = FireDialogViewModel(
+                fireViewModel: self.fireViewModel,
+                tabCollectionViewModel: mainViewController.tabCollectionViewModel,
+                historyCoordinating: Application.appDelegate.historyCoordinator,
+                fireproofDomains: Application.appDelegate.fireproofDomains,
+                faviconManagement: Application.appDelegate.faviconManager,
+                tld: Application.appDelegate.tld,
+                onboardingContextualDialogsManager: Application.appDelegate.onboardingContextualDialogsManager
+            )
+            FireDialogView(viewModel: vm).show(in: burningWindow)
+        } else if waitForOpening {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1/3) {
                 self.showFirePopover(relativeTo: mainViewController.tabBarViewController.fireButton,
                                 tabCollectionViewModel: mainViewController.tabCollectionViewModel)

@@ -127,6 +127,18 @@ public enum RemoteMessageModelType: Codable, Equatable {
     case cardsList(titleText: String, items: [ListItem], primaryActionText: String, primaryAction: RemoteAction)
 }
 
+extension RemoteMessageModelType {
+
+    var listItems: [ListItem]? {
+        switch self {
+        case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
+            return nil
+        case let .cardsList(_, items, _, _):
+            return items
+        }
+    }
+}
+
 public extension RemoteMessageModelType {
 
     struct ListItem: Codable, Equatable {

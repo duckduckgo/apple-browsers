@@ -48,26 +48,31 @@ public struct RemoteMessagingConfigMatcher {
     }
 
     func evaluate(remoteConfig: RemoteConfigModel) -> RemoteMessageModel? {
-        let rules = remoteConfig.rules
         let filteredMessages = remoteConfig.messages.filter { !dismissedMessageIds.contains($0.id) }
+        let rulesEvaluator = rulesEvaluator(remoteRules: remoteConfig.rules)
 
-        for message in filteredMessages {
-            if message.matchingRules.isEmpty && message.exclusionRules.isEmpty {
-                return message
+        return filteredMessages
+            .compactMap { message in
+                // Skip message if it fails message-level targeting rules
+                guard rulesEvaluator(message.id, message.matchingRules, message.exclusionRules) else { return nil }
+
+                // Messages without items pass as rules for the message have been evaluated and not discarded in the process.
+                guard let items = message.content?.listItems else { return message }
+
+                // Filter items by their individual targeting rules
+                let filteredItems = items.filter { item in
+                    rulesEvaluator(item.id, item.matchingRules, item.exclusionRules)
+                }
+                // Skip message if no items remain after filtering.
+                guard !filteredItems.isEmpty else { return nil }
+
+                // If items have been filtered return new content with items otherwise return the same message.
+                return items != filteredItems ? message.withFilteredItems(filteredItems) : message
             }
-
-            let matchingResult = evaluateMatchingRules(message.matchingRules, messageID: message.id, fromRules: rules)
-            let exclusionResult = evaluateExclusionRules(message.exclusionRules, messageID: message.id, fromRules: rules)
-
-            if matchingResult == .match && exclusionResult == .fail {
-                return message
-            }
-        }
-
-        return nil
+            .first
     }
 
-    func evaluateMatchingRules(_ matchingRules: [Int], messageID: String, fromRules rules: [RemoteConfigRule]) -> EvaluationResult {
+    func evaluateMatchingRules(_ matchingRules: [Int], entityID: String, fromRules rules: [RemoteConfigRule]) -> EvaluationResult {
         var result: EvaluationResult = .match
 
         for rule in matchingRules {
@@ -76,10 +81,10 @@ public struct RemoteMessagingConfigMatcher {
             }
 
             if let percentile = matchingRule.targetPercentile, let messagePercentile = percentile.before {
-                let userPercentile = percentileStore.percentile(forMessageId: messageID)
+                let userPercentile = percentileStore.percentile(forEntityId: entityID)
 
                 if userPercentile > messagePercentile {
-                    Logger.remoteMessaging.debug("Matching rule percentile check failed for message with ID \(messageID, privacy: .public)")
+                    Logger.remoteMessaging.debug("Matching rule percentile check failed for message with ID \(entityID, privacy: .public)")
                     return .fail
                 }
             }
@@ -101,7 +106,7 @@ public struct RemoteMessagingConfigMatcher {
         return result
     }
 
-    func evaluateExclusionRules(_ exclusionRules: [Int], messageID: String, fromRules rules: [RemoteConfigRule]) -> EvaluationResult {
+    func evaluateExclusionRules(_ exclusionRules: [Int], entityID: String, fromRules rules: [RemoteConfigRule]) -> EvaluationResult {
         var result: EvaluationResult = .fail
 
         for rule in exclusionRules {
@@ -110,10 +115,10 @@ public struct RemoteMessagingConfigMatcher {
             }
 
             if let percentile = matchingRule.targetPercentile, let messagePercentile = percentile.before {
-                let userPercentile = percentileStore.percentile(forMessageId: messageID)
+                let userPercentile = percentileStore.percentile(forEntityId: entityID)
 
                 if userPercentile > messagePercentile {
-                    Logger.remoteMessaging.debug("Exclusion rule percentile check failed for message with ID \(messageID, privacy: .public)")
+                    Logger.remoteMessaging.debug("Exclusion rule percentile check failed for message with ID \(entityID, privacy: .public)")
                     return .fail
                 }
             }
@@ -148,4 +153,49 @@ public struct RemoteMessagingConfigMatcher {
 
         return .nextMessage
     }
+}
+
+private extension RemoteMessagingConfigMatcher {
+
+    func rulesEvaluator(remoteRules: [RemoteConfigRule]) -> (String, [Int], [Int]) -> Bool {
+        return { id, matchingRules, exclusionRules in
+            // Handle empty rules case (auto-match like messages do)
+            if matchingRules.isEmpty && exclusionRules.isEmpty {
+                return true
+            }
+
+            let matchingResult = self.evaluateMatchingRules(matchingRules, entityID: id, fromRules: remoteRules)
+            let exclusionResult = self.evaluateExclusionRules(exclusionRules, entityID: id, fromRules: remoteRules)
+            return matchingResult == .match && exclusionResult == .fail
+        }
+    }
+
+}
+
+private extension RemoteMessageModel {
+
+    func withFilteredItems(_ items: [RemoteMessageModelType.ListItem]) -> RemoteMessageModel {
+        RemoteMessageModel(
+            id: self.id,
+            surfaces: self.surfaces,
+            content: content?.withFilteredItems(items),
+            matchingRules: self.matchingRules,
+            exclusionRules: self.exclusionRules,
+            isMetricsEnabled: self.isMetricsEnabled
+        )
+    }
+
+}
+
+private extension RemoteMessageModelType {
+
+    func withFilteredItems(_ items: [ListItem]) -> Self {
+        switch self {
+        case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
+            return self
+        case let .cardsList(titleText, _, primaryActionText, primaryAction):
+            return .cardsList(titleText: titleText, items: items, primaryActionText: primaryActionText, primaryAction: primaryAction)
+        }
+    }
+
 }

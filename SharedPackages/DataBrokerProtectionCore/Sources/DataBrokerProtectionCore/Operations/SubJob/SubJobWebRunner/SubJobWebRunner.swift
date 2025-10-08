@@ -367,7 +367,7 @@ public extension SubJobWebRunning {
     }
 
     private func fireScanStagePixel(for action: Action) {
-        pixelHandler.fire(.scanStage(dataBroker: context.dataBroker.name,
+        pixelHandler.fire(.scanStage(dataBroker: context.dataBroker.url,
                                      dataBrokerVersion: context.dataBroker.version,
                                      tries: stageCalculator.tries,
                                      actionId: action.id,

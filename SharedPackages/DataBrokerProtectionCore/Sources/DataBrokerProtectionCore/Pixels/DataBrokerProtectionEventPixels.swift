@@ -263,9 +263,8 @@ extension DataBrokerProtectionEventPixels {
     func fireWeeklyChildBrokerOrphanedOptOutsPixels(for data: [BrokerProfileQueryData]) {
         let brokerURLsToQueryData = Dictionary(grouping: data, by: { $0.dataBroker.url })
         let childBrokerURLsToOrphanedProfilesCount = childBrokerURLsToOrphanedProfilesWeeklyCount(for: data)
-        for (key, value) in childBrokerURLsToOrphanedProfilesCount {
-            guard let childQueryData = brokerURLsToQueryData[key],
-                  let childBrokerName = childQueryData.first?.dataBroker.name,
+        for (childBrokerURL, value) in childBrokerURLsToOrphanedProfilesCount {
+            guard let childQueryData = brokerURLsToQueryData[childBrokerURL],
                   let parentURL = childQueryData.first?.dataBroker.parent,
                   let parentQueryData = brokerURLsToQueryData[parentURL] else {
                 continue
@@ -278,7 +277,7 @@ extension DataBrokerProtectionEventPixels {
             if recordsCountDifference <= 0 && value == 0 {
                 continue
             }
-            handler.fire(.weeklyChildBrokerOrphanedOptOuts(dataBrokerName: childBrokerName,
+            handler.fire(.weeklyChildBrokerOrphanedOptOuts(dataBrokerURL: childBrokerURL,
                                                            childParentRecordDifference: recordsCountDifference,
                                                            calculatedOrphanedRecords: value))
         }

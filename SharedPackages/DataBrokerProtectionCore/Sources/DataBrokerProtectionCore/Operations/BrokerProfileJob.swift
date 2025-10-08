@@ -29,7 +29,7 @@ public enum JobType {
 }
 
 public protocol BrokerProfileJobErrorDelegate: AnyObject {
-    func dataBrokerOperationDidError(_ error: Error, withBrokerName brokerName: String?, version: String?)
+    func dataBrokerOperationDidError(_ error: Error, withBrokerURL brokerURL: String?, version: String?)
 }
 
 public class BrokerProfileJob: Operation, @unchecked Sendable {
@@ -205,7 +205,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                 Logger.dataBrokerProtection.error("Error: \(error.localizedDescription, privacy: .public)")
 
                 errorDelegate?.dataBrokerOperationDidError(error,
-                                                           withBrokerName: brokerProfileQueriesData.first?.dataBroker.name,
+                                                           withBrokerURL: brokerProfileQueriesData.first?.dataBroker.url,
                                                            version: brokerProfileQueriesData.first?.dataBroker.version)
             }
         }

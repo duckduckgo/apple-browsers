@@ -485,7 +485,7 @@ private extension DataBrokerProtectionStatsPixels {
     }
 
     func pixel(for dataBrokerStat: CustomIndividualDataBrokerStat) -> DataBrokerProtectionSharedPixels {
-        .customDataBrokerStatsOptoutSubmit(dataBrokerName: dataBrokerStat.dataBrokerName,
+        .customDataBrokerStatsOptoutSubmit(dataBrokerURL: dataBrokerStat.dataBrokerURL,
                                            optOutSubmitSuccessRate: dataBrokerStat.optoutSubmitSuccessRate)
     }
 
@@ -540,20 +540,20 @@ extension DataBrokerProtectionStatsPixels {
             return hasEnoughTimePassedToFirePixel && !optOutJob.twentyOneDaysConfirmationPixelFired
         }
 
-        let brokerIDsToNames = brokerProfileQueryData.reduce(into: [Int64: String]()) {
+        let brokerIDsToURLs = brokerProfileQueryData.reduce(into: [Int64: String]()) {
             // Really the ID should never be zero
-            $0[$1.dataBroker.id ?? -1] = $1.dataBroker.name
+            $0[$1.dataBroker.id ?? -1] = $1.dataBroker.url
         }
 
         // Now fire the pixels and update the DB
         for optOutJob in sevenDayOldPlusOptOutsThatHaveNotFiredPixel {
-            let brokerName = brokerIDsToNames[optOutJob.brokerId] ?? ""
+            let brokerURL = brokerIDsToURLs[optOutJob.brokerId] ?? ""
             let isOptOutConfirmed = optOutJob.extractedProfile.removedDate != nil
 
             if isOptOutConfirmed {
-                handler.fire(.optOutJobAt7DaysConfirmed(dataBroker: brokerName))
+                handler.fire(.optOutJobAt7DaysConfirmed(dataBroker: brokerURL))
             } else {
-                handler.fire(.optOutJobAt7DaysUnconfirmed(dataBroker: brokerName))
+                handler.fire(.optOutJobAt7DaysUnconfirmed(dataBroker: brokerURL))
             }
 
             guard let extractedProfileID = optOutJob.extractedProfile.id else { continue }
@@ -564,13 +564,13 @@ extension DataBrokerProtectionStatsPixels {
         }
 
         for optOutJob in fourteenDayOldPlusOptOutsThatHaveNotFiredPixel {
-            let brokerName = brokerIDsToNames[optOutJob.brokerId] ?? ""
+            let brokerURL = brokerIDsToURLs[optOutJob.brokerId] ?? ""
             let isOptOutConfirmed = optOutJob.extractedProfile.removedDate != nil
 
             if isOptOutConfirmed {
-                handler.fire(.optOutJobAt14DaysConfirmed(dataBroker: brokerName))
+                handler.fire(.optOutJobAt14DaysConfirmed(dataBroker: brokerURL))
             } else {
-                handler.fire(.optOutJobAt14DaysUnconfirmed(dataBroker: brokerName))
+                handler.fire(.optOutJobAt14DaysUnconfirmed(dataBroker: brokerURL))
             }
 
             guard let extractedProfileID = optOutJob.extractedProfile.id else { continue }
@@ -581,13 +581,13 @@ extension DataBrokerProtectionStatsPixels {
         }
 
         for optOutJob in twentyOneDayOldPlusOptOutsThatHaveNotFiredPixel {
-            let brokerName = brokerIDsToNames[optOutJob.brokerId] ?? ""
+            let brokerURL = brokerIDsToURLs[optOutJob.brokerId] ?? ""
             let isOptOutConfirmed = optOutJob.extractedProfile.removedDate != nil
 
             if isOptOutConfirmed {
-                handler.fire(.optOutJobAt21DaysConfirmed(dataBroker: brokerName))
+                handler.fire(.optOutJobAt21DaysConfirmed(dataBroker: brokerURL))
             } else {
-                handler.fire(.optOutJobAt21DaysUnconfirmed(dataBroker: brokerName))
+                handler.fire(.optOutJobAt21DaysUnconfirmed(dataBroker: brokerURL))
             }
 
             guard let extractedProfileID = optOutJob.extractedProfile.id else { continue }

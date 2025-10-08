@@ -26,7 +26,7 @@ public struct CustomOptOutStats: Equatable {
 
 /// Encapsulates data broker stats
 struct CustomIndividualDataBrokerStat: Equatable {
-    let dataBrokerName: String
+    let dataBrokerURL: String
     let optoutSubmitSuccessRate: Double
 }
 
@@ -87,9 +87,9 @@ public struct DefaultDataBrokerProtectionCustomOptOutStatsProvider: DataBrokerPr
             let optOutSuccessRate = optOutJobsCount > 0 ? Double(requestsCountSinceStartDate) / Double(optOutJobsCount) : 0
             let roundedOptOutSuccessRate = (optOutSuccessRate * 100).rounded() / 100
 
-            let dataBrokerName = groupedByBroker[dataBroker]?.first?.dataBroker.name ?? ""
+            let dataBrokerURL = groupedByBroker[dataBroker]?.first?.dataBroker.url ?? ""
 
-            let customIndividualDataBrokerStat = CustomIndividualDataBrokerStat(dataBrokerName: dataBrokerName,
+            let customIndividualDataBrokerStat = CustomIndividualDataBrokerStat(dataBrokerURL: dataBrokerURL,
                                                                                 optoutSubmitSuccessRate: roundedOptOutSuccessRate)
 
             customIndividualDataBrokerStats.append(customIndividualDataBrokerStat)

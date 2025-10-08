@@ -43,10 +43,7 @@ public enum ErrorCategory: Equatable {
 public enum DataBrokerProtectionSharedPixels {
 
     public struct Consts {
-
-        @available(*, deprecated, message: "Use dataBrokerURL instead")
         public static let dataBrokerParamKey = "data_broker"
-
         public static let dataBrokerVersionKey = "broker_version"
         public static let appVersionParamKey = "app_version"
         public static let attemptIdParamKey = "attempt_id"
@@ -76,7 +73,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let profileQueries = "profile_queries"
         public static let hasError = "has_error"
         public static let brokerURL = "broker_url"
-        public static let dataBrokerURL = "data_broker_url"
+        public static let dataBrokerURL = "data_broker"
         public static let attemptNumber = "attempt_number"
         public static let linkAgeMs = "link_age_ms"
         public static let status = "status"
@@ -196,9 +193,9 @@ public enum DataBrokerProtectionSharedPixels {
     case dataBrokerMetricsMonthlyStats(dataBrokerURL: String, profilesFound: Int, optOutsInProgress: Int, successfulOptOuts: Int, failedOptOuts: Int, durationOfFirstOptOut: Int, numberOfNewRecordsFound: Int, numberOfReappereances: Int)
 
     // Custom stats
-    case customDataBrokerStatsOptoutSubmit(dataBrokerName: String, optOutSubmitSuccessRate: Double)
+    case customDataBrokerStatsOptoutSubmit(dataBrokerURL: String, optOutSubmitSuccessRate: Double)
     case customGlobalStatsOptoutSubmit(optOutSubmitSuccessRate: Double)
-    case weeklyChildBrokerOrphanedOptOuts(dataBrokerName: String, childParentRecordDifference: Int, calculatedOrphanedRecords: Int)
+    case weeklyChildBrokerOrphanedOptOuts(dataBrokerURL: String, childParentRecordDifference: Int, calculatedOrphanedRecords: Int)
 
     // UserScript
     case userScriptLoadJSFailed(jsFile: String, error: Error)
@@ -494,13 +491,13 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                            Consts.durationOfFirstOptOut: String(durationOfFirstOptOut),
                            Consts.numberOfNewRecordsFound: String(numberOfNewRecordsFound),
                            Consts.numberOfReappereances: String(numberOfReappereances)]
-        case .customDataBrokerStatsOptoutSubmit(let dataBrokerName, let optOutSubmitSuccessRate):
-            return [Consts.dataBrokerParamKey: dataBrokerName,
+        case .customDataBrokerStatsOptoutSubmit(let dataBrokerURL, let optOutSubmitSuccessRate):
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
         case .customGlobalStatsOptoutSubmit(let optOutSubmitSuccessRate):
             return [Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
-        case .weeklyChildBrokerOrphanedOptOuts(let dataBrokerName, let childParentRecordDifference, let calculatedOrphanedRecords):
-            return [Consts.dataBrokerParamKey: dataBrokerName,
+        case .weeklyChildBrokerOrphanedOptOuts(let dataBrokerURL, let childParentRecordDifference, let calculatedOrphanedRecords):
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.childParentRecordDifference: String(childParentRecordDifference),
                     Consts.calculatedOrphanedRecords: String(calculatedOrphanedRecords)]
         case .userScriptLoadJSFailed(let jsFile, _):

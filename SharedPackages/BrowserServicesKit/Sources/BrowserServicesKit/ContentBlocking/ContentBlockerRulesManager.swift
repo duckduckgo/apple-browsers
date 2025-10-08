@@ -123,7 +123,7 @@ public class ContentBlockerRulesManager: CompiledRuleListsSource {
         updatesSubject.eraseToAnyPublisher()
     }
     public var onCriticalError: (() -> Void)?
-    public var onPreCompilationCheck: (() -> Bool)?
+    public var onPreCompilationCheck: (() -> Bool) = { return true }
 
     private let errorReporting: EventMapping<ContentBlockerDebugEvents>?
 
@@ -299,11 +299,9 @@ public class ContentBlockerRulesManager: CompiledRuleListsSource {
 
     private func startCompilationProcess() {
         // Check if compilation should proceed (e.g., temp directory exists)
-        if let preCompilationCheck = onPreCompilationCheck {
-            guard preCompilationCheck() else {
-                // Pre-compilation check failed, abort compilation, app will crash anyway with an alert
-                return
-            }
+        guard onPreCompilationCheck() else {
+            // Pre-compilation check failed, abort compilation, app will crash anyway with an alert
+            return
         }
 
         prepareSourceManagers()

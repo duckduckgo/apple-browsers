@@ -42,7 +42,7 @@ public final class ContentBlocking {
         }
     }
     
-    public var onPreCompilationCheck: (() -> Bool)? {
+    public var onPreCompilationCheck: (() -> Bool) = { return true } {
         didSet {
             contentBlockingManager.onPreCompilationCheck = onPreCompilationCheck
         }

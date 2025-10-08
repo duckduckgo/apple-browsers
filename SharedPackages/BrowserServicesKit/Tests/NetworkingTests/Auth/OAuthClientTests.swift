@@ -18,8 +18,43 @@
 
 import XCTest
 import NetworkingTestingUtils
+import Common
 @testable import Networking
 import JWTKit
+
+extension OAuthClientRefreshEvent: Equatable {
+    public static func == (lhs: OAuthClientRefreshEvent, rhs: OAuthClientRefreshEvent) -> Bool {
+        switch (lhs, rhs) {
+        case (.tokenRefreshStarted(_), .tokenRefreshStarted(_)),
+             (.tokenRefreshRefreshingAccessToken(_), .tokenRefreshRefreshingAccessToken(_)),
+             (.tokenRefreshRefreshedAccessToken(_), .tokenRefreshRefreshedAccessToken(_)),
+             (.tokenRefreshFetchingJWKS(_), .tokenRefreshFetchingJWKS(_)),
+             (.tokenRefreshFetchedJWKS(_), .tokenRefreshFetchedJWKS(_)),
+             (.tokenRefreshVerifyingAccessToken(_), .tokenRefreshVerifyingAccessToken(_)),
+             (.tokenRefreshVerifyingRefreshToken(_), .tokenRefreshVerifyingRefreshToken(_)),
+             (.tokenRefreshSavingTokens(_), .tokenRefreshSavingTokens(_)),
+             (.tokenRefreshSucceeded(_), .tokenRefreshSucceeded(_)),
+             (.tokenRefreshFailed(_, _), .tokenRefreshFailed(_, _)):
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+class OAuthEventCapture {
+    private(set) var capturedEvents: [OAuthClientRefreshEvent] = []
+
+    var eventMapping: EventMapping<OAuthClientRefreshEvent> {
+        EventMapping { [weak self] event, _, _, _ in
+            self?.capturedEvents.append(event)
+        }
+    }
+
+    func reset() {
+        capturedEvents.removeAll()
+    }
+}
 
 final class OAuthClientTests: XCTestCase {
 
@@ -27,14 +62,17 @@ final class OAuthClientTests: XCTestCase {
     var mockOAuthService: MockOAuthService!
     var tokenStorage: MockTokenStorage!
     var legacyTokenStorage: MockLegacyTokenStorage!
+    var eventCapture: OAuthEventCapture!
 
     override func setUp() async throws {
         mockOAuthService = MockOAuthService()
         tokenStorage = MockTokenStorage()
         legacyTokenStorage = MockLegacyTokenStorage()
+        eventCapture = OAuthEventCapture()
         oAuthClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                          legacyTokenStorage: legacyTokenStorage,
-                                         authService: mockOAuthService)
+                                         authService: mockOAuthService,
+                                         refreshEventMapping: eventCapture.eventMapping)
     }
 
     override func tearDown() async throws {
@@ -42,6 +80,7 @@ final class OAuthClientTests: XCTestCase {
         oAuthClient = nil
         tokenStorage = nil
         legacyTokenStorage = nil
+        eventCapture = nil
     }
 
     // MARK: -
@@ -265,5 +304,76 @@ final class OAuthClientTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(HTTPStatusCode.gatewayTimeout))
         }
+    }
+
+    // MARK: - Event Mapping
+
+    func testEventMapping_successfulRefresh() async throws {
+        mockOAuthService.getJWTSignersResponse = .success(JWTSigners())
+        mockOAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
+        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+
+        await oAuthClient.setTestingDecodedTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+
+        _ = try await oAuthClient.getTokens(policy: .localForceRefresh)
+
+        let expectedEventSequence: [OAuthClientRefreshEvent] = [
+            .tokenRefreshStarted(refreshID: ""),
+            .tokenRefreshRefreshingAccessToken(refreshID: ""),
+            .tokenRefreshRefreshedAccessToken(refreshID: ""),
+            .tokenRefreshSavingTokens(refreshID: ""),
+            .tokenRefreshSucceeded(refreshID: "")
+        ]
+
+        XCTAssertEqual(eventCapture.capturedEvents, expectedEventSequence)
+
+        guard let firstEvent = eventCapture.capturedEvents.first,
+              case .tokenRefreshStarted(let refreshID) = firstEvent else {
+            XCTFail("First event should be tokenRefreshStarted")
+            return
+        }
+
+        for event in eventCapture.capturedEvents {
+            switch event {
+            case .tokenRefreshStarted(let id),
+                 .tokenRefreshRefreshingAccessToken(let id),
+                 .tokenRefreshRefreshedAccessToken(let id),
+                 .tokenRefreshFetchingJWKS(let id),
+                 .tokenRefreshFetchedJWKS(let id),
+                 .tokenRefreshVerifyingAccessToken(let id),
+                 .tokenRefreshVerifyingRefreshToken(let id),
+                 .tokenRefreshSavingTokens(let id),
+                 .tokenRefreshSucceeded(let id):
+                XCTAssertEqual(id, refreshID, "All events should have the same refreshID")
+            case .tokenRefreshFailed:
+                XCTFail("Should not have tokenRefreshFailed in successful refresh")
+            }
+        }
+    }
+
+    func testEventMapping_failedRefresh() async throws {
+        mockOAuthService.getJWTSignersResponse = .success(JWTSigners())
+        mockOAuthService.refreshAccessTokenResponse = .failure(OAuthServiceError.invalidResponseCode(HTTPStatusCode.gatewayTimeout))
+        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+
+        do {
+            _ = try await oAuthClient.getTokens(policy: .localForceRefresh)
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(HTTPStatusCode.gatewayTimeout))
+        }
+
+        XCTAssertTrue(eventCapture.capturedEvents.contains(.tokenRefreshStarted(refreshID: "")))
+        XCTAssertTrue(eventCapture.capturedEvents.contains(.tokenRefreshRefreshingAccessToken(refreshID: "")))
+        XCTAssertTrue(eventCapture.capturedEvents.contains(.tokenRefreshFailed(refreshID: "", error: OAuthServiceError.invalidResponseCode(HTTPStatusCode.gatewayTimeout))))
+        XCTAssertFalse(eventCapture.capturedEvents.contains(.tokenRefreshSucceeded(refreshID: "")))
+
+        guard let lastEvent = eventCapture.capturedEvents.last,
+              case .tokenRefreshFailed(_, let error) = lastEvent else {
+            XCTFail("Last event should be tokenRefreshFailed")
+            return
+        }
+
+        XCTAssertNotNil(error)
     }
 }

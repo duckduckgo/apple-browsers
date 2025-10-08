@@ -84,7 +84,7 @@
     widePixelFeatureStatus: {
         key: 'feature.status',
         type: 'string',
-        description: 'Final status of the subscription flow',
+        description: 'Final status of the wide event flow',
         enum: ['SUCCESS', 'FAILURE', 'CANCELLED', 'UNKNOWN'],
     },
     widePixelErrorDomain: {
@@ -99,14 +99,14 @@
         pattern: '^-?\\d+$',
     },
     widePixelUnderlyingErrorDomain: {
-        key: 'feature.data.error.underlying_domain',
+        keyPattern: 'feature\\.data\\.error\\.underlying_domain[0-9]*',
         type: 'string',
-        description: 'Underlying error domain, when applicable, e.g. SKErrorDomain',
+        description: 'Underlying error domain (supports optional numeric index for nested errors)',
     },
     widePixelUnderlyingErrorCode: {
-        key: 'feature.data.error.underlying_code',
+        keyPattern: 'feature\\.data\\.error\\.underlying_code[0-9]*',
         type: 'string',
-        description: 'Underlying error code, when applicable',
+        description: 'Underlying error code (supports optional numeric index for nested errors)',
         pattern: '^-?\\d+$',
     },
     duration: {

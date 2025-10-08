@@ -103,7 +103,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210052464460517?focus=true
     case privacyProFreeTrial
 
-	/// https://app.asana.com/1/137249556945/project/1204186595873227/task/1210181044180012?focus=true
+    /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1210181044180012?focus=true
     case paidAIChat
 
     /// https://app.asana.com/1/137249556945/task/1210330600670666
@@ -202,6 +202,14 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211396583578252?focus=true
     case unifiedURLPredictorMetrics
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211555469558398?focus=true
+    case authV2WideEventEnabled
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210417832822045
+    case fireDialog
+    /// Toggle for showing the "Manage individual sites" link in Fire dialog
+    case fireDialogIndividualSitesLink
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -217,7 +225,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .supportsAlternateStripePaymentFlow,
                 .restoreSessionPrompt,
                 .refactorOfSyncPreferences,
-                .subscriptionPurchaseWidePixelMeasurement:
+                .subscriptionPurchaseWidePixelMeasurement,
+                .authV2WideEventEnabled:
             true
         default:
             false
@@ -256,7 +265,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .paidAIChat,
                 .exchangeKeysToSyncWithAnotherDevice,
                 .canScanUrlBasedSyncSetupBarcodes,
-				.privacyProFreeTrial,
+                .privacyProFreeTrial,
                 .removeWWWInCanonicalizationInThreatProtection,
                 .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage,
@@ -291,7 +300,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .appStoreUpdateFlow,
                 .unifiedURLPredictor,
                 .unifiedURLPredictorMetrics,
-                .webKitPerformanceReporting:
+                .authV2WideEventEnabled,
+                .webKitPerformanceReporting,
+                .fireDialog:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -300,7 +311,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .scheduledSetDefaultBrowserAndAddToDockPrompts:
+                .scheduledSetDefaultBrowserAndAddToDockPrompts,
+                .fireDialogIndividualSitesLink:
             return false
         }
     }
@@ -425,6 +437,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .enabled
         case .subscriptionPurchaseWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
+        case .fireDialog:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.fireDialog))
+        case .fireDialogIndividualSitesLink:
+            return .enabled
         case .refactorOfSyncPreferences:
             return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
         case .newSyncEntryPoints:
@@ -439,6 +455,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .unifiedURLPredictorMetrics:
             return .disabled
+        case .authV2WideEventEnabled:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
         case .webKitPerformanceReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webKitPerformanceReporting))
         }

@@ -181,6 +181,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210659895188821?focus=true
     case embeddedSERPSettings
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211555469558398?focus=true
+    case authV2WideEventEnabled
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -197,7 +200,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .daxEasterEggLogos,
              .subscriptionPurchaseWidePixelMeasurement,
              .refreshButtonPosition,
-             .newDeviceSyncPrompt:
+             .newDeviceSyncPrompt,
+             .authV2WideEventEnabled:
             true
         default:
             false
@@ -251,7 +255,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .refreshButtonPosition,
              .newDeviceSyncPrompt,
              .serpSettingsFollowUpQuestions,
-             .embeddedSERPSettings:
+             .embeddedSERPSettings,
+             .authV2WideEventEnabled:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -445,6 +450,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.serpSettingsFollowUpQuestions))
         case .embeddedSERPSettings:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.embeddedSERPSettings))
+        case .authV2WideEventEnabled:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
         }
     }
 }

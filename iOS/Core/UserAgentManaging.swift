@@ -141,7 +141,7 @@ struct UserAgent {
     init(defaultAgent: String = Constants.fallbackDefaultAgent,
          statistics: StatisticsStore = StatisticsUserDefaults(),
          privacyConfig: PrivacyConfiguration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig) {
-        let defaultAgent: String = UserAgent.shouldUseUpdatedSafariVersions(forConfig: privacyConfig) ? defaultAgent.replacingOccurrences(of: "OS 19_0", with: "OS 18_6") : defaultAgent
+        let defaultAgent: String = UserAgent.shouldUseUpdatedSafariVersions(forConfig: privacyConfig) ? defaultAgent.replacingOccurrences(of: "OS 19_0", with: "OS 18_7") : defaultAgent
         let version = UserAgent.getVersion(fromAgent: defaultAgent, privacyConfig: privacyConfig)
         versionComponent = UserAgent.createVersionComponent(withVersion: version)
         baseAgent = UserAgent.createBaseAgent(fromAgent: defaultAgent, versionComponent: versionComponent)

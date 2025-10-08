@@ -30,7 +30,7 @@ final class MainWindowController: NSWindowController {
     let fireWindowSession: FireWindowSession?
     private let appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences
     let fullscreenController = FullscreenController()
-    private let themeManager: ThemeManagerProtocol
+    private let themeManager: ThemeManaging
 
     var mainViewController: MainViewController {
         // swiftlint:disable force_cast
@@ -47,7 +47,7 @@ final class MainWindowController: NSWindowController {
          mainViewController: MainViewController,
          fireWindowSession: FireWindowSession? = nil,
          fireViewModel: FireViewModel,
-         themeManager: ThemeManagerProtocol) {
+         themeManager: ThemeManaging) {
 
         // Compute initial window frame
         let frame = InitialWindowFrameProvider.initialFrame()
@@ -180,7 +180,7 @@ final class MainWindowController: NSWindowController {
         applyThemeStyles(theme: themeManager.theme)
     }
 
-    private func applyThemeStyles(theme: ThemeDefinition) {
+    private func applyThemeStyles(theme: ThemeStyleProviding) {
         // Prevent a 2px white line from appearing above the tab bar on macOS 26
         window?.backgroundColor = theme.colorsProvider.baseBackgroundColor
     }

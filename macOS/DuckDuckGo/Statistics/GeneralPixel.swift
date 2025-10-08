@@ -429,6 +429,7 @@ enum GeneralPixel: PixelKitEvent {
     case updaterDidFindUpdate
     case updaterDidDownloadUpdate
     case updaterDidRunUpdate
+    case updaterAttemptToRestartWithoutResumeBlock
     case releaseNotesEmpty
 
     case faviconDecryptionFailedUnique
@@ -1143,6 +1144,8 @@ enum GeneralPixel: PixelKitEvent {
             return "updater_did_download_update"
         case .updaterDidRunUpdate:
             return "updater_did_run_update"
+        case .updaterAttemptToRestartWithoutResumeBlock:
+            return "updater_attempt_to_restart_without_resume_block"
         case .releaseNotesEmpty:
             return "m_mac_release_notes_empty"
 

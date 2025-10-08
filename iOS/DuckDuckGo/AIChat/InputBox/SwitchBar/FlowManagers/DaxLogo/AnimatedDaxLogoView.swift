@@ -21,7 +21,15 @@ import UIKit
 import Lottie
 
 final class AnimatedDaxLogoView: UIView, DaxLogoViewSwitching {
-    private(set) lazy var logoAnimation = LottieAnimationView(name: Constant.daxLogoAnimationName)
+    private(set) lazy var logoAnimation = LottieAnimationView(name: daxAnimationName)
+
+    private var daxAnimationName: String {
+        if traitCollection.userInterfaceStyle == .dark {
+            return Constant.daxLogoAnimationDarkName
+        } else {
+            return Constant.daxLogoAnimationName
+        }
+    }
 
     init() {
         super.init(frame: .zero)
@@ -56,11 +64,7 @@ final class AnimatedDaxLogoView: UIView, DaxLogoViewSwitching {
 
     private func updateAnimationForCurrentTraitCollection() {
         let progress = logoAnimation.currentProgress
-        if traitCollection.userInterfaceStyle == .dark {
-            logoAnimation.animation = LottieAnimation.named(Constant.daxLogoAnimationDarkName)
-        } else {
-            logoAnimation.animation = LottieAnimation.named(Constant.daxLogoAnimationName)
-        }
+        logoAnimation.animation = LottieAnimation.named(daxAnimationName)
         logoAnimation.currentProgress = progress
     }
 

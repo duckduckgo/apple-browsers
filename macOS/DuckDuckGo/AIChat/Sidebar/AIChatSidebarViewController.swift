@@ -60,7 +60,8 @@ final class AIChatSidebarViewController: NSViewController {
         }
     }
     private let burnerMode: BurnerMode
-    private let visualStyle: VisualStyleProviding
+    private var themeCancellable: AnyCancellable?
+    private let themeManager: ThemeManaging
 
     private var openInNewTabButton: MouseOverButton!
     private var closeButton: MouseOverButton!
@@ -74,10 +75,10 @@ final class AIChatSidebarViewController: NSViewController {
 
     init(currentAIChatURL: URL,
          burnerMode: BurnerMode,
-         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.currentAIChatURL = currentAIChatURL
         self.burnerMode = burnerMode
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -106,7 +107,8 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     override func loadView() {
-        let container = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.navigationBackgroundColor)
+        let colorsProvider = themeManager.theme.colorsProvider
+        let container = ColorView(frame: .zero, backgroundColor: colorsProvider.navigationBackgroundColor)
 
         if let aiChatPayload {
             aiTab.aiChat?.setAIChatNativeHandoffData(payload: aiChatPayload)
@@ -134,6 +136,7 @@ final class AIChatSidebarViewController: NSViewController {
         updateWebViewMask()
         subscribeToURLChanges()
         subscribeToUserInteractionDialogChanges()
+        subscribeToThemeChanges()
     }
 
     private func createAndSetupSeparator(in container: NSView) {
@@ -308,6 +311,23 @@ final class AIChatSidebarViewController: NSViewController {
 
         aiTab.webView.stopLoading()
         aiTab.webView.loadHTMLString("", baseURL: nil)
+    }
+
+    private func subscribeToThemeChanges() {
+        themeCancellable = themeManager.themePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] style in
+                self?.applyThemeStyle(theme: style)
+            }
+    }
+
+    private func applyThemeStyle(theme: ThemeStyleProviding) {
+        guard let contentView = view as? ColorView else {
+            assertionFailure()
+            return
+        }
+
+        contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
     }
 }
 

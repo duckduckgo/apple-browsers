@@ -52,7 +52,7 @@ final class SuggestionTableCellView: NSTableCellView {
     @IBOutlet weak var iconImageViewLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var searchSuggestionTextFieldLeadingConstraint: NSLayoutConstraint!
 
-    var theme: ThemeDefinition?
+    var theme: ThemeStyleProviding?
     var suggestion: Suggestion?
 
     static let switchToTabAttributedString: NSAttributedString = {

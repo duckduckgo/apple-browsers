@@ -271,7 +271,7 @@ struct FireDialogView: ModalView {
 
     private func presentManageFireproof() {
         // Use the app's preferences presenter to begin a sheet on the parent window (stacks above the Fire sheet)
-        Task {
+        Task { @MainActor in
             await Application.appDelegate.dataClearingPreferences.presentManageFireproofSitesDialog()
             viewModel.clearingOption = viewModel.clearingOption // trigger data reload
         }

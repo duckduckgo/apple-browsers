@@ -17,10 +17,13 @@
 //
 
 import AppKit
+import SwiftUI
 
 final class FireproofDomainCellView: NSTableCellView {
 
     static var identifier: NSUserInterfaceItemIdentifier { .init(rawValue: FireproofDomainCellView.className()) }
+
+    private var faviconHostingView: NSHostingView<FaviconView>?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -35,36 +38,49 @@ final class FireproofDomainCellView: NSTableCellView {
     private func setup() {
         identifier = Self.identifier
 
-        let iconView = NSImageView()
+        let iconPlaceholder = NSView()
         let titleField = NSTextField(labelWithString: "")
 
-        iconView.translatesAutoresizingMaskIntoConstraints = false
-        iconView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-        iconView.setContentHuggingPriority(.defaultHigh, for: .vertical)
-        iconView.widthAnchor.constraint(equalToConstant: 16).isActive = true
-        iconView.heightAnchor.constraint(equalToConstant: 16).isActive = true
+        iconPlaceholder.translatesAutoresizingMaskIntoConstraints = false
+        iconPlaceholder.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        iconPlaceholder.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        iconPlaceholder.widthAnchor.constraint(equalToConstant: 16).isActive = true
+        iconPlaceholder.heightAnchor.constraint(equalToConstant: 16).isActive = true
 
         titleField.translatesAutoresizingMaskIntoConstraints = false
         titleField.lineBreakMode = .byTruncatingMiddle
         titleField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        addSubview(iconView)
+        addSubview(iconPlaceholder)
+
         addSubview(titleField)
 
-        imageView = iconView
         textField = titleField
 
         NSLayoutConstraint.activate([
-            iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0),
-            iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            titleField.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 4),
+            iconPlaceholder.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0),
+            iconPlaceholder.centerYAnchor.constraint(equalTo: centerYAnchor),
+            titleField.leadingAnchor.constraint(equalTo: iconPlaceholder.trailingAnchor, constant: 4),
             titleField.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: 0),
             titleField.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
+
+        // Host SwiftUI FaviconView in the icon slot so it handles cache + generated icons automatically
+        let hosting = NSHostingView(rootView: FaviconView(url: nil, size: 16))
+        hosting.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(hosting)
+        NSLayoutConstraint.activate([
+            hosting.leadingAnchor.constraint(equalTo: iconPlaceholder.leadingAnchor),
+            hosting.trailingAnchor.constraint(equalTo: iconPlaceholder.trailingAnchor),
+            hosting.topAnchor.constraint(equalTo: iconPlaceholder.topAnchor),
+            hosting.bottomAnchor.constraint(equalTo: iconPlaceholder.bottomAnchor)
+        ])
+        faviconHostingView = hosting
     }
 
     func update(host: String) {
         textField?.stringValue = host
         toolTip = host
+        faviconHostingView?.rootView = FaviconView(url: URL(string: "https://\(host)"), size: 16)
     }
 }

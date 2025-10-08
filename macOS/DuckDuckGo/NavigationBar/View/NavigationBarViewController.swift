@@ -154,8 +154,8 @@ final class NavigationBarViewController: NSViewController {
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
     private let showTab: (Tab.TabContent) -> Void
 
-    private let themeManager: ThemeManagerProtocol
-    private var theme: ThemeDefinition {
+    private let themeManager: ThemeManaging
+    private var theme: ThemeStyleProviding {
         themeManager.theme
     }
 
@@ -215,7 +215,7 @@ final class NavigationBarViewController: NSViewController {
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-                       themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager,
+                       themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
                        aiChatSidebarPresenter: AIChatSidebarPresenting,
                        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = NSApp.delegateTyped.vpnUpsellVisibilityManager,
@@ -269,7 +269,7 @@ final class NavigationBarViewController: NSViewController {
         autofillPopoverPresenter: AutofillPopoverPresenter,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger,
-        themeManager: ThemeManagerProtocol,
+        themeManager: ThemeManaging,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatSidebarPresenter: AIChatSidebarPresenting,
         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
@@ -1706,7 +1706,7 @@ final class NavigationBarViewController: NSViewController {
 
     /// Provides the menu items to display in the overflow menu for a given pinned view.
     private func overflowMenuItem(for view: PinnableView,
-                                  theme: ThemeDefinition) -> NSMenuItem {
+                                  theme: ThemeStyleProviding) -> NSMenuItem {
         switch view {
         case .autofill:
             return NSMenuItem(title: UserText.autofill, action: #selector(overflowMenuRequestedLoginsPopover), keyEquivalent: "")

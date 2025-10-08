@@ -45,7 +45,7 @@ final class FirePopoverViewController: NSViewController {
     private let fireViewModel: FireViewModel
     private var firePopoverViewModel: FireDialogViewModel
     private let historyCoordinating: HistoryCoordinating
-    private let visualStyle: VisualStyleProviding
+    private let themeManager: ThemeManaging
 
     @IBOutlet weak var closeTabsLabel: NSTextField!
     @IBOutlet weak var openFireWindowsTitleLabel: NSTextField!
@@ -87,16 +87,20 @@ final class FirePopoverViewController: NSViewController {
           fireproofDomains: FireproofDomains = NSApp.delegateTyped.fireproofDomains,
           faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager,
           tld: TLD = NSApp.delegateTyped.tld,
-          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.fireViewModel = fireViewModel
         self.historyCoordinating = historyCoordinating
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
         self.firePopoverViewModel = FireDialogViewModel(fireViewModel: fireViewModel,
-                                                         tabCollectionViewModel: tabCollectionViewModel,
-                                                         historyCoordinating: historyCoordinating,
-                                                         fireproofDomains: fireproofDomains,
-                                                         faviconManagement: faviconManagement,
-                                                         tld: tld)
+                                                        tabCollectionViewModel: tabCollectionViewModel,
+                                                        historyCoordinating: historyCoordinating,
+                                                        fireproofDomains: fireproofDomains,
+                                                        faviconManagement: faviconManagement,
+                                                        clearingOption: .allData,
+                                                        includeTabsAndWindows: true,
+                                                        includeHistory: true,
+                                                        includeCookiesAndSiteData: true,
+                                                        tld: tld)
 
         super.init(coder: coder)
     }
@@ -125,7 +129,8 @@ final class FirePopoverViewController: NSViewController {
         subscribeToViewModel()
         subscribeToSelected()
 
-        fireGraphic.image = visualStyle.iconsProvider.fireInfoGraphic
+        let iconsProvider = themeManager.theme.iconsProvider
+        fireGraphic.image = iconsProvider.fireInfoGraphic
     }
 
     override func viewDidLayout() {

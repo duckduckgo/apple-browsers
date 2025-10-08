@@ -82,7 +82,7 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
     private let presentFaviconsFetcherOnboarding: (() -> Void)?
-    private let visualStyle: VisualStyleProviding
+    private let themeManager: ThemeManaging
 
     init(
         contentMode: ContentMode,
@@ -91,7 +91,7 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         dragDropManager: BookmarkDragDropManager,
         sortMode: BookmarksSortMode,
         presentFaviconsFetcherOnboarding: (() -> Void)? = nil,
-        visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
+        themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
     ) {
         self.contentMode = contentMode
         self.bookmarkManager = bookmarkManager
@@ -99,7 +99,7 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         self.treeController = treeController
         self.presentFaviconsFetcherOnboarding = presentFaviconsFetcherOnboarding
         self.sortMode = sortMode
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
 
         super.init()
     }
@@ -222,7 +222,7 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         }
 
         let cell = outlineView.makeView(withIdentifier: BookmarkOutlineCellView.identifier(for: contentMode), owner: self) as? BookmarkOutlineCellView
-        ?? BookmarkOutlineCellView(identifier: BookmarkOutlineCellView.identifier(for: contentMode), style: visualStyle)
+        ?? BookmarkOutlineCellView(identifier: BookmarkOutlineCellView.identifier(for: contentMode), theme: themeManager.theme)
         cell.delegate = self
         cell.update(from: node, isSearch: isSearching)
 

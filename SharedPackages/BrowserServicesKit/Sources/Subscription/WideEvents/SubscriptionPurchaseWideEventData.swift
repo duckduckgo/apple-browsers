@@ -1,5 +1,5 @@
 //
-//  SubscriptionWideEventData.swift
+//  SubscriptionPurchaseWideEventData.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PixelKit
 
 public class SubscriptionPurchaseWideEventData: WideEventData {
     #if DEBUG
@@ -101,15 +102,17 @@ extension SubscriptionPurchaseWideEventData {
 
         parameters[WideEventParameter.SubscriptionFeature.freeTrialEligible] = freeTrialEligible ? "true" : "false"
 
-        func emit(_ key: String, interval: WideEvent.MeasuredInterval?) {
-            guard let start = interval?.start, let end = interval?.end else { return }
-            let ms = max(0, Int(end.timeIntervalSince(start) * 1000))
-            parameters[key] = String(bucket(ms))
+        if let duration = createAccountDuration?.durationMilliseconds {
+            parameters[WideEventParameter.SubscriptionFeature.accountCreationLatency] = String(bucket(duration))
         }
 
-        emit(WideEventParameter.SubscriptionFeature.accountCreationLatency, interval: createAccountDuration)
-        emit(WideEventParameter.SubscriptionFeature.accountPaymentLatency, interval: completePurchaseDuration)
-        emit(WideEventParameter.SubscriptionFeature.accountActivationLatency, interval: activateAccountDuration)
+        if let duration = completePurchaseDuration?.durationMilliseconds {
+            parameters[WideEventParameter.SubscriptionFeature.accountPaymentLatency] = String(bucket(duration))
+        }
+
+        if let duration = activateAccountDuration?.durationMilliseconds {
+            parameters[WideEventParameter.SubscriptionFeature.accountActivationLatency] = String(bucket(duration))
+        }
 
         return parameters
     }
@@ -119,7 +122,7 @@ extension SubscriptionPurchaseWideEventData {
         self.errorData = WideEventErrorData(error: error)
     }
 
-    private func bucket(_ ms: Int) -> Int {
+    private func bucket(_ ms: Double) -> Int {
         switch ms {
         case 0..<1000: return 1000
         case 1000..<5000: return 5000
@@ -129,6 +132,20 @@ extension SubscriptionPurchaseWideEventData {
         case 60000..<300000: return 300000
         default: return 600000
         }
+    }
+
+}
+
+extension WideEventParameter {
+
+    public enum SubscriptionFeature {
+        static let purchasePlatform = "feature.data.ext.purchase_platform"
+        static let failingStep = "feature.data.ext.failing_step"
+        static let subscriptionIdentifier = "feature.data.ext.subscription_identifier"
+        static let freeTrialEligible = "feature.data.ext.free_trial_eligible"
+        static let accountCreationLatency = "feature.data.ext.account_creation_latency_ms_bucketed"
+        static let accountPaymentLatency = "feature.data.ext.account_payment_latency_ms_bucketed"
+        static let accountActivationLatency = "feature.data.ext.account_activation_latency_ms_bucketed"
     }
 
 }

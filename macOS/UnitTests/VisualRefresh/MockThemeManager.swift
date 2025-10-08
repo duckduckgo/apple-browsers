@@ -20,11 +20,11 @@ import Bookmarks
 import Foundation
 @testable import DuckDuckGo_Privacy_Browser
 
-class MockThemeManager: ThemeManagerProtocol {
+class MockThemeManager: ThemeManaging {
 
-    @Published var theme: ThemeDefinition = VisualStyle.buildVisualStyle(themeName: .default)
+    @Published var theme: ThemeStyleProviding = ThemeStyle.buildThemeStyle(themeName: .default)
 
-    var themePublisher: Published<any ThemeDefinition>.Publisher {
+    var themePublisher: Published<any ThemeStyleProviding>.Publisher {
         $theme
     }
 }

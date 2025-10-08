@@ -401,8 +401,8 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         let tabID = "test-tab"
         mockSidebarHost.currentTabID = tabID
 
-        // Set up the sidebar with a test URL (without restoration data, so it falls back to URL)
-        let testURL = URL(string: "https://example.com")!
+        // Set up the sidebar with a test URL that includes a placement parameter
+        let testURL = URL(string: "https://example.com")!.forAIChatSidebar()
         let sidebar = AIChatSidebar(initialAIChatURL: testURL, burnerMode: .regular)
         mockSidebarProvider.restoreState([tabID: sidebar])
 
@@ -414,10 +414,15 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         // Then
         waitForExpectations(timeout: 3)
         XCTAssertTrue(mockAIChatTabOpener.openAIChatTabCalled)
-        XCTAssertEqual(mockAIChatTabOpener.lastURL, testURL)
+
+        // Verify the placement parameter is stripped from the URL
+        let expectedURL = testURL.removingAIChatPlacementParameter()
+        XCTAssertEqual(mockAIChatTabOpener.lastURL, expectedURL)
+        XCTAssertNotEqual(mockAIChatTabOpener.lastURL, testURL, "URL should have placement parameter stripped")
+
         // Verify it was called with .url content type
         if case .url(let url) = mockAIChatTabOpener.lastTrigger {
-            XCTAssertEqual(url, testURL)
+            XCTAssertEqual(url, expectedURL)
         } else {
             XCTFail("Expected .url content type")
         }

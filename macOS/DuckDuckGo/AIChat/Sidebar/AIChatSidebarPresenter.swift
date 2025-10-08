@@ -259,7 +259,7 @@ extension AIChatSidebarPresenter: AIChatSidebarViewControllerDelegate {
         pixelFiring?.fire(AIChatPixel.aiChatSidebarExpanded, frequency: .dailyAndStandard)
 
         let restorationData = sidebar.restorationData
-        let currentAIChatURL = sidebar.currentAIChatURL
+        let currentAIChatURL = sidebar.currentAIChatURL.removingAIChatPlacementParameter()
 
         toggleSidebar()
 

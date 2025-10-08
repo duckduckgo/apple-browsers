@@ -136,6 +136,8 @@ public extension RemoteMessageModelType {
         public let descriptionText: String
         public let placeholderImage: RemotePlaceholder
         public let action: RemoteAction?
+        public let matchingRules: [Int]
+        public let exclusionRules: [Int]
     }
 }
 

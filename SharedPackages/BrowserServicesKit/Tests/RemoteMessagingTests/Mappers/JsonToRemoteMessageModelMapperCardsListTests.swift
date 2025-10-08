@@ -65,12 +65,11 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
     func manyValidItemsSucceeds(numberOfItems: Int) {
         // GIVEN
         let listItems = (0..<numberOfItems).map { index in
-            RemoteMessageResponse.JsonListItem(
+            RemoteMessageResponse.JsonListItem.mockListItem(
                 id: "item\(index)",
                 type: "two_line_list_item",
                 titleText: "Feature \(index)",
                 descriptionText: "Description \(index)",
-                placeholder: nil,
                 primaryAction: .urlInContext
             )
         }
@@ -339,6 +338,214 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
     }
 }
 
+@Suite("RMF - Mapping - Cards List Items with Rules")
+struct JsonToRemoteMessageModelMapperCardsListRulesTests {
+    let surveyActionMapper = MockRemoteMessageSurveyActionMapper()
+    @Test("Check List Items with Matching Rules Map Correctly")
+    func listItemsWithMatchingRules() throws {
+        // GIVEN
+        let itemWithBothRules = RemoteMessageResponse.JsonListItem.mockListItem(
+            id: "item_with_both_rules",
+            matchingRules: [1, 2],
+            exclusionRules: [3]
+        )
+        let itemWithMatchingOnly = RemoteMessageResponse.JsonListItem.mockListItem(
+            id: "item_with_matching_only",
+            matchingRules: [4, 5, 6],
+            exclusionRules: nil
+        )
+        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(
+            listItems: [itemWithBothRules, itemWithMatchingOnly]
+        )
+
+        // WHEN
+        let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
+
+        // THEN
+        guard case let .cardsList(_, items, _, _) = result else {
+            Issue.record("Expected cardsList message type")
+            return
+        }
+
+        #expect(items.count == 2)
+
+        let firstItem = try #require(items.first)
+        #expect(firstItem.id == "item_with_both_rules")
+        #expect(firstItem.matchingRules == [1, 2])
+        #expect(firstItem.exclusionRules == [3])
+
+        let secondItem = try #require(items.last)
+        #expect(secondItem.id == "item_with_matching_only")
+        #expect(secondItem.matchingRules == [4, 5, 6])
+        #expect(secondItem.exclusionRules == [])
+    }
+
+    @Test("Check List Items with Exclusion Rules Map Correctly")
+    func listItemsWithExclusionRules() throws {
+        // GIVEN
+        let itemWithExclusionOnly = RemoteMessageResponse.JsonListItem.mockListItem(
+            id: "item_with_exclusion_only",
+            matchingRules: nil,
+            exclusionRules: [7, 8]
+        )
+        let itemWithNoRules = RemoteMessageResponse.JsonListItem.mockListItem(
+            id: "item_with_no_rules",
+            matchingRules: nil,
+            exclusionRules: nil
+        )
+        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(
+            listItems: [itemWithExclusionOnly, itemWithNoRules]
+        )
+
+        // WHEN
+        let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
+
+        // THEN
+        guard case let .cardsList(_, items, _, _) = result else {
+            Issue.record("Expected cardsList message type")
+            return
+        }
+
+        #expect(items.count == 2)
+
+        let firstItem = try #require(items.first)
+        #expect(firstItem.id == "item_with_exclusion_only")
+        #expect(firstItem.matchingRules == [])
+        #expect(firstItem.exclusionRules == [7, 8])
+
+        let secondItem = try #require(items.last)
+        #expect(secondItem.id == "item_with_no_rules")
+        #expect(secondItem.matchingRules == [])
+        #expect(secondItem.exclusionRules == [])
+    }
+
+    @Test("Check Empty Rules Arrays Default to Empty")
+    func emptyRulesArraysDefaultToEmpty() throws {
+        // GIVEN
+        let itemWithEmptyArrays = RemoteMessageResponse.JsonListItem.mockListItem(
+            id: "item_with_empty_arrays",
+            matchingRules: [],
+            exclusionRules: []
+        )
+        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(
+            listItems: [itemWithEmptyArrays]
+        )
+
+        // WHEN
+        let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
+
+        // THEN
+        guard case let .cardsList(_, items, _, _) = result else {
+            Issue.record("Expected cardsList message type")
+            return
+        }
+
+        let item = try #require(items.first)
+        #expect(item.id == "item_with_empty_arrays")
+        #expect(item.matchingRules == [])
+        #expect(item.exclusionRules == [])
+    }
+
+    @Test("Check Invalid Items with Rules Are Discarded Correctly")
+    func invalidItemsWithRulesAreDiscarded() throws {
+        // GIVEN
+        let invalidItemWithRules = RemoteMessageResponse.JsonListItem.mockListItem(
+            id: "", // Invalid - empty ID
+            titleText: "Invalid Item with Rules",
+            matchingRules: [1, 2],
+            exclusionRules: [3]
+        )
+        let validItemAfterInvalid = RemoteMessageResponse.JsonListItem.mockListItem(
+            id: "valid_item_after_invalid",
+            matchingRules: [4],
+            exclusionRules: []
+        )
+        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(
+            listItems: [invalidItemWithRules, validItemAfterInvalid]
+        )
+
+        // WHEN
+        let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
+
+        // THEN
+        guard case let .cardsList(_, items, _, _) = result else {
+            Issue.record("Expected cardsList message type")
+            return
+        }
+
+        #expect(items.count == 1, "Only valid item should remain")
+
+        let validItem = try #require(items.first)
+        #expect(validItem.id == "valid_item_after_invalid")
+        #expect(validItem.matchingRules == [4])
+        #expect(validItem.exclusionRules == [])
+    }
+
+    @Test("Check Rules Maintain Order and Values")
+    func rulesMaintainOrderAndValues() throws {
+        // GIVEN
+        let itemWithManyRules = RemoteMessageResponse.JsonListItem.mockListItem(
+            id: "item_with_many_rules",
+            matchingRules: [10, 1, 5, 999, 2],
+            exclusionRules: [100, 50, 200]
+        )
+        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(
+            listItems: [itemWithManyRules]
+        )
+
+        // WHEN
+        let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
+
+        // THEN
+        guard case let .cardsList(_, items, _, _) = result else {
+            Issue.record("Expected cardsList message type")
+            return
+        }
+
+        let item = try #require(items.first)
+        #expect(item.id == "item_with_many_rules")
+        #expect(item.matchingRules == [10, 1, 5, 999, 2], "Should maintain exact order and values")
+        #expect(item.exclusionRules == [100, 50, 200], "Should maintain exact order and values")
+    }
+
+    @Test("Check Duplicate Item IDs with Rules Keep First Occurrence")
+    func duplicateItemIDsWithRulesKeepFirstOccurrence() throws {
+        // GIVEN
+        let firstItem = RemoteMessageResponse.JsonListItem.mockListItem(
+            id: "duplicate_id",
+            titleText: "First Item",
+            matchingRules: [1, 2],
+            exclusionRules: [3]
+        )
+        let duplicateItem = RemoteMessageResponse.JsonListItem.mockListItem(
+            id: "duplicate_id",
+            titleText: "Duplicate Item",
+            matchingRules: [4, 5],
+            exclusionRules: [6, 7]
+        )
+        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(
+            listItems: [firstItem, duplicateItem]
+        )
+
+        // WHEN
+        let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
+
+        // THEN
+        guard case let .cardsList(_, items, _, _) = result else {
+            Issue.record("Expected cardsList message type")
+            return
+        }
+
+        #expect(items.count == 1, "Duplicate should be discarded")
+
+        let item = try #require(items.first)
+        #expect(item.id == "duplicate_id")
+        #expect(item.titleText == "First Item", "Should keep first occurrence")
+        #expect(item.matchingRules == [1, 2], "Should keep rules from first occurrence")
+        #expect(item.exclusionRules == [3], "Should keep rules from first occurrence")
+    }
+}
+
 // MARK: - Helpers
 
 private extension RemoteMessageResponse.JsonContent {
@@ -373,7 +580,9 @@ private extension RemoteMessageResponse.JsonListItem {
         titleText: String = "Feature",
         descriptionText: String? = "Description",
         placeholder: String? = "Announce",
-        primaryAction: RemoteMessageResponse.JsonMessageAction? = .init(type: "url", value: "https://example.com", additionalParameters: nil)
+        primaryAction: RemoteMessageResponse.JsonMessageAction? = .init(type: "url", value: "https://example.com", additionalParameters: nil),
+        matchingRules: [Int]? = nil,
+        exclusionRules: [Int]? = nil
     ) -> RemoteMessageResponse.JsonListItem {
         RemoteMessageResponse.JsonListItem(
             id: id,
@@ -381,14 +590,15 @@ private extension RemoteMessageResponse.JsonListItem {
             titleText: titleText,
             descriptionText: descriptionText,
             placeholder: placeholder,
-            primaryAction: primaryAction
+            primaryAction: primaryAction,
+            matchingRules: matchingRules,
+            exclusionRules: exclusionRules
         )
     }
 
 }
 
 private extension RemoteMessageResponse.JsonMessageAction {
-
     static let dismiss: RemoteMessageResponse.JsonMessageAction = .init(type: "dismiss", value: "", additionalParameters: nil)
     static let urlInContext: RemoteMessageResponse.JsonMessageAction = .init(type: "url_in_context", value: "https://example.com", additionalParameters: nil)
 }

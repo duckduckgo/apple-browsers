@@ -53,12 +53,6 @@ final class AIChatSidebarViewController: NSViewController {
     public var aiChatPayload: AIChatPayload?
     private(set) var currentAIChatURL: URL
 
-    /// The current AI chat restoration data being displayed.
-    public var currentAIChatRestorationData: AIChatRestorationData? {
-        get {
-            return aiTab.aiChat?.aiChatUserScript?.handler.messageHandling.getDataForMessageType(.chatRestorationData) as? AIChatRestorationData
-        }
-    }
     private let burnerMode: BurnerMode
     private var themeCancellable: AnyCancellable?
     private let themeManager: ThemeManaging

@@ -26,6 +26,7 @@ import PixelKit
 import PrivacyStats
 import XCTest
 import BrowserServicesKit
+import RemoteMessagingTestsUtils
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockPrivacyStats: PrivacyStatsCollecting {

@@ -301,6 +301,7 @@ private extension HomeMessage {
         HomeMessage.remoteMessage(
             remoteMessage: .init(
                 id: "foo",
+                surfaces: .newTabPage,
                 content: type,
                 matchingRules: [],
                 exclusionRules: [],

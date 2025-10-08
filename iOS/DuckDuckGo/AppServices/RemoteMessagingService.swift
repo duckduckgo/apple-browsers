@@ -50,6 +50,7 @@ final class RemoteMessagingService {
             remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(
                 privacyConfigurationManager: privacyConfigurationManager
             ),
+            remoteMessagingSurfacesProvider: DefaultRemoteMessagingSurfacesProvider(),
             duckPlayerStorage: DefaultDuckPlayerStorage(),
             configurationURLProvider: configurationURLProvider,
             syncService: syncService,

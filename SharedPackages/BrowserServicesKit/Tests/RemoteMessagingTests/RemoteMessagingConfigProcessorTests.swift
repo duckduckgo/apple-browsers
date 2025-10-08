@@ -64,7 +64,7 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
                                                                   invalidate: false,
                                                                   evaluationTimestamp: Date())
 
-        let processorResult = processor.process(jsonRemoteMessagingConfig: jsonRemoteMessagingConfig, currentConfig: config)
+        let processorResult = processor.process(jsonRemoteMessagingConfig: jsonRemoteMessagingConfig, currentConfig: config, supportedSurfacesForMessage: { _ in .newTabPage })
         XCTAssertNotNil(processorResult)
         XCTAssertEqual(processorResult?.version, jsonRemoteMessagingConfig.version)
         XCTAssertNotNil(processorResult?.message)
@@ -110,7 +110,7 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
                                                                   invalidate: false,
                                                                   evaluationTimestamp: Date())
 
-        let result = processor.process(jsonRemoteMessagingConfig: jsonRemoteMessagingConfig, currentConfig: config)
+        let result = processor.process(jsonRemoteMessagingConfig: jsonRemoteMessagingConfig, currentConfig: config, supportedSurfacesForMessage: { _ in .newTabPage })
         XCTAssertNil(result)
     }
 

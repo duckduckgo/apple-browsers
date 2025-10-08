@@ -24,6 +24,7 @@ import DDGSync
 import History
 import BrowserServicesKit
 import RemoteMessaging
+import RemoteMessagingTestsUtils
 @testable import Configuration
 import Core
 import SubscriptionTestingUtilities
@@ -59,20 +60,7 @@ import SystemSettingsPiPTutorialTestSupport
             featureFlagger: MockFeatureFlagger()
         )
 
-        let remoteMessagingClient = RemoteMessagingClient(
-            bookmarksDatabase: db,
-            appSettings: AppSettingsMock(),
-            internalUserDecider: MockInternalUserDecider(),
-            configurationStore: MockConfigurationStoring(),
-            database: db,
-            errorEvents: nil,
-            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
-            duckPlayerStorage: MockDuckPlayerStorage(),
-            configurationURLProvider: MockCustomURLProvider(),
-            syncService: MockDDGSyncing(),
-            winBackOfferService: .mocked
-        )
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
         let tabsModel = TabsModel(desktop: true)
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()

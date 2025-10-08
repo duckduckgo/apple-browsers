@@ -797,6 +797,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(
                     privacyConfigurationManager: privacyConfigurationManager
                 ),
+                remoteMessagingSurfacesProvider: DefaultRemoteMessagingSurfacesProvider(),
                 subscriptionManager: subscriptionAuthV1toV2Bridge,
                 featureFlagger: self.featureFlagger,
                 configurationURLProvider: configurationURLProvider,

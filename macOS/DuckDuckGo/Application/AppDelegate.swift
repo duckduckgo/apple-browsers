@@ -802,7 +802,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                        subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                        freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPPromotionViewCoordinator = FreemiumDBPPromotionViewCoordinator(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
-                                                                                  freemiumDBPFeature: freemiumDBPFeature)
+                                                                                  freemiumDBPFeature: freemiumDBPFeature,
+                                                                                  contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher())
 
         brokenSitePromptLimiter = BrokenSitePromptLimiter(privacyConfigManager: privacyConfigurationManager, store: BrokenSitePromptLimiterStore())
 #if DEBUG

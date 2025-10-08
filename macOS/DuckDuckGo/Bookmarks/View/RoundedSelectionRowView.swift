@@ -60,8 +60,7 @@ final class RoundedSelectionRowView: NSTableRowView {
 
         let path = NSBezierPath(roundedRect: selectionRect, xRadius: 6, yRadius: 6)
 
-        let colorsProvider = theme.palette
-        colorsProvider.controlsFillPrimary.setFill()
+        theme.colorsProvider.buttonMouseOverColor.setFill()
 
         path.fill()
     }
@@ -77,12 +76,11 @@ final class RoundedSelectionRowView: NSTableRowView {
         selectionRect.size.height -= (insets.top + insets.bottom)
 
         let path = NSBezierPath(roundedRect: selectionRect, xRadius: 6, yRadius: 6)
-        let colorsProvider = theme.palette
 
         if isInKeyWindow {
-            colorsProvider.controlsFillSecondary.setFill()
+            theme.colorsProvider.buttonMouseDownColor.setFill()
         } else {
-            colorsProvider.controlsFillPrimary.setFill()
+            theme.colorsProvider.buttonMouseOverColor.setFill()
         }
 
         path.fill()

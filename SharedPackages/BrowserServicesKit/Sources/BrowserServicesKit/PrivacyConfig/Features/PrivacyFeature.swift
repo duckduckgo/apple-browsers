@@ -129,6 +129,12 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Enable WebKit page load timing performance reporting
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/XXXXXXXXX?focus=true
     case webKitPerformanceReporting
+
+    // Gradual rollout for new Fire dialog replacing the legacy popover
+    // https://app.asana.com/1/137249556945/project/72649045549333/task/1210417832822045
+    case fireDialog
+    // Controls visibility of the "Manage individual sites" link in the Fire dialog
+    case fireDialogIndividualSitesLink
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -327,6 +333,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case vpnToolbarUpsell
     case supportsAlternateStripePaymentFlow
     case subscriptionPurchaseWidePixelMeasurement
+    case authV2WideEventEnabled
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

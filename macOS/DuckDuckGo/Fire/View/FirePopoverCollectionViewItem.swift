@@ -34,7 +34,7 @@ final class FirePopoverCollectionViewItem: NSCollectionViewItem {
     @IBOutlet weak var checkButton: NSButton!
     @IBOutlet weak var faviconImageView: NSImageView!
 
-    func setItem(_ item: FirePopoverViewModel.Item, isFireproofed: Bool) {
+    func setItem(_ item: FireDialogViewModel.Item, isFireproofed: Bool) {
         domainTextField.stringValue = item.domain
         faviconImageView.image = item.favicon ?? .web
         checkButton.isHidden = isFireproofed

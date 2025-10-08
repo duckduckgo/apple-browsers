@@ -80,13 +80,14 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         let fireproofDomainsWindowController = FireproofDomainsViewController.create(fireproofDomains: fireproofDomains, faviconManager: faviconManager).wrappedInWindowController()
 
         guard let fireproofDomainsWindow = fireproofDomainsWindowController.window,
-              let parentWindowController = windowControllersManager.lastKeyMainWindowController
+              let window = windowControllersManager.lastKeyMainWindowController?.window
         else {
             assertionFailure("DataClearingPreferences: Failed to present FireproofDomainsViewController")
             return
         }
 
-        parentWindowController.window?.beginSheet(fireproofDomainsWindow)
+        // display on top of currently presented sheet
+        sequence(first: window, next: \.sheets.last).reversed().first?.beginSheet(fireproofDomainsWindow)
     }
 
     init(

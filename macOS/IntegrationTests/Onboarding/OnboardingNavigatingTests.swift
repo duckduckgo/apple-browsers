@@ -28,7 +28,7 @@ final class OnboardingNavigatingTests: XCTestCase {
     override func setUp() {
         super.setUp()
         onboardingNavigation = Application.appDelegate.windowControllersManager
-        fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
         assert(Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty)
     }
 

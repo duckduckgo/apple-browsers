@@ -655,7 +655,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         startupPreferences = StartupPreferences(persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore), appearancePreferences: appearancePreferences)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(themeManager: themeManager, appearancePreferences: appearancePreferences)
 
-        fireCoordinator = FireCoordinator(tld: tld)
+        fireCoordinator = FireCoordinator(tld: tld, featureFlagger: featureFlagger)
 
         var appContentBlocking: AppContentBlocking?
 #if DEBUG

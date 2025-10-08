@@ -253,15 +253,18 @@ extension AIChatSidebarPresenter: AIChatSidebarHostingDelegate {
 extension AIChatSidebarPresenter: AIChatSidebarViewControllerDelegate {
 
     func didClickOpenInNewTabButton(currentAIChatURL: URL, aiChatRestorationData: AIChatRestorationData?) {
+        guard let currentTabID = sidebarHost.currentTabID,
+              let sidebar = sidebarProvider.sidebarsByTab[currentTabID] else { return }
+
         pixelFiring?.fire(AIChatPixel.aiChatSidebarExpanded, frequency: .dailyAndStandard)
 
         toggleSidebar()
 
         Task { @MainActor in
-            if let data = aiChatRestorationData {
+            if let data = sidebar.restorationData {
                 aiChatTabOpener.openAIChatTab(with: .restoration(data), behavior: .newTab(selected: true))
             } else {
-                aiChatTabOpener.openAIChatTab(with: .url(currentAIChatURL), behavior: .newTab(selected: true))
+                aiChatTabOpener.openAIChatTab(with: .url(sidebar.currentAIChatURL), behavior: .newTab(selected: true))
             }
         }
     }

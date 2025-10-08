@@ -109,9 +109,6 @@ final class AIChatSidebar: NSObject {
         if let sidebarViewController {
             if persistingState {
                 aiChatURL = sidebarViewController.currentAIChatURL
-                if let restorationData = sidebarViewController.currentAIChatRestorationData {
-                    self.restorationData = restorationData
-                }
             }
             sidebarViewController.stopLoading()
             sidebarViewController.removeCompletely()

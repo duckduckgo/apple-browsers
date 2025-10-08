@@ -24,20 +24,13 @@ import Freemium
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 import SubscriptionTestingUtilities
+import RemoteMessagingTestsUtils
 import BrowserServicesKit
+@testable import Subscription
 
 struct MockRemoteMessagingStoreProvider: RemoteMessagingStoreProviding {
     func makeRemoteMessagingStore(database: CoreDataDatabase, availabilityProvider: RemoteMessagingAvailabilityProviding) -> RemoteMessagingStoring {
         MockRemoteMessagingStore()
-    }
-}
-
-final class MockRemoteMessagingConfigFetcher: RemoteMessagingConfigFetching {
-    func fetchRemoteMessagingConfig() async throws -> RemoteMessageResponse.JsonRemoteMessagingConfig {
-        let json = #"{ "version": 1, "messages": [], "rules": [] }"#
-        let jsonData = json.data(using: .utf8)!
-        let decoder = JSONDecoder()
-        return try decoder.decode(RemoteMessageResponse.JsonRemoteMessagingConfig.self, from: jsonData)
     }
 }
 
@@ -63,6 +56,7 @@ final class RemoteMessagingClientTests: XCTestCase {
 
     var storeProvider: MockRemoteMessagingStoreProvider!
     var availabilityProvider: MockRemoteMessagingAvailabilityProvider!
+    var surfacesProvider: MockRemoteMessageSurfacesProvider!
 
     var remoteMessagingDatabase: CoreDataDatabase!
     var remoteMessagingDatabaseLocation: URL!
@@ -75,6 +69,7 @@ final class RemoteMessagingClientTests: XCTestCase {
         setUpBookmarksDatabase()
 
         availabilityProvider = MockRemoteMessagingAvailabilityProvider()
+        surfacesProvider = MockRemoteMessageSurfacesProvider()
         storeProvider = MockRemoteMessagingStoreProvider()
         subscriptionAuthV1toV2Bridge = SubscriptionAuthV1toV2BridgeMock()
     }
@@ -83,6 +78,7 @@ final class RemoteMessagingClientTests: XCTestCase {
         try tearDownBookmarksDatabase()
         try tearDownRemoteMessagingDatabase()
         availabilityProvider = nil
+        surfacesProvider = nil
         client = nil
         subscriptionAuthV1toV2Bridge = nil
     }
@@ -121,7 +117,9 @@ final class RemoteMessagingClientTests: XCTestCase {
         try FileManager.default.removeItem(at: bookmarksDatabaseLocation)
     }
 
-    private func makeClient() {
+    private func makeClient(
+        configFetcher: MockRemoteMessagingConfigFetcher = MockRemoteMessagingConfigFetcher(),
+    ) {
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -129,7 +127,7 @@ final class RemoteMessagingClientTests: XCTestCase {
         )
         client = RemoteMessagingClient(
             remoteMessagingDatabase: remoteMessagingDatabase,
-            configFetcher: MockRemoteMessagingConfigFetcher(),
+            configFetcher: configFetcher,
             configMatcherProvider: RemoteMessagingConfigMatcherProvider(
                 bookmarksDatabase: bookmarksDatabase,
                 appearancePreferences: appearancePreferences,
@@ -142,7 +140,8 @@ final class RemoteMessagingClientTests: XCTestCase {
                 featureFlagger: MockFeatureFlagger(),
                 themeManager: MockThemeManager()
             ),
-            remoteMessagingAvailabilityProvider: availabilityProvider
+            remoteMessagingAvailabilityProvider: availabilityProvider,
+            remoteMessagingSurfacesProvider: surfacesProvider
         )
     }
 
@@ -168,4 +167,30 @@ final class RemoteMessagingClientTests: XCTestCase {
         availabilityProvider.isRemoteMessagingAvailable = true
         XCTAssertNotNil(client.store)
     }
+
+    func testWhenFetchAndProcessUsingStoreIsCalledThenUseInjectSurfacesProviderFunction() async throws {
+        // GIVEN
+        let subscription = DuckDuckGoSubscription(
+            productId: "prod123",
+            name: "Pro Plan",
+            billingPeriod: .monthly,
+            startedAt: Date(timeIntervalSince1970: 1000),
+            expiresOrRenewsAt: Date(timeIntervalSince1970: 2000),
+            platform: .google,
+            status: .autoRenewable,
+            activeOffers: []
+        )
+        subscriptionAuthV1toV2Bridge.returnSubscription = .success(subscription)
+        availabilityProvider.isRemoteMessagingAvailable = true
+        makeClient(configFetcher: .init(config: .smallMessage))
+        let store = try XCTUnwrap(client.store)
+
+        // WHEN
+        try await client.fetchAndProcess(using: store)
+
+        // THEN
+        XCTAssertTrue(surfacesProvider.didCallSupportedSurfacesForMessageType)
+        XCTAssertEqual(surfacesProvider.capturedMessageType, .small(titleText: "Small Message", descriptionText: "Small Message Description"))
+    }
+
 }

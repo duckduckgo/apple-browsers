@@ -28,6 +28,7 @@ public enum RemoteMessageResponse {
 
     struct JsonRemoteMessage: Decodable, Equatable {
         let id: String
+        let surfaces: [String]?
         let content: JsonContent
         let translations: [String: JsonContentTranslation]?
         let matchingRules, exclusionRules: [Int]?
@@ -62,6 +63,13 @@ public enum RemoteMessageResponse {
         let primaryAction: JsonMessageAction?
         let secondaryActionText: String?
         let secondaryAction: JsonMessageAction?
+    }
+
+    enum JsonSurface: String, CaseIterable {
+        case newTabPage = "new_tab_page"
+        case modal
+        // Used for 'What's New' (macOS)
+        case dedicatedTab = "dedicated_tab"
     }
 
     struct JsonMessageAction: Decodable {

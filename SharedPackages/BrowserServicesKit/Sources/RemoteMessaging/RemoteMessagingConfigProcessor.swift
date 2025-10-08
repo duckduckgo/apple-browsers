@@ -31,7 +31,8 @@ public protocol RemoteMessagingConfigProcessing {
 
     func process(
         jsonRemoteMessagingConfig: RemoteMessageResponse.JsonRemoteMessagingConfig,
-        currentConfig: RemoteMessagingConfig?
+        currentConfig: RemoteMessagingConfig?,
+        supportedSurfacesForMessage: @escaping (RemoteMessageModelType) -> RemoteMessageSurfaceType
     ) -> RemoteMessagingConfigProcessor.ProcessorResult?
 }
 
@@ -45,7 +46,9 @@ public struct RemoteMessagingConfigProcessor: RemoteMessagingConfigProcessing {
     public let remoteMessagingConfigMatcher: RemoteMessagingConfigMatcher
 
     public func process(jsonRemoteMessagingConfig: RemoteMessageResponse.JsonRemoteMessagingConfig,
-                        currentConfig: RemoteMessagingConfig?) -> ProcessorResult? {
+                        currentConfig: RemoteMessagingConfig?,
+                        supportedSurfacesForMessage: @escaping (RemoteMessageModelType) -> RemoteMessageSurfaceType
+    ) -> ProcessorResult? {
         Logger.remoteMessaging.debug("Processing version \(jsonRemoteMessagingConfig.version, privacy: .public)")
 
         let currentVersion = currentConfig?.version ?? 0
@@ -56,7 +59,8 @@ public struct RemoteMessagingConfigProcessor: RemoteMessagingConfigProcessing {
         if isNewVersion || shouldProcessConfig(currentConfig) {
             let config = JsonToRemoteConfigModelMapper.mapJson(
                 remoteMessagingConfig: jsonRemoteMessagingConfig,
-                surveyActionMapper: remoteMessagingConfigMatcher.surveyActionMapper
+                surveyActionMapper: remoteMessagingConfigMatcher.surveyActionMapper,
+                supportedSurfacesForMessage: supportedSurfacesForMessage
             )
             let message = remoteMessagingConfigMatcher.evaluate(remoteConfig: config)
             Logger.remoteMessaging.debug("Message to present next: \(message.debugDescription, privacy: .public)")

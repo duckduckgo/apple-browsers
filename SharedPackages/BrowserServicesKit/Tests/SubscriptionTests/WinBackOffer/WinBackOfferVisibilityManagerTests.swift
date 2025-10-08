@@ -49,7 +49,6 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         super.tearDown()
     }
 
-
     func testWhenFeatureDisabled_TheOfferIsNotAvailable() {
         // Given
         mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = false

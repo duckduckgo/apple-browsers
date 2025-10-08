@@ -121,18 +121,11 @@ struct AppConfiguration {
     
     private func attemptWebViewTempDirectoryFallback(at url: URL) {
         Logger.general.info("🌐 Attempting WKWebView fallback for temp directory recreation")
-        // Create a minimal WKWebView and load content to trigger temp directory creation
+        // Create a minimal WKWebView to trigger temp directory creation
         // WebKit may have elevated privileges that could help with directory creation
         let webView = WKWebView(frame: .zero)
-        
-        // Load about:blank to trigger WebKit's temp directory creation
-        if let aboutBlankURL = URL(string: "about:blank") {
-            let request = URLRequest(url: aboutBlankURL)
-            webView.load(request)
-        }
-        
-        let fallbackSucceeded = FileManager.default.fileExists(atPath: url.path)
 
+        let fallbackSucceeded = FileManager.default.fileExists(atPath: url.path)
         if fallbackSucceeded {
             Logger.general.info("✅ WKWebView fallback successfully recreated temp directory")
             Pixel.fire(pixel: .recreateTmpWebViewFallbackSucceeded)

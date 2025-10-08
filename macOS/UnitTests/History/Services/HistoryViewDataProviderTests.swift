@@ -697,8 +697,8 @@ final class CapturingHistoryBurner: HistoryBurning {
         burnAllCallsCount += 1
     }
 
-    func burn(_ visits: [Visit], animated: Bool) async {
-        burnCalls.append(.init(visits, animated))
+    func burn(_ visits: [Visit], and burnChats: Bool, animated: Bool) async {
+        burnCalls.append(.init(visits, burnChats, animated))
     }
 
     var burnCalls: [BurnCall] = []
@@ -706,10 +706,12 @@ final class CapturingHistoryBurner: HistoryBurning {
 
     struct BurnCall: Equatable {
         let visits: [Visit]
+        let burnChats: Bool
         let animated: Bool
 
-        init(_ visits: [Visit], _ animated: Bool) {
+        init(_ visits: [Visit], _ burnChats: Bool, _ animated: Bool) {
             self.visits = visits
+            self.burnChats = burnChats
             self.animated = animated
         }
     }

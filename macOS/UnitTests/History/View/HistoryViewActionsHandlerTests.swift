@@ -127,7 +127,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
     func testWhenDeleteDialogIsAcceptedWithBurningThenShowDeleteDialogForQueryPerformsBurningAndReturnsDeleteAction() async {
         let data = dataProvider.configureWithGeneratedTestData(domainsCount: 5, visitsPerDomain: 20)
         dataProvider.visitsMatchingQuery = { _ in data.visits }
-        dialogPresenter.deleteDialogResponse = .burn
+        dialogPresenter.deleteDialogResponse = .burn(data: true, chats: false)
         let dialogResponse = await actionsHandler.showDeleteDialog(for: .rangeFilter(.all))
         XCTAssertEqual(dataProvider.deleteVisitsMatchingQueryCalls, [])
         XCTAssertEqual(dataProvider.burnVisitsMatchingQueryCalls, [.rangeFilter(.all)])
@@ -262,7 +262,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
             .init(uuid: "efgh", url: try XCTUnwrap("https://domain.com".url), date: Date())
         ]
         dataProvider.visitsMatchingQuery = { _ in data.visits }
-        dialogPresenter.deleteDialogResponse = .burn
+        dialogPresenter.deleteDialogResponse = .burn(data: true, chats: false)
         let dialogResponse = await actionsHandler.showDeleteDialog(for: identifiers.map(\.description))
         XCTAssertEqual(dialogPresenter.showDeleteDialogCalls.count, 1)
         XCTAssertEqual(dataProvider.deleteVisitsMatchingQueryCalls, [])

@@ -26,8 +26,8 @@ import Combine
 
 protocol AIChatDataClearingUserScriptDelegate: AnyObject {
 
-    func dataClearingSucceeded()
-    func dataClearingFailed()
+    @MainActor func dataClearingSucceeded()
+    @MainActor func dataClearingFailed()
 
 }
 
@@ -48,7 +48,7 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
     weak var delegate: AIChatDataClearingUserScriptDelegate?
     weak var broker: UserScriptMessageBroker?
     private(set) var messageOriginPolicy: MessageOriginPolicy
-    var featureName: String = "duckAiDataClearing"
+    var featureName = "duckAiDataClearing"
     weak var webView: WKWebView?
     private var cancellables = Set<AnyCancellable>()
 

@@ -42,7 +42,7 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
         deleteVisitsMatchingQueryCalls.append(query)
     }
 
-    func burnVisits(matching query: DataModel.HistoryQueryKind) async {
+    func burnVisits(matching query: DataModel.HistoryQueryKind, and burnChats: Bool) async {
         burnVisitsMatchingQueryCalls.append(query)
     }
 

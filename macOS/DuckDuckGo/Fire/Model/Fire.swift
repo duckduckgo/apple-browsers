@@ -267,7 +267,9 @@ final class Fire: FireProtocol {
         }
         self.aiChatHistoryCleaner = aIChatHistoryCleaner ?? AIChatHistoryCleaner(featureFlagger: NSApp.delegateTyped.featureFlagger,
                                                                                  aiChatMenuConfiguration: NSApp.delegateTyped.aiChatMenuConfiguration,
-                                                                                 featureDiscovery: DefaultFeatureDiscovery())
+                                                                                 featureDiscovery: DefaultFeatureDiscovery(),
+                                                                                 privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager)
+        subscribeToChatHistoryNotifications()
     }
 
     @MainActor
@@ -320,6 +322,7 @@ final class Fire: FireProtocol {
             self.burnAutoconsentCache()
             self.burnZoomLevels(of: domains)
             if includingChatHistory {
+                group.enter() // Leave is called when we receive notification that data clearing is complete
                 self.burnChatHistory()
             }
 
@@ -383,6 +386,8 @@ final class Fire: FireProtocol {
             self.burnRecentlyClosed()
             self.burnAutoconsentCache()
             self.burnZoomLevels()
+
+            group.enter() // Leave is called when we receive notification that data clearing is complete
             self.burnChatHistory()
 
             group.notify(queue: .main) {
@@ -456,6 +461,12 @@ final class Fire: FireProtocol {
     @MainActor
     func burnChatHistory() {
         aiChatHistoryCleaner.cleanAIChatHistory()
+    }
+
+    private func subscribeToChatHistoryNotifications() {
+        NotificationCenter.default.addObserver(forName: .aiChatHistoryClearDataCompleted, object: nil, queue: .main) { [weak self] _ in
+            self?.dispatchGroup?.leave()
+        }
     }
 
     // MARK: - Fire animation

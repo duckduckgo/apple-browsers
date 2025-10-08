@@ -261,6 +261,7 @@ final class FireTests: XCTestCase {
         fire.burnVisits([],
                         except: Application.appDelegate.fireproofDomains,
                         isToday: true,
+                        clearChatHistory: false,
                         completion: {
             finishedBurningExpectation.fulfill()
         })
@@ -309,6 +310,7 @@ final class FireTests: XCTestCase {
                         ],
                         except: Application.appDelegate.fireproofDomains,
                         isToday: false,
+                        clearChatHistory: false,
                         completion: {
             finishedBurningExpectation.fulfill()
         })

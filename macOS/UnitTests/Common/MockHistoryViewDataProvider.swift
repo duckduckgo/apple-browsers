@@ -154,7 +154,7 @@ public class MockHistoryViewDataProvider: @preconcurrency HistoryViewDataProvidi
     }
 
     public func deleteVisits(matching query: HistoryView.DataModel.HistoryQueryKind) async {}
-    public func burnVisits(matching query: HistoryView.DataModel.HistoryQueryKind) async {}
+    public func burnVisits(matching query: HistoryView.DataModel.HistoryQueryKind, and burnChats: Bool) async {}
 
     public func cookieDomains(matching query: DataModel.HistoryQueryKind) async -> Set<String> {
         let visits = await visits(matching: query)

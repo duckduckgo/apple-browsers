@@ -194,6 +194,7 @@ private struct Metrics {
                     HomeMessage.remoteMessage(
                         remoteMessage: RemoteMessageModel(
                             id: "0",
+                            surfaces: .newTabPage,
                             content: .small(titleText: "Title", descriptionText: "Description"),
                             matchingRules: [],
                             exclusionRules: [],

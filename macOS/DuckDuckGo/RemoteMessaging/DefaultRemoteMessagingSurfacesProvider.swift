@@ -1,7 +1,7 @@
 //
-//  MockRemoteMessagingAvailabilityProvider.swift
+//  DefaultRemoteMessagingSurfacesProvider.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,18 +16,16 @@
 //  limitations under the License.
 //
 
-import Combine
+import Foundation
 import RemoteMessaging
 
-public class MockRemoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding {
+struct DefaultRemoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding {
 
-    public init(isRemoteMessagingAvailable: Bool = true) {
-        self.isRemoteMessagingAvailable = isRemoteMessagingAvailable
+    func supportedSurfaces(for messageType: RemoteMessaging.RemoteMessageModelType) -> RemoteMessaging.RemoteMessageSurfaceType {
+        switch messageType {
+        case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
+            return .newTabPage
+        }
     }
 
-    public var isRemoteMessagingAvailablePublisher: AnyPublisher<Bool, Never> {
-        $isRemoteMessagingAvailable.dropFirst().eraseToAnyPublisher()
-    }
-
-    @Published public var isRemoteMessagingAvailable: Bool
 }

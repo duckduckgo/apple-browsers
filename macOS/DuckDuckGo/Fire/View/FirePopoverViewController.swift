@@ -92,12 +92,16 @@ final class FirePopoverViewController: NSViewController {
         self.historyCoordinating = historyCoordinating
         self.themeManager = themeManager
         self.firePopoverViewModel = FireDialogViewModel(fireViewModel: fireViewModel,
-                                                         tabCollectionViewModel: tabCollectionViewModel,
-                                                         historyCoordinating: historyCoordinating,
-                                                         fireproofDomains: fireproofDomains,
-                                                         faviconManagement: faviconManagement,
-                                                         tld: tld,
-                                                         onboardingContextualDialogsManager: Application.appDelegate.onboardingContextualDialogsManager)
+                                                        tabCollectionViewModel: tabCollectionViewModel,
+                                                        historyCoordinating: historyCoordinating,
+                                                        fireproofDomains: fireproofDomains,
+                                                        faviconManagement: faviconManagement,
+                                                        clearingOption: .allData,
+                                                        includeTabsAndWindows: true,
+                                                        includeHistory: true,
+                                                        includeCookiesAndSiteData: true,
+                                                        tld: tld,
+                                                        onboardingContextualDialogsManager: Application.appDelegate.onboardingContextualDialogsManager)
 
         super.init(coder: coder)
     }

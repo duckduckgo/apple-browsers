@@ -125,6 +125,11 @@ final class AIChatSidebar: NSObject {
     func updateHiddenAt(_ date: Date?) {
         hiddenAt = date
     }
+
+    /// Test-only method to set the restoration data for testing
+    func updateRestorationData(_ data: AIChatRestorationData?) {
+        restorationData = data
+    }
 #endif
 }
 

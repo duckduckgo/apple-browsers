@@ -398,7 +398,14 @@ final class AIChatSidebarPresenterTests: XCTestCase {
 
     func testDidClickOpenInNewTabButton_newAIChatTabIsOpen() {
         // Given
+        let tabID = "test-tab"
+        mockSidebarHost.currentTabID = tabID
+
+        // Set up the sidebar with a test URL (without restoration data, so it falls back to URL)
         let testURL = URL(string: "https://example.com")!
+        let sidebar = AIChatSidebar(initialAIChatURL: testURL, burnerMode: .regular)
+        mockSidebarProvider.restoreState([tabID: sidebar])
+
         mockAIChatTabOpener.openMethodCalledExpectation = expectation(description: "AIChatTabOpener did open a new tab")
 
         // When
@@ -418,8 +425,15 @@ final class AIChatSidebarPresenterTests: XCTestCase {
 
     func testDidClickOpenInNewTabButton_withRestorationData() {
         // Given
-        let testURL = URL(string: "https://example.com")!
+        let tabID = "test-tab"
+        mockSidebarHost.currentTabID = tabID
+
+        // Set up the sidebar with restoration data
         let restorationData = AIChatRestorationData()
+        let sidebar = AIChatSidebar(burnerMode: .regular)
+        sidebar.updateRestorationData(restorationData)
+        mockSidebarProvider.restoreState([tabID: sidebar])
+
         mockAIChatTabOpener.openMethodCalledExpectation = expectation(description: "AIChatTabOpener did open a new tab")
 
         // When

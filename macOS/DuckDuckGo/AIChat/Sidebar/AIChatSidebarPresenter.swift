@@ -258,13 +258,16 @@ extension AIChatSidebarPresenter: AIChatSidebarViewControllerDelegate {
 
         pixelFiring?.fire(AIChatPixel.aiChatSidebarExpanded, frequency: .dailyAndStandard)
 
+        let restorationData = sidebar.restorationData
+        let currentAIChatURL = sidebar.currentAIChatURL
+
         toggleSidebar()
 
         Task { @MainActor in
-            if let data = sidebar.restorationData {
+            if let data = restorationData {
                 aiChatTabOpener.openAIChatTab(with: .restoration(data), behavior: .newTab(selected: true))
             } else {
-                aiChatTabOpener.openAIChatTab(with: .url(sidebar.currentAIChatURL), behavior: .newTab(selected: true))
+                aiChatTabOpener.openAIChatTab(with: .url(currentAIChatURL), behavior: .newTab(selected: true))
             }
         }
     }

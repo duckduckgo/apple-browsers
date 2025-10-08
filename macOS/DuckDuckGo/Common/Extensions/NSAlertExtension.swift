@@ -279,26 +279,6 @@ extension NSAlert {
         return alert
     }
 
-    /// Creates a prompt for adding a new Fireproof domain, returning the configured alert and the bound text field.
-    /// Caller can run it as a sheet or modally and read the domain from the returned text field.
-    static func fireproofAddDomainPrompt() -> (alert: NSAlert, textField: NSTextField) {
-        let alert = NSAlert()
-        alert.messageText = UserText.fireproofAddTitle
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: UserText.fireproofAddButton)
-        alert.addButton(withTitle: UserText.cancel)
-
-        let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
-        textField.maximumNumberOfLines = 1
-        textField.lineBreakMode = .byTruncatingTail
-        textField.placeholderString = "example.com"
-        alert.accessoryView = textField
-        alert.window.initialFirstResponder = textField
-        return (alert, textField)
-    }
-
-    // Intentionally no presenting helper: callers own sheet presentation and validation
-
     @discardableResult
     func runModal() async -> NSApplication.ModalResponse {
         await withCheckedContinuation { continuation in

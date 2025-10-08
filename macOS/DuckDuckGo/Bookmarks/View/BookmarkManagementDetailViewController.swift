@@ -78,7 +78,13 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
     private let sortBookmarksViewModel: SortBookmarksViewModel
-    private let visualStyle: VisualStyleProviding
+
+    private var themeCancellable: AnyCancellable?
+    private let themeManager: ThemeManaging
+    private var theme: ThemeStyleProviding {
+        themeManager.theme
+    }
+
     private var selectionState: BookmarkManagementSidebarViewController.SelectionState = .empty {
         didSet {
             reloadData()
@@ -124,14 +130,14 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     init(bookmarkManager: BookmarkManager,
          dragDropManager: BookmarkDragDropManager,
-         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         let metrics = BookmarksSearchAndSortMetrics()
         let navigationEngagementMetrics = BookmarksNavigationEngagementMetrics()
         let sortViewModel = SortBookmarksViewModel(manager: bookmarkManager, metrics: metrics, origin: .manager)
         self.sortBookmarksViewModel = sortViewModel
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
         self.managementDetailViewModel = BookmarkManagementDetailViewModel(bookmarkManager: bookmarkManager,
                                                                            metrics: metrics,
                                                                            navigationEngagementMetrics: navigationEngagementMetrics,
@@ -145,7 +151,9 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     override func loadView() {
         let showSyncPromo = syncPromoManager.shouldPresentPromoFor(.bookmarks)
-        view = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.bookmarksManagerBackgroundColor)
+        let colorsProvider = theme.colorsProvider
+
+        view = ColorView(frame: .zero, backgroundColor: colorsProvider.bookmarksManagerBackgroundColor)
         view.translatesAutoresizingMaskIntoConstraints = false
 
         // set menu before `newFolderButton` initialization as it uses the menu as its target
@@ -166,10 +174,11 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         toolbarButtonsStackView.distribution = .fill
         toolbarButtonsStackView.setClippingResistancePriority(.defaultHigh, for: .horizontal)
 
-        configureToolbarButton(newBookmarkButton, image: visualStyle.iconsProvider.bookmarksIconsProvider.addBookmarkIcon, isHidden: false)
-        configureToolbarButton(newFolderButton, image: visualStyle.iconsProvider.bookmarksIconsProvider.addBookmarkFolderIcon, isHidden: false)
-        configureToolbarButton(deleteItemsButton, image: visualStyle.iconsProvider.bookmarksIconsProvider.deleteBookmarkIcon, isHidden: false)
-        configureToolbarButton(sortItemsButton, image: visualStyle.iconsProvider.bookmarksIconsProvider.sortBookmarkManuallyIcon, isHidden: false)
+        let bookmarksIconsProvider = theme.iconsProvider.bookmarksIconsProvider
+        configureToolbarButton(newBookmarkButton, image: bookmarksIconsProvider.addBookmarkIcon, isHidden: false)
+        configureToolbarButton(newFolderButton, image: bookmarksIconsProvider.addBookmarkFolderIcon, isHidden: false)
+        configureToolbarButton(deleteItemsButton, image: bookmarksIconsProvider.deleteBookmarkIcon, isHidden: false)
+        configureToolbarButton(sortItemsButton, image: bookmarksIconsProvider.sortBookmarkManuallyIcon, isHidden: false)
 
         loadingProgressIndicator.translatesAutoresizingMaskIntoConstraints = false
         loadingProgressIndicator.style = .spinning
@@ -290,6 +299,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         tableView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
 
         reloadData()
+        subscribeToThemeChanges()
     }
 
     override func viewDidAppear() {
@@ -307,16 +317,17 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         sortBookmarksViewModel.$selectedSortMode.sink { [weak self] newSortMode in
             guard let self else { return }
 
+            let bookmarksIconsProvider = theme.iconsProvider.bookmarksIconsProvider
             switch newSortMode {
             case .nameDescending:
                 self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSortByNameTitle
-                self.sortItemsButton.image = visualStyle.iconsProvider.bookmarksIconsProvider.sortBookmarkDescendingIcon
+                self.sortItemsButton.image = bookmarksIconsProvider.sortBookmarkDescendingIcon
             case .nameAscending:
                 self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSortByNameTitle
-                self.sortItemsButton.image = visualStyle.iconsProvider.bookmarksIconsProvider.sortBookmarkAscendingIcon
+                self.sortItemsButton.image = bookmarksIconsProvider.sortBookmarkAscendingIcon
             case .manual:
                 self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSort
-                self.sortItemsButton.image = visualStyle.iconsProvider.bookmarksIconsProvider.sortBookmarkManuallyIcon
+                self.sortItemsButton.image = bookmarksIconsProvider.sortBookmarkManuallyIcon
             }
 
             delegate?.bookmarkManagementDetailViewControllerSortChanged(newSortMode)
@@ -336,6 +347,23 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
                 self?.firstResponderDidChange($0)
             }
             .store(in: &cancellables)
+    }
+
+    private func subscribeToThemeChanges() {
+        themeCancellable = themeManager.themePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] style in
+                self?.applyThemeStyle(theme: style)
+            }
+    }
+
+    private func applyThemeStyle(theme: ThemeStyleProviding) {
+        guard let contentView = view as? ColorView else {
+            assertionFailure()
+            return
+        }
+
+        contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
     }
 
     override func keyDown(with event: NSEvent) {
@@ -545,7 +573,7 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
         guard let entity = fetchEntity(at: row) else { return nil }
 
         let cell = tableView.makeView(withIdentifier: .init(BookmarkTableCellView.className()), owner: nil) as? BookmarkTableCellView
-        ?? BookmarkTableCellView(identifier: .init(BookmarkTableCellView.className()), visualStyle: visualStyle)
+        ?? BookmarkTableCellView(identifier: .init(BookmarkTableCellView.className()), theme: theme)
 
         cell.delegate = self
 

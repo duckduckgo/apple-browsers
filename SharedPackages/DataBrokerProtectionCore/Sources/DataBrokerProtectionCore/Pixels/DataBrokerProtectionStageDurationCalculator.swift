@@ -94,6 +94,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     private(set) var tries = 1
     let vpnConnectionState: String
     let vpnBypassStatus: String
+    weak var wideEventRecorder: OptOutSubmissionWideEventRecording?
 
     init(attemptId: UUID = UUID(),
          startTime: Date = Date(),
@@ -114,6 +115,10 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.vpnBypassStatus = vpnBypassStatus
     }
 
+    func attachWideEventRecorder(_ recorder: OptOutSubmissionWideEventRecording?) {
+        self.wideEventRecorder = recorder
+    }
+
     /// Returned in milliseconds
     func durationSinceLastStage() -> Double {
         let now = Date()
@@ -132,99 +137,154 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     func fireOptOutStart() {
         setStage(.start)
         handler.fire(.optOutStart(dataBroker: dataBroker, attemptId: attemptId))
+        wideEventRecorder?.recordStage(.start,
+                                       duration: nil,
+                                       tries: tries,
+                                       actionID: actionID)
     }
 
     func fireOptOutEmailGenerate() {
+        let duration = durationSinceLastStage()
         handler.fire(.optOutEmailGenerate(dataBroker: dataBroker,
                                           attemptId: attemptId,
-                                          duration: durationSinceLastStage(),
+                                          duration: duration,
                                           dataBrokerVersion: dataBrokerVersion,
                                           tries: tries,
                                           actionId: actionID ?? ""))
+        wideEventRecorder?.recordStage(.emailGenerate,
+                                       duration: duration,
+                                       tries: tries,
+                                       actionID: actionID)
     }
 
     func fireOptOutCaptchaParse() {
+        let duration = durationSinceLastStage()
         handler.fire(.optOutCaptchaParse(dataBroker: dataBroker,
                                          attemptId: attemptId,
-                                         duration: durationSinceLastStage(),
+                                         duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
                                          tries: tries,
                                          actionId: actionID ?? ""))
+        wideEventRecorder?.recordStage(.captchaParse,
+                                       duration: duration,
+                                       tries: tries,
+                                       actionID: actionID)
     }
 
     func fireOptOutCaptchaSend() {
+        let duration = durationSinceLastStage()
         handler.fire(.optOutCaptchaSend(dataBroker: dataBroker,
                                         attemptId: attemptId,
-                                        duration: durationSinceLastStage(),
+                                        duration: duration,
                                         dataBrokerVersion: dataBrokerVersion,
                                         tries: tries,
                                         actionId: actionID ?? ""))
+        wideEventRecorder?.recordStage(.captchaSend,
+                                       duration: duration,
+                                       tries: tries,
+                                       actionID: actionID)
     }
 
     func fireOptOutCaptchaSolve() {
+        let duration = durationSinceLastStage()
         handler.fire(.optOutCaptchaSolve(dataBroker: dataBroker,
                                          attemptId: attemptId,
-                                         duration: durationSinceLastStage(),
+                                         duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
                                          tries: tries,
                                          actionId: actionID ?? ""))
+        wideEventRecorder?.recordStage(.captchaSolve,
+                                       duration: duration,
+                                       tries: tries,
+                                       actionID: actionID)
     }
 
     func fireOptOutSubmit() {
         setStage(.submit)
+        let duration = durationSinceLastStage()
         handler.fire(.optOutSubmit(dataBroker: dataBroker,
                                    attemptId: attemptId,
-                                   duration: durationSinceLastStage(),
+                                   duration: duration,
                                    dataBrokerVersion: dataBrokerVersion,
                                    tries: tries,
                                    actionId: actionID ?? ""))
+        wideEventRecorder?.recordStage(.submit,
+                                       duration: duration,
+                                       tries: tries,
+                                       actionID: actionID)
     }
 
     func fireOptOutEmailReceive() {
+        let duration = durationSinceLastStage()
         handler.fire(.optOutEmailReceive(dataBroker: dataBroker,
                                          attemptId: attemptId,
-                                         duration: durationSinceLastStage(),
+                                         duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
                                          tries: tries,
                                          actionId: actionID ?? ""))
+        wideEventRecorder?.recordStage(.emailReceive,
+                                       duration: duration,
+                                       tries: tries,
+                                       actionID: actionID)
     }
 
     func fireOptOutEmailConfirm() {
+        let duration = durationSinceLastStage()
         handler.fire(.optOutEmailConfirm(dataBroker: dataBroker,
                                          attemptId: attemptId,
-                                         duration: durationSinceLastStage(),
+                                         duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
                                          tries: tries,
                                          actionId: actionID ?? ""))
+        wideEventRecorder?.recordStage(.emailConfirm,
+                                       duration: duration,
+                                       tries: tries,
+                                       actionID: actionID)
     }
 
     func fireOptOutValidate() {
         setStage(.validate)
+        let duration = durationSinceLastStage()
         handler.fire(.optOutValidate(dataBroker: dataBroker,
                                      attemptId: attemptId,
-                                     duration: durationSinceLastStage(),
+                                     duration: duration,
                                      dataBrokerVersion: dataBrokerVersion,
                                      tries: tries,
                                      actionId: actionID ?? ""))
+        wideEventRecorder?.recordStage(.validate,
+                                       duration: duration,
+                                       tries: tries,
+                                       actionID: actionID)
     }
 
     func fireOptOutFillForm() {
+        let duration = durationSinceLastStage()
         handler.fire(.optOutFillForm(dataBroker: dataBroker,
                                      attemptId: attemptId,
-                                     duration: durationSinceLastStage(),
+                                     duration: duration,
                                      dataBrokerVersion: dataBrokerVersion,
                                      tries: tries,
                                      actionId: actionID ?? ""))
+        wideEventRecorder?.recordStage(.fillForm,
+                                       duration: duration,
+                                       tries: tries,
+                                       actionID: actionID)
     }
 
     func fireOptOutSubmitSuccess(tries: Int) {
+        let now = Date()
+        let totalDuration = durationSinceStartTime()
         handler.fire(.optOutSubmitSuccess(dataBroker: dataBroker,
                                           attemptId: attemptId,
-                                          duration: durationSinceStartTime(),
+                                          duration: totalDuration,
                                           tries: tries,
                                           emailPattern: emailPattern,
                                           vpnConnectionState: vpnConnectionState,
                                           vpnBypassStatus: vpnBypassStatus))
+        wideEventRecorder?.markSubmissionCompleted(at: now,
+                                                   tries: tries,
+                                                   actionID: actionID)
+        wideEventRecorder?.complete(status: .success)
     }
 
     func fireOptOutFailure(tries: Int) {
@@ -241,21 +301,31 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     }
 
     func fireOptOutConditionFound() {
+        let duration = durationSinceLastStage()
         handler.fire(.optOutConditionFound(dataBroker: dataBroker,
                                            attemptId: attemptId,
-                                           duration: durationSinceLastStage(),
+                                           duration: duration,
                                            dataBrokerVersion: dataBrokerVersion,
                                            tries: tries,
                                            actionId: actionID ?? ""))
+        wideEventRecorder?.recordStage(.conditionFound,
+                                       duration: duration,
+                                       tries: tries,
+                                       actionID: actionID)
     }
 
     func fireOptOutConditionNotFound() {
+        let duration = durationSinceLastStage()
         handler.fire(.optOutConditionNotFound(dataBroker: dataBroker,
                                               attemptId: attemptId,
-                                              duration: durationSinceLastStage(),
+                                              duration: duration,
                                               dataBrokerVersion: dataBrokerVersion,
                                               tries: tries,
                                               actionId: actionID ?? ""))
+        wideEventRecorder?.recordStage(.conditionNotFound,
+                                       duration: duration,
+                                       tries: tries,
+                                       actionID: actionID)
     }
 
 #if os(iOS)

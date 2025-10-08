@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import BrowserServicesKit
 import os.log
 
 struct BrokerProfileOptOutSubJob {
@@ -81,6 +82,20 @@ struct BrokerProfileOptOutSubJob {
             vpnConnectionState: vpnConnectionState,
             vpnBypassStatus: vpnBypassStatus
         )
+
+        let recordFoundDate = RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
+                                                              repository: dependencies.database,
+                                                              brokerId: brokerId,
+                                                              profileQueryId: profileQueryId,
+                                                              extractedProfileId: extractedProfileId)
+        let wideEventRecorder = OptOutSubmissionWideEventRecorder.makeIfPossible(
+            wideEvent: dependencies.wideEvent,
+            attemptID: stageDurationCalculator.attemptId,
+            dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+            dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+            recordFoundDate: recordFoundDate
+        )
+        stageDurationCalculator.attachWideEventRecorder(wideEventRecorder)
 
         // 6. Record the start of the opt-out job:
         stageDurationCalculator.fireOptOutStart()
@@ -166,6 +181,37 @@ struct BrokerProfileOptOutSubJob {
             // 9. Catch errors from the opt-out job and report them:
             let tries = try? fetchTotalNumberOfOptOutAttempts(database: dependencies.database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1)
+
+            switch error {
+            case is TimeoutError:
+                wideEventRecorder?.cancel(with: error)
+                OptOutConfirmationWideEventEmitter.emitCancelled(
+                    wideEvent: dependencies.wideEvent,
+                    attemptID: stageDurationCalculator.attemptId,
+                    dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+                    dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+                    error: error
+                )
+            case let dbpError as DataBrokerProtectionError where dbpError == .jobTimeout:
+                wideEventRecorder?.cancel(with: error)
+                OptOutConfirmationWideEventEmitter.emitCancelled(
+                    wideEvent: dependencies.wideEvent,
+                    attemptID: stageDurationCalculator.attemptId,
+                    dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+                    dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+                    error: dbpError
+                )
+            default:
+                wideEventRecorder?.complete(status: .failure, with: error)
+                OptOutConfirmationWideEventEmitter.emitFailure(
+                    wideEvent: dependencies.wideEvent,
+                    attemptID: stageDurationCalculator.attemptId,
+                    dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+                    dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+                    error: error
+                )
+            }
+
             handleOperationError(
                 origin: .optOut,
                 brokerId: brokerId,

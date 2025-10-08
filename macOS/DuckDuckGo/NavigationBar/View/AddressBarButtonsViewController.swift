@@ -609,12 +609,13 @@ final class AddressBarButtonsViewController: NSViewController {
     private func updateBookmarkButtonImage(isUrlBookmarked: Bool = false) {
         let bookmarksIconsProvider = theme.iconsProvider.bookmarksIconsProvider
         let colorsProvider = theme.colorsProvider
+        let palette = theme.palette
 
         if let url = tabViewModel?.tab.content.userEditableUrl,
            isUrlBookmarked || bookmarkManager.isAnyUrlVariantBookmarked(url: url)
         {
             bookmarkButton.image = bookmarksIconsProvider.bookmarkFilledIcon
-            bookmarkButton.mouseOverTintColor = NSColor.bookmarkFilledTint
+            bookmarkButton.mouseOverTintColor = palette.surfacePrimary
             bookmarkButton.toolTip = UserText.editBookmarkTooltip
             bookmarkButton.setAccessibilityValue("Bookmarked")
             bookmarkButton.setAccessibilityTitle(UserText.editBookmarkTooltip)

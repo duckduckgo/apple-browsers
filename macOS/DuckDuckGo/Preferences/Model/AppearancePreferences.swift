@@ -31,6 +31,7 @@ import Combine
 protocol AppearancePreferencesPersistor {
     var showFullURL: Bool { get set }
     var themeAppearance: String { get set }
+    var themeName: String { get set }
     var favoritesDisplayMode: String? { get set }
     var isOmnibarVisible: Bool { get set }
     var isFavoriteVisible: Bool { get set }
@@ -77,6 +78,9 @@ struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersisto
 
     @UserDefaultsWrapper(key: .themeAppearance, defaultValue: ThemeAppearance.systemDefault.rawValue)
     var themeAppearance: String
+
+    @UserDefaultsWrapper(key: .themeName, defaultValue: ThemeName.default.rawValue)
+    var themeName: String
 
     @UserDefaultsWrapper(key: .favoritesDisplayMode, defaultValue: FavoritesDisplayMode.displayNative(.desktop).description)
     var favoritesDisplayMode: String?
@@ -247,6 +251,12 @@ final class AppearancePreferences: ObservableObject {
             persistor.themeAppearance = themeAppearance.rawValue
             updateUserInterfaceStyle()
             pixelFiring?.fire(SettingsPixel.themeSettingChanged, frequency: .uniqueByName)
+        }
+    }
+
+    @Published var themeName: ThemeName {
+        didSet {
+            persistor.themeName = themeName.rawValue
         }
     }
 
@@ -431,6 +441,7 @@ final class AppearancePreferences: ObservableObject {
         isContinueSetUpCardsViewOutdated = persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays
         continueSetUpCardsClosed = persistor.continueSetUpCardsClosed
         themeAppearance = .init(rawValue: persistor.themeAppearance) ?? .systemDefault
+        themeName = .init(rawValue: persistor.themeName) ?? .default
         showFullURL = persistor.showFullURL
         favoritesDisplayMode = persistor.favoritesDisplayMode.flatMap(FavoritesDisplayMode.init) ?? .default
         isOmnibarVisible = persistor.isOmnibarVisible
@@ -453,6 +464,7 @@ final class AppearancePreferences: ObservableObject {
         isContinueSetUpCardsViewOutdated = persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays
         continueSetUpCardsClosed = persistor.continueSetUpCardsClosed
         themeAppearance = .init(rawValue: persistor.themeAppearance) ?? .systemDefault
+        themeName = .init(rawValue: persistor.themeName) ?? .default
         showFullURL = persistor.showFullURL
         favoritesDisplayMode = persistor.favoritesDisplayMode.flatMap(FavoritesDisplayMode.init) ?? .default
         isOmnibarVisible = persistor.isOmnibarVisible

@@ -127,6 +127,7 @@ extension URL {
         guard featureFlagger.isFeatureOn(.unifiedURLPredictor) else {
             return makeURLUsingNativePredictionLogic(from: addressBarString)
         }
+
         let url = makeURLUsingUnifiedPredictionLogic(from: addressBarString)
 
         /// Return early if the metrics feature flag is disabled (only internal users can opt in to metrics collection).

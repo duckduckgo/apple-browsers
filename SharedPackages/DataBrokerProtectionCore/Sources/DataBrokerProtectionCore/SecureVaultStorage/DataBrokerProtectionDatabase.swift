@@ -77,6 +77,8 @@ public protocol DataBrokerProtectionRepository {
     func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation?
     func addAttempt(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws
 
+    func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> OptOutJobData?
+
     func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)?
 
     func fetchFirstEligibleJobDate() throws -> Date?
@@ -527,6 +529,15 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             return optOut.historyEvents
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchOptOutHistoryEvents brokerId profileQueryId extractedProfileId")
+            throw error
+        }
+    }
+
+    public func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> OptOutJobData? {
+        do {
+            return try vault.fetchOptOut(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchOptOut")
             throw error
         }
     }

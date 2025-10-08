@@ -41,6 +41,7 @@ public class DataBrokerProtectionAgentManagerProvider {
                                     configurationManager: DefaultConfigurationManager,
                                     privacyConfigurationManager: DBPPrivacyConfigurationManager,
                                     featureFlagger: DBPFeatureFlagging,
+                                    wideEvent: WideEventManaging,
                                     vpnBypassService: VPNBypassFeatureProvider) -> DataBrokerProtectionAgentManager? {
         guard let pixelKit = PixelKit.shared else {
             assertionFailure("PixelKit not set up")
@@ -148,7 +149,8 @@ public class DataBrokerProtectionAgentManagerProvider {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: featureFlagger,
-            vpnBypassService: vpnBypassService)
+            vpnBypassService: vpnBypassService,
+            wideEvent: wideEvent)
 
         return DataBrokerProtectionAgentManager(
             eventsHandler: eventsHandler,

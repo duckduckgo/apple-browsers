@@ -31,6 +31,10 @@ public protocol WideEventData: Codable, WideEventParameterProviding {
 
     /// Data about the current install of the app, such as version and form factor.
     var appData: WideEventAppData { get set }
+
+    /// Optional error data.
+    /// All layers of underlying errors will be reported.
+    var errorData: WideEventErrorData? { get set }
 }
 
 public enum WideEventStatus: Codable, Equatable, CustomStringConvertible {
@@ -92,6 +96,9 @@ public enum WideEventStatus: Codable, Equatable, CustomStringConvertible {
 // MARK: - WideEventGlobalData
 
 public struct WideEventGlobalData: Codable {
+    public static let minimumSampleRate: Float = 0.0
+    public static let maximumSampleRate: Float = 1.0
+
     /// Used for storing event data locally; not included in the event payload.
     public let id: String
 
@@ -109,15 +116,15 @@ public struct WideEventGlobalData: Codable {
         self.init(sampleRate: 1.0)
     }
 
-    public init(id: String = UUID().uuidString, platform: String = DevicePlatform.currentPlatform.rawValue, sampleRate: Float) {
-        if sampleRate > 1.0 || sampleRate < 0.0 {
+    public init(id: String = UUID().uuidString, platform: String = DevicePlatform.currentPlatform.rawValue, sampleRate: Float = Self.maximumSampleRate) {
+        if sampleRate > Self.maximumSampleRate || sampleRate < Self.minimumSampleRate {
             assertionFailure("Sample rate must be between 0-1")
         }
 
         self.id = id
         self.platform = platform
         self.type = "app" // Don't allow type to be overridden
-        self.sampleRate = sampleRate.clamped(to: 0...1)
+        self.sampleRate = sampleRate.clamped(to: Self.minimumSampleRate...Self.maximumSampleRate)
     }
 }
 
@@ -212,18 +219,59 @@ public struct WideEventErrorData: Codable {
 
     public var domain: String
     public var code: Int
-    public var underlyingDomain: String?
-    public var underlyingCode: Int?
+    public var underlyingErrors: [UnderlyingError]
 
     public init(error: Error) {
         let nsError = error as NSError
         self.domain = nsError.domain
         self.code = nsError.code
 
-        if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
-            self.underlyingDomain = underlyingError.domain
-            self.underlyingCode = underlyingError.code
-        }
+        self.underlyingErrors = Self.collectUnderlyingErrors(from: nsError)
     }
 
+}
+
+extension WideEventErrorData {
+    public struct UnderlyingError: Codable {
+        public let domain: String
+        public let code: Int
+    }
+
+    private static func collectUnderlyingErrors(from error: NSError?) -> [UnderlyingError] {
+        guard let error else { return [] }
+
+        var collected: [UnderlyingError] = []
+        var current = error.userInfo[NSUnderlyingErrorKey] as? NSError
+
+        while let nsError = current {
+            collected.append(UnderlyingError(domain: nsError.domain, code: nsError.code))
+            current = nsError.userInfo[NSUnderlyingErrorKey] as? NSError
+        }
+
+        return collected
+    }
+}
+
+extension WideEventErrorData: WideEventParameterProviding {
+    public func pixelParameters() -> [String: String] {
+        var parameters: [String: String] = [:]
+
+        parameters[WideEventParameter.Feature.errorDomain] = domain
+        parameters[WideEventParameter.Feature.errorCode] = String(code)
+
+        for (index, nested) in underlyingErrors.enumerated() {
+            let suffix = index == 0 ? "" : String(index + 1)
+            parameters[WideEventParameter.Feature.underlyingErrorDomain + suffix] = nested.domain
+            parameters[WideEventParameter.Feature.underlyingErrorCode + suffix] = String(nested.code)
+        }
+
+        return parameters
+    }
+}
+
+extension WideEvent.MeasuredInterval {
+    public var durationMilliseconds: Double? {
+        guard let start, let end else { return nil }
+        return max(end.timeIntervalSince(start) * 1000, 0)
+    }
 }

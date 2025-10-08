@@ -48,6 +48,7 @@ enum Preferences {
     struct RootView: View {
 
         @ObservedObject var model: PreferencesSidebarModel
+        @ObservedObject var themeManager: ThemeManager
 
         var purchaseSubscriptionModel: PreferencesPurchaseSubscriptionModel?
         var personalInformationRemovalModel: PreferencesPersonalInformationRemovalModel?
@@ -55,16 +56,22 @@ enum Preferences {
         var subscriptionSettingsModel: PreferencesSubscriptionSettingsModelV1?
         let subscriptionManager: SubscriptionManager
         let subscriptionUIHandler: SubscriptionUIHandling
-        let visualStyle: VisualStyleProviding
+        let featureFlagger: FeatureFlagger
+
+        private var colorsProvider: ColorsProviding {
+            themeManager.theme.colorsProvider
+        }
 
         init(model: PreferencesSidebarModel,
              subscriptionManager: SubscriptionManager,
              subscriptionUIHandler: SubscriptionUIHandling,
-             visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+             themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
+             featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
-            self.visualStyle = visualStyle
+            self.themeManager = themeManager
+            self.featureFlagger = featureFlagger
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
@@ -85,7 +92,7 @@ enum Preferences {
                 .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(visualStyle.colorsProvider.settingsBackgroundColor))
+            .background(Color(colorsProvider.settingsBackgroundColor))
         }
 
         @ViewBuilder
@@ -118,7 +125,7 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared, isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
                 case .dataClearing:
                     DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences,
                                      startupModel: NSApp.delegateTyped.startupPreferences)
@@ -278,6 +285,7 @@ enum Preferences {
     struct RootViewV2: View {
 
         @ObservedObject var model: PreferencesSidebarModel
+        @ObservedObject var themeManager: ThemeManager
 
         var purchaseSubscriptionModel: PreferencesPurchaseSubscriptionModel?
         var personalInformationRemovalModel: PreferencesPersonalInformationRemovalModel?
@@ -286,10 +294,13 @@ enum Preferences {
         var subscriptionSettingsModel: PreferencesSubscriptionSettingsModelV2?
         let subscriptionManager: SubscriptionManagerV2
         let subscriptionUIHandler: SubscriptionUIHandling
-        let visualStyle: VisualStyleProviding
         let featureFlagger: FeatureFlagger
         let showTab: @MainActor (Tab.TabContent) -> Void
         let aiChatURLSettings: AIChatRemoteSettingsProvider
+
+        private var colorsProvider: ColorsProviding {
+            themeManager.theme.colorsProvider
+        }
 
         init(
             model: PreferencesSidebarModel,
@@ -298,14 +309,14 @@ enum Preferences {
             featureFlagger: FeatureFlagger,
             aiChatURLSettings: AIChatRemoteSettingsProvider,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
-            visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
+            themeManager: ThemeManager = NSApp.delegateTyped.themeManager
         ) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
             self.showTab = showTab
             self.featureFlagger = featureFlagger
-            self.visualStyle = visualStyle
+            self.themeManager = themeManager
             self.aiChatURLSettings = aiChatURLSettings
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
@@ -329,7 +340,7 @@ enum Preferences {
                 .accessibilityIdentifier("Settings.ScrollView")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(visualStyle.colorsProvider.settingsBackgroundColor))
+            .background(Color(colorsProvider.settingsBackgroundColor))
         }
 
         @ViewBuilder
@@ -362,7 +373,7 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared, isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
                 case .dataClearing:
                     DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences, startupModel: NSApp.delegateTyped.startupPreferences)
                 case .subscription:

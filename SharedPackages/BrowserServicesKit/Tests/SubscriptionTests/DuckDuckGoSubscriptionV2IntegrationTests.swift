@@ -50,7 +50,8 @@ final class DuckDuckGoSubscriptionV2IntegrationTests: XCTestCase {
 
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             legacyTokenStorage: legacyAccountStorage,
-                                            authService: authService)
+                                            authService: authService,
+                                            refreshEventMapping: nil)
         storePurchaseManager = StorePurchaseManagerMockV2()
         let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
                                                                                baseURL: subscriptionEnvironment.serviceEnvironment.url)

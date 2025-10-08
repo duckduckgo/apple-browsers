@@ -300,6 +300,10 @@ struct JsonToRemoteMessageModelMapper {
             return translation
         }
 
+        if let languageCode = locale.languageCode, let translation = translations[languageCode] {
+            return translation
+        }
+
         return nil
     }
 }

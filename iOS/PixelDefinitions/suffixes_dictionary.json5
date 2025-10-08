@@ -19,7 +19,7 @@
     },
     daily_standard: {
         type: 'string',
-        description: 'Pixel schedule type',
+        description: 'Daily and standard pixel suffixes',
         enum: ['daily', ''],
     },
     form_factor: {

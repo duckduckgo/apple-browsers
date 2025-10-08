@@ -23,6 +23,11 @@
                 type: 'string',
             },
             {
+                key: 'is_duck_url',
+                description: 'Whether the URL of a crashed tab is a "duck" scheme URL',
+                type: 'boolean',
+            },
+            {
                 key: 'e',
                 type: 'string',
                 description: 'Error code',

@@ -102,15 +102,17 @@ extension SubscriptionPurchaseWideEventData {
 
         parameters[WideEventParameter.SubscriptionFeature.freeTrialEligible] = freeTrialEligible ? "true" : "false"
 
-        func emit(_ key: String, interval: WideEvent.MeasuredInterval?) {
-            guard let start = interval?.start, let end = interval?.end else { return }
-            let ms = max(0, Int(end.timeIntervalSince(start) * 1000))
-            parameters[key] = String(bucket(ms))
+        if let duration = createAccountDuration?.durationMilliseconds {
+            parameters[WideEventParameter.SubscriptionFeature.accountCreationLatency] = String(bucket(duration))
         }
 
-        emit(WideEventParameter.SubscriptionFeature.accountCreationLatency, interval: createAccountDuration)
-        emit(WideEventParameter.SubscriptionFeature.accountPaymentLatency, interval: completePurchaseDuration)
-        emit(WideEventParameter.SubscriptionFeature.accountActivationLatency, interval: activateAccountDuration)
+        if let duration = completePurchaseDuration?.durationMilliseconds {
+            parameters[WideEventParameter.SubscriptionFeature.accountPaymentLatency] = String(bucket(duration))
+        }
+
+        if let duration = activateAccountDuration?.durationMilliseconds {
+            parameters[WideEventParameter.SubscriptionFeature.accountActivationLatency] = String(bucket(duration))
+        }
 
         return parameters
     }
@@ -120,7 +122,7 @@ extension SubscriptionPurchaseWideEventData {
         self.errorData = WideEventErrorData(error: error)
     }
 
-    private func bucket(_ ms: Int) -> Int {
+    private func bucket(_ ms: Double) -> Int {
         switch ms {
         case 0..<1000: return 1000
         case 1000..<5000: return 5000

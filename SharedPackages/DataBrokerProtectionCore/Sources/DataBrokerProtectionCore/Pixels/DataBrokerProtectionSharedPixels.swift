@@ -60,10 +60,6 @@ public enum DataBrokerProtectionSharedPixels {
         public static let pattern = "pattern"
         public static let isParent = "is_parent"
         public static let actionIDKey = "action_id"
-        public static let hadNewMatch = "had_new_match"
-        public static let hadReAppereance = "had_re-appearance"
-        public static let scanCoverage = "scan_coverage"
-        public static let removals = "removals"
         public static let environmentKey = "environment"
         public static let wasOnWaitlist = "was_on_waitlist"
         public static let httpCode = "http_code"
@@ -77,14 +73,6 @@ public enum DataBrokerProtectionSharedPixels {
         public static let linkAgeMs = "link_age_ms"
         public static let status = "status"
         public static let errorCode = "error_code"
-        public static let numberOfRecordsFound = "num_found"
-        public static let numberOfOptOutsInProgress = "num_inprogress"
-        public static let numberOfSucessfulOptOuts = "num_optoutsuccess"
-        public static let numberOfOptOutsFailure = "num_optoutfailure"
-        public static let durationOfFirstOptOut = "duration_firstoptout"
-        public static let numberOfNewRecordsFound = "num_new_found"
-        public static let numberOfReappereances = "num_reappeared"
-        public static let numberOfHiddenFound = "num_hidden_found"
         public static let optOutSubmitSuccessRate = "optout_submit_success_rate"
         public static let childParentRecordDifference = "child-parent-record-difference"
         public static let calculatedOrphanedRecords = "calculated-orphaned-records"
@@ -157,8 +145,6 @@ public enum DataBrokerProtectionSharedPixels {
     case monthlyActiveUser
 
     // KPIs - events
-    case weeklyReportScanning(hadNewMatch: Bool, hadReAppereance: Bool, scanCoverage: String)
-    case weeklyReportRemovals(removals: Int)
     case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double)
     case weeklyReportStalledScans(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String)
     case weeklyReportStalledOptOuts(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String)
@@ -183,13 +169,6 @@ public enum DataBrokerProtectionSharedPixels {
     case initialScanSiteLoadDuration(duration: Double, hasError: Bool, brokerURL: String)
     case initialScanPostLoadingDuration(duration: Double, hasError: Bool, brokerURL: String)
     case initialScanPreStartDuration(duration: Double)
-
-    // Measure success/failure rate of Personal Information Removal Pixels
-    // https://app.asana.com/0/1204006570077678/1206889724879222/f
-    case globalMetricsWeeklyStats(profilesFound: Int, optOutsInProgress: Int, successfulOptOuts: Int, failedOptOuts: Int, durationOfFirstOptOut: Int, numberOfNewRecordsFound: Int)
-    case globalMetricsMonthlyStats(profilesFound: Int, optOutsInProgress: Int, successfulOptOuts: Int, failedOptOuts: Int, durationOfFirstOptOut: Int, numberOfNewRecordsFound: Int)
-    case dataBrokerMetricsWeeklyStats(dataBrokerURL: String, profilesFound: Int, optOutsInProgress: Int, successfulOptOuts: Int, failedOptOuts: Int, durationOfFirstOptOut: Int, numberOfNewRecordsFound: Int, numberOfReappereances: Int, numberOfHiddenFound: Int)
-    case dataBrokerMetricsMonthlyStats(dataBrokerURL: String, profilesFound: Int, optOutsInProgress: Int, successfulOptOuts: Int, failedOptOuts: Int, durationOfFirstOptOut: Int, numberOfNewRecordsFound: Int, numberOfReappereances: Int)
 
     // Custom stats
     case customDataBrokerStatsOptoutSubmit(dataBrokerURL: String, optOutSubmitSuccessRate: Double)
@@ -267,8 +246,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .weeklyActiveUser: return "dbp_engagement_wau"
         case .monthlyActiveUser: return "dbp_engagement_mau"
 
-        case .weeklyReportScanning: return "dbp_event_weekly-report_scanning"
-        case .weeklyReportRemovals: return "dbp_event_weekly-report_removals"
         case .weeklyReportBackgroundTaskSession: return "dbp_event_weekly-report_background-task_session"
         case .weeklyReportStalledScans: return "dbp_event_weekly-report_stalled-scans"
         case .weeklyReportStalledOptOuts: return "dbp_event_weekly-report_stalled-optouts"
@@ -292,11 +269,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .initialScanSiteLoadDuration: return "dbp_scan_broker_site_loaded"
         case .initialScanPostLoadingDuration: return "dbp_initial_scan_broker_post_loading"
         case .initialScanPreStartDuration: return "dbp_initial_scan_pre_start_duration"
-
-        case .globalMetricsWeeklyStats: return "dbp_weekly_stats"
-        case .globalMetricsMonthlyStats: return "dbp_monthly_stats"
-        case .dataBrokerMetricsWeeklyStats: return "dbp_databroker_weekly_stats"
-        case .dataBrokerMetricsMonthlyStats: return "dbp_databroker_monthly_stats"
 
             // Various monitoring pixels
         case .customDataBrokerStatsOptoutSubmit: return "dbp_databroker_custom_stats_optoutsubmit"
@@ -405,10 +377,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.triesKey: String(tries),
                     Consts.actionIDKey: actionId,
                     Consts.actionTypeKey: actionType]
-        case .weeklyReportScanning(let hadNewMatch, let hadReAppereance, let scanCoverage):
-            return [Consts.hadNewMatch: hadNewMatch ? "1" : "0", Consts.hadReAppereance: hadReAppereance ? "1" : "0", Consts.scanCoverage: scanCoverage.description]
-        case .weeklyReportRemovals(let removals):
-            return [Consts.removals: String(removals)]
         case .weeklyReportBackgroundTaskSession(let started, let orphaned, let completed, let terminated, let durationMinMs, let durationMaxMs, let durationMedianMs):
             return [Consts.started: String(started),
                     Consts.orphaned: String(orphaned),
@@ -463,33 +431,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
         case .initialScanPreStartDuration(let duration):
             return [Consts.durationInMs: String(duration)]
-        case .globalMetricsWeeklyStats(let profilesFound, let optOutsInProgress, let successfulOptOuts, let failedOptOuts, let durationOfFirstOptOut, let numberOfNewRecordsFound),
-                        .globalMetricsMonthlyStats(let profilesFound, let optOutsInProgress, let successfulOptOuts, let failedOptOuts, let durationOfFirstOptOut, let numberOfNewRecordsFound):
-                    return [Consts.numberOfRecordsFound: String(profilesFound),
-                            Consts.numberOfOptOutsInProgress: String(optOutsInProgress),
-                            Consts.numberOfSucessfulOptOuts: String(successfulOptOuts),
-                            Consts.numberOfOptOutsFailure: String(failedOptOuts),
-                            Consts.durationOfFirstOptOut: String(durationOfFirstOptOut),
-                            Consts.numberOfNewRecordsFound: String(numberOfNewRecordsFound)]
-        case .dataBrokerMetricsWeeklyStats(let dataBrokerURL, let profilesFound, let optOutsInProgress, let successfulOptOuts, let failedOptOuts, let durationOfFirstOptOut, let numberOfNewRecordsFound, let numberOfReappereances, let numberOfHiddenFound):
-            return [Consts.dataBrokerParamKey: dataBrokerURL,
-                    Consts.numberOfRecordsFound: String(profilesFound),
-                    Consts.numberOfOptOutsInProgress: String(optOutsInProgress),
-                    Consts.numberOfSucessfulOptOuts: String(successfulOptOuts),
-                    Consts.numberOfOptOutsFailure: String(failedOptOuts),
-                    Consts.durationOfFirstOptOut: String(durationOfFirstOptOut),
-                    Consts.numberOfNewRecordsFound: String(numberOfNewRecordsFound),
-                    Consts.numberOfReappereances: String(numberOfReappereances),
-                    Consts.numberOfHiddenFound: String(numberOfHiddenFound)]
-        case .dataBrokerMetricsMonthlyStats(let dataBrokerURL, let profilesFound, let optOutsInProgress, let successfulOptOuts, let failedOptOuts, let durationOfFirstOptOut, let numberOfNewRecordsFound, let numberOfReappereances):
-                   return [Consts.dataBrokerParamKey: dataBrokerURL,
-                           Consts.numberOfRecordsFound: String(profilesFound),
-                           Consts.numberOfOptOutsInProgress: String(optOutsInProgress),
-                           Consts.numberOfSucessfulOptOuts: String(successfulOptOuts),
-                           Consts.numberOfOptOutsFailure: String(failedOptOuts),
-                           Consts.durationOfFirstOptOut: String(durationOfFirstOptOut),
-                           Consts.numberOfNewRecordsFound: String(numberOfNewRecordsFound),
-                           Consts.numberOfReappereances: String(numberOfReappereances)]
         case .customDataBrokerStatsOptoutSubmit(let dataBrokerURL, let optOutSubmitSuccessRate):
             return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
@@ -631,8 +572,6 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .dailyActiveUser,
                     .weeklyActiveUser,
                     .monthlyActiveUser,
-                    .weeklyReportScanning,
-                    .weeklyReportRemovals,
                     .weeklyReportBackgroundTaskSession,
                     .weeklyReportStalledScans,
                     .weeklyReportStalledOptOuts,
@@ -648,10 +587,6 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .initialScanSiteLoadDuration,
                     .initialScanPostLoadingDuration,
                     .initialScanPreStartDuration,
-                    .globalMetricsWeeklyStats,
-                    .globalMetricsMonthlyStats,
-                    .dataBrokerMetricsWeeklyStats,
-                    .dataBrokerMetricsMonthlyStats,
                     .customDataBrokerStatsOptoutSubmit,
                     .customGlobalStatsOptoutSubmit,
                     .weeklyChildBrokerOrphanedOptOuts,

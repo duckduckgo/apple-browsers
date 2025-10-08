@@ -106,41 +106,6 @@ public final class DataBrokerProtectionEventPixels {
             Logger.dataBrokerProtection.error("Database error: when attempting to fireWeeklyReportPixels, error: \(error.localizedDescription, privacy: .public)")
             return
         }
-        let dataInThePastWeek = data.filter(hadScanThisWeek(_:))
-
-        var newMatchesFoundInTheLastWeek = 0
-        var reAppereancesInTheLastWeek = 0
-        var removalsInTheLastWeek = 0
-
-        for query in data {
-            let allHistoryEventsForQuery = query.scanJobData.historyEvents + query.optOutJobData.flatMap { $0.historyEvents }
-            let historyEventsInThePastWeek = allHistoryEventsForQuery.filter {
-                !didWeekPassedBetweenDates(start: $0.date, end: Date())
-            }
-            let newMatches = historyEventsInThePastWeek.reduce(0, { result, next in
-                return result + next.matchesFound()
-            })
-            let reAppereances = historyEventsInThePastWeek.filter { $0.type == .reAppearence }.count
-            let removals = historyEventsInThePastWeek.filter { $0.type == .optOutConfirmed }.count
-
-            newMatchesFoundInTheLastWeek += newMatches
-            reAppereancesInTheLastWeek += reAppereances
-            removalsInTheLastWeek += removals
-        }
-
-        let totalBrokers = Dictionary(grouping: data, by: { $0.dataBroker.url }).count
-        let totalBrokersInTheLastWeek = Dictionary(grouping: dataInThePastWeek, by: { $0.dataBroker.url }).count
-        var percentageOfBrokersScanned: Int
-
-        if totalBrokers == 0 {
-            percentageOfBrokersScanned = 0
-        } else {
-            percentageOfBrokersScanned = (totalBrokersInTheLastWeek * 100) / totalBrokers
-        }
-
-        handler.fire(.weeklyReportScanning(hadNewMatch: newMatchesFoundInTheLastWeek > 0, hadReAppereance: reAppereancesInTheLastWeek > 0, scanCoverage: percentageOfBrokersScanned.toString))
-        handler.fire(.weeklyReportRemovals(removals: removalsInTheLastWeek))
-
         fireWeeklyChildBrokerOrphanedOptOutsPixels(for: data)
 
         #if os(iOS)
@@ -220,12 +185,6 @@ public final class DataBrokerProtectionEventPixels {
             totalByBroker: optOutMetrics.totalByBroker.encodeToJSON() ?? "{}",
             stalledByBroker: optOutMetrics.stalledByBroker.encodeToJSON() ?? "{}"
         ))
-    }
-
-    private func hadScanThisWeek(_ brokerProfileQuery: BrokerProfileQueryData) -> Bool {
-        return brokerProfileQuery.scanJobData.historyEvents.contains { historyEvent in
-            !didWeekPassedBetweenDates(start: historyEvent.date, end: Date())
-        }
     }
 
     private func didWeekPassedBetweenDates(start: Date, end: Date) -> Bool {

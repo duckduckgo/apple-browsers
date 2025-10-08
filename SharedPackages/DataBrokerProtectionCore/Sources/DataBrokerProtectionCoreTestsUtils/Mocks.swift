@@ -2163,10 +2163,6 @@ extension SecureStorageError: @retroactive Equatable {
 
 public final class MockDataBrokerProtectionStatsPixelsRepository: DataBrokerProtectionStatsPixelsRepository {
 
-    public var wasMarkStatsWeeklyPixelDateCalled: Bool = false
-    public var wasMarkStatsMonthlyPixelDateCalled: Bool = false
-    public var latestStatsWeeklyPixelDate: Date?
-    public var latestStatsMonthlyPixelDate: Date?
     public var didSetCustomStatsPixelsLastSentTimestamp = false
     public var didGetCustomStatsPixelsLastSentTimestamp = false
     public var _customStatsPixelsLastSentTimestamp: Date?
@@ -2183,27 +2179,7 @@ public final class MockDataBrokerProtectionStatsPixelsRepository: DataBrokerProt
 
     public init() {}
 
-    public func markStatsWeeklyPixelDate() {
-        wasMarkStatsWeeklyPixelDateCalled = true
-    }
-
-    public func markStatsMonthlyPixelDate() {
-        wasMarkStatsMonthlyPixelDateCalled = true
-    }
-
-    public func getLatestStatsWeeklyPixelDate() -> Date? {
-        return latestStatsWeeklyPixelDate
-    }
-
-    public func getLatestStatsMonthlyPixelDate() -> Date? {
-        return latestStatsMonthlyPixelDate
-    }
-
     func clear() {
-        wasMarkStatsWeeklyPixelDateCalled = false
-        wasMarkStatsMonthlyPixelDateCalled = false
-        latestStatsWeeklyPixelDate = nil
-        latestStatsMonthlyPixelDate = nil
         didSetCustomStatsPixelsLastSentTimestamp = false
         customStatsPixelsLastSentTimestamp = nil
 

@@ -130,7 +130,8 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
         settingsPersistor: HistoryViewDeleteDialogSettingsPersisting = UserDefaultsHistoryViewDeleteDialogSettingsPersistor(),
         aiChatHistoryCleaner: AIChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: Application.appDelegate.featureFlagger,
                                                                           aiChatMenuConfiguration: Application.appDelegate.aiChatMenuConfiguration,
-                                                                          featureDiscovery: DefaultFeatureDiscovery())
+                                                                          featureDiscovery: DefaultFeatureDiscovery(),
+                                                                          privacyConfig: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager)
     ) {
         self.message = {
             guard entriesCount > 1 else {

@@ -29,6 +29,11 @@ struct BrokerProfileOptOutSubJob {
         let extractedProfileId: Int64
     }
 
+    struct StageDurationContext {
+        let stageDurationCalculator: DataBrokerProtectionStageDurationCalculator
+        let wideEventRecorder: OptOutSubmissionWideEventRecording?
+    }
+
     private let dependencies: BrokerProfileJobDependencyProviding
 
     init(dependencies: BrokerProfileJobDependencyProviding) {
@@ -54,23 +59,21 @@ struct BrokerProfileOptOutSubJob {
                           brokerProfileQueryData: BrokerProfileQueryData,
                           showWebView: Bool,
                           shouldRunNextStep: @escaping () -> Bool) async throws -> Bool {
-        // 1, 2, 3, 4. Validate function parameters and extract ID's
         guard let identifiers = try validateOptOutPreconditions(for: extractedProfile,
                                                                 brokerProfileQueryData: brokerProfileQueryData,
                                                                 database: dependencies.database) else {
             return false
         }
 
-        // 5, 6. Setup stage calculator
-        let stageDurationCalculator = createStageDurationContext(for: brokerProfileQueryData,
-                                                                 identifiers: identifiers,
-                                                                 database: dependencies.database,
-                                                                 wideEvent: dependencies.wideEvent,
-                                                                 pixelHandler: dependencies.pixelHandler,
-                                                                 vpnConnectionState: vpnConnectionState,
-                                                                 vpnBypassStatus: vpnBypassStatus)
+        let stageDurationContext = createStageDurationContext(for: brokerProfileQueryData,
+                                                              identifiers: identifiers,
+                                                              database: dependencies.database,
+                                                              wideEvent: dependencies.wideEvent,
+                                                              pixelHandler: dependencies.pixelHandler,
+                                                              vpnConnectionState: vpnConnectionState,
+                                                              vpnBypassStatus: vpnBypassStatus)
 
-        // 7. Set up a defer block to report opt-out job completion regardless of its success:
+        // Set up a defer block to report opt-out job completion regardless of its success:
         defer {
             reportOptOutJobCompletion(
                 brokerProfileQueryData: brokerProfileQueryData,
@@ -82,13 +85,12 @@ struct BrokerProfileOptOutSubJob {
             )
         }
 
-        // 8. Perform the opt-out:
         do {
             try markOptOutStarted(identifiers: identifiers,
                                   database: dependencies.database)
 
             let runner = makeOptOutRunner(brokerProfileQueryData: brokerProfileQueryData,
-                                          stageDurationCalculator: stageDurationCalculator,
+                                          stageDurationCalculator: stageDurationContext.stageDurationCalculator,
                                           shouldRunNextStep: shouldRunNextStep,
                                           runnerFactory: dependencies.createOptOutRunner)
 
@@ -104,23 +106,22 @@ struct BrokerProfileOptOutSubJob {
                                                       pixelHandler: dependencies.pixelHandler,
                                                       brokerProfileQueryData: brokerProfileQueryData,
                                                       identifiers: identifiers,
-                                                      stageDurationCalculator: stageDurationCalculator)
+                                                      stageDurationCalculator: stageDurationContext.stageDurationCalculator)
             } else {
                 try finalizeOptOut(database: dependencies.database,
                                    brokerProfileQueryData: brokerProfileQueryData,
                                    identifiers: identifiers,
-                                   stageDurationCalculator: stageDurationCalculator)
+                                   stageDurationCalculator: stageDurationContext.stageDurationCalculator)
             }
         } catch {
-            // 9. Catch errors from the opt-out job and report them:
             recordOptOutFailure(error: error,
                                 brokerProfileQueryData: brokerProfileQueryData,
                                 database: dependencies.database,
                                 wideEvent: dependencies.wideEvent,
-                                wideEventRecorder: stageDurationCalculator.wideEventRecorder,
+                                wideEventRecorder: stageDurationContext.wideEventRecorder,
                                 schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
                                 identifiers: identifiers,
-                                stageDurationCalculator: stageDurationCalculator)
+                                stageDurationCalculator: stageDurationContext.stageDurationCalculator)
 
             throw error
         }
@@ -171,7 +172,7 @@ struct BrokerProfileOptOutSubJob {
                                              wideEvent: WideEventManaging?,
                                              pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                              vpnConnectionState: String,
-                                             vpnBypassStatus: String) -> DataBrokerProtectionStageDurationCalculator {
+                                             vpnBypassStatus: String) -> StageDurationContext {
         // 5. Set up dependencies used to report the status of the opt-out job:
         let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
             dataBroker: brokerProfileQueryData.dataBroker.url,
@@ -199,7 +200,8 @@ struct BrokerProfileOptOutSubJob {
         stageDurationCalculator.fireOptOutStart()
         Logger.dataBrokerProtection.log("Running opt-out operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
-        return stageDurationCalculator
+        return StageDurationContext(stageDurationCalculator: stageDurationCalculator,
+                                    wideEventRecorder: wideEventRecorder)
     }
 
     internal func markOptOutStarted(identifiers: OptOutIdentifiers,

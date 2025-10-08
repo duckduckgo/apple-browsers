@@ -98,7 +98,7 @@ extension SubscriptionRestoreWideEventData {
 
         public static func from(_ currentURL: URL) -> Self? {
             let key = currentURL.forComparison().absoluteString
-            return lookup[key]
+            return Self.lookup[key]
         }
     }
 

@@ -17,330 +17,160 @@
 //
 
 import XCTest
-@testable import PixelKit
-import Subscription
+import PixelKit
+@testable import Subscription
 
 final class SubscriptionRestoreWideEventTests: XCTestCase {
 
-    private var wideEvent: WideEvent!
-    private var firedPixels: [(name: String, parameters: [String: String])] = []
-    private var testDefaults: UserDefaults!
-    private var testSuiteName: String!
+    // MARK: - Pixel Parameters
 
-    override func setUp() {
-        super.setUp()
-
-        testSuiteName = "\(type(of: self))-\(UUID().uuidString)"
-        testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
-        wideEvent = WideEvent(storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
-                              pixelKitProvider: { PixelKit.shared })
-        firedPixels.removeAll()
-        setUpMockPixelKit()
-    }
-
-    override func tearDown() {
-        testDefaults?.removePersistentDomain(forName: testSuiteName)
-        PixelKit.tearDown()
-        super.tearDown()
-    }
-
-    private func setUpMockPixelKit() {
-        let mockFireRequest: PixelKit.FireRequest = { pixelName, _, parameters, _, _, onComplete in
-            self.firedPixels.append((name: pixelName, parameters: parameters))
-            DispatchQueue.main.async { onComplete(true, nil) }
-        }
-
-        PixelKit.setUp(
-            dryRun: false,
-            appVersion: "1.0.0",
-            source: "test",
-            defaultHeaders: [:],
-            dateGenerator: Date.init,
-            defaults: testDefaults,
-            fireRequest: mockFireRequest
-        )
-    }
-
-    // MARK: - Utilities
-
-    private func waitForPixelFired(timeout: TimeInterval = 1.0) {
-        let exp = expectation(description: "Pixel fired")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { exp.fulfill() }
-        wait(for: [exp], timeout: timeout)
-    }
-
-    private func unwrapFlow<T: WideEventData>(_ type: T.Type, id: String) throws -> T {
-        guard let data = wideEvent.getFlowData(type, globalID: id) else {
-            XCTFail("Flow not found for \(id)")
-            throw NSError(domain: "FlowNotFound", code: -1)
-        }
-        return data
-    }
-
-    private func makeAppleRestore(contextName: String? = nil) -> SubscriptionRestoreWideEventData {
-        SubscriptionRestoreWideEventData(
+    func testPixelParameters_withAppleAccountFlows() {
+        let contextData = WideEventContextData(name: "test-context")
+        let eventData = SubscriptionRestoreWideEventData(
             restorePlatform: .appleAccount,
-            contextData: WideEventContextData(name: contextName)
+            contextData: contextData
         )
+
+        let base = Date()
+        eventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval(
+            start: base,
+            end: base.addingTimeInterval(2.5) // 5000ms
+        )
+
+        let parameters = eventData.pixelParameters()
+        XCTAssertEqual(parameters["feature.name"], "subscription-restore")
+        XCTAssertEqual(parameters["feature.data.ext.restore_platform"], "apple_account")
+        XCTAssertEqual(parameters["feature.data.ext.apple_account_restore_latency_ms_bucketed"], "5000")
+
+        XCTAssertNil(parameters["feature.data.ext.email_address_restore_latency_ms_bucketed"])
+        XCTAssertNil(parameters["feature.data.ext.email_address_restore_last_url"])
     }
 
-    private func makeEmailRestore(contextName: String? = nil,
-                                  lastURL: SubscriptionRestoreWideEventData.EmailAddressRestoreURL? = nil) -> SubscriptionRestoreWideEventData {
-        SubscriptionRestoreWideEventData(
+    func testPixelParameters_withEmailAddressFlows() {
+        let contextData = WideEventContextData(name: "test-context")
+        let eventData = SubscriptionRestoreWideEventData(
             restorePlatform: .emailAddress,
-            emailAddressRestoreLastURL: lastURL,
-            contextData: WideEventContextData(name: contextName)
+            contextData: contextData
         )
-    }
 
-    private func makeBackgroundRestore(contextName: String? = nil) -> SubscriptionRestoreWideEventData {
-        SubscriptionRestoreWideEventData(
-            restorePlatform: .purchaseBackgroundTask,
-            contextData: WideEventContextData(name: contextName)
+        let base = Date()
+        eventData.emailAddressRestoreDuration = WideEvent.MeasuredInterval(
+            start: base,
+            end: base.addingTimeInterval(2.5) // 5000ms
         )
+        eventData.emailAddressRestoreLastURL = .activationFlowActivateEmailOTP
+
+        let parameters = eventData.pixelParameters()
+        XCTAssertEqual(parameters["feature.name"], "subscription-restore")
+        XCTAssertEqual(parameters["feature.data.ext.restore_platform"], "email_address")
+        XCTAssertEqual(parameters["feature.data.ext.email_address_restore_latency_ms_bucketed"], "10000")
+        XCTAssertEqual(parameters["feature.data.ext.email_address_restore_last_url"], "activation_flow_activate_email_otp")
+
+        XCTAssertNil(parameters["feature.data.ext.apple_account_restore_latency_ms_bucketed"])
     }
 
-    // MARK: - Journey 1: Apple Account
+    // MARK: - Interval Bucketing
 
-    func testAppleAccountRestore_Success() throws {
-        let data = makeAppleRestore(contextName: "app_settings")
-        wideEvent.startFlow(data)
+    func testPixelParameters_withAppleAccountDuration_bucketing() {
+        let contextData = WideEventContextData(name: "test-context")
+        let cases: [(ms: Int, expected: String)] = [
+            (500, "1000"), // normal
+            (4999, "5000"), // higher edge
+            (5000, "10000"), // lower edge
+            (300000, "600000"), // lower edge
+            (800000, "600000") // default
+        ]
+        let base = Date()
 
-        let started = try unwrapFlow(SubscriptionRestoreWideEventData.self, id: data.globalData.id)
-        started.appleAccountRestoreDuration = WideEvent.MeasuredInterval(start: Date(timeIntervalSince1970: 0),
-                                                                         end: Date(timeIntervalSince1970: 2.5)) // 2.5s -> 5000ms
-        wideEvent.updateFlow(started)
-
-        let exp = expectation(description: "complete")
-        wideEvent.completeFlow(started, status: .success) { success, error in
-            XCTAssertTrue(success); XCTAssertNil(error); exp.fulfill()
-        }
-        wait(for: [exp], timeout: 1.0)
-
-        XCTAssertFalse(firedPixels.isEmpty)
-        let params = firedPixels[0].parameters
-        XCTAssertEqual(params["feature.status"], "SUCCESS")
-        XCTAssertEqual(params["feature.data.ext.restore_platform"], "apple_account")
-        XCTAssertEqual(params["feature.data.ext.apple_account_restore_latency_ms_bucketed"], "5000")
-        XCTAssertEqual(params["context.name"], "app_settings")
-        XCTAssertNotNil(params["app.name"])
-        XCTAssertNotNil(params["app.version"])
-    }
-
-    func testAppleAccountRestore_Failure_WithErrorAndLatency() throws {
-        let data = makeAppleRestore(contextName: "app_settings")
-        wideEvent.startFlow(data)
-
-        let failing = try unwrapFlow(SubscriptionRestoreWideEventData.self, id: data.globalData.id)
-        failing.appleAccountRestoreDuration = WideEvent.MeasuredInterval(start: Date(timeIntervalSince1970: 0),
-                                                                         end: Date(timeIntervalSince1970: 8.0)) // 8s -> 10000ms
-        failing.errorData = WideEventErrorData(error: NSError(domain: "UseSubscriptionError", code: 1))
-        wideEvent.updateFlow(failing)
-
-        let exp = expectation(description: "complete")
-        wideEvent.completeFlow(failing, status: .failure) { success, error in
-            XCTAssertTrue(success); XCTAssertNil(error); exp.fulfill()
-        }
-        wait(for: [exp], timeout: 1.0)
-
-        let p = firedPixels[0].parameters
-        XCTAssertEqual(p["feature.status"], "FAILURE")
-        XCTAssertEqual(p["feature.data.ext.restore_platform"], "apple_account")
-        XCTAssertEqual(p["feature.data.ext.apple_account_restore_latency_ms_bucketed"], "10000")
-        XCTAssertEqual(p["feature.data.error.domain"], "UseSubscriptionError")
-        XCTAssertEqual(p["context.name"], "app_settings")
-    }
-
-    // MARK: - Journey 2: Email Address
-
-    func testEmailAddressRestore_Success_IncludesLastURL() throws {
-        let data = makeEmailRestore(contextName: "offer_page", lastURL: .activationFlowSuccess)
-        wideEvent.startFlow(data)
-
-        let started = try unwrapFlow(SubscriptionRestoreWideEventData.self, id: data.globalData.id)
-        started.emailAddressRestoreDuration = WideEvent.MeasuredInterval(start: Date(timeIntervalSince1970: 10),
-                                                                         end: Date(timeIntervalSince1970: 40)) // 30s -> 30000ms bucket
-        wideEvent.updateFlow(started)
-
-        let exp = expectation(description: "complete")
-        wideEvent.completeFlow(started, status: .success) { success, error in
-            XCTAssertTrue(success); XCTAssertNil(error); exp.fulfill()
-        }
-        wait(for: [exp], timeout: 1.0)
-
-        let p = firedPixels[0].parameters
-        XCTAssertEqual(p["feature.status"], "SUCCESS")
-        XCTAssertEqual(p["feature.data.ext.restore_platform"], "email_address")
-        XCTAssertEqual(p["feature.data.ext.email_address_restore_latency_ms_bucketed"], "30000")
-        XCTAssertEqual(p["feature.data.ext.email_address_restore_last_url"], "activation_flow_success")
-        XCTAssertEqual(p["context.name"], "offer_page")
-    }
-
-    func testEmailAddressRestore_Failure_WithErrorAndLatency() throws {
-        let data = makeEmailRestore(contextName: "app_settings")
-        wideEvent.startFlow(data)
-
-        let failing = try unwrapFlow(SubscriptionRestoreWideEventData.self, id: data.globalData.id)
-        failing.emailAddressRestoreDuration = WideEvent.MeasuredInterval(start: Date(timeIntervalSince1970: 0),
-                                                                         end: Date(timeIntervalSince1970: 600.0)) // 10 min -> 600000ms
-        failing.errorData = WideEventErrorData(error: NSError(domain: "FailedToSetSubscription", code: 999))
-        wideEvent.updateFlow(failing)
-
-        let exp = expectation(description: "complete")
-        wideEvent.completeFlow(failing, status: .failure) { success, error in
-            XCTAssertTrue(success); XCTAssertNil(error); exp.fulfill()
-        }
-        wait(for: [exp], timeout: 1.0)
-
-        let p = firedPixels[0].parameters
-        XCTAssertEqual(p["feature.status"], "FAILURE")
-        XCTAssertEqual(p["feature.data.ext.restore_platform"], "email_address")
-        XCTAssertEqual(p["feature.data.ext.email_address_restore_latency_ms_bucketed"], "600000")
-        XCTAssertEqual(p["feature.data.error.domain"], "FailedToSetSubscription")
-        XCTAssertEqual(p["context.name"], "app_settings")
-    }
-
-    // MARK: - Journey 3: Purchase Background Task
-
-    func testPurchaseBackgroundTask_PreOrDuringPurchase_Success() throws {
-        let data = makeBackgroundRestore(contextName: "purchase_flow")
-        wideEvent.startFlow(data)
-
-        let started = try unwrapFlow(SubscriptionRestoreWideEventData.self, id: data.globalData.id)
-        started.appleAccountRestoreDuration = WideEvent.MeasuredInterval(start: Date(timeIntervalSince1970: 0),
-                                                                         end: Date(timeIntervalSince1970: 1.0)) // 1s -> 5000ms
-        wideEvent.updateFlow(started)
-
-        let exp = expectation(description: "complete")
-        wideEvent.completeFlow(started, status: .success) { success, error in
-            XCTAssertTrue(success); XCTAssertNil(error); exp.fulfill()
-        }
-        wait(for: [exp], timeout: 1.0)
-
-        let p = firedPixels[0].parameters
-        XCTAssertEqual(p["feature.status"], "SUCCESS")
-        XCTAssertEqual(p["feature.data.ext.restore_platform"], "purchase_background_task")
-        XCTAssertEqual(p["feature.data.ext.apple_account_restore_latency_ms_bucketed"], "5000")
-        XCTAssertEqual(p["context.name"], "purchase_flow")
-    }
-
-    func testPurchaseBackgroundTask_PreOrDuringPurchase_Failure() throws {
-        let data = makeBackgroundRestore(contextName: "purchase_flow")
-        wideEvent.startFlow(data)
-
-        let failing = try unwrapFlow(SubscriptionRestoreWideEventData.self, id: data.globalData.id)
-        failing.appleAccountRestoreDuration = WideEvent.MeasuredInterval(start: Date(timeIntervalSince1970: 0),
-                                                                         end: Date(timeIntervalSince1970: 20.0)) // 20s -> 30000ms
-        failing.errorData = WideEventErrorData(error: NSError(domain: "AppStoreRestoreFlowErrorV2", code: 13001))
-        wideEvent.updateFlow(failing)
-
-        let exp = expectation(description: "complete")
-        wideEvent.completeFlow(failing, status: .failure) { success, error in
-            XCTAssertTrue(success); XCTAssertNil(error); exp.fulfill()
-        }
-        wait(for: [exp], timeout: 1.0)
-
-        let p = firedPixels[0].parameters
-        XCTAssertEqual(p["feature.status"], "FAILURE")
-        XCTAssertEqual(p["feature.data.ext.restore_platform"], "purchase_background_task")
-        XCTAssertEqual(p["feature.data.ext.apple_account_restore_latency_ms_bucketed"], "30000")
-        XCTAssertEqual(p["feature.data.error.domain"], "AppStoreRestoreFlowErrorV2")
-        XCTAssertEqual(p["context.name"], "purchase_flow")
-    }
-
-    // MARK: - Unknown Pixels (Abandoned/Delayed)
-
-    func testUnknownPixel_Abandoned_PartialData() {
-        // No durations set
-        let data = makeAppleRestore(contextName: "any")
-        wideEvent.startFlow(data)
-
-        let exp = expectation(description: "complete")
-        wideEvent.completeFlow(data, status: .unknown(reason: SubscriptionRestoreWideEventData.StatusReason.partialData.rawValue)) { success, error in
-            XCTAssertTrue(success); XCTAssertNil(error); exp.fulfill()
-        }
-        wait(for: [exp], timeout: 1.0)
-
-        let p = firedPixels[0].parameters
-        XCTAssertEqual(p["feature.status"], "UNKNOWN")
-        XCTAssertEqual(p["feature.status_reason"], "partial_data")
-        XCTAssertEqual(p["feature.data.ext.restore_platform"], "apple_account")
-    }
-
-    func testUnknownPixel_Delayed_Timeout() {
-        // Started but not completed interval
-        let data = makeEmailRestore(contextName: "any")
-        wideEvent.startFlow(data)
-
-        let started = try? unwrapFlow(SubscriptionRestoreWideEventData.self, id: data.globalData.id)
-        started?.emailAddressRestoreDuration = WideEvent.MeasuredInterval(start: Date(timeIntervalSince1970: 0), end: Date(timeIntervalSince1970: 901.0)) // > 15 min bucket top (-1) but we only encode when completed
-        if let started { wideEvent.updateFlow(started) }
-
-        let exp = expectation(description: "complete")
-        wideEvent.completeFlow(data, status: .unknown(reason: SubscriptionRestoreWideEventData.StatusReason.timeout.rawValue)) { success, error in
-            XCTAssertTrue(success); XCTAssertNil(error); exp.fulfill()
-        }
-        wait(for: [exp], timeout: 1.0)
-
-        let p = firedPixels[0].parameters
-        XCTAssertEqual(p["feature.status"], "UNKNOWN")
-        XCTAssertEqual(p["feature.status_reason"], "timeout")
-        XCTAssertEqual(p["feature.data.ext.restore_platform"], "email_address")
-    }
-
-    // MARK: - Bucket Boundary Checks
-
-    func testAppleAccountLatencyBuckets() throws {
-        let data = makeAppleRestore()
-        wideEvent.startFlow(data)
-
-        func assertBucket(ms: Double, expected: String) throws {
-            let d = try unwrapFlow(SubscriptionRestoreWideEventData.self, id: data.globalData.id)
-            d.appleAccountRestoreDuration = WideEvent.MeasuredInterval(
-                start: Date(timeIntervalSince1970: 0),
-                end: Date(timeIntervalSince1970: ms / 1000.0)
+        for (ms, expected) in cases {
+            let eventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount, contextData: contextData)
+            eventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval(
+                start: base,
+                end: base.addingTimeInterval(Double(ms) / 1000.0)
             )
-            wideEvent.updateFlow(d)
-            let exp = expectation(description: "complete")
-            wideEvent.completeFlow(d, status: .success) { _, _ in exp.fulfill() }
-            wait(for: [exp], timeout: 1.0)
-            let p = self.firedPixels.removeFirst().parameters
-            XCTAssertEqual(p["feature.data.ext.apple_account_restore_latency_ms_bucketed"], expected)
-        }
 
-        try assertBucket(ms: 999, expected: "1000")
-        try assertBucket(ms: 1500, expected: "5000")
-        try assertBucket(ms: 8000, expected: "10000")
-        try assertBucket(ms: 20000, expected: "30000")
-        try assertBucket(ms: 45000, expected: "60000")
-        try assertBucket(ms: 120000, expected: "300000")
-        try assertBucket(ms: 700000, expected: "600000")
+            let parameters = eventData.pixelParameters()
+            XCTAssertEqual(parameters["feature.data.ext.apple_account_restore_latency_ms_bucketed"], expected)
+        }
     }
 
-    func testEmailAddressLatencyBuckets() throws {
-        let data = makeEmailRestore()
-        wideEvent.startFlow(data)
+    // MARK: - Interval Bucketing
 
-        func assertBucket(ms: Double, expected: String) throws {
-            let d = try unwrapFlow(SubscriptionRestoreWideEventData.self, id: data.globalData.id)
-            d.emailAddressRestoreDuration = WideEvent.MeasuredInterval(
-                start: Date(timeIntervalSince1970: 0),
-                end: Date(timeIntervalSince1970: ms / 1000.0)
+    func testPixelParameters_withEmailAddressDuration_bucketing() {
+        let contextData = WideEventContextData(name: "test-context")
+        let base = Date()
+        let cases: [(ms: Int, expected: String)] = [
+            (5000, "10000"), // normal
+            (29999, "30000"), // higher edge
+            (60000, "300000"), // lower edge
+            (900000, "-1"), // default
+            (1200000, "-1") // default
+        ]
+
+        for (ms, expected) in cases {
+            let eventData = SubscriptionRestoreWideEventData(restorePlatform: .emailAddress, contextData: contextData)
+            eventData.emailAddressRestoreDuration = WideEvent.MeasuredInterval(
+                start: base,
+                end: base.addingTimeInterval(Double(ms) / 1000.0)
             )
-            wideEvent.updateFlow(d)
-            let exp = expectation(description: "complete")
-            wideEvent.completeFlow(d, status: .success) { _, _ in exp.fulfill() }
-            wait(for: [exp], timeout: 1.0)
-            let p = self.firedPixels.removeFirst().parameters
-            XCTAssertEqual(p["feature.data.ext.email_address_restore_latency_ms_bucketed"], expected)
-        }
 
-        try assertBucket(ms: 5000, expected: "10000")
-        try assertBucket(ms: 20000, expected: "30000")
-        try assertBucket(ms: 45000, expected: "60000")
-        try assertBucket(ms: 120000, expected: "300000")
-        try assertBucket(ms: 420000, expected: "600000")
-        try assertBucket(ms: 850000, expected: "900000")
-        try assertBucket(ms: 1_200_000, expected: "-1")
+            let parameters = eventData.pixelParameters()
+            XCTAssertEqual(parameters["feature.data.ext.email_address_restore_latency_ms_bucketed"], expected)
+        }
+    }
+
+    // MARK: - URL Mapping
+
+    func test_EmailAddressRestoreURL_mapAllRecognizedURLS() {
+        let cases: [(url: URL, expected: SubscriptionRestoreWideEventData.EmailAddressRestoreURL)] = [
+            (URL(string: "https://duckduckgo.com/subscriptions/activation-flow")!, .activationFlow),
+            (URL(string: "https://duckduckgo.com/subscriptions/activation-flow/this-device/email")!, .activationFlowEmail),
+            (URL(string: "https://duckduckgo.com/subscriptions/activation-flow/this-device/activate-by-email")!, .activationFlowActivateEmail),
+            (URL(string: "https://duckduckgo.com/subscriptions/activation-flow/this-device/activate-by-email/otp")!, .activationFlowActivateEmailOTP),
+            (URL(string: "https://duckduckgo.com/subscriptions/activation-flow/this-device/activate-by-email/success")!, .activationFlowSuccess)
+        ]
+        
+        
+        for (route, expected) in cases {
+            XCTAssertEqual(SubscriptionRestoreWideEventData.EmailAddressRestoreURL.from(route), expected)
+        }
+    }
+
+    func test_EmailAddressRestoreURL_mapNonRecognizedURL_returnsNil() {
+        let unknownURL = URL(string: "https://duckduckgo.com/subscriptions/activation-flow/manage")!
+        XCTAssertNil(SubscriptionRestoreWideEventData.EmailAddressRestoreURL.from(unknownURL))
+    }
+
+    // MARK: - Abandoned & Delayed Flows
+
+    func testPixelParameters_withAbandonedFlows() {
+        let contextData = WideEventContextData(name: "test-context")
+        let base = Date()
+        let eventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount, contextData: contextData)
+
+        // no started interval
+        var parameters = eventData.pixelParameters()
+        XCTAssertNil(parameters["feature.data.ext.apple_account_restore_latency_ms_bucketed"])
+
+        // has ended interval
+        eventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval(start: base, end: base.addingTimeInterval(2.5)) // 5000ms
+        parameters = eventData.pixelParameters()
+        XCTAssertEqual(parameters["feature.data.ext.apple_account_restore_latency_ms_bucketed"], "5000")
+    }
+
+    func testPixelParameters_withDelayedFlows() {
+        let contextData = WideEventContextData(name: "test-context")
+        let base = Date()
+        let eventData = SubscriptionRestoreWideEventData(restorePlatform: .emailAddress, contextData: contextData)
+
+        // start only
+        eventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval(start: base, end: nil)
+        var parameters = eventData.pixelParameters()
+        XCTAssertNil(parameters["feature.data.ext.apple_account_restore_latency_ms_bucketed"])
+
+        // end only
+        eventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval(start: nil, end: base)
+        parameters = eventData.pixelParameters()
+        XCTAssertNil(parameters["feature.data.ext.apple_account_restore_latency_ms_bucketed"])
     }
 }

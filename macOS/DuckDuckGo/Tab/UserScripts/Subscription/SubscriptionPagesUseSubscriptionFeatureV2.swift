@@ -165,7 +165,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     func setAuthTokens(params: Any, original: WKScriptMessage) async throws -> Encodable? {
 
         PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseEmailSuccess, frequency: .legacyDailyAndCount)
-        
+
         retrieveRestoreEmailAppSettingsWideEventDataIfNeeded()
         let restoreDataList: [SubscriptionRestoreWideEventData] = [
             self.restoreEmailAppSettingsWideEventData,
@@ -793,7 +793,7 @@ private extension SubscriptionPagesUseSubscriptionFeatureV2 {
 // MARK: - Wide Event
 
 private extension SubscriptionPagesUseSubscriptionFeatureV2 {
-    
+
     // Attempt to retrieve restoreEmailAppSettingsWideEventData sent from Preferences/View/PreferencesRootView.swift
     func retrieveRestoreEmailAppSettingsWideEventDataIfNeeded() {
         guard isSubscriptionRestoreWidePixelMeasurementEnabled else { return }
@@ -802,7 +802,7 @@ private extension SubscriptionPagesUseSubscriptionFeatureV2 {
             self.restoreEmailAppSettingsWideEventData = data
         }
     }
-    
+
     func setupRestoreEmailOfferPageWideEventDataIfNeeded() {
         guard isSubscriptionRestoreWidePixelMeasurementEnabled else { return }
         let restoreEmailOfferPageWideEventData = SubscriptionRestoreWideEventData(
@@ -813,7 +813,7 @@ private extension SubscriptionPagesUseSubscriptionFeatureV2 {
         restoreEmailOfferPageWideEventData.emailAddressRestoreDuration = WideEvent.MeasuredInterval.startingNow()
         wideEvent.startFlow(restoreEmailOfferPageWideEventData)
     }
-    
+
     func markEmailAddressRestoreAsFailure(data dataList: [SubscriptionRestoreWideEventData], with error: Error? = nil) {
         guard isSubscriptionRestoreWidePixelMeasurementEnabled else { return }
         for data in dataList {
@@ -824,7 +824,7 @@ private extension SubscriptionPagesUseSubscriptionFeatureV2 {
             wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
         }
     }
-    
+
     func markEmailAddressRestoreAsSuccess(data dataList: [SubscriptionRestoreWideEventData]) {
         guard isSubscriptionRestoreWidePixelMeasurementEnabled else { return }
         for data in dataList {

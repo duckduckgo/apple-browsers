@@ -166,7 +166,7 @@ final class WideEventService {
             if data.appleAccountRestoreDuration?.start != nil && data.appleAccountRestoreDuration?.end == nil {
                 continue
             }
-            
+
             if data.emailAddressRestoreDuration?.start != nil && data.emailAddressRestoreDuration?.end == nil {
                 continue
             }

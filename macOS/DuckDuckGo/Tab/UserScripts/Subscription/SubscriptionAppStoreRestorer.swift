@@ -240,9 +240,9 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
         default: return
         }
     }
-    
+
     // MARK: - Wide Pixel Helper
-    
+
     private func markSubscriptionRestoreWideEventAsFailure(with error: Error) {
         guard isSubscriptionRestoreWidePixelMeasurementEnabled, let data = subscriptionRestoreWideEventData else { return }
         data.appleAccountRestoreDuration?.complete()

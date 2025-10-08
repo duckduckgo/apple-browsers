@@ -68,6 +68,7 @@ final class DuckDuckGoSubscriptionV2IntegrationTests: XCTestCase {
 
         appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
                                                            storePurchaseManager: storePurchaseManager)
+        wideEvent = WideEventMock()
         appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
                                                              storePurchaseManager: storePurchaseManager,
                                                              appStoreRestoreFlow: appStoreRestoreFlow,

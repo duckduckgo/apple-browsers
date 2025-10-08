@@ -81,7 +81,7 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
          freemiumDBPPresenter: FreemiumDBPPresenter = DefaultFreemiumDBPPresenter(),
          notificationCenter: NotificationCenter = .default,
          dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
-         contextualOnboardingPublisher: AnyPublisher<Bool, Never>) {
+         contextualOnboardingPublisher: AnyPublisher<Bool, Never> = Empty<Bool, Never>().eraseToAnyPublisher()) {
 
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.freemiumDBPFeature = freemiumDBPFeature
@@ -197,9 +197,9 @@ private extension FreemiumDBPPromotionViewCoordinator {
         contextualOnboardingPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isCompleted in
-                guard isCompleted else { return }
+                guard let self, isCompleted else { return }
                 Logger.freemiumDBP.debug("[Freemium DBP] Contextual Onboarding Completed")
-                self?.viewModel = self?.createViewModel()
+                isHomePagePromotionVisible = (!didDismissHomePagePromotion && freemiumDBPFeature.isAvailable)
             }
             .store(in: &cancellables)
     }

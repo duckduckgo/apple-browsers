@@ -227,7 +227,10 @@ struct FireDialogView: ModalView {
 
     private func presentManageFireproof() {
         // Use the app's preferences presenter to begin a sheet on the parent window (stacks above the Fire sheet)
-        Application.appDelegate.dataClearingPreferences.presentManageFireproofSitesDialog()
+        Task { @MainActor in
+            Application.appDelegate.dataClearingPreferences.presentManageFireproofSitesDialog()
+            viewModel.clearingOption = viewModel.clearingOption // trigger data reload
+        }
     }
 
     private func presentIndividualSites() {
@@ -511,6 +514,9 @@ private class MockFireproofDomains: FireproofDomains {
 
     // Provide simple preview icons from bundled assets (replace names if needed)
     let faviconMock = FaviconManagerMock()
+    faviconMock.setImage(NSImage(systemSymbolName: "apple.logo", accessibilityDescription: nil)!, forHost: "apple.com")
+    faviconMock.setImage(NSImage(named: NSImage.bonjourName)!, forHost: "cnn.com")
+    faviconMock.setImage(NSImage(named: NSImage.networkName)!, forHost: "dropbox.com")
 
     let vm = FireDialogViewModel(
         fireViewModel: FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider),

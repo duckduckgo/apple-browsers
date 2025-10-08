@@ -29,6 +29,7 @@ struct UserText {
     static let ok = NSLocalizedString("ok", value: "OK", comment: "OK button")
     static let cancel = NSLocalizedString("cancel", value: "Cancel", comment: "Cancel button")
     static let none = NSLocalizedString("none", value: "None", comment: "Generic 'None' label")
+    static let searchBarSearch = NSLocalizedString("searchBar.search", value: "Search", comment: "Generic placeholder for search fields")
 
     // Fire Dialog
     static let fireDialogFireproofSitesManage = NSLocalizedString("fire.dialog.manage", value: "Manage", comment: "Button title to manage Fireproof Sites or related settings")

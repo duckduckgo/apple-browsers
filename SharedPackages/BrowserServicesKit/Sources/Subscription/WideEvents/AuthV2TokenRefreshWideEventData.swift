@@ -44,7 +44,7 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
 
     public init(failingStep: FailingStep? = nil,
                 errorData: WideEventErrorData? = nil,
-                contextData: WideEventContextData,
+                contextData: WideEventContextData = WideEventContextData(),
                 appData: WideEventAppData = WideEventAppData(),
                 globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.failingStep = failingStep
@@ -116,8 +116,7 @@ extension AuthV2TokenRefreshWideEventData {
             switch event {
             case .tokenRefreshStarted(let refreshID):
                 let globalData = WideEventGlobalData(id: refreshID)
-                let contextData = WideEventContextData(name: "token-refresh")
-                let data = AuthV2TokenRefreshWideEventData(contextData: contextData, globalData: globalData)
+                let data = AuthV2TokenRefreshWideEventData(globalData: globalData)
                 data.failingStep = .tokenRead
                 wideEvent.startFlow(data)
             case .tokenRefreshRefreshingAccessToken(refreshID: let refreshID):

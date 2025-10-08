@@ -73,8 +73,15 @@ final class ContentBlockingConfiguration {
             application.setWindow(window)
         }
 
-        let alertController = CriticalAlerts.makePreemptiveCrashAlert()
-        window.rootViewController?.present(alertController, animated: true, completion: nil)
+        guard let rootViewController = window.rootViewController else {
+            fatalError("rootViewController is missing")
+        }
+
+        // Dismiss all presented view controllers first
+        rootViewController.dismiss(animated: false) {
+            let alertController = CriticalAlerts.makePreemptiveCrashAlert()
+            window.rootViewController?.present(alertController, animated: true, completion: nil)
+        }
     }
     
     private func alertAndTerminateForInsufficientDiskSpace() {
@@ -86,8 +93,15 @@ final class ContentBlockingConfiguration {
             application.setWindow(window)
         }
 
-        let alertController = CriticalAlerts.makeInsufficientDiskSpaceAlert()
-        window.rootViewController?.present(alertController, animated: true, completion: nil)
+        guard let rootViewController = window.rootViewController else {
+            fatalError("rootViewController is missing")
+        }
+        
+        // Dismiss all presented view controllers first
+        rootViewController.dismiss(animated: false) {
+            let alertController = CriticalAlerts.makeInsufficientDiskSpaceAlert()
+            rootViewController.present(alertController, animated: true, completion: nil)
+        }
     }
 
 }

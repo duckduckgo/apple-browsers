@@ -172,14 +172,14 @@ Cached: \(cachedSubscription?.debugDescription ?? "nil", privacy: .public)
 New: \(subscription.debugDescription, privacy: .public)
 """)
         if subscription != cachedSubscription {
-            updateCache(with: subscription)
+            updateCache(with: subscription, cachedSubscription: cachedSubscription)
         } else {
             Logger.subscriptionEndpointService.debug("No subscription update required")
         }
         return subscription
     }
 
-    func updateCache(with subscription: DuckDuckGoSubscription) {
+    func updateCache(with subscription: DuckDuckGoSubscription, cachedSubscription: DuckDuckGoSubscription?) {
         cacheSerialQueue.sync {
             let expiryDate = subscription.expiresOrRenewsAt
 #if DEBUG
@@ -197,7 +197,11 @@ New: \(subscription.debugDescription, privacy: .public)
             }
             Task { @MainActor in
                 Logger.subscriptionEndpointService.debug("Notifying subscription changed")
-                NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: subscription])
+                var info: [UserDefaultsCacheKey: Any] = [UserDefaultsCacheKey.subscription: subscription]
+                if let cachedSubscription {
+                    info[UserDefaultsCacheKey.previousSubscription] = cachedSubscription
+                }
+                NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: info)
             }
         }
     }

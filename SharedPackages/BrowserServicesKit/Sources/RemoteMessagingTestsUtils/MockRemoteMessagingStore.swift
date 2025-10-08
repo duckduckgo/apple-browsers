@@ -30,6 +30,8 @@ public class MockRemoteMessagingStore: RemoteMessagingStoring {
     public var fetchDismissedRemoteMessageIDsCalls = 0
     public var updateRemoteMessageCalls = 0
 
+    public var capturedSurfaces: RemoteMessageSurfaceType?
+
     public var remoteMessagingConfig: RemoteMessagingConfig?
     public var scheduledRemoteMessage: RemoteMessageModel?
     public var remoteMessages: [String: RemoteMessageModel]
@@ -59,8 +61,9 @@ public class MockRemoteMessagingStore: RemoteMessagingStoring {
         return remoteMessagingConfig
     }
 
-    public func fetchScheduledRemoteMessage() -> RemoteMessageModel? {
+    public func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType) -> RemoteMessageModel? {
         fetchScheduledRemoteMessageCalls += 1
+        capturedSurfaces = surfaces
         return scheduledRemoteMessage
     }
 
@@ -85,6 +88,11 @@ public class MockRemoteMessagingStore: RemoteMessagingStoring {
 
     public func updateRemoteMessage(withID id: String, asShown shown: Bool) {
         updateRemoteMessageCalls += 1
+        if shown {
+            shownRemoteMessagesIDs.append(id)
+        } else {
+            shownRemoteMessagesIDs.removeAll(where: { $0 == id })
+        }
     }
 
     public func resetRemoteMessages() {}

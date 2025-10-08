@@ -50,6 +50,9 @@ public protocol RemoteMessagingProcessing {
     /// Provides feature flag support for RMF.
     var remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding { get }
 
+    /// Provides eligible surfaces for specific message types.
+    var remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding { get }
+
     /**
      * This function returns a config processor.
      *
@@ -89,7 +92,11 @@ public extension RemoteMessagingProcessing {
             let processor = configProcessor(for: remoteMessagingConfigMatcher)
             let storedConfig = store.fetchRemoteMessagingConfig()
 
-            if let processorResult = processor.process(jsonRemoteMessagingConfig: jsonConfig, currentConfig: storedConfig) {
+            if let processorResult = processor.process(
+                jsonRemoteMessagingConfig: jsonConfig,
+                currentConfig: storedConfig,
+                supportedSurfacesForMessage: remoteMessagingSurfacesProvider.supportedSurfaces(for:)
+            ) {
                 await store.saveProcessedResult(processorResult)
             }
 

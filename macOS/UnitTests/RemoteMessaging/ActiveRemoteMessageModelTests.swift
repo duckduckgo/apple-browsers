@@ -19,6 +19,7 @@
 import Foundation
 import XCTest
 import RemoteMessaging
+import RemoteMessagingTestsUtils
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ActiveRemoteMessageModelTests: XCTestCase {
@@ -31,6 +32,7 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
         store = MockRemoteMessagingStore()
         message = RemoteMessageModel(
             id: "1",
+            surfaces: .newTabPage, // Surface not handled yet in macOS
             content: .small(titleText: "test", descriptionText: "desc"), matchingRules: [], exclusionRules: [], isMetricsEnabled: false
         )
     }
@@ -95,6 +97,7 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
     func testWhenMessageIsForTabBar_thenCorrectPublisherIsSet() {
         let tabBarRemoteMessage = RemoteMessageModel(
             id: TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId,
+            surfaces: .newTabPage, // Surface not handled yet in macOS
             content: .bigSingleAction(titleText: "Help Us Improve!",
                                       descriptionText: "Description",
                                       placeholder: .announce,
@@ -128,4 +131,24 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
         XCTAssertNil(model.tabBarRemoteMessage)
         XCTAssertNotNil(model.newTabPageRemoteMessage)
     }
+
+    func testWhenScheduledMessageIsCalledThenSurfaceIsNewTabPage() {
+        // GIVEN
+        store.scheduledRemoteMessage = message
+        XCTAssertEqual(store.fetchScheduledRemoteMessageCalls, 0)
+        XCTAssertNil(store.capturedSurfaces)
+
+        // WHEN
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { }
+        )
+
+        // THEN
+        XCTAssertEqual(store.fetchScheduledRemoteMessageCalls, 1)
+        XCTAssertEqual(store.capturedSurfaces, .newTabPage)
+    }
+
 }

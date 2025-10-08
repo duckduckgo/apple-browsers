@@ -84,7 +84,7 @@ final class MainCoordinator {
         self.defaultBrowserPromptPresenter = defaultBrowserPromptPresenter
 
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
-                                                          remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
+                                                          remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()

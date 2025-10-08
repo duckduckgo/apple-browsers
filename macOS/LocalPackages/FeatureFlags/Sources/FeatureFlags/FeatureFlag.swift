@@ -311,7 +311,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .authV2WideEventEnabled,
                 .webKitPerformanceReporting,
                 .fireDialog,
-                .webKitPerformanceReporting:
                 .winBackOffer:
             return true
         case .debugMenu,

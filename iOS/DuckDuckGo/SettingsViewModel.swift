@@ -151,6 +151,10 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) && serpSettings.didMigrate
     }
 
+    var embedSERPSettings: Bool {
+        featureFlagger.isFeatureOn(.embeddedSERPSettings)
+    }
+
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
 

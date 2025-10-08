@@ -33173,36 +33173,6 @@
         }
       }
     },
-    "fire.dialog.history.count.tab" : {
-      "comment" : "Subtitle for Tab scope. Shows the exact number of history items to be deleted from current tab. %@ is a localized decimal number.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "%@ Elemente aus diesem Tab löschen." } },
-        "en" : { "stringUnit" : { "state" : "new", "value" : "Delete %@ items from this tab." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Eliminar %@ elementos de esta pestaña." } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Supprimer %@ éléments de cet onglet." } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Elimina %@ elementi da questa scheda." } },
-        "nl" : { "stringUnit" : { "state" : "translated", "value" : "%@ items uit dit tabblad verwijderen." } },
-        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Usuń %@ elementów z tej karty." } },
-        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Eliminar %@ itens deste separador." } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Удалить %@ элементов с этой вкладки." } }
-      }
-    },
-    "fire.dialog.history.count.window" : {
-      "comment" : "Subtitle for Window scope. Shows the exact number of history items to be deleted from current window. %@ is a localized decimal number.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "%@ Elemente aus diesem Fenster löschen." } },
-        "en" : { "stringUnit" : { "state" : "new", "value" : "Delete %@ items from this window." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Eliminar %@ elementos de esta ventana." } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Supprimer %@ éléments de cette fenêtre." } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Elimina %@ elementi da questa finestra." } },
-        "nl" : { "stringUnit" : { "state" : "translated", "value" : "%@ items uit dit venster verwijderen." } },
-        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Usuń %@ elementów z tego okna." } },
-        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Eliminar %@ itens desta janela." } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Удалить %@ элементов из этого окна." } }
-      }
-    },
     "fire.dialog.history.title" : {
       "comment" : "Section title. Toggle that controls whether browsing history entries are deleted.",
       "localizations" : {
@@ -34811,6 +34781,186 @@
         }
       }
     },
+    "fireproof.domains.add" : {
+      "comment" : "Button adds a new fireproofed website",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hinzufügen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toevoegen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить"
+          }
+        }
+      }
+    },
+    "fireproof.domains.add.current" : {
+      "comment" : "Button adds the current website to the fireproofed list",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktuelle hinzufügen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add Current"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir actual"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter l’actuel"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi corrente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Huidige toevoegen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj bieżącą"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar atual"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить текущий"
+          }
+        }
+      }
+    },
+    "fireproof.domains.add.title" : {
+      "comment" : "Title for the alert to add a fireproof site",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feuerfeste Seite hinzufügen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add Fireproof Site"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir sitio a prueba de fuego"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter un site coupe-feu"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi sito protetto"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brandveilig site toevoegen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj chronioną witrynę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar site protegido"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить огнеупорный сайт"
+          }
+        }
+      }
+    },
     "fireproof.domains.remove.all" : {
       "comment" : "Label of a button that allows the user to remove all the websites from the fireproofed list",
       "extractionState" : "extracted_with_value",
@@ -35049,51 +35199,6 @@
             "value" : "Огнеупорные сайты"
           }
         }
-      }
-    },
-    "fireproof.domains.add" : {
-      "comment" : "Button adds a new fireproofed website",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Hinzufügen" } },
-        "en" : { "stringUnit" : { "state" : "new", "value" : "Add" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Añadir" } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Ajouter" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Aggiungi" } },
-        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Toevoegen" } },
-        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Dodaj" } },
-        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Adicionar" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Добавить" } }
-      }
-    },
-    "fireproof.domains.add.title" : {
-      "comment" : "Title for the alert to add a fireproof site",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Feuerfeste Seite hinzufügen" } },
-        "en" : { "stringUnit" : { "state" : "new", "value" : "Add Fireproof Site" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Añadir sitio a prueba de fuego" } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Ajouter un site coupe-feu" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Aggiungi sito protetto" } },
-        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Brandveilig site toevoegen" } },
-        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Dodaj chronioną witrynę" } },
-        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Adicionar site protegido" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Добавить огнеупорный сайт" } }
-      }
-    },
-    "fireproof.domains.add.current" : {
-      "comment" : "Button adds the current website to the fireproofed list",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Aktuelle hinzufügen" } },
-        "en" : { "stringUnit" : { "state" : "new", "value" : "Add Current" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Añadir actual" } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Ajouter l’actuel" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Aggiungi corrente" } },
-        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Huidige toevoegen" } },
-        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Dodaj bieżącą" } },
-        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Adicionar atual" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Добавить текущий" } }
       }
     },
     "folder.dialog.add" : {
@@ -36282,66 +36387,6 @@
         }
       }
     },
-    "history.delete.older.dialog.title" : {
-      "comment" : "Title of a dialog asking the user to confirm deleting older history (more than a week old)",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Älteren Verlauf löschen?"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Delete older history?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Borrar historial más antiguo?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Supprimer l'historique plus ancien ?"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancellare la cronologia più vecchia?"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Oudere geschiedenis verwijderen?"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usunąć starszą historię?"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eliminar histórico mais antigo?"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удалить старую историю?"
-          }
-        }
-      }
-    },
     "history.delete.date.dialog.title" : {
       "comment" : "Title of a dialog asking the user to confirm deleting history for a given date. %@ represents the date",
       "extractionState" : "extracted_with_value",
@@ -36766,10 +36811,58 @@
       "comment" : "Title of a dialog asking the user to confirm deleting older history (more than a week old)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Älteren Verlauf löschen?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Delete older history?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Borrar historial más antiguo?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer l'historique plus ancien ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancellare la cronologia più vecchia?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oudere geschiedenis verwijderen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunąć starszą historię?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar histórico mais antigo?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить старую историю?"
           }
         }
       }
@@ -37610,6 +37703,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Недавно посещенные"
+          }
+        }
+      }
+    },
+    "history.sites.label" : {
+      "comment" : "Label for the Sites section in history view showing unique domains visited",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Seiten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sites"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sitios"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sites"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Siti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sites"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Witryny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sites"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Сайты"
           }
         }
       }
@@ -82461,49 +82614,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "heute"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "hoy"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "aujourd'hui"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "oggi"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "vandaag"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "dzisiaj"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "hoje"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "сегодня"
           }
         }
       }
@@ -91757,49 +91910,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "gestern"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "ayer"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "hier"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "ieri"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "gisteren"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "wczoraj"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "ontem"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "вчера"
           }
         }
       }

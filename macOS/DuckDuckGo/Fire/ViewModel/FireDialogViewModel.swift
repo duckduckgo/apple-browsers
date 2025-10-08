@@ -61,7 +61,8 @@ final class FireDialogViewModel: ObservableObject {
             switch self {
             case .fireButton, .mainMenuAll,
                  .historyView(query: .rangeFilter(.today)),
-                 .historyView(query: .rangeFilter(.all)):
+                 .historyView(query: .rangeFilter(.all)),
+                 .historyView(query: .rangeFilter(.allSites)):
                 return true
             case .historyView:
                 return false
@@ -83,7 +84,8 @@ final class FireDialogViewModel: ObservableObject {
             let title = switch self {
             case .fireButton: UserText.fireDialogTitle
             case .mainMenuAll,
-                 .historyView(query: .rangeFilter(.all)): HistoryViewDeleteDialogModel.DeleteMode.all.title
+                 .historyView(query: .rangeFilter(.all)),
+                 .historyView(query: .rangeFilter(.allSites)): HistoryViewDeleteDialogModel.DeleteMode.all.title
             case .historyView(query: .rangeFilter(.today)): HistoryViewDeleteDialogModel.DeleteMode.today.title
             case .historyView(query: .rangeFilter(.yesterday)): HistoryViewDeleteDialogModel.DeleteMode.yesterday.title
             case .historyView(query: .dateFilter(let date)): HistoryViewDeleteDialogModel.DeleteMode.date(date).title

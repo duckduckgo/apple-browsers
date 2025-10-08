@@ -598,7 +598,7 @@ final class MoreOptionsMenuTests: XCTestCase {
             .newtab,
             .settings(pane: nil),
             .bookmarks,
-            .history,
+            .anyHistoryPane,
             .onboarding,
             .dataBrokerProtection
         ]
@@ -643,7 +643,7 @@ final class MoreOptionsMenuTests: XCTestCase {
             .releaseNotes,
             .webExtensionUrl(.aboutDuckDuckGo),
             .newtab,
-            .history,
+            .anyHistoryPane,
             .bookmarks,
             .settings(pane: nil)
         ]
@@ -688,7 +688,7 @@ final class MoreOptionsMenuTests: XCTestCase {
             .releaseNotes,
             .webExtensionUrl(.aboutDuckDuckGo),
             .newtab,
-            .history,
+            .anyHistoryPane,
             .bookmarks,
             .settings(pane: nil)
         ]

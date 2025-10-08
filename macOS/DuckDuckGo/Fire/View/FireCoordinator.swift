@@ -220,7 +220,7 @@ extension FireCoordinator {
             options.isToday = (scopeQuery == .rangeFilter(.today))
 
             let isAllHistorySelected = (options.clearingOption == .allData /* not Current Tab or Window */)
-            && scopeQuery == .rangeFilter(.all)
+            && (scopeQuery == .rangeFilter(.all) || scopeQuery == .rangeFilter(.allSites))
 
             await self.handleDialogResult(options, tabCollectionViewModel: tabCollectionViewModel, isAllHistorySelected: isAllHistorySelected)
 

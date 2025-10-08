@@ -128,6 +128,12 @@ extension URL {
             return makeURLUsingNativePredictionLogic(from: addressBarString)
         }
 
+        // Handle VPN URLs first, to avoid them being misclassified. This workaround can be removed when the
+        // URL predictor identifies the networkprotection:// scheme as a navigate action instead of a search.
+        if let vpnURL = URL(string: addressBarString), vpnURL.scheme?.isNetworkProtectionScheme == true {
+            return vpnURL
+        }
+
         let url = makeURLUsingUnifiedPredictionLogic(from: addressBarString)
 
         /// Return early if the metrics feature flag is disabled (only internal users can opt in to metrics collection).
@@ -215,6 +221,10 @@ extension URL {
         return settings.appendingPathComponent(pane.rawValue)
     }
 
+    static func historyPane(_ pane: HistoryPaneIdentifier) -> URL {
+        return history.appendingParameter(name: "range", value: pane.rawValue)
+    }
+
     var isSettingsURL: Bool {
         isChild(of: .settings) && (pathComponents.isEmpty || PreferencePaneIdentifier(url: self) != nil)
     }
@@ -239,6 +249,7 @@ extension URL {
 
         static let aboutSettings = URL(string: "about:settings")!
         static let aboutPreferences = URL(string: "about:preferences")!
+        static let aboutHistory = URL(string: "about:history")!
         static let duckPreferences = URL(string: "duck://preferences")!
         static let aboutConfig = URL(string: "about:config")!
         static let duckConfig = URL(string: "duck://config")!

@@ -658,7 +658,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireCoordinator = FireCoordinator(tld: tld,
                                           featureFlagger: featureFlagger,
                                           historyProvider: HistoryViewDataProvider(historyDataSource: historyCoordinator,
-                                                                                   historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains, fire: { @MainActor in NSApp.delegateTyped.fireCoordinator.fireViewModel.fire })),
+                                                                                   historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains, fire: { @MainActor in NSApp.delegateTyped.fireCoordinator.fireViewModel.fire }),
+                                                                                   featureFlagger: featureFlagger),
                                           fireproofDomains: fireproofDomains)
 
         var appContentBlocking: AppContentBlocking?

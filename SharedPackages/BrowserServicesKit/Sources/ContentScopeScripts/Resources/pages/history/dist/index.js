@@ -2853,6 +2853,10 @@
     range_older: {
       title: "Older",
       note: "Label on a button that shows older history entries."
+    },
+    range_sites: {
+      title: "Sites",
+      note: "Label on a button that shows which sites have been visited"
     }
   };
 
@@ -3487,7 +3491,8 @@
       "saturday",
       "sunday",
       "recentlyOpened",
-      "older"
+      "older",
+      "sites"
     ];
     return valid.includes(input) ? (
       /** @type {import('../types/history.js').RangeId} */
@@ -4364,7 +4369,7 @@
      * @param {string} props.url - The text to be displayed for the item.
      * @param {string} props.domain - The text to be displayed for the domain
      * @param {number} props.kind - The kind or type of the item that determines its visual style.
-     * @param {string} props.dateTimeOfDay - the time of day, like 11.00am.
+     * @param {string} [props.dateTimeOfDay] - the time of day, like 11.00am.
      * @param {string} props.dateRelativeDay - the time of day, like 11.00am.
      * @param {string|null} props.etldPlusOne
      * @param {number} props.index - original index
@@ -4400,7 +4405,7 @@
         )),
         /* @__PURE__ */ _("a", { href: props.url, "data-url": props.url, class: Item_default.entryLink, tabindex: 0 }, title),
         /* @__PURE__ */ _("span", { class: Item_default.domain, "data-testid": "Item.domain", title: props.domain }, props.domain),
-        /* @__PURE__ */ _("span", { class: Item_default.time }, dateTimeOfDay),
+        dateTimeOfDay && /* @__PURE__ */ _("span", { className: Item_default.time }, dateTimeOfDay),
         /* @__PURE__ */ _("button", { class: Item_default.dots, "data-action": BTN_ACTION_ENTRIES_MENU, "data-index": index, value: props.id, tabindex: -1 }, /* @__PURE__ */ _(Dots, null))
       ));
     }
@@ -4653,7 +4658,8 @@
     friday: "icons/day.svg",
     saturday: "icons/day.svg",
     sunday: "icons/day.svg",
-    older: "icons/older.svg"
+    older: "icons/older.svg",
+    sites: "icons/sites.svg"
   };
   var titleMap = {
     all: (t4) => t4("range_all"),
@@ -4666,7 +4672,8 @@
     friday: (t4) => t4("range_friday"),
     saturday: (t4) => t4("range_saturday"),
     sunday: (t4) => t4("range_sunday"),
-    older: (t4) => t4("range_older")
+    older: (t4) => t4("range_older"),
+    sites: (t4) => t4("range_sites")
   };
   function Sidebar({ ranges }) {
     const { t: t4 } = useTypedTranslation();
@@ -4750,6 +4757,7 @@
       case "thursday":
       case "friday":
       case "saturday":
+      case "sites":
       case "sunday":
         return { linkLabel: t4("show_history_for", { range }), buttonLabel: t4("delete_history_for", { range }) };
       case "older":

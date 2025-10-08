@@ -271,6 +271,7 @@ struct UserText {
 
     static let today = NSLocalizedString("today", value: "today", comment: "Date section in history view indicating current day")
     static let yesterday = NSLocalizedString("yesterday", value: "yesterday", comment: "Date section in history view indicating previous day")
+    static let historySitesLabel = NSLocalizedString("history.sites.label", value: "Sites", comment: "Label for the Sites section in history view showing unique domains visited")
 
     static let deleteHistory = NSLocalizedString("history.delete.dialog.title1", value: "Delete history?", comment: "Title of a dialog asking the user to confirm deleting history")
     static let deleteAllHistory = NSLocalizedString("history.delete.all.dialog.title", value: "Delete all history?", comment: "Title of a dialog asking the user to confirm deleting all history")

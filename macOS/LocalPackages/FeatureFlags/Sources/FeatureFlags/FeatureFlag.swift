@@ -48,6 +48,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/1201048563534612/1208850443048685/f
     case historyView
 
+    /// Subfeature: display the Sites section inside History View
+    case historyViewSitesSectionSubfeature
+
     /// Enable WebKit page load timing performance reporting
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/XXXXXXXXX?focus=true
     case webKitPerformanceReporting
@@ -248,6 +251,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .networkProtectionAppStoreSysexMessage,
                 .syncSeamlessAccountSwitching,
                 .historyView,
+                .historyViewSitesSectionSubfeature,
                 .webExtensions,
                 .autoUpdateInDEBUG,
                 .updatesWontAutomaticallyRestartApp,
@@ -341,6 +345,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage))
         case .historyView:
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
+        case .historyViewSitesSectionSubfeature:
+            return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.sitesSection))
         case .autoUpdateInDEBUG:
             return .disabled
         case .updatesWontAutomaticallyRestartApp:

@@ -129,8 +129,7 @@ final class SubscriptionRestoreWideEventTests: XCTestCase {
             (URL(string: "https://duckduckgo.com/subscriptions/activation-flow/this-device/activate-by-email/otp")!, .activationFlowActivateEmailOTP),
             (URL(string: "https://duckduckgo.com/subscriptions/activation-flow/this-device/activate-by-email/success")!, .activationFlowSuccess)
         ]
-        
-        
+
         for (route, expected) in cases {
             XCTAssertEqual(SubscriptionRestoreWideEventData.EmailAddressRestoreURL.from(route), expected)
         }

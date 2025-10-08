@@ -169,8 +169,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         retrieveRestoreEmailAppSettingsWideEventDataIfNeeded()
         let restoreDataList: [SubscriptionRestoreWideEventData] = [
             self.restoreEmailAppSettingsWideEventData,
-            self.restoreEmailOfferPageWideEventData
-        ].compactMap{ $0 }
+            self.restoreEmailOfferPageWideEventData].compactMap { $0 }
 
         guard let subscriptionValues: SubscriptionValuesV2 = CodableHelper.decode(from: params) else {
             Logger.subscription.fault("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
@@ -798,7 +797,7 @@ private extension SubscriptionPagesUseSubscriptionFeatureV2 {
     func retrieveRestoreEmailAppSettingsWideEventDataIfNeeded() {
         guard isSubscriptionRestoreWidePixelMeasurementEnabled else { return }
         let flows = wideEvent.getAllFlowData(SubscriptionRestoreWideEventData.self)
-        if let data = flows.last(where: { $0.restorePlatform == .emailAddress && $0.emailAddressRestoreDuration?.start != nil && $0.emailAddressRestoreDuration?.end == nil }) {
+        if let data = flows.last(where: { $0.restorePlatform == .emailAddress && $0.emailAddressRestoreDuration?.start != nil && $0.emailAddressRestoreDuration?.end == nil && $0.contextData.name == SubscriptionRestoreFunnelOrigin.appSettings.rawValue }) {
             self.restoreEmailAppSettingsWideEventData = data
         }
     }

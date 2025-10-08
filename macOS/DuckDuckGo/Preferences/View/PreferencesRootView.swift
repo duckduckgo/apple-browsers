@@ -432,11 +432,11 @@ enum Preferences {
                         contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
                     )
                     showTab(.subscription(url))
-                    
+
                     if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
+                        subscriptionRestoreEmailSettingsWideEventData.emailAddressRestoreDuration = WideEvent.MeasuredInterval.startingNow()
                         wideEvent.startFlow(subscriptionRestoreEmailSettingsWideEventData)
                     }
-                    
                     PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {

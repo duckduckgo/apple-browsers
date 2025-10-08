@@ -239,7 +239,12 @@
                 key: 'context.name',
                 type: 'string',
                 description: 'Context name for the flow',
-                enum: ['funnel_appsettings_macos', 'funnel_purchaseoffer_macos', 'funnel_prepurchasecheck_macos'],
+                enum: [
+                    'funnel_appsettings_macos',
+                    'funnel_purchaseoffer_macos',
+                    'funnel_prepurchasecheck_macos',
+                    'funnel_onpurchasecheck_multiple',
+                ],
             },
         ],
     },

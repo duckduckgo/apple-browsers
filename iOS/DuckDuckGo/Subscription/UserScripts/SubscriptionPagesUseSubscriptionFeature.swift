@@ -1140,7 +1140,6 @@ private extension DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
     func markEmailAddressRestoreWideEventFlowAsSuccess() {
         guard subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled, let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }
         restoreWideEventData.emailAddressRestoreDuration?.complete()
-        restoreWideEventData.errorData = .init(error: UseSubscriptionError.generalError)
         wideEvent.completeFlow(restoreWideEventData, status: .success, onComplete: { _, _ in })
         self.subscriptionRestoreEmailAddressWideEventData = nil
     }

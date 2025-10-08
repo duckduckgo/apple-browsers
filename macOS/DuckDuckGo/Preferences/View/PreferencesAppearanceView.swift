@@ -215,7 +215,7 @@ extension Preferences {
 
             } label: {
                 HStack(spacing: 8) {
-                    Image(systemNamed: .arrowCounterClockWise)
+                    Image(.reset)
                     Text(UserText.themeReset)
                 }
                 .foregroundColor(Color.linkBlue)

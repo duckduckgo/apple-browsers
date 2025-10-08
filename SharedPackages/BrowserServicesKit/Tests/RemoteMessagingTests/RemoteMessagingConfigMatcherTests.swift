@@ -571,6 +571,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
     func mediumMessage(id: String = "1", matchingRules: [Int], exclusionRules: [Int]) -> RemoteMessageModel {
         return RemoteMessageModel(id: id,
+                                  surfaces: .newTabPage,
                                   content: .medium(titleText: "title", descriptionText: "description", placeholder: .announce),
                                   matchingRules: matchingRules,
                                   exclusionRules: exclusionRules,

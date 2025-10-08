@@ -270,7 +270,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                     return nil
                 }
 
-                // 4: Configure wide pixel and start the flow
+                // 4: Configure wide event and start the flow
                 let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
                 let data = SubscriptionPurchaseWideEventData(purchasePlatform: .appStore,
                                                              subscriptionIdentifier: subscriptionSelection.id,
@@ -331,7 +331,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
 
-                    // Complete the wide pixel flow if the purchase step fails:
+                    // Complete the wide event flow if the purchase step fails:
                     if error == .cancelledByUser {
                         if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
                             wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
@@ -422,7 +422,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                             wideEvent.completeFlow(wideEventData, status: .cancelled, onComplete: { _, _ in })
                         }
                     case .missingEntitlements:
-                        // This case deliberately avoids sending a failure wide pixel in case activation succeeds later
+                        // This case deliberately avoids sending a failure wide event in case activation succeeds later
                         subscriptionErrorReporter.report(subscriptionActivationError: .missingEntitlements)
                         DispatchQueue.main.async { [weak self] in
                             self?.notificationCenter.post(name: .subscriptionPageCloseAndOpenPreferences, object: self)

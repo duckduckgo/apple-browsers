@@ -241,7 +241,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                             pixelHandler: DataBrokerProtectionMacOSPixelsHandler())
     }()
 
-    // MARK: - Wide Pixel Service
+    // MARK: - Wide Event Service
 
     private lazy var wideEventService: WideEventService = {
         return WideEventService(

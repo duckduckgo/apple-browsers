@@ -30,7 +30,7 @@ public enum WideEventError: DDGError, LocalizedError {
     public var description: String {
         switch self {
         case .flowNotFound(let pixelName):
-            return "Wide pixel flow not found: \(pixelName)"
+            return "Wide event flow not found: \(pixelName)"
         case .typeMismatch(let expected, let actual):
             return "Type mismatch: expected \(expected), got \(actual)"
         case .serializationFailed(let error):

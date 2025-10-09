@@ -25,68 +25,78 @@ import XCTest
 
 final class FireDialogViewModelTests: XCTestCase {
 
+    private var historyCoordinator: HistoryCoordinatingMock!
+    private var tabCollectionVM: TabCollectionViewModel!
+    private var onboardingContextualDialogsManager: CapturingContextualOnboardingStateUpdater!
+    private var fireproofDomains: FireproofDomains!
+    private var fire: Fire!
+    private var fireViewModel: FireViewModel!
+    private var fireCoordinator: FireCoordinator!
+    private var windowControllersManager: WindowControllersManagerMock!
+
+    private var fireDialogViewResponse: FireDialogView.Response!
+
     @MainActor
     override func setUp() {
         super.setUp()
         FireDialogViewModel.resetPersistedDefaults()
-    }
 
-    @MainActor
-    private func makeViewModel(with tabCollectionViewModel: TabCollectionViewModel) -> FireDialogViewModel {
+        fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())
+        historyCoordinator = HistoryCoordinatingMock()
         let manager = WebCacheManagerMock()
-        let historyCoordinator = HistoryCoordinatingMock()
         let permissionManager = PermissionManagerMock()
         let faviconManager = FaviconManagerMock()
-        let fire = Fire(cacheManager: manager,
-                        historyCoordinating: historyCoordinator,
-                        permissionManager: permissionManager,
-                        windowControllerManager: WindowControllersManagerMock(),
-                        faviconManagement: faviconManager,
-                        tld: TLD())
-        return FireDialogViewModel(
-            fireViewModel: .init(fire: fire),
-            tabCollectionViewModel: tabCollectionViewModel,
-            historyCoordinating: historyCoordinator,
-            fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
-            faviconManagement: FaviconManagerMock(),
-            tld: TLD()
-        )
-    }
 
-    @MainActor
-    private func handle(_ vm: FireDialogViewModel,
-                        _ result: FireDialogResult,
-                        onboarding: ContextualOnboardingStateUpdater? = nil) -> Task<Void, Never> {
-        let coordinator = FireCoordinator(tld: TLD(),
+        fire = Fire(cacheManager: manager,
+                    historyCoordinating: historyCoordinator,
+                    permissionManager: permissionManager,
+                    windowControllerManager: windowControllersManager,
+                    faviconManagement: faviconManager,
+                    tld: TLD())
+
+        fireViewModel = FireViewModel(fire: fire)
+
+        tabCollectionVM = TabCollectionViewModel(isPopup: false)
+        windowControllersManager = WindowControllersManagerMock()
+        onboardingContextualDialogsManager = CapturingContextualOnboardingStateUpdater()
+        fireCoordinator = FireCoordinator(tld: TLD(),
                                           featureFlagger: Application.appDelegate.featureFlagger,
-                                          historyCoordinating: HistoryCoordinatingMock(),
+                                          historyCoordinating: historyCoordinator,
                                           visualizeFireAnimationDecider: nil,
-                                          onboardingContextualDialogsManager: nil,
+                                          onboardingContextualDialogsManager: { [unowned self] in self.onboardingContextualDialogsManager },
                                           fireproofDomains: MockFireproofDomains(),
                                           faviconManagement: FaviconManagerMock(),
-                                          windowControllersManager: WindowControllersManagerMock(),
+                                          windowControllersManager: windowControllersManager,
                                           pixelFiring: nil,
                                           historyProvider: MockHistoryViewDataProvider(),
-                                          fireViewModel: vm.fireViewModel)
-        let isAllHistorySelected: Bool
-        if vm.scopeCookieDomains != nil  {
-            isAllHistorySelected = false
-        } else {
-            // no specific domains passed initially
-            isAllHistorySelected = result.selectedCookieDomains == nil || result.selectedCookieDomains?.count == vm.selectable.count
-        }
+                                          fireViewModel: fireViewModel,
+                                          tabViewModelGetter: { [tabCollectionVM] _ in
+            tabCollectionVM
+        },
+                                          fireDialogViewFactory: { [unowned self] config in
+            return TestPresenter { [unowned self] _, completion in
+                config.onConfirm(self.fireDialogViewResponse)
+                completion?()
+            }
+        })
+    }
 
-        return Task {
-            await coordinator.handleDialogResult(result, tabCollectionViewModel: vm.tabCollectionViewModel, isAllHistorySelected: isAllHistorySelected)
-        }
+    override func tearDown() {
+        fire = nil
+        fireViewModel = nil
+        windowControllersManager = nil
+        fireCoordinator = nil
+        onboardingContextualDialogsManager = nil
+        fireproofDomains = nil
+        fireDialogViewResponse = nil
+        tabCollectionVM = nil
+        historyCoordinator = nil
     }
 
     @MainActor func testOnBurn_OnboardingContextualDialogsManagerFireButtonUsedCalled() async throws {
         // Scenario: Pressing Fire triggers onboarding context hook.
         // Action: Call burn() on the view model.
         // Expectation: Only fireButtonUsed is recorded; no other onboarding actions occur.
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
-        let onboardingContextualDialogsManager = CapturingContextualOnboardingStateUpdater()
         let vm = makeViewModel(with: tabCollectionVM)
         XCTAssertNil(onboardingContextualDialogsManager.updatedForTab)
         XCTAssertFalse(onboardingContextualDialogsManager.gotItPressedCalled)
@@ -98,30 +108,10 @@ final class FireDialogViewModelTests: XCTestCase {
                                       includeTabsAndWindows: vm.includeTabsAndWindows,
                                       includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
 
-        let coordinator = FireCoordinator(
-            tld: TLD(),
-            featureFlagger: Application.appDelegate.featureFlagger,
-            historyCoordinating: HistoryCoordinatingMock(),
-            visualizeFireAnimationDecider: nil,
-            onboardingContextualDialogsManager: { onboardingContextualDialogsManager },
-            fireproofDomains: MockFireproofDomains(),
-            faviconManagement: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock(),
-            pixelFiring: nil,
-            historyProvider: MockHistoryViewDataProvider(),
-            fireViewModel: vm.fireViewModel,
-            tabViewModelGetter: { _ in
-                TabCollectionViewModel(isPopup: false)
-            },
-            fireDialogViewFactory: { config in
-                return TestPresenter { _, completion in
-                    config.onConfirm(.burn(options: result))
-                    completion?()
-                }
-            })
+        fireDialogViewResponse = .burn(options: result)
 
         let window = MockWindow()
-        _=await coordinator.presentFireDialog(mode: .fireButton, in: window)
+        _=await fireCoordinator.presentFireDialog(mode: .fireButton, in: window)
 
         // Then
         XCTAssertNil(onboardingContextualDialogsManager.updatedForTab)
@@ -133,8 +123,6 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: User disables history clearing.
         // Action: Burn with includeHistory=false.
         // Expectation: No history API is invoked (all burn* flags remain false).
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
-        let historyCoordinator = HistoryCoordinatingMock()
 
         let manager = WebCacheManagerMock()
         let permissionManager = PermissionManagerMock()
@@ -142,7 +130,7 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: WindowControllersManagerMock(),
+                        windowControllerManager: windowControllersManager,
                         faviconManagement: faviconManager,
                         tld: TLD())
 
@@ -177,16 +165,14 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: Changing scope updates sections.
         // Action: Set clearingOption to .currentWindow.
         // Expectation: Selectable first, fireproofed second; no crashes during refresh.
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         // simulate local history domains
         let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
         tabCollectionVM.append(tab: exampleTab)
         tabCollectionVM.select(at: .unpinned(1))
 
-        let historyCoordinator = HistoryCoordinatingMock()
         let faviconManager = FaviconManagerMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: WindowControllersManagerMock(),
+                        windowControllerManager: windowControllersManager,
                         faviconManagement: faviconManager,
                         tld: TLD())
 
@@ -213,15 +199,13 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: Current Tab scope with history enabled.
         // Action: Burn with includeHistory=true.
         // Expectation: burnVisits is called; no other burn callbacks fire.
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         // Ensure selected tab exists
         let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
         tabCollectionVM.append(tab: exampleTab)
         tabCollectionVM.select(at: .unpinned(1))
 
-        let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: WindowControllersManagerMock(),
+                        windowControllerManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: TLD())
 
@@ -252,15 +236,13 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: Current Window scope with history enabled.
         // Action: Burn with includeHistory=true.
         // Expectation: burnVisits is called; others are not.
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         // Add a tab to populate local history structure
         let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
         tabCollectionVM.append(tab: exampleTab)
         tabCollectionVM.select(at: .unpinned(1))
 
-        let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: WindowControllersManagerMock(),
+                        windowControllerManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: TLD())
         let vm = FireDialogViewModel(
@@ -290,10 +272,9 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: Current Tab, keep tabs open.
         // Action: Burn with includeTabsAndWindows=false.
         // Expectation: burnVisits still occurs; no tab/window closure required.
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
-        let historyCoordinator = HistoryCoordinatingMock()
+
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: WindowControllersManagerMock(),
+                        windowControllerManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: TLD())
 
@@ -330,10 +311,9 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: Current Window, keep tabs open.
         // Action: Burn with includeTabsAndWindows=false.
         // Expectation: burnVisits occurs; no other burn callbacks fire.
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
-        let historyCoordinator = HistoryCoordinatingMock()
+
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: WindowControllersManagerMock(),
+                        windowControllerManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: TLD())
         let vm = FireDialogViewModel(
@@ -364,10 +344,9 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: All Data scope, keep windows open.
         // Action: Burn with includeTabsAndWindows=false.
         // Expectation: burnAll is called; no visits/domains burns.
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
-        let historyCoordinator = HistoryCoordinatingMock()
+
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: WindowControllersManagerMock(),
+                        windowControllerManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: TLD())
         let vm = FireDialogViewModel(
@@ -398,10 +377,9 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: All Data scope with full clearing.
         // Action: Burn with includeHistory=true.
         // Expectation: burnAll is called; others are not.
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
-        let historyCoordinator = HistoryCoordinatingMock()
+
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: WindowControllersManagerMock(),
+                        windowControllerManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: TLD())
         let vm = FireDialogViewModel(
@@ -431,14 +409,12 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: Current Tab, cookies/site data excluded.
         // Action: Burn with includeCookiesAndSiteData=false.
         // Expectation: burnVisits is called via (.currentTab, false) path.
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
         tabCollectionVM.append(tab: exampleTab)
         tabCollectionVM.select(at: .unpinned(1))
 
-        let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: WindowControllersManagerMock(),
+                        windowControllerManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: TLD())
 
@@ -471,14 +447,12 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: Current Window, cookies/site data excluded.
         // Action: Burn with includeCookiesAndSiteData=false.
         // Expectation: burnVisits is called via (.currentWindow, false) path.
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
         tabCollectionVM.append(tab: exampleTab)
         tabCollectionVM.select(at: .unpinned(1))
 
-        let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: WindowControllersManagerMock(),
+                        windowControllerManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: TLD())
         let vm = FireDialogViewModel(
@@ -511,10 +485,9 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: All Data, cookies/site data excluded.
         // Action: Burn with includeCookiesAndSiteData=false.
         // Expectation: burnAll is called via (.allData, false) path; others not.
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
-        let historyCoordinator = HistoryCoordinatingMock()
+
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: WindowControllersManagerMock(),
+                        windowControllerManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: TLD())
         let vm = FireDialogViewModel(
@@ -547,14 +520,12 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: Current Tab but history disabled.
         // Action: Burn with includeHistory=false.
         // Expectation: No history clearing occurs.
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
         tabCollectionVM.append(tab: exampleTab)
         tabCollectionVM.select(at: .unpinned(1))
 
-        let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: WindowControllersManagerMock(),
+                        windowControllerManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: TLD())
 
@@ -588,14 +559,12 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: Current Window but history disabled.
         // Action: Burn with includeHistory=false.
         // Expectation: No history clearing occurs.
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
         tabCollectionVM.append(tab: exampleTab)
         tabCollectionVM.select(at: .unpinned(1))
 
-        let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: WindowControllersManagerMock(),
+                        windowControllerManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: TLD())
         let vm = FireDialogViewModel(
@@ -627,8 +596,7 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: Items update on init and when scope changes.
         // Action: Initialize with .allData, then change to .currentWindow.
         // Expectations: history count reflects visits; cookiesSitesCount uses visitedDomains; selection stays valid when empty.
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
-        let historyCoordinator = HistoryCoordinatingMock()
+
         // Two different domains to exercise BrowsingHistory.visitedDomains(tld:)
         let entry1 = HistoryEntry(identifier: UUID(), url: URL(string: "https://duckduckgo.com")!, failedToLoad: false, numberOfTotalVisits: 1, lastVisit: Date(), visits: [], numberOfTrackersBlocked: 0, blockedTrackingEntities: [], trackersFound: false)
         let entry2 = HistoryEntry(identifier: UUID(), url: URL(string: "https://example.com")!, failedToLoad: false, numberOfTotalVisits: 1, lastVisit: Date(), visits: [], numberOfTrackersBlocked: 0, blockedTrackingEntities: [], trackersFound: false)
@@ -638,7 +606,7 @@ final class FireDialogViewModelTests: XCTestCase {
             Visit(date: Date(), identifier: nil, historyEntry: entry2)
         ]
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: WindowControllersManagerMock(),
+                        windowControllerManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
                         tld: TLD())
 
@@ -670,7 +638,6 @@ final class FireDialogViewModelTests: XCTestCase {
     @MainActor func testCurrentTab_SelectsOnlyCurrentTabDomains() {
         // Scenario: Window with multiple tabs, verify currentTab scope only selects current tab's domains
         // Setup: Window with 2 tabs, each visiting different domains
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
 
         // Tab 1 (current): visits example.com and test.com
         let historyMock1 = HistoryTabExtensionMock()
@@ -709,8 +676,7 @@ final class FireDialogViewModelTests: XCTestCase {
     @MainActor func testCurrentTab_ExcludesFireproofedDomains() {
         // Scenario: Current tab has both regular and fireproofed domains
         // Expectation: Fireproofed domains should be in separate list, not selectable
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
-        let fireproofDomains = makeFireproofDomains(["duckduckgo.com"])
+        makeFireproofDomains(["duckduckgo.com"])
 
         // Current tab visits both regular and fireproofed domains
         let historyMock = HistoryTabExtensionMock()
@@ -726,7 +692,6 @@ final class FireDialogViewModelTests: XCTestCase {
         tabCollectionVM.select(at: .unpinned(1))
 
         let viewModel = makeViewModel(with: tabCollectionVM,
-                                      fireproofDomains: fireproofDomains,
                                       clearingOption: .currentTab)
 
         // Verify: Selectable should only contain example.com
@@ -743,7 +708,6 @@ final class FireDialogViewModelTests: XCTestCase {
     @MainActor func testCurrentWindow_SelectsAllWindowTabsDomains() {
         // Scenario: Window with multiple tabs, verify currentWindow scope includes all tabs
         // Setup: Window with 3 tabs visiting different domains
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
 
         // Tab 1: visits example.com
         let historyMock1 = HistoryTabExtensionMock()
@@ -779,8 +743,7 @@ final class FireDialogViewModelTests: XCTestCase {
     @MainActor func testCurrentWindow_ExcludesFireproofedDomains() {
         // Scenario: Window tabs have mix of regular and fireproofed domains
         // Expectation: Only non-fireproofed domains in selectable list
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
-        let fireproofDomains = makeFireproofDomains(["duckduckgo.com", "github.com"])
+        makeFireproofDomains(["duckduckgo.com", "github.com"])
 
         // Tab 1: visits regular domains
         let historyMock1 = HistoryTabExtensionMock()
@@ -807,7 +770,6 @@ final class FireDialogViewModelTests: XCTestCase {
         tabCollectionVM.select(at: .unpinned(1))
 
         let viewModel = makeViewModel(with: tabCollectionVM,
-                                      fireproofDomains: fireproofDomains,
                                       clearingOption: .currentWindow)
 
         // Verify: Selectable should only contain non-fireproofed domains
@@ -824,7 +786,6 @@ final class FireDialogViewModelTests: XCTestCase {
     @MainActor func testAllData_WithScopeCookieDomains_UsesProvidedDomains() {
         // Scenario: AllData mode with explicit scopeCookieDomains provided
         // Expectation: Uses provided domains, not tab domains
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
 
         // Tab only has example.com
         let historyMock = HistoryTabExtensionMock()
@@ -850,13 +811,11 @@ final class FireDialogViewModelTests: XCTestCase {
     @MainActor func testAllData_WithScopeCookieDomains_ExcludesFireproofed() {
         // Scenario: AllData with scopeCookieDomains including fireproofed domains
         // Expectation: Fireproofed domains separated from selectable
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
-        let fireproofDomains = makeFireproofDomains(["duckduckgo.com"])
+        makeFireproofDomains(["duckduckgo.com"])
 
         let scopeCookieDomains = Set(["example.com", "duckduckgo.com", "test.com"])
 
         let viewModel = makeViewModel(with: tabCollectionVM,
-                                      fireproofDomains: fireproofDomains,
                                       clearingOption: .allData,
                                       scopeCookieDomains: scopeCookieDomains)
 
@@ -874,8 +833,6 @@ final class FireDialogViewModelTests: XCTestCase {
     @MainActor func testAllData_WithoutScopeCookieDomains_FallsBackToGlobalHistory() {
         // Scenario: AllData mode without scopeCookieDomains
         // Expectation: Falls back to global history domains
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
-        let historyCoordinator = HistoryCoordinatingMock()
 
         // Setup global history with multiple entries
         let entry1 = makeHistoryEntry(url: "https://example.com")
@@ -884,7 +841,6 @@ final class FireDialogViewModelTests: XCTestCase {
         historyCoordinator.history = [entry1, entry2, entry3]
 
         let viewModel = makeViewModel(with: tabCollectionVM,
-                                      historyCoordinating: historyCoordinator,
                                       clearingOption: .allData,
                                       scopeCookieDomains: nil)  // No scope provided
 
@@ -897,8 +853,7 @@ final class FireDialogViewModelTests: XCTestCase {
     @MainActor func testSwitchingScope_UpdatesDomainLists() {
         // Scenario: Switching between scopes updates domain lists correctly
         // Expectation: Domain lists reflect current scope
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
-        let fireproofDomains = makeFireproofDomains(["duckduckgo.com"])
+        makeFireproofDomains(["duckduckgo.com"])
 
         // Tab 1 (current): only example.com
         let historyMock1 = HistoryTabExtensionMock()
@@ -921,7 +876,6 @@ final class FireDialogViewModelTests: XCTestCase {
         tabCollectionVM.select(at: .unpinned(1))  // Select tab1
 
         let viewModel = makeViewModel(with: tabCollectionVM,
-                                      fireproofDomains: fireproofDomains,
                                       clearingOption: .currentTab)
 
         // Initially: CurrentTab should only have example.com
@@ -946,7 +900,6 @@ final class FireDialogViewModelTests: XCTestCase {
     @MainActor func testAllData_ScopeCookieDomainsRemainUnchanged_WhenScopeNotChanged() {
         // Scenario: When scopeCookieDomains are provided, they should not be altered unless scope changes
         // Expectation: Original scopeCookieDomains persist across operations
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
 
         // Tab only has example.com
         let historyMock = HistoryTabExtensionMock()
@@ -985,7 +938,6 @@ final class FireDialogViewModelTests: XCTestCase {
     @MainActor func testAllData_ScopeCookieDomainsPreserved_WhenSwitchingScopesAndBack() {
         // Scenario: When scopeCookieDomains provided, switching away and back to .allData should preserve them
         // Expectation: Original scopeCookieDomains are reused when returning to .allData
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
 
         // Tab has example.com
         let historyMock = HistoryTabExtensionMock()
@@ -1027,8 +979,6 @@ final class FireDialogViewModelTests: XCTestCase {
     @MainActor func testAllData_ScopeVisitsRemainUnchanged_WhenScopeNotChanged() {
         // Scenario: When scopeVisits are provided, they should not be altered unless scope changes
         // Expectation: historyVisits reflects provided scopeVisits for .allData
-        let tabCollectionVM = TabCollectionViewModel(isPopup: false)
-        let historyCoordinator = HistoryCoordinatingMock()
 
         // Create scope visits from coordinator (representing history query results)
         let entry1 = makeHistoryEntry(url: "https://example.com")
@@ -1044,7 +994,7 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: WindowControllersManagerMock(),
+                        windowControllerManager: windowControllersManager,
                         faviconManagement: faviconManager,
                         tld: TLD())
 
@@ -1080,38 +1030,40 @@ final class FireDialogViewModelTests: XCTestCase {
 
     @MainActor
     private func makeViewModel(with tabCollectionViewModel: TabCollectionViewModel,
-                               historyCoordinating: HistoryCoordinating? = nil,
-                               fireproofDomains: FireproofDomains? = nil,
-                               clearingOption: FireDialogViewModel.ClearingOption,
+                               clearingOption: FireDialogViewModel.ClearingOption? = nil,
                                scopeCookieDomains: Set<String>? = nil) -> FireDialogViewModel {
-        let historyCoord = historyCoordinating ?? HistoryCoordinatingMock()
-        let fireproof = fireproofDomains ?? makeFireproofDomains([])
-        let manager = WebCacheManagerMock()
-        let permissionManager = PermissionManagerMock()
-        let faviconManager = FaviconManagerMock()
-        let fire = Fire(cacheManager: manager,
-                        historyCoordinating: historyCoord,
-                        permissionManager: permissionManager,
-                        windowControllerManager: WindowControllersManagerMock(),
-                        faviconManagement: faviconManager,
-                        tld: TLD())
 
         return FireDialogViewModel(
-            fireViewModel: .init(fire: fire),
+            fireViewModel: fireViewModel,
             tabCollectionViewModel: tabCollectionViewModel,
-            historyCoordinating: historyCoord,
-            fireproofDomains: fireproof,
-            faviconManagement: faviconManager,
+            historyCoordinating: fire.historyCoordinating,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
             clearingOption: clearingOption,
             scopeCookieDomains: scopeCookieDomains,
             tld: TLD()
         )
     }
 
-    private func makeFireproofDomains(_ domains: [String]) -> FireproofDomains {
-        let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())
+    @MainActor
+    private func handle(_ vm: FireDialogViewModel,
+                        _ result: FireDialogResult,
+                        onboarding: ContextualOnboardingStateUpdater? = nil) -> Task<Void, Never> {
+        let isAllHistorySelected: Bool
+        if vm.scopeCookieDomains != nil  {
+            isAllHistorySelected = false
+        } else {
+            // no specific domains passed initially
+            isAllHistorySelected = result.selectedCookieDomains == nil || result.selectedCookieDomains?.count == vm.selectable.count
+        }
+
+        return Task {
+            await fireCoordinator.handleDialogResult(result, tabCollectionViewModel: vm.tabCollectionViewModel, isAllHistorySelected: isAllHistorySelected)
+        }
+    }
+
+    private func makeFireproofDomains(_ domains: [String]) {
         domains.forEach { fireproofDomains.add(domain: $0) }
-        return fireproofDomains
     }
 
     private func makeHistoryEntry(url: String) -> HistoryEntry {

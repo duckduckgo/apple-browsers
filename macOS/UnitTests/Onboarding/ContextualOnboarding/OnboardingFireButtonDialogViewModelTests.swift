@@ -46,30 +46,12 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         }
 
         reporter = CapturingOnboardingPixelReporter()
-        let fireCoordinator = FireCoordinator(tld: TLD(),
-                                              featureFlagger: Application.appDelegate.featureFlagger,
-                                              historyCoordinating: HistoryCoordinatingMock(),
-                                              visualizeFireAnimationDecider: nil,
-                                              onboardingContextualDialogsManager: nil,
-                                              fireproofDomains: MockFireproofDomains(),
-                                              faviconManagement: FaviconManagerMock(),
-                                              windowControllersManager: WindowControllersManagerMock(),
-                                              pixelFiring: nil,
-                                              historyProvider: MockHistoryViewDataProvider())
-        viewModel = OnboardingFireButtonDialogViewModel(
-            onboardingPixelReporter: reporter,
-            fireCoordinator: fireCoordinator,
-            onDismiss: onDismiss,
-            onGotItPressed: onGotItPressed,
-            onFireButtonPressed: onFireButtonPressed
-        )
     }
 
     @MainActor
     override func tearDownWithError() throws {
         reporter = nil
         viewModel = nil
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = nil
     }
 
     func testWhenHighFiveThenOnGotItAndOnDismissPressed() throws {
@@ -81,6 +63,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenTryFireButtonThenOnFireButtonPressedCalledAndPixelSent() throws {
+        let windowControllersManager = WindowControllersManagerMock()
         let fireCoordinator = FireCoordinator(tld: TLD(),
                                               featureFlagger: Application.appDelegate.featureFlagger,
                                               historyCoordinating: HistoryCoordinatingMock(),
@@ -88,7 +71,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
                                               onboardingContextualDialogsManager: nil,
                                               fireproofDomains: MockFireproofDomains(),
                                               faviconManagement: FaviconManagerMock(),
-                                              windowControllersManager: WindowControllersManagerMock(),
+                                              windowControllersManager: windowControllersManager,
                                               pixelFiring: nil,
                                               historyProvider: MockHistoryViewDataProvider())
         let mainViewController = MainViewController(
@@ -105,13 +88,23 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
             themeManager: MockThemeManager()
         )
         mainWindowController.window = window
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
+        windowControllersManager.lastKeyMainWindowController = mainWindowController
 
         window.isVisible = true
+
+        viewModel = OnboardingFireButtonDialogViewModel(
+            onboardingPixelReporter: reporter,
+            fireCoordinator: fireCoordinator,
+            onDismiss: onDismiss,
+            onGotItPressed: onGotItPressed,
+            onFireButtonPressed: onFireButtonPressed
+        )
         viewModel.tryFireButton()
 
         XCTAssertTrue(onFireButtonPressedCalled)
         XCTAssertTrue(reporter.measureFireButtonTryItCalled)
+
+        windowControllersManager.lastKeyMainWindowController = nil
     }
 
 }

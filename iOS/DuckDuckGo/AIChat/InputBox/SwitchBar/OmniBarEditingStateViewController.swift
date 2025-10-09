@@ -35,6 +35,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onQuerySubmitted(_ query: String)
     func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?)
     func onSelectFavorite(_ favorite: BookmarkEntity)
+    func onEditFavorite(_ favorite: BookmarkEntity)
     func onSelectSuggestion(_ suggestion: Suggestion)
     func onVoiceSearchRequested(from mode: TextEntryMode)
     func onDismissRequested()
@@ -469,6 +470,10 @@ extension OmniBarEditingStateViewController: SuggestionTrayManagerDelegate {
 
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String) {
         switchBarHandler.updateCurrentText(text)
+    }
+
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity) {
+        delegate?.onEditFavorite(favorite)
     }
 
 }

@@ -46,6 +46,7 @@ protocol SuggestionTrayManagerDelegate: AnyObject {
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectSuggestion suggestion: Suggestion)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectFavorite favorite: BookmarkEntity)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String)
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity)
 }
 
 /// Manages the suggestion tray functionality including favorites and autocomplete
@@ -122,7 +123,6 @@ final class SuggestionTrayManager: NSObject {
         }
 
         controller.coversFullScreen = true
-        controller.isUsingSearchInputCustomStyling = true
 
         parentViewController.addChild(controller)
         containerView.addSubview(controller.view)
@@ -141,7 +141,6 @@ final class SuggestionTrayManager: NSObject {
         ])
 
         controller.autocompleteDelegate = self
-        controller.favoritesOverlayDelegate = self
         controller.newTabPageControllerDelegate = self
         controller.didMove(toParent: parentViewController)
 
@@ -284,13 +283,9 @@ extension SuggestionTrayManager: NewTabPageControllerDelegate {
     func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
         delegate?.suggestionTrayManager(self, didSelectFavorite: favorite)
     }
-    
-    func newTabPageDidDeleteFavorite(_ controller: NewTabPageViewController, favorite: Bookmarks.BookmarkEntity) {
-        assertionFailure("Unexpected")
-    }
-    
+     
     func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: Bookmarks.BookmarkEntity) {
-        assertionFailure("Unexpected")
+        delegate?.suggestionTrayManager(self, requestsEditFavorite: favorite)
     }
     
     func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {

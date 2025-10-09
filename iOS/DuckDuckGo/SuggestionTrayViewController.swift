@@ -39,7 +39,6 @@ class SuggestionTrayViewController: UIViewController {
     @IBOutlet var fullHeightConstraint: NSLayoutConstraint!
 
     weak var autocompleteDelegate: AutocompleteViewControllerDelegate?
-    weak var favoritesOverlayDelegate: FavoritesOverlayDelegate?
     weak var newTabPageControllerDelegate: NewTabPageControllerDelegate?
 
     var dismissHandler: (() -> Void)?
@@ -48,22 +47,11 @@ class SuggestionTrayViewController: UIViewController {
         autocompleteController != nil
     }
 
-    var isShowingFavoritesOverlay: Bool {
-        favoritesOverlay != nil
-    }
-
     var isShowing: Bool {
-        isShowingAutocompleteSuggestions || isShowingFavoritesOverlay
-    }
-
-    var isUsingSearchInputCustomStyling: Bool = false {
-        didSet {
-            favoritesOverlay?.isUsingSearchInputCustomStyling = isUsingSearchInputCustomStyling
-        }
+        isShowingAutocompleteSuggestions
     }
 
     private var autocompleteController: AutocompleteViewController?
-    private var favoritesOverlay: FavoritesOverlay?
     private var newTabPage: NewTabPageViewController?
     private var willRemoveAutocomplete = false
     private let bookmarksDatabase: CoreDataDatabase
@@ -128,7 +116,7 @@ class SuggestionTrayViewController: UIViewController {
                    appSettings: AppSettings,
                    aiChatSettings: AIChatSettingsProvider,
                    featureDiscovery: FeatureDiscovery,
-                   newTabPageDependencies: NewTabPageDependencies? = nil) {
+                   newTabPageDependencies: NewTabPageDependencies) {
         self.favoritesModel = favoritesViewModel
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
@@ -193,7 +181,6 @@ class SuggestionTrayViewController: UIViewController {
     
     func didHide() {
         removeAutocomplete()
-        removeFavorites()
         removeNewTabPage()
     }
     
@@ -269,11 +256,9 @@ class SuggestionTrayViewController: UIViewController {
     }
 
     private func displayFavoritesIfNeeded(animated: Bool, onInstall: @escaping () -> Void = {}) {
-        if isUsingSearchInputCustomStyling && newTabPage == nil {
+        if newTabPage == nil {
             installNewTabPage(animated: animated, onInstall: onInstall)
-        } else if !isUsingSearchInputCustomStyling && favoritesOverlay == nil {
-            installFavoritesOverlay(animated: animated, onInstall: onInstall)
-        } else {
+        } else  {
             onInstall()
         }
     }
@@ -298,7 +283,6 @@ class SuggestionTrayViewController: UIViewController {
         )
 
         controller.delegate = newTabPageControllerDelegate
-        controller.setFavoritesEditable(false)
         controller.hideBorderView()
 
         install(controller: controller,
@@ -307,16 +291,6 @@ class SuggestionTrayViewController: UIViewController {
         newTabPage = controller
     }
 
-    private func installFavoritesOverlay(animated: Bool, onInstall: @escaping () -> Void = {}) {
-        let controller = FavoritesOverlay(viewModel: favoritesModel)
-        controller.delegate = favoritesOverlayDelegate
-        controller.isUsingSearchInputCustomStyling = isUsingSearchInputCustomStyling
-        install(controller: controller,
-                animated: animated,
-                completion: onInstall)
-        favoritesOverlay = controller
-    }
-    
     private func canDisplayAutocompleteSuggestions(forQuery query: String) -> Bool {
         let canDisplay = appSettings.autocomplete && !query.isEmpty
         if !canDisplay {
@@ -352,12 +326,6 @@ class SuggestionTrayViewController: UIViewController {
         autocompleteController = nil
     }
     
-    private func removeFavorites() {
-        guard let controller = favoritesOverlay else { return }
-        removeController(controller)
-        favoritesOverlay = nil
-    }
-
     private func removeNewTabPage() {
         guard let controller = newTabPage else { return }
         removeController(controller)
@@ -406,10 +374,6 @@ class SuggestionTrayViewController: UIViewController {
 extension SuggestionTrayViewController: AutocompleteViewControllerPresentationDelegate {
     
     func autocompleteDidChangeContentHeight(height: CGFloat) {
-        if autocompleteController != nil && !willRemoveAutocomplete {
-            removeFavorites()
-        }
-        
         guard !fullHeightConstraint.isActive else { return }
         
         if height > Constant.suggestionTrayInitialHeight {

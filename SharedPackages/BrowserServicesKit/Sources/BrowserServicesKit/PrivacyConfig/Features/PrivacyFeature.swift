@@ -455,6 +455,6 @@ public enum BehaviorMetricsSubfeature: String, PrivacySubfeature {
 
 public enum DataImportSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .dataImport }
-    
+
     case newSafariFilePicker
 }

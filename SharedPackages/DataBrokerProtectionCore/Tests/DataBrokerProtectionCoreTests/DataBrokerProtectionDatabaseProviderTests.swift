@@ -52,6 +52,8 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
     private var sut: DataBrokerProtectionDatabaseProvider!
     private let vaultURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: "DBP", fileName: "Test-Vault.db")
     private let key = "9CA59EDC-5CE8-4F53-AAC6-286A7378F384".data(using: .utf8)!
+    private let legacyV5MigrationsHandler = DefaultDataBrokerProtectionDatabaseMigrationsProvider.v5Migrations
+    private let legacyV8MigrationsHandler = DefaultDataBrokerProtectionDatabaseMigrationsProvider.v8Migrations
 
     override func setUpWithError() throws {
         do {
@@ -109,7 +111,7 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
 
     func testV3MigrationRecreatesTablesWithCascadingDeletes_andDeletingProfileQueryDeletesDependentRecords() throws {
         // Given
-        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: Migrations.v5Migrations))
+        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: legacyV5MigrationsHandler))
         XCTAssertEqual(try sut.fetchAllScans().filter { $0.profileQueryId == 43 }.count, 50)
         let allBrokerIds = try sut.fetchAllBrokers().map { $0.id! }
         var allExtractedProfiles = try allBrokerIds.flatMap { try sut.fetchExtractedProfiles(for: $0, with: 43) }
@@ -223,7 +225,7 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
 
     func testV4Migration() throws {
         // Given
-        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: Migrations.v5Migrations))
+        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: legacyV5MigrationsHandler))
 
         // When
         let optOuts = try sut.fetchAllOptOuts()
@@ -240,7 +242,7 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
 
     func testV5Migration() throws {
         // Given
-        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: Migrations.v5Migrations))
+        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: legacyV5MigrationsHandler))
 
         // When
         let optOuts = try sut.fetchAllOptOuts()
@@ -252,7 +254,7 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
 
     func testV8Migration() throws {
         // Given
-        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: Migrations.v8Migrations))
+        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: legacyV8MigrationsHandler))
 
         // When
         let brokers = try sut.fetchAllBrokers()
@@ -264,7 +266,7 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
 
     func testV8Migration_schemaHasRemovedAtColumn() throws {
         // Given
-        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: Migrations.v8Migrations))
+        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: legacyV8MigrationsHandler))
 
         // When/Then
         try sut.db.read { db in
@@ -280,7 +282,7 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
 
     func testV8Migration_canSetAndRetrieveRemovedAt() throws {
         // Given
-        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: Migrations.v8Migrations))
+        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: legacyV8MigrationsHandler))
 
         // When: Create broker with removedAt date
         let testDate = Date()
@@ -303,7 +305,7 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         let originalVersion = firstBroker.version
 
         // When: Apply v8 migration
-        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: Migrations.v8Migrations))
+        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: legacyV8MigrationsHandler))
 
         // Then: All original data preserved
         let migratedBrokers = try sut.fetchAllBrokers()
@@ -327,7 +329,7 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         let freshProvider = try DefaultDataBrokerProtectionDatabaseProvider(
             file: freshVaultURL,
             key: key,
-            registerMigrationsHandler: Migrations.v8Migrations
+            registerMigrationsHandler: legacyV8MigrationsHandler
         )
 
         // Then: Schema should be correct and ready for use
@@ -380,7 +382,7 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         let v8Provider = try DefaultDataBrokerProtectionDatabaseProvider(
             file: updateVaultURL,
             key: key,
-            registerMigrationsHandler: Migrations.v8Migrations
+            registerMigrationsHandler: legacyV8MigrationsHandler
         )
 
         // Then: v7 data preserved and v8 schema available

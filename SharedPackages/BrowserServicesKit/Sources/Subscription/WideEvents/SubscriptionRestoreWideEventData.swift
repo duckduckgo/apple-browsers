@@ -85,15 +85,10 @@ extension SubscriptionRestoreWideEventData {
                 (.activationFlowSuccess, .activationFlowSuccess)
             ]
 
-            #if DEBUG
-            return Dictionary(uniqueKeysWithValues: pairs.map {
-                ($0.0.subscriptionURL(environment: .staging).forComparison().absoluteString, $0.1)
-            })
-            #else
+            // forComparison normalize the URL by removing the env query so the result is the same regardless of .stage or .production
             return Dictionary(uniqueKeysWithValues: pairs.map {
                 ($0.0.subscriptionURL(environment: .production).forComparison().absoluteString, $0.1)
             })
-            #endif
         }()
 
         public static func from(_ currentURL: URL) -> Self? {

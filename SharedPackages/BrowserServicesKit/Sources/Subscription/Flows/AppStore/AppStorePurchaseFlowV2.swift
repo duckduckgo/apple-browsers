@@ -145,7 +145,6 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
         } else {
             Logger.subscriptionAppStorePurchaseFlow.log("Try to retrieve an expired Apple subscription or create a new one")
 
-            // Try to restore an account from a past purchase
             if isSubscriptionRestoreWidePixelMeasurementEnabled {
                 subscriptionRestoreWideEventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
                 wideEvent.startFlow(subscriptionRestoreWideEventData)

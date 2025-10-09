@@ -61,18 +61,6 @@
         }
       }
     },
-    "NSCameraUsageDescription" : {
-      "comment" : "Privacy - Camera Usage Description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Websites müssen um Erlaubnis bitten, um deine Kamera für Videoanrufe, das Aufnehmen und Hochladen von Videos oder das Aufnehmen und Hochladen von Fotos zu verwenden."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
             "state" : "new",
             "value" : "Lets websites ask permission to use your camera for video calls, recording and uploading videos, or taking and uploading photos."
           }

@@ -75,6 +75,13 @@ struct AppConfiguration {
         let tmp = FileManager.default.temporaryDirectory
         removeTempDirectory(at: tmp)
         recreateTempDirectory(at: tmp)
+        
+        if !FileManager.default.fileExists(atPath: tmp.path) {
+            let isBackground = UIApplication.shared.applicationState == .background
+            
+            Logger.general.error("💥 Temp directory still missing after all recreation attempts. Is background: \(isBackground)")
+            Pixel.fire(pixel: .tmpDirStillMissingAfterRecreation, withAdditionalParameters: ["isBackground": String(isBackground)])
+        }
     }
 
     private func removeTempDirectory(at url: URL) {

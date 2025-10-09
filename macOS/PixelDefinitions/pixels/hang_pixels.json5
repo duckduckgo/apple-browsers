@@ -1,56 +1,56 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
-    m_mac_ui_hang: {
-        description: 'Sent when UI is frozen for more than 1 second.',
-        owners: ['frosty'],
-        triggers: ['other'],
-        suffixes: [
-            'daily',
-            'count',
+    "m_mac_ui_hang": {
+        "description": "Sent when UI is frozen for more than 1 second.",
+        "owners": ["frosty"],
+        "triggers": ["other"],
+        "suffixes": [
+            "daily",
+            "count",
             {
-                description: "Whether the UI is still frozen at the time of reporting, or whether we've detected a deadlock.",
-                enum: ['recovered', 'not-recovered', 'deadlock'],
-            },
+                "description": "Whether the UI is still frozen at the time of reporting, or whether we've detected a deadlock.",
+                "enum": ["recovered", "not-recovered", "deadlock"]
+            }
         ],
-        parameters: [
-            'appVersion',
+        "parameters": [
+            "appVersion",
             {
-                key: 'duration_seconds',
-                type: 'number',
-                description: 'Freeze duration in seconds, bucketed from 1 to 10 (we detect freezes up to 10 seconds).',
-                enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                "key": "duration_seconds",
+                "type": "number",
+                "description": "Freeze duration in seconds, bucketed from 1 to 10 (we detect freezes up to 10 seconds).",
+                "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
             },
             {
-                key: 'in_foreground',
-                type: 'boolean',
-                description: 'Optional. Indicates whether the browser is currently a foreground app.',
+                "key": "in_foreground",
+                "type": "boolean",
+                "description": "Optional. Indicates whether the browser is currently a foreground app."
             },
             {
-                key: 'any_window_visible',
-                type: 'boolean',
-                description: 'Optional. Indicates whether any browser windows are visible (not minimized, not hidden).',
+                "key": "any_window_visible",
+                "type": "boolean",
+                "description": "Optional. Indicates whether any browser windows are visible (not minimized, not hidden)."
             },
             {
-                key: 'battery_power',
-                type: 'string',
-                description: 'Optional. Whether the computer is running on battery power or plugged in.',
-                enum: ['on-battery', 'plugged-in'],
+                "key": "battery_power",
+                "type": "string",
+                "description": "Optional. Whether the computer is running on battery power or plugged in.",
+                "enum": ["on-battery", "plugged-in"]
             },
             {
-                key: 'open_browser_window_count',
-                type: 'number',
-                description: 'Optional. The number of open DDG browser windows at the time of the hang.',
+                "key": "open_browser_window_count",
+                "type": "number",
+                "description": "Optional. The number of open DDG browser windows at the time of the hang."
             },
             {
-                key: 'open_browser_tab_count',
-                type: 'number',
-                description: 'Optional. The number of open DDG browser tabs at the time of the hang.',
+                "key": "open_browser_tab_count",
+                "type": "number",
+                "description": "Optional. The number of open DDG browser tabs at the time of the hang."
             },
             {
-                key: 'stack_trace',
-                type: 'string',
-                description: 'Optional. The last N stack trace lines of the frozen thread (currently set to 1). Only sent for max freeze bucket (currently 10 seconds).',
-            },
-        ],
-    },
+                "key": "stack_trace",
+                "type": "string",
+                "description": "Optional. The last N stack trace lines of the frozen thread (currently set to 1). Only sent for max freeze bucket (currently 10 seconds)."
+            }
+        ]
+    }
 }

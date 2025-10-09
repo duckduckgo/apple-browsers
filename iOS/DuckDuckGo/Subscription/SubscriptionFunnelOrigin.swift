@@ -27,3 +27,15 @@ enum SubscriptionFunnelOrigin: String {
     /// User entered the funnel via the App Settings screen.
     case appSettings = "funnel_appsettings_ios"
 }
+
+/// Represents the origin point from which the user enters the subscription restore funnel in the iOS app.
+enum SubscriptionRestoreFunnelOrigin: String {
+    /// User entered the restore funnel via the App Settings screen.
+    case appSettings = "funnel_appsettings_ios"
+
+    /// User entered the restore funnel via the Purchase Offer web page.
+    case purchaseOffer = "funnel_purchaseoffer_ios"
+
+    /// User entered the restore funnel during the pre-purchase check.
+    case prePurchaseCheck = "funnel_prepurchasecheck_ios"
+}

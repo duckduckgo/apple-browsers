@@ -90,7 +90,9 @@ extension Preferences {
 
                     PreferencePaneSubSection {
                         Button(UserText.manageFireproofSites) {
-                            model.presentManageFireproofSitesDialog()
+                            Task { @MainActor in
+                                model.presentManageFireproofSitesDialog()
+                            }
                         }
                     }
                 }

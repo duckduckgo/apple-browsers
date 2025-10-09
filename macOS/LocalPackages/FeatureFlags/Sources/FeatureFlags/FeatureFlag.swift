@@ -478,7 +478,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .winBackOffer:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
         case .dataImportNewSafariFilePicker:
-            return .disabled
+            return .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker))
         }
     }
 }

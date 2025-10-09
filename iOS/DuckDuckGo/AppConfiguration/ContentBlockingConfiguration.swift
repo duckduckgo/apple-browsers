@@ -22,7 +22,7 @@ import Core
 import Persistence
 
 final class ContentBlockingConfiguration {
-
+    
     private let application: UIApplication
     private let keyValueStore: ThrowingKeyValueStoring
 
@@ -58,7 +58,10 @@ final class ContentBlockingConfiguration {
             fatalError("rootViewController is missing")
         }
 
-        // Dismiss all presented view controllers first
+        // Don't interrupt if a critical alert is already showing
+        guard !(rootViewController.presentedViewController is UIAlertController) else { return }
+        
+        // Dismiss all other presented view controllers first
         rootViewController.dismiss(animated: false) {
             let alertController = CriticalAlerts.makePreemptiveCrashAlert()
             window.rootViewController?.present(alertController, animated: true, completion: nil)

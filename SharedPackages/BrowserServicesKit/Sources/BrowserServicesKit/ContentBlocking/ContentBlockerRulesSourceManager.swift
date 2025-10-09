@@ -96,17 +96,16 @@ public class ContentBlockerRulesSourceManager {
     public private(set) var fallbackTDSFailure = false
 
     private let errorReporting: EventMapping<ContentBlockerDebugEvents>?
-    private let onCriticalError: (() -> Void)?
     private let failedCompilationsStore: FailedCompilationsStore = FailedCompilationsStore()
+
+    var onCriticalError: (() -> Void)?
 
     init(rulesList: ContentBlockerRulesList,
          exceptionsSource: ContentBlockerRulesExceptionsSource,
-         errorReporting: EventMapping<ContentBlockerDebugEvents>? = nil,
-         onCriticalError: (() -> Void)? = nil) {
+         errorReporting: EventMapping<ContentBlockerDebugEvents>? = nil) {
         self.rulesList = rulesList
         self.exceptionsSource = exceptionsSource
         self.errorReporting = errorReporting
-        self.onCriticalError = onCriticalError
     }
 
     /**

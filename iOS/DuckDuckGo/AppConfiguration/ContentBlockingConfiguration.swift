@@ -37,56 +37,12 @@ final class ContentBlockingConfiguration {
             try? self.keyValueStore.set(Date(), forKey: "contentBlockingCompilationFailureDate")
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-//                self.alertAndTerminate()
                 fatalError()
             }
         }
         
         // Explicitly prepare ContentBlockingUpdating instance before Tabs are created
         _ = ContentBlockingUpdating.shared
-    }
-    
-    private func alertAndTerminate() {
-        let window: UIWindow
-        if let existingWindow = application.window {
-            window = existingWindow
-        } else {
-            window = UIWindow.makeBlank()
-            application.setWindow(window)
-        }
-
-        guard let rootViewController = window.rootViewController else {
-            fatalError("rootViewController is missing")
-        }
-
-        // Don't interrupt if a critical alert is already showing
-        guard !(rootViewController.presentedViewController is UIAlertController) else { return }
-        
-        // Dismiss all other presented view controllers first
-        rootViewController.dismiss(animated: false) {
-            let alertController = CriticalAlerts.makePreemptiveCrashAlert()
-            window.rootViewController?.present(alertController, animated: true, completion: nil)
-        }
-    }
-    
-    private func alertAndTerminateForInsufficientDiskSpace() {
-        let window: UIWindow
-        if let existingWindow = application.window {
-            window = existingWindow
-        } else {
-            window = UIWindow.makeBlank()
-            application.setWindow(window)
-        }
-
-        guard let rootViewController = window.rootViewController else {
-            fatalError("rootViewController is missing")
-        }
-        
-        // Dismiss all presented view controllers first
-        rootViewController.dismiss(animated: false) {
-            let alertController = CriticalAlerts.makeInsufficientDiskSpaceAlert()
-            rootViewController.present(alertController, animated: true, completion: nil)
-        }
     }
 
 }

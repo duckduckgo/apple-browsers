@@ -267,15 +267,6 @@ extension SuggestionTrayManager: AutocompleteViewControllerDelegate {
     }
 }
 
-// MARK: - FavoritesOverlayDelegate
-
-extension SuggestionTrayManager: FavoritesOverlayDelegate {
-    
-    func favoritesOverlay(_ overlay: FavoritesOverlay, didSelect favorite: BookmarkEntity) {
-        delegate?.suggestionTrayManager(self, didSelectFavorite: favorite)
-    }
-}
-
 // MARK: - NewTabPageControllerDelegate
 
 extension SuggestionTrayManager: NewTabPageControllerDelegate {

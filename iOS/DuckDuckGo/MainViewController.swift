@@ -2827,13 +2827,6 @@ extension MainViewController: OmniBarDelegate {
     }
 }
 
-extension MainViewController: FavoritesOverlayDelegate {
-
-    func favoritesOverlay(_ overlay: FavoritesOverlay, didSelect favorite: BookmarkEntity) {
-        handleFavoriteSelected(favorite)
-    }
-}
-
 // MARK: - AutocompleteViewControllerDelegate Methods
 extension MainViewController: AutocompleteViewControllerDelegate {
 

@@ -265,12 +265,25 @@ extension OptOutDB: PersistableRecord, FetchableRecord {
         createdDate = row[Columns.createdDate]
         lastRunDate = row[Columns.lastRunDate]
         preferredRunDate = row[Columns.preferredRunDate]
-        attemptCount = row[Columns.attemptCount]
+
+        // Introduced in v5
+        if row.hasColumn(Columns.attemptCount.rawValue) {
+            attemptCount = row[Columns.attemptCount]
+        } else {
+            attemptCount = 0
+        }
+
         submittedSuccessfullyDate = row[Columns.submittedSuccessfullyDate]
         sevenDaysConfirmationPixelFired = row[Columns.sevenDaysConfirmationPixelFired]
         fourteenDaysConfirmationPixelFired = row[Columns.fourteenDaysConfirmationPixelFired]
         twentyOneDaysConfirmationPixelFired = row[Columns.twentyOneDaysConfirmationPixelFired]
-        fortyTwoDaysConfirmationPixelFired = row[Columns.fortyTwoDaysConfirmationPixelFired]
+
+        // Introduced in v10
+        if row.hasColumn(Columns.fortyTwoDaysConfirmationPixelFired.rawValue) {
+            fortyTwoDaysConfirmationPixelFired = row[Columns.fortyTwoDaysConfirmationPixelFired]
+        } else {
+            fortyTwoDaysConfirmationPixelFired = false
+        }
     }
 
     public func encode(to container: inout PersistenceContainer) throws {

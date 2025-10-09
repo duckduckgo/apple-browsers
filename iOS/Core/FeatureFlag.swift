@@ -201,7 +201,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionPurchaseWidePixelMeasurement,
              .refreshButtonPosition,
              .newDeviceSyncPrompt,
-             .authV2WideEventEnabled:
+             .authV2WideEventEnabled,
+             .embeddedSERPSettings:
             true
         default:
             false

@@ -84,6 +84,8 @@ final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
         let response = await fireCoordinator.presentFireDialog(mode: .historyView(query: query), in: window, scopeVisits: visits)
         switch response {
         case .noAction: return .noAction
+        case .burn(options: .some(let options)) where options.includeHistory == false:
+            return .noAction // don‘t delete history records from History View, burning is done by FireCoordinator
         case .burn: return .burn
         }
     }

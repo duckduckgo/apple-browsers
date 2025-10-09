@@ -353,9 +353,17 @@ public class ContentBlockerRulesManager: CompiledRuleListsSource {
         var changes = [String: ContentBlockerRulesIdentifier.Difference]()
 
         lock.lock()
+        defer {
+            lock.unlock()
+        }
+
+        var fatalErrorOccurred = false
 
         let newRules: [Rules] = currentTasks.compactMap { task in
             guard let result = task.result else {
+                if task.sourceManager.fallbackTDSFailure {
+                    fatalErrorOccurred = true
+                }
                 Logger.contentBlocking.debug("Failed to complete task \(task.rulesList.name, privacy: .public)")
                 return nil
             }
@@ -386,10 +394,13 @@ public class ContentBlockerRulesManager: CompiledRuleListsSource {
             return rules
         }
 
+        guard fatalErrorOccurred == false else {
+            // Do not apply rules - we are either crashing app right now, or will do so shortly
+            return
+        }
+
         lastCompiledRulesStore?.update(with: newRules)
         applyRules(newRules, changes: changes)
-
-        lock.unlock()
     }
 
     private func applyRules(_ rules: [Rules], changes: [String: ContentBlockerRulesIdentifier.Difference] = [:]) {

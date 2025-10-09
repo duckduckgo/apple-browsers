@@ -56,14 +56,6 @@ class HistoryCoordinatingMock: HistoryCoordinating, SuggestionContainer.HistoryP
         commitChangesCalled = true
     }
 
-    var burnCalled = false
-    var onBurn: (() -> Void)?
-    func burn(except fireproofDomains: FireproofDomains, completion: @escaping () -> Void) {
-        burnCalled = true
-        onBurn?()
-        completion()
-    }
-
     var burnAllCalled = false
     var onBurnAll: (() -> Void)?
     func burnAll(completion: @escaping () -> Void) {

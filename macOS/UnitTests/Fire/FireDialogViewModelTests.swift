@@ -20,6 +20,7 @@ import Common
 import History
 import HistoryView
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class FireDialogViewModelTests: XCTestCase {
@@ -39,16 +40,16 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: faviconManager,
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
         return FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionViewModel,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
-            tld: Application.appDelegate.tld
+            tld: TLD()
         )
     }
 
@@ -56,12 +57,17 @@ final class FireDialogViewModelTests: XCTestCase {
     private func handle(_ vm: FireDialogViewModel,
                         _ result: FireDialogResult,
                         onboarding: ContextualOnboardingStateUpdater? = nil) -> Task<Void, Never> {
-        let coordinator = FireCoordinator(
-            tld: Application.appDelegate.tld,
-            featureFlagger: Application.appDelegate.featureFlagger,
-            historyProvider: MockHistoryProvider(),
-            fireViewModel: vm.fireViewModel
-        )
+        let coordinator = FireCoordinator(tld: TLD(),
+                                          featureFlagger: Application.appDelegate.featureFlagger,
+                                          historyCoordinating: HistoryCoordinatingMock(),
+                                          visualizeFireAnimationDecider: nil,
+                                          onboardingContextualDialogsManager: nil,
+                                          fireproofDomains: MockFireproofDomains(),
+                                          faviconManagement: FaviconManagerMock(),
+                                          windowControllersManager: WindowControllersManagerMock(),
+                                          pixelFiring: nil,
+                                          historyProvider: MockHistoryViewDataProvider(),
+                                          fireViewModel: vm.fireViewModel)
         let isAllHistorySelected: Bool
         if vm.scopeCookieDomains != nil  {
             isAllHistorySelected = false
@@ -93,19 +99,25 @@ final class FireDialogViewModelTests: XCTestCase {
                                       includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
 
         let coordinator = FireCoordinator(
-            tld: Application.appDelegate.tld,
+            tld: TLD(),
             featureFlagger: Application.appDelegate.featureFlagger,
-            historyProvider: MockHistoryProvider(),
-            fireViewModel: vm.fireViewModel,
+            historyCoordinating: HistoryCoordinatingMock(),
+            visualizeFireAnimationDecider: nil,
             onboardingContextualDialogsManager: { onboardingContextualDialogsManager },
+            fireproofDomains: MockFireproofDomains(),
+            faviconManagement: FaviconManagerMock(),
+            windowControllersManager: WindowControllersManagerMock(),
+            pixelFiring: nil,
+            historyProvider: MockHistoryViewDataProvider(),
+            fireViewModel: vm.fireViewModel,
+            tabViewModelGetter: { _ in
+                TabCollectionViewModel(isPopup: false)
+            },
             fireDialogViewFactory: { config in
                 return TestPresenter { _, completion in
                     config.onConfirm(.burn(options: result))
                     completion?()
                 }
-            },
-            tabViewModelGetter: { _ in
-                TabCollectionViewModel(isPopup: false)
             })
 
         let window = MockWindow()
@@ -130,9 +142,9 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: faviconManager,
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
 
         let viewModel = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -140,7 +152,7 @@ final class FireDialogViewModelTests: XCTestCase {
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: faviconManager,
-            tld: Application.appDelegate.tld,
+            tld: TLD(),
         )
 
         viewModel.clearingOption = .allData
@@ -174,9 +186,9 @@ final class FireDialogViewModelTests: XCTestCase {
         let historyCoordinator = HistoryCoordinatingMock()
         let faviconManager = FaviconManagerMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: faviconManager,
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
 
         let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())
         fireproofDomains.add(domain: URL.duckduckgoDomain)
@@ -187,7 +199,7 @@ final class FireDialogViewModelTests: XCTestCase {
             historyCoordinating: historyCoordinator,
             fireproofDomains: fireproofDomains,
             faviconManagement: faviconManager,
-            tld: Application.appDelegate.tld,
+            tld: TLD(),
         )
 
         viewModel.clearingOption = .currentWindow
@@ -209,9 +221,9 @@ final class FireDialogViewModelTests: XCTestCase {
 
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: FaviconManagerMock(),
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
 
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -219,7 +231,7 @@ final class FireDialogViewModelTests: XCTestCase {
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
-            tld: Application.appDelegate.tld,
+            tld: TLD(),
         )
         vm.clearingOption = .currentTab
         let exp = expectation(description: "burnVisits called")
@@ -248,16 +260,16 @@ final class FireDialogViewModelTests: XCTestCase {
 
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: FaviconManagerMock(),
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
-            tld: Application.appDelegate.tld,
+            tld: TLD(),
         )
         vm.clearingOption = .currentWindow
         let exp = expectation(description: "burnVisits called")
@@ -281,9 +293,9 @@ final class FireDialogViewModelTests: XCTestCase {
         let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: FaviconManagerMock(),
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
 
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -291,7 +303,7 @@ final class FireDialogViewModelTests: XCTestCase {
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
-            tld: Application.appDelegate.tld,
+            tld: TLD(),
         )
         vm.clearingOption = .currentTab
         // Ensure selected tab exists
@@ -321,16 +333,16 @@ final class FireDialogViewModelTests: XCTestCase {
         let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: FaviconManagerMock(),
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
-            tld: Application.appDelegate.tld,
+            tld: TLD(),
         )
         vm.clearingOption = .currentWindow
         let exp = expectation(description: "burnVisits called")
@@ -355,16 +367,16 @@ final class FireDialogViewModelTests: XCTestCase {
         let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: FaviconManagerMock(),
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
-            tld: Application.appDelegate.tld,
+            tld: TLD(),
         )
         vm.clearingOption = .allData
         let exp = expectation(description: "burnAll called")
@@ -389,16 +401,16 @@ final class FireDialogViewModelTests: XCTestCase {
         let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: FaviconManagerMock(),
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
-            tld: Application.appDelegate.tld,
+            tld: TLD(),
         )
         vm.clearingOption = .allData
         let exp = expectation(description: "burnAll called")
@@ -426,9 +438,9 @@ final class FireDialogViewModelTests: XCTestCase {
 
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: FaviconManagerMock(),
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
 
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -436,7 +448,7 @@ final class FireDialogViewModelTests: XCTestCase {
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
-            tld: Application.appDelegate.tld,
+            tld: TLD(),
         )
         vm.clearingOption = .currentTab
         let exp = expectation(description: "burnVisits called")
@@ -466,16 +478,16 @@ final class FireDialogViewModelTests: XCTestCase {
 
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: FaviconManagerMock(),
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
-            tld: Application.appDelegate.tld,
+            tld: TLD(),
         )
         vm.clearingOption = .currentWindow
         let exp = expectation(description: "burnVisits called")
@@ -502,16 +514,16 @@ final class FireDialogViewModelTests: XCTestCase {
         let tabCollectionVM = TabCollectionViewModel(isPopup: false)
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: FaviconManagerMock(),
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
-            tld: Application.appDelegate.tld,
+            tld: TLD(),
         )
         vm.clearingOption = .allData
         let exp = expectation(description: "burnAll called")
@@ -542,9 +554,9 @@ final class FireDialogViewModelTests: XCTestCase {
 
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: FaviconManagerMock(),
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
 
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -552,7 +564,7 @@ final class FireDialogViewModelTests: XCTestCase {
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
-            tld: Application.appDelegate.tld,
+            tld: TLD(),
         )
         vm.clearingOption = .currentTab
         vm.includeHistory = false
@@ -583,16 +595,16 @@ final class FireDialogViewModelTests: XCTestCase {
 
         let historyCoordinator = HistoryCoordinatingMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: FaviconManagerMock(),
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
-            tld: Application.appDelegate.tld,
+            tld: TLD(),
         )
         vm.clearingOption = .currentWindow
         vm.includeHistory = false
@@ -626,9 +638,9 @@ final class FireDialogViewModelTests: XCTestCase {
             Visit(date: Date(), identifier: nil, historyEntry: entry2)
         ]
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: FaviconManagerMock(),
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
 
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -637,7 +649,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             clearingOption: .allData,
-            tld: Application.appDelegate.tld,
+            tld: TLD(),
         )
 
         // Initial update done in init for .allData
@@ -1032,9 +1044,9 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: faviconManager,
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
 
         let viewModel = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -1044,12 +1056,12 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: faviconManager,
             clearingOption: .allData,
             scopeVisits: scopeVisits,  // Provided by coordinator
-            tld: Application.appDelegate.tld
+            tld: TLD()
         )
 
         // Verify: historyVisits uses provided scopeVisits
         XCTAssertNotNil(viewModel.historyVisits)
-        XCTAssertEqual(viewModel.historyVisits?.count, 2,
+        XCTAssertEqual(viewModel.historyVisits.count, 2,
                        "AllData should use provided scopeVisits")
         XCTAssertEqual(viewModel.historyItemsCountForCurrentScope, 2)
 
@@ -1059,7 +1071,7 @@ final class FireDialogViewModelTests: XCTestCase {
         }
 
         // Verify: historyVisits still uses provided scopeVisits
-        XCTAssertEqual(viewModel.historyVisits?.count, 2,
+        XCTAssertEqual(viewModel.historyVisits.count, 2,
                        "AllData scopeVisits should not change when only selection changes")
         XCTAssertEqual(viewModel.historyItemsCountForCurrentScope, 2)
     }
@@ -1080,9 +1092,9 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoord,
                         permissionManager: permissionManager,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllerManager: WindowControllersManagerMock(),
                         faviconManagement: faviconManager,
-                        tld: Application.appDelegate.tld)
+                        tld: TLD())
 
         return FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -1092,7 +1104,7 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: faviconManager,
             clearingOption: clearingOption,
             scopeCookieDomains: scopeCookieDomains,
-            tld: Application.appDelegate.tld
+            tld: TLD()
         )
     }
 

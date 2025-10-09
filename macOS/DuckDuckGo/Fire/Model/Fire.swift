@@ -133,7 +133,7 @@ final class Fire: FireProtocol {
     let permissionManager: PermissionManagerProtocol
     let savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating
     let downloadListCoordinator: DownloadListCoordinator
-    let windowControllerManager: WindowControllersManager
+    let windowControllerManager: WindowControllersManagerProtocol
     let faviconManagement: FaviconManagement
     let fireproofDomains: FireproofDomains
     let autoconsentManagement: AutoconsentManagement?
@@ -214,7 +214,7 @@ final class Fire: FireProtocol {
          permissionManager: PermissionManagerProtocol? = nil,
          savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating = AccessibilityPreferences.shared,
          downloadListCoordinator: DownloadListCoordinator = DownloadListCoordinator.shared,
-         windowControllerManager: WindowControllersManager? = nil,
+         windowControllerManager: WindowControllersManagerProtocol? = nil,
          faviconManagement: FaviconManagement? = nil,
          fireproofDomains: FireproofDomains? = nil,
          autoconsentManagement: AutoconsentManagement? = nil,

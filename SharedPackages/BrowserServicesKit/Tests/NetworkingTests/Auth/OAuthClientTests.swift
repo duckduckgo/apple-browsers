@@ -239,6 +239,31 @@ final class OAuthClientTests: XCTestCase {
         }
     }
 
+    func testGetToken_localForceRefresh_concurrentCallsOnlyRefreshOnce() async throws {
+        mockOAuthService.getJWTSignersResponse = .success(JWTSigners())
+        mockOAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
+        mockOAuthService.setRefreshAccessTokenDelay(100_000_000) // 0.1 seconds
+
+        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        await oAuthClient.setTestingDecodedTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+
+        async let result1 = oAuthClient.getTokens(policy: .localForceRefresh)
+        async let result2 = oAuthClient.getTokens(policy: .localForceRefresh)
+        async let result3 = oAuthClient.getTokens(policy: .localForceRefresh)
+        async let result4 = oAuthClient.getTokens(policy: .localForceRefresh)
+        async let result5 = oAuthClient.getTokens(policy: .localForceRefresh)
+
+        let results = try await [result1, result2, result3, result4, result5]
+
+        for result in results {
+            XCTAssertNotNil(result.accessToken)
+            XCTAssertNotNil(result.refreshToken)
+            XCTAssertFalse(result.decodedAccessToken.isExpired())
+        }
+
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 1, "Expected only one refresh call for concurrent requests")
+    }
+
     // MARK: Create if needed
 
     func testGetToken_createIfNeeded_foundLocal() async throws {

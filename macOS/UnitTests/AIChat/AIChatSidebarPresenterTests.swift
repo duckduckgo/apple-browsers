@@ -398,19 +398,31 @@ final class AIChatSidebarPresenterTests: XCTestCase {
 
     func testDidClickOpenInNewTabButton_newAIChatTabIsOpen() {
         // Given
-        let testURL = URL(string: "https://example.com")!
+        let tabID = "test-tab"
+        mockSidebarHost.currentTabID = tabID
+
+        // Set up the sidebar with a test URL that includes a placement parameter
+        let testURL = URL(string: "https://example.com")!.forAIChatSidebar()
+        let sidebar = AIChatSidebar(initialAIChatURL: testURL, burnerMode: .regular)
+        mockSidebarProvider.restoreState([tabID: sidebar])
+
         mockAIChatTabOpener.openMethodCalledExpectation = expectation(description: "AIChatTabOpener did open a new tab")
 
         // When
-        presenter.didClickOpenInNewTabButton(currentAIChatURL: testURL, aiChatRestorationData: nil)
+        presenter.didClickOpenInNewTabButton()
 
         // Then
         waitForExpectations(timeout: 3)
         XCTAssertTrue(mockAIChatTabOpener.openAIChatTabCalled)
-        XCTAssertEqual(mockAIChatTabOpener.lastURL, testURL)
+
+        // Verify the placement parameter is stripped from the URL
+        let expectedURL = testURL.removingAIChatPlacementParameter()
+        XCTAssertEqual(mockAIChatTabOpener.lastURL, expectedURL)
+        XCTAssertNotEqual(mockAIChatTabOpener.lastURL, testURL, "URL should have placement parameter stripped")
+
         // Verify it was called with .url content type
         if case .url(let url) = mockAIChatTabOpener.lastTrigger {
-            XCTAssertEqual(url, testURL)
+            XCTAssertEqual(url, expectedURL)
         } else {
             XCTFail("Expected .url content type")
         }
@@ -418,12 +430,19 @@ final class AIChatSidebarPresenterTests: XCTestCase {
 
     func testDidClickOpenInNewTabButton_withRestorationData() {
         // Given
-        let testURL = URL(string: "https://example.com")!
+        let tabID = "test-tab"
+        mockSidebarHost.currentTabID = tabID
+
+        // Set up the sidebar with restoration data
         let restorationData = AIChatRestorationData()
+        let sidebar = AIChatSidebar(burnerMode: .regular)
+        sidebar.updateRestorationData(restorationData)
+        mockSidebarProvider.restoreState([tabID: sidebar])
+
         mockAIChatTabOpener.openMethodCalledExpectation = expectation(description: "AIChatTabOpener did open a new tab")
 
         // When
-        presenter.didClickOpenInNewTabButton(currentAIChatURL: testURL, aiChatRestorationData: restorationData)
+        presenter.didClickOpenInNewTabButton()
 
         // Then
         waitForExpectations(timeout: 3)

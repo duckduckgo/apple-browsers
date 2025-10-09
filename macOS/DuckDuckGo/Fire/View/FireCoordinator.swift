@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Cocoa
+import Combine
 import Common
 import History
 import HistoryView
@@ -51,26 +52,49 @@ final class FireCoordinator {
 
     /// This is a lazy var in order to avoid initializing Fire directly at AppDelegate.init
     /// because of a significant number of dependencies that are still singletons.
-    private(set) lazy var fireViewModel: FireViewModel = FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider)
+    private(set) lazy var fireViewModel: FireViewModel = FireViewModel(tld: tld, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
     private(set) var firePopover: FirePopover?
     private let tld: TLD
     private let featureFlagger: FeatureFlagger
-    private let historyProvider: HistoryViewDataProviding
+    let historyProvider: HistoryViewDataProviding
+    private let historyCoordinating: (HistoryCoordinating & HistoryDataSource)
     private let fireDialogViewFactory: FireDialogViewFactory
     private let fireproofDomains: FireproofDomains
-    private let onboardingContextualDialogsManager: () -> ContextualOnboardingStateUpdater
+    private let faviconManagement: FaviconManagement
+    private let onboardingContextualDialogsManager: (() -> ContextualOnboardingStateUpdater)?
+    private let windowControllersManager: WindowControllersManagerProtocol
     private let tabViewModelGetter: (NSWindow) -> TabCollectionViewModel?
+    private let pixelFiring: PixelFiring?
+    private let visualizeFireAnimationDecider: OverridableVisualizeFireSettingsDecider
 
-    init(tld: TLD, featureFlagger: FeatureFlagger, historyProvider: HistoryViewDataProviding, fireViewModel: FireViewModel? = nil, onboardingContextualDialogsManager: (() -> ContextualOnboardingStateUpdater)? = nil, fireDialogViewFactory: FireDialogViewFactory? = nil, fireproofDomains: FireproofDomains? = nil, tabViewModelGetter: ((NSWindow) -> TabCollectionViewModel?)? = nil) {
+    init(tld: TLD,
+         featureFlagger: FeatureFlagger,
+         historyCoordinating: (HistoryCoordinating & HistoryDataSource),
+         visualizeFireAnimationDecider: VisualizeFireSettingsDecider?,
+         onboardingContextualDialogsManager: (() -> ContextualOnboardingStateUpdater)?,
+         fireproofDomains: FireproofDomains,
+         faviconManagement: FaviconManagement,
+         windowControllersManager: WindowControllersManagerProtocol,
+         pixelFiring: PixelFiring?,
+         historyProvider: HistoryViewDataProviding? = nil, // for testing: created if not provided
+         fireViewModel: FireViewModel? = nil, // for testing: created if not provided
+         tabViewModelGetter: ((NSWindow) -> TabCollectionViewModel?)? = nil, // for testing: created if not provided
+         fireDialogViewFactory: FireDialogViewFactory? = nil, // for testing: created if not provided
+    ) {
 
         self.tld = tld
         self.featureFlagger = featureFlagger
-        self.historyProvider = historyProvider
-        self.fireproofDomains = fireproofDomains ?? Application.appDelegate.fireproofDomains
-        self.onboardingContextualDialogsManager = onboardingContextualDialogsManager ?? { Application.appDelegate.onboardingContextualDialogsManager }
+        self.historyCoordinating = historyCoordinating
+        self.fireproofDomains = fireproofDomains
+        self.faviconManagement = faviconManagement
+        self.onboardingContextualDialogsManager = onboardingContextualDialogsManager
+        self.windowControllersManager = windowControllersManager
         self.tabViewModelGetter = tabViewModelGetter ?? { window in
             (window.contentViewController as? MainViewController)?.tabCollectionViewModel
         }
+        self.pixelFiring = pixelFiring
+        let visualizeFireAnimationDecider = visualizeFireAnimationDecider
+        self.visualizeFireAnimationDecider = OverridableVisualizeFireSettingsDecider(internalDecider: visualizeFireAnimationDecider)
 
         self.fireDialogViewFactory = fireDialogViewFactory ?? { config in
             let view = FireDialogView(
@@ -80,16 +104,20 @@ final class FireCoordinator {
             )
             return DefaultFireDialogPresenter(view: view)
         }
+        var fireCoordinatorGetter: (() -> FireCoordinator)!
+        let historyBurner = FireHistoryBurner(fireproofDomains: self.fireproofDomains, fire: { fireCoordinatorGetter().fireViewModel.fire })
+        self.historyProvider = historyProvider ?? HistoryViewDataProvider(historyDataSource: self.historyCoordinating, historyBurner: historyBurner, featureFlagger: featureFlagger)
         if let fireViewModel {
             self.fireViewModel = fireViewModel
         }
+        fireCoordinatorGetter = { [unowned self] in self }
     }
 
     func fireButtonAction() {
         let burningWindow: NSWindow
         let waitForOpening: Bool
 
-        if let lastKeyWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window,
+        if let lastKeyWindow = windowControllersManager.lastKeyMainWindowController?.window,
            lastKeyWindow.isVisible {
             burningWindow = lastKeyWindow
             burningWindow.makeKeyAndOrderFront(nil)
@@ -107,15 +135,7 @@ final class FireCoordinator {
         // Present dialog gated by feature flag; fallback to legacy popover
         if featureFlagger.isFeatureOn(.fireDialog) {
             Task { @MainActor in
-                let response = await self.presentFireDialog(mode: .fireButton, in: burningWindow)
-                if case .burn(let result?) = response {
-                    PixelKit.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
-                    switch result.clearingOption {
-                    case .currentTab: PixelKit.fire(GeneralPixel.fireButton(option: .tab))
-                    case .currentWindow: PixelKit.fire(GeneralPixel.fireButton(option: .window))
-                    case .allData: PixelKit.fire(GeneralPixel.fireButton(option: .allSites))
-                    }
-                }
+                _=await self.presentFireDialog(mode: .fireButton, in: burningWindow)
             }
         } else if waitForOpening {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1/3) {
@@ -144,13 +164,21 @@ extension FireCoordinator {
     /// Unified Fire dialog presenter for all entry points
     @MainActor
     func presentFireDialog(mode: FireDialogViewModel.Mode, in window: NSWindow? = nil, scopeVisits providedVisits: [Visit]? = nil) async -> FireDialogView.Response {
-        let targetWindow = window ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
+        let targetWindow = window ?? windowControllersManager.lastKeyMainWindowController?.window
         guard let parentWindow = targetWindow,
               let tabCollectionViewModel = tabViewModelGetter(parentWindow) else { return .noAction }
 
-        let scopeQuery: DataModel.HistoryQueryKind = switch mode {
-        case .fireButton, .mainMenuAll: .rangeFilter(.all)
-        case .historyView(let query): query
+        let scopeQuery: DataModel.HistoryQueryKind
+        switch mode {
+        case .fireButton, .mainMenuAll:
+            scopeQuery = .rangeFilter(.all)
+        case .historyView(let query):
+            scopeQuery = query
+            // Disable fire animation for History View requests
+            visualizeFireAnimationDecider.isAnimationDisabled = true
+        }
+        defer {
+            visualizeFireAnimationDecider.isAnimationDisabled = false
         }
 
         let scopeVisits: [Visit]
@@ -173,9 +201,9 @@ extension FireCoordinator {
         let vm = FireDialogViewModel(
             fireViewModel: self.fireViewModel,
             tabCollectionViewModel: tabCollectionViewModel,
-            historyCoordinating: Application.appDelegate.historyCoordinator,
+            historyCoordinating: self.historyCoordinating,
             fireproofDomains: self.fireproofDomains,
-            faviconManagement: Application.appDelegate.faviconManager,
+            faviconManagement: self.faviconManagement,
             clearingOption: mode.shouldShowSegmentedControl ? nil /* last selected */ : .allData,
             includeTabsAndWindows: mode.shouldShowCloseTabsToggle ? nil /* last selected */ : false,
             mode: mode,
@@ -226,7 +254,7 @@ extension FireCoordinator {
 
             if [.fireButton, .mainMenuAll].contains(mode) {
                 // Record fire button usage for contextual onboarding flows
-                onboardingContextualDialogsManager().fireButtonUsed()
+                onboardingContextualDialogsManager?().fireButtonUsed()
             }
             return .burn(options: options)
         }
@@ -248,9 +276,10 @@ extension FireCoordinator {
                                                 urlToOpenIfWindowsAreClosed: nil)
             return
         }
-
+        pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
         switch result.clearingOption {
         case .currentTab:
+            pixelFiring?.fire(GeneralPixel.fireButton(option: .tab))
             guard let tabCollectionViewModel,
                   let tabViewModel = tabCollectionViewModel.selectedTabViewModel else {
                 assertionFailure("No tab selected")
@@ -263,6 +292,7 @@ extension FireCoordinator {
             await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory)
 
         case .currentWindow:
+            pixelFiring?.fire(GeneralPixel.fireButton(option: .window))
             guard let tabCollectionViewModel else {
                 assertionFailure("Missing TabCollectionViewModel for window scope")
                 return
@@ -273,12 +303,12 @@ extension FireCoordinator {
             await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory)
 
         case .allData:
-            PixelKit.fire(GeneralPixel.fireButton(option: .allSites))
+            pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
             // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
             if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory {
                 await fireViewModel.fire.burnAll(isBurnOnExit: false, opening: .newtab)
             } else {
-                let entity = Fire.BurningEntity.allWindows(mainWindowControllers: Application.appDelegate.windowControllersManager.mainWindowControllers,
+                let entity = Fire.BurningEntity.allWindows(mainWindowControllers: windowControllersManager.mainWindowControllers,
                                                            selectedDomains: result.selectedCookieDomains ?? [],
                                                            customURLToOpen: nil,
                                                            close: result.includeTabsAndWindows)
@@ -286,4 +316,31 @@ extension FireCoordinator {
             }
         }
     }
+}
+/// Allows locally disabling Fire animation depending on context
+final class OverridableVisualizeFireSettingsDecider: VisualizeFireSettingsDecider {
+    private let internalDecider: VisualizeFireSettingsDecider?
+
+    var isAnimationDisabled: Bool = false
+
+    var shouldShowFireAnimation: Bool {
+        isAnimationDisabled ? false : internalDecider?.shouldShowFireAnimation ?? false
+    }
+
+    var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> {
+        internalDecider?.shouldShowFireAnimationPublisher ?? Empty().eraseToAnyPublisher()
+    }
+
+    var isOpenFireWindowByDefaultEnabled: Bool {
+        internalDecider?.isOpenFireWindowByDefaultEnabled ?? false
+    }
+
+    var shouldShowOpenFireWindowByDefaultPublisher: AnyPublisher<Bool, Never> {
+        internalDecider?.shouldShowOpenFireWindowByDefaultPublisher ?? Empty().eraseToAnyPublisher()
+    }
+
+    init(internalDecider: VisualizeFireSettingsDecider?) {
+        self.internalDecider = internalDecider
+    }
+
 }

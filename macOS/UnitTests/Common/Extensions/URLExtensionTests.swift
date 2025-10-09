@@ -129,17 +129,21 @@ final class URLExtensionTests {
         #expect(url?.absoluteString == expectation, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
 
-    @Test("Verifying hypertext scheme when making URL from suggestion phrase with colon")
-    func whenMakingUrlFromSuggestionPhaseContainingColon_ThenVerifyHypertextScheme() {
-        let validUrl = URL.makeURL(fromSuggestionPhrase: "http://duckduckgo.com")
+    static let whenMakingUrlFromSuggestionPhaseContainingColon_ThenVerifyHypertextScheme_args = [
+        (true, #line),
+        (false, #line),
+    ]
+    @Test("Verifying hypertext scheme when making URL from suggestion phrase with colon", arguments: whenMakingUrlFromSuggestionPhaseContainingColon_ThenVerifyHypertextScheme_args)
+    func whenMakingUrlFromSuggestionPhaseContainingColon_ThenVerifyHypertextScheme(useUnifiedLogic: Bool, line: Int) {
+        let validUrl = URL.makeURL(fromSuggestionPhrase: "http://duckduckgo.com", useUnifiedLogic: useUnifiedLogic)
         #expect(validUrl != nil)
         #expect(validUrl?.scheme == "http")
 
-        let anotherValidUrl = URL.makeURL(fromSuggestionPhrase: "duckduckgo.com")
+        let anotherValidUrl = URL.makeURL(fromSuggestionPhrase: "duckduckgo.com", useUnifiedLogic: useUnifiedLogic)
         #expect(anotherValidUrl != nil)
         #expect(validUrl?.scheme != nil)
 
-        let notURL = URL.makeURL(fromSuggestionPhrase: "type:pdf")
+        let notURL = URL.makeURL(fromSuggestionPhrase: "type:pdf", useUnifiedLogic: useUnifiedLogic)
         #expect(notURL == nil)
     }
 

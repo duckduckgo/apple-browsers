@@ -502,9 +502,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
         let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
             PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
-                                                                             accessError: error,
-                                                                             source: KeychainErrorSource.shared,
-                                                                             authVersion: KeychainErrorAuthVersion.v2),
+                                                                                 accessError: error,
+                                                                                 source: KeychainErrorSource.shared,
+                                                                                 authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
 
@@ -611,7 +611,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform,
                 paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
                 supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) },
-                isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) }
+                isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) },
+                isSubscriptionRestoreWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) }
             ),
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger
@@ -657,9 +658,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         fireCoordinator = FireCoordinator(tld: tld,
                                           featureFlagger: featureFlagger,
-                                          historyProvider: HistoryViewDataProvider(historyDataSource: historyCoordinator,
-                                                                                   historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains, fire: { @MainActor in NSApp.delegateTyped.fireCoordinator.fireViewModel.fire })),
-                                          fireproofDomains: fireproofDomains)
+                                          historyCoordinating: historyCoordinator,
+                                          visualizeFireAnimationDecider: visualizeFireSettingsDecider,
+                                          onboardingContextualDialogsManager: { Application.appDelegate.onboardingContextualDialogsManager },
+                                          fireproofDomains: fireproofDomains,
+                                          faviconManagement: faviconManager,
+                                          windowControllersManager: windowControllersManager,
+                                          pixelFiring: PixelKit.shared)
 
         var appContentBlocking: AppContentBlocking?
 #if DEBUG

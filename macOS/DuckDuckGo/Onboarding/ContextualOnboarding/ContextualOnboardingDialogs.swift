@@ -341,7 +341,8 @@ private class PreviewHistoryProvider: HistoryViewDataProviding {
     }
 
     func visits(matching query: HistoryView.DataModel.HistoryQueryKind) async -> [History.Visit] { [] }
-    func deleteVisits(for identifiers: [VisitIdentifier]) async {}
+    func deleteVisits(matching query: HistoryView.DataModel.HistoryQueryKind) async {}
+    func burnVisits(matching query: HistoryView.DataModel.HistoryQueryKind) async {}
 
     func cookieDomains(matching query: DataModel.HistoryQueryKind) async -> Set<String> {
         return []
@@ -354,7 +355,7 @@ private class PreviewHistoryProvider: HistoryViewDataProviding {
 
 #Preview("Try Fire Button") {
     DaxDialogView(logoPosition: .left) {
-        OnboardingFireButtonDialogContent(viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: FireCoordinator(tld: TLD(), featureFlagger: Application.appDelegate.featureFlagger, historyProvider: PreviewHistoryProvider()), onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}))
+        OnboardingFireButtonDialogContent(viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: nil, onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}))
     }
     .padding()
 }
@@ -364,6 +365,6 @@ private class PreviewHistoryProvider: HistoryViewDataProviding {
         let firstString = UserText.ContextualOnboarding.onboardingTryFireButtonMessage
         return NSMutableAttributedString(string: firstString)
     }()
-    OnboardingTrackersDoneDialog(shouldFollowUp: true, message: message, blockedTrackersCTAAction: {}, viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: FireCoordinator(tld: TLD(), featureFlagger: Application.appDelegate.featureFlagger, historyProvider: PreviewHistoryProvider()), onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}), onManualDismiss: {})
+    OnboardingTrackersDoneDialog(shouldFollowUp: true, message: message, blockedTrackersCTAAction: {}, viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: nil, onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}), onManualDismiss: {})
         .padding()
 }

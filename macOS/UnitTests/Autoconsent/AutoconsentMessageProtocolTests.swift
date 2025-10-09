@@ -44,6 +44,17 @@ class AutoconsentMessageProtocolTests: XCTestCase {
             appearancePreferences: appearancePreferences,
         )
 
+        let fireCoordinator = FireCoordinator(tld: TLD(),
+                                              featureFlagger: Application.appDelegate.featureFlagger,
+                                              historyCoordinating: HistoryCoordinatingMock(),
+                                              visualizeFireAnimationDecider: nil,
+                                              onboardingContextualDialogsManager: nil,
+                                              fireproofDomains: MockFireproofDomains(),
+                                              faviconManagement: FaviconManagerMock(),
+                                              windowControllersManager: WindowControllersManagerMock(),
+                                              pixelFiring: nil,
+                                              historyProvider: MockHistoryViewDataProvider())
+
         userScript = AutoconsentUserScript(
             scriptSource: ScriptSourceProvider(configStorage: MockConfigurationStore(),
                                                privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -63,7 +74,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
                                                bookmarkManager: MockBookmarkManager(),
                                                historyCoordinator: CapturingHistoryDataSource(),
                                                fireproofDomains: MockFireproofDomains(domains: []),
-                                               fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger, historyProvider: MockHistoryProvider()),
+                                               fireCoordinator: fireCoordinator,
                                                newTabPageActionsManager: nil
                                               ),
             config: MockPrivacyConfiguration()

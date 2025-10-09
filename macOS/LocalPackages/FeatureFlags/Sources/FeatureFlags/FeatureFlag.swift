@@ -203,6 +203,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211396583578252?focus=true
     case unifiedURLPredictorMetrics
 
+    /// https://app.asana.com/1/137249556945/task/1211354430557015?focus=true
+    case subscriptionRestoreWidePixelMeasurement
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211555469558398?focus=true
     case authV2WideEventEnabled
 
@@ -226,6 +229,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .restoreSessionPrompt,
                 .refactorOfSyncPreferences,
                 .subscriptionPurchaseWidePixelMeasurement,
+                .subscriptionRestoreWidePixelMeasurement,
                 .authV2WideEventEnabled:
             true
         default:
@@ -295,6 +299,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dbpEmailConfirmationDecoupling,
                 .dbpRemoteBrokerDelivery,
                 .subscriptionPurchaseWidePixelMeasurement,
+                .subscriptionRestoreWidePixelMeasurement,
                 .syncFeatureLevel3,
                 .themes,
                 .appStoreUpdateFlow,
@@ -459,6 +464,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
         case .webKitPerformanceReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webKitPerformanceReporting))
+        case .subscriptionRestoreWidePixelMeasurement:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         }
     }
 }

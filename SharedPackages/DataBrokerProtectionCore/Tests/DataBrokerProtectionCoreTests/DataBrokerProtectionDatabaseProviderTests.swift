@@ -80,6 +80,8 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         MockMigrationsProvider.didCallV6Migrations = false
         MockMigrationsProvider.didCallV7Migrations = false
         MockMigrationsProvider.didCallV8Migrations = false
+        MockMigrationsProvider.didCallV9Migrations = false
+        MockMigrationsProvider.didCallV10Migrations = false
     }
 
     func testV3MigrationCleansUpOrphanedRecords_andResultsInNoDataIntegrityIssues() throws {
@@ -232,6 +234,7 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         XCTAssertFalse(optOut.sevenDaysConfirmationPixelFired)
         XCTAssertFalse(optOut.fourteenDaysConfirmationPixelFired)
         XCTAssertFalse(optOut.twentyOneDaysConfirmationPixelFired)
+        XCTAssertFalse(optOut.fortyTwoDaysConfirmationPixelFired)
 
     }
 
@@ -481,7 +484,7 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         let freshProvider = try DefaultDataBrokerProtectionDatabaseProvider(
             file: freshVaultURL,
             key: key,
-            registerMigrationsHandler: Migrations.v8Migrations
+            registerMigrationsHandler: Migrations.v10Migrations
         )
 
         return (freshProvider, freshVaultURL)

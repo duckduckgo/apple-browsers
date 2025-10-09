@@ -229,6 +229,7 @@ public struct OptOutDB: Codable {
     var sevenDaysConfirmationPixelFired: Bool
     var fourteenDaysConfirmationPixelFired: Bool
     var twentyOneDaysConfirmationPixelFired: Bool
+    var fortyTwoDaysConfirmationPixelFired: Bool
 }
 
 extension OptOutDB: PersistableRecord, FetchableRecord {
@@ -254,6 +255,7 @@ extension OptOutDB: PersistableRecord, FetchableRecord {
         case sevenDaysConfirmationPixelFired
         case fourteenDaysConfirmationPixelFired
         case twentyOneDaysConfirmationPixelFired
+        case fortyTwoDaysConfirmationPixelFired
     }
 
     public init(row: Row) throws {
@@ -268,6 +270,7 @@ extension OptOutDB: PersistableRecord, FetchableRecord {
         sevenDaysConfirmationPixelFired = row[Columns.sevenDaysConfirmationPixelFired]
         fourteenDaysConfirmationPixelFired = row[Columns.fourteenDaysConfirmationPixelFired]
         twentyOneDaysConfirmationPixelFired = row[Columns.twentyOneDaysConfirmationPixelFired]
+        fortyTwoDaysConfirmationPixelFired = row[Columns.fortyTwoDaysConfirmationPixelFired]
     }
 
     public func encode(to container: inout PersistenceContainer) throws {
@@ -282,6 +285,7 @@ extension OptOutDB: PersistableRecord, FetchableRecord {
         container[Columns.sevenDaysConfirmationPixelFired] = sevenDaysConfirmationPixelFired
         container[Columns.fourteenDaysConfirmationPixelFired] = fourteenDaysConfirmationPixelFired
         container[Columns.twentyOneDaysConfirmationPixelFired] = twentyOneDaysConfirmationPixelFired
+        container[Columns.fortyTwoDaysConfirmationPixelFired] = fortyTwoDaysConfirmationPixelFired
     }
 }
 

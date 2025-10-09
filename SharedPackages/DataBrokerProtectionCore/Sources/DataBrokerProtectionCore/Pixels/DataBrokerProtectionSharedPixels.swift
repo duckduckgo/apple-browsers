@@ -158,6 +158,8 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutJobAt14DaysUnconfirmed(dataBroker: String)
     case optOutJobAt21DaysConfirmed(dataBroker: String)
     case optOutJobAt21DaysUnconfirmed(dataBroker: String)
+    case optOutJobAt42DaysConfirmed(dataBroker: String)
+    case optOutJobAt42DaysUnconfirmed(dataBroker: String)
 
     // Backend service errors
     case generateEmailHTTPErrorDaily(statusCode: Int, environment: String, wasOnWaitlist: Bool)
@@ -259,6 +261,8 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .optOutJobAt14DaysUnconfirmed: return "dbp_optoutjob_at-14-days_unconfirmed"
         case .optOutJobAt21DaysConfirmed: return "dbp_optoutjob_at-21-days_confirmed"
         case .optOutJobAt21DaysUnconfirmed: return "dbp_optoutjob_at-21-days_unconfirmed"
+        case .optOutJobAt42DaysConfirmed: return "dbp_optoutjob_at-42-days_confirmed"
+        case .optOutJobAt42DaysUnconfirmed: return "dbp_optoutjob_at-42-days_unconfirmed"
 
             // Backend service errors
         case .generateEmailHTTPErrorDaily: return "dbp_service_email-generate-http-error"
@@ -400,7 +404,9 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .optOutJobAt14DaysConfirmed(let dataBroker),
                 .optOutJobAt14DaysUnconfirmed(let dataBroker),
                 .optOutJobAt21DaysConfirmed(let dataBroker),
-                .optOutJobAt21DaysUnconfirmed(let dataBroker):
+                .optOutJobAt21DaysUnconfirmed(let dataBroker),
+                .optOutJobAt42DaysConfirmed(let dataBroker),
+                .optOutJobAt42DaysUnconfirmed(let dataBroker):
             return [Consts.dataBrokerParamKey: dataBroker]
         case .dailyActiveUser,
                 .weeklyActiveUser,

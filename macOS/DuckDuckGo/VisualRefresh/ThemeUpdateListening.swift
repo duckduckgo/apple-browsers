@@ -47,6 +47,7 @@ extension ThemeUpdateListening {
     ///
     func subscribeToThemeChanges() {
         themeUpdateCancellable = themeManager.themePublisher
+            .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] theme in
                 self?.applyThemeStyle(theme: theme)

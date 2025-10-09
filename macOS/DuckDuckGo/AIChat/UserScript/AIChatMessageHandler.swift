@@ -92,7 +92,7 @@ extension AIChatMessageHandler {
                                             supportsNativeChatInput: false,
                                             supportsURLChatIDRestoration: true,
                                             supportsFullChatRestoration: true,
-                                            supportsPageContext: true)
+                                            supportsPageContext: featureFlagger.isFeatureOn(.aiChatPageContext))
         } else {
             return AIChatNativeConfigValues.defaultValues
         }

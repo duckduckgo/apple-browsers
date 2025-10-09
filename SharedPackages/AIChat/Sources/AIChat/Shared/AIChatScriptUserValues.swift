@@ -88,7 +88,7 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsNativeChatInput: false,
                                         supportsURLChatIDRestoration: false,
                                         supportsFullChatRestoration: false,
-                                        supportsPageContext: true)
+                                        supportsPageContext: false)
 #endif
 
 #if os(macOS)
@@ -99,7 +99,7 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsNativeChatInput: false,
                                         supportsURLChatIDRestoration: false,
                                         supportsFullChatRestoration: false,
-                                        supportsPageContext: true)
+                                        supportsPageContext: false)
 #endif
     }
 

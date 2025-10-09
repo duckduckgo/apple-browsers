@@ -185,9 +185,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210659895188821?focus=true
     case embeddedSERPSettings
 
-    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210659895188821?focus=true
-    case embeddedSERPSettings
-
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211555469558398?focus=true
     case authV2WideEventEnabled
 

@@ -41,7 +41,6 @@ public final class ContentBlocking {
             contentBlockingManager.onCriticalError = onCriticalError
         }
     }
-    
 
     enum PixelParameterName {
         static let experimentName = "experimentName"

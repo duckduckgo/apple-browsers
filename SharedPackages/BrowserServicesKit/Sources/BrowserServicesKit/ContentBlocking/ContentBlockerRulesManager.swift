@@ -297,7 +297,6 @@ public class ContentBlockerRulesManager: CompiledRuleListsSource {
     }
 
     private func startCompilationProcess() {
-
         prepareSourceManagers()
 
         // Prepare compilation tasks based on the sources

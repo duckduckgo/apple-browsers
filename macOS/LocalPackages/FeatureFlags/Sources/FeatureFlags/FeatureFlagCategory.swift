@@ -69,7 +69,8 @@ extension FeatureFlag: FeatureFlagCategorization {
             return .updates
         case .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
-                .vpnToolbarUpsell:
+                .vpnToolbarUpsell,
+                .winBackOffer:
             return .vpn
         case .dbpEmailConfirmationDecoupling,
                 .dbpRemoteBrokerDelivery:

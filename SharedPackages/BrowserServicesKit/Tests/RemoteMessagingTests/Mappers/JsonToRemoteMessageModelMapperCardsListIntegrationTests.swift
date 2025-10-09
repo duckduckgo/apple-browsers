@@ -173,3 +173,134 @@ struct JsonToRemoteMessageModelMapperCardsListIntegrationTests {
         #expect(message.exclusionRules.isEmpty, "No exclusion rules in test config")
     }
 }
+
+@Suite("RMF - Mapping - Cards List Items with Rules - JSON Integration")
+struct JsonToRemoteMessageModelMapperCardsListRulesIntegrationTests {
+    let config: RemoteConfigModel
+
+    init() throws {
+        self.config = try RemoteMessagingConfigDecoder.decodeAndMapJson(
+            fileName: "remote-messaging-config-cards-list-items-with-rules.json",
+            bundle: .module
+        )
+    }
+
+    @Test("Check List Items with Matching and Exclusion Rules Map Correctly")
+    func listItemsWithMatchingAndExclusionRulesMapped() throws {
+        // WHEN
+        let message = try #require(config.messages.first(where: { $0.id == "cards_list_with_item_rules" }))
+
+        guard case let .cardsList(_, items, _, _) = message.content else {
+            Issue.record("Expected cardsList content type")
+            return
+        }
+
+        // THEN
+        #expect(items.count == 5)
+
+        // Item with both matching and exclusion rules
+        let itemWithBothRules = try #require(items.first(where: { $0.id == "item_with_both_rules" }))
+        #expect(itemWithBothRules.matchingRules == [1, 2])
+        #expect(itemWithBothRules.exclusionRules == [3])
+
+        // Item with matching rules only
+        let itemWithMatchingOnly = try #require(items.first(where: { $0.id == "item_with_matching_only" }))
+        #expect(itemWithMatchingOnly.matchingRules == [4, 5, 6])
+        #expect(itemWithMatchingOnly.exclusionRules == [])
+
+        // Item with exclusion rules only
+        let itemWithExclusionOnly = try #require(items.first(where: { $0.id == "item_with_exclusion_only" }))
+        #expect(itemWithExclusionOnly.matchingRules == [])
+        #expect(itemWithExclusionOnly.exclusionRules == [7, 8])
+
+        // Item with no rules
+        let itemWithNoRules = try #require(items.first(where: { $0.id == "item_with_no_rules" }))
+        #expect(itemWithNoRules.matchingRules == [])
+        #expect(itemWithNoRules.exclusionRules == [])
+
+        // Item with empty arrays
+        let itemWithEmptyArrays = try #require(items.first(where: { $0.id == "item_with_empty_arrays" }))
+        #expect(itemWithEmptyArrays.matchingRules == [])
+        #expect(itemWithEmptyArrays.exclusionRules == [])
+    }
+
+    @Test("Check Null Rules Default to Empty Arrays")
+    func nullRulesDefaultToEmptyArrays() throws {
+        // WHEN
+        let message = try #require(config.messages.first(where: { $0.id == "cards_list_null_rules" }))
+
+        guard case let .cardsList(_, items, _, _) = message.content else {
+            Issue.record("Expected cardsList content type")
+            return
+        }
+
+        // THEN
+        #expect(items.count == 1)
+
+        let item = try #require(items.first)
+        #expect(item.id == "item_with_null_rules")
+        #expect(item.matchingRules == [])
+        #expect(item.exclusionRules == [])
+    }
+
+    @Test("Check Missing Rules Fields Default to Empty Arrays")
+    func missingRulesFieldsDefaultToEmptyArrays() throws {
+        // WHEN
+        let message = try #require(config.messages.first(where: { $0.id == "cards_list_missing_rules" }))
+
+        guard case let .cardsList(_, items, _, _) = message.content else {
+            Issue.record("Expected cardsList content type")
+            return
+        }
+
+        // THEN
+        #expect(items.count == 1)
+
+        let item = try #require(items.first)
+        #expect(item.id == "item_missing_rules")
+        #expect(item.matchingRules == [])
+        #expect(item.exclusionRules == [])
+    }
+
+    @Test("Check Invalid Items with Rules Are Discarded Correctly")
+    func invalidItemsWithRulesAreDiscarded() throws {
+        // WHEN
+        let message = try #require(config.messages.first(where: { $0.id == "cards_list_invalid_items_with_rules" }))
+
+        guard case let .cardsList(_, items, _, _) = message.content else {
+            Issue.record("Expected cardsList content type")
+            return
+        }
+
+        // THEN
+        #expect(items.count == 1, "Only valid item should remain")
+
+        let validItem = try #require(items.first)
+        #expect(validItem.id == "valid_item_after_invalid")
+        #expect(validItem.matchingRules == [4])
+        #expect(validItem.exclusionRules == [])
+    }
+
+    @Test("Check Message Level Rules Are Preserved")
+    func messageLevelRulesArePreserved() throws {
+        // WHEN
+        let message = try #require(config.messages.first(where: { $0.id == "cards_list_with_item_rules" }))
+
+        // THEN
+        #expect(message.matchingRules == [1], "Message level matching rules should be preserved")
+        #expect(message.exclusionRules == [], "Message level exclusion rules should be preserved")
+    }
+
+    @Test("Check Rules Configuration Contains Expected Rules")
+    func rulesConfigurationContainsExpectedRules() throws {
+        // THEN
+        #expect(config.rules.count == 8, "Should have all rules from test configuration")
+
+        // Verify some key rules exist
+        let rule1 = try #require(config.rules.first(where: { $0.id == 1 }))
+        #expect(rule1.targetPercentile?.before == 0.5, "Rule 1 should have percentile targeting")
+
+        let rule2 = try #require(config.rules.first(where: { $0.id == 2 }))
+        #expect(rule2.targetPercentile == nil, "Rule 2 should not have percentile targeting")
+    }
+}

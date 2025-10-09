@@ -415,6 +415,8 @@ private extension JsonToRemoteMessageModelMapper {
             let remoteAction = try validator.compactMap(\.primaryAction) { action in
                 mapToAction(action, surveyActionMapper: surveyActionMapper)
             }
+            let matchingRules = jsonListItem.matchingRules ?? []
+            let exclusionRules = jsonListItem.exclusionRules ?? []
 
             return RemoteMessageModelType.ListItem(
                 id: id,
@@ -422,7 +424,9 @@ private extension JsonToRemoteMessageModelMapper {
                 titleText: titleText,
                 descriptionText: descriptionText,
                 placeholderImage: placeHolderImage,
-                action: remoteAction
+                action: remoteAction,
+                matchingRules: matchingRules,
+                exclusionRules: exclusionRules
             )
         }
 

@@ -40,6 +40,7 @@ final class ThemeManager: ObservableObject, ThemeManaging {
 
     private func subscribeToThemeNameChanges(appearancePreferences: AppearancePreferences) {
         appearancePreferences.$themeName
+            .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] themeName in
                 self?.switchToTheme(named: themeName)

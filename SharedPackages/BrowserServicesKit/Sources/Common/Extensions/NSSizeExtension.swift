@@ -20,14 +20,14 @@ import Foundation
 
 public extension CGSize {
 
-    static var faviconSize: NSSize { NSSize(width: 16, height: 16) }
+    static var faviconSize: CGSize { CGSize(width: 16, height: 16) }
 
     // Smaller in both width and height, not area
     func isSmaller(than size: CGSize) -> Bool {
         width < size.width && height < size.height
     }
 
-    func scaled(by scaleFactor: CGFloat) -> NSSize {
+    func scaled(by scaleFactor: CGFloat) -> CGSize {
         NSSize(width: width * scaleFactor, height: height * scaleFactor)
     }
 

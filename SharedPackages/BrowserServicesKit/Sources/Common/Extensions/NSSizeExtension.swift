@@ -28,7 +28,7 @@ public extension CGSize {
     }
 
     func scaled(by scaleFactor: CGFloat) -> CGSize {
-        NSSize(width: width * scaleFactor, height: height * scaleFactor)
+        CGSize(width: width * scaleFactor, height: height * scaleFactor)
     }
 
 }

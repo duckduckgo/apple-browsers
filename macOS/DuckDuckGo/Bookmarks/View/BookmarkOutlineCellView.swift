@@ -236,6 +236,8 @@ final class BookmarkOutlineCellView: NSTableCellView {
     }
 
     private func updateUI() {
+        let palette = theme.palette
+
         if titleLabel.isEnabled {
             let isHighlighted = self.highlight && (self.isInKeyWindow || self.contentMode == .foldersOnly)
             countLabel.isHidden = isHighlighted || countLabel.stringValue.isEmpty
@@ -250,13 +252,12 @@ final class BookmarkOutlineCellView: NSTableCellView {
         if !titleLabel.isEnabled {
             titleLabel.textColor = .disabledControlTextColor
         } else if highlight,
-                  isInKeyWindow,
                   contentMode != .foldersOnly {
-            titleLabel.textColor = .selectedMenuItemTextColor
-            urlLabel.textColor = .selectedMenuItemTextColor
+            titleLabel.textColor = palette.accentContentPrimary
+            urlLabel.textColor = palette.accentContentSecondary
         } else {
-            titleLabel.textColor = .controlTextColor
-            urlLabel.textColor = .secondaryLabelColor
+            titleLabel.textColor = palette.textPrimary
+            urlLabel.textColor = palette.textSecondary
         }
         updateUIAtNarrowWidths()
     }

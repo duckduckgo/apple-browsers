@@ -35,6 +35,12 @@ final class RoundedSelectionRowView: NSTableRowView {
         }
     }
 
+    var requiresAccentColors = false {
+        didSet {
+            needsDisplay = true
+        }
+    }
+
     var insets = NSEdgeInsets()
 
     override func drawDraggingDestinationFeedback(in dirtyRect: NSRect) {
@@ -60,7 +66,11 @@ final class RoundedSelectionRowView: NSTableRowView {
 
         let path = NSBezierPath(roundedRect: selectionRect, xRadius: 6, yRadius: 6)
 
-        theme.colorsProvider.buttonMouseOverColor.setFill()
+        if requiresAccentColors {
+            theme.palette.accentPrimary.setFill()
+        } else {
+            theme.palette.controlsFillPrimary.setFill()
+        }
 
         path.fill()
     }
@@ -77,10 +87,10 @@ final class RoundedSelectionRowView: NSTableRowView {
 
         let path = NSBezierPath(roundedRect: selectionRect, xRadius: 6, yRadius: 6)
 
-        if isInKeyWindow {
-            theme.colorsProvider.buttonMouseDownColor.setFill()
+        if requiresAccentColors {
+            theme.palette.accentPrimary.setFill()
         } else {
-            theme.colorsProvider.buttonMouseOverColor.setFill()
+            theme.palette.controlsFillPrimary.setFill()
         }
 
         path.fill()

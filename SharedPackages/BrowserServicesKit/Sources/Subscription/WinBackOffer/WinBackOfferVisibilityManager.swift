@@ -54,7 +54,9 @@ final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging {
     }
 
     deinit {
-        observer = nil
+        if let observer {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
 
     var shouldShowUrgencyMessage: Bool {

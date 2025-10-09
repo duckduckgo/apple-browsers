@@ -19,10 +19,11 @@
 import BrowserServicesKit
 import Carbon
 import Combine
-import Navigation
-import XCTest
-import History
 import Common
+import History
+import Navigation
+import SharedTestUtilities
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 

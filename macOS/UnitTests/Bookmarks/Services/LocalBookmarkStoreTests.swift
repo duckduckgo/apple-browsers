@@ -16,11 +16,13 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Bookmarks
+import Foundation
+import SharedTestUtilities
 import XCTest
-@testable import DuckDuckGo_Privacy_Browser
+
 @testable import BrowserServicesKit
+@testable import DuckDuckGo_Privacy_Browser
 
 extension LocalBookmarkStore {
 
@@ -1722,4 +1724,10 @@ final class LocalBookmarkStoreTests: XCTestCase {
         return ImportedBookmarks(topLevelFolders: topLevelFolders)
     }
 
+}
+
+extension CoreData {
+    public static func bookmarkContainer() -> NSPersistentContainer {
+        return createInMemoryPersistentContainer(modelName: "BookmarksModel", bundle: Bookmarks.bundle)
+    }
 }

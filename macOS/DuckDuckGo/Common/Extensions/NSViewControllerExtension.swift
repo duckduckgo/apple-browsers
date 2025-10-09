@@ -18,6 +18,8 @@
 
 import AppKit
 import AppKitExtensions
+import DeveloperToolsSupport
+import Foundation
 
 extension NSViewController {
 
@@ -158,5 +160,15 @@ final class Preview_ViewControllerWindowObserver: NSObject {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.styleMask = []
+    }
+}
+
+public extension CGSize {
+    /// #Preview helper to convert CGSize to Preview Traits
+    @available(macOS 14.0, *)
+    var fixedLayout: PreviewTrait<Preview.ViewTraits> {
+        MainActor.assumeMainThread {
+            .fixedLayout(width: width, height: height)
+        }
     }
 }

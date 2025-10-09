@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import Combine
 import Foundation
+import SharedSandboxTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import Combine
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
-import Combine
 
 final class WindowManagerStateRestorationTests: XCTestCase {
 

@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import SecureStorage
-import PixelKit
+import Bookmarks
 import Foundation
+import PixelKit
+import SecureStorage
 
 public enum DataImport {
 

@@ -16,8 +16,11 @@
 //  limitations under the License.
 //
 
-import Testing
 import Common
+import Foundation
+import Testing
+import SharedTestUtilities
+
 @testable import DuckDuckGo_Privacy_Browser
 
 struct FirefoxHistoryReaderTests {

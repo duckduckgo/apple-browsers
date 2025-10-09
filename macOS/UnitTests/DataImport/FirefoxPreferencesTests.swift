@@ -16,7 +16,10 @@
 //  limitations under the License.
 //
 
+import Foundation
+import SharedTestUtilities
 import Testing
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class FirefoxPreferencesTests {

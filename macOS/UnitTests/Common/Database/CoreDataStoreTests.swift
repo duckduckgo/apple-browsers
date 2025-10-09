@@ -16,15 +16,16 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
 import CoreData
+import Foundation
+import SharedTestUtilities
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
 final class CoreDataStoreTests: XCTestCase {
 
-    var container: NSPersistentContainer! = CoreData.coreDataStoreTestsContainer()
+    var container: NSPersistentContainer! = CoreData.coreDataStoreTestsContainer(bundle: Bundle(for: CoreDataStoreTests.self))
     typealias Store = CoreDataStore<TestManagedObject>
     lazy var store: Store! = Store(context: container.newBackgroundContext())
 

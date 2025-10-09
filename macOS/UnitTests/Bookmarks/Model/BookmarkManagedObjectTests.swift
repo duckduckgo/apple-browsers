@@ -17,6 +17,7 @@
 //
 
 import CoreData
+import SharedTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

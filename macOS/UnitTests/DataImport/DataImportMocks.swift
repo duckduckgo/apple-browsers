@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
+import Bookmarks
 import Foundation
-@testable import DuckDuckGo_Privacy_Browser
-@testable import BrowserServicesKit
 import SecureStorage
+
+@testable import BrowserServicesKit
+@testable import DuckDuckGo_Privacy_Browser
 
 final class MockLoginImporter: LoginImporter {
     var importedLogins: DataImportSummary?

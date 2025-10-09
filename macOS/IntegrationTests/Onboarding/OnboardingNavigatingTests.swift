@@ -16,7 +16,10 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import SharedTestUtilities
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class OnboardingNavigatingTests: XCTestCase {

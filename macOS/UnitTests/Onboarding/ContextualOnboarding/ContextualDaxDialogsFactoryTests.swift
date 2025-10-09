@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import XCTest
-import Onboarding
 import BrowserServicesKit
+import Onboarding
+import SharedTestUtilities
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ContextualDaxDialogsFactoryTests: XCTestCase {
@@ -333,3 +335,4 @@ class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
         dismissedDialog = dialogType
     }
 }
+extension CapturingOnboardingNavigationDelegate: OnboardingNavigationDelegate {}

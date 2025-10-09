@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
 import CryptoKit
+import Foundation
+import Utilities
 
 final class EncryptedValueTransformer<T: NSSecureCoding & NSObject>: ValueTransformer {
 

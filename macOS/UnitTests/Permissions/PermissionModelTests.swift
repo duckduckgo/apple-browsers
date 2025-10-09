@@ -20,6 +20,7 @@ import AVFoundation
 import Combine
 import CommonObjCExtensions
 import Foundation
+import SharedTestUtilities
 import WebKit
 import XCTest
 

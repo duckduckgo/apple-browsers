@@ -17,6 +17,7 @@
 //
 
 import Navigation
+import SharedTestUtilities
 import WebKit
 import XCTest
 

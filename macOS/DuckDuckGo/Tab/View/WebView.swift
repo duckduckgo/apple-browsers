@@ -48,7 +48,11 @@ final class WebView: WKWebView {
     weak var interactionEventsDelegate: WebViewInteractionEventsDelegate?
     weak var zoomLevelDelegate: WebViewZoomLevelDelegate?
 
-    var isLoadingObserver: Any?
+    private var isLoadingObserver: Any?
+    /// used in tests
+    @objc func resetLoadingObserver() {
+        isLoadingObserver = nil
+    }
 
     private var shouldShowWebInspector: Bool {
         // When a new tab is open, we don't want the web inspector to be active on screen and gain focus.

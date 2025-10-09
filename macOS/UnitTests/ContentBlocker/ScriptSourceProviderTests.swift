@@ -19,7 +19,9 @@
 import BrowserServicesKit
 import Common
 import PersistenceTestingUtils
+import SharedTestUtilities
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ScriptSourceProviderTests: XCTestCase {
@@ -100,3 +102,4 @@ class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
         return allActiveContentScopeExperiments
     }
 }
+extension HistoryCoordinatingMock: HistoryDataSource {}

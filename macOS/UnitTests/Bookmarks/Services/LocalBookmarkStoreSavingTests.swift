@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Bookmarks
-import XCTest
 import CoreData
+import Foundation
+import SharedTestUtilities
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class LocalBookmarkStoreSavingTests: XCTestCase {

@@ -94,6 +94,23 @@ struct FileWithSpaceInPathError: Error, CustomStringConvertible {
 
 }
 
+struct FileNotInTargetSourcesFolderError: Error, CustomStringConvertible {
+    var targets: Set<String>
+    var filePath: String
+    //    var expectedFolder: String
+
+    init(targets: Set<String>, filePath: String/*, expectedFolder: String*/) {
+        self.targets = targets
+        self.filePath = filePath
+        //        self.expectedFolder = expectedFolder
+    }
+
+    var description: String {
+        let targets = targets.map { "'\($0)'" }.joined(separator: ", ")
+        return "File '\(filePath)' is added to targets \(targets)" // but is not located in the expected target sources folder '\(expectedFolder)'"
+    }
+}
+
 struct CombinedError: Error, CustomStringConvertible {
 
     private var errors: [Error]

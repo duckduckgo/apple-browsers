@@ -21,6 +21,7 @@ import Combine
 import Common
 import LoginItems
 import PixelKitTestingUtilities
+import WebKit
 import XCTest
 
 @testable import DataBrokerProtection_macOS

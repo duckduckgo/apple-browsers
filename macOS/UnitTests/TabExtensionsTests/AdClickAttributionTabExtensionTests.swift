@@ -21,6 +21,7 @@ import Combine
 import ContentBlocking
 import Navigation
 import os.log
+import SharedTestUtilities
 import TrackerRadarKit
 import WebKit
 import XCTest

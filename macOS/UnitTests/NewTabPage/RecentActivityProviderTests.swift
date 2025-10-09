@@ -19,7 +19,9 @@
 import Common
 import History
 import NewTabPage
+import SharedTestUtilities
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockURLFavoriteStatusProvider: URLFavoriteStatusProviding {
@@ -395,3 +397,4 @@ private extension HistoryEntry {
         )
     }
 }
+extension HistoryCoordinatingMock: SuggestionContainer.HistoryProvider {}

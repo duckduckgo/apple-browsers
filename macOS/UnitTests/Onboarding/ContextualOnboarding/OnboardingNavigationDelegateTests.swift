@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Onboarding
+import SharedTestUtilities
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 @available(macOS 12.0, *)

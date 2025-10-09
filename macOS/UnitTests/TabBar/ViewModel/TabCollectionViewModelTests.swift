@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Combine
+import SharedTestUtilities
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 // MARK: - Tests for TabCollectionViewModel with PinnedTabsManager but without pinned tabs

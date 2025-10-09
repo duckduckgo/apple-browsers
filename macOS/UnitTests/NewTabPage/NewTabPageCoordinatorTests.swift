@@ -16,14 +16,16 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Combine
 import Common
 import NewTabPage
 import PersistenceTestingUtils
 import PixelKit
 import PrivacyStats
+import SharedTestUtilities
 import XCTest
-import BrowserServicesKit
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockPrivacyStats: PrivacyStatsCollecting {
@@ -80,7 +82,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
 
         tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor())
 
-        featureFlagger = FeatureFlaggerMock()
+        featureFlagger = MockFeatureFlagger()
 
         coordinator = NewTabPageCoordinator(
             appearancePreferences: appearancePreferences,

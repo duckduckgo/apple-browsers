@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import XCTest
 
 /// We are apparently in the part of the `XCUIAutomation` life cycle right now in which interruption management using `addUIInterruptionMonitor`

@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
+import SharedTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
-import Combine
 
 @MainActor
 class AutoClearHandlerTests: XCTestCase {

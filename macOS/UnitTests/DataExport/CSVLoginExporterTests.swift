@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
 import BrowserServicesKit
+import Foundation
+import SharedTestUtilities
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class CSVLoginExporterTests: XCTestCase {

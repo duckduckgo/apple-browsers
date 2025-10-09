@@ -16,11 +16,13 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import Combine
 import Foundation
 import History
-
+import SharedTestUtilities
 import XCTest
-import Combine
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class FireTests: XCTestCase {
@@ -382,3 +384,5 @@ private class WKVisitedLinkStoreMock: NSObject {
     }
 
 }
+
+extension FileStoreMock: FileStore {}

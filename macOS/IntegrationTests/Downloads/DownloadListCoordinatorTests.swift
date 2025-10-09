@@ -16,9 +16,12 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+import BrowserServicesKit
 import Combine
 import Common
 import Foundation
+import SharedTestUtilities
 import UniformTypeIdentifiers
 import XCTest
 

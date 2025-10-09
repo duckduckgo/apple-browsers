@@ -16,8 +16,11 @@
 //  limitations under the License.
 //
 
-import Combine
 import AIChat
+import AppKit
+import Combine
+import Foundation
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class WindowControllersManagerMock: WindowControllersManagerProtocol, AIChatTabManaging {

@@ -1,51 +1,51 @@
 {
-    'm_debug_app-did-show-ui-time-2-': {
-        description: 'Fires on app launch with the duration it took for the UI to become visible.',
-        owners: ['jaceklyp', 'bwaresiak'],
-        triggers: ['startup'],
-        suffixes: ['time_bucket', 'platform', 'form_factor'],
-        parameters: [
-            'appVersion',
+    "m_debug_app-did-show-ui-time-2-": {
+        "description": "Fires on app launch with the duration it took for the UI to become visible.",
+        "owners": ["jaceklyp", "bwaresiak"],
+        "triggers": ["startup"],
+        "suffixes": ["time_bucket", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
             {
-                key: 'time',
-                description: 'Duration time',
-                type: 'number',
-            },
-        ],
+                "key": "time",
+                "description": "Duration time",
+                "type": "number"
+            }
+        ]
     },
-    m_keyboard_settings_on_new_tab_enabled: {
-        description: 'Fires daily to measure the status of the "Show keyboard on new tab" setting',
-        owners: ['Bunn'],
-        triggers: ['startup'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: [
-            'appVersion',
+    "m_keyboard_settings_on_new_tab_enabled": {
+        "description": "Fires daily to measure the status of the \"Show keyboard on new tab\" setting",
+        "owners": ["Bunn"],
+        "triggers": ["startup"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
             {
-                key: 'is_enabled',
-                description: 'Whether the keyboard on new tab setting is enabled',
-                type: 'boolean',
-            },
-        ],
+                "key": "is_enabled",
+                "description": "Whether the keyboard on new tab setting is enabled",
+                "type": "boolean"
+            }
+        ]
     },
-    m_keyboard_settings_on_app_launch_enabled: {
-        description: 'Fires daily to measure the status of the "Show keyboard on app launch" setting',
-        owners: ['Bunn'],
-        triggers: ['startup'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: [
-            'appVersion',
+    "m_keyboard_settings_on_app_launch_enabled": {
+        "description": "Fires daily to measure the status of the \"Show keyboard on app launch\" setting",
+        "owners": ["Bunn"],
+        "triggers": ["startup"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
             {
-                key: 'is_enabled',
-                description: 'Whether the keyboard on app launch setting is enabled',
-                type: 'boolean',
-            },
-        ],
+                "key": "is_enabled",
+                "description": "Whether the keyboard on app launch setting is enabled",
+                "type": "boolean"
+            }
+        ]
     },
-    m_keyboard_on_app_launch_used: {
-        description: 'Fires daily and count when the app is launched and the keyboard is shown due to the "Show keyboard on app launch" setting being enabled',
-        owners: ['Bunn'],
-        triggers: ['other'],
-        suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion'],
-    },
+    "m_keyboard_on_app_launch_used": {
+        "description": "Fires daily and count when the app is launched and the keyboard is shown due to the \"Show keyboard on app launch\" setting being enabled",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
 }

@@ -24,6 +24,8 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
+    var windowControllersManager: WindowControllersManagerMock!
+    var fireCoordinator: FireCoordinator!
     var viewModel: OnboardingFireButtonDialogViewModel!
     var reporter: CapturingOnboardingPixelReporter!
     var onGotItPressedCalled = false
@@ -46,12 +48,33 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         }
 
         reporter = CapturingOnboardingPixelReporter()
+
+        windowControllersManager = WindowControllersManagerMock()
+        fireCoordinator = FireCoordinator(tld: TLD(),
+                                          featureFlagger: Application.appDelegate.featureFlagger,
+                                          historyCoordinating: HistoryCoordinatingMock(),
+                                          visualizeFireAnimationDecider: nil,
+                                          onboardingContextualDialogsManager: nil,
+                                          fireproofDomains: MockFireproofDomains(),
+                                          faviconManagement: FaviconManagerMock(),
+                                          windowControllersManager: windowControllersManager,
+                                          pixelFiring: nil,
+                                          historyProvider: MockHistoryViewDataProvider())
+        viewModel = OnboardingFireButtonDialogViewModel(
+            onboardingPixelReporter: reporter,
+            fireCoordinator: fireCoordinator,
+            onDismiss: onDismiss,
+            onGotItPressed: onGotItPressed,
+            onFireButtonPressed: onFireButtonPressed
+        )
     }
 
     @MainActor
     override func tearDownWithError() throws {
         reporter = nil
         viewModel = nil
+        windowControllersManager = nil
+        fireCoordinator = nil
     }
 
     func testWhenHighFiveThenOnGotItAndOnDismissPressed() throws {
@@ -63,17 +86,6 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenTryFireButtonThenOnFireButtonPressedCalledAndPixelSent() throws {
-        let windowControllersManager = WindowControllersManagerMock()
-        let fireCoordinator = FireCoordinator(tld: TLD(),
-                                              featureFlagger: Application.appDelegate.featureFlagger,
-                                              historyCoordinating: HistoryCoordinatingMock(),
-                                              visualizeFireAnimationDecider: nil,
-                                              onboardingContextualDialogsManager: nil,
-                                              fireproofDomains: MockFireproofDomains(),
-                                              faviconManagement: FaviconManagerMock(),
-                                              windowControllersManager: windowControllersManager,
-                                              pixelFiring: nil,
-                                              historyProvider: MockHistoryViewDataProvider())
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
@@ -92,13 +104,6 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
 
         window.isVisible = true
 
-        viewModel = OnboardingFireButtonDialogViewModel(
-            onboardingPixelReporter: reporter,
-            fireCoordinator: fireCoordinator,
-            onDismiss: onDismiss,
-            onGotItPressed: onGotItPressed,
-            onFireButtonPressed: onFireButtonPressed
-        )
         viewModel.tryFireButton()
 
         XCTAssertTrue(onFireButtonPressedCalled)

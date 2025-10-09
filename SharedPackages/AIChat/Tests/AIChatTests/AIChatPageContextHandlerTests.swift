@@ -37,6 +37,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         let testPayload = AIChatPageContextData(
             title: "Test Title",
             favicon: [AIChatPageContextData.PageContextFavicon(href: "https://example.com/favicon.ico", rel: "icon")],
+            url: "https://example.com",
             content: "hello",
             truncated: false
         )
@@ -45,6 +46,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         let consumedPayload = pageContextHandler.consumeData()
         XCTAssertEqual(consumedPayload?.content, "hello", "The payload should be set correctly.")
         XCTAssertEqual(consumedPayload?.title, "Test Title", "The title should be set correctly.")
+        XCTAssertEqual(consumedPayload?.url, "https://example.com", "The url should be set correctly.")
         XCTAssertEqual(consumedPayload?.truncated, false, "The truncated flag should be set correctly.")
     }
 
@@ -52,6 +54,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         let testPayload = AIChatPageContextData(
             title: "Test Title",
             favicon: [AIChatPageContextData.PageContextFavicon(href: "https://example.com/favicon.ico", rel: "icon")],
+            url: "https://example.com",
             content: "hello",
             truncated: false
         )
@@ -68,6 +71,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         let testPayload = AIChatPageContextData(
             title: "Test Title",
             favicon: [AIChatPageContextData.PageContextFavicon(href: "https://example.com/favicon.ico", rel: "icon")],
+            url: "https://example.com",
             content: "hello",
             truncated: false
         )

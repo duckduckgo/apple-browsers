@@ -678,6 +678,7 @@ let package = Package(
                 .copy("Resources/remote-messaging-config-surfaces-supported-values.json"),
                 .copy("Resources/remote-messaging-config-surfaces-unsupported-values.json"),
                 .copy("Resources/remote-messaging-config-surfaces-mixed-supported-and-unsupported-values.json"),
+                .copy("Resources/remote-messaging-config-cards-list-items-with-rules.json"),
                 .copy("Resources/remote-messaging-config-cards-list-items.json"),
                 .copy("Resources/Database_V1.sqlite"),
                 .copy("Resources/Database_V1.sqlite-shm"),

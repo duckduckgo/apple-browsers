@@ -32,9 +32,15 @@ struct AppConfiguration {
     let persistentStoresConfiguration = PersistentStoresConfiguration()
     let onboardingConfiguration = OnboardingConfiguration()
     let atbAndVariantConfiguration = ATBAndVariantConfiguration()
-    let contentBlockingConfiguration = ContentBlockingConfiguration()
+    private let contentBlockingConfiguration: ContentBlockingConfiguration
+    private let appKeyValueStore: ThrowingKeyValueStoring
 
-    func start(syncKeyValueStore: ThrowingKeyValueStoring) throws -> Bool {
+    init(appKeyValueStore: ThrowingKeyValueStoring) {
+        self.appKeyValueStore = appKeyValueStore
+        self.contentBlockingConfiguration = ContentBlockingConfiguration(keyValueStore: appKeyValueStore)
+    }
+
+    func start() throws -> Bool {
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
         PixelConfiguration.configure(with: featureFlagger)
 
@@ -42,8 +48,8 @@ struct AppConfiguration {
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
 
         onboardingConfiguration.migrateToNewOnboarding()
-        clearTemporaryDirectory()
-        let isBookmarksStructureMissing = try persistentStoresConfiguration.configure(syncKeyValueStore: syncKeyValueStore)
+        try clearTemporaryDirectory()
+        let isBookmarksStructureMissing = try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore)
         migrateAIChatSettings()
 
         WidgetCenter.shared.reloadAllTimelines()
@@ -65,10 +71,15 @@ struct AppConfiguration {
         })
     }
 
-    private func clearTemporaryDirectory() {
+    private func clearTemporaryDirectory() throws {
         let tmp = FileManager.default.temporaryDirectory
         removeTempDirectory(at: tmp)
         recreateTempDirectory(at: tmp)
+        
+        // After recreation attempts, check if directory still missing and there's a marker
+        if !FileManager.default.fileExists(atPath: tmp.path) {
+            try checkCompilationFailureMarkerAndCrashIfNeeded()
+        }
     }
 
     private func removeTempDirectory(at url: URL) {
@@ -123,7 +134,7 @@ struct AppConfiguration {
         Logger.general.info("🌐 Attempting WKWebView fallback for temp directory recreation")
         // Create a minimal WKWebView to trigger temp directory creation
         // WebKit may have elevated privileges that could help with directory creation
-        let webView = WKWebView(frame: .zero)
+        _ = WKWebView(frame: .zero)
 
         let fallbackSucceeded = FileManager.default.fileExists(atPath: url.path)
         if fallbackSucceeded {
@@ -132,6 +143,19 @@ struct AppConfiguration {
         } else {
             Logger.general.error("❌ WKWebView fallback failed to recreate temp directory")
             Pixel.fire(pixel: .recreateTmpWebViewFallbackFailed)
+        }
+    }
+
+    private func checkCompilationFailureMarkerAndCrashIfNeeded() throws {
+        guard let failureDate = try? appKeyValueStore.object(forKey: "contentBlockingCompilationFailureDate") as? Date else {
+            Logger.general.info("ℹ️ No compilation failure marker found")
+            return
+        }
+
+        try? appKeyValueStore.removeObject(forKey: "contentBlockingCompilationFailureDate")
+        if Date().timeIntervalSince(failureDate) <= 60 * 60 {
+            Logger.general.error("💥 Found fresh compilation failure marker, terminating app")
+            throw TerminationError.missingTempDirectoryAfterCompilationFailure
         }
     }
 
@@ -146,7 +170,7 @@ struct AppConfiguration {
         CrashHandlersConfiguration.handleCrashDuringCrashHandlersSetup()
         startAutomationServerIfNeeded(mainViewController: mainViewController)
         UserAgentConfiguration(
-            store: keyValueStore,
+            store: appKeyValueStore,
             launchTaskManager: launchTaskManager
         ).configure() // Called at launch end to avoid IPC race when spawning WebView for content blocking.
     }

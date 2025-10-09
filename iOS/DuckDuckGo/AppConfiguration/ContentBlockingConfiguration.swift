@@ -19,50 +19,31 @@
 
 import Foundation
 import Core
+import Persistence
 
 final class ContentBlockingConfiguration {
 
     private let application: UIApplication
+    private let keyValueStore: ThrowingKeyValueStoring
 
-    init(application: UIApplication = UIApplication.shared) {
+    init(application: UIApplication = UIApplication.shared, keyValueStore: ThrowingKeyValueStoring) {
         self.application = application
+        self.keyValueStore = keyValueStore
     }
 
     func prepareContentBlocking() {
         ContentBlocking.shared.onCriticalError = {
+            // Set marker for compilation failure
+            try? self.keyValueStore.set(Date(), forKey: "contentBlockingCompilationFailureDate")
+
             DispatchQueue.main.async {
                 self.alertAndTerminate()
             }
         }
         
-        // Check temp directory before starting compilation
-        ContentBlocking.shared.onPreCompilationCheck = {
-            return self.ensureTempDirectoryOrTerminate()
-        }
-        
         // Explicitly prepare ContentBlockingUpdating instance before Tabs are created
         _ = ContentBlockingUpdating.shared
     }
-
-    private func ensureTempDirectoryOrTerminate() -> Bool {
-        let tmpDirectory = FileManager.default.temporaryDirectory
-        
-        guard !FileManager.default.fileExists(atPath: tmpDirectory.path) else {
-            return true // Temp directory exists, proceed with compilation
-        }
-        
-        // Temp directory is missing - this will cause compilation to fail
-        Logger.general.error("❌ Temp directory missing before content blocking compilation: \(tmpDirectory.path)")
-        Pixel.fire(pixel: .contentBlockingCompilationFailedMissingTmpDir)
-        
-        // Show insufficient disk space alert and terminate
-        DispatchQueue.main.async {
-            self.alertAndTerminateForInsufficientDiskSpace()
-        }
-        
-        return false
-    }
-    
     
     private func alertAndTerminate() {
         let window: UIWindow

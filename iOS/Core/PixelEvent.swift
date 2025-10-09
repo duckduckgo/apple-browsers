@@ -1419,6 +1419,7 @@ extension Pixel {
         case recreateTmpWebViewFallbackSucceeded
         case recreateTmpWebViewFallbackFailed
         case contentBlockingCompilationFailedMissingTmpDir
+        case missingTmpDirAfterCompilationFailure
     }
 
 }
@@ -2764,6 +2765,7 @@ extension Pixel.Event {
         case .recreateTmpWebViewFallbackSucceeded: return "m_debug_recreate-tmp-webview-fallback-succeeded"
         case .recreateTmpWebViewFallbackFailed: return "m_debug_recreate-tmp-webview-fallback-failed"
         case .contentBlockingCompilationFailedMissingTmpDir: return "m_debug_content-blocking-compilation-failed-missing-tmp-dir"
+        case .missingTmpDirAfterCompilationFailure: return "m_debug_missing-tmp-dir-after-compilation-failure"
         }
     }
 }

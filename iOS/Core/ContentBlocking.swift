@@ -42,11 +42,6 @@ public final class ContentBlocking {
         }
     }
     
-    public var onPreCompilationCheck: (() -> Bool) = { return true } {
-        didSet {
-            contentBlockingManager.onPreCompilationCheck = onPreCompilationCheck
-        }
-    }
 
     enum PixelParameterName {
         static let experimentName = "experimentName"
@@ -132,6 +127,11 @@ public final class ContentBlocking {
             }
 
             domainEvent = .contentBlockingCompilationFailed(listType: listType, component: component)
+            
+            let tmpDirectory = FileManager.default.temporaryDirectory
+            if !FileManager.default.fileExists(atPath: tmpDirectory.path) {
+                Pixel.fire(pixel: .contentBlockingCompilationFailedMissingTmpDir)
+            }
 
         case .contentBlockingLookupRulesSucceeded:
             domainEvent = .contentBlockingLookupRulesSucceeded

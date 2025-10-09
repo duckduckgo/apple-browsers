@@ -28,6 +28,7 @@ enum TerminationError: Error {
     case historyDatabase(Error)
     case keyValueFileStore(AppKeyValueFileStoreService.Error)
     case tabsPersistence(TabsPersistenceError)
+    case missingTempDirectoryAfterCompilationFailure
 
 }
 
@@ -163,6 +164,9 @@ struct Terminating: TerminatingHandling {
             case .storeInit: .tabsStoreInitError
             }
             mode = .immediately(debugMessage: "TabsModelPersistence init failed: \(error)")
+        case .missingTempDirectoryAfterCompilationFailure:
+            pixel = .missingTmpDirAfterCompilationFailure
+            mode = .afterAlert(reason: .insufficientDiskSpace)
         }
 
         DailyPixel.fireDailyAndCount(pixel: pixel,

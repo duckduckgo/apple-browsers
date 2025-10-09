@@ -29,3 +29,11 @@ enum ThemeName: String, CaseIterable {
     case slateBlue
     case violet
 }
+
+extension ThemeName {
+
+    /// Exclude the "Legacy Theme" for Internal Users
+    static var internalUserThemes: [ThemeName] {
+        ThemeName.allCases.filter { $0 != .default }
+    }
+}

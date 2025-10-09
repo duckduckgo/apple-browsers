@@ -20,6 +20,7 @@ import Foundation
 import Persistence
 import SecureStorage
 
+/// Stores data to be used for the win-back offer feature.
 protocol WinbackOfferStoring {
     func storeChurnDate(_ churnDate: Date)
     func getChurnDate() -> Date?
@@ -27,7 +28,6 @@ protocol WinbackOfferStoring {
     func hasRedeemedOffer() -> Bool
     var firstDayModalShown: Bool { get set }
 }
-
 extension WinbackOfferStore {
     enum Key: String {
         case firstDayModalShown = "winback-offer.first-day-modal-shown"
@@ -43,6 +43,14 @@ extension WinbackOfferStore {
     }
 }
 
+/// Default implementation of the WinbackOfferStoring protocol.
+/// 
+/// Will store the following data in Keychain:
+/// - churnDate
+/// - offerRedemption
+/// 
+/// And in user defaults:
+/// - firstDayModalShown
 struct WinbackOfferStore: WinbackOfferStoring {
     private let keychainService: KeychainService
     private let keyValueStore: ThrowingKeyValueStoring

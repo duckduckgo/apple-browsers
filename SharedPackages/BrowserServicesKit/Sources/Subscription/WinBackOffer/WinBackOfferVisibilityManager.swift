@@ -19,23 +19,42 @@
 import Foundation
 import Common
 
+/// Manages the visibility of the win-back offer.
 protocol WinBackOfferVisibilityManaging {
+    /// Whether the urgency message should be shown.
+    /// 
+    /// The urgency message is shown on the last day of the offer.
     var shouldShowUrgencyMessage: Bool { get }
+    /// Whether the launch message should be shown.
+    /// 
+    /// The launch message is shown on the first launch, once the offer is available.
     var shouldShowLaunchMessage: Bool { get }
+    /// Whether the offer is available.
+    /// 
+    /// Availability depends on feature flag, subscription status, and churn date.
     var isOfferAvailable: Bool { get }
-
+    /// Mark the launch message as presented.
+    /// 
+    /// Use this to update the storage when the launch message is presented.
     func setLaunchMessagePresented(_ newValue: Bool)
+    /// Mark the offer as redeemed.
+    /// 
+    /// Use this to update the storage when the offer is redeemed.
     func setOfferRedeemed(_ newValue: Bool)
 }
 
 extension WinBackOfferVisibilityManager {
     enum Constants {
+        // After redeeming the offer and churning again, the offer will be available again after 270 days
         static let cooldownPeriod = 270 * TimeInterval.day
+        // Offer will be available 3 days after the last churn date
         static let daysBeforeOfferAvailability = 3 * TimeInterval.day
+        // Offer will be available for 5 days
         static let offerAvailabilityPeriod = 5 * TimeInterval.day
     }
 }
 
+/// Default implementation of the WinBackOfferVisibilityManaging protocol.
 final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging {
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private var winbackOfferStore: any WinbackOfferStoring
@@ -127,11 +146,7 @@ final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging {
         guard isFeatureEnabled else { return }
 
         observer = NotificationCenter.default.addObserver(forName: .subscriptionDidChange, object: nil, queue: .main) { [weak self] notification in
-            guard let self else { return }
-            let previousSubscription = notification.userInfo?[UserDefaultsCacheKey.previousSubscription] as? DuckDuckGoSubscription
-            let newSubscription = notification.userInfo?[UserDefaultsCacheKey.subscription] as? DuckDuckGoSubscription
-
-            guard let previousSubscription, let newSubscription, previousSubscription.status != newSubscription.status else { return }
+            guard let self, let newSubscription = notification.userInfo?[UserDefaultsCacheKey.subscription] as? DuckDuckGoSubscription else { return }
 
             hasActiveSubscription = newSubscription.status.isActive
 

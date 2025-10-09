@@ -18,6 +18,9 @@
 
 import Foundation
 
+/// A protocol for providing the win back offer feature flag.
+/// 
+/// This protocol is required as BrowserServicesKit doesn't have access to FeatureFlagger.
 public protocol WinBackOfferFeatureFlagProvider {
     var isWinBackOfferFeatureEnabled: Bool { get }
 }

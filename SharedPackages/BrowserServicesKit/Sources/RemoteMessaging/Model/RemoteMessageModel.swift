@@ -91,6 +91,8 @@ public struct RemoteMessageModel: Equatable, Codable {
                                             actionText: translation.primaryActionText ?? actionText,
                                             action: action)
 
+        case .cardsList(let titleText, let items, let primaryActionText, let primaryAction):
+            self.content = .cardsList(titleText: titleText, items: items, primaryActionText: primaryActionText, primaryAction: primaryAction)
         }
     }
 }
@@ -122,6 +124,27 @@ public enum RemoteMessageModelType: Codable, Equatable {
                       secondaryAction: RemoteAction)
     case promoSingleAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
                            actionText: String, action: RemoteAction)
+    case cardsList(titleText: String, items: [ListItem], primaryActionText: String, primaryAction: RemoteAction)
+}
+
+public extension RemoteMessageModelType {
+
+    struct ListItem: Codable, Equatable {
+        public let id: String
+        public let type: ListItemType
+        public let titleText: String
+        public let descriptionText: String
+        public let placeholderImage: RemotePlaceholder
+        public let action: RemoteAction?
+    }
+}
+
+public extension RemoteMessageModelType.ListItem {
+
+    enum ListItemType: Codable, Equatable {
+        case twoLinesItem
+    }
+
 }
 
 public enum NavigationTarget: String, Codable, Equatable {
@@ -129,11 +152,15 @@ public enum NavigationTarget: String, Codable, Equatable {
     case settings
     case feedback
     case sync
+    case importPasswords = "import.passwords"
 }
 
 public enum RemoteAction: Codable, Equatable {
     case share(value: String, title: String?)
+    /// Used to open a URL from a browser tab.
     case url(value: String)
+    /// Used to open a URL from an embedded web view.
+    case urlInContext(value: String)
     case survey(value: String)
     case appStore
     case dismiss

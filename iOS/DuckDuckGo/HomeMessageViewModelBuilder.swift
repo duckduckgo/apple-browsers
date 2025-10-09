@@ -37,12 +37,17 @@ struct HomeMessageViewModelBuilder {
                       navigator: MessageNavigator,
                       onDidClose: @escaping (HomeMessageViewModel.ButtonAction?) async -> Void,
                       onDidAppear: @escaping () -> Void) -> HomeMessageViewModel? {
-            guard let content = remoteMessage.content else { return nil }
-
+        guard
+            let content = remoteMessage.content,
+            let homeSupportedMessageDisplayType = HomeSupportedMessageDisplayType(content)
+        else {
+            return nil
+        }
+        
         return HomeMessageViewModel(
             messageId: remoteMessage.id,
             sendPixels: remoteMessage.isMetricsEnabled,
-            modelType: content,
+            modelType: homeSupportedMessageDisplayType,
             navigator: navigator,
             onDidClose: onDidClose,
             onDidAppear: onDidAppear,
@@ -61,7 +66,7 @@ extension RemoteAction {
         case .share(let value, let title):
             return .share(value: value, title: title)
 
-        case .appStore, .url, .survey, .navigation:
+        case .appStore, .url, .urlInContext, .survey, .navigation:
             if isSecondaryAction {
                 return .cancel
             }
@@ -69,6 +74,27 @@ extension RemoteAction {
 
         case .dismiss:
             return .cancel
+        }
+    }
+
+}
+
+private extension HomeSupportedMessageDisplayType {
+
+    init?(_ remoteType: RemoteMessageModelType) {
+        switch remoteType {
+        case let .small(titleText, descriptionText):
+            self = .small(titleText: titleText, descriptionText: descriptionText)
+        case let .medium(titleText, descriptionText, placeholder):
+            self = .medium(titleText: titleText, descriptionText: descriptionText, placeholder: placeholder)
+        case let .bigSingleAction(titleText, descriptionText, placeholder, primaryActionText, primaryAction):
+            self = .bigSingleAction(titleText: titleText, descriptionText: descriptionText, placeholder: placeholder, primaryActionText: primaryActionText, primaryAction: primaryAction)
+        case let .bigTwoAction(titleText, descriptionText, placeholder, primaryActionText, primaryAction, secondaryActionText, secondaryAction):
+            self = .bigTwoAction(titleText: titleText, descriptionText: descriptionText, placeholder: placeholder, primaryActionText: primaryActionText, primaryAction: primaryAction, secondaryActionText: secondaryActionText, secondaryAction: secondaryAction)
+        case let .promoSingleAction(titleText, descriptionText, placeholder, actionText, action):
+            self = .promoSingleAction(titleText: titleText, descriptionText: descriptionText, placeholder: placeholder, actionText: actionText, action: action)
+        case .cardsList:
+            return nil
         }
     }
 

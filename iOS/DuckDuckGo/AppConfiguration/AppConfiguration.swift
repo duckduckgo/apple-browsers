@@ -162,8 +162,7 @@ struct AppConfiguration {
     @MainActor
     func finalize(reportingService: ReportingService,
                   mainViewController: MainViewController,
-                  launchTaskManager: LaunchTaskManager,
-                  keyValueStore: ThrowingKeyValueStoring) {
+                  launchTaskManager: LaunchTaskManager) {
         atbAndVariantConfiguration.cleanUpATBAndAssignVariant {
             onVariantAssigned(reportingService: reportingService)
         }

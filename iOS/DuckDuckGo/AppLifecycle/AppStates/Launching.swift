@@ -210,8 +210,7 @@ struct Launching: LaunchingHandling {
         configuration.finalize(
             reportingService: reportingService,
             mainViewController: mainCoordinator.controller,
-            launchTaskManager: launchTaskManager,
-            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+            launchTaskManager: launchTaskManager
         )
 
         setupWindow()

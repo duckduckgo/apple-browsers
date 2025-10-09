@@ -52,8 +52,6 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         sut = BrokerProfileOptOutSubJob(dependencies: mockDependencies)
     }
 
-    // MARK: - Run opt-out operation tests
-
     private func makeFixtureIdentifiers() -> BrokerProfileOptOutSubJob.OptOutIdentifiers {
         .init(brokerId: 1, profileQueryId: 1, extractedProfileId: 1)
     }
@@ -202,7 +200,6 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
         XCTAssertTrue(mockDatabase.optOutEvents.contains { $0.type == .optOutStarted })
     }
-
     // MARK: - makeOptOutRunner
 
     func testMakeOptOutRunner_usesFactory() {
@@ -315,6 +312,29 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
             XCTAssertEqual(tries, 1)
         } else {
             XCTFail("Expected opt-out submit success pixel")
+        }
+    }
+
+    func testFinalizeOptOut_whenHistoryWriteFails_rethrows() {
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker",
+                                                                     dataBrokerVersion: "1.0",
+                                                                     handler: mockPixelHandler,
+                                                                     vpnConnectionState: "state",
+                                                                     vpnBypassStatus: "status")
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        let failingDatabase = MockDatabase()
+        failingDatabase.incrementAttemptShouldThrow = true
+
+        XCTAssertThrowsError(
+            try sut.finalizeOptOut(
+                database: failingDatabase,
+                brokerProfileQueryData: brokerData,
+                identifiers: identifiers,
+                stageDurationCalculator: calculator
+            )
+        ) { error in
+            XCTAssertTrue(error is MockDatabase.MockError)
         }
     }
 
@@ -445,6 +465,41 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         }
     }
 
+    func testRecordOptOutFailure_whenHistoryWriteFails_stillEmitsPixels() {
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker",
+                                                                     dataBrokerVersion: "1.0",
+                                                                     handler: mockPixelHandler,
+                                                                     vpnConnectionState: "state",
+                                                                     vpnBypassStatus: "status")
+        let identifiers = makeFixtureIdentifiers()
+        let wideEvent = WideEventMock()
+        let recorder = OptOutSubmissionWideEventRecorder.makeIfPossible(wideEvent: wideEvent,
+                                                                        attemptID: calculator.attemptId,
+                                                                        dataBrokerURL: "broker.com",
+                                                                        dataBrokerVersion: "1.0",
+                                                                        recordFoundDate: Date())
+        mockDependencies.wideEvent = wideEvent
+        mockDatabase.saveResult = .failure(MockDatabase.MockError.saveFailed)
+
+        sut.recordOptOutFailure(
+            error: DataBrokerProtectionError.actionFailed(actionID: "action", message: "msg"),
+            brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
+            database: mockDatabase,
+            wideEvent: wideEvent,
+            wideEventRecorder: recorder,
+            schedulingConfig: .default,
+            identifiers: identifiers,
+            stageDurationCalculator: calculator
+        )
+
+        XCTAssertEqual(wideEvent.completions.first?.1, .failure)
+        if case .optOutFailure = mockPixelHandler.lastFiredEvent {
+            // expected even when history write fails
+        } else {
+            XCTFail("Expected opt-out failure pixel")
+        }
+    }
+
     func testWhenNoBrokerIdIsPresent_thenOptOutOperationThrows() async {
         do {
             _ = try await sut.runOptOut(
@@ -528,12 +583,12 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     func testWhenBrokerHasParentOptOut_thenNothingHappens() async {
         do {
             _ = try await sut.runOptOut(
-                for: .mockWithRemovedDate,
+                for: .mockWithoutRemovedDate,
                 brokerProfileQueryData: .init(
                     dataBroker: .mockWithParentOptOut,
                     profileQuery: .mock,
                     scanJobData: .mock,
-                    optOutJobData: [OptOutJobData.mock(with: .mockWithRemovedDate)]
+                    optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
                 ),
                 showWebView: false,
                 shouldRunNextStep: { true }

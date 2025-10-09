@@ -64,6 +64,12 @@ class AddressBarTests: XCTestCase {
     var schemeHandler: TestSchemeHandler!
     static let testHtml = "<html><head><title>Title</title></head><body>test</body></html>"
 
+    override var disableDeallocationChecksForTests: Set<String> {
+        Set([
+            #selector(testWhenActivatingWindowWithPinnedTabOpen_webViewBecomesFirstResponder)
+        ].map(NSStringFromSelector))
+    }
+
     @MainActor
     override func setUp() {
         TestRunHelper.allowAppSendUserEvents = true

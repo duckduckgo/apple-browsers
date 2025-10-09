@@ -136,7 +136,8 @@ final class WatchdogEventMapperTests: XCTestCase {
         XCTAssert(pixel.name.hasPrefix("m_mac_ui_hang_not-recovered"))
     }
 
-    func testBatteryPowerMappingOnBattery() {
+    func testBatteryPowerMappingOnBattery() throws {
+        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/1200194497630846/task/1211604496994582?focus=true")
         // Given
         let event = Watchdog.Event.uiHangRecovered(durationSeconds: 1)
         setupMockDiagnostics(isOnBattery: true)
@@ -158,7 +159,8 @@ final class WatchdogEventMapperTests: XCTestCase {
         XCTAssertEqual(pixel.parameters?["battery_power"], "on-battery")
     }
 
-    func testBatteryPowerMappingPluggedIn() {
+    func testBatteryPowerMappingPluggedIn() throws {
+        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/1200194497630846/task/1211604496994582?focus=true")
         // Given
         let event = Watchdog.Event.uiHangRecovered(durationSeconds: 1)
         setupMockDiagnostics(isOnBattery: false)

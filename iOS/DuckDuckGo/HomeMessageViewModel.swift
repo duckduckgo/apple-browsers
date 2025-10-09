@@ -22,7 +22,7 @@ import BrowserServicesKit
 import RemoteMessaging
 import UIKit
 
-enum HomeSupportedModelDisplayType {
+enum HomeSupportedMessageDisplayType {
     case small(titleText: String, descriptionText: String)
     case medium(titleText: String, descriptionText: String, placeholder: RemotePlaceholder)
     case bigSingleAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
@@ -45,7 +45,7 @@ struct HomeMessageViewModel {
 
     let messageId: String
     let sendPixels: Bool
-    let modelType: HomeSupportedModelDisplayType
+    let modelType: HomeSupportedMessageDisplayType
     let navigator: MessageNavigator
 
     var image: String? {

@@ -404,7 +404,7 @@ private extension JsonToRemoteMessageModelMapper {
             let id = try validator.notEmpty(\.id)
             let titleText = try validator.notEmpty(\.titleText)
             let jsonType = try validator.mapEnum(\.type, to: RemoteMessageResponse.JsonListItemType.self)
-            let descriptionText = try validator.notNilOrEmpty(\.descriptionText)
+            let descriptionText = jsonListItem.descriptionText ?? ""
             let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
             let remoteAction = try validator.compactMap(\.primaryAction) { action in
                 mapToAction(action, surveyActionMapper: surveyActionMapper)

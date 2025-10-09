@@ -160,6 +160,25 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         #expect(items.first?.id == "valid_item", "Only valid item should remain")
     }
 
+    @Test("Check Nil Description Defaults To Empty String")
+    func nilDescriptionForItemDefaultsToEmptyString() {
+        // GIVEN
+        let item = RemoteMessageResponse.JsonListItem.mockListItem(id: "1", titleText: "Feature 1", descriptionText: nil, primaryAction: .dismiss)
+        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [item])
+
+        // WHEN
+        let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
+
+        // THEN
+        guard case let .cardsList(_, items, _, _) = result else {
+            Issue.record("Expected cardsList message type")
+            return
+        }
+
+        #expect(items.count == 1)
+        #expect(items.first?.descriptionText == "")
+    }
+
     @Test("Check Nil Or Empty List Items Discards Message", arguments: [nil, []] as [[RemoteMessageResponse.JsonListItem]?])
     func nilListItemsDiscardsMessage(listItems: [RemoteMessageResponse.JsonListItem]?) {
         // GIVEN
@@ -352,7 +371,7 @@ private extension RemoteMessageResponse.JsonListItem {
         id: String,
         type: String = "two_line_list_item",
         titleText: String = "Feature",
-        descriptionText: String = "Description",
+        descriptionText: String? = "Description",
         placeholder: String? = "Announce",
         primaryAction: RemoteMessageResponse.JsonMessageAction? = .init(type: "url", value: "https://example.com", additionalParameters: nil)
     ) -> RemoteMessageResponse.JsonListItem {

@@ -290,22 +290,22 @@ private enum Const {
 
 struct HomeMessageView_Previews: PreviewProvider {
 
-    static let small: RemoteMessageModelType =
+    static let small: HomeSupportedMessageDisplayType =
         .small(titleText: "Small", descriptionText: "Description")
 
-    static let critical: RemoteMessageModelType =
+    static let critical: HomeSupportedMessageDisplayType =
         .medium(titleText: "Critical",
                 descriptionText: "Description text",
                 placeholder: .criticalUpdate)
 
-    static let bigSingle: RemoteMessageModelType =
+    static let bigSingle: HomeSupportedMessageDisplayType =
         .bigSingleAction(titleText: "Big Single",
                          descriptionText: "This is a description",
                          placeholder: .ddgAnnounce,
                          primaryActionText: "Primary",
                          primaryAction: .dismiss)
 
-    static let bigTwo: RemoteMessageModelType =
+    static let bigTwo: HomeSupportedMessageDisplayType =
         .bigTwoAction(titleText: "Big Two",
                       descriptionText: "This is a <b>big</b> two style",
                       placeholder: .macComputer,
@@ -314,7 +314,7 @@ struct HomeMessageView_Previews: PreviewProvider {
                       secondaryActionText: "Dismiss",
                       secondaryAction: .dismiss)
 
-    static let promo: RemoteMessageModelType =
+    static let promo: HomeSupportedMessageDisplayType =
         .promoSingleAction(titleText: "Promotional",
                            descriptionText: "Description <b>with bold</b> to make a statement.",
                            placeholder: .newForMacAndWindows,

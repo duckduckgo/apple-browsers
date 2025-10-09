@@ -1,0 +1,216 @@
+{
+  "version": 1,
+  "messages": [
+    {
+      "id": "cards_list_with_item_rules",
+      "surfaces": ["modal"],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "Features with Rules",
+        "descriptionText": "Test list items with matching and exclusion rules",
+        "listItems": [
+          {
+            "id": "item_with_both_rules",
+            "type": "two_line_list_item",
+            "titleText": "Item with Both Rules",
+            "descriptionText": "Has both matching and exclusion rules",
+            "placeholder": "Announce",
+            "matchingRules": [1, 2],
+            "exclusionRules": [3],
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          },
+          {
+            "id": "item_with_matching_only",
+            "type": "two_line_list_item",
+            "titleText": "Item with Matching Rules Only",
+            "descriptionText": "Has only matching rules",
+            "placeholder": "Announce",
+            "matchingRules": [4, 5, 6],
+            "primaryAction": {
+              "type": "dismiss",
+              "value": ""
+            }
+          },
+          {
+            "id": "item_with_exclusion_only",
+            "type": "two_line_list_item",
+            "titleText": "Item with Exclusion Rules Only",
+            "descriptionText": "Has only exclusion rules",
+            "placeholder": "Announce",
+            "exclusionRules": [7, 8],
+            "primaryAction": {
+              "type": "navigation",
+              "value": "settings"
+            }
+          },
+          {
+            "id": "item_with_no_rules",
+            "type": "two_line_list_item",
+            "titleText": "Item with No Rules",
+            "descriptionText": "Has neither matching nor exclusion rules",
+            "placeholder": "Announce",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          },
+          {
+            "id": "item_with_empty_arrays",
+            "type": "two_line_list_item",
+            "titleText": "Item with Empty Arrays",
+            "descriptionText": "Has empty arrays for rules",
+            "placeholder": "Announce",
+            "matchingRules": [],
+            "exclusionRules": [],
+            "primaryAction": {
+              "type": "dismiss",
+              "value": ""
+            }
+          }
+        ],
+        "primaryActionText": "Got It",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      },
+      "matchingRules": [1],
+      "exclusionRules": []
+    },
+    {
+      "id": "cards_list_null_rules",
+      "surfaces": ["modal"],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "Features with Null Rules",
+        "descriptionText": "Test list items with null rules (should default to empty)",
+        "listItems": [
+          {
+            "id": "item_with_null_rules",
+            "type": "two_line_list_item",
+            "titleText": "Item with Null Rules",
+            "descriptionText": "matchingRules and exclusionRules are null",
+            "placeholder": "Announce",
+            "matchingRules": null,
+            "exclusionRules": null,
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          }
+        ],
+        "primaryActionText": "OK",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "cards_list_missing_rules",
+      "surfaces": ["modal"],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "Features with Missing Rules",
+        "descriptionText": "Test list items without rules fields at all",
+        "listItems": [
+          {
+            "id": "item_missing_rules",
+            "type": "two_line_list_item",
+            "titleText": "Item Missing Rules",
+            "descriptionText": "No matchingRules or exclusionRules fields",
+            "placeholder": "Announce",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          }
+        ],
+        "primaryActionText": "OK",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "cards_list_invalid_items_with_rules",
+      "surfaces": ["modal"],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "Invalid Items with Rules",
+        "descriptionText": "Items that fail validation but have rules",
+        "listItems": [
+          {
+            "id": "",
+            "type": "two_line_list_item",
+            "titleText": "Empty ID with Rules",
+            "descriptionText": "Should be discarded despite having rules",
+            "matchingRules": [1, 2],
+            "exclusionRules": [3],
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          },
+          {
+            "id": "valid_item_after_invalid",
+            "type": "two_line_list_item",
+            "titleText": "Valid Item After Invalid",
+            "descriptionText": "Should be kept",
+            "matchingRules": [4],
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          }
+        ],
+        "primaryActionText": "OK",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    }
+  ],
+  "rules": [
+    {
+      "id": 1,
+      "targetPercentile": {
+        "before": 0.5
+      },
+      "attributes": {}
+    },
+    {
+      "id": 2,
+      "attributes": {}
+    },
+    {
+      "id": 3,
+      "attributes": {}
+    },
+    {
+      "id": 4,
+      "attributes": {}
+    },
+    {
+      "id": 5,
+      "attributes": {}
+    },
+    {
+      "id": 6,
+      "attributes": {}
+    },
+    {
+      "id": 7,
+      "attributes": {}
+    },
+    {
+      "id": 8,
+      "attributes": {}
+    }
+  ]
+}

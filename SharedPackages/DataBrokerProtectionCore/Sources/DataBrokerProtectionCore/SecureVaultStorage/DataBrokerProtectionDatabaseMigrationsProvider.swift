@@ -111,7 +111,15 @@ public final class DefaultDataBrokerProtectionDatabaseMigrationsProvider: DataBr
     }
 
     public static var v10Migrations: (inout DatabaseMigrator) throws -> Void = { migrator in
-        try Self.v9Migrations(&migrator)
+        migrator.registerMigration("v1", migrate: migrateV1(database:))
+        migrator.registerMigration("v2", migrate: migrateV2(database:))
+        migrator.registerMigration("v3", migrate: migrateV3(database:))
+        migrator.registerMigration("v4", migrate: migrateV4(database:))
+        migrator.registerMigration("v5", migrate: migrateV5(database:))
+        migrator.registerMigration("v6", migrate: migrateV6(database:))
+        migrator.registerMigration("v7", migrate: migrateV7(database:))
+        migrator.registerMigration("v8", migrate: migrateV8(database:))
+        migrator.registerMigration("v9", migrate: migrateV9(database:))
         migrator.registerMigration("v10", migrate: migrateV10(database:))
     }
 

@@ -587,6 +587,8 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .optOutJobAt14DaysUnconfirmed,
                     .optOutJobAt21DaysConfirmed,
                     .optOutJobAt21DaysUnconfirmed,
+                    .optOutJobAt42DaysConfirmed,
+                    .optOutJobAt42DaysUnconfirmed,
                     .scanningEventNewMatch,
                     .scanningEventReAppearance,
                     .initialScanTotalDuration,

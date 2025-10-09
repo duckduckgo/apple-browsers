@@ -52,8 +52,11 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
     private var sut: DataBrokerProtectionDatabaseProvider!
     private let vaultURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: "DBP", fileName: "Test-Vault.db")
     private let key = "9CA59EDC-5CE8-4F53-AAC6-286A7378F384".data(using: .utf8)!
+
+    private let legacyV4MigrationsHandler = DefaultDataBrokerProtectionDatabaseMigrationsProvider.v4Migrations
     private let legacyV5MigrationsHandler = DefaultDataBrokerProtectionDatabaseMigrationsProvider.v5Migrations
     private let legacyV8MigrationsHandler = DefaultDataBrokerProtectionDatabaseMigrationsProvider.v8Migrations
+    private let mostRecentMigrationHandler = DefaultDataBrokerProtectionDatabaseMigrationsProvider.v10Migrations
 
     override func setUpWithError() throws {
         do {
@@ -225,7 +228,7 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
 
     func testV4Migration() throws {
         // Given
-        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: legacyV5MigrationsHandler))
+        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: legacyV4MigrationsHandler))
 
         // When
         let optOuts = try sut.fetchAllOptOuts()
@@ -236,8 +239,6 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         XCTAssertFalse(optOut.sevenDaysConfirmationPixelFired)
         XCTAssertFalse(optOut.fourteenDaysConfirmationPixelFired)
         XCTAssertFalse(optOut.twentyOneDaysConfirmationPixelFired)
-        XCTAssertFalse(optOut.fortyTwoDaysConfirmationPixelFired)
-
     }
 
     func testV5Migration() throws {
@@ -403,6 +404,18 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         try? FileManager.default.removeItem(at: updateVaultURL)
     }
 
+    func testV10Migration() throws {
+        // Given
+        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: DefaultDataBrokerProtectionDatabaseMigrationsProvider.v10Migrations))
+
+        // When
+        let optOuts = try sut.fetchAllOptOuts()
+        let optOut = optOuts.first!.optOutDB
+
+        // Then
+        XCTAssertFalse(optOut.fortyTwoDaysConfirmationPixelFired)
+    }
+
     func testDeleteAllDataSucceedsInRemovingAllData() throws {
         XCTAssertFalse(try sut.db.allTablesAreEmpty())
         XCTAssertNoThrow(try sut.deleteProfileData())
@@ -486,7 +499,7 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         let freshProvider = try DefaultDataBrokerProtectionDatabaseProvider(
             file: freshVaultURL,
             key: key,
-            registerMigrationsHandler: Migrations.v10Migrations
+            registerMigrationsHandler: mostRecentMigrationHandler
         )
 
         return (freshProvider, freshVaultURL)

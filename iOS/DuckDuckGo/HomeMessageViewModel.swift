@@ -22,6 +22,18 @@ import BrowserServicesKit
 import RemoteMessaging
 import UIKit
 
+enum HomeSupportedMessageDisplayType {
+    case small(titleText: String, descriptionText: String)
+    case medium(titleText: String, descriptionText: String, placeholder: RemotePlaceholder)
+    case bigSingleAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
+                         primaryActionText: String, primaryAction: RemoteAction)
+    case bigTwoAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
+                      primaryActionText: String, primaryAction: RemoteAction, secondaryActionText: String,
+                      secondaryAction: RemoteAction)
+    case promoSingleAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
+                           actionText: String, action: RemoteAction)
+}
+
 struct HomeMessageViewModel {
 
     enum ButtonAction {
@@ -33,7 +45,7 @@ struct HomeMessageViewModel {
 
     let messageId: String
     let sendPixels: Bool
-    let modelType: RemoteMessageModelType
+    let modelType: HomeSupportedMessageDisplayType
     let navigator: MessageNavigator
 
     var image: String? {
@@ -138,6 +150,9 @@ struct HomeMessageViewModel {
                 LaunchTabNotification.postLaunchTabNotification(urlString: value)
                 await onDidClose(buttonAction)
             }
+        case .urlInContext:
+            // Handle action when implementing centralised remote action handler
+            return { @MainActor in }
         case .survey(let value):
             return { @MainActor in
                 let refreshedURL = refreshLastSearchState(in: value)

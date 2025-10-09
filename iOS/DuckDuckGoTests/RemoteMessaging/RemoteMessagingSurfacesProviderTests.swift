@@ -33,6 +33,7 @@ struct RemoteMessagingSurfacesProviderTest {
             (.bigSingleAction(titleText: "", descriptionText: "", placeholder: .announce, primaryActionText: "", primaryAction: .dismiss), .newTabPage),
             (.bigTwoAction(titleText: "", descriptionText: "", placeholder: .announce, primaryActionText: "", primaryAction: .dismiss, secondaryActionText: "", secondaryAction: .dismiss), .newTabPage),
             (.promoSingleAction(titleText: "", descriptionText: "", placeholder: .announce, actionText: "", action: .dismiss), .newTabPage),
+            (.cardsList(titleText: "", items: [], primaryActionText: "", primaryAction: .dismiss), .modal)
         ] as [(RemoteMessageModelType, RemoteMessageSurfaceType)]
     )
     func returnExpectedSurfaceForMessageType(messageType: RemoteMessageModelType, expectedSurface: RemoteMessageSurfaceType) throws {

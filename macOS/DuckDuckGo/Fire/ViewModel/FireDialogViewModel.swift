@@ -190,8 +190,8 @@ final class FireDialogViewModel: ObservableObject {
 
     @Published private(set) var selectable: [Item] = []
     @Published private(set) var fireproofed: [Item] = []
-    @Published private(set) var selected: Set<Int> = Set()
-    @Published private(set) var historyVisits: [Visit]?
+    @Published private(set) var selected: Set<Int> = []
+    @Published private(set) var historyVisits: [Visit] = []
 
     var isPinnedTabSelected: Bool {
         tabCollectionViewModel?.selectedTabViewModel?.tab.isPinned ?? false
@@ -250,7 +250,7 @@ final class FireDialogViewModel: ObservableObject {
         // Update history visits for current scope
         switch clearingOption {
         case .allData:
-            self.historyVisits = scopeVisits ?? historyCoordinating.allHistoryVisits
+            self.historyVisits = scopeVisits ?? historyCoordinating.allHistoryVisits ?? []
         case .currentTab:
             self.historyVisits = tabCollectionViewModel?.selectedTabViewModel?.tab.localHistory ?? []
         case .currentWindow:
@@ -260,7 +260,7 @@ final class FireDialogViewModel: ObservableObject {
 
     // MARK: - Counts for subtitles
 
-    var historyItemsCountForCurrentScope: Int { historyVisits?.count ?? 0 }
+    var historyItemsCountForCurrentScope: Int { historyVisits.count }
 
     /// Cookies/sites are deleted for non-fireproofed visited eTLD+1 domains
     var cookiesSitesCountForCurrentScope: Int { selectable.count }

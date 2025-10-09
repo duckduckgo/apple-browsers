@@ -59,7 +59,7 @@ final class FireDialogViewModelTests: XCTestCase {
         let coordinator = FireCoordinator(
             tld: Application.appDelegate.tld,
             featureFlagger: Application.appDelegate.featureFlagger,
-            historyProvider: MockHistoryProvider(),
+            historyProvider: MockHistoryViewDataProvider(),
             fireViewModel: vm.fireViewModel
         )
         let isAllHistorySelected: Bool
@@ -95,7 +95,7 @@ final class FireDialogViewModelTests: XCTestCase {
         let coordinator = FireCoordinator(
             tld: Application.appDelegate.tld,
             featureFlagger: Application.appDelegate.featureFlagger,
-            historyProvider: MockHistoryProvider(),
+            historyProvider: MockHistoryViewDataProvider(),
             fireViewModel: vm.fireViewModel,
             onboardingContextualDialogsManager: { onboardingContextualDialogsManager },
             fireDialogViewFactory: { config in
@@ -1049,7 +1049,7 @@ final class FireDialogViewModelTests: XCTestCase {
 
         // Verify: historyVisits uses provided scopeVisits
         XCTAssertNotNil(viewModel.historyVisits)
-        XCTAssertEqual(viewModel.historyVisits?.count, 2,
+        XCTAssertEqual(viewModel.historyVisits.count, 2,
                        "AllData should use provided scopeVisits")
         XCTAssertEqual(viewModel.historyItemsCountForCurrentScope, 2)
 
@@ -1059,7 +1059,7 @@ final class FireDialogViewModelTests: XCTestCase {
         }
 
         // Verify: historyVisits still uses provided scopeVisits
-        XCTAssertEqual(viewModel.historyVisits?.count, 2,
+        XCTAssertEqual(viewModel.historyVisits.count, 2,
                        "AllData scopeVisits should not change when only selection changes")
         XCTAssertEqual(viewModel.historyItemsCountForCurrentScope, 2)
     }

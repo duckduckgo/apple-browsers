@@ -556,7 +556,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .init(historyEntry: entry3, date: saturday)
         ]
         await provider.refreshData()
-        await provider.deleteVisits(for: identifiers)
+        await provider.deleteVisits(matching: .visits(identifiers))
         XCTAssertEqual(dataSource.deleteCalls.count, 1)
 
         let deletedVisits = try XCTUnwrap(dataSource.deleteCalls.first)
@@ -586,7 +586,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .init(historyEntry: entry, date: yesterday)
         ]
         await provider.refreshData()
-        await provider.deleteVisits(for: identifiers)
+        await provider.deleteVisits(matching: .visits(identifiers))
         XCTAssertEqual(dataSource.deleteCalls.count, 1)
 
         let deletedVisits = try XCTUnwrap(dataSource.deleteCalls.first)

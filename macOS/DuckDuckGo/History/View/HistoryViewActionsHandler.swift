@@ -126,9 +126,17 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         let pixelScope = HistoryViewPixel.DeletedBatchKind(adjustedQuery)
         switch result {
         case .burn:
+            // FireCoordinator handles the result of the new Fire Dialog
+            if !featureFlagger.isFeatureOn(.fireDialog) {
+                await dataProvider.burnVisits(matching: adjustedQuery)
+            }
             self.firePixel(.delete, .daily)
             self.firePixel(.multipleItemsDeleted(pixelScope, burn: true), .dailyAndStandard)
         case .delete:
+            // FireCoordinator handles the result of the new Fire Dialog
+            if !featureFlagger.isFeatureOn(.fireDialog) {
+                await dataProvider.deleteVisits(matching: adjustedQuery)
+            }
             self.firePixel(.delete, .daily)
             self.firePixel(.multipleItemsDeleted(pixelScope, burn: false), .dailyAndStandard)
         case .noAction: break
@@ -305,7 +313,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         }
 
         guard featureFlagger.isFeatureOn(.fireDialog) || identifiers.count > 1 else {
-            await dataProvider.deleteVisits(for: identifiers)
+            await dataProvider.deleteVisits(matching: .visits(identifiers))
             firePixel(.delete, .daily)
             firePixel(.singleItemDeleted, .dailyAndStandard)
             return .delete

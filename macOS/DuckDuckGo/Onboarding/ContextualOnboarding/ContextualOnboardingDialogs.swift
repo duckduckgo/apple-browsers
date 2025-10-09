@@ -341,7 +341,8 @@ private class PreviewHistoryProvider: HistoryViewDataProviding {
     }
 
     func visits(matching query: HistoryView.DataModel.HistoryQueryKind) async -> [History.Visit] { [] }
-    func deleteVisits(for identifiers: [VisitIdentifier]) async {}
+    func deleteVisits(matching query: HistoryView.DataModel.HistoryQueryKind) async {}
+    func burnVisits(matching query: HistoryView.DataModel.HistoryQueryKind) async {}
 
     func cookieDomains(matching query: DataModel.HistoryQueryKind) async -> Set<String> {
         return []

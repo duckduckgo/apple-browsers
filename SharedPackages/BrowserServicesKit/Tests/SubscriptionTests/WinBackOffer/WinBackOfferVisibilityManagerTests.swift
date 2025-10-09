@@ -247,7 +247,6 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
     func testWhenSubscriptionExpires_ItStoresChurnDate() async {
         // Given
         mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
-        let previousSubscription = createMockSubscription(status: .autoRenewable)
         let newSubscription = createMockSubscription(status: .expired)
 
         // When
@@ -255,7 +254,6 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
             name: .subscriptionDidChange,
             object: nil,
             userInfo: [
-                UserDefaultsCacheKey.previousSubscription: previousSubscription,
                 UserDefaultsCacheKey.subscription: newSubscription
             ]
         )
@@ -272,7 +270,6 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
     func testWhenSubscriptionStillActive_ItDoesNotStoreChurnDate() async {
         // Given
         mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
-        let previousSubscription = createMockSubscription(status: .autoRenewable)
         let newSubscription = createMockSubscription(status: .gracePeriod)
 
         // When
@@ -280,7 +277,6 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
             name: .subscriptionDidChange,
             object: nil,
             userInfo: [
-                UserDefaultsCacheKey.previousSubscription: previousSubscription,
                 UserDefaultsCacheKey.subscription: newSubscription
             ]
         )
@@ -300,7 +296,6 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         mockStore.offerRedeemed = true
         mockStore.firstDayModalShown = true
 
-        let previousSubscription = createMockSubscription(status: .autoRenewable)
         let newSubscription = createMockSubscription(status: .expired)
 
         // When
@@ -308,7 +303,6 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
             name: .subscriptionDidChange,
             object: nil,
             userInfo: [
-                UserDefaultsCacheKey.previousSubscription: previousSubscription,
                 UserDefaultsCacheKey.subscription: newSubscription
             ]
         )
@@ -330,7 +324,6 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         mockStore.churnDate = recentChurnDate
         mockStore.offerRedeemed = true
 
-        let previousSubscription = createMockSubscription(status: .autoRenewable)
         let newSubscription = createMockSubscription(status: .expired)
 
         // When
@@ -338,7 +331,6 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
             name: .subscriptionDidChange,
             object: nil,
             userInfo: [
-                UserDefaultsCacheKey.previousSubscription: previousSubscription,
                 UserDefaultsCacheKey.subscription: newSubscription
             ]
         )

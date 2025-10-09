@@ -255,6 +255,13 @@ struct JsonToRemoteMessageModelMapper {
                                       actionText: actionText,
                                       action: action)
 
+        case .cardsList:
+            do {
+                return try mapToCardsList(content, surveyActionMapper: surveyActionMapper)
+            } catch {
+                Logger.remoteMessaging.debug("\(error.localizedDescription, privacy: .public)")
+                return nil
+            }
         case .none:
             return nil
         }
@@ -271,6 +278,8 @@ struct JsonToRemoteMessageModelMapper {
             return .share(value: jsonAction.value, title: jsonAction.additionalParameters?["title"])
         case .url:
             return .url(value: jsonAction.value)
+        case .urlInContext:
+            return .urlInContext(value: jsonAction.value)
         case .survey:
             if let queryParamsString = jsonAction.additionalParameters?["queryParams"] as? String {
                 let queryParams = queryParamsString.components(separatedBy: ";")
@@ -373,4 +382,94 @@ struct JsonToRemoteMessageModelMapper {
 
         return nil
     }
+}
+
+// MARK: - Cards List Mapping
+
+private extension JsonToRemoteMessageModelMapper {
+
+    static func mapToCardsList(_ jsonContent: RemoteMessageResponse.JsonContent, surveyActionMapper: RemoteMessagingSurveyActionMapping) throws -> RemoteMessageModelType {
+        let validator = MappingValidator(root: jsonContent)
+        let titleText = try validator.notEmpty(\.titleText)
+        let listItems = try validator.compactMap(\.listItems) { items throws(MappingError) in
+            let mappedItems = try mapToListItems(items, surveyActionMapper: surveyActionMapper)
+            return try validator.notEmpty(mappedItems, keyPath: \RemoteMessageResponse.JsonContent.listItems)
+        }
+        let primaryActionText = try validator.notNilOrEmpty(\.primaryActionText)
+        let primaryAction = try validator.compactMap(\.primaryAction) { action in
+            mapToAction(action, surveyActionMapper: surveyActionMapper)
+        }
+        return .cardsList(titleText: titleText, items: listItems, primaryActionText: primaryActionText, primaryAction: primaryAction)
+    }
+
+    static func mapToListItems(_ jsonListItems: [RemoteMessageResponse.JsonListItem], surveyActionMapper: RemoteMessagingSurveyActionMapping) throws(MappingError) -> [RemoteMessageModelType.ListItem] {
+
+        func mapToListItem(_ jsonListItem: RemoteMessageResponse.JsonListItem, surveyActionMapper: RemoteMessagingSurveyActionMapping) throws(MappingError) -> RemoteMessageModelType.ListItem {
+            let validator = MappingValidator(root: jsonListItem)
+
+            let id = try validator.notEmpty(\.id)
+            let titleText = try validator.notEmpty(\.titleText)
+            let jsonType = try validator.mapEnum(\.type, to: RemoteMessageResponse.JsonListItemType.self)
+            let descriptionText = jsonListItem.descriptionText ?? ""
+            let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
+            let remoteAction = try validator.compactMap(\.primaryAction) { action in
+                mapToAction(action, surveyActionMapper: surveyActionMapper)
+            }
+
+            return RemoteMessageModelType.ListItem(
+                id: id,
+                type: RemoteMessageModelType.ListItem.ListItemType(from: jsonType),
+                titleText: titleText,
+                descriptionText: descriptionText,
+                placeholderImage: placeHolderImage,
+                action: remoteAction
+            )
+        }
+
+        var mappedIDs: Set<String> = []
+        var items: [RemoteMessageModelType.ListItem] = []
+
+        jsonListItems.forEach { jsonListItem in
+            do {
+                // Check we have not mapped already an item with the same id and discard it
+                guard !mappedIDs.contains(jsonListItem.id) else { throw MappingError.duplicateValue(\RemoteMessageResponse.JsonListItem.id) }
+                let item = try mapToListItem(jsonListItem, surveyActionMapper: surveyActionMapper)
+                // Only insert ID after successful parsing
+                mappedIDs.insert(jsonListItem.id)
+                items.append(item)
+            } catch {
+                Logger.remoteMessaging.debug("\(error.localizedDescription, privacy: .public)")
+            }
+        }
+        return items
+    }
+
+}
+
+// MARK: - Surfaces Helpers
+
+private extension JsonToRemoteMessageModelMapper {
+
+    static func supportedSurfaces(for messageType: RemoteMessageModelType) -> Set<RemoteMessageResponse.JsonSurface> {
+        switch messageType {
+        case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
+            return [.newTabPage]
+        case .cardsList:
+            return [.modal, .dedicatedTab]
+        }
+    }
+
+}
+
+// MARK: - Item Helpers
+
+extension RemoteMessageModelType.ListItem.ListItemType {
+
+    init(from jsonType: RemoteMessageResponse.JsonListItemType) {
+        switch jsonType {
+        case .twoLinesItem:
+            self = .twoLinesItem
+        }
+    }
+
 }

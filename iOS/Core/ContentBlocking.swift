@@ -36,12 +36,6 @@ public final class ContentBlocking {
     private let exceptionsSource: DefaultContentBlockerRulesExceptionsSource
     private let lastCompiledRulesStore: AppLastCompiledRulesStore
 
-    public var onCriticalError: (() -> Void)? {
-        didSet {
-            contentBlockingManager.onCriticalError = onCriticalError
-        }
-    }
-
     enum PixelParameterName {
         static let experimentName = "experimentName"
         static let etag = "etag"

@@ -104,12 +104,4 @@
         parameters: ['appVersion'],
         expires: '2025-11-08',
     },
-    'm_debug_missing-tmp-dir-after-compilation-failure': {
-        description: 'Fires when app terminates due to missing temp directory after previous compilation failure',
-        owners: ['jaceklyp'],
-        triggers: ['startup'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion'],
-        expires: '2025-11-08',
-    },
 }

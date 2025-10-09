@@ -98,8 +98,6 @@ public class ContentBlockerRulesSourceManager {
     private let errorReporting: EventMapping<ContentBlockerDebugEvents>?
     private let failedCompilationsStore: FailedCompilationsStore = FailedCompilationsStore()
 
-    var onCriticalError: (() -> Void)?
-
     init(rulesList: ContentBlockerRulesList,
          exceptionsSource: ContentBlockerRulesExceptionsSource,
          errorReporting: EventMapping<ContentBlockerDebugEvents>? = nil) {
@@ -240,18 +238,10 @@ public class ContentBlockerRulesSourceManager {
                                  parameters: params,
                                  onComplete: { _ in
                 if input.name == DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName {
-                    self.handleCriticalError()
+                    fatalError("Could not compile embedded rules list")
                 }
             })
             fallbackTDSFailure = true
-        }
-    }
-
-    private func handleCriticalError() {
-        if let onCriticalError = self.onCriticalError {
-            onCriticalError()
-        } else {
-            fatalError("Could not compile embedded rules list")
         }
     }
 

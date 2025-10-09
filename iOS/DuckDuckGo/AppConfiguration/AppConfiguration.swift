@@ -32,23 +32,23 @@ struct AppConfiguration {
     let persistentStoresConfiguration = PersistentStoresConfiguration()
     let onboardingConfiguration = OnboardingConfiguration()
     let atbAndVariantConfiguration = ATBAndVariantConfiguration()
-    private let contentBlockingConfiguration: ContentBlockingConfiguration
     private let appKeyValueStore: ThrowingKeyValueStoring
 
     init(appKeyValueStore: ThrowingKeyValueStoring) {
         self.appKeyValueStore = appKeyValueStore
-        self.contentBlockingConfiguration = ContentBlockingConfiguration(keyValueStore: appKeyValueStore)
     }
 
     func start() throws -> Bool {
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
         PixelConfiguration.configure(with: featureFlagger)
 
-        contentBlockingConfiguration.prepareContentBlocking()
+        // Explicitly prepare ContentBlockingUpdating instance before Tabs are created
+        _ = ContentBlockingUpdating.shared
+
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
 
         onboardingConfiguration.migrateToNewOnboarding()
-        try clearTemporaryDirectory()
+        clearTemporaryDirectory()
         let isBookmarksStructureMissing = try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore)
         migrateAIChatSettings()
 
@@ -71,15 +71,10 @@ struct AppConfiguration {
         })
     }
 
-    private func clearTemporaryDirectory() throws {
+    private func clearTemporaryDirectory() {
         let tmp = FileManager.default.temporaryDirectory
         removeTempDirectory(at: tmp)
         recreateTempDirectory(at: tmp)
-        
-        // After recreation attempts, check if directory still missing and there's a marker
-        if !FileManager.default.fileExists(atPath: tmp.path) {
-            try checkCompilationFailureMarkerAndCrashIfNeeded()
-        }
     }
 
     private func removeTempDirectory(at url: URL) {
@@ -143,19 +138,6 @@ struct AppConfiguration {
         } else {
             Logger.general.error("❌ WKWebView fallback failed to recreate temp directory")
             Pixel.fire(pixel: .recreateTmpWebViewFallbackFailed)
-        }
-    }
-
-    private func checkCompilationFailureMarkerAndCrashIfNeeded() throws {
-        guard let failureDate = try? appKeyValueStore.object(forKey: "contentBlockingCompilationFailureDate") as? Date else {
-            Logger.general.info("ℹ️ No compilation failure marker found")
-            return
-        }
-
-        try? appKeyValueStore.removeObject(forKey: "contentBlockingCompilationFailureDate")
-        if Date().timeIntervalSince(failureDate) <= 60 * 60 {
-            Logger.general.error("💥 Found fresh compilation failure marker, terminating app")
-            throw TerminationError.missingTempDirectoryAfterCompilationFailure
         }
     }
 

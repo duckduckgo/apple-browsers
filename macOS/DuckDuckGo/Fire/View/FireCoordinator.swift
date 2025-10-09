@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Cocoa
+import Combine
 import Common
 import History
 import HistoryView
@@ -51,12 +52,12 @@ final class FireCoordinator {
 
     /// This is a lazy var in order to avoid initializing Fire directly at AppDelegate.init
     /// because of a significant number of dependencies that are still singletons.
-    private(set) lazy var fireViewModel: FireViewModel = FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider)
+    private(set) lazy var fireViewModel: FireViewModel = FireViewModel(tld: tld, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
     private(set) var firePopover: FirePopover?
     private let tld: TLD
     private let featureFlagger: FeatureFlagger
-    private let historyProvider: HistoryViewDataProviding
-    private let historyCoordinating: HistoryCoordinating
+    let historyProvider: HistoryViewDataProviding
+    private let historyCoordinating: (HistoryCoordinating & HistoryDataSource)
     private let fireDialogViewFactory: FireDialogViewFactory
     private let fireproofDomains: FireproofDomains
     private let faviconManagement: FaviconManagement
@@ -64,12 +65,12 @@ final class FireCoordinator {
     private let windowControllersManager: WindowControllersManagerProtocol
     private let tabViewModelGetter: (NSWindow) -> TabCollectionViewModel?
     private let pixelFiring: PixelFiring?
+    private let visualizeFireAnimationDecider: OverridableVisualizeFireSettingsDecider
 
-    init(tld: TLD, featureFlagger: FeatureFlagger, historyProvider: HistoryViewDataProviding, historyCoordinating: HistoryCoordinating? = nil, fireViewModel: FireViewModel? = nil, onboardingContextualDialogsManager: (() -> ContextualOnboardingStateUpdater)? = nil, fireDialogViewFactory: FireDialogViewFactory? = nil, fireproofDomains: FireproofDomains? = nil, faviconManagement: FaviconManagement? = nil, windowControllersManager: WindowControllersManagerProtocol? = nil, tabViewModelGetter: ((NSWindow) -> TabCollectionViewModel?)? = nil, pixelFiring: PixelFiring? = PixelKit.shared) {
+    init(tld: TLD, featureFlagger: FeatureFlagger, historyProvider: HistoryViewDataProviding? = nil, historyCoordinating: (HistoryCoordinating & HistoryDataSource)? = nil, fireViewModel: FireViewModel? = nil, visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil, onboardingContextualDialogsManager: (() -> ContextualOnboardingStateUpdater)? = nil, fireDialogViewFactory: FireDialogViewFactory? = nil, fireproofDomains: FireproofDomains? = nil, faviconManagement: FaviconManagement? = nil, windowControllersManager: WindowControllersManagerProtocol? = nil, tabViewModelGetter: ((NSWindow) -> TabCollectionViewModel?)? = nil, pixelFiring: PixelFiring? = PixelKit.shared) {
 
         self.tld = tld
         self.featureFlagger = featureFlagger
-        self.historyProvider = historyProvider
         self.historyCoordinating = historyCoordinating ?? Application.appDelegate.historyCoordinator
         self.fireproofDomains = fireproofDomains ?? Application.appDelegate.fireproofDomains
         self.faviconManagement = faviconManagement ?? Application.appDelegate.faviconManager
@@ -79,6 +80,8 @@ final class FireCoordinator {
             (window.contentViewController as? MainViewController)?.tabCollectionViewModel
         }
         self.pixelFiring = pixelFiring
+        let visualizeFireAnimationDecider = visualizeFireAnimationDecider ?? Application.appDelegate.visualizeFireSettingsDecider
+        self.visualizeFireAnimationDecider = OverridableVisualizeFireSettingsDecider(internalDecider: visualizeFireAnimationDecider)
 
         self.fireDialogViewFactory = fireDialogViewFactory ?? { config in
             let view = FireDialogView(
@@ -88,9 +91,13 @@ final class FireCoordinator {
             )
             return DefaultFireDialogPresenter(view: view)
         }
+        var fireCoordinatorGetter: (() -> FireCoordinator)!
+        let historyBurner = FireHistoryBurner(fireproofDomains: self.fireproofDomains, fire: { fireCoordinatorGetter().fireViewModel.fire })
+        self.historyProvider = historyProvider ?? HistoryViewDataProvider(historyDataSource: self.historyCoordinating, historyBurner: historyBurner, featureFlagger: featureFlagger)
         if let fireViewModel {
             self.fireViewModel = fireViewModel
         }
+        fireCoordinatorGetter = { [unowned self] in self }
     }
 
     func fireButtonAction() {
@@ -148,9 +155,17 @@ extension FireCoordinator {
         guard let parentWindow = targetWindow,
               let tabCollectionViewModel = tabViewModelGetter(parentWindow) else { return .noAction }
 
-        let scopeQuery: DataModel.HistoryQueryKind = switch mode {
-        case .fireButton, .mainMenuAll: .rangeFilter(.all)
-        case .historyView(let query): query
+        let scopeQuery: DataModel.HistoryQueryKind
+        switch mode {
+        case .fireButton, .mainMenuAll:
+            scopeQuery = .rangeFilter(.all)
+        case .historyView(let query):
+            scopeQuery = query
+            // Disable fire animation for History View requests
+            visualizeFireAnimationDecider.isAnimationDisabled = true
+        }
+        defer {
+            visualizeFireAnimationDecider.isAnimationDisabled = false
         }
 
         let scopeVisits: [Visit]
@@ -288,4 +303,31 @@ extension FireCoordinator {
             }
         }
     }
+}
+/// Allows locally disabling Fire animation depending on context
+final class OverridableVisualizeFireSettingsDecider: VisualizeFireSettingsDecider {
+    private let internalDecider: VisualizeFireSettingsDecider
+
+    var isAnimationDisabled: Bool = false
+
+    var shouldShowFireAnimation: Bool {
+        isAnimationDisabled ? false : internalDecider.shouldShowFireAnimation
+    }
+
+    var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> {
+        internalDecider.shouldShowFireAnimationPublisher
+    }
+
+    var isOpenFireWindowByDefaultEnabled: Bool {
+        internalDecider.isOpenFireWindowByDefaultEnabled
+    }
+
+    var shouldShowOpenFireWindowByDefaultPublisher: AnyPublisher<Bool, Never> {
+        internalDecider.shouldShowOpenFireWindowByDefaultPublisher
+    }
+
+    init(internalDecider: VisualizeFireSettingsDecider) {
+        self.internalDecider = internalDecider
+    }
+
 }

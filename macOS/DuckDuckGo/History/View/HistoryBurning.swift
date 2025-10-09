@@ -18,12 +18,12 @@
 
 import History
 
-protocol HistoryBurning: AnyObject {
+protocol HistoryBurning {
     func burn(_ visits: [Visit], animated: Bool) async
     func burnAll() async
 }
 
-final class FireHistoryBurner: HistoryBurning {
+struct FireHistoryBurner: HistoryBurning {
     let fireproofDomains: DomainFireproofStatusProviding
     let fire: () async -> FireProtocol
 

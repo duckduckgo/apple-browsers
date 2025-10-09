@@ -502,9 +502,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
         let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
             PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
-                                                                             accessError: error,
-                                                                             source: KeychainErrorSource.shared,
-                                                                             authVersion: KeychainErrorAuthVersion.v2),
+                                                                                 accessError: error,
+                                                                                 source: KeychainErrorSource.shared,
+                                                                                 authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
 
@@ -657,10 +657,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         fireCoordinator = FireCoordinator(tld: tld,
                                           featureFlagger: featureFlagger,
-                                          historyProvider: HistoryViewDataProvider(historyDataSource: historyCoordinator,
-                                                                                   historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains, fire: { @MainActor in NSApp.delegateTyped.fireCoordinator.fireViewModel.fire }),
-                                                                                   featureFlagger: featureFlagger),
                                           historyCoordinating: historyCoordinator,
+                                          visualizeFireAnimationDecider: visualizeFireSettingsDecider,
                                           fireproofDomains: fireproofDomains,
                                           faviconManagement: faviconManager,
                                           windowControllersManager: windowControllersManager,

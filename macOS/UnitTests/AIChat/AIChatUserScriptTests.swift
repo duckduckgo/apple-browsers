@@ -209,7 +209,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
-        didSubmitPageContext = true
+        didSubmitAIChatPageContext = true
     }
 
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {

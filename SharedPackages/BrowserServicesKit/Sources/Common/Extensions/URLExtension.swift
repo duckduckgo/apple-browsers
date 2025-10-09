@@ -18,6 +18,7 @@
 
 import Foundation
 import Network
+import URLPredictor
 
 extension URL {
 
@@ -136,6 +137,12 @@ extension URL {
         self.scheme.map(NavigationalScheme.init(rawValue:))
     }
 
+    /// Checks if a URL is valid, using native logic.
+    ///
+    /// - Note: The logic differs slightly between unified (rust-library-based) and native validation.
+    ///         This property uses native prediction for backward compatibility. To use unified validation
+    ///         use `isValid(usingUnifiedLogic:)` instead.
+    ///
     public var isValid: Bool {
         guard let navigationalScheme else { return false }
 
@@ -148,10 +155,45 @@ extension URL {
         return true
     }
 
+    /// Checks if a URL is valid.
+    ///
+    /// - Parameters:
+    ///   - usingUnifiedLogic: a boolean value indicating whether to use unified URL predictor
+    ///                        or native validation logic.
+    ///
+    /// - Note: This function is added temporarily and will be removed when unified logic
+    ///         is fully rolled out on macOS and iOS.
+    ///
+    public func isValid(usingUnifiedLogic: Bool) -> Bool {
+        guard usingUnifiedLogic else {
+            return isValid
+        }
+        /// URL is valid if its string representation can be classified as a URL
+        return Self.makeUsingUnifiedLogic(trimmedAddressBarString: absoluteString) != nil
+    }
+
+    static func makeUsingUnifiedLogic(trimmedAddressBarString: String) -> Self? {
+        try? Classifier.classify(input: trimmedAddressBarString).url
+    }
+
     // swiftlint:disable cyclomatic_complexity
+    /// Construct a URL from a text typed into the address bar.
+    ///
     /// URL and URLComponents can't cope with emojis and international characters so this routine does some manual processing while trying to
     /// retain the input as much as possible.
-    public init?(trimmedAddressBarString: String) {
+    ///
+    /// - Parameters:
+    ///   - useUnifiedLogic: when `true`, this function switches to using a unified URL predictor and skips native logic.
+    ///                      This parameter is added temporarily and will be removed when unified logic is fully rolled out
+    ///                      on macOS and iOS.
+    public init?(trimmedAddressBarString: String, useUnifiedLogic: Bool = false) {
+        guard !useUnifiedLogic else {
+            guard let url = Self.makeUsingUnifiedLogic(trimmedAddressBarString: trimmedAddressBarString) else {
+                return nil
+            }
+            self = url
+            return
+        }
         var s = trimmedAddressBarString
 
         // Creates URL even if user enters one slash "/" instead of two slashes "//" after the hypertext scheme component

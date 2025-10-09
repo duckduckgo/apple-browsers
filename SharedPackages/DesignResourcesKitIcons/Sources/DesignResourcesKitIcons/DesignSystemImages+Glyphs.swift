@@ -373,6 +373,7 @@ public extension DesignSystemImages {
             public static var email: DesignSystemImage { .init(resource: .email24) }
             public static var emailCheck: DesignSystemImage { .init(resource: .emailCheck24) }
             public static var emailForward: DesignSystemImage { .init(resource: .emailForward24) }
+            public static var enter: DesignSystemImage { .init(resource: .enter24) }
             public static var eye: DesignSystemImage { .init(resource: .eye24) }
             public static var eyeClosed: DesignSystemImage { .init(resource: .eyeClosed24) }
             public static var exclamation: DesignSystemImage { .init(resource: .exclamation24) }

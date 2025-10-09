@@ -52,4 +52,58 @@ final class ThemeManagerTests: XCTestCase {
         let manager = ThemeManager(appearancePreferences: preferences, internalUserDecider: internalUserDecider)
         XCTAssertEqual(manager.theme.name, .orange)
     }
+
+    func testInternalUsersGetTheirDefaultThemeSetAsFigma() async {
+        let persistor = AppearancePreferencesPersistorMock(themeName: ThemeName.default.rawValue)
+        let preferences = AppearancePreferences(
+            persistor: persistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
+
+        let internalUserDecider = MockInternalUserDecider(isInternalUser: false)
+        let manager = ThemeManager(appearancePreferences: preferences, internalUserDecider: internalUserDecider)
+
+        internalUserDecider.isInternalUserSubject.send(true)
+
+        let updatedTheme = await manager.$theme.nextValue()
+        XCTAssertEqual(updatedTheme.name, .figma)
+    }
+
+    func testLoosingInternalUserStateSetsTheLegacyTheme() async {
+        let persistor = AppearancePreferencesPersistorMock(themeName: ThemeName.green.rawValue)
+        let preferences = AppearancePreferences(
+            persistor: persistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
+
+        let internalUserDecider = MockInternalUserDecider(isInternalUser: true)
+        let manager = ThemeManager(appearancePreferences: preferences, internalUserDecider: internalUserDecider)
+
+        internalUserDecider.isInternalUserSubject.send(false)
+
+        let updatedTheme = await manager.$theme.nextValue()
+        XCTAssertEqual(updatedTheme.name, .default)
+    }
+}
+
+// MARK: - Published.Publisher Private Testing Helpers
+//
+private extension Published.Publisher {
+
+    /// Awaits until the `next` value is published
+    ///
+    func nextValue() async -> Output {
+        await withCheckedContinuation { continuation in
+            var cancellable: AnyCancellable?
+
+            cancellable = dropFirst()
+                .first()
+                .sink { newValue in
+                cancellable?.cancel()
+                continuation.resume(returning: newValue)
+            }
+        }
+    }
 }

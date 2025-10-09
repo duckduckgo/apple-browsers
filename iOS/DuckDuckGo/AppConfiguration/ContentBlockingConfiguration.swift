@@ -36,8 +36,9 @@ final class ContentBlockingConfiguration {
             // Set marker for compilation failure
             try? self.keyValueStore.set(Date(), forKey: "contentBlockingCompilationFailureDate")
 
-            DispatchQueue.main.async {
-                self.alertAndTerminate()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+//                self.alertAndTerminate()
+                fatalError()
             }
         }
         

@@ -1,5 +1,5 @@
 //
-//  Logger.swift
+//  Logger+Tests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //

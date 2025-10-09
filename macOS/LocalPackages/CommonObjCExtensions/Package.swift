@@ -19,7 +19,6 @@
 //
 
 import PackageDescription
-import Foundation
 
 let package = Package(
     name: "CommonObjCExtensions",
@@ -58,50 +57,8 @@ let package = Package(
             ],
             publicHeadersPath: "include",
             cSettings: [
-                .headerSearchPath("include")
-            ],
-            linkerSettings: isXcode ? [
-                // Use dynamically determined clang runtime library path
-                // This is a workaround to allow the compiler to find the clang runtime library
-                // when building with code coverage enabled, otherwise the build will fail with:
-                // ld: library not found for -lclang_rt.profile_osx
-                //
-                // For more details, see https://forums.swift.org/t/compiler-code-coverage-need-help/68075
-                .unsafeFlags([
-                    "-L\(clangLibPath())",
-                    "-lclang_rt.profile_osx"
-                ], .when(platforms: [.macOS]))
-            ] : []
+                .headerSearchPath("include"),
+            ]
         )
     ]
 )
-
-var isXcode: Bool {
-    ProcessInfo.processInfo.environment["__CFBundleIdentifier"]?.contains("com.apple.dt.Xcode") == true
-}
-
-// Dynamically determine clang runtime library path at Package resolution time
-func clangLibPath() -> String {
-    // LD_LIBRARY_PATH: /Applications/Xcode.app/Contents/Developer/../SharedFrameworks/
-    guard let ldLibraryPath = ProcessInfo().environment["LD_LIBRARY_PATH"],
-          !ldLibraryPath.isEmpty else {
-        fatalError("LD_LIBRARY_PATH is not set: \(ProcessInfo.processInfo.environment.map { "\($0): \($1)" }.joined(separator: "; "))")
-    }
-    let developerPath = "/" + ldLibraryPath.split(separator: "/").dropLast(2).joined(separator: "/")
-    let clangPath = developerPath + "/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/"
-
-    guard let contents = try? FileManager.default.contentsOfDirectory(atPath: clangPath) else {
-        fatalError("Failed to get contents of \(clangPath)")
-    }
-    // get the first clang version number with format 16.0.0 from the contents
-    let versionRegex = try? NSRegularExpression(pattern: "[0-9]+\\.[0-9]+\\.[0-9]+")
-    guard let clangVersion = contents.first(where: {
-        versionRegex?.firstMatch(in: $0, range: NSRange(location: 0, length: $0.utf16.count)) != nil
-    }) else {
-        fatalError("Failed to get clang version from \(contents)")
-    }
-    let clangLibPath = clangPath + clangVersion + "/lib/darwin"
-
-    // /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16.0.0/lib/darwin
-    return clangLibPath
-}

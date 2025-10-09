@@ -4,10 +4,10 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 
 export default [
     {
-        input: 'DuckDuckGo/Autoconsent/userscript.js',
+        input: 'DuckDuckGo/Autoconsent/Resources/userscript.js',
         output: [
             {
-                file: 'DuckDuckGo/Autoconsent/autoconsent-bundle.js',
+                file: 'DuckDuckGo/Autoconsent/Resources/autoconsent-bundle.js',
                 format: 'iife'
             }
         ],

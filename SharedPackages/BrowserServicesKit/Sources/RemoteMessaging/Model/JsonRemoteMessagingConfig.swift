@@ -73,6 +73,8 @@ public enum RemoteMessageResponse {
         let descriptionText: String?
         let placeholder: String?
         let primaryAction: JsonMessageAction?
+        let matchingRules: [Int]?
+        let exclusionRules: [Int]?
     }
 
     enum JsonListItemType: String, CaseIterable {

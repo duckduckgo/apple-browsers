@@ -69,7 +69,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        bookmarkManager: MockBookmarkManager(),
                                        historyCoordinator: CapturingHistoryDataSource(),
                                        fireproofDomains: MockFireproofDomains(domains: []),
-                                       fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld))
+                                       fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger))
         /// Set it to any value to trigger `didSet` that unblocks updates stream
         updating.userScriptDependenciesProvider = nil
     }

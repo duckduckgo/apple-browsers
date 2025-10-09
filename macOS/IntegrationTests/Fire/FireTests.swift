@@ -226,8 +226,12 @@ final class FireTests: XCTestCase {
         let fire = Fire(savedZoomLevelsCoordinating: zoomLevelsCoordinator,
                         tld: Application.appDelegate.tld)
 
-        fire.burnEntity(entity: .none(selectedDomains: domainsToBurn))
+        let finishedBurningExpectation = expectation(description: "Finished burning")
+        fire.burnEntity(entity: .none(selectedDomains: domainsToBurn)) {
+            finishedBurningExpectation.fulfill()
+        }
 
+        waitForExpectations(timeout: 5)
         XCTAssertTrue(zoomLevelsCoordinator.burnZoomLevelsOfDomainsCalled)
         XCTAssertEqual(zoomLevelsCoordinator.domainsBurned, domainsToBurn)
     }

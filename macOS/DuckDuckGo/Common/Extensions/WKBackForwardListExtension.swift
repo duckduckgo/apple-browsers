@@ -21,14 +21,26 @@ import WebKit
 
 extension WKBackForwardList {
 
-    static let removeAllItemsSelector = NSSelectorFromString("_removeAllItems")
+    enum Selector {
+        static let removeAllItems = NSSelectorFromString("_removeAllItems")
+        static let clear = NSSelectorFromString("_clear")
+    }
 
-    func removeAllItems() {
-        guard self.responds(to: Self.removeAllItemsSelector) else {
-            assertionFailure("WKBackForwardList does not respond to _removeAllItems")
-            return
+    func removeAllItems(includingCurrent: Bool = true) {
+        if includingCurrent {
+            guard self.responds(to: Selector.removeAllItems) else {
+                assertionFailure("WKBackForwardList does not respond to _removeAllItems")
+                return
+            }
+            self.perform(Selector.removeAllItems)
+        } else {
+            guard self.responds(to: Selector.clear) else {
+                assertionFailure("WKBackForwardList does not respond to _clear")
+                return
+            }
+            // Removes all items except the current one.
+            self.perform(Selector.clear)
         }
-        self.perform(Self.removeAllItemsSelector)
     }
 
 }

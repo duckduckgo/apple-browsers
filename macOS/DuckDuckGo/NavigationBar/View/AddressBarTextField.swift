@@ -56,7 +56,7 @@ final class AddressBarTextField: NSTextField {
         tabCollectionViewModel?.isBurner ?? false
     }
 
-    var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
+    private var themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
 
     private var suggestionResultCancellable: AnyCancellable?
     private var selectedSuggestionViewModelCancellable: AnyCancellable?
@@ -144,8 +144,9 @@ final class AddressBarTextField: NSTextField {
             .sink { [weak self] contentType in
                 guard let self else { return }
 
-                let newTabFontSize = visualStyle.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize
-                let defaultFontSize = visualStyle.addressBarStyleProvider.defaultAddressBarFontSize
+                let barStyleProvider = themeManager.theme.addressBarStyleProvider
+                let newTabFontSize = barStyleProvider.newTabOrHomePageAddressBarFontSize
+                let defaultFontSize = barStyleProvider.defaultAddressBarFontSize
                 self.font = .systemFont(ofSize: contentType == .newtab ? newTabFontSize : defaultFontSize)
             }
     }
@@ -211,8 +212,9 @@ final class AddressBarTextField: NSTextField {
 
     private func updateAttributedStringValue() {
         withUndoDisabled {
-            let newTabFontSize = visualStyle.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize
-            let defaultFontSize = visualStyle.addressBarStyleProvider.defaultAddressBarFontSize
+            let barStyleProvider = themeManager.theme.addressBarStyleProvider
+            let newTabFontSize = barStyleProvider.newTabOrHomePageAddressBarFontSize
+            let defaultFontSize = barStyleProvider.defaultAddressBarFontSize
 
             if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner) {
                 self.attributedStringValue = attributedString
@@ -547,7 +549,7 @@ final class AddressBarTextField: NSTextField {
             let suggestionViewController = SuggestionViewController(coder: coder,
                                                                     suggestionContainerViewModel: self.suggestionContainerViewModel!,
                                                                     isBurner: self.isBurner,
-                                                                    visualStyle: self.visualStyle)
+                                                                    themeManager: self.themeManager)
             suggestionViewController?.delegate = self
             return suggestionViewController
         }
@@ -651,7 +653,7 @@ final class AddressBarTextField: NSTextField {
 
     @objc func pasteAndGo(_ menuItem: NSMenuItem) {
         guard let pasteboardString = NSPasteboard.general.string(forType: .string)?.trimmingWhitespace(),
-              let url = URL(trimmedAddressBarString: pasteboardString) else {
+              let url = URL(trimmedAddressBarString: pasteboardString, useUnifiedLogic: Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)) else {
             assertionFailure("Pasteboard doesn't contain URL")
             return
         }
@@ -752,7 +754,18 @@ extension AddressBarTextField {
         case suggestion(_ suggestionViewModel: SuggestionViewModel)
 
         init(stringValue: String, userTyped: Bool, isSearch: Bool = false) {
-            if let url = URL(trimmedAddressBarString: stringValue), url.isValid {
+
+            let url: URL? = {
+                let shouldUseUnifiedLogic = Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)
+                guard shouldUseUnifiedLogic else {
+                    let url = URL(trimmedAddressBarString: stringValue)
+                    return url?.isValid == true ? url : nil
+                }
+                /// unified logic does not require additional `isValid` check
+                return URL(trimmedAddressBarString: stringValue, useUnifiedLogic: true)
+            }()
+
+            if let url {
                 var stringValue = stringValue
                 // display punycoded url in readable form when editing
                 if !userTyped,
@@ -974,7 +987,7 @@ extension AddressBarTextField: NSTextFieldDelegate {
         // don't blink and keep the Suggestion displayed
         if case .userAppendingTextToTheEnd = currentTextDidChangeEvent,
            let suggestion = autocompleteSuggestionBeingTypedOverByUser(with: stringValueWithoutSuffix) {
-            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix, visualStyle: visualStyle))
+            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix, themeManager: themeManager))
 
         } else {
             suggestionContainerViewModel?.clearSelection()
@@ -1209,7 +1222,7 @@ private extension NSMenuItem {
     static func makePasteAndGoMenuItem() -> NSMenuItem? {
         if let trimmedPasteboardString = NSPasteboard.general.string(forType: .string)?.trimmingWhitespace(),
            trimmedPasteboardString.count > 0 {
-            if URL(trimmedAddressBarString: trimmedPasteboardString) != nil {
+            if URL(trimmedAddressBarString: trimmedPasteboardString, useUnifiedLogic: Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)) != nil {
                 return Self.pasteAndGoMenuItem
             } else {
                 return Self.pasteAndSearchMenuItem

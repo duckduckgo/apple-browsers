@@ -107,7 +107,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
 
         var fireWindowSession: FireWindowSessionRef?
         if isBurner {
-            let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+            let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
             let mainViewController = MainViewController(
                 tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: []), burnerMode: .init(isBurner: true)),
                 autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
@@ -118,7 +118,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
                 mainViewController: mainViewController,
                 fireWindowSession: .init(),
                 fireViewModel: fireCoordinator.fireViewModel,
-                visualStyle: NSApp.delegateTyped.visualStyle
+                themeManager: MockThemeManager()
             )
             fireWindowSession = FireWindowSessionRef(window: mainWindowController.window)
         }

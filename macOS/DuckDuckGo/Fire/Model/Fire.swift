@@ -69,16 +69,31 @@ final class Fire {
         }
     }
 
+    /// Represents what should be "burned" (tabs/windows) and for which domains; `close` controls whether UI is closed or only state is cleared.
     enum BurningEntity {
         case none(selectedDomains: Set<String>)
         case tab(tabViewModel: TabViewModel,
                  selectedDomains: Set<String>,
-                 parentTabCollectionViewModel: TabCollectionViewModel)
+                 parentTabCollectionViewModel: TabCollectionViewModel,
+                 close: Bool)
         case window(tabCollectionViewModel: TabCollectionViewModel,
-                    selectedDomains: Set<String>)
+                    selectedDomains: Set<String>,
+                    close: Bool)
         case allWindows(mainWindowControllers: [MainWindowController],
                         selectedDomains: Set<String>,
-                        customURLToOpen: URL?)
+                        customURLToOpen: URL?,
+                        close: Bool)
+
+        var shouldClose: Bool {
+            switch self {
+            case .tab(tabViewModel: _, selectedDomains: _, parentTabCollectionViewModel: _, close: let close),
+                    .window(tabCollectionViewModel: _, selectedDomains: _, close: let close),
+                    .allWindows(mainWindowControllers: _, selectedDomains: _, customURLToOpen: _, close: let close):
+                return close
+            case .none:
+                return true
+            }
+        }
 
         func shouldPlayFireAnimation(decider: VisualizeFireSettingsDecider) -> Bool {
             switch self {
@@ -160,29 +175,31 @@ final class Fire {
 
         let tabViewModels = tabViewModels(of: entity)
 
-        tabCleanupPreparer.prepareTabsForCleanup(tabViewModels) {
-
-            group.enter()
-            self.burnTabs(burningEntity: entity) {
-                Task {
-                    await self.burnWebCache(baseDomains: domains)
-                    if includingHistory {
-                        self.burnHistory(ofEntity: entity) {
-                            self.burnFavicons(for: domains) {
-                                group.leave()
-                            }
-                        }
-                    } else {
-                        group.leave()
-                    }
-                }
+        Task {
+            if entity.shouldClose {
+                await tabCleanupPreparer.prepareTabsForCleanup(tabViewModels)
             }
 
             group.enter()
-            self.burnPermissions(of: domains, completion: {
+            self.burnTabs(burningEntity: entity, includingHistory: includingHistory)
+
+            await self.burnWebCache(baseDomains: domains)
+
+            if includingHistory {
+                self.burnHistory(ofEntity: entity) {
+                    self.burnFavicons(for: domains) {
+                        group.leave()
+                    }
+                }
+            } else {
+                group.leave()
+            }
+
+            group.enter()
+            self.burnPermissions(of: domains) {
                 self.burnDownloads(of: domains)
                 group.leave()
-            })
+            }
 
             self.burnRecentlyClosed(baseDomains: domains)
             self.burnAutoconsentCache()
@@ -190,7 +207,9 @@ final class Fire {
 
             group.notify(queue: .main) {
                 self.dispatchGroup = nil
-                self.closeWindows(entity: entity)
+                if entity.shouldClose {
+                    self.closeWindows(entity: entity)
+                }
 
                 self.burningData = nil
 
@@ -210,7 +229,7 @@ final class Fire {
 
         burningData = .all
 
-        let entity = BurningEntity.allWindows(mainWindowControllers: windowControllerManager.mainWindowControllers, selectedDomains: Set(), customURLToOpen: url)
+        let entity = BurningEntity.allWindows(mainWindowControllers: windowControllerManager.mainWindowControllers, selectedDomains: Set(), customURLToOpen: url, close: true)
 
         // Close windows first if fire animation is disabled
         let shouldCloseWindowsFirst = !visualizeFireAnimationDecider.shouldShowFireAnimation
@@ -225,21 +244,20 @@ final class Fire {
 
         let tabViewModels = tabViewModels(of: entity)
 
-        tabCleanupPreparer.prepareTabsForCleanup(tabViewModels) {
+        Task {
+            await tabCleanupPreparer.prepareTabsForCleanup(tabViewModels)
 
             group.enter()
-            self.burnTabs(burningEntity: .allWindows(mainWindowControllers: windowControllers, selectedDomains: Set(), customURLToOpen: url)) {
-                Task { @MainActor in
-                    await self.burnWebCache()
-                    await self.burnPrivacyStats()
-                    self.burnAllVisitedLinks()
-                    self.burnAllHistory {
-                        self.burnPermissions {
-                            self.burnFavicons {
-                                self.burnDownloads()
-                                group.leave()
-                            }
-                        }
+            self.burnTabs(burningEntity: .allWindows(mainWindowControllers: windowControllers, selectedDomains: Set(), customURLToOpen: url, close: true), includingHistory: true)
+
+            await self.burnWebCache()
+            await self.burnPrivacyStats()
+            self.burnAllVisitedLinks()
+            self.burnAllHistory {
+                self.burnPermissions {
+                    self.burnFavicons {
+                        self.burnDownloads()
+                        group.leave()
                     }
                 }
             }
@@ -293,7 +311,7 @@ final class Fire {
 
             // Burn all windows in case we are burning visits for today
             if isToday {
-                entity = .allWindows(mainWindowControllers: self.windowControllerManager.mainWindowControllers, selectedDomains: domains, customURLToOpen: url)
+                entity = .allWindows(mainWindowControllers: self.windowControllerManager.mainWindowControllers, selectedDomains: domains, customURLToOpen: url, close: true)
             } else {
                 entity = .none(selectedDomains: domains)
             }
@@ -339,15 +357,15 @@ final class Fire {
         switch entity {
         case .none:
             return
-        case .tab(tabViewModel: _, selectedDomains: _, parentTabCollectionViewModel: let tabCollectionViewModel):
+        case .tab(tabViewModel: _, selectedDomains: _, parentTabCollectionViewModel: let tabCollectionViewModel, _):
             if tabCollectionViewModel.allTabsCount == 0 {
                 newWindowDroppingPoint = closeWindow(of: tabCollectionViewModel)
             }
-        case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _):
+        case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _, _):
             if pinnedTabsManagerProvider.pinnedTabsMode == .shared || tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
                 newWindowDroppingPoint = closeWindow(of: tabCollectionViewModel)
             }
-        case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _, ):
+        case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _, close: _):
             newWindowDroppingPoint = NSApp.keyWindow?.frame.droppingPoint
             mainWindowControllers.forEach {
                 if pinnedTabsManagerProvider.pinnedTabsMode == .shared || $0.mainViewController.tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
@@ -364,7 +382,7 @@ final class Fire {
             guard let self else { return }
             /// When we are burning on exit we do not need to open a new window.
             if self.windowControllerManager.mainWindowControllers.count == 0 && !isBurnOnExit {
-                if case let .allWindows(_, _, customURL) = entity, let customURL {
+                if case let .allWindows(_, _, customURLToOpen: customURL, _) = entity, let customURL {
                     WindowsManager.openNewWindow(with: customURL, source: .ui, isBurner: false, droppingPoint: newWindowDroppingPoint)
                 } else {
                     WindowsManager.openNewWindow(droppingPoint: newWindowDroppingPoint)
@@ -399,9 +417,9 @@ final class Fire {
                 completion()
             }
             return
-        case .tab(tabViewModel: let tabViewModel, selectedDomains: _, parentTabCollectionViewModel: _):
+        case .tab(tabViewModel: let tabViewModel, selectedDomains: _, parentTabCollectionViewModel: _, _):
             visits = tabViewModel.tab.localHistory
-        case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _):
+        case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _, _):
             visits = tabCollectionViewModel.localHistory
 
         case .allWindows:
@@ -518,8 +536,8 @@ final class Fire {
     // MARK: - Tabs
 
     @MainActor
-    private func burnTabs(burningEntity: BurningEntity,
-                          completion: @escaping () -> Void) {
+    /// Closes tabs/windows when `close` is true; otherwise clears back/forward history and session state when requested.
+    private func burnTabs(burningEntity: BurningEntity, includingHistory: Bool) {
 
         func replacementPinnedTab(from pinnedTab: Tab) -> Tab {
             return Tab(content: pinnedTab.content.loadedFromCache(), shouldLoadInBackground: true)
@@ -543,62 +561,89 @@ final class Fire {
             }
         }
 
-        // Close tabs
+        // Close tabs or reset history based on entity.close
         switch burningEntity {
         case .none: break
         case .tab(tabViewModel: let tabViewModel,
                   selectedDomains: _,
-                  parentTabCollectionViewModel: let tabCollectionViewModel):
+                  parentTabCollectionViewModel: let tabCollectionViewModel,
+                  close: let shouldClose):
             assert(tabViewModel === tabCollectionViewModel.selectedTabViewModel)
-            if tabCollectionViewModel.pinnedTabsManager?.isTabPinned(tabViewModel.tab) ?? false {
-                let tab = replacementPinnedTab(from: tabViewModel.tab)
-                if let index = tabCollectionViewModel.selectionIndex {
-                    tabCollectionViewModel.replaceTab(at: index, with: tab, forceChange: true)
+            if shouldClose {
+                if tabCollectionViewModel.pinnedTabsManager?.isTabPinned(tabViewModel.tab) ?? false {
+                    let tab = replacementPinnedTab(from: tabViewModel.tab)
+                    if let index = tabCollectionViewModel.selectionIndex {
+                        tabCollectionViewModel.replaceTab(at: index, with: tab, forceChange: true)
+                    }
+                } else {
+                    tabCollectionViewModel.removeSelected(forceChange: true)
                 }
-            } else {
-                tabCollectionViewModel.removeSelected(forceChange: true)
+            } else if includingHistory {
+                tabViewModel.tab.clearNavigationHistory(keepingCurrent: true)
             }
+
         case .window(tabCollectionViewModel: let tabCollectionViewModel,
-                     selectedDomains: _):
-            tabCollectionViewModel.removeAllTabs(forceChange: true)
-            burnPinnedTabs(in: tabCollectionViewModel)
-            selectPinnedTabIfNeeded(in: tabCollectionViewModel)
+                     selectedDomains: _,
+                     close: let shouldClose):
+            if shouldClose {
+                tabCollectionViewModel.removeAllTabs(forceChange: true)
+                burnPinnedTabs(in: tabCollectionViewModel)
+                selectPinnedTabIfNeeded(in: tabCollectionViewModel)
+            } else if includingHistory {
+                for vm in tabCollectionViewModel.tabViewModels.values {
+                    vm.tab.clearNavigationHistory(keepingCurrent: true)
+                }
+                // also handle pinned tabs
+                tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.forEach {
+                    $0.clearNavigationHistory(keepingCurrent: true)
+                }
+            }
 
         case .allWindows(mainWindowControllers: let mainWindowControllers,
                          selectedDomains: _,
-                         customURLToOpen: _):
-            mainWindowControllers.forEach {
-                $0.mainViewController.tabCollectionViewModel.removeAllTabs(forceChange: true)
-                burnPinnedTabs(in: $0.mainViewController.tabCollectionViewModel)
-                selectPinnedTabIfNeeded(in: $0.mainViewController.tabCollectionViewModel)
+                         customURLToOpen: _,
+                         close: let shouldClose):
+            if shouldClose {
+                mainWindowControllers.forEach {
+                    $0.mainViewController.tabCollectionViewModel.removeAllTabs(forceChange: true)
+                    burnPinnedTabs(in: $0.mainViewController.tabCollectionViewModel)
+                    selectPinnedTabIfNeeded(in: $0.mainViewController.tabCollectionViewModel)
+                }
+            } else if includingHistory {
+                mainWindowControllers.forEach { wc in
+                    let vm = wc.mainViewController.tabCollectionViewModel
+                    vm.tabViewModels.values.forEach {
+                        $0.tab.clearNavigationHistory(keepingCurrent: true)
+                    }
+                    vm.pinnedTabsManager?.tabCollection.tabs.forEach {
+                        $0.clearNavigationHistory(keepingCurrent: true)
+                    }
+                }
             }
         }
-
-        completion()
     }
 
     private func domainsToBurn(from entity: BurningEntity) -> Set<String> {
         switch entity {
         case .none(let domains):
             return domains
-        case .tab(tabViewModel: _, selectedDomains: let domains, parentTabCollectionViewModel: _):
+        case .tab(tabViewModel: _, selectedDomains: let domains, parentTabCollectionViewModel: _, _):
             return domains
-        case .window(tabCollectionViewModel: _, selectedDomains: let domains):
+        case .window(tabCollectionViewModel: _, selectedDomains: let domains, _):
             return domains
-        case .allWindows(mainWindowControllers: _, selectedDomains: let domains, customURLToOpen: _):
+        case .allWindows(mainWindowControllers: _, selectedDomains: let domains, customURLToOpen: _, _):
             return domains
         }
     }
 
     @MainActor
     private func tabViewModels(of entity: BurningEntity) -> [TabViewModel] {
-
         switch entity {
         case .none:
             return []
-        case .tab(tabViewModel: let tabViewModel, selectedDomains: _, parentTabCollectionViewModel: _):
+        case .tab(tabViewModel: let tabViewModel, selectedDomains: _, parentTabCollectionViewModel: _, _):
             return [tabViewModel]
-        case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _):
+        case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _, _):
             let pinnedTabViewModels = Array(tabCollectionViewModel.pinnedTabsManager?.tabViewModels.values ?? Dictionary().values)
             let tabViewModels = Array(tabCollectionViewModel.tabViewModels.values)
             return pinnedTabViewModels + tabViewModels

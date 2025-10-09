@@ -1,17 +1,17 @@
 {
-    webkit_did_terminate_non_recoverable_aggregated: {
-        description: 'Fires when multiple WebKit web content processes terminate/crash within a short time window (100ms), indicating burst crashes. Provides crash count for burst detection.',
-        owners: ['diegoreymendez'],
-        triggers: ['exception'],
-        suffixes: ['daily_standard'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
+    "webkit_did_terminate_non_recoverable_aggregated": {
+        "description": "Fires when multiple WebKit web content processes terminate/crash within a short time window (100ms), indicating burst crashes. Provides crash count for burst detection.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
             {
-                key: 'tab_count',
-                description: 'Number of tab crashes that occurred in the burst (within 100ms window)',
-                type: 'string',
-            },
-        ],
-    },
+                "key": "tab_count",
+                "description": "Number of tab crashes that occurred in the burst (within 100ms window)",
+                "type": "string"
+            }
+        ]
+    }
 }

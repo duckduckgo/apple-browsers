@@ -24,6 +24,7 @@ import Core
 import Subscription
 import BrowserServicesKit
 import DataBrokerProtection_iOS
+import PixelKit
 
 final class SubscriptionFlowViewModel: ObservableObject {
     
@@ -36,6 +37,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     private let urlOpener: URLOpener
     private let featureFlagger: FeatureFlagger
+    private let wideEvent: WideEventManaging
     private var cancellables = Set<AnyCancellable>()
     private var canGoBackCancellable: AnyCancellable?
     private var urlCancellable: AnyCancellable?
@@ -79,6 +81,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
          selectedFeature: SettingsViewModel.SettingsDeepLinkSection? = nil,
          urlOpener: URLOpener = UIApplication.shared,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
         self.purchaseURL = purchaseURL
         self.userScript = userScript
@@ -86,6 +89,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         self.subscriptionManager = subscriptionManager
         self.urlOpener = urlOpener
         self.featureFlagger = featureFlagger
+        self.wideEvent = wideEvent
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
@@ -335,16 +339,42 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     @MainActor
     func restoreAppstoreTransaction() {
+        let isSubscriptionRestoreWidePixelMeasurementEnabled = featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
+        let data = SubscriptionRestoreWideEventData(
+            restorePlatform: .purchaseBackgroundTask,
+            contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.prePurchaseCheck.rawValue)
+        )
+        
         clearTransactionError()
+        
         Task {
+            if isSubscriptionRestoreWidePixelMeasurementEnabled {
+                data.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
+                wideEvent.startFlow(data)
+            }
+            
             do {
                 try await subFeature.restoreAccountFromAppStorePurchase()
+                
+                if isSubscriptionRestoreWidePixelMeasurementEnabled {
+                    data.appleAccountRestoreDuration?.complete()
+                    wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
+                }
+                
                 backButtonEnabled(false)
                 await webViewModel.navigationCoordinator.reload()
                 backButtonEnabled(true)
             } catch let error {
                 if let specificError = error as? UseSubscriptionError {
+                    data.errorData = .init(error: specificError)
                     handleTransactionError(error: specificError)
+                } else {
+                    data.errorData = .init(error: error)
+                }
+                
+                if isSubscriptionRestoreWidePixelMeasurementEnabled {
+                    data.appleAccountRestoreDuration?.complete()
+                    wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
                 }
             }
         }

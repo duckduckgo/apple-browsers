@@ -22,6 +22,7 @@ import Combine
 import PixelKit
 import WebKit
 import UserScript
+import os.log
 
 protocol AIChatHistoryCleaning {
     /// Whether the option to clear Duck.ai chat history should be displayed to the user.
@@ -31,7 +32,7 @@ protocol AIChatHistoryCleaning {
     var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> { get }
 
     /// Deletes all Duck.ai chat history.
-    @MainActor func cleanAIChatHistory()
+    @MainActor func cleanAIChatHistory() async
 }
 
 final class AIChatHistoryCleaner: AIChatHistoryCleaning {
@@ -47,6 +48,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     private var coordinator: Coordinator?
     private var aiChatDataClearingUserScript: AIChatDataClearingUserScript?
     private var contentScopeUserScript: ContentScopeUserScript?
+    private var continuation: CheckedContinuation<Result<Void, Error>, Never>?
 
     @Published
     private var aiChatWasUsedBefore: Bool
@@ -82,11 +84,13 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
 
     /// Launches a headless web view to clear Duck.ai chat history with a C-S-S feature.
     @MainActor
-    func cleanAIChatHistory() {
-        // Avoid launching multiple concurrent web views
+    func cleanAIChatHistory() async {
         guard featureFlagger.isFeatureOn(.aiChatDataClearing), webView == nil else { return }
 
-        launchHistoryCleaningWebView()
+        _ = await withCheckedContinuation { continuation in
+            self.continuation = continuation
+            self.launchHistoryCleaningWebView()
+        }
     }
 
     private func subscribeToChanges() {
@@ -111,7 +115,6 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     private func launchHistoryCleaningWebView() {
         do {
             let aiChatDataClearing = AIChatDataClearingUserScript()
-            aiChatDataClearing.delegate = self
 
             let features = ContentScopeFeatureToggles(emailProtection: false,
                                                       emailProtectionIncontextSignup: false,
@@ -163,9 +166,31 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()
-                fatalError("Failed to initialize ContentScopeUserScript: \(error)")
             }
-            tearDownClearingWebView()
+            finish(result: .failure(error))
+        }
+    }
+
+    @MainActor
+    private func finish(result: Result<Void, Error>) {
+        switch result {
+        case .success:
+            pixelKit?.fire(AIChatPixel.aiChatDeleteHistorySuccessful, frequency: .dailyAndCount)
+        case .failure(let error):
+            Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
+            pixelKit?.fire(AIChatPixel.aiChatDeleteHistoryFailed, frequency: .dailyAndCount)
+        }
+        tearDownClearingWebView()
+        continuation?.resume(returning: result)
+        continuation = nil
+    }
+
+    @MainActor
+    private func startClearing() {
+        Task { @MainActor [weak self] in
+            guard let self, let script = aiChatDataClearingUserScript else { return }
+            let result = await script.clearAIChatDataAsync(timeout: 5)
+            self.finish(result: result)
         }
     }
 
@@ -175,25 +200,8 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
         webView?.navigationDelegate = nil
         webView = nil
         coordinator = nil
-        aiChatDataClearingUserScript?.delegate = nil
         aiChatDataClearingUserScript = nil
         contentScopeUserScript = nil
-        notificationCenter.post(name: .aiChatHistoryClearDataCompleted, object: nil)
-    }
-}
-
-// MARK: - AIChatDataClearingUserScriptDelegate Conformance
-extension AIChatHistoryCleaner: AIChatDataClearingUserScriptDelegate {
-    @MainActor
-    func dataClearingSucceeded() {
-        pixelKit?.fire(AIChatPixel.aiChatDeleteHistorySuccessful, frequency: .dailyAndCount)
-        tearDownClearingWebView()
-    }
-
-    @MainActor
-    func dataClearingFailed() {
-        pixelKit?.fire(AIChatPixel.aiChatDeleteHistoryFailed, frequency: .dailyAndCount)
-        tearDownClearingWebView()
     }
 }
 
@@ -201,27 +209,18 @@ extension AIChatHistoryCleaner: AIChatDataClearingUserScriptDelegate {
 extension AIChatHistoryCleaner {
     private final class Coordinator: NSObject, WKNavigationDelegate {
         weak var cleaner: AIChatHistoryCleaner?
-        init(cleaner: AIChatHistoryCleaner) {
-            self.cleaner = cleaner
-        }
+        init(cleaner: AIChatHistoryCleaner) { self.cleaner = cleaner }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            cleaner?.notificationCenter.post(name: .aiChatHistoryClearDataRequested, object: nil)
+            cleaner?.startClearing()
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-            cleaner?.dataClearingFailed()
+            cleaner?.finish(result: .failure(error))
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-            cleaner?.dataClearingFailed()
+            cleaner?.finish(result: .failure(error))
         }
     }
-}
-
-// MARK: - Notifications
-public extension NSNotification.Name {
-
-    static let aiChatHistoryClearDataRequested = Notification.Name("aiChatHistoryClearDataRequested")
-    static let aiChatHistoryClearDataCompleted = Notification.Name("aiChatHistoryClearDataCompleted")
 }

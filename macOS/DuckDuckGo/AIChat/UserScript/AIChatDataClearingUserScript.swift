@@ -21,6 +21,7 @@ import UserScript
 import WebKit
 import os.log
 import Combine
+import Common
 
 // MARK: - Delegate Protocol
 
@@ -43,6 +44,31 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
 
     }
 
+    // MARK: - Async Clear Support
+    enum ClearError: Error, DDGError {
+        case notReady
+        case timeout
+        case failedFromScript
+
+        static var errorDomain: String = "com.duckduckgo.aiChatDataClearing"
+
+        var description: String {
+            switch self {
+            case .notReady: return "AIChatDataClearingUserScript not ready to clear data"
+            case .timeout: return "AIChatDataClearingUserScript timed out waiting for response from script"
+            case .failedFromScript: return "AIChatDataClearingUserScript reported failure from script"
+            }
+        }
+
+        var errorCode: Int {
+            switch self {
+            case .notReady: return 1
+            case .timeout: return 2
+            case .failedFromScript: return 3
+            }
+        }
+    }
+
     // MARK: - Properties
 
     weak var delegate: AIChatDataClearingUserScriptDelegate?
@@ -52,13 +78,14 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
     weak var webView: WKWebView?
     private var cancellables = Set<AnyCancellable>()
 
+    @MainActor private var continuation: CheckedContinuation<Result<Void, Error>, Never>?
+    @MainActor private var timeoutTask: Task<Void, Never>?
+
     // MARK: - Initialization
 
     override init() {
         self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules())
         super.init()
-
-        registerForNotifications()
     }
 
     private static func buildMessageOriginRules() -> [HostnameMatchingRule] {
@@ -69,15 +96,6 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
         }
 
         return rules
-    }
-
-    private func registerForNotifications() {
-        NotificationCenter.default.publisher(for: .aiChatHistoryClearDataRequested)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.clearAIChatData()
-            }
-            .store(in: &cancellables)
     }
 
     // MARK: - Subfeature
@@ -99,20 +117,53 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
         }
     }
 
-    private func clearAIChatData() {
+    // MARK: - Public Async API
+
+    /// Starts JS-based clearing and awaits a result. Safe to call only after navigation finished.
+    /// - Parameter timeout: Maximum seconds to wait for a JS response before failing with `.timeout`.
+    /// - Returns: Result signalling success or an error.
+    @MainActor
+    func clearAIChatDataAsync(timeout: TimeInterval = 5) async -> Result<Void, Error> {
+        guard webView != nil, broker != nil else { return .failure(ClearError.notReady) }
+
+        sendClearDataMessage()
+
+        return await withCheckedContinuation { continuation in
+            self.continuation = continuation
+            self.timeoutTask = Task { [weak self] in
+                try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                self?.finish(result: .failure(ClearError.timeout))
+            }
+        }
+    }
+
+    // MARK: - Private helpers
+
+    private func sendClearDataMessage() {
         guard let webView else { return }
         broker?.push(method: AIChatDataClearingUserScript.MessageName.duckAiClearData.rawValue, params: nil, for: self, into: webView)
     }
 
     @MainActor
+    private func finish(result: Result<Void, Error>) {
+        timeoutTask?.cancel()
+        timeoutTask = nil
+        let cont = continuation
+        continuation = nil
+        cont?.resume(returning: result)
+    }
+
+    // MARK: - JS Callbacks
+
+    @MainActor
     private func aiChatDataClearingSucceeded(params: Any, message: UserScriptMessage) -> Encodable? {
-        delegate?.dataClearingSucceeded()
+        finish(result: .success(()))
         return nil
     }
 
     @MainActor
     private func aiChatDataClearingFailed(params: Any, message: UserScriptMessage) -> Encodable? {
-        delegate?.dataClearingFailed()
+        finish(result: .failure(ClearError.failedFromScript))
         return nil
     }
 }

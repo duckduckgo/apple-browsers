@@ -195,7 +195,7 @@ extension AppDelegate {
                                                                close: true)
                     await fireCoordinator.fireViewModel.fire.burnEntity(entity, includingHistory: true, includingChatHistory: includeChats)
                 } else {
-                    fireCoordinator.fireViewModel.fire.burnChatHistory()
+                    await fireCoordinator.fireViewModel.fire.burnChatHistory()
                 }
             case .delete:
                 // FireCoordinator handles burning for Fire Dialog View

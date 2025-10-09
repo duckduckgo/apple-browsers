@@ -132,7 +132,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
             } else if burnData {
                 await dataProvider.burnVisits(matching: adjustedQuery, and: burnChats)
             } else {
-                fireCoordinator.fireViewModel.fire.burnChatHistory()
+                await fireCoordinator.fireViewModel.fire.burnChatHistory()
             }
             self.firePixel(.delete, .daily)
             self.firePixel(.multipleItemsDeleted(pixelScope, burn: true), .dailyAndStandard)

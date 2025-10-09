@@ -19,6 +19,7 @@
 import XCTest
 import Combine
 import AppKit
+import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
@@ -31,8 +32,9 @@ final class ThemeManagerTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger()
         )
+        let internalUserDecider = MockInternalUserDecider()
 
-        let manager = ThemeManager(appearancePreferences: preferences)
+        let manager = ThemeManager(appearancePreferences: preferences, internalUserDecider: internalUserDecider)
         XCTAssertEqual(manager.theme.name, .green)
     }
 
@@ -45,8 +47,9 @@ final class ThemeManagerTests: XCTestCase {
         )
 
         preferences.themeName = .orange
+        let internalUserDecider = MockInternalUserDecider()
 
-        let manager = ThemeManager(appearancePreferences: preferences)
+        let manager = ThemeManager(appearancePreferences: preferences, internalUserDecider: internalUserDecider)
         XCTAssertEqual(manager.theme.name, .orange)
     }
 }

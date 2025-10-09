@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import AppKit
+import BrowserServicesKit
 
 protocol ThemeManaging {
     var theme: ThemeStyleProviding { get }
@@ -27,15 +28,19 @@ protocol ThemeManaging {
 
 final class ThemeManager: ObservableObject, ThemeManaging {
     private var cancellables = Set<AnyCancellable>()
+    private var appearancePreferences: AppearancePreferences
     @Published private(set) var theme: ThemeStyleProviding
 
     var themePublisher: Published<any ThemeStyleProviding>.Publisher {
         $theme
     }
 
-    init(appearancePreferences: AppearancePreferences) {
-        theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName)
+    init(appearancePreferences: AppearancePreferences, internalUserDecider: InternalUserDecider) {
+        self.appearancePreferences = appearancePreferences
+        self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName)
+
         subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
+        subscribeToInternalUserChanges(internalUserDecider: internalUserDecider)
     }
 
     private func subscribeToThemeNameChanges(appearancePreferences: AppearancePreferences) {
@@ -47,11 +52,33 @@ final class ThemeManager: ObservableObject, ThemeManaging {
             }
             .store(in: &cancellables)
     }
+
+    private func subscribeToInternalUserChanges(internalUserDecider: InternalUserDecider) {
+        internalUserDecider.isInternalUserPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isInternalUser in
+                self?.resetThemeNameIfNeeded(isInternalUser: isInternalUser)
+            }
+            .store(in: &cancellables)
+    }
 }
 
 private extension ThemeManager {
 
     func switchToTheme(named themeName: ThemeName) {
         theme = ThemeStyle.buildThemeStyle(themeName: themeName)
+    }
+
+    func resetThemeNameIfNeeded(isInternalUser: Bool) {
+        /// Internal Users should not see the `.default` theme
+        if isInternalUser, appearancePreferences.themeName == .default {
+            appearancePreferences.themeName = .figma
+            return
+        }
+
+        /// Non Internal Users should only see the `.default` theme
+        if isInternalUser == false, appearancePreferences.themeName != .default {
+            appearancePreferences.themeName = .default
+        }
     }
 }

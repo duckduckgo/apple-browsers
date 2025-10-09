@@ -456,7 +456,7 @@ final class DataImportViewModelTests: XCTestCase {
         }())
         await fulfillment(of: [e], timeout: 0)
 
-        let expectation = DataImportViewModel(importSource: .firefox, screen: .summary([.bookmarks, .passwords]), summary: [.init(.bookmarks, .success(.init(successful: 1, duplicate: 1, failed: 1))), .init(.passwords, .success(.init(successful: 2, duplicate: 2, failed: 2)))])
+        let expectation = DataImportViewModel(importSource: .firefox, screen: .summary([.bookmarks, .passwords], previousScreen: .profileAndDataTypesPicker), summary: [.init(.bookmarks, .success(.init(successful: 1, duplicate: 1, failed: 1))), .init(.passwords, .success(.init(successful: 2, duplicate: 2, failed: 2)))])
         XCTAssertEqual(model.description, expectation.description)
 
     }
@@ -502,7 +502,7 @@ final class DataImportViewModelTests: XCTestCase {
         try await initiateImport(of: [.bookmarks, .passwords], from: .test(for: ThirdPartyBrowser.firefox))
         await fulfillment(of: [e, e2], timeout: 0)
 
-        let expected = DataImportViewModel(importSource: .firefox, screen: .summary([.bookmarks, .passwords]), summary: [.init(.bookmarks, .success(.init(successful: 1, duplicate: 1, failed: 1))), .init(.passwords, .success(.init(successful: 2, duplicate: 2, failed: 2)))])
+        let expected = DataImportViewModel(importSource: .firefox, screen: .summary([.bookmarks, .passwords], previousScreen: .profileAndDataTypesPicker), summary: [.init(.bookmarks, .success(.init(successful: 1, duplicate: 1, failed: 1))), .init(.passwords, .success(.init(successful: 2, duplicate: 2, failed: 2)))])
         XCTAssertEqual(model.description, expected.description)
     }
 
@@ -556,7 +556,7 @@ final class DataImportViewModelTests: XCTestCase {
                 .passwords: .success(.init(successful: 13, duplicate: 42, failed: 3)),
             ])
 
-            let expectation = DataImportViewModel(importSource: source, screen: .summary([.bookmarks, .passwords]), summary: [.init(.bookmarks, .success(.init(successful: 100, duplicate: 2, failed: 1))), .init(.passwords, .success(.init(successful: 13, duplicate: 42, failed: 3)))])
+            let expectation = DataImportViewModel(importSource: source, screen: .summary([.bookmarks, .passwords], previousScreen: .profileAndDataTypesPicker), summary: [.init(.bookmarks, .success(.init(successful: 100, duplicate: 2, failed: 1))), .init(.passwords, .success(.init(successful: 13, duplicate: 42, failed: 3)))])
             XCTAssertEqual(model.description, expectation.description)
         }
     }
@@ -635,7 +635,7 @@ final class DataImportViewModelTests: XCTestCase {
                 .bookmarks: .success(.init(successful: 42, duplicate: 1, failed: 3)),
             ])
 
-            let expectation = DataImportViewModel(importSource: source, screen: .summary([.bookmarks]), summary: [.init(.bookmarks, .success(.init(successful: 42, duplicate: 1, failed: 3)))])
+            let expectation = DataImportViewModel(importSource: source, screen: .summary([.bookmarks], previousScreen: .profileAndDataTypesPicker), summary: [.init(.bookmarks, .success(.init(successful: 42, duplicate: 1, failed: 3)))])
             XCTAssertEqual(model.description, expectation.description)
         }
     }
@@ -971,7 +971,7 @@ final class DataImportViewModelTests: XCTestCase {
                 .passwords: .success(.init(successful: 1, duplicate: 2, failed: 3)),
             ])
 
-            let expectation = DataImportViewModel(importSource: source, screen: .summary([.passwords]), summary: [.init(.passwords, .success(.init(successful: 1, duplicate: 2, failed: 3)))])
+            let expectation = DataImportViewModel(importSource: source, screen: .summary([.passwords], previousScreen: .profileAndDataTypesPicker), summary: [.init(.passwords, .success(.init(successful: 1, duplicate: 2, failed: 3)))])
             XCTAssertEqual(model.description, expectation.description)
         }
     }
@@ -1076,7 +1076,7 @@ final class DataImportViewModelTests: XCTestCase {
                 dataType: .success(.init(successful: 42, duplicate: 12, failed: 3)),
             ])
 
-            let expectation = DataImportViewModel(importSource: source, screen: .summary([dataType], isFileImport: true), summary: [.init(dataType, .success(.init(successful: 42, duplicate: 12, failed: 3)))])
+            let expectation = DataImportViewModel(importSource: source, screen: .summary([dataType], previousScreen: .fileImport(dataType: dataType, summary: [])), summary: [.init(dataType, .success(.init(successful: 42, duplicate: 12, failed: 3)))])
             XCTAssertEqual(model.description, expectation.description)
         }
     }
@@ -1099,7 +1099,7 @@ final class DataImportViewModelTests: XCTestCase {
                 dataType: .success(.init(successful: 0, duplicate: 0, failed: 0)),
             ])
 
-            let expectation = DataImportViewModel(importSource: source, screen: .summary([dataType], isFileImport: true), summary: [.init(dataType, .success(.init(successful: 0, duplicate: 0, failed: 0)))])
+            let expectation = DataImportViewModel(importSource: source, screen: .summary([dataType], previousScreen: .fileImport(dataType: dataType, summary: [])), summary: [.init(dataType, .success(.init(successful: 0, duplicate: 0, failed: 0)))])
             XCTAssertEqual(model.description, expectation.description)
         }
     }
@@ -1201,7 +1201,7 @@ final class DataImportViewModelTests: XCTestCase {
                         if let result {
                             try await initiateImport(of: [.bookmarks], fromFile: .testHTML, resultingWith: [.bookmarks: result], xctDescr)
                             // expect Final Summary
-                            expectation = DataImportViewModel(importSource: source, screen: .summary([.bookmarks], isFileImport: true), summary: [bookmarksSummary, passwordsSummary, .init(.bookmarks, result)].compactMap { $0 })
+                            expectation = DataImportViewModel(importSource: source, screen: .summary([.bookmarks], previousScreen: .fileImport(dataType: .bookmarks, summary: [.bookmarks])), summary: [bookmarksSummary, passwordsSummary, .init(.bookmarks, result)].compactMap { $0 })
 
                             xctDescr = "\(source): " + xctDescr
 
@@ -1244,7 +1244,7 @@ final class DataImportViewModelTests: XCTestCase {
                     xctDescr = "\(source): " + xctDescr
 
                     // expect Final Summary
-                    let expectation = DataImportViewModel(importSource: source, screen: .summary([.bookmarks], isFileImport: true), summary: [bookmarksSummary, result.map { .init(.bookmarks, $0) }].compactMap { $0 })
+                    let expectation = DataImportViewModel(importSource: source, screen: .summary([.bookmarks], previousScreen: .fileImport(dataType: .bookmarks, summary: [.bookmarks])), summary: [bookmarksSummary, result.map { .init(.bookmarks, $0) }].compactMap { $0 })
                     XCTAssertEqual(model.description, expectation.description, xctDescr)
                     XCTAssertEqual(model.actionButton, .next(.shortcuts([.bookmarks])), xctDescr)
                     XCTAssertNil(model.secondaryButton, xctDescr)
@@ -1255,7 +1255,7 @@ final class DataImportViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenSummaryShown_shouldShowSyncFooterButton() async throws {
-        let model = DataImportViewModel(importSource: .chrome, screen: .summary([.bookmarks], isFileImport: true), summary: [])
+        let model = DataImportViewModel(importSource: .chrome, screen: .summary([.bookmarks], previousScreen: .profileAndDataTypesPicker), summary: [])
         XCTAssertTrue(model.shouldShowSyncFooterButton)
     }
 
@@ -1406,7 +1406,7 @@ final class DataImportViewModelTests: XCTestCase {
                         xctDescr = "\(source): " + xctDescr
 
                         // expect Bookmarks Import Summary screen
-                        let expectation = DataImportViewModel(importSource: source, screen: .summary([.bookmarks], isFileImport: true), summary: [bookmarksSummary, passwordsSummary, result.map { .init(.bookmarks, $0) }].compactMap { $0 })
+                        let expectation = DataImportViewModel(importSource: source, screen: .summary([.bookmarks], previousScreen: .fileImport(dataType: .bookmarks, summary: [.bookmarks])), summary: [bookmarksSummary, passwordsSummary, result.map { .init(.bookmarks, $0) }].compactMap { $0 })
                         XCTAssertEqual(model.description, expectation.description, xctDescr)
                         // [Next] -> passwords file import screen
                         XCTAssertEqual(model.actionButton, .next(.fileImport(dataType: .passwords)), xctDescr)
@@ -1496,7 +1496,7 @@ final class DataImportViewModelTests: XCTestCase {
                             xctDescr = "\(source): " + xctDescr
 
                             // expect Final Summary
-                            let expectation = DataImportViewModel(importSource: source, screen: .summary([.passwords], isFileImport: true), summary: [bookmarksSummary, passwordsSummary, bookmarksFileImportSummary, result.map { .init(.passwords, $0) }].compactMap { $0 })
+                            let expectation = DataImportViewModel(importSource: source, screen: .summary([.passwords], previousScreen: .fileImport(dataType: .passwords, summary: [])), summary: [bookmarksSummary, passwordsSummary, bookmarksFileImportSummary, result.map { .init(.passwords, $0) }].compactMap { $0 })
                             XCTAssertEqual(model.description, expectation.description, xctDescr)
                             XCTAssertEqual(model.actionButton, .next(.shortcuts([.passwords])), xctDescr)
                             XCTAssertNil(model.secondaryButton, xctDescr)
@@ -1534,7 +1534,7 @@ final class DataImportViewModelTests: XCTestCase {
                     xctDescr = "\(source): " + xctDescr
 
                     // expect Final Summary
-                    let expectation = DataImportViewModel(importSource: source, screen: .summary([.passwords], isFileImport: true), summary: [passwordsSummary, result.map { .init(.passwords, $0) }].compactMap { $0 })
+                    let expectation = DataImportViewModel(importSource: source, screen: .summary([.passwords], previousScreen: .fileImport(dataType: .passwords, summary: [])), summary: [passwordsSummary, result.map { .init(.passwords, $0) }].compactMap { $0 })
                     XCTAssertEqual(model.description, expectation.description, xctDescr)
                     XCTAssertEqual(model.actionButton, .next(.shortcuts([.passwords])), xctDescr)
                     XCTAssertNil(model.secondaryButton, xctDescr)
@@ -1896,7 +1896,7 @@ final class DataImportViewModelTests: XCTestCase {
             .moreInfo,
             .getReadPermission(.testCSV),
             .fileImport(dataType: .bookmarks),
-            .summary([.bookmarks]),
+            .summary([.bookmarks], previousScreen: .fileImport(dataType: .bookmarks, summary: [.bookmarks])),
             .feedback,
             .shortcuts([.bookmarks])
         ]
@@ -2101,7 +2101,7 @@ final class DataImportViewModelTests: XCTestCase {
         ])
 
         // THEN
-        let expected = DataImportViewModel(importSource: .safari, screen: .summary([.bookmarks, .passwords], isFileImport: true), summary: [
+        let expected = DataImportViewModel(importSource: .safari, screen: .summary([.bookmarks, .passwords], previousScreen: .archiveImport(dataTypes: [.bookmarks, .passwords])), summary: [
             .init(.bookmarks, .success(.init(successful: 10, duplicate: 2, failed: 1))),
             .init(.passwords, .success(.init(successful: 5, duplicate: 1, failed: 0)))
         ])
@@ -2280,10 +2280,14 @@ extension DataImportViewModel.Screen: CustomStringConvertible {
         case .getReadPermission(let url): "getReadPermission(\(url.path))"
         case .fileImport(dataType: let dataType, summary: let summaryDataTypes): ".fileImport(dataType: .\(dataType)\(!summaryDataTypes.isEmpty ? ", summary: [\(summaryDataTypes.map { "." + $0.rawValue }.sorted().joined(separator: ", "))]" : ""))"
         case .archiveImport(dataTypes: let dataTypes): ".archiveImport([\(dataTypes.map { "." + $0.rawValue }.sorted().joined(separator: ", "))])"
-        case .summary(let dataTypes, isFileImport: false):
-            ".summary([\(dataTypes.map { "." + $0.rawValue }.sorted().joined(separator: ", "))])"
-        case .summary(let dataTypes, isFileImport: true):
-            ".summary([\(dataTypes.map { "." + $0.rawValue }.sorted().joined(separator: ", "))], isFileImport: true)"
+        case .summary(let dataTypes, previousScreen: .fileImport):
+            ".summary([\(dataTypes.map { "." + $0.rawValue }.sorted().joined(separator: ", "))], previousScreen: .fileImport)"
+        case .summary(let dataTypes, previousScreen: .profileAndDataTypesPicker):
+            ".summary([\(dataTypes.map { "." + $0.rawValue }.sorted().joined(separator: ", "))], previousScreen: .profileAndDataTypesPicker)"
+        case .summary(let dataTypes, previousScreen: .archiveImport):
+            ".summary([\(dataTypes.map { "." + $0.rawValue }.sorted().joined(separator: ", "))], previousScreen: .archiveImport)"
+        case .summary(let dataTypes, let previousScreen):
+            ".summary([\(dataTypes.map { "." + $0.rawValue }.sorted().joined(separator: ", "))], previousScreen: \(previousScreen)"
         case .feedback: ".feedback"
         case .shortcuts: ".shortcuts"
         }

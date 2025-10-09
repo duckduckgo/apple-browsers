@@ -63,13 +63,13 @@ struct DataImportViewModel {
 
     private let onCancelled: () -> Void
 
-    enum Screen: Hashable {
+    indirect enum Screen: Hashable {
         case profileAndDataTypesPicker
         case moreInfo
         case getReadPermission(URL)
         case fileImport(dataType: DataType, summary: Set<DataType> = [])
         case archiveImport(dataTypes: Set<DataType>)
-        case summary(Set<DataType>, isFileImport: Bool = false)
+        case summary(Set<DataType>, previousScreen: Screen)
         case feedback
         case shortcuts(Set<DataType>)
 
@@ -290,6 +290,7 @@ struct DataImportViewModel {
                 if dataTypeSummary.isEmpty, !(screen.isFileImport && screen.fileImportDataType == dataType), nextScreen == nil {
                     nextScreen = .fileImport(dataType: dataType, summary: Set(summary.filter({ $0.value.isSuccess }).keys))
                 }
+
                 PixelKit.fire(GeneralPixel.dataImportSucceeded(action: .init(dataType), source: importSource.pixelSourceParameterName, sourceVersion: sourceVersion), frequency: .dailyAndStandard)
             case .failure(let error):
                 // successful imports are appended above
@@ -309,8 +310,6 @@ struct DataImportViewModel {
             }
         }
 
-        let isFileImport = screen.isFileImport || screen.isArchiveImport
-
         if let nextScreen {
             Logger.dataImportExport.debug("mergeImportSummary: next screen: \(String(describing: nextScreen))")
             self.screen = nextScreen
@@ -322,14 +321,14 @@ struct DataImportViewModel {
             self.screen = .feedback
         } else if self.screen.isFileImport, let dataType = self.screen.fileImportDataType {
             Logger.dataImportExport.debug("mergeImportSummary: file import summary(\(dataType))")
-            self.screen = .summary([dataType], isFileImport: true)
+            self.screen = .summary([dataType], previousScreen: self.screen)
         } else if screenForNextDataTypeRemainingToImport(after: DataType.allCases.last(where: summary.keys.contains)) == nil { // no next data type manual import screen
             let allKeys = self.summary.reduce(into: Set()) { $0.insert($1.dataType) }
             Logger.dataImportExport.debug("mergeImportSummary: final summary(\(Set(allKeys)))")
-            self.screen = .summary(allKeys, isFileImport: isFileImport)
+            self.screen = .summary(allKeys, previousScreen: self.screen)
         } else {
             Logger.dataImportExport.debug("mergeImportSummary: intermediary summary(\(Set(summary.keys)))")
-            self.screen = .summary(Set(summary.keys), isFileImport: isFileImport)
+            self.screen = .summary(Set(summary.keys), previousScreen: self.screen)
         }
 
         if self.areAllSelectedDataTypesSuccessfullyImported {
@@ -730,7 +729,10 @@ extension DataImportViewModel {
         case .fileImport:
             return .skip
 
-        case .summary(let dataTypes, isFileImport: _):
+        case .summary(let dataTypes, let previousScreen):
+            if case .archiveImport = previousScreen {
+                return .next(.shortcuts(dataTypes))
+            }
             if let screen = screenForNextDataTypeRemainingToImport(after: DataType.allCases.last(where: dataTypes.contains)) {
                 return .next(screen)
             } else {

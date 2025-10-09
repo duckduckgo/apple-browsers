@@ -184,8 +184,8 @@ struct DataImportView: ModalView {
                 fileImportBody(dataType: dataType, summaryTypes: summaryTypes)
             case .archiveImport:
                 multifileImportBody(fileTypes: model.importSource.archiveImportSupportedFiles)
-            case .summary(let dataTypes, let isFileImport):
-                DataImportSummaryView(model, dataTypes: dataTypes, isFileImport: isFileImport)
+            case .summary(let dataTypes, let previousScreen):
+                DataImportSummaryView(model, dataTypes: dataTypes, isFileImport: previousScreen.isFileImport)
             case .feedback:
                 feedbackBody
             case .shortcuts(let dataTypes):

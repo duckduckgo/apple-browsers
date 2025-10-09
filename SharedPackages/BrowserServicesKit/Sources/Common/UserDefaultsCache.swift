@@ -34,7 +34,6 @@ public protocol UserDefaultsCacheKeyStore {
 public enum UserDefaultsCacheKey: String, UserDefaultsCacheKeyStore {
     case subscriptionEntitlements = "com.duckduckgo.bsk.subscription.entitlements"
     case subscription = "com.duckduckgo.bsk.subscription.info"
-    case previousSubscription = "com.duckduckgo.bsk.subscription.previous.info"
 }
 
 /// A generic UserDefaults cache for storing and retrieving Codable objects

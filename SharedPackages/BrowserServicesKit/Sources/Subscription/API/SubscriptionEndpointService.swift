@@ -145,11 +145,7 @@ public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
         let cachedSubscription = subscriptionCache.get()
         if subscription != cachedSubscription {
             subscriptionCache.set(subscription)
-            var info: [UserDefaultsCacheKey: Any] = [UserDefaultsCacheKey.subscription: subscription]
-            if let cachedSubscription {
-                info[UserDefaultsCacheKey.previousSubscription] = cachedSubscription
-            }
-            NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: info)
+            NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: subscription])
         }
     }
 

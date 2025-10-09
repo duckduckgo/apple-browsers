@@ -61,26 +61,39 @@ final class FireCoordinator {
     private let fireDialogViewFactory: FireDialogViewFactory
     private let fireproofDomains: FireproofDomains
     private let faviconManagement: FaviconManagement
-    private let onboardingContextualDialogsManager: () -> ContextualOnboardingStateUpdater
+    private let onboardingContextualDialogsManager: (() -> ContextualOnboardingStateUpdater)?
     private let windowControllersManager: WindowControllersManagerProtocol
     private let tabViewModelGetter: (NSWindow) -> TabCollectionViewModel?
     private let pixelFiring: PixelFiring?
     private let visualizeFireAnimationDecider: OverridableVisualizeFireSettingsDecider
 
-    init(tld: TLD, featureFlagger: FeatureFlagger, historyProvider: HistoryViewDataProviding? = nil, historyCoordinating: (HistoryCoordinating & HistoryDataSource)? = nil, fireViewModel: FireViewModel? = nil, visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil, onboardingContextualDialogsManager: (() -> ContextualOnboardingStateUpdater)? = nil, fireDialogViewFactory: FireDialogViewFactory? = nil, fireproofDomains: FireproofDomains? = nil, faviconManagement: FaviconManagement? = nil, windowControllersManager: WindowControllersManagerProtocol? = nil, tabViewModelGetter: ((NSWindow) -> TabCollectionViewModel?)? = nil, pixelFiring: PixelFiring? = PixelKit.shared) {
+    init(tld: TLD,
+         featureFlagger: FeatureFlagger,
+         historyCoordinating: (HistoryCoordinating & HistoryDataSource),
+         visualizeFireAnimationDecider: VisualizeFireSettingsDecider?,
+         onboardingContextualDialogsManager: (() -> ContextualOnboardingStateUpdater)?,
+         fireproofDomains: FireproofDomains,
+         faviconManagement: FaviconManagement,
+         windowControllersManager: WindowControllersManagerProtocol,
+         pixelFiring: PixelFiring?,
+         historyProvider: HistoryViewDataProviding? = nil, // for testing: created if not provided
+         fireViewModel: FireViewModel? = nil, // for testing: created if not provided
+         tabViewModelGetter: ((NSWindow) -> TabCollectionViewModel?)? = nil, // for testing: created if not provided
+         fireDialogViewFactory: FireDialogViewFactory? = nil, // for testing: created if not provided
+    ) {
 
         self.tld = tld
         self.featureFlagger = featureFlagger
-        self.historyCoordinating = historyCoordinating ?? Application.appDelegate.historyCoordinator
-        self.fireproofDomains = fireproofDomains ?? Application.appDelegate.fireproofDomains
-        self.faviconManagement = faviconManagement ?? Application.appDelegate.faviconManager
-        self.onboardingContextualDialogsManager = onboardingContextualDialogsManager ?? { Application.appDelegate.onboardingContextualDialogsManager }
-        self.windowControllersManager = windowControllersManager ?? Application.appDelegate.windowControllersManager
+        self.historyCoordinating = historyCoordinating
+        self.fireproofDomains = fireproofDomains
+        self.faviconManagement = faviconManagement
+        self.onboardingContextualDialogsManager = onboardingContextualDialogsManager
+        self.windowControllersManager = windowControllersManager
         self.tabViewModelGetter = tabViewModelGetter ?? { window in
             (window.contentViewController as? MainViewController)?.tabCollectionViewModel
         }
         self.pixelFiring = pixelFiring
-        let visualizeFireAnimationDecider = visualizeFireAnimationDecider ?? Application.appDelegate.visualizeFireSettingsDecider
+        let visualizeFireAnimationDecider = visualizeFireAnimationDecider
         self.visualizeFireAnimationDecider = OverridableVisualizeFireSettingsDecider(internalDecider: visualizeFireAnimationDecider)
 
         self.fireDialogViewFactory = fireDialogViewFactory ?? { config in
@@ -241,7 +254,7 @@ extension FireCoordinator {
 
             if [.fireButton, .mainMenuAll].contains(mode) {
                 // Record fire button usage for contextual onboarding flows
-                onboardingContextualDialogsManager().fireButtonUsed()
+                onboardingContextualDialogsManager?().fireButtonUsed()
             }
             return .burn(options: options)
         }
@@ -306,27 +319,27 @@ extension FireCoordinator {
 }
 /// Allows locally disabling Fire animation depending on context
 final class OverridableVisualizeFireSettingsDecider: VisualizeFireSettingsDecider {
-    private let internalDecider: VisualizeFireSettingsDecider
+    private let internalDecider: VisualizeFireSettingsDecider?
 
     var isAnimationDisabled: Bool = false
 
     var shouldShowFireAnimation: Bool {
-        isAnimationDisabled ? false : internalDecider.shouldShowFireAnimation
+        isAnimationDisabled ? false : internalDecider?.shouldShowFireAnimation ?? false
     }
 
     var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> {
-        internalDecider.shouldShowFireAnimationPublisher
+        internalDecider?.shouldShowFireAnimationPublisher ?? Empty().eraseToAnyPublisher()
     }
 
     var isOpenFireWindowByDefaultEnabled: Bool {
-        internalDecider.isOpenFireWindowByDefaultEnabled
+        internalDecider?.isOpenFireWindowByDefaultEnabled ?? false
     }
 
     var shouldShowOpenFireWindowByDefaultPublisher: AnyPublisher<Bool, Never> {
-        internalDecider.shouldShowOpenFireWindowByDefaultPublisher
+        internalDecider?.shouldShowOpenFireWindowByDefaultPublisher ?? Empty().eraseToAnyPublisher()
     }
 
-    init(internalDecider: VisualizeFireSettingsDecider) {
+    init(internalDecider: VisualizeFireSettingsDecider?) {
         self.internalDecider = internalDecider
     }
 

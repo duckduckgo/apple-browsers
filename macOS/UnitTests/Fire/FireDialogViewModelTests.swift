@@ -56,12 +56,17 @@ final class FireDialogViewModelTests: XCTestCase {
     private func handle(_ vm: FireDialogViewModel,
                         _ result: FireDialogResult,
                         onboarding: ContextualOnboardingStateUpdater? = nil) -> Task<Void, Never> {
-        let coordinator = FireCoordinator(
-            tld: Application.appDelegate.tld,
-            featureFlagger: Application.appDelegate.featureFlagger,
-            historyProvider: MockHistoryViewDataProvider(),
-            fireViewModel: vm.fireViewModel
-        )
+        let coordinator = FireCoordinator(tld: TLD(),
+                                          featureFlagger: Application.appDelegate.featureFlagger,
+                                          historyCoordinating: HistoryCoordinatingMock(),
+                                          visualizeFireAnimationDecider: nil,
+                                          onboardingContextualDialogsManager: nil,
+                                          fireproofDomains: MockFireproofDomains(),
+                                          faviconManagement: FaviconManagerMock(),
+                                          windowControllersManager: WindowControllersManagerMock(),
+                                          pixelFiring: nil,
+                                          historyProvider: MockHistoryViewDataProvider(),
+                                          fireViewModel: vm.fireViewModel)
         let isAllHistorySelected: Bool
         if vm.scopeCookieDomains != nil  {
             isAllHistorySelected = false
@@ -93,19 +98,25 @@ final class FireDialogViewModelTests: XCTestCase {
                                       includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
 
         let coordinator = FireCoordinator(
-            tld: Application.appDelegate.tld,
+            tld: TLD(),
             featureFlagger: Application.appDelegate.featureFlagger,
+            historyCoordinating: HistoryCoordinatingMock(),
+            visualizeFireAnimationDecider: nil,
+            onboardingContextualDialogsManager: { onboardingContextualDialogsManager },
+            fireproofDomains: MockFireproofDomains(),
+            faviconManagement: FaviconManagerMock(),
+            windowControllersManager: WindowControllersManagerMock(),
+            pixelFiring: nil,
             historyProvider: MockHistoryViewDataProvider(),
             fireViewModel: vm.fireViewModel,
-            onboardingContextualDialogsManager: { onboardingContextualDialogsManager },
+            tabViewModelGetter: { _ in
+                TabCollectionViewModel(isPopup: false)
+            },
             fireDialogViewFactory: { config in
                 return TestPresenter { _, completion in
                     config.onConfirm(.burn(options: result))
                     completion?()
                 }
-            },
-            tabViewModelGetter: { _ in
-                TabCollectionViewModel(isPopup: false)
             })
 
         let window = MockWindow()

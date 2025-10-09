@@ -660,6 +660,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                           featureFlagger: featureFlagger,
                                           historyCoordinating: historyCoordinator,
                                           visualizeFireAnimationDecider: visualizeFireSettingsDecider,
+                                          onboardingContextualDialogsManager: { Application.appDelegate.onboardingContextualDialogsManager },
                                           fireproofDomains: fireproofDomains,
                                           faviconManagement: faviconManager,
                                           windowControllersManager: windowControllersManager,

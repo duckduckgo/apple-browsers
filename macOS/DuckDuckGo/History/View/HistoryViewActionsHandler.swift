@@ -127,14 +127,18 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         switch result {
         case .burn:
             // FireCoordinator handles the result of the new Fire Dialog
-            if !featureFlagger.isFeatureOn(.fireDialog) {
+            if featureFlagger.isFeatureOn(.fireDialog) {
+                await dataProvider.refreshData()
+            } else {
                 await dataProvider.burnVisits(matching: adjustedQuery)
             }
             self.firePixel(.delete, .daily)
             self.firePixel(.multipleItemsDeleted(pixelScope, burn: true), .dailyAndStandard)
         case .delete:
             // FireCoordinator handles the result of the new Fire Dialog
-            if !featureFlagger.isFeatureOn(.fireDialog) {
+            if featureFlagger.isFeatureOn(.fireDialog) {
+                await dataProvider.refreshData()
+            } else {
                 await dataProvider.deleteVisits(matching: adjustedQuery)
             }
             self.firePixel(.delete, .daily)

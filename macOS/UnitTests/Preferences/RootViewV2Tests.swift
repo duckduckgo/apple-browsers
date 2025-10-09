@@ -20,6 +20,7 @@ import Combine
 import Subscription
 import SubscriptionTestingUtilities
 import XCTest
+import PixelKitTestingUtilities
 
 @testable import DuckDuckGo_Privacy_Browser
 @testable import SubscriptionUI
@@ -60,6 +61,7 @@ final class RootViewV2Tests: XCTestCase {
             subscriptionUIHandler: subscriptionUIHandler,
             featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: MockRemoteAISettings(),
+            wideEvent: WideEventMock(),
             showTab: { _ in },
             )
 
@@ -77,7 +79,8 @@ final class RootViewV2Tests: XCTestCase {
             subscriptionManager: subscriptionManager,
             subscriptionUIHandler: subscriptionUIHandler,
             featureFlagger: MockFeatureFlagger(),
-            aiChatURLSettings: mockRemoteAISettings
+            aiChatURLSettings: mockRemoteAISettings,
+            wideEvent: WideEventMock()
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -110,7 +113,8 @@ final class RootViewV2Tests: XCTestCase {
             subscriptionManager: subscriptionManager,
             subscriptionUIHandler: subscriptionUIHandler,
             featureFlagger: MockFeatureFlagger(),
-            aiChatURLSettings: MockRemoteAISettings()
+            aiChatURLSettings: MockRemoteAISettings(),
+            wideEvent: WideEventMock()
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content

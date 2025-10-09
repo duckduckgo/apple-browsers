@@ -25,7 +25,7 @@
       "id": "3",
       "content": {
         "messageType": "big_single_action",
-        "titleText": "Here goes a titl",
+        "titleText": "Here goes a title",
         "descriptionText": "description",
         "placeholder": "DDGAnnounce",
         "primaryActionText": "Ok",

@@ -56,6 +56,9 @@ class DefaultMessageNavigator: MessageNavigator {
             delegate?.segueToFeedback()
         case .sync:
             delegate?.segueToSettingsSync(with: nil, pairingInfo: nil)
+        case .importPasswords:
+            // Segue to Import Passwords
+            break
         }
     }
 

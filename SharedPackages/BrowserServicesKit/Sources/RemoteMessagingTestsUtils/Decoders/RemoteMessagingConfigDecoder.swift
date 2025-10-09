@@ -35,6 +35,8 @@ package enum RemoteMessagingConfigDecoder {
         switch messageType {
         case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
             return .newTabPage
+        case .cardsList:
+            return [.modal, .dedicatedTab]
         }
     }
 

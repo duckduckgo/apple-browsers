@@ -49,6 +49,7 @@ final class MainViewController: NSViewController {
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
     private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
     private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
+    private let winBackOfferPromptPresenting: WinBackOfferPromptPresenting
 
     let tabCollectionViewModel: TabCollectionViewModel
     let bookmarkManager: BookmarkManager
@@ -110,7 +111,8 @@ final class MainViewController: NSViewController {
          pixelFiring: PixelFiring? = PixelKit.shared,
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider = NSApp.delegateTyped.visualizeFireSettingsDecider,
          vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter = NSApp.delegateTyped.vpnUpsellPopoverPresenter,
-         sessionRestorePromptCoordinator: SessionRestorePromptCoordinating = NSApp.delegateTyped.sessionRestorePromptCoordinator
+         sessionRestorePromptCoordinator: SessionRestorePromptCoordinating = NSApp.delegateTyped.sessionRestorePromptCoordinator,
+         winBackOfferPromptPresenting: WinBackOfferPromptPresenting = NSApp.delegateTyped.winBackOfferPromptPresenter
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -123,6 +125,7 @@ final class MainViewController: NSViewController {
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
         self.themeManager = themeManager
         self.fireCoordinator = fireCoordinator
+        self.winBackOfferPromptPresenting = winBackOfferPromptPresenting
 
         tabBarViewController = TabBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
@@ -315,6 +318,7 @@ final class MainViewController: NSViewController {
         updateStopMenuItem()
         browserTabViewController.windowDidBecomeKey()
         showSetAsDefaultAndAddToDockIfNeeded()
+        showWinBackOfferIfNeeded()
     }
 
     func windowDidResignKey() {
@@ -680,6 +684,12 @@ final class MainViewController: NSViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
             self?.updateDividerColor(isShowingHomePage: self?.tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
         }
+    }
+
+    // MARK: - Win-Back Offer
+
+    private func showWinBackOfferIfNeeded() {
+        winBackOfferPromptPresenting.tryToShowPrompt(in: view.window)
     }
 
     // MARK: - First responder

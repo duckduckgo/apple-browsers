@@ -241,6 +241,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                             pixelHandler: DataBrokerProtectionMacOSPixelsHandler())
     }()
 
+    // MARK: - Win-back Campaign
+    lazy var winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = {
+        return WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
+                                            winbackOfferStore: winbackOfferStore,
+                                            winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider)
+    }()
+
+    private lazy var winbackOfferStore: WinbackOfferStoring = {
+        return WinbackOfferStore(keyValueStore: keyValueStore)
+    }()
+
+    private lazy var winbackOfferFeatureFlagProvider: WinBackOfferFeatureFlagProvider = {
+        return WinBackOfferFeatureFlagger(featureFlagger: featureFlagger)
+    }()
+
+    lazy var winBackOfferPromptPresenter: WinBackOfferPromptPresenting = {
+        return WinBackOfferPromptPresenter(visibilityManager: winBackOfferVisibilityManager)
+    }()
+
     // MARK: - Wide Event Service
 
     private lazy var wideEventService: WideEventService = {

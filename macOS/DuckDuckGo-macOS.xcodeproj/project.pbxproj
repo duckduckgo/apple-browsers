@@ -3375,6 +3375,16 @@
 		BB486B552E749A060026B972 /* AppStoreUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB486B532E7499FE0026B972 /* AppStoreUpdateController.swift */; };
 		BB486B572E749A1A0026B972 /* SparkleUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB486B562E749A160026B972 /* SparkleUpdateController.swift */; };
 		BB486B582E749A1A0026B972 /* SparkleUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB486B562E749A160026B972 /* SparkleUpdateController.swift */; };
+		BB4AA66E2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA66D2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift */; };
+		BB4AA66F2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA66D2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift */; };
+		BB4AA6742E96FD600008CC12 /* WinBackOfferDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA6702E96FD600008CC12 /* WinBackOfferDebugMenu.swift */; };
+		BB4AA6752E96FD600008CC12 /* WinBackOfferPromptPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA6712E96FD600008CC12 /* WinBackOfferPromptPresenter.swift */; };
+		BB4AA6762E96FD600008CC12 /* WinBackOfferPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA6722E96FD600008CC12 /* WinBackOfferPromptView.swift */; };
+		BB4AA6772E96FD600008CC12 /* WinBackOfferPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA6732E96FD600008CC12 /* WinBackOfferPromptViewModel.swift */; };
+		BB4AA6782E96FD600008CC12 /* WinBackOfferDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA6702E96FD600008CC12 /* WinBackOfferDebugMenu.swift */; };
+		BB4AA6792E96FD600008CC12 /* WinBackOfferPromptPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA6712E96FD600008CC12 /* WinBackOfferPromptPresenter.swift */; };
+		BB4AA67A2E96FD600008CC12 /* WinBackOfferPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA6722E96FD600008CC12 /* WinBackOfferPromptView.swift */; };
+		BB4AA67B2E96FD600008CC12 /* WinBackOfferPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA6732E96FD600008CC12 /* WinBackOfferPromptViewModel.swift */; };
 		BB4EC6952D9B5C8000660600 /* ThemeStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4EC6942D9B5C7800660600 /* ThemeStyleProviding.swift */; };
 		BB4EC6962D9B5C8000660600 /* ThemeStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4EC6942D9B5C7800660600 /* ThemeStyleProviding.swift */; };
 		BB53CF3E2E26CEED007F0B42 /* RequestNewFeatureFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB53CF3D2E26CEE5007F0B42 /* RequestNewFeatureFormView.swift */; };
@@ -5771,6 +5781,11 @@
 		BB486B502E74770D0026B972 /* LatestReleaseCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestReleaseCheckerTests.swift; sourceTree = "<group>"; };
 		BB486B532E7499FE0026B972 /* AppStoreUpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreUpdateController.swift; sourceTree = "<group>"; };
 		BB486B562E749A160026B972 /* SparkleUpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdateController.swift; sourceTree = "<group>"; };
+		BB4AA66D2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferFeatureFlagger.swift; sourceTree = "<group>"; };
+		BB4AA6702E96FD600008CC12 /* WinBackOfferDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferDebugMenu.swift; sourceTree = "<group>"; };
+		BB4AA6712E96FD600008CC12 /* WinBackOfferPromptPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPromptPresenter.swift; sourceTree = "<group>"; };
+		BB4AA6722E96FD600008CC12 /* WinBackOfferPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPromptView.swift; sourceTree = "<group>"; };
+		BB4AA6732E96FD600008CC12 /* WinBackOfferPromptViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPromptViewModel.swift; sourceTree = "<group>"; };
 		BB4EC6942D9B5C7800660600 /* ThemeStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeStyleProviding.swift; sourceTree = "<group>"; };
 		BB53CF3D2E26CEE5007F0B42 /* RequestNewFeatureFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestNewFeatureFormView.swift; sourceTree = "<group>"; };
 		BB5789712B2CA70F0009DFE2 /* DataBrokerProtectionSubscriptionEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionSubscriptionEventHandler.swift; sourceTree = "<group>"; };
@@ -7714,6 +7729,7 @@
 		4B4D60632A0B29FA00BCD287 /* BothAppTargets */ = {
 			isa = PBXGroup;
 			children = (
+				BB4AA66C2E96F7050008CC12 /* WinBackOffer */,
 				4B975C092E43227E0019F757 /* VPNUpsellNew */,
 				7BB4BC692C5CD96200E06FC8 /* ActiveDomainPublisher.swift */,
 				7BB4BC622C5BC13D00E06FC8 /* ActiveSiteInfoPublisher.swift */,
@@ -10978,6 +10994,18 @@
 			path = Feedback;
 			sourceTree = "<group>";
 		};
+		BB4AA66C2E96F7050008CC12 /* WinBackOffer */ = {
+			isa = PBXGroup;
+			children = (
+				BB4AA6702E96FD600008CC12 /* WinBackOfferDebugMenu.swift */,
+				BB4AA6712E96FD600008CC12 /* WinBackOfferPromptPresenter.swift */,
+				BB4AA6722E96FD600008CC12 /* WinBackOfferPromptView.swift */,
+				BB4AA6732E96FD600008CC12 /* WinBackOfferPromptViewModel.swift */,
+				BB4AA66D2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift */,
+			);
+			path = WinBackOffer;
+			sourceTree = "<group>";
+		};
 		BB4EC6902D9B5C6400660600 /* VisualRefresh */ = {
 			isa = PBXGroup;
 			children = (
@@ -13354,6 +13382,7 @@
 				EE098E782C8EDE2C009EBA7F /* AutofillCredentialsImportManager.swift in Sources */,
 				1D39E57B2C2C0F3700757339 /* ReleaseNotesUserScript.swift in Sources */,
 				3706FB33293F65D500E42796 /* DeviceIdleStateDetector.swift in Sources */,
+				BB4AA66E2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift in Sources */,
 				1DB67F2A2B6FEB17003DF243 /* WebViewSnapshotRenderer.swift in Sources */,
 				CC87770A2E1FF39B00113863 /* FirefoxHistoryReader.swift in Sources */,
 				1E15F69A2DF0D1590061395E /* AIChatSidebar.swift in Sources */,
@@ -14090,6 +14119,10 @@
 				3706FC9E293F65D500E42796 /* PreferencesAppearanceView.swift in Sources */,
 				3706FC9F293F65D500E42796 /* NSMenuItemExtension.swift in Sources */,
 				3706FCA0293F65D500E42796 /* ContiguousBytesExtension.swift in Sources */,
+				BB4AA6742E96FD600008CC12 /* WinBackOfferDebugMenu.swift in Sources */,
+				BB4AA6752E96FD600008CC12 /* WinBackOfferPromptPresenter.swift in Sources */,
+				BB4AA6762E96FD600008CC12 /* WinBackOfferPromptView.swift in Sources */,
+				BB4AA6772E96FD600008CC12 /* WinBackOfferPromptViewModel.swift in Sources */,
 				B602E8172A1E2570006D261F /* URL+NetworkProtection.swift in Sources */,
 				C1D3C5732E8ADB080086A2BD /* IdentitiesCleanupErrorHandling.swift in Sources */,
 				C1D3C5742E8ADB080086A2BD /* SyncIdentitiesAdapter.swift in Sources */,
@@ -15407,6 +15440,7 @@
 				B65E6BA026D9F10600095F96 /* NSBezierPathExtension.swift in Sources */,
 				31ECDA112BED339600AE679F /* DataBrokerAuthenticationManagerBuilder.swift in Sources */,
 				4B4D60E02A0C875F00BCD287 /* Bundle+VPN.swift in Sources */,
+				BB4AA66F2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift in Sources */,
 				AA6820E425502F19005ED0D5 /* WebsiteDataStore.swift in Sources */,
 				E274EFF92E1E8DFF00373C41 /* NewTabPageOmnibarActionsHandler.swift in Sources */,
 				7BD504CB2E606097008A0646 /* WebExtensionLoadResult.swift in Sources */,
@@ -15508,6 +15542,10 @@
 				AA9E9A5625A3AE8400D1959D /* NSWindowExtension.swift in Sources */,
 				7BD3AF5D2A8E7AF1006F9F56 /* KeychainType+ClientDefault.swift in Sources */,
 				370A34B12AB24E3700C77F7C /* SyncDebugMenu.swift in Sources */,
+				BB4AA6782E96FD600008CC12 /* WinBackOfferDebugMenu.swift in Sources */,
+				BB4AA6792E96FD600008CC12 /* WinBackOfferPromptPresenter.swift in Sources */,
+				BB4AA67A2E96FD600008CC12 /* WinBackOfferPromptView.swift in Sources */,
+				BB4AA67B2E96FD600008CC12 /* WinBackOfferPromptViewModel.swift in Sources */,
 				9FDA6C212B79A59D00E099A9 /* BookmarkFavoriteView.swift in Sources */,
 				AAC5E4C725D6A6E8007F5990 /* AddBookmarkPopover.swift in Sources */,
 				B6F7127E29F6779000594A45 /* QRSharingService.swift in Sources */,

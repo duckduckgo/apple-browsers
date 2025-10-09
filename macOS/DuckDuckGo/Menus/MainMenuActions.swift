@@ -202,7 +202,7 @@ extension AppDelegate {
                         reloadHistoryTabs()
                     }
                     if burnChats {
-                        fireCoordinator.fireViewModel.fire.burnChatHistory()
+                        await fireCoordinator.fireViewModel.fire.burnChatHistory()
                     }
                 }
             case .noAction:

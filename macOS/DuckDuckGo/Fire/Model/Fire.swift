@@ -51,7 +51,7 @@ protocol FireProtocol: AnyObject {
                                clearChatHistory: Bool,
                                urlToOpenIfWindowsAreClosed url: URL?,
                                completion: (@MainActor () -> Void)?)
-    @MainActor func burnChatHistory()
+    @MainActor func burnChatHistory() async
 }
 extension FireProtocol {
 
@@ -272,7 +272,6 @@ final class Fire: FireProtocol {
                                                                                  aiChatMenuConfiguration: NSApp.delegateTyped.aiChatMenuConfiguration,
                                                                                  featureDiscovery: DefaultFeatureDiscovery(),
                                                                                  privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager)
-        subscribeToChatHistoryNotifications()
     }
 
     @MainActor
@@ -324,9 +323,9 @@ final class Fire: FireProtocol {
             self.burnRecentlyClosed(baseDomains: domains)
             self.burnAutoconsentCache()
             self.burnZoomLevels(of: domains)
+
             if includingChatHistory {
-                group.enter() // Leave is called when we receive notification that data clearing is complete
-                self.burnChatHistory()
+                await burnChatHistory()
             }
 
             group.notify(queue: .main) {
@@ -390,8 +389,7 @@ final class Fire: FireProtocol {
             self.burnAutoconsentCache()
             self.burnZoomLevels()
 
-            group.enter() // Leave is called when we receive notification that data clearing is complete
-            self.burnChatHistory()
+            await burnChatHistory()
 
             group.notify(queue: .main) {
                 self.dispatchGroup = nil
@@ -462,14 +460,8 @@ final class Fire: FireProtocol {
     // MARK: - Duck.ai Chat History
 
     @MainActor
-    func burnChatHistory() {
-        aiChatHistoryCleaner.cleanAIChatHistory()
-    }
-
-    private func subscribeToChatHistoryNotifications() {
-        NotificationCenter.default.addObserver(forName: .aiChatHistoryClearDataCompleted, object: nil, queue: .main) { [weak self] _ in
-            self?.dispatchGroup?.leave()
-        }
+    func burnChatHistory() async {
+        await aiChatHistoryCleaner.cleanAIChatHistory()
     }
 
     // MARK: - Fire animation

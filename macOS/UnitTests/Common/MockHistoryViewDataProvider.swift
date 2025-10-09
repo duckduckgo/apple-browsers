@@ -1,5 +1,5 @@
 //
-//  MockHistoryProvider.swift
+//  MockHistoryViewDataProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -23,7 +23,7 @@ import HistoryView
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
-public class MockHistoryProvider: @preconcurrency HistoryViewDataProviding {
+public class MockHistoryViewDataProvider: @preconcurrency HistoryViewDataProviding {
 
     public var date = Date()
     public var allVisits: [Visit] = []
@@ -153,9 +153,8 @@ public class MockHistoryProvider: @preconcurrency HistoryViewDataProviding {
         return [:]
     }
 
-    public func deleteVisits(for identifiers: [VisitIdentifier]) async {
-
-    }
+    public func deleteVisits(matching query: HistoryView.DataModel.HistoryQueryKind) async {}
+    public func burnVisits(matching query: HistoryView.DataModel.HistoryQueryKind) async {}
 
     public func cookieDomains(matching query: DataModel.HistoryQueryKind) async -> Set<String> {
         let visits = await visits(matching: query)

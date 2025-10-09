@@ -20,7 +20,7 @@ import Common
 @testable import DuckDuckGo_Privacy_Browser
 
 class MockFireproofDomains: FireproofDomains {
-    init(domains: [String]) {
+    init(domains: [String] = []) {
         super.init(store: FireproofDomainsStoreMock(), tld: TLD())
         for domain in domains {
             super.add(domain: domain, notify: false)

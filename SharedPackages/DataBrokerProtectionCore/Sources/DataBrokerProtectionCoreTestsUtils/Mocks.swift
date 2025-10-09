@@ -611,6 +611,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public var lastDeletedEmailConfirmationExtractedProfileId: Int64?
     public var wasIncrementAttemptCountCalled = false
     public var incrementAttemptCountCallCount = 0
+    public var incrementShouldThrow = false
 
     public typealias DatabaseProvider = SecureStorageDatabaseProviderMock
 
@@ -968,6 +969,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var lastDeletedEmailConfirmationExtractedProfileId: Int64?
     public var wasIncrementAttemptCountCalled = false
     public var incrementAttemptCountCallCount = 0
+    public var incrementAttemptShouldThrow = false
     public var lastAddedHistoryEvent: HistoryEvent?
 
     public var saveResult: Result<Void, Error> = .success(())
@@ -1115,6 +1117,9 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     }
 
     public func incrementAttemptCount(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
+        if incrementAttemptShouldThrow {
+            throw MockError.saveFailed
+        }
         attemptCount += 1
     }
 

@@ -999,7 +999,8 @@ protocol NewWindowPolicyDecisionMaker {
 
     @MainActor
     private func shouldReload(_ url: URL, source: ReloadIfNeededSource) -> Bool {
-        guard url.isValid else { return false }
+        /// Use unified logic if enabled to decide if URL is valid
+        guard url.isValid(usingUnifiedLogic: featureFlagger.isFeatureOn(.unifiedURLPredictor)) else { return false }
 
         switch source {
         // should load when Web View is displayed?

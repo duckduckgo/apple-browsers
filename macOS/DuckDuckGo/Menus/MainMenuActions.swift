@@ -171,10 +171,7 @@ extension AppDelegate {
                 })
                 return
             }
-            let historyViewDataProvider = HistoryViewDataProvider(
-                historyDataSource: historyCoordinator,
-                historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains, fire: { @MainActor in self.fireCoordinator.fireViewModel.fire })
-            )
+            let historyViewDataProvider = self.fireCoordinator.historyProvider
             await historyViewDataProvider.refreshData()
             let visits = await historyViewDataProvider.visits(matching: .rangeFilter(.all))
 

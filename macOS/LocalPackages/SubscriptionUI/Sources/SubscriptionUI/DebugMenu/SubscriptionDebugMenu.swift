@@ -19,6 +19,7 @@
 import AppKit
 import Subscription
 import StoreKit
+import PixelKit
 
 public final class SubscriptionDebugMenu: NSMenuItem {
 
@@ -42,6 +43,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
 
     let subscriptionUserDefaults: UserDefaults
     let isAuthV2Enabled: Bool
+    let wideEvent: WideEventManaging
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -56,7 +58,8 @@ public final class SubscriptionDebugMenu: NSMenuItem {
                 subscriptionManagerV1: (any SubscriptionManager)?,
                 subscriptionManagerV2: (any SubscriptionManagerV2)?,
                 subscriptionUserDefaults: UserDefaults,
-                isAuthV2Enabled: Bool) {
+                isAuthV2Enabled: Bool,
+                wideEvent: WideEventManaging) {
         self.currentEnvironment = currentEnvironment
         self.updateServiceEnvironment = updateServiceEnvironment
         self.updatePurchasingPlatform = updatePurchasingPlatform
@@ -68,6 +71,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         self.subscriptionManagerV2 = subscriptionManagerV2
         self.subscriptionUserDefaults = subscriptionUserDefaults
         self.isAuthV2Enabled = isAuthV2Enabled
+        self.wideEvent = wideEvent
         super.init(title: "Subscription", action: nil, keyEquivalent: "")
         self.submenu = makeSubmenu()
     }
@@ -447,10 +451,11 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     @IBAction func showPurchaseViewV2(_ sender: Any?) {
         if #available(macOS 12.0, *) {
             let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManagerV2,
-                                                                 storePurchaseManager: subscriptionManagerV2.storePurchaseManager())
+                                                                   storePurchaseManager: subscriptionManagerV2.storePurchaseManager())
             let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManagerV2,
-                                                                   storePurchaseManager: subscriptionManagerV2.storePurchaseManager(),
-                                                                   appStoreRestoreFlow: appStoreRestoreFlow)
+                                                                     storePurchaseManager: subscriptionManagerV2.storePurchaseManager(),
+                                                                     appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                     wideEvent: wideEvent)
             // swiftlint:disable:next force_cast
             let vc = DebugPurchaseViewControllerV2(storePurchaseManager: subscriptionManagerV2.storePurchaseManager() as! DefaultStorePurchaseManagerV2,
                                                    appStorePurchaseFlow: appStorePurchaseFlow)

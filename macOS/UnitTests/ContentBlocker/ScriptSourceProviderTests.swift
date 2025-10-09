@@ -65,6 +65,16 @@ final class ScriptSourceProviderTests: XCTestCase {
             appearancePreferences: appearancePreferences
         )
 
+        let fireCoordinator = FireCoordinator(tld: TLD(),
+                                              featureFlagger: Application.appDelegate.featureFlagger,
+                                              historyCoordinating: HistoryCoordinatingMock(),
+                                              visualizeFireAnimationDecider: nil,
+                                              onboardingContextualDialogsManager: nil,
+                                              fireproofDomains: MockFireproofDomains(),
+                                              faviconManagement: FaviconManagerMock(),
+                                              windowControllersManager: WindowControllersManagerMock(),
+                                              pixelFiring: nil,
+                                              historyProvider: MockHistoryViewDataProvider())
         let sourceProvider = ScriptSourceProvider(
             configStorage: MockConfigurationStore(),
             privacyConfigurationManager: MockPrivacyConfigurationManaging(),
@@ -81,7 +91,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             fireproofDomains: MockFireproofDomains(domains: []),
-            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger, historyProvider: MockHistoryProvider()),
+            fireCoordinator: fireCoordinator,
             newTabPageActionsManager: nil
         )
 

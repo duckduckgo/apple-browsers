@@ -109,7 +109,16 @@ final class DownloadListCoordinatorTests: XCTestCase {
 
         var fireWindowSession: FireWindowSessionRef?
         if isBurner {
-            let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger, historyProvider: MockHistoryProvider())
+            let fireCoordinator = FireCoordinator(tld: TLD(),
+                                                  featureFlagger: Application.appDelegate.featureFlagger,
+                                                  historyCoordinating: HistoryCoordinatingMock(),
+                                                  visualizeFireAnimationDecider: nil,
+                                                  onboardingContextualDialogsManager: nil,
+                                                  fireproofDomains: MockFireproofDomains(),
+                                                  faviconManagement: FaviconManagerMock(),
+                                                  windowControllersManager: WindowControllersManagerMock(),
+                                                  pixelFiring: nil,
+                                                  historyProvider: MockHistoryViewDataProvider())
             let mainViewController = MainViewController(
                 tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: []), burnerMode: .init(isBurner: true)),
                 autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),

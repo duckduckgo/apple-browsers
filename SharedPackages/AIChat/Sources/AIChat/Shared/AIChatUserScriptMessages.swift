@@ -37,4 +37,5 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case getAIChatPageContext
     case submitAIChatPageContext
     case togglePageContextTelemetry
+    case openKeyboard
 }

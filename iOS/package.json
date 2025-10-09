@@ -10,10 +10,8 @@
     "pixel-lint.fix": "prettier ./PixelDefinitions --write"
   },
   "devDependencies": {
-    "@duckduckgo/pixel-schema": "github:duckduckgo/pixel-schema#v1.0.8",
+    "@duckduckgo/pixel-schema": "github:duckduckgo/pixel-schema#v1.0.9",
     "prettier": "^3.6.2"
-  },
-  "dependencies": {
   },
   "prettier": {
     "singleQuote": true,
@@ -23,7 +21,7 @@
       {
         "files": "*.json5",
         "options": {
-          "parser": "json5",
+          "parser": "json",
           "tabWidth": 4
         }
       }

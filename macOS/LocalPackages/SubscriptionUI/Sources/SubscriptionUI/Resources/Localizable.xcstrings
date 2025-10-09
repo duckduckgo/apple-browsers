@@ -2393,6 +2393,66 @@
         }
       }
     },
+    "subscription.preferences.paid.ai.chat.ai.features.link" : {
+      "comment" : "Link to the AI Features Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einstellungen für KI-Funktionen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AI Features Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configuración de funciones de IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paramètres des fonctionnalités d'IA"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impostazioni delle funzionalità AI"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instellingen voor AI-functies"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustawienia funkcji AI"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Definições de Funcionalidades de IA"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки функций ИИ"
+          }
+        }
+      }
+    },
     "subscription.preferences.paid.ai.chat.button" : {
       "comment" : "Title for the preferences pane button to open Duck.ai Pro",
       "extractionState" : "extracted_with_value",
@@ -2449,6 +2509,246 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть Duck.ai"
+          }
+        }
+      }
+    },
+    "subscription.preferences.paid.ai.chat.configure.duck.ai.description" : {
+      "comment" : "Description of the section of settings that allows user to configure Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai und andere KI-Funktionen deines Browsers in den Einstellungen für KI-Funktionen anpassen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Customize Duck.ai and other AI Features of your browser in AI Features Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personaliza Duck.ai y otras características de IA de tu navegador en la configuración de funciones de IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personnalisez Duck.ai et les autres fonctionnalités d'IA de votre navigateur dans les paramètres des fonctionnalités d'IA."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizza Duck.ai e altre funzionalità AI del tuo browser nelle impostazioni delle funzionalità AI"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas Duck.ai en andere AI-functies van je browser aan in de instellingen voor AI-functies"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dostosuj Duck.ai i inne funkcje AI swojej przeglądarki w ustawieniach funkcji AI"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personaliza o Duck.ai e outras Funcionalidades de IA do teu navegador nas definições de Funcionalidades de IA."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Параметры Duck.ai и других ИИ-функций браузера можно задать в «Настройках функций ИИ»."
+          }
+        }
+      }
+    },
+    "subscription.preferences.paid.ai.chat.configure.duck.ai.title" : {
+      "comment" : "Title of the section of settings that allows user to configure Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai konfigurieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Configure Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configura Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configurer Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configura Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai configureren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skonfiguruj Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configurar Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройка Duck.ai"
+          }
+        }
+      }
+    },
+    "subscription.preferences.paid.ai.chat.enable.duck.ai.description" : {
+      "comment" : "Title of the section of settings that allows user to configure Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktiviere Duck.ai in den Einstellungen für KI-Funktionen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Enable Duck.ai in AI Features Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Habilitar Duck.ai en la configuración de funciones de IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activer Duck.ai dans les réglages des fonctionnalités d'IA"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abilita Duck.ai nelle impostazioni delle funzionalità AI"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai inschakelen in de instellingen voor AI-functies"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Włącz Duck.ai w ustawieniach funkcji AI"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ativar o Duck.ai nas definições das Funcionalidades de IA"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включить Duck.ai в «Настройках функций ИИ»"
+          }
+        }
+      }
+    },
+    "subscription.preferences.paid.ai.chat.enable.duck.ai.title" : {
+      "comment" : "Title of the section of settings that allows user to configure Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erhalte Zugriff auf fortschrittliche KI-Modelle in Duck.ai"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get access to advanced AI models in Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtén acceso a modelos avanzados de IA en Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accéder à des modèles d'IA avancés dans Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accedi a modelli AI avanzati in Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toegang tot geavanceerde AI-modellen in Duck.ai"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzyskaj dostęp do zaawansowanych modeli AI w Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtém acesso a modelos avançados de IA no Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Продвинутые ИИ-модели в Duck.ai"
           }
         }
       }
@@ -5105,7 +5405,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Privacy Pro heißt jetzt einfach DuckDuckGo-Abo"
           }
         },
@@ -5117,43 +5417,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Privacy Pro ahora se llama simplemente suscripción a DuckDuckGo"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Privacy Pro s'appelle désormais simplement l'abonnement DuckDuckGo"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Privacy Pro ora si chiama semplicemente abbonamento DuckDuckGo"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Privacy Pro heet nu gewoon het DuckDuckGo-abonnement"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Privacy Pro obecnie nazywa się po prostu subskrypcją DuckDuckGo"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "O Privacy Pro chama-se agora subscrição da DuckDuckGo"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Пакет Privacy Pro теперь называется просто подпиской DuckDuckGo."
           }
         }

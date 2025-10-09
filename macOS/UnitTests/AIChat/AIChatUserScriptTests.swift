@@ -118,6 +118,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didTogglePageContextTelemetry = false
     var pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     var pageContextRequestedSubject = PassthroughSubject<Void, Never>()
+    var chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
 
     var didReportMetric = false
 
@@ -203,8 +204,12 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         pageContextRequestedSubject.eraseToAnyPublisher()
     }
 
+    var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> {
+        chatRestorationDataSubject.eraseToAnyPublisher()
+    }
+
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
-        didSubmitAIChatPageContext = true
+        didSubmitPageContext = true
     }
 
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {

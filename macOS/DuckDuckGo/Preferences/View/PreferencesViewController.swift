@@ -59,7 +59,8 @@ final class PreferencesViewController: NSViewController {
                                         vpnGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager),
                                         includeDuckPlayer: duckPlayer.shouldDisplayPreferencesSideBar,
                                         includeAIChat: aiChatRemoteSettings.isAIChatEnabled,
-                                        subscriptionManager: subscriptionManager)
+                                        subscriptionManager: subscriptionManager,
+                                        aiFeaturesStatusProvider: AIChatPreferences.shared)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -85,7 +86,8 @@ final class PreferencesViewController: NSViewController {
                                                       subscriptionManager: Application.appDelegate.subscriptionManagerV2!,
                                                       subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
                                                       featureFlagger: featureFlagger,
-                                                      aiChatURLSettings: aiChatRemoteSettings)
+                                                      aiChatURLSettings: aiChatRemoteSettings,
+                                                      wideEvent: Application.appDelegate.wideEvent)
             let host = NSHostingView(rootView: prefRootView)
             view.addAndLayout(host)
         }

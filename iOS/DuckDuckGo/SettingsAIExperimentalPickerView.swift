@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import UIComponents
 
 struct SettingsAIExperimentalPickerView: View {
     @Binding var isDuckAISelected: Bool
@@ -30,7 +31,8 @@ struct SettingsAIExperimentalPickerView: View {
                 isSelected: !isDuckAISelected,
                 selectedImage: .searchExperimentalOn,
                 unselectedImage: .searchExperimentalOff,
-                title: UserText.settingsAIPickerSearchOnly
+                title: UserText.settingsAIPickerSearchOnly,
+                showNewBadge: false
             ) {
                 isDuckAISelected = false
             }
@@ -39,7 +41,8 @@ struct SettingsAIExperimentalPickerView: View {
                 isSelected: isDuckAISelected,
                 selectedImage: .aiExperimentalOn,
                 unselectedImage: .aiExperimentalOff,
-                title: UserText.settingsAIPickerSearchAndDuckAI
+                title: UserText.settingsAIPickerSearchAndDuckAI,
+                showNewBadge: true
             ) {
                 isDuckAISelected = true
             }
@@ -54,7 +57,10 @@ private struct PickerOptionView: View {
     let selectedImage: ImageResource
     let unselectedImage: ImageResource
     let title: String
+    let showNewBadge: Bool
     let action: () -> Void
+    
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         Button(action: action) {
@@ -62,10 +68,9 @@ private struct PickerOptionView: View {
                 Image(isSelected ? selectedImage : unselectedImage)
                     .resizable()
                     .scaledToFit()
+                    .frame(height: shouldUseVerticalLayout ? SettingsAIExperimentalPickerViewLayout.imageHeight : nil)
 
-                Text(title)
-                .daxFootnoteRegular()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
+                textAndBadgeView
 
                 CheckmarkView(isSelected: isSelected)
                     .scaledToFit()
@@ -74,6 +79,34 @@ private struct PickerOptionView: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
+    }
+    
+    @ViewBuilder
+    private var textAndBadgeView: some View {
+        if shouldUseVerticalLayout {
+            VStack(spacing: 4) {
+                Text(title)
+                    .daxFootnoteRegular()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .multilineTextAlignment(.center)
+                if showNewBadge {
+                    BadgeView(text: UserText.settingsItemNewBadge)
+                }
+            }
+        } else {
+            HStack(spacing: 6) {
+                Text(title)
+                    .daxFootnoteRegular()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                if showNewBadge {
+                    BadgeView(text: UserText.settingsItemNewBadge)
+                }
+            }
+        }
+    }
+    
+    private var shouldUseVerticalLayout: Bool {
+        dynamicTypeSize.isAccessibilitySize || dynamicTypeSize > .large
     }
 }
 
@@ -102,4 +135,5 @@ private enum SettingsAIExperimentalPickerViewLayout {
     static let viewHeight: CGFloat = 152
     static let maxViewWidth: CGFloat = 380
     static let checkmarkHeight: CGFloat = 20
+    static let imageHeight: CGFloat = 88
 }

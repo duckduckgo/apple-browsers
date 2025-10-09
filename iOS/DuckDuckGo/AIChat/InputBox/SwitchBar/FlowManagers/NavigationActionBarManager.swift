@@ -50,7 +50,7 @@ final class NavigationActionBarManager {
     
     /// Installs the navigation action bar in the provided parent view controller
     @MainActor
-    func installInViewController(_ viewController: UIViewController) {
+    func installInViewController(_ viewController: UIViewController, inView containerView: UIView? = nil) {
         let viewModel = NavigationActionBarViewModel(
             switchBarHandler: switchBarHandler,
             onMicrophoneTapped: { [weak self] in
@@ -67,20 +67,28 @@ final class NavigationActionBarManager {
             }
         )
         navigationActionBarViewModel = viewModel
-        
-        let actionBarViewController = NavigationActionBarViewController(viewModel: viewModel)
+
+        let isFloating = containerView == nil
+
+        let actionBarViewController = NavigationActionBarViewController(viewModel: viewModel, isFloating: isFloating)
         navigationActionBarViewController = actionBarViewController
-        
+
+        let view: UIView = containerView ?? viewController.view
+
         viewController.addChild(actionBarViewController)
-        viewController.view.addSubview(actionBarViewController.view)
+        view.addSubview(actionBarViewController.view)
         actionBarViewController.view.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            actionBarViewController.view.leadingAnchor.constraint(equalTo: viewController.view.leadingAnchor),
-            actionBarViewController.view.trailingAnchor.constraint(equalTo: viewController.view.trailingAnchor),
-            actionBarViewController.view.bottomAnchor.constraint(equalTo: viewController.view.bottomAnchor)
+            actionBarViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            actionBarViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            actionBarViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
-        
+
+        if !isFloating {
+            actionBarViewController.view.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+        }
+
         actionBarViewController.didMove(toParent: viewController)
     }
     

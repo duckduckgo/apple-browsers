@@ -404,6 +404,7 @@ enum GeneralPixel: PixelKitEvent {
     case userViewedWebKitTerminationErrorPage
     case webKitTerminationLoop
     case webKitTerminationIndicatorClicked
+    case webKitDidTerminateNonRecoverableAggregated
 
     case removedInvalidBookmarkManagedObjects
 
@@ -428,6 +429,7 @@ enum GeneralPixel: PixelKitEvent {
     case updaterDidFindUpdate
     case updaterDidDownloadUpdate
     case updaterDidRunUpdate
+    case updaterAttemptToRestartWithoutResumeBlock
     case releaseNotesEmpty
 
     case faviconDecryptionFailedUnique
@@ -506,10 +508,6 @@ enum GeneralPixel: PixelKitEvent {
     case secureVaultKeystoreEventL2KeyPasswordMigration
 
     case compilationFailed
-
-    // MARK: error page shown
-    case errorPageShownOther
-    case errorPageShownWebkitTermination
 
     // Broken site prompt
 
@@ -1098,6 +1096,9 @@ enum GeneralPixel: PixelKitEvent {
         /// Event trigger: User clicked WebKit process crash indicator icon
         case .webKitTerminationIndicatorClicked:
             return "webkit_termination_indicator_clicked"
+        /// Event trigger: Aggregated WebKit process crashes (burst detection)
+        case .webKitDidTerminateNonRecoverableAggregated:
+            return "webkit_did_terminate_non_recoverable_aggregated"
 
         case .removedInvalidBookmarkManagedObjects:
             return "removed_invalid_bookmark_managed_objects"
@@ -1143,6 +1144,8 @@ enum GeneralPixel: PixelKitEvent {
             return "updater_did_download_update"
         case .updaterDidRunUpdate:
             return "updater_did_run_update"
+        case .updaterAttemptToRestartWithoutResumeBlock:
+            return "updater_attempt_to_restart_without_resume_block"
         case .releaseNotesEmpty:
             return "m_mac_release_notes_empty"
 
@@ -1226,9 +1229,6 @@ enum GeneralPixel: PixelKitEvent {
         case .bookmarksSortByName: return "m_mac_sort_bookmarks_by_name"
         case .bookmarksSearchExecuted: return "m_mac_search_bookmarks_executed"
         case .bookmarksSearchResultClicked: return "m_mac_search_result_clicked"
-
-        case .errorPageShownOther: return "m_mac_errorpageshown_other"
-        case .errorPageShownWebkitTermination: return "m_mac_errorpageshown_webkittermination"
 
             // Broken site prompt
         case .pageRefreshThreeTimesWithin20Seconds: return "m_mac_reload-three-times-within-20-seconds"

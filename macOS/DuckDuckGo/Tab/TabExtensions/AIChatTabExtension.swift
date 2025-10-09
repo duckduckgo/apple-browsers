@@ -45,6 +45,7 @@ final class AIChatTabExtension {
          isLoadedInSidebar: Bool) {
         self.isLoadedInSidebar = isLoadedInSidebar
         pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
+        chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
 
         webViewPublisher.sink { [weak self] webView in
             self?.webView = webView
@@ -93,10 +94,19 @@ final class AIChatTabExtension {
                 self?.pageContextRequestedSubject.send()
             }
             .store(in: &userScriptCancellables)
+
+        aiChatUserScript.handler.chatRestorationDataPublisher
+            .sink { [weak self] data in
+                self?.chatRestorationDataSubject.send(data)
+            }
+            .store(in: &userScriptCancellables)
     }
 
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     let pageContextRequestedPublisher: AnyPublisher<Void, Never>
+
+    private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
+    let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
 
     private var temporaryAIChatNativeHandoffData: AIChatPayload?
     func setAIChatNativeHandoffData(payload: AIChatPayload) {
@@ -110,7 +120,7 @@ final class AIChatTabExtension {
     }
 
     private var temporaryAIChatRestorationData: AIChatRestorationData?
-    func setAIChatRestorationData(data: AIChatRestorationData) {
+    func setAIChatRestorationData(_ data: AIChatRestorationData?) {
         guard let aiChatUserScript else {
             // User script not yet loaded, store the payload and set when ready
             temporaryAIChatRestorationData = data
@@ -178,11 +188,12 @@ extension AIChatTabExtension: NavigationResponder {
 protocol AIChatProtocol: AnyObject, NavigationResponder {
     var aiChatUserScript: AIChatUserScript? { get }
     func setAIChatNativeHandoffData(payload: AIChatPayload)
-    func setAIChatRestorationData(data: AIChatRestorationData)
+    func setAIChatRestorationData(_ data: AIChatRestorationData?)
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
 
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
+    var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
 }
 
 extension AIChatTabExtension: AIChatProtocol, TabExtension {

@@ -59,7 +59,7 @@ struct SettingsSubscriptionView: View {
                                                            subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
                                                            subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                           widePixel: AppDependencyProvider.shared.widePixel,
+                                                           wideEvent: AppDependencyProvider.shared.wideEvent,
                                                            dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider)
     }
 
@@ -300,7 +300,7 @@ struct SettingsSubscriptionView: View {
                 SettingsCellView(
                     label: UserText.settingsSubscriptionAiChatTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
-                    statusIndicator: StatusIndicatorView(status: hasAIChatEntitlement ? .on : .off),
+                    statusIndicator: StatusIndicatorView(status: (hasAIChatEntitlement && settingsViewModel.isAIChatEnabled) ? .on : .off),
                     isGreyedOut: !hasAIChatEntitlement,
                     isNew: true
                 )

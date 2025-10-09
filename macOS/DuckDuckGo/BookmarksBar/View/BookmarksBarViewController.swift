@@ -49,7 +49,12 @@ final class BookmarksBarViewController: NSViewController {
     private let viewModel: BookmarksBarViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
     private let appereancePreferences: AppearancePreferencesPersistor
-    private let visualStyle: VisualStyleProviding
+
+    private var themeCancellable: AnyCancellable?
+    private let themeManager: ThemeManaging
+    private var theme: ThemeStyleProviding {
+        themeManager.theme
+    }
 
     let syncButtonModel: DismissableSyncDeviceButtonModel = .init(source: .bookmarksBar, keyValueStore: UserDefaults.standard)
 
@@ -78,18 +83,18 @@ final class BookmarksBarViewController: NSViewController {
           bookmarkManager: BookmarkManager,
           dragDropManager: BookmarkDragDropManager,
           appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore),
-          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
+          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
     ) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.appereancePreferences = appereancePreferences
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager,
                                                dragDropManager: dragDropManager,
                                                tabCollectionViewModel: tabCollectionViewModel,
-                                               visualStyle: visualStyle)
+                                               themeManager: themeManager)
 
         super.init(coder: coder)
     }
@@ -109,15 +114,12 @@ final class BookmarksBarViewController: NSViewController {
 
         viewModel.delegate = self
 
-        backgroundColorView.backgroundColor = visualStyle.colorsProvider.navigationBackgroundColor
-
         let nib = NSNib(nibNamed: "BookmarksBarCollectionViewItem", bundle: .main)
         bookmarksBarCollectionView.setDraggingSourceOperationMask([.copy, .move], forLocal: true)
         bookmarksBarCollectionView.register(nib, forItemWithIdentifier: BookmarksBarCollectionViewItem.identifier)
         bookmarksBarCollectionView.allowsMultipleSelection = false
 
         bookmarksBarCollectionView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
-        bookmarksBarCollectionView.backgroundColors = [visualStyle.colorsProvider.navigationBackgroundColor]
         bookmarksBarCollectionView.setAccessibilityIdentifier("BookmarksBarViewController.bookmarksBarCollectionView")
 
         clippedItemsIndicator.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
@@ -133,14 +135,16 @@ final class BookmarksBarViewController: NSViewController {
         view.postsFrameChangedNotifications = true
 
         setUpSyncButton()
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     private func setUpSyncButton() {
         if appereancePreferences.showBookmarksBar {
             syncButtonModel.viewDidLoad()
         }
-        syncButton.layer?.cornerRadius = visualStyle.toolbarButtonsCornerRadius
-        syncMouseOverView.cornerRadius = visualStyle.toolbarButtonsCornerRadius
+        syncButton.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
+        syncMouseOverView.cornerRadius = theme.toolbarButtonsCornerRadius
         syncButton.isHidden = !syncButtonModel.shouldShowSyncButton
         syncButtonIcon.image = DesignSystemImages.Glyphs.Size16.sync
         syncButtonIcon.contentTintColor = .textPrimary
@@ -155,8 +159,8 @@ final class BookmarksBarViewController: NSViewController {
         importBookmarksIcon.image = NSImage(named: "Import-16D")
         importBookmarksIcon.contentTintColor = .textPrimary
         importBookmarksButton.isHidden = true
-        importBookmarksButton.layer?.cornerRadius = visualStyle.toolbarButtonsCornerRadius
-        importBookmarksMouseOverView.cornerRadius = visualStyle.toolbarButtonsCornerRadius
+        importBookmarksButton.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
+        importBookmarksMouseOverView.cornerRadius = theme.toolbarButtonsCornerRadius
     }
 
     private func addContextMenu() {
@@ -433,6 +437,26 @@ extension BookmarksBarViewController: BookmarksBarViewModelDelegate {
         dialog.show(in: view.window)
     }
 
+    // MARK: - Themes
+
+    private func subscribeToThemeChanges() {
+        themeCancellable = themeManager.themePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] style in
+                self?.applyThemeStyle(theme: style)
+            }
+    }
+
+    private func applyThemeStyle() {
+        applyThemeStyle(theme: themeManager.theme)
+    }
+
+    private func applyThemeStyle(theme: ThemeStyleProviding) {
+        let navigationBackgroundColor = theme.colorsProvider.navigationBackgroundColor
+
+        backgroundColorView.backgroundColor = navigationBackgroundColor
+        bookmarksBarCollectionView.backgroundColors = [navigationBackgroundColor]
+    }
 }
 
 private let draggingInfoUpdatedTimerKey = UnsafeRawPointer(bitPattern: "draggingInfoUpdatedTimerKey".hashValue)!

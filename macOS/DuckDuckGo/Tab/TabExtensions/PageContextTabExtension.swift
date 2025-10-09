@@ -159,11 +159,11 @@ final class PageContextTabExtension {
 
     private func subscribeToCollectionRequest() {
         sidebarCancellables.removeAll()
-        guard let sidebar else {
+        guard let sidebarViewController = sidebar?.sidebarViewController else {
             return
         }
 
-        sidebar.sidebarViewController.pageContextRequestedPublisher?
+        sidebarViewController.pageContextRequestedPublisher?
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.shouldForceContextCollection = true
@@ -181,8 +181,8 @@ final class PageContextTabExtension {
         }
         shouldForceContextCollection = false
         cachedPageContext = pageContext
-        if let sidebar = aiChatSidebarProvider.getSidebar(for: tabID) {
-            sidebar.sidebarViewController.setPageContext(pageContext)
+        if let sidebarViewController = aiChatSidebarProvider.getSidebarViewController(for: tabID) {
+            sidebarViewController.setPageContext(pageContext)
         }
     }
 

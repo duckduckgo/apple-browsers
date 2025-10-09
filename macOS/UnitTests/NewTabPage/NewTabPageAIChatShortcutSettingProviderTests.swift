@@ -34,7 +34,6 @@ final class NewTabPageAIChatShortcutSettingProviderTests: XCTestCase {
         userDefaults = UserDefaults(suiteName: suiteName)
         storage = DefaultAIChatPreferencesStorage(userDefaults: userDefaults)
         featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.aiChatGlobalSwitch]
         configuration = AIChatMenuConfiguration(storage: storage, remoteSettings: MockRemoteAISettings(), featureFlagger: featureFlagger)
 
         provider = NewTabPageAIChatShortcutSettingProvider(

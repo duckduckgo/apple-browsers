@@ -83,6 +83,8 @@ public enum PrivacyFeature: String {
     case htmlNewTabPage
     case daxEasterEggLogos
     case openFireWindowByDefault
+    case behaviorMetrics
+    case appStoreUpdateFlow
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -123,6 +125,17 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211260578559159?focus=true
     case unifiedURLPredictor
+
+    /// Enable WebKit page load timing performance reporting
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/XXXXXXXXX?focus=true
+    case webKitPerformanceReporting
+
+    // Gradual rollout for new Fire dialog replacing the legacy popover
+    // https://app.asana.com/1/137249556945/project/72649045549333/task/1210417832822045
+    case fireDialog
+
+    // Controls visibility of the "Manage individual sites" link in the Fire dialog
+    case fireDialogIndividualSitesLink
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -139,16 +152,15 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case widgetReporting
 
-    /// Add ask AI chat to end of autocomplete suggestions
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210839825079760?focus=true
-    case askAIChatSuggestion
-
     // Local inactivity provisional notifications delivered to Notification Center.
     // https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
     case inactivityNotification
 
     /// https://app.asana.com/1/137249556945/project/1210947754188321/task/1210869716452616?focus=true
     case refreshButtonPosition
+
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210659895188821?focus=true
+    case embeddedSERPSettings
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -233,6 +245,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Adds context menu action for translating text selected on a website.
     case textTranslation
+
+    /// Adds toggle for controlling  'Ask Follow-Up Questions' setting.
+    case serpSettingsFollowUpQuestions
+
+    /// Rollout feature flag for entry point improvements
+    case improvements
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -319,6 +337,9 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case vpnToolbarUpsell
     case supportsAlternateStripePaymentFlow
     case subscriptionPurchaseWidePixelMeasurement
+    case subscriptionRestoreWidePixelMeasurement
+    case authV2WideEventEnabled
+    case winBackOffer
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {
@@ -423,4 +444,10 @@ public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .experimentalTheming }
 
     case visualUpdates // Rollout
+}
+
+public enum BehaviorMetricsSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .behaviorMetrics }
+
+    case behaviorMetricsEnabled
 }

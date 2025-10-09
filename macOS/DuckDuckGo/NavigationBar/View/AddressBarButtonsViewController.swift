@@ -615,7 +615,7 @@ final class AddressBarButtonsViewController: NSViewController {
            isUrlBookmarked || bookmarkManager.isAnyUrlVariantBookmarked(url: url)
         {
             bookmarkButton.image = bookmarksIconsProvider.bookmarkFilledIcon
-            bookmarkButton.mouseOverTintColor = palette.surfacePrimary
+            bookmarkButton.mouseOverTintColor = palette.iconsPrimary
             bookmarkButton.toolTip = UserText.editBookmarkTooltip
             bookmarkButton.setAccessibilityValue("Bookmarked")
             bookmarkButton.setAccessibilityTitle(UserText.editBookmarkTooltip)

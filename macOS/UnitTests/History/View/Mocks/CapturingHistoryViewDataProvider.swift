@@ -38,14 +38,6 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
         return await visitsBatch(query, source, limit, offset)
     }
 
-    func deleteVisits(for identifiers: [VisitIdentifier]) async {
-        deleteVisitsForIdentifierCalls.append(identifiers)
-    }
-
-    func burnVisits(for identifiers: [VisitIdentifier]) async {
-        burnVisitsForIdentifiersCalls.append(identifiers)
-    }
-
     func deleteVisits(matching query: DataModel.HistoryQueryKind) async {
         deleteVisitsMatchingQueryCalls.append(query)
     }
@@ -87,9 +79,6 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
 
     var deleteVisitsMatchingQueryCalls: [DataModel.HistoryQueryKind] = []
     var burnVisitsMatchingQueryCalls: [DataModel.HistoryQueryKind] = []
-
-    var deleteVisitsForIdentifierCalls: [[VisitIdentifier]] = []
-    var burnVisitsForIdentifiersCalls: [[VisitIdentifier]] = []
 
     var visitsBatchCalls: [VisitsBatchCall] = []
     var visitsBatch: (DataModel.HistoryQueryKind, DataModel.HistoryQuerySource, Int, Int) async -> DataModel.HistoryItemsBatch = { _, _, _, _ in .init(finished: true, visits: []) }

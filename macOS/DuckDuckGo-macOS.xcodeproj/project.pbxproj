@@ -2383,10 +2383,10 @@
 		846F4CDF2E048A0500266DB7 /* BWIntegration in Frameworks */ = {isa = PBXBuildFile; productRef = 846F4CDE2E048A0500266DB7 /* BWIntegration */; };
 		847642ED2E570E5C00AA33EE /* WindowControllersManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847642EC2E570E5B00AA33EE /* WindowControllersManagerMock.swift */; };
 		847642EE2E570E5C00AA33EE /* WindowControllersManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847642EC2E570E5B00AA33EE /* WindowControllersManagerMock.swift */; };
-		847711032E8BC6B2003292BD /* MockHistoryProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847711022E8BC6B2003292BD /* MockHistoryProvider.swift */; };
-		847711042E8BC6B2003292BD /* MockHistoryProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847711022E8BC6B2003292BD /* MockHistoryProvider.swift */; };
-		847711052E8BCD9B003292BD /* MockHistoryProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847711022E8BC6B2003292BD /* MockHistoryProvider.swift */; };
-		847711062E8BCD9B003292BD /* MockHistoryProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847711022E8BC6B2003292BD /* MockHistoryProvider.swift */; };
+		847711032E8BC6B2003292BD /* MockHistoryViewDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847711022E8BC6B2003292BD /* MockHistoryViewDataProvider.swift */; };
+		847711042E8BC6B2003292BD /* MockHistoryViewDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847711022E8BC6B2003292BD /* MockHistoryViewDataProvider.swift */; };
+		847711052E8BCD9B003292BD /* MockHistoryViewDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847711022E8BC6B2003292BD /* MockHistoryViewDataProvider.swift */; };
+		847711062E8BCD9B003292BD /* MockHistoryViewDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847711022E8BC6B2003292BD /* MockHistoryViewDataProvider.swift */; };
 		847873DE2E02A32C00A8CB04 /* Logger+UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */; };
 		847873DF2E02A32C00A8CB04 /* Logger+UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */; };
 		84796D752E67000C007E6F9F /* FireDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84796D742E67000C007E6F9F /* FireDialogView.swift */; };
@@ -5089,7 +5089,7 @@
 		845B43332DB69F2C00D46001 /* SwiftObjectRetainCycleBreakerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftObjectRetainCycleBreakerTests.swift; sourceTree = "<group>"; };
 		846F4CD02E04829D00266DB7 /* TabContent+DisplayedFavicon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TabContent+DisplayedFavicon.swift"; sourceTree = "<group>"; };
 		847642EC2E570E5B00AA33EE /* WindowControllersManagerMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowControllersManagerMock.swift; sourceTree = "<group>"; };
-		847711022E8BC6B2003292BD /* MockHistoryProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockHistoryProvider.swift; sourceTree = "<group>"; };
+		847711022E8BC6B2003292BD /* MockHistoryViewDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockHistoryViewDataProvider.swift; sourceTree = "<group>"; };
 		84796D742E67000C007E6F9F /* FireDialogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireDialogView.swift; sourceTree = "<group>"; };
 		848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarMenuViewController.swift; sourceTree = "<group>"; };
 		84A03D2A2DBBE06700A3685B /* DraggingDestinationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraggingDestinationView.swift; sourceTree = "<group>"; };
@@ -9036,7 +9036,7 @@
 				4BBF09222830812900EE1418 /* FileSystemDSL.swift */,
 				4BBF0924283083EC00EE1418 /* FileSystemDSLTests.swift */,
 				84D0B97D2E0BD7E500E3256A /* MockFeatureFlagger.swift */,
-				847711022E8BC6B2003292BD /* MockHistoryProvider.swift */,
+				847711022E8BC6B2003292BD /* MockHistoryViewDataProvider.swift */,
 				B630E7FD29C887ED00363609 /* NSErrorAdditionalInfo.swift */,
 				9F5E48162D5D867600D2396D /* NSPasteboardExtensionTests.swift */,
 				847642EC2E570E5B00AA33EE /* WindowControllersManagerMock.swift */,
@@ -14242,7 +14242,7 @@
 				9F0660792BECC81C00B8EEF1 /* PixelCapturedParameters.swift in Sources */,
 				3706FE20293F661700E42796 /* CLLocationManagerMock.swift in Sources */,
 				B6656E0E2B29C733008798A1 /* FileImportViewLocalizationTests.swift in Sources */,
-				847711032E8BC6B2003292BD /* MockHistoryProvider.swift in Sources */,
+				847711032E8BC6B2003292BD /* MockHistoryViewDataProvider.swift in Sources */,
 				B6C843DB2BA1CAB6006FDEC3 /* FilePresenterTests.swift in Sources */,
 				B6619EF72B10DFF700CD9186 /* InstructionsFormatParserTests.swift in Sources */,
 				3706FE21293F661700E42796 /* DownloadsPreferencesTests.swift in Sources */,
@@ -14582,7 +14582,7 @@
 				1DDC4B272E2E4CC50084146D /* NewTabPageOmnibarActionsHandlerTests.swift in Sources */,
 				845063562DB76FF000A60B56 /* WKDownloadMock.swift in Sources */,
 				B6F5656A299A414300A04298 /* WKWebViewMockingExtension.swift in Sources */,
-				847711062E8BCD9B003292BD /* MockHistoryProvider.swift in Sources */,
+				847711062E8BCD9B003292BD /* MockHistoryViewDataProvider.swift in Sources */,
 				EEE0E1CD2C32F5690058E148 /* CSVImporterIntegrationTests.swift in Sources */,
 				563A3CFB2D37AE2A001966FD /* ConfigurationManagerIntegrationTests.swift in Sources */,
 				84C176522DF050E5001DEEC7 /* DownloadsWebViewMock.swift in Sources */,
@@ -14656,7 +14656,7 @@
 				1DDC4B262E2E4CC50084146D /* NewTabPageOmnibarActionsHandlerTests.swift in Sources */,
 				845063552DB76FF000A60B56 /* WKDownloadMock.swift in Sources */,
 				B6F56568299A414300A04298 /* WKWebViewMockingExtension.swift in Sources */,
-				847711052E8BCD9B003292BD /* MockHistoryProvider.swift in Sources */,
+				847711052E8BCD9B003292BD /* MockHistoryViewDataProvider.swift in Sources */,
 				EEE0E1D12C32F8620058E148 /* CSVImporterIntegrationTests.swift in Sources */,
 				563A3CFA2D37AE2A001966FD /* ConfigurationManagerIntegrationTests.swift in Sources */,
 				84C176532DF050E5001DEEC7 /* DownloadsWebViewMock.swift in Sources */,
@@ -16428,7 +16428,7 @@
 				9F180D0F2B69C553000D695F /* Tab+WKUIDelegateTests.swift in Sources */,
 				9FB4AF532DED8C0700BE416F /* DefaultBrowserAndDockPromptPixelEventTests.swift in Sources */,
 				4BA1A6E6258C270800F6F690 /* EncryptionKeyGeneratorTests.swift in Sources */,
-				847711042E8BC6B2003292BD /* MockHistoryProvider.swift in Sources */,
+				847711042E8BC6B2003292BD /* MockHistoryViewDataProvider.swift in Sources */,
 				C149975A2DE762B600FF8F0F /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift in Sources */,
 				37CDFC2B2D79CCF400CBB429 /* HistoryViewDataProviderPixelHandlerTests.swift in Sources */,
 				1D4B03D92CA55DDF00224E99 /* BookmarkUrlExtensionTests.swift in Sources */,

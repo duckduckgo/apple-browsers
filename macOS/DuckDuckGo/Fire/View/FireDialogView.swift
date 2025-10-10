@@ -269,7 +269,7 @@ struct FireDialogView: ModalView {
                     icon: DesignSystemImages.Glyphs.Size16.aiChat,
                     title: UserText.fireDialogChatHistoryTitle,
                     subtitle: UserText.fireDialogChatHistorySubtitle,
-                    isOn: $viewModel.includeChatHistory
+                    isOn: $viewModel.includeChatHistorySetting
                 )
             }
             sectionDivider(padding: 0)

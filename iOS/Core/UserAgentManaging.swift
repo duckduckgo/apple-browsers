@@ -169,11 +169,11 @@ struct UserAgent {
               deviceVersion.majorVersion == 26,
               let mapping = config.settings(for: .customUserAgent)[Constants.safariVersionMappingsKey] as? [String: String] else { return agent }
 
-        var components: [String] = [deviceVersion.majorVersion, deviceVersion.minorVersion, deviceVersion.patchVersion].map { "\($0)"}
+        var components: [String] = [deviceVersion.majorVersion, deviceVersion.minorVersion, deviceVersion.patchVersion].map { "\($0)" }
         var replacement: String?
         while !components.isEmpty, replacement == nil {
             replacement = mapping[components.joined(separator: ".")]
-            _ = components.dropLast()
+            components = components.dropLast()
         }
 
         guard let replacement else { return agent }

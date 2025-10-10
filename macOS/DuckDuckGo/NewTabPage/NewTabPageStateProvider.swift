@@ -50,7 +50,8 @@ final class NewTabPageStateProvider: NewTabPageStateProviding {
 
     @MainActor
     func getState() -> [NewTabPage.WindowNewTabPageStateData]? {
-        guard featureFlagger.isFeatureOn(.newTabPageTabIDs) else {
+        guard featureFlagger.isFeatureOn(.newTabPageTabIDs) &&
+                !featureFlagger.isFeatureOn(.newTabPagePerTab) else {
             return nil
         }
 

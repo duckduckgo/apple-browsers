@@ -33,7 +33,6 @@ final class CrashCollectionService {
 
     init(appSettings: AppSettings = AppUserDefaults(),
          application: UIApplication = UIApplication.shared) {
-        self.isBookmarksStructureMissing = isBookmarksStructureMissing
         self.appSettings = appSettings
         self.application = application
 

@@ -49,7 +49,8 @@ struct AppConfiguration {
 
         onboardingConfiguration.migrateToNewOnboarding()
         clearTemporaryDirectory()
-        try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore)
+        let isBackground = UIApplication.shared.applicationState == .background
+        try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore, isBackground: isBackground)
         migrateAIChatSettings()
 
         WidgetCenter.shared.reloadAllTimelines()

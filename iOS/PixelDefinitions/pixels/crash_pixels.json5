@@ -174,6 +174,11 @@
                 "key": "launch-marker-present",
                 "description": "Whether app has successfully launched before (helps distinguish backup restore from corruption)",
                 "type": "boolean"
+            },
+            {
+                "key": "is-background",
+                "description": "Whether the app was in background state when the validation occurred",
+                "type": "boolean"
             }
         ]
     },

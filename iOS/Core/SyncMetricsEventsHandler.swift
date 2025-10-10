@@ -30,6 +30,7 @@ public class SyncMetricsEventsHandler: EventMapping<MetricsEvent> {
                 Pixel.fire(pixel: .syncDuckAddressOverride, includedParameters: [.appVersion])
             case .localTimestampResolutionTriggered(let feature):
                 Pixel.fire(pixel: .syncLocalTimestampResolutionTriggered(feature), includedParameters: [.appVersion])
+            }
         }
     }
 

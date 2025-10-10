@@ -21,11 +21,13 @@ import Foundation
 import CoreData
 import Bookmarks
 import Persistence
+import UIKit
 
 public protocol BookmarksStateValidation {
 
     func validateInitialState(context: NSManagedObjectContext,
-                              validationError: BookmarksStateValidator.ValidationError) -> Bool
+                              validationError: BookmarksStateValidator.ValidationError,
+                              isBackground: Bool) -> Bool
 
     func validateBookmarksStructure(context: NSManagedObjectContext)
 }
@@ -53,8 +55,9 @@ public class BookmarksStateValidator: BookmarksStateValidation {
     }
 
     public func validateInitialState(context: NSManagedObjectContext,
-                                     validationError: ValidationError) {
-        guard keyValueStore.object(forKey: Constants.bookmarksDBIsInitialized) != nil else { return }
+                                     validationError: ValidationError,
+                                     isBackground: Bool) -> Bool {
+        guard keyValueStore.object(forKey: Constants.bookmarksDBIsInitialized) != nil else { return true }
 
         let fetch = BookmarkEntity.fetchRequest()
         do {
@@ -62,14 +65,16 @@ public class BookmarksStateValidator: BookmarksStateValidation {
             if count == 0 {
                 switch validationError {
                 case .bookmarksStructureLost:
-                    errorHandler(.bookmarksStructureLost, generateDiagnosticParameters())
+                    errorHandler(.bookmarksStructureLost, ["is-background": String(isBackground)])
                 default:
                     errorHandler(validationError, nil)
                 }
+                return false
             }
         } catch {
             errorHandler(.validatorError(error), nil)
         }
+        return true
     }
 
     public func validateBookmarksStructure(context: NSManagedObjectContext) {

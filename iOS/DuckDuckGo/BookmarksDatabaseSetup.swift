@@ -59,7 +59,8 @@ struct BookmarksDatabaseSetup {
 
     func loadStoreAndMigrate(bookmarksDatabase: CoreDataStoring,
                              formFactorFavoritesMigrator: BookmarkFormFactorFavoritesMigrating = BookmarkFormFactorFavoritesMigration(),
-                             validator: BookmarksStateValidation = Self.makeValidator()) throws {
+                             validator: BookmarksStateValidation = Self.makeValidator(),
+                             isBackground: Bool = false) throws {
 
         let oldFavoritesOrder: [String]?
         do {
@@ -81,7 +82,7 @@ struct BookmarksDatabaseSetup {
             }
 
             // Perform pre-setup/migration validation
-            let isMissingStructure = !validator.validateInitialState(context: context, validationError: .bookmarksStructureLost)
+            let isMissingStructure = !validator.validateInitialState(context: context, validationError: .bookmarksStructureLost, isBackground: isBackground)
             do {
                 try self.migrateFromLegacyCoreDataStorageIfNeeded(context)
                 migrationHappened = try self.migrateToFormFactorSpecificFavorites(context, oldFavoritesOrder)
@@ -92,7 +93,8 @@ struct BookmarksDatabaseSetup {
 
             if isMissingStructure {
                 _ = validator.validateInitialState(context: context,
-                                                   validationError: .bookmarksStructureNotRecovered)
+                                                   validationError: .bookmarksStructureNotRecovered,
+                                                   isBackground: isBackground)
             }
 
             // Add new migrations and set migrationHappened flag above this comment. Only the last migration is relevant.

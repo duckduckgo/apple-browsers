@@ -68,7 +68,7 @@ struct Launching: LaunchingHandling {
 
         // MARK: - Application Setup
         // Handles one-time application setup during launch
-        let isBookmarksStructureMissing = try configuration.start()
+        try configuration.start()
 
         // MARK: - Service Initialization (continued)
         // Create and initialize remaining core services

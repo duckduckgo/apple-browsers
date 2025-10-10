@@ -25,7 +25,7 @@ public final class PixelKit {
     public typealias CompletionBlock = (Bool, (any Error)?) -> Void
 
     /// The frequency with which a pixel is sent to our endpoint.
-    public enum Frequency {
+    public enum Frequency: Equatable {
         /// The default frequency for pixels. This fires pixels with the event names as-is.
         case standard
 

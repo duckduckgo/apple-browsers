@@ -37,12 +37,10 @@ public protocol NewTabPageSectionsVisibilityProviding: AnyObject {
     var isProtectionsReportVisiblePublisher: AnyPublisher<Bool, Never> { get }
 }
 
-public protocol NewTabPageTabIDsProviding: AnyObject {
-
+public protocol NewTabPageStateProviding: AnyObject {
     @MainActor
-    func getTabStateData() -> [WindowNewTabPageStateData]
-    var tabStateChangedPublisher: AnyPublisher<Void, Never> { get }
-
+    func getState() -> [WindowNewTabPageStateData]
+    var stateChangedPublisher: AnyPublisher<Void, Never> { get }
 }
 
 public struct WindowNewTabPageStateData {
@@ -73,7 +71,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     private let contextMenuPresenter: NewTabPageContextMenuPresenting
     private let linkOpener: NewTabPageLinkOpening
     private let eventMapper: EventMapping<NewTabPageConfigurationEvent>?
-    private let tabIDsProvider: NewTabPageTabIDsProviding
+    private let stateProvider: NewTabPageStateProviding
 
     public init(
         sectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding,
@@ -83,7 +81,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         contextMenuPresenter: NewTabPageContextMenuPresenting = DefaultNewTabPageContextMenuPresenter(),
         linkOpener: NewTabPageLinkOpening,
         eventMapper: EventMapping<NewTabPageConfigurationEvent>?,
-        tabIDsProvider: NewTabPageTabIDsProviding
+        stateProvider: NewTabPageStateProviding
     ) {
         self.sectionsAvailabilityProvider = sectionsAvailabilityProvider
         self.sectionsVisibilityProvider = sectionsVisibilityProvider
@@ -92,7 +90,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         self.contextMenuPresenter = contextMenuPresenter
         self.linkOpener = linkOpener
         self.eventMapper = eventMapper
-        self.tabIDsProvider = tabIDsProvider
+        self.stateProvider = stateProvider
         super.init()
 
         Publishers.Merge3(
@@ -106,7 +104,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             }
             .store(in: &cancellables)
 
-        tabIDsProvider.tabStateChangedPublisher
+        stateProvider.stateChangedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
@@ -175,7 +173,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func notifyTabStateDidChange() {
-        let states = tabIDsProvider.getTabStateData()
+        let states = stateProvider.getState()
         for state in states {
             pushMessage(
                 named: MessageName.tabsOnDataUpdate.rawValue,
@@ -283,8 +281,8 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         let widgets = fetchWidgets()
         let widgetConfigs = fetchWidgetConfigs()
         let customizerData = customBackgroundProvider.customizerData
-        let tabs = tabIDsProvider
-            .getTabStateData()
+        let tabs = stateProvider
+            .getState()
             .first(where: { $0.webView === original.webView })?
             .tabs
         let config = NewTabPageDataModel.NewTabPageConfiguration(

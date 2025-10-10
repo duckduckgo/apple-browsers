@@ -1,5 +1,4 @@
-//
-//  NewTabPageTabIDsProvider.swift
+//  NewTabPageStateProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -26,9 +25,9 @@ import PixelKit
 import Combine
 import WebKit
 
-final class NewTabPageTabIDsProvider: NewTabPageTabIDsProviding {
+final class NewTabPageStateProvider: NewTabPageStateProviding {
 
-    var tabStateChangedPublisher: AnyPublisher<Void, Never>
+    var stateChangedPublisher: AnyPublisher<Void, Never>
 
     private let windowControllersManager: WindowControllersManagerProtocol
 
@@ -38,14 +37,14 @@ final class NewTabPageTabIDsProvider: NewTabPageTabIDsProviding {
     init(windowControllersManager: WindowControllersManagerProtocol) {
         self.windowControllersManager = windowControllersManager
 
-        tabStateChangedPublisher = windowControllersManager
+        stateChangedPublisher = windowControllersManager
             .tabsChanged
             .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
     }
 
     @MainActor
-    func getTabStateData() -> [NewTabPage.WindowNewTabPageStateData] {
+    func getState() -> [NewTabPage.WindowNewTabPageStateData] {
         return windowControllersManager.mainWindowControllers.compactMap { controller in
             let webView = controller.mainViewController.browserTabViewController.newTabPageWebViewModel.webView
             let tabs = NewTabPageDataModel.Tabs(from: controller)

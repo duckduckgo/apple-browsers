@@ -155,7 +155,7 @@ extension NewTabPageActionsManager {
             keyValueStore: keyValueStore,
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider
         )
-        let tabIDsProvider = NewTabPageTabIDsProvider(windowControllersManager: windowControllersManager)
+        let stateProvider = NewTabPageStateProvider(windowControllersManager: windowControllersManager)
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(
@@ -165,7 +165,7 @@ extension NewTabPageActionsManager {
                 customBackgroundProvider: customizationProvider,
                 linkOpener: NewTabPageLinkOpener(),
                 eventMapper: NewTabPageConfigurationErrorHandler(),
-                tabIDsProvider: tabIDsProvider
+                stateProvider: stateProvider
             ),
             NewTabPageCustomBackgroundClient(model: customizationProvider),
             NewTabPageRMFClient(remoteMessageProvider: activeRemoteMessageModel),

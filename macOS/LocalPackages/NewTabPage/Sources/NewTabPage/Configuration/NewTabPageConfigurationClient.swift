@@ -40,9 +40,19 @@ public protocol NewTabPageSectionsVisibilityProviding: AnyObject {
 public protocol NewTabPageTabIDsProviding: AnyObject {
 
     @MainActor
-    func getTabStateData() -> [(NewTabPageDataModel.Tabs, WKWebView)]
+    func getTabStateData() -> [WindowNewTabPageStateData]
     var tabStateChangedPublisher: AnyPublisher<Void, Never> { get }
 
+}
+
+public struct WindowNewTabPageStateData {
+    let tabs: NewTabPageDataModel.Tabs
+    let webView: WKWebView
+
+    public init(tabs: NewTabPageDataModel.Tabs, webView: WKWebView) {
+        self.tabs = tabs
+        self.webView = webView
+    }
 }
 
 public protocol NewTabPageLinkOpening {
@@ -165,9 +175,13 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func notifyTabStateDidChange() {
-        let data = tabIDsProvider.getTabStateData()
-        for tuple in data {
-            pushMessage(named: MessageName.tabsOnDataUpdate.rawValue, params: tuple.0, to: tuple.1)
+        let states = tabIDsProvider.getTabStateData()
+        for state in states {
+            pushMessage(
+                named: MessageName.tabsOnDataUpdate.rawValue,
+                params: state.tabs,
+                to: state.webView
+            )
         }
     }
 
@@ -269,9 +283,10 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         let widgets = fetchWidgets()
         let widgetConfigs = fetchWidgetConfigs()
         let customizerData = customBackgroundProvider.customizerData
-        let tabs = tabIDsProvider.getTabStateData().first { (_, webView) in
-            webView === original.webView
-        }?.0 ?? nil
+        let tabs = tabIDsProvider
+            .getTabStateData()
+            .first(where: { $0.webView === original.webView })?
+            .tabs
         let config = NewTabPageDataModel.NewTabPageConfiguration(
             widgets: widgets,
             widgetConfigs: widgetConfigs,

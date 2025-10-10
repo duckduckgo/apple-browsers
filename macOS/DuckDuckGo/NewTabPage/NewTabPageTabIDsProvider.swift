@@ -44,22 +44,12 @@ final class NewTabPageTabIDsProvider: NewTabPageTabIDsProviding {
             .eraseToAnyPublisher()
     }
 
-//    @MainActor
-//    func getTabIDs() -> NewTabPage.NewTabPageDataModel.Tabs {
-//        return NewTabPageDataModel.Tabs(from: windowControllersManager)
-//    }
-
-//    @MainActor
-//    func getActiveWebView() -> WKWebView? {
-//        return windowControllersManager.lastKeyMainWindowController?.mainViewController.browserTabViewController.newTabPageWebViewModel.webView
-//    }
-
     @MainActor
-    func getTabStateData() -> [(NewTabPage.NewTabPageDataModel.Tabs, WKWebView)] {
+    func getTabStateData() -> [NewTabPage.WindowNewTabPageStateData] {
         return windowControllersManager.mainWindowControllers.compactMap { controller in
             let webView = controller.mainViewController.browserTabViewController.newTabPageWebViewModel.webView
             let tabs = NewTabPageDataModel.Tabs(from: controller)
-            return (tabs, webView)
+            return NewTabPage.WindowNewTabPageStateData(tabs: tabs, webView: webView)
         }
     }
 

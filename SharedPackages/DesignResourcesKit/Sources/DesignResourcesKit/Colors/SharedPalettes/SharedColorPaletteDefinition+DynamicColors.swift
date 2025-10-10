@@ -222,6 +222,36 @@ extension SharedColorPaletteDefinition {
             return toneShadePrimary
         case .toneTintPrimary:
             return toneTintPrimary
+
+        /// Fire Dialog
+        case .fireDialogBackground:
+            return DynamicColor(lightColor: .white, darkColor: Color(0x333333))
+        case .fireDialogPillBackground:
+            return DynamicColor(lightColor: .xF7F7F7, darkColor: .x1C1C1E)
+        case .fireDialogPillBorder:
+            return DynamicColor(lightColor: Color(0xE8E8E8), darkColor: Color(0x5C5C5C))
+        case .fireDialogPillSelectedSegmentBackground:
+            return DynamicColor(lightColor: .white, darkColor: .gray85)
+        case .fireDialogPillSelectedSegmentBorder:
+            return DynamicColor(lightColor: .gray20, darkColor: Color(0x4D4D4D))
+        case .fireDialogPillSelectedSegmentShadow:
+            return DynamicColor(lightColor: .gray20.opacity(0.05), darkColor: .clear)
+        case .fireDialogPillSelectedSegmentTopStroke:
+            return DynamicColor(lightColor: .clear, darkColor: Color(0x333333))
+        case .fireDialogPillSegmentMouseOver:
+            return DynamicColor(lightColor: Color(0xE0E0E0), darkColor: Color(0x333333))
+        case .fireDialogPillSegmentMouseDown:
+            return DynamicColor(lightColor: .gray30, darkColor: Color(0x404145))
+        case .fireDialogPillHoverOverlay:
+            return DynamicColor(lightColor: .black.opacity(0.06), darkColor: .white.opacity(0.06))
+        case .fireDialogPillSelectedSegmentIconBackground:
+            return DynamicColor(lightColor: Color(designSystemColor: .accentPrimary).opacity(0.12), darkColor: Color(designSystemColor: .accentPrimary).opacity(0.2))
+        case .fireDialogToggleKnob:
+            return DynamicColor(lightColor: .white, darkColor: Color(0x121827))
+        case .fireDialogSectionBackground:
+            return DynamicColor(lightColor: Color(0xFCFCFC), darkColor: Color(0x393939))
+        case .fireDialogSectionBorder:
+            return DynamicColor(lightColor: Color(0xEDEDED), darkColor: Color(0x424242))
         }
     }
 }

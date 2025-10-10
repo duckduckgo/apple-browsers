@@ -111,17 +111,30 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
     private let storePurchaseManager: any StorePurchaseManagerV2
     private let appStoreRestoreFlow: any AppStoreRestoreFlowV2
 
+    // Wide Event
+    private let wideEvent: WideEventManaging
+    private let isSubscriptionRestoreWidePixelMeasurementEnabled: Bool
+
     public init(subscriptionManager: any SubscriptionManagerV2,
                 storePurchaseManager: any StorePurchaseManagerV2,
-                appStoreRestoreFlow: any AppStoreRestoreFlowV2
+                appStoreRestoreFlow: any AppStoreRestoreFlowV2,
+                wideEvent: WideEventManaging,
+                isSubscriptionRestoreWidePixelMeasurementEnabled: Bool = false
     ) {
         self.subscriptionManager = subscriptionManager
         self.storePurchaseManager = storePurchaseManager
         self.appStoreRestoreFlow = appStoreRestoreFlow
+        self.wideEvent = wideEvent
+        self.isSubscriptionRestoreWidePixelMeasurementEnabled = isSubscriptionRestoreWidePixelMeasurementEnabled
     }
 
     public func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<PurchaseResult, AppStorePurchaseFlowError> {
         Logger.subscriptionAppStorePurchaseFlow.log("Purchasing Subscription")
+
+        let subscriptionRestoreWideEventData = SubscriptionRestoreWideEventData(
+            restorePlatform: .purchaseBackgroundTask,
+            contextData: WideEventContextData(name: "funnel_onpurchasecheck_multiple")
+        )
 
         var externalID: String?
         var accountCreationDuration: WideEvent.MeasuredInterval?
@@ -132,12 +145,26 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
         } else {
             Logger.subscriptionAppStorePurchaseFlow.log("Try to retrieve an expired Apple subscription or create a new one")
 
+            if isSubscriptionRestoreWidePixelMeasurementEnabled {
+                subscriptionRestoreWideEventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
+                wideEvent.startFlow(subscriptionRestoreWideEventData)
+            }
             // Try to restore an account from a past purchase
             switch await appStoreRestoreFlow.restoreAccountFromPastPurchase() {
             case .success:
                 Logger.subscriptionAppStorePurchaseFlow.log("An active subscription is already present")
+                if isSubscriptionRestoreWidePixelMeasurementEnabled {
+                    subscriptionRestoreWideEventData.appleAccountRestoreDuration?.complete()
+                    wideEvent.completeFlow(subscriptionRestoreWideEventData, status: .success, onComplete: { _, _ in })
+                }
                 return .failure(.activeSubscriptionAlreadyPresent)
             case .failure(let error):
+                if isSubscriptionRestoreWidePixelMeasurementEnabled {
+                    subscriptionRestoreWideEventData.appleAccountRestoreDuration?.complete()
+                    subscriptionRestoreWideEventData.errorData = .init(error: error)
+                    wideEvent.completeFlow(subscriptionRestoreWideEventData, status: .failure, onComplete: { _, _ in })
+                }
+
                 Logger.subscriptionAppStorePurchaseFlow.log("Failed to restore an account from a past purchase: \(String(describing: error), privacy: .public)")
                 do {
                     var creationStart = WideEvent.MeasuredInterval.startingNow()

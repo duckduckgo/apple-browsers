@@ -50,7 +50,7 @@ struct Launching: LaunchingHandling {
     private let isAppLaunchedInBackground = UIApplication.shared.applicationState == .background
     private let window: UIWindow = UIWindow(frame: UIScreen.main.bounds)
 
-    private let configuration = AppConfiguration()
+    private let configuration: AppConfiguration
     private let services: AppServices
     private let mainCoordinator: MainCoordinator
     private let launchTaskManager = LaunchTaskManager()
@@ -62,10 +62,13 @@ struct Launching: LaunchingHandling {
         Logger.lifecycle.info("Launching: \(#function)")
 
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
+        
+        // Initialize configuration with the key-value store
+        configuration = AppConfiguration(appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
         // MARK: - Application Setup
         // Handles one-time application setup during launch
-        let isBookmarksStructureMissing = try configuration.start(syncKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        let isBookmarksStructureMissing = try configuration.start()
 
         // MARK: - Service Initialization (continued)
         // Create and initialize remaining core services
@@ -207,8 +210,7 @@ struct Launching: LaunchingHandling {
         configuration.finalize(
             reportingService: reportingService,
             mainViewController: mainCoordinator.controller,
-            launchTaskManager: launchTaskManager,
-            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+            launchTaskManager: launchTaskManager
         )
 
         setupWindow()

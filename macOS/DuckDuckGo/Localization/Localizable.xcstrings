@@ -69127,22 +69127,17 @@
       "comment" : "In the preferences for themes, the option to reset to the Default Theme Colors.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-<<<<<<< HEAD
-=======
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Design zurücksetzen"
           }
         },
->>>>>>> origin/main
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Reset Theme"
           }
-<<<<<<< HEAD
-=======
         },
         "es" : {
           "stringUnit" : {
@@ -69185,7 +69180,6 @@
             "state" : "translated",
             "value" : "Сбросить тему"
           }
->>>>>>> origin/main
         }
       }
     },

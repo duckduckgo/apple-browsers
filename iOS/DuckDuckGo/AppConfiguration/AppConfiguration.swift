@@ -38,7 +38,7 @@ struct AppConfiguration {
         self.appKeyValueStore = appKeyValueStore
     }
 
-    func start() throws -> Bool {
+    func start() throws {
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
         PixelConfiguration.configure(with: featureFlagger)
 
@@ -49,13 +49,11 @@ struct AppConfiguration {
 
         onboardingConfiguration.migrateToNewOnboarding()
         clearTemporaryDirectory()
-        let isBookmarksStructureMissing = try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore)
+        try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore)
         migrateAIChatSettings()
 
         WidgetCenter.shared.reloadAllTimelines()
         PrivacyFeatures.httpsUpgrade.loadDataAsync()
-        
-        return isBookmarksStructureMissing
     }
 
     /// Perform AI Chat settings migration, and needs to happen before AIChatSettings is created

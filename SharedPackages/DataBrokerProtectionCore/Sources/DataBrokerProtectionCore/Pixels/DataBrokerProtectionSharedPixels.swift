@@ -95,7 +95,7 @@ public enum DataBrokerProtectionSharedPixels {
     }
 
     case httpError(error: Error, code: Int, dataBroker: String, version: String)
-    case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String)
+    case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String, stepType: StepType?, dataBrokerParent: String?)
     case otherError(error: Error, dataBroker: String, version: String)
     case databaseError(error: Error, functionOccurredIn: String)
     case cocoaError(error: Error, functionOccurredIn: String)
@@ -308,11 +308,13 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return ["code": String(code),
                     "dataBroker": dataBroker,
                     "version": version]
-        case .actionFailedError(_, let actionId, let message, let dataBroker, let version):
+        case .actionFailedError(_, let actionId, let message, let dataBroker, let version, let stepType, let dataBrokerParent):
             return ["actionID": actionId,
                     "message": message,
                     "dataBroker": dataBroker,
-                    "version": version]
+                    "version": version,
+                    "stepType": stepType?.rawValue ?? "unknown",
+                    "parent": dataBrokerParent ?? ""]
         case .otherError(let error, let dataBroker, let version):
             return ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
                     "dataBroker": dataBroker,
@@ -540,7 +542,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
             case .secureVaultDatabaseRecreated:
                 self.pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters, withNamePrefix: platform.pixelNamePrefix)
             case .httpError(let error, _, _, _),
-                    .actionFailedError(let error, _, _, _, _),
+                    .actionFailedError(let error, _, _, _, _, _, _),
                     .otherError(let error, _, _):
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .databaseError(let error, _),

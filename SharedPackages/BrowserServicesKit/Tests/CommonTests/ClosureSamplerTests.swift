@@ -20,127 +20,127 @@ import XCTest
 @testable import Common
 
 final class ClosureSamplerTests: XCTestCase {
-    
+
     func testWhenPercentageIsZeroThenClosureNeverExecutes() {
         let sampler = ClosureSampler(percentage: 0)
         var executionCount = 0
-        
+
         for _ in 0..<100 {
             sampler.sample {
                 executionCount += 1
             }
         }
-        
+
         XCTAssertEqual(executionCount, 0)
     }
-    
+
     func testWhenPercentageIsHundredThenClosureAlwaysExecutes() {
         let sampler = ClosureSampler(percentage: 100)
         var executionCount = 0
-        
+
         for _ in 0..<100 {
             sampler.sample {
                 executionCount += 1
             }
         }
-        
+
         XCTAssertEqual(executionCount, 100)
     }
-    
+
     func testWhenPercentageIsFiftyThenClosureExecutesApproximatelyHalfTheTime() {
         let sampler = ClosureSampler(percentage: 50)
         var executionCount = 0
         let iterations = 1000
-        
+
         for _ in 0..<iterations {
             if sampler.sample({}) {
                 executionCount += 1
             }
         }
-        
+
         // Allow for some variance (±10%)
         let expectedMin = Int(Double(iterations) * 0.4)
         let expectedMax = Int(Double(iterations) * 0.6)
         XCTAssertGreaterThanOrEqual(executionCount, expectedMin)
         XCTAssertLessThanOrEqual(executionCount, expectedMax)
     }
-    
+
     func testWhenPercentageIsTenThenClosureExecutesApproximatelyTenPercentOfTheTime() {
         let sampler = ClosureSampler(percentage: 10)
         var executionCount = 0
         let iterations = 1000
-        
+
         for _ in 0..<iterations {
             if sampler.sample({}) {
                 executionCount += 1
             }
         }
-        
+
         // Allow for some variance (±5%)
         let expectedMin = Int(Double(iterations) * 0.05)
         let expectedMax = Int(Double(iterations) * 0.15)
         XCTAssertGreaterThanOrEqual(executionCount, expectedMin)
         XCTAssertLessThanOrEqual(executionCount, expectedMax)
     }
-    
+
     func testWhenPercentageIsBelowOneThenClampsToOne() {
         let sampler = ClosureSampler(percentage: -5)
         XCTAssertEqual(sampler.percentage, 1)
     }
-    
+
     func testWhenPercentageIsAboveHundredThenClampsToHundred() {
         let sampler = ClosureSampler(percentage: 150)
         XCTAssertEqual(sampler.percentage, 100)
     }
-    
+
     func testSampleWithReturnValueReturnsNilWhenNotSampled() {
         let sampler = ClosureSampler(percentage: 0)
-        
+
         let result = sampler.sample { "test" }
-        
+
         XCTAssertNil(result)
     }
-    
+
     func testSampleWithReturnValueReturnsValueWhenSampled() {
         let sampler = ClosureSampler(percentage: 100)
-        
+
         let result = sampler.sample { "test" }
-        
+
         XCTAssertEqual(result, "test")
     }
-    
+
     func testSampleWithVoidClosureReturnsFalseWhenNotSampled() {
         let sampler = ClosureSampler(percentage: 0)
-        
+
         let result = sampler.sample { }
-        
+
         XCTAssertFalse(result)
     }
-    
+
     func testSampleWithVoidClosureReturnsTrueWhenSampled() {
         let sampler = ClosureSampler(percentage: 100)
-        
+
         let result = sampler.sample { }
-        
+
         XCTAssertTrue(result)
     }
-    
+
     func testMultipleSamplersWithDifferentPercentagesWorkIndependently() {
         let sampler10 = ClosureSampler(percentage: 10)
         let sampler50 = ClosureSampler(percentage: 50)
         let sampler90 = ClosureSampler(percentage: 90)
-        
+
         var count10 = 0
         var count50 = 0
         var count90 = 0
         let iterations = 1000
-        
+
         for _ in 0..<iterations {
             if sampler10.sample({}) { count10 += 1 }
             if sampler50.sample({}) { count50 += 1 }
             if sampler90.sample({}) { count90 += 1 }
         }
-        
+
         // Verify each sampler behaves independently
         XCTAssertLessThan(count10, count50)
         XCTAssertLessThan(count50, count90)

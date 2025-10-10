@@ -1625,7 +1625,6 @@
 		CBF259B92D499D0B00AC63E4 /* MainCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF259B82D499D0B00AC63E4 /* MainCoordinator.swift */; };
 		CBF259BB2D4D020200AC63E4 /* AutoClearService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF259BA2D4D020200AC63E4 /* AutoClearService.swift */; };
 		CBF259BD2D4E56E900AC63E4 /* ReportingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF259BC2D4E56E900AC63E4 /* ReportingService.swift */; };
-		CBF259C12D4EBD2F00AC63E4 /* ContentBlockingConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF259C02D4EBD2F00AC63E4 /* ContentBlockingConfiguration.swift */; };
 		CBF259C32D4EC10400AC63E4 /* CrashHandlersConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF259C22D4EC10400AC63E4 /* CrashHandlersConfiguration.swift */; };
 		CBF259C52D4ED37700AC63E4 /* ATBAndVariantConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF259C42D4ED37700AC63E4 /* ATBAndVariantConfiguration.swift */; };
 		CBF259C72D4ED93F00AC63E4 /* OnboardingConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF259C62D4ED93F00AC63E4 /* OnboardingConfiguration.swift */; };
@@ -3877,7 +3876,6 @@
 		CBF259B82D499D0B00AC63E4 /* MainCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainCoordinator.swift; sourceTree = "<group>"; };
 		CBF259BA2D4D020200AC63E4 /* AutoClearService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoClearService.swift; sourceTree = "<group>"; };
 		CBF259BC2D4E56E900AC63E4 /* ReportingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportingService.swift; sourceTree = "<group>"; };
-		CBF259C02D4EBD2F00AC63E4 /* ContentBlockingConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentBlockingConfiguration.swift; sourceTree = "<group>"; };
 		CBF259C22D4EC10400AC63E4 /* CrashHandlersConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashHandlersConfiguration.swift; sourceTree = "<group>"; };
 		CBF259C42D4ED37700AC63E4 /* ATBAndVariantConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ATBAndVariantConfiguration.swift; sourceTree = "<group>"; };
 		CBF259C62D4ED93F00AC63E4 /* OnboardingConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingConfiguration.swift; sourceTree = "<group>"; };
@@ -7870,7 +7868,6 @@
 				CBF2597A2D414B6D00AC63E4 /* PersistentStoresConfiguration.swift */,
 				CBF259802D42852B00AC63E4 /* PixelConfiguration.swift */,
 				CBF2598D2D47B1A500AC63E4 /* KeyboardConfiguration.swift */,
-				CBF259C02D4EBD2F00AC63E4 /* ContentBlockingConfiguration.swift */,
 				CBF259C22D4EC10400AC63E4 /* CrashHandlersConfiguration.swift */,
 				CBF259C42D4ED37700AC63E4 /* ATBAndVariantConfiguration.swift */,
 				CBF259C62D4ED93F00AC63E4 /* OnboardingConfiguration.swift */,
@@ -10244,7 +10241,6 @@
 				8524CC98246D66E100E59D45 /* String+Markdown.swift in Sources */,
 				CBEFB9142AE0844700DEDE7B /* CriticalAlerts.swift in Sources */,
 				986B16C425E92DF0007D23E8 /* BrowsingMenuViewController.swift in Sources */,
-				CBF259C12D4EBD2F00AC63E4 /* ContentBlockingConfiguration.swift in Sources */,
 				988AC355257E47C100793C64 /* RequeryLogic.swift in Sources */,
 				6FCF65142DF8481F00C7F35F /* OmniBarEditingStateViewController.swift in Sources */,
 				F1970B5A2DF1F356008F18BC /* AdClickExternalOpenDetector.swift in Sources */,

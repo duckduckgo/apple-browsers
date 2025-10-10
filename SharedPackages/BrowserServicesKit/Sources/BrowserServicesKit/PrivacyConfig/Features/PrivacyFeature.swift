@@ -84,7 +84,6 @@ public enum PrivacyFeature: String {
     case daxEasterEggLogos
     case openFireWindowByDefault
     case behaviorMetrics
-    case appStoreUpdateFlow
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -136,6 +135,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     // Controls visibility of the "Manage individual sites" link in the Fire dialog
     case fireDialogIndividualSitesLink
+
+    /// New App Store Update flow feature flag
+    /// https://app.asana.com/1/137249556945/project/1199230911884351/task/1211563301906360?focus=true
+    case appStoreUpdateFlow
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

@@ -459,7 +459,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .themes:
             return .disabled
         case .appStoreUpdateFlow:
-            return .remoteReleasable(.feature(.appStoreUpdateFlow))
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .unifiedURLPredictorMetrics:

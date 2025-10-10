@@ -96,11 +96,12 @@ public class PerformanceMetricsSubfeature: Subfeature {
             return
         }
 
-        let performanceMetrics = PerformanceMetrics(from: metrics)
+        let rawMetrics = PerformanceMetrics(from: metrics)
+        let privacyAwareMetrics = rawMetrics.privacyAwareMetrics()
 
-        // Create pixel with available data
-        let pixel = SiteLoadingPerformancePixel.performanceMetricsReceived(metrics: performanceMetrics)
+        // Create pixel with privacy-aware data
+        let pixel = SiteLoadingPerformancePixel.performanceMetricsReceived(metrics: privacyAwareMetrics)
 
-        PixelKit.fire(pixel, frequency: .standard)
+        PixelKit.fire(pixel, frequency: .daily)
     }
 }

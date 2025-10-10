@@ -70,63 +70,22 @@ public struct PerformanceMetrics {
         self.navigationType = metrics["navigationType"] as? String
     }
 
-    /// Returns a dictionary representation of all performance metrics
-    // swiftlint:disable:next cyclomatic_complexity
-    public func toDictionary() -> [String: Any] {
-        var dict: [String: Any] = [:]
-
-        if let firstContentfulPaint = firstContentfulPaint {
-            dict["firstContentfulPaint"] = firstContentfulPaint
-        }
-        if let largestContentfulPaint = largestContentfulPaint {
-            dict["largestContentfulPaint"] = largestContentfulPaint
-        }
-        if let timeToFirstByte = timeToFirstByte {
-            dict["timeToFirstByte"] = timeToFirstByte
-        }
-        if let loadComplete = loadComplete {
-            dict["loadComplete"] = loadComplete
-        }
-        if let transferSize = transferSize {
-            dict["transferSize"] = transferSize
-        }
-        if let decodedBodySize = decodedBodySize {
-            dict["decodedBodySize"] = decodedBodySize
-        }
-        if let encodedBodySize = encodedBodySize {
-            dict["encodedBodySize"] = encodedBodySize
-        }
-        if let totalResourcesSize = totalResourcesSize {
-            dict["totalResourcesSize"] = totalResourcesSize
-        }
-        if let resourceCount = resourceCount {
-            dict["resourceCount"] = resourceCount
-        }
-        if let redirectCount = redirectCount {
-            dict["redirectCount"] = redirectCount
-        }
-        if let networkProtocol = networkProtocol {
-            dict["protocol"] = networkProtocol
-        }
-        if let serverTime = serverTime {
-            dict["serverTime"] = serverTime
-        }
-        if let responseTime = responseTime {
-            dict["responseTime"] = responseTime
-        }
-        if let domInteractive = domInteractive {
-            dict["domInteractive"] = domInteractive
-        }
-        if let domComplete = domComplete {
-            dict["domComplete"] = domComplete
-        }
-        if let domContentLoaded = domContentLoaded {
-            dict["domContentLoaded"] = domContentLoaded
-        }
-        if let navigationType = navigationType {
-            dict["navigationType"] = navigationType
-        }
-
-        return dict
+    /// Convert to privacy-aware metrics for analytics
+    public func privacyAwareMetrics() -> PrivacyAwarePerformanceMetrics {
+        return PrivacyAwarePerformanceMetrics(
+            firstContentfulPaint: firstContentfulPaint,
+            largestContentfulPaint: largestContentfulPaint,
+            timeToFirstByte: timeToFirstByte,
+            loadComplete: loadComplete,
+            transferSize: transferSize,
+            decodedBodySize: decodedBodySize,
+            encodedBodySize: encodedBodySize,
+            totalResourcesSize: totalResourcesSize,
+            resourceCount: resourceCount,
+            redirectCount: redirectCount,
+            domInteractive: domInteractive,
+            domComplete: domComplete,
+            domContentLoaded: domContentLoaded
+        )
     }
 }

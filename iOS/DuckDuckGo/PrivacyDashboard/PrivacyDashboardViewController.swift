@@ -334,6 +334,7 @@ extension PrivacyDashboardViewController {
 
         let expandedWebVitalsResult = await calculateExpandedWebVitals(breakageAdditionalInfo: breakageAdditionalInfo,
                                                                        privacyConfig: privacyConfigurationManager.privacyConfig)
+        let privacyAwareWebVitals = expandedWebVitalsResult?.privacyAwareMetrics()
 
         let blockedTrackerDomains = privacyInfo.trackerInfo.trackersBlocked.compactMap { $0.domain }
         let protectionsState = privacyConfigurationManager.privacyConfig.isFeature(.contentBlocking,
@@ -371,7 +372,7 @@ extension PrivacyDashboardViewController {
                                 openerContext: breakageAdditionalInfo.openerContext,
                                 vpnOn: breakageAdditionalInfo.vpnOn,
                                 jsPerformance: webVitalsResult,
-                                extendedPerformanceMetrics: expandedWebVitalsResult,
+                                extendedPerformanceMetrics: privacyAwareWebVitals,
                                 userRefreshCount: breakageAdditionalInfo.userRefreshCount,
                                 variant: PixelExperiment.cohort?.rawValue ?? "",
                                 cookieConsentInfo: privacyInfo.cookieConsentManaged,

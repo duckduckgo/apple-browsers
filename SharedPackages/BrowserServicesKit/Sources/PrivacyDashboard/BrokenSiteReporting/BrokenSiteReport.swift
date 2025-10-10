@@ -97,7 +97,7 @@ public struct BrokenSiteReport {
     let openerContext: OpenerContext?
     let vpnOn: Bool
     let jsPerformance: [Double]?
-    let extendedPerformanceMetrics: PerformanceMetrics?
+    let extendedPerformanceMetrics: PrivacyAwarePerformanceMetrics?
     let userRefreshCount: Int
     let locale: Locale
     let cookieConsentInfo: CookieConsentInfo?
@@ -134,7 +134,7 @@ public struct BrokenSiteReport {
         openerContext: OpenerContext?,
         vpnOn: Bool,
         jsPerformance: [Double]?,
-        extendedPerformanceMetrics: PerformanceMetrics? = nil,
+        extendedPerformanceMetrics: PrivacyAwarePerformanceMetrics? = nil,
         userRefreshCount: Int,
         locale: Locale = Locale.current,
         cookieConsentInfo: CookieConsentInfo?,
@@ -199,7 +199,7 @@ public struct BrokenSiteReport {
         openerContext: OpenerContext?,
         vpnOn: Bool,
         jsPerformance: [Double]?,
-        extendedPerformanceMetrics: PerformanceMetrics? = nil,
+        extendedPerformanceMetrics: PrivacyAwarePerformanceMetrics? = nil,
         userRefreshCount: Int,
         variant: String,
         locale: Locale = Locale.current,

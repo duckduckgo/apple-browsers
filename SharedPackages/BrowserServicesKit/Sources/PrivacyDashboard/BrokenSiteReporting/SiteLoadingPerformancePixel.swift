@@ -29,23 +29,19 @@ enum SiteLoadingPerformancePixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
         static let largestContentfulPaintMs = "largest_contentful_paint_ms"
         static let timeToFirstByteMs = "time_to_first_byte_ms"
         static let loadCompleteMs = "load_complete_ms"
-        static let transferSizeBytes = "transfer_size_bytes"
-        static let decodedBodySizeBytes = "decoded_body_size_bytes"
-        static let encodedBodySizeBytes = "encoded_body_size_bytes"
-        static let resourceCount = "resource_count"
-        static let totalResourcesSizeBytes = "total_resources_size_bytes"
-        static let networkProtocol = "protocol"
-        static let navigationType = "navigation_type"
+        static let transferSizeBucket = "transfer_size_bucket"
+        static let decodedBodySizeBucket = "decoded_body_size_bucket"
+        static let encodedBodySizeBucket = "encoded_body_size_bucket"
+        static let resourceCountBucket = "resource_count_bucket"
+        static let totalResourcesSizeBucket = "total_resources_size_bucket"
         static let domInteractiveMs = "dom_interactive_ms"
         static let domCompleteMs = "dom_complete_ms"
         static let domContentLoadedMs = "dom_content_loaded_ms"
-        static let serverTimeMs = "server_time_ms"
-        static let responseTimeMs = "response_time_ms"
-        static let redirectCount = "redirect_count"
+        static let redirectCountBucket = "redirect_count_bucket"
     }
 
     /// Site loading performance metrics received via expandedPerformanceMetricsResult notification
-    case performanceMetricsReceived(metrics: PerformanceMetrics)
+    case performanceMetricsReceived(metrics: PrivacyAwarePerformanceMetrics)
 
     var name: String {
         switch self {
@@ -73,56 +69,44 @@ enum SiteLoadingPerformancePixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
         case .performanceMetricsReceived(let metrics):
             var params: [String: String] = [:]
 
-            if let firstContentfulPaint = metrics.firstContentfulPaint {
-                params[ParameterNames.firstContentfulPaintMs] = String(Int(firstContentfulPaint))
+            if let firstContentfulPaintMs = metrics.firstContentfulPaintMs {
+                params[ParameterNames.firstContentfulPaintMs] = String(firstContentfulPaintMs)
             }
-            if let largestContentfulPaint = metrics.largestContentfulPaint {
-                params[ParameterNames.largestContentfulPaintMs] = String(Int(largestContentfulPaint))
+            if let largestContentfulPaintMs = metrics.largestContentfulPaintMs {
+                params[ParameterNames.largestContentfulPaintMs] = String(largestContentfulPaintMs)
             }
-            if let timeToFirstByte = metrics.timeToFirstByte {
-                params[ParameterNames.timeToFirstByteMs] = String(Int(timeToFirstByte))
+            if let timeToFirstByteMs = metrics.timeToFirstByteMs {
+                params[ParameterNames.timeToFirstByteMs] = String(timeToFirstByteMs)
             }
-            if let loadComplete = metrics.loadComplete {
-                params[ParameterNames.loadCompleteMs] = String(Int(loadComplete))
+            if let loadCompleteMs = metrics.loadCompleteMs {
+                params[ParameterNames.loadCompleteMs] = String(loadCompleteMs)
             }
-            if let transferSize = metrics.transferSize {
-                params[ParameterNames.transferSizeBytes] = String(Int(transferSize))
+            if let transferSizeBucket = metrics.transferSizeBucket {
+                params[ParameterNames.transferSizeBucket] = transferSizeBucket.rawValue
             }
-            if let decodedBodySize = metrics.decodedBodySize {
-                params[ParameterNames.decodedBodySizeBytes] = String(Int(decodedBodySize))
+            if let decodedBodySizeBucket = metrics.decodedBodySizeBucket {
+                params[ParameterNames.decodedBodySizeBucket] = decodedBodySizeBucket.rawValue
             }
-            if let encodedBodySize = metrics.encodedBodySize {
-                params[ParameterNames.encodedBodySizeBytes] = String(Int(encodedBodySize))
+            if let encodedBodySizeBucket = metrics.encodedBodySizeBucket {
+                params[ParameterNames.encodedBodySizeBucket] = encodedBodySizeBucket.rawValue
             }
-            if let resourceCount = metrics.resourceCount {
-                params[ParameterNames.resourceCount] = String(resourceCount)
+            if let resourceCountBucket = metrics.resourceCountBucket {
+                params[ParameterNames.resourceCountBucket] = resourceCountBucket.rawValue
             }
-            if let totalResourcesSize = metrics.totalResourcesSize {
-                params[ParameterNames.totalResourcesSizeBytes] = String(Int(totalResourcesSize))
+            if let totalResourcesSizeBucket = metrics.totalResourcesSizeBucket {
+                params[ParameterNames.totalResourcesSizeBucket] = totalResourcesSizeBucket.rawValue
             }
-            if let networkProtocol = metrics.networkProtocol {
-                params[ParameterNames.networkProtocol] = networkProtocol
+            if let domInteractiveMs = metrics.domInteractiveMs {
+                params[ParameterNames.domInteractiveMs] = String(domInteractiveMs)
             }
-            if let navigationType = metrics.navigationType {
-                params[ParameterNames.navigationType] = navigationType
+            if let domCompleteMs = metrics.domCompleteMs {
+                params[ParameterNames.domCompleteMs] = String(domCompleteMs)
             }
-            if let domInteractive = metrics.domInteractive {
-                params[ParameterNames.domInteractiveMs] = String(Int(domInteractive))
+            if let domContentLoadedMs = metrics.domContentLoadedMs {
+                params[ParameterNames.domContentLoadedMs] = String(domContentLoadedMs)
             }
-            if let domComplete = metrics.domComplete {
-                params[ParameterNames.domCompleteMs] = String(Int(domComplete))
-            }
-            if let domContentLoaded = metrics.domContentLoaded {
-                params[ParameterNames.domContentLoadedMs] = String(Int(domContentLoaded))
-            }
-            if let serverTime = metrics.serverTime {
-                params[ParameterNames.serverTimeMs] = String(Int(serverTime))
-            }
-            if let responseTime = metrics.responseTime {
-                params[ParameterNames.responseTimeMs] = String(Int(responseTime))
-            }
-            if let redirectCount = metrics.redirectCount {
-                params[ParameterNames.redirectCount] = String(redirectCount)
+            if let redirectCountBucket = metrics.redirectCountBucket {
+                params[ParameterNames.redirectCountBucket] = redirectCountBucket.rawValue
             }
 
             return params

@@ -437,7 +437,7 @@
                 key: 'stepType',
                 description: 'Identifies the failing step type (scan or optOut)',
                 type: 'string',
-                enum: ['scan', 'optOut'],
+                enum: ['scan', 'optOut', 'unknown'],
             },
             {
                 key: 'parent',

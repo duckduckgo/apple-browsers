@@ -25,7 +25,7 @@ import Combine
 /// This protocol defines methods for responding to navigation and UI events in the sidebar.
 protocol AIChatSidebarViewControllerDelegate: AnyObject {
     /// Called when the user clicks the "Expand" button
-    func didClickOpenInNewTabButton(currentAIChatURL: URL, aiChatRestorationData: AIChatRestorationData?)
+    func didClickOpenInNewTabButton()
     /// Called when the user clicks the "Close" button
     func didClickCloseButton()
 }
@@ -52,13 +52,6 @@ final class AIChatSidebarViewController: NSViewController {
     weak var delegate: AIChatSidebarViewControllerDelegate?
     public var aiChatPayload: AIChatPayload?
     private(set) var currentAIChatURL: URL
-
-    /// The current AI chat restoration data being displayed.
-    public var currentAIChatRestorationData: AIChatRestorationData? {
-        get {
-            return aiTab.aiChat?.aiChatUserScript?.handler.messageHandling.getDataForMessageType(.chatRestorationData) as? AIChatRestorationData
-        }
-    }
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
@@ -93,7 +86,7 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     public func setPageContext(_ pageContext: AIChatPageContextData?) {
-        aiTab.aiChat?.submitPageContext(pageContext)
+        aiTab.aiChat?.submitAIChatPageContext(pageContext)
     }
 
     public func setAIChatRestorationData(_ restorationData: AIChatRestorationData?) {
@@ -299,8 +292,7 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     @objc private func openInNewTabButtonClicked() {
-        delegate?.didClickOpenInNewTabButton(currentAIChatURL: currentAIChatURL.removingAIChatPlacementParameter(),
-                                             aiChatRestorationData: currentAIChatRestorationData)
+        delegate?.didClickOpenInNewTabButton()
     }
 
     @objc private func closeButtonClicked() {

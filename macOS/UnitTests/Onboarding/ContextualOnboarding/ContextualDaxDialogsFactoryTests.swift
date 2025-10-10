@@ -30,7 +30,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     @MainActor
     override func setUpWithError() throws {
         reporter = CapturingOnboardingPixelReporter()
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
         factory = DefaultContextualDaxDialogViewFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
         delegate = CapturingOnboardingNavigationDelegate()
         featureFlagger = MockFeatureFlagger()
@@ -243,7 +243,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let onFireButtonPressed = { onFireButtonRun = true }
         let onDismiss = { onDismissRun = true }
 
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),

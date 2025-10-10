@@ -86,7 +86,8 @@ final class PreferencesViewController: NSViewController {
                                                       subscriptionManager: Application.appDelegate.subscriptionManagerV2!,
                                                       subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
                                                       featureFlagger: featureFlagger,
-                                                      aiChatURLSettings: aiChatRemoteSettings)
+                                                      aiChatURLSettings: aiChatRemoteSettings,
+                                                      wideEvent: Application.appDelegate.wideEvent)
             let host = NSHostingView(rootView: prefRootView)
             view.addAndLayout(host)
         }

@@ -36,8 +36,14 @@ public extension URL {
     static let emailProtectionHelpPageLink = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/"))!
     static let aboutLink = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/about"))!
     static let otherDevices = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/app/devices?origin=funnel_app_ios"))!
-    static let searchSettings = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/settings"))!
-    static let assistSettings = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/settings#aifeatures"))!
+
+    static let settingsPath = "/settings"
+    static let embeddedGeneralSERPSettings = URL(string: "\(base)\(settingsPath)?ko=-1&embedded=1#general")!
+    static let embeddedSearchAssistSettings =  URL(string: "\(base)\(settingsPath)?ko=-1&embedded=1&highlight=kbe#aifeatures")!
+
+    static let searchSettings = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)\(settingsPath)"))!
+    static let assistSettings = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)\(settingsPath)#aifeatures"))!
+
     static let aiFeaturesLearnMore = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/duckai/approach-to-ai"))!
     static let autofillHelpPageLink = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/sync-and-backup/password-manager-security/"))!
     static let maliciousSiteProtectionLearnMore = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/privacy/phishing-and-malware-protection/"))!

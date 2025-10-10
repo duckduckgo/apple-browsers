@@ -39,7 +39,9 @@ final class SubscriptionService {
                                                                                  purchasePlatform: .appStore,
                                                                                  paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
                                                                                  supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) },
-                                                                                 isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) })
+                                                                                 isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) },
+                                                                                 isSubscriptionRestoreWidePixelMeasurementEnabledProvider: {
+                                                                                    featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) })
         Task {
             await subscriptionManagerV1?.loadInitialData()
             await subscriptionManagerV2?.loadInitialData()

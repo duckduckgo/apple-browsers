@@ -57,26 +57,34 @@ class HistoryCoordinatingMock: HistoryCoordinating, SuggestionContainer.HistoryP
     }
 
     var burnCalled = false
+    var onBurn: (() -> Void)?
     func burn(except fireproofDomains: FireproofDomains, completion: @escaping () -> Void) {
         burnCalled = true
+        onBurn?()
         completion()
     }
 
     var burnAllCalled = false
+    var onBurnAll: (() -> Void)?
     func burnAll(completion: @escaping () -> Void) {
         burnAllCalled = true
+        onBurnAll?()
         completion()
     }
 
     var burnDomainsCalled = false
+    var onBurnDomains: (() -> Void)?
     func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping (Set<URL>) -> Void) {
         burnDomainsCalled = true
+        onBurnDomains?()
         completion([])
     }
 
     var burnVisitsCalled = false
+    var onBurnVisits: (() -> Void)?
     func burnVisits(_ visits: [Visit], completion: @escaping () -> Void) {
         burnVisitsCalled = true
+        onBurnVisits?()
         completion()
     }
 

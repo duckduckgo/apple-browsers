@@ -255,10 +255,6 @@ extension Preferences {
 
                         ThemesResetView()
                             .environmentObject(model)
-                            .padding(.bottom, 16)
-
-                        ThemesResetView()
-                            .environmentObject(model)
 
                     } else {
                         ThemeAppearancePicker()

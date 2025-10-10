@@ -85,6 +85,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let featureFlagger: FeatureFlagger
     private let freeTrialBadgePersistor: FreeTrialBadgePersisting
+    private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
     private let notificationCenter: NotificationCenter
 
@@ -131,7 +132,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          isFireWindowDefault: Bool = NSApp.delegateTyped.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
          isUsingAuthV2: Bool,
          syncDeviceButtonModel: SyncDeviceButtonModel = SyncDeviceButtonModel(),
-         freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard)) {
+         freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard),
+         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager) {
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -158,6 +160,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.moreOptionsMenuIconsProvider = themeManager.theme.iconsProvider.moreOptionsMenuIconsProvider
         self.isFireWindowDefault = isFireWindowDefault
         self.syncDeviceButtonModel = syncDeviceButtonModel
+        self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
 
         super.init(title: "")
 
@@ -613,8 +616,18 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             var subscriptionItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
                 .withImage(moreOptionsMenuIconsProvider.subscriptionIcon)
 
+            // Check if user is eligible for Win-back Offer
+            if winBackOfferVisibilityManager.isOfferAvailable {
+                subscriptionItem = NSMenuItem.createMenuItemWithBadge(
+                    title: UserText.subscriptionOptionsMenuItem,
+                    badgeText: UserText.winBackCampaignMenuBadgeText,
+                    action: #selector(openSubscriptionPurchasePage(_:)),
+                    target: self,
+                    image: moreOptionsMenuIconsProvider.subscriptionIcon,
+                    menu: self
+                )
             // Check if user is eligible for Free Trial and hasn't exceeded view limit
-            if featureFlagger.isFeatureOn(.privacyProFreeTrial) &&
+            } else if featureFlagger.isFeatureOn(.privacyProFreeTrial) &&
                subscriptionManager.isUserEligibleForFreeTrial() &&
                !freeTrialBadgePersistor.hasReachedViewLimit {
                 subscriptionItem = NSMenuItem.createMenuItemWithBadge(

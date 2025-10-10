@@ -69,6 +69,17 @@ final class FireDialogViewModel: ObservableObject {
             }
         }
 
+        var shouldShowChatHistoryToggle: Bool {
+            switch self {
+            case .fireButton,
+                    .mainMenuAll,
+                    .historyView(query: .rangeFilter(.all)):
+                return true
+            case .historyView:
+                return false
+            }
+        }
+
         /// Hide fireproof section when dialog is scoped to specific site(s)
         var shouldShowFireproofSection: Bool {
             switch self {
@@ -107,6 +118,7 @@ final class FireDialogViewModel: ObservableObject {
     static var lastIncludeTabsAndWindowsState: Bool = true
     static var lastIncludeHistoryState: Bool = true
     static var lastIncludeCookiesAndSiteDataState: Bool = true
+    static var lastIncludeChatHistoryState: Bool = false
 
     /// Reset persisted UI defaults - used for tests
     static func resetPersistedDefaults() {
@@ -114,17 +126,20 @@ final class FireDialogViewModel: ObservableObject {
         lastIncludeTabsAndWindowsState = true
         lastIncludeHistoryState = true
         lastIncludeCookiesAndSiteDataState = true
+        lastIncludeChatHistoryState = false
     }
 
     init(fireViewModel: FireViewModel,
          tabCollectionViewModel: TabCollectionViewModel,
          historyCoordinating: HistoryCoordinating,
+         aiChatHistoryCleaner: AIChatHistoryCleaning,
          fireproofDomains: FireproofDomains,
          faviconManagement: FaviconManagement,
          clearingOption: ClearingOption? = nil,
          includeTabsAndWindows: Bool? = nil,
          includeHistory: Bool? = nil,
          includeCookiesAndSiteData: Bool? = nil,
+         includeChatHistory: Bool? = nil,
          mode: Mode = .fireButton,
          scopeCookieDomains: Set<String>? = nil,
          scopeVisits: [Visit]? = nil,
@@ -135,10 +150,12 @@ final class FireDialogViewModel: ObservableObject {
         self.fireproofDomains = fireproofDomains
         self.faviconManagement = faviconManagement
         self.historyCoordinating = historyCoordinating
+        self.aiChatHistoryCleaner = aiChatHistoryCleaner
         self.clearingOption = clearingOption ?? Self.lastSelectedClearingOption
         self.includeTabsAndWindows = includeTabsAndWindows ?? Self.lastIncludeTabsAndWindowsState
         self.includeHistory = includeHistory ?? Self.lastIncludeHistoryState
         self.includeCookiesAndSiteData = includeCookiesAndSiteData ?? Self.lastIncludeCookiesAndSiteDataState
+        self.includeChatHistory = includeChatHistory ?? Self.lastIncludeChatHistoryState
 
         self.tld = tld
         self.mode = mode
@@ -153,11 +170,16 @@ final class FireDialogViewModel: ObservableObject {
 
     private(set) var shouldShowPinnedTabsInfo: Bool = false
 
+    var shouldShowChatHistoryToggle: Bool {
+        aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption && mode.shouldShowChatHistoryToggle && clearingOption == .allData
+    }
+
     let fireViewModel: FireViewModel
     private(set) weak var tabCollectionViewModel: TabCollectionViewModel?
     private let fireproofDomains: FireproofDomains
     private let faviconManagement: FaviconManagement
     private let historyCoordinating: HistoryCoordinating
+    private let aiChatHistoryCleaner: AIChatHistoryCleaning
     let tld: TLD
     let mode: Mode
     private let scopeVisits: [Visit]?
@@ -187,6 +209,12 @@ final class FireDialogViewModel: ObservableObject {
     @Published var includeCookiesAndSiteData: Bool {
         didSet {
             Self.lastIncludeCookiesAndSiteDataState = includeCookiesAndSiteData
+        }
+    }
+    /// when true, all Duck.ai chat history is cleared.
+    @Published var includeChatHistory: Bool {
+        didSet {
+            Self.lastIncludeChatHistoryState = includeChatHistory
         }
     }
 

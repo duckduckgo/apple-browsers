@@ -10253,25 +10253,49 @@ ${truncatedWarning}
   function isHtmlElement(node) {
     return node.nodeType === Node.ELEMENT_NODE;
   }
-  function domToMarkdown(node, maxLength = Infinity, excludeSelectors) {
+  function getSameOriginIframeDocument(iframe) {
+    try {
+      const doc = iframe.contentDocument;
+      if (doc && doc.documentElement) {
+        return doc;
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  }
+  function domToMarkdownChildren(childNodes, settings, depth = 0) {
+    if (depth > settings.maxDepth) {
+      return "";
+    }
+    let children = "";
+    for (const childNode of childNodes) {
+      const childContent = domToMarkdown(childNode, settings, depth + 1);
+      children += childContent;
+      if (children.length > settings.maxLength) {
+        children = children.substring(0, settings.maxLength) + "...";
+        break;
+      }
+    }
+    return children;
+  }
+  function domToMarkdown(node, settings, depth = 0) {
+    if (depth > settings.maxDepth) {
+      return "";
+    }
     if (node.nodeType === Node.TEXT_NODE) {
       return collapseWhitespace(node.textContent);
     }
     if (!isHtmlElement(node)) {
       return "";
     }
-    if (!checkNodeIsVisible(node) || node.matches(excludeSelectors)) {
+    if (!checkNodeIsVisible(node) || node.matches(settings.excludeSelectors)) {
       return "";
     }
     const tag = node.tagName.toLowerCase();
-    let children = "";
-    for (const childNode of node.childNodes) {
-      const childContent = domToMarkdown(childNode, maxLength - children.length, excludeSelectors);
-      children += childContent;
-      if (children.length > maxLength) {
-        children = children.substring(0, maxLength) + "...";
-        break;
-      }
+    let children = domToMarkdownChildren(node.childNodes, settings, depth + 1);
+    if (node.shadowRoot) {
+      children += domToMarkdownChildren(node.shadowRoot.childNodes, settings, depth + 1);
     }
     switch (tag) {
       case "strong":
@@ -10308,6 +10332,26 @@ ${children}
 `;
       case "a":
         return getLinkText(node);
+      case "iframe": {
+        if (!settings.includeIframes) {
+          return children;
+        }
+        const iframeDoc = getSameOriginIframeDocument(
+          /** @type {HTMLIFrameElement} */
+          node
+        );
+        if (iframeDoc && iframeDoc.body) {
+          const iframeContent = domToMarkdown(iframeDoc.body, settings, depth + 1);
+          return iframeContent ? `
+
+--- Iframe Content ---
+${iframeContent}
+--- End Iframe ---
+
+` : children;
+        }
+        return children;
+      }
       default:
         return children;
     }
@@ -10545,6 +10589,7 @@ ${children}
     getMainContent() {
       const maxLength = this.getFeatureSetting("maxContentLength") || 9500;
       const upperLimit = this.getFeatureSetting("upperLimit") || 5e5;
+      const maxDepth = this.getFeatureSetting("maxDepth") || 5e3;
       let excludeSelectors = this.getFeatureSetting("excludeSelectors") || [".ad", ".sidebar", ".footer", ".nav", ".header"];
       const excludedInertElements = this.getFeatureSetting("excludedInertElements") || [
         "script",
@@ -10567,13 +10612,22 @@ ${children}
       const contentRoot = mainContent || document.body;
       if (contentRoot) {
         this.log.info("Getting main content", contentRoot);
-        content += domToMarkdown(contentRoot, upperLimit, excludeSelectorsString);
+        content += domToMarkdown(contentRoot, {
+          maxLength: upperLimit,
+          maxDepth,
+          includeIframes: this.getFeatureSettingEnabled("includeIframes", "enabled"),
+          excludeSelectors: excludeSelectorsString
+        });
         this.log.info("Content markdown", content, contentRoot);
       }
       content = content.trim();
       this.fullContentLength = content.length;
       if (content.length > maxLength) {
-        this.log.info("Truncating content", content);
+        this.log.info("Truncating content", {
+          content,
+          contentLength: content.length,
+          maxLength
+        });
         content = content.substring(0, maxLength) + "...";
       }
       return content;

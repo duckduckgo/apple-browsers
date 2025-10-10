@@ -28,13 +28,13 @@ final class MockNewTabPageStateProviding: NewTabPageStateProviding {
     }
 
     @MainActor
-    func getState() -> [WindowNewTabPageStateData] {
+    func getState() -> [WindowNewTabPageStateData]? {
         return mockState
     }
 
     // MARK: - Test Hooks
 
-    var mockState: [WindowNewTabPageStateData] = []
+    var mockState: [WindowNewTabPageStateData]? = []
 
     func emitStateChanged() {
         stateChangedSubject.send(())

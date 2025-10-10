@@ -49,9 +49,9 @@ final class NewTabPageStateProvider: NewTabPageStateProviding {
     }
 
     @MainActor
-    func getState() -> [NewTabPage.WindowNewTabPageStateData] {
+    func getState() -> [NewTabPage.WindowNewTabPageStateData]? {
         guard featureFlagger.isFeatureOn(.newTabPageTabIDs) else {
-            return []
+            return nil
         }
 
         return windowControllersManager.mainWindowControllers.compactMap { controller in

@@ -39,7 +39,7 @@ public protocol NewTabPageSectionsVisibilityProviding: AnyObject {
 
 public protocol NewTabPageStateProviding: AnyObject {
     @MainActor
-    func getState() -> [WindowNewTabPageStateData]
+    func getState() -> [WindowNewTabPageStateData]?
     var stateChangedPublisher: AnyPublisher<Void, Never> { get }
 }
 
@@ -173,7 +173,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func notifyTabStateDidChange() {
-        let states = stateProvider.getState()
+        guard let states = stateProvider.getState() else { return }
         for state in states {
             pushMessage(
                 named: MessageName.tabsOnDataUpdate.rawValue,
@@ -282,7 +282,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         let widgetConfigs = fetchWidgetConfigs()
         let customizerData = customBackgroundProvider.customizerData
         let tabs = stateProvider
-            .getState()
+            .getState()?
             .first(where: { $0.webView === original.webView })?
             .tabs
         let config = NewTabPageDataModel.NewTabPageConfiguration(

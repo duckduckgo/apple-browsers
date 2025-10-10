@@ -45,7 +45,7 @@ final class AIChatHistoryCleanerTests: XCTestCase {
     }
 
     func testWhenFeatureFlagIsOn_andAIChatShouldBeShown_andAIChatWasUsed_thenShouldDisplayCleanAIChatHistoryOptionIsTrue() {
-        featureFlaggerMock.enabledFeatureFlags = [.aiChatDataClearing]
+        featureFlaggerMock.enabledFeatureFlags = [.duckAiDataClearing]
         aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature = true
         featureDiscoveryMock.setReturnValue(true, for: .aiChat)
 
@@ -55,7 +55,7 @@ final class AIChatHistoryCleanerTests: XCTestCase {
     }
 
     func testWhenFeatureFlagIsOn_andAIChatShouldBeShown_andAIChatWasNotUsed_thenShouldDisplayCleanAIChatHistoryOptionIsFalse() {
-        featureFlaggerMock.enabledFeatureFlags = [.aiChatDataClearing]
+        featureFlaggerMock.enabledFeatureFlags = [.duckAiDataClearing]
         aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature = true
         featureDiscoveryMock.setReturnValue(false, for: .aiChat)
 
@@ -65,7 +65,7 @@ final class AIChatHistoryCleanerTests: XCTestCase {
     }
 
     func testWhenFeatureFlagIsOn_andAIChatShouldNotBeShown_andAIChatWasUsed_thenShouldDisplayCleanAIChatHistoryOptionIsFalse() {
-        featureFlaggerMock.enabledFeatureFlags = [.aiChatDataClearing]
+        featureFlaggerMock.enabledFeatureFlags = [.duckAiDataClearing]
         aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature = false
         featureDiscoveryMock.setReturnValue(true, for: .aiChat)
 
@@ -85,7 +85,7 @@ final class AIChatHistoryCleanerTests: XCTestCase {
     }
 
     func testWhenNotificationIsPosted_thenShouldDisplayCleanAIChatHistoryOptionIsEnabled() {
-        featureFlaggerMock.enabledFeatureFlags = [.aiChatDataClearing]
+        featureFlaggerMock.enabledFeatureFlags = [.duckAiDataClearing]
         aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature = true
         featureDiscoveryMock.setReturnValue(false, for: .aiChat)
         let notificationCenter = NotificationCenter()

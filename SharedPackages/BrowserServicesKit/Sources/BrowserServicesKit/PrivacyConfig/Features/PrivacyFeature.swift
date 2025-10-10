@@ -86,7 +86,7 @@ public enum PrivacyFeature: String {
     case openFireWindowByDefault
     case behaviorMetrics
     case dataImport
-    case aiChatDataClearing
+    case duckAiDataClearing
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.

@@ -85,7 +85,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     /// Launches a headless web view to clear Duck.ai chat history with a C-S-S feature.
     @MainActor
     func cleanAIChatHistory() async {
-        guard featureFlagger.isFeatureOn(.aiChatDataClearing), webView == nil else { return }
+        guard featureFlagger.isFeatureOn(.duckAiDataClearing), webView == nil else { return }
 
         _ = await withCheckedContinuation { continuation in
             self.continuation = continuation
@@ -103,9 +103,9 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
         $aiChatWasUsedBefore.combineLatest(aiChatMenuConfiguration.valuesChangedPublisher.prepend(()))
             .map { [weak self] wasUsed, _ in
                 guard let self else { return false }
-                return wasUsed && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatDataClearing)
+                return wasUsed && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.duckAiDataClearing)
             }
-            .prepend(aiChatWasUsedBefore && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatDataClearing))
+            .prepend(aiChatWasUsedBefore && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.duckAiDataClearing))
             .removeDuplicates()
             .assign(to: &$shouldDisplayCleanAIChatHistoryOption)
     }

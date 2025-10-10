@@ -225,7 +225,7 @@ public enum FeatureFlag: String, CaseIterable {
     case syncIdentities
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211185922947392?focus=true
-    case aiChatDataClearing
+    case duckAiDataClearing
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211469820985204?focus=true
     case dataImportNewSafariFilePicker
@@ -331,7 +331,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .winBackOffer,
                 .syncCreditCards,
                 .syncIdentities,
-                .aiChatDataClearing,
+                .duckAiDataClearing,
                 .dataImportNewSafariFilePicker:
             return true
         case .debugMenu,
@@ -501,8 +501,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
         case .dataImportNewSafariFilePicker:
             return .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker))
-        case .aiChatDataClearing:
-            return .remoteDevelopment(.feature(.aiChatDataClearing))
+        case .duckAiDataClearing:
+            return .remoteDevelopment(.feature(.duckAiDataClearing))
         }
     }
 }

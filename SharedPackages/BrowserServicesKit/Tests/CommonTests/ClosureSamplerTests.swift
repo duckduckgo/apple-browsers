@@ -145,11 +145,11 @@ final class ClosureSamplerTests: XCTestCase {
         XCTAssertLessThan(count10, count50)
         XCTAssertLessThan(count50, count90)
     }
-    
+
     func testOnDiscardedClosureIsCalledWhenSamplingFails() {
         let sampler = ClosureSampler(percentage: 0)
         var discardedCount = 0
-        
+
         for _ in 0..<10 {
             sampler.sample({
                 XCTFail("Main closure should not execute when percentage is 0")
@@ -157,15 +157,15 @@ final class ClosureSamplerTests: XCTestCase {
                 discardedCount += 1
             })
         }
-        
+
         XCTAssertEqual(discardedCount, 10)
     }
-    
+
     func testOnDiscardedClosureIsNotCalledWhenSamplingSucceeds() {
         let sampler = ClosureSampler(percentage: 100)
         var discardedCount = 0
         var executedCount = 0
-        
+
         for _ in 0..<10 {
             sampler.sample({
                 executedCount += 1
@@ -173,33 +173,33 @@ final class ClosureSamplerTests: XCTestCase {
                 discardedCount += 1
             })
         }
-        
+
         XCTAssertEqual(executedCount, 10)
         XCTAssertEqual(discardedCount, 0)
     }
-    
+
     func testOnDiscardedClosureWithReturnValueIsCalledWhenSamplingFails() {
         let sampler = ClosureSampler(percentage: 0)
         var discardedCount = 0
-        
+
         for _ in 0..<10 {
             let result = sampler.sample({
                 return "test"
             }, onDiscarded: {
                 discardedCount += 1
             })
-            
+
             XCTAssertNil(result)
         }
-        
+
         XCTAssertEqual(discardedCount, 10)
     }
-    
+
     func testOnDiscardedClosureWithReturnValueIsNotCalledWhenSamplingSucceeds() {
         let sampler = ClosureSampler(percentage: 100)
         var discardedCount = 0
         var executedCount = 0
-        
+
         for _ in 0..<10 {
             let result = sampler.sample({
                 executedCount += 1
@@ -207,22 +207,22 @@ final class ClosureSamplerTests: XCTestCase {
             }, onDiscarded: {
                 discardedCount += 1
             })
-            
+
             XCTAssertEqual(result, "test")
         }
-        
+
         XCTAssertEqual(executedCount, 10)
         XCTAssertEqual(discardedCount, 0)
     }
-    
+
     func testOnDiscardedClosureIsOptional() {
         let sampler = ClosureSampler(percentage: 0)
-        
+
         // Should not crash when onDiscarded is nil
         let result = sampler.sample({
             return "test"
         })
-        
+
         XCTAssertNil(result)
     }
 }

@@ -51,6 +51,10 @@ final class BookmarkTableCellView: NSTableCellView {
     }
 
     private var theme: ThemeStyleProviding
+    private var palette: ColorPalette {
+        theme.palette
+    }
+
     private var entity: BaseBookmarkEntity?
     private var trackingArea: NSTrackingArea?
     private var mouseInside: Bool = false {
@@ -322,11 +326,11 @@ final class BookmarkTableCellView: NSTableCellView {
     }
 
     private var themedTextColor: NSColor {
-        (mouseInside || isSelected) ? theme.palette.accentContentPrimary : theme.palette.textPrimary
+        isSelected ? palette.accentContentPrimary : palette.textPrimary
     }
 
     private var themedURLColor: NSColor {
-        (mouseInside || isSelected) ? theme.palette.accentContentSecondary : theme.palette.textSecondary
+        isSelected ? palette.accentContentSecondary : palette.textSecondary
     }
 
     private var legacyTextColor: NSColor {

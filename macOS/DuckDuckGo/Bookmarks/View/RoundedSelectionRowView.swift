@@ -95,18 +95,18 @@ final class RoundedSelectionRowView: NSTableRowView {
     }
 
     private var selectionBackgroundColor: NSColor {
-        if isThemesFeatureEnabled {
-            return requiresAccentColors ? palette.accentPrimary : palette.controlsFillPrimary
+        guard isThemesFeatureEnabled else {
+            return NSColor.rowHover
         }
 
-        return NSColor.rowHover
+        return requiresAccentColors && isInKeyWindow ? palette.accentPrimary : palette.controlsFillPrimary
     }
 
     private var highlightBackgroundColor: NSColor {
-        if isThemesFeatureEnabled {
-            return requiresAccentColors ? palette.accentPrimary : palette.controlsFillPrimary
+        guard isThemesFeatureEnabled else {
+            return isInKeyWindow ? NSColor.controlAccentColor : NSColor.buttonMouseOver
         }
 
-        return isInKeyWindow ? NSColor.controlAccentColor : NSColor.buttonMouseOver
+        return requiresAccentColors && isInKeyWindow ? palette.accentPrimary : palette.controlsFillPrimary
     }
 }

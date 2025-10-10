@@ -127,7 +127,7 @@ final class BookmarkTableRowView: NSTableRowView {
 
     private var highlightBackgroundColor: NSColor {
         if isThemesFeatureEnabled {
-            return palette.accentPrimary
+            return palette.controlsFillPrimary
         }
 
         return NSColor.rowHover

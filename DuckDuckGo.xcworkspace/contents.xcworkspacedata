@@ -31,6 +31,9 @@
       <FileRef
          location = "group:DesignResourcesKit">
       </FileRef>
+      <FileRef
+         location = "group:SystemFrameworksExtensions">
+      </FileRef>
    </Group>
    <FileRef
       location = "group:iOS/DuckDuckGo-iOS.xcodeproj">

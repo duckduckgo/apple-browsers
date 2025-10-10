@@ -17,98 +17,287 @@
 //
 
 import AppKit
-
+import AppKitExtensions
+import Carbon
+import Common
+import SwiftUI
+import CoreAudioTypes
 final class FireproofDomainsViewController: NSViewController {
 
     enum Constants {
-        static let storyboardName = "FireproofDomains"
-        static let identifier = "FireproofDomainsViewController"
-        static let cellIdentifier = NSUserInterfaceItemIdentifier(rawValue: "FireproofDomainCell")
+        static let preferredContentSize = CGSize(width: 475, height: 307)
     }
 
+    // Factory used by callers (e.g., preferences) to present this controller
     static func create(fireproofDomains: FireproofDomains, faviconManager: FaviconManagement) -> FireproofDomainsViewController {
-        let storyboard = NSStoryboard(name: Constants.storyboardName, bundle: nil)
-        return storyboard.instantiateController(identifier: Constants.identifier) { coder in
-            self.init(coder: coder, fireproofDomains: fireproofDomains, faviconManager: faviconManager)
-        }
+        FireproofDomainsViewController(fireproofDomains: fireproofDomains, faviconManager: faviconManager)
     }
 
-    init?(coder: NSCoder, fireproofDomains: FireproofDomains, faviconManager: FaviconManagement) {
-        self.fireproofDomains = fireproofDomains
-        self.faviconManager = faviconManager
-        super.init(coder: coder)
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    @IBOutlet var tableView: NSTableView!
-    @IBOutlet var removeDomainButton: NSButton!
-    @IBOutlet var removeAllDomainsButton: NSButton!
-    @IBOutlet var doneButton: NSButton!
-    @IBOutlet var fireproofSitesLabel: NSTextField!
-
+    // MARK: - Dependencies
     private let fireproofDomains: FireproofDomains
     private let faviconManager: FaviconManagement
 
+    // MARK: - UI
+    private let buttonsStackView = NSStackView()
+    private lazy var removeDomainButton = NSButton(title: UserText.remove, target: self, action: #selector(removeSelectedDomain(_:)))
+    private lazy var removeAllDomainsButton = NSButton(title: UserText.fireproofRemoveAllButton, target: self, action: #selector(removeAllDomains(_:)))
+    private lazy var doneButton = NSButton(title: UserText.done, target: self, action: #selector(doneButtonClicked(_:)))
+    private lazy var fireproofSitesLabel = NSTextField(labelWithString: UserText.fireproofSites)
+    private let searchBar = NSSearchField()
+    private let scrollView = NSScrollView()
+    private let tableView = NSTableView()
+
+    // MARK: - State
     private var allFireproofDomains = [String]()
     private var filteredFireproofDomains: [String]?
+    private var visibleFireproofDomains: [String] { filteredFireproofDomains ?? allFireproofDomains }
 
-    private var visibleFireproofDomains: [String] {
-        return filteredFireproofDomains ?? allFireproofDomains
+    // MARK: - Init
+    init(fireproofDomains: FireproofDomains, faviconManager: FaviconManagement) {
+        self.fireproofDomains = fireproofDomains
+        self.faviconManager = faviconManager
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("\(type(of: self)): Bad initializer")
+    }
+
+    // MARK: - View lifecycle
+    override func loadView() {
+        view = NSView(frame: NSRect(origin: .zero, size: Constants.preferredContentSize))
+        view.translatesAutoresizingMaskIntoConstraints = false
+
+        // Label
+        fireproofSitesLabel.font = .systemFont(ofSize: 13, weight: .medium)
+        fireproofSitesLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(fireproofSitesLabel)
+
+        // Search
+        searchBar.translatesAutoresizingMaskIntoConstraints = false
+        searchBar.delegate = self
+        searchBar.placeholderString = UserText.searchBarSearch
+        view.addSubview(searchBar)
+        searchBar.setAccessibilityIdentifier("FireproofDomainsViewController.searchBar")
+
+        // Table inside scroll view
+        scrollView.autohidesScrollers = true
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = false
+        scrollView.borderType = .bezelBorder
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+
+        let clipView = NSClipView()
+        clipView.documentView = tableView
+        clipView.autoresizingMask = [.width, .height]
+        clipView.backgroundColor = .clear
+        clipView.drawsBackground = false
+        scrollView.contentView = clipView
+        view.addSubview(scrollView)
+        tableView.setAccessibilityIdentifier("FireproofDomainsViewController.tableView")
+
+        // Table configuration
+        let column = NSTableColumn()
+        column.resizingMask = .autoresizingMask
+        tableView.addTableColumn(column)
+        tableView.headerView = nil
+        tableView.style = .plain
+        tableView.intercellSpacing = NSSize(width: 17, height: 0)
+        tableView.backgroundColor = .controlBackgroundColor
+        tableView.usesAlternatingRowBackgroundColors = true
+        tableView.rowHeight = 24
+        tableView.selectionHighlightStyle = .regular
+        tableView.allowsColumnSelection = true
+        tableView.allowsMultipleSelection = true
+        tableView.allowsColumnReordering = false
+        tableView.allowsColumnResizing = false
+        tableView.usesAutomaticRowHeights = true
+        tableView.delegate = self
+        tableView.dataSource = self
+
+        // Buttons
+        removeDomainButton.setAccessibilityIdentifier("FireproofDomainsViewController.removeButton")
+        removeAllDomainsButton.setAccessibilityIdentifier("FireproofDomainsViewController.removeAllButton")
+        doneButton.setAccessibilityIdentifier("FireproofDomainsViewController.doneButton")
+
+        configureToolbarButton(removeDomainButton)
+        configureToolbarButton(removeAllDomainsButton)
+        configureToolbarButton(doneButton)
+
+        buttonsStackView.orientation = .horizontal
+        buttonsStackView.spacing = 12
+        buttonsStackView.translatesAutoresizingMaskIntoConstraints = false
+        buttonsStackView.addArrangedSubview(removeDomainButton)
+        buttonsStackView.addArrangedSubview(removeAllDomainsButton)
+        view.addSubview(buttonsStackView)
+        doneButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(doneButton)
+
+        // Layout
+        fireproofSitesLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        fireproofSitesLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        NSLayoutConstraint.activate([
+            fireproofSitesLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            fireproofSitesLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
+
+            searchBar.centerYAnchor.constraint(equalTo: fireproofSitesLabel.centerYAnchor),
+            searchBar.leadingAnchor.constraint(greaterThanOrEqualTo: fireproofSitesLabel.trailingAnchor, constant: 8),
+            view.trailingAnchor.constraint(equalTo: searchBar.trailingAnchor, constant: 16),
+            searchBar.widthAnchor.constraint(greaterThanOrEqualToConstant: 170),
+            searchBar.widthAnchor.constraint(equalToConstant: 256).priority(.defaultLow),
+
+            scrollView.topAnchor.constraint(equalTo: fireproofSitesLabel.bottomAnchor, constant: 16),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            view.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: 16),
+            buttonsStackView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 20),
+            buttonsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            view.bottomAnchor.constraint(equalTo: buttonsStackView.bottomAnchor, constant: 20),
+
+            doneButton.leadingAnchor.constraint(greaterThanOrEqualTo: buttonsStackView.trailingAnchor, constant: 16),
+            doneButton.centerYAnchor.constraint(equalTo: buttonsStackView.centerYAnchor),
+            view.trailingAnchor.constraint(equalTo: doneButton.trailingAnchor, constant: 20)
+        ])
     }
 
     override func viewDidLoad() {
-        super.viewDidLoad()
-
         applyModalWindowStyleIfNeeded()
-        reloadData()
-        setUpStrings()
+        preferredContentSize = Constants.preferredContentSize
+
+        // Key equivalents: ⌘F focuses search
+        addKeyEquivalent("f", modifierFlags: .command) { [weak self] _ in
+            self?.handleCmdF() ?? false
+        }
+        // ⌘⌫ deletes selected items
+        addKeyEquivalent(.backspace, modifierFlags: .command) { [weak self] _ in
+            self?.deleteSelectedItems() ?? false
+        }
+        // ⌘A selects all rows
+        addKeyEquivalent("a", modifierFlags: .command) { [weak self] _ in
+            self?.selectAllRows() ?? false
+        }
+        doneButton.keyEquivalent = "\r"
     }
 
-    private func setUpStrings() {
-        removeDomainButton.title = UserText.remove
-        removeAllDomainsButton.title = UserText.fireproofRemoveAllButton
-        doneButton.title = UserText.done
-        fireproofSitesLabel.stringValue = UserText.fireproofSites
+    override func viewWillAppear() {
+        reloadData()
+    }
+
+    // MARK: - UI setup
+    private func configureToolbarButton(_ button: NSButton) {
+        button.bezelStyle = .rounded
+        button.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        button.heightAnchor.constraint(equalToConstant: 24).isActive = true
+        button.widthAnchor.constraint(greaterThanOrEqualToConstant: 24).isActive = true
     }
 
     private func updateRemoveButtonState() {
-        removeDomainButton.isEnabled = tableView.selectedRow > -1
+        removeDomainButton.isEnabled = !tableView.selectedRowIndexes.isEmpty
     }
 
-    fileprivate func reloadData() {
-        allFireproofDomains = fireproofDomains.fireproofDomains.sorted { (lhs, rhs) -> Bool in
-            return lhs < rhs
-        }
+    private func reloadData() {
+        allFireproofDomains = fireproofDomains.fireproofDomains.sorted(by: <)
+        updateFilteredFireproofDomains()
 
+        let scrollPosition = tableView.visibleRect.origin
         tableView.reloadData()
+        tableView.scroll(scrollPosition)
         updateRemoveButtonState()
+
+        let hasAnyDomains = !allFireproofDomains.isEmpty
+        removeAllDomainsButton.isEnabled = hasAnyDomains
+        searchBar.isEnabled = hasAnyDomains
     }
 
-    @IBAction func doneButtonClicked(_ sender: NSButton) {
-        dismiss()
-    }
-
-    @IBAction func removeSelectedDomain(_ sender: NSButton) {
-        guard tableView.selectedRow > -1 else {
-            updateRemoveButtonState()
+    private func updateFilteredFireproofDomains() {
+        let searchBarString = searchBar.stringValue
+        guard !searchBarString.isEmpty else {
+            filteredFireproofDomains = nil
             return
         }
 
-        let selectedDomain = visibleFireproofDomains[tableView.selectedRow]
-        fireproofDomains.remove(domain: selectedDomain)
-        reloadData()
+        filteredFireproofDomains = allFireproofDomains.filter { $0.localizedCaseInsensitiveContains(searchBarString) }
     }
 
-    @IBAction func removeAllDomains(_ sender: NSButton) {
+    // MARK: - Actions
+    @objc private func doneButtonClicked(_ sender: NSButton) {
+        dismiss()
+    }
+
+    @objc private func removeSelectedDomain(_ sender: NSButton) {
+        deleteSelectedItems()
+    }
+
+    @objc private func removeAllDomains(_ sender: NSButton) {
+        let domainsBeforeClear = allFireproofDomains
+
+        undoManager?.beginUndoGrouping()
+        undoManager?.registerUndo(withTarget: self) { vc in
+            domainsBeforeClear.forEach { vc.fireproofDomains.add(domain: $0) }
+            vc.reloadData()
+        }
+        undoManager?.setActionName(UserText.fireproofRemoveAllButton)
+        undoManager?.endUndoGrouping()
+
         fireproofDomains.clearAll()
+        searchBar.stringValue = ""
+        filteredFireproofDomains = nil
         reloadData()
     }
 
-}
+    private func handleCmdF() -> Bool {
+        guard !visibleFireproofDomains.isEmpty else { return false }
+        searchBar.makeMeFirstResponder()
+        return true
+    }
 
+    @discardableResult
+    private func deleteSelectedItems() -> Bool {
+        let indexes = tableView.selectedRowIndexes
+        guard !indexes.isEmpty else { return false }
+
+        let domains = indexes.map { visibleFireproofDomains[$0] }
+
+        undoManager?.beginUndoGrouping()
+        for domain in domains {
+            undoManager?.registerUndo(withTarget: self) { vc in
+                vc.fireproofDomains.add(domain: domain)
+                vc.reloadData()
+            }
+        }
+        undoManager?.setActionName(UserText.remove)
+        undoManager?.endUndoGrouping()
+
+        domains.forEach { fireproofDomains.remove(domain: $0) }
+
+        reloadData()
+        return true
+    }
+
+    @discardableResult
+    private func selectAllRows() -> Bool {
+        guard tableView.numberOfRows > 0 else { return false }
+        let all = IndexSet(integersIn: 0..<tableView.numberOfRows)
+        tableView.selectRowIndexes(all, byExtendingSelection: false)
+        updateRemoveButtonState()
+        return true
+    }
+
+    override func keyDown(with event: NSEvent) {
+        switch Int(event.keyCode) {
+        case kVK_Delete, kVK_ForwardDelete:
+            if deleteSelectedItems() { return }
+            // fallthrough (Beep)
+        default: break
+        }
+        super.keyDown(with: event)
+    }
+
+    // handle Esc key
+    override func cancelOperation(_ sender: Any?) {
+        dismiss()
+    }
+}
+// MARK: - NSTableViewDataSource
 extension FireproofDomainsViewController: NSTableViewDataSource, NSTableViewDelegate {
 
     func numberOfRows(in tableView: NSTableView) -> Int {
@@ -120,15 +309,11 @@ extension FireproofDomainsViewController: NSTableViewDataSource, NSTableViewDele
     }
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        if let cell = tableView.makeView(withIdentifier: Constants.cellIdentifier, owner: nil) as? NSTableCellView {
-            let domain = visibleFireproofDomains[row]
-            cell.textField?.stringValue = domain
-            cell.imageView?.image = faviconManager.getCachedFavicon(for: domain, sizeCategory: .small)?.image
+        let cell = tableView.makeView(withIdentifier: FireproofDomainCellView.identifier, owner: nil) as? FireproofDomainCellView ?? FireproofDomainCellView()
 
-            return cell
-        }
-
-        return nil
+        let domain = visibleFireproofDomains[row]
+        cell.update(host: domain)
+        return cell
     }
 
     func tableViewSelectionDidChange(_ notification: Notification) {
@@ -136,19 +321,67 @@ extension FireproofDomainsViewController: NSTableViewDataSource, NSTableViewDele
     }
 
 }
-
-extension FireproofDomainsViewController: NSTextFieldDelegate {
+// MARK: - NSSearchFieldDelegate
+extension FireproofDomainsViewController: NSSearchFieldDelegate {
 
     func controlTextDidChange(_ notification: Notification) {
-        guard let field = notification.object as? NSSearchField else { return }
+        updateFilteredFireproofDomains()
+        tableView.reloadData()
+        updateRemoveButtonState()
+    }
 
-        if field.stringValue.isEmpty {
-            filteredFireproofDomains = nil
-        } else {
-            filteredFireproofDomains = allFireproofDomains.filter { $0.contains(field.stringValue) }
+    func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+        guard control === searchBar else { return false }
+        switch selector {
+        case #selector(NSResponder.moveDown(_:)):
+            if tableView.numberOfRows > 0 {
+                tableView.makeMeFirstResponder()
+                if tableView.selectedRow == -1 {
+                    tableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
+                }
+            }
+            return true
+        case #selector(NSResponder.cancelOperation(_:)),
+             #selector(NSResponder.insertNewline(_:)):
+            // If search field is active, first press just deactivates it
+            tableView.makeMeFirstResponder()
+            return true
+        default:
+            return false
         }
-
-        reloadData()
     }
 
 }
+
+// MARK: - #Preview
+#if DEBUG
+private class MockFireproofDomains: FireproofDomains {
+    init(domains: [String]) {
+        super.init(store: FireproofDomainsStore(context: nil), tld: TLD())
+        for domain in domains {
+            super.add(domain: domain)
+        }
+    }
+}
+@available(macOS 14.0, *)
+#Preview(traits: FireproofDomainsViewController.Constants.preferredContentSize.fixedLayout) {
+    customAssertionFailure = { _, _, _ in }
+    let mockDomains = MockFireproofDomains(domains: [
+        "duckduckgo.com",
+        "github.com",
+        "figma.com",
+        "y-the-very-long-domain-name-for-preview-testing-is-in-the-end.com"
+    ])
+
+    // Provide simple preview icons from bundled assets (replace names if needed)
+    let faviconMock = FaviconManagerMock()
+    faviconMock.setImage(NSImage(named: NSImage.applicationIconName)!, forHost: "duckduckgo.com")
+    faviconMock.setImage(NSImage(named: NSImage.networkName)!, forHost: "github.com")
+
+    let controller = FireproofDomainsViewController(
+        fireproofDomains: mockDomains,
+        faviconManager: faviconMock
+    )._preview_hidingWindowControlsOnAppear()
+    return controller
+}
+#endif

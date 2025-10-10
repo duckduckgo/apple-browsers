@@ -74,7 +74,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         return true
         #else
         // For App Store builds: only show update status if feature flag is enabled
-        return featureFlagger.isFeatureOn(.appStoreCheckForUpdatesFlow)
+        return featureFlagger.isFeatureOn(.appStoreUpdateFlow)
         #endif
     }
 

@@ -82,8 +82,14 @@ final class SuggestionContainer: SuggestionContainerProtocol {
         self.bookmarkProvider = bookmarkProvider
         self.historyProvider = historyProvider
         self.startupPreferences = startupPreferences ?? NSApp.delegateTyped.startupPreferences
-        self.featureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
-        self.loading = suggestionLoading ?? SuggestionLoader(urlFactory: URL.makeURL(fromSuggestionPhrase:), isUrlIgnored: isUrlIgnored)
+        let effectiveFeatureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
+        self.featureFlagger = effectiveFeatureFlagger
+        self.loading = suggestionLoading ?? SuggestionLoader(
+            urlFactory: {
+                URL.makeURL(fromSuggestionPhrase: $0, useUnifiedLogic: effectiveFeatureFlagger.isFeatureOn(.unifiedURLPredictor))
+            },
+            isUrlIgnored: isUrlIgnored
+        )
         self.urlSession = urlSession ?? URLSession(configuration: .ephemeral)
         self.burnerMode = burnerMode
         self.windowControllersManager = windowControllersManager

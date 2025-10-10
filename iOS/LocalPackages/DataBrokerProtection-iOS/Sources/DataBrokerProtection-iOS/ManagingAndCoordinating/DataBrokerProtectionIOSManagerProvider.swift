@@ -62,6 +62,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
                                   featureFlagger: DBPFeatureFlagging,
                                   pixelKit: PixelKit,
+                                  wideEvent: WideEventManaging,
                                   subscriptionManager: DataBrokerProtectionSubscriptionManager,
                                   quickLinkOpenURLHandler: @escaping (URL) -> Void,
                                   feedbackViewCreator: @escaping () -> (any View)) -> DataBrokerProtectionIOSManager? {
@@ -148,7 +149,8 @@ public class DataBrokerProtectionIOSManagerProvider {
             captchaService: captchaService,
             featureFlagger: featureFlagger,
             vpnBypassService: nil,
-            jobSortPredicate: BrokerJobDataComparators.byPriorityForBackgroundTask
+            jobSortPredicate: BrokerJobDataComparators.byPriorityForBackgroundTask,
+            wideEvent: wideEvent
         )
 
         return DataBrokerProtectionIOSManager(

@@ -20,13 +20,21 @@ import Foundation
 import Combine
 import AppKit
 
-final class ThemeManager: ObservableObject {
+protocol ThemeManaging {
+    var theme: ThemeStyleProviding { get }
+    var themePublisher: Published<any ThemeStyleProviding>.Publisher { get }
+}
 
+final class ThemeManager: ObservableObject, ThemeManaging {
     private var cancellables = Set<AnyCancellable>()
-    @Published private(set) var theme: VisualStyleProviding
+    @Published private(set) var theme: ThemeStyleProviding
+
+    var themePublisher: Published<any ThemeStyleProviding>.Publisher {
+        $theme
+    }
 
     init(appearancePreferences: AppearancePreferences) {
-        theme = VisualStyle.buildVisualStyle(themeName: appearancePreferences.themeName)
+        theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName)
         subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
     }
 
@@ -43,6 +51,6 @@ final class ThemeManager: ObservableObject {
 private extension ThemeManager {
 
     func switchToTheme(named themeName: ThemeName) {
-        theme = VisualStyle.buildVisualStyle(themeName: themeName)
+        theme = ThemeStyle.buildThemeStyle(themeName: themeName)
     }
 }

@@ -21,6 +21,7 @@ import XCTest
 @testable import Networking
 import SubscriptionTestingUtilities
 import NetworkingTestingUtils
+import PixelKitTestingUtilities
 
 @available(macOS 12.0, iOS 15.0, *)
 final class AppStorePurchaseFlowV2Tests: XCTestCase {
@@ -29,16 +30,19 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
     private var subscriptionManagerMock: SubscriptionManagerMockV2!
     private var storePurchaseManagerMock: StorePurchaseManagerMockV2!
     private var appStoreRestoreFlowMock: AppStoreRestoreFlowMockV2!
+    private var wideEventMock: WideEventMock!
 
     override func setUp() {
         super.setUp()
         subscriptionManagerMock = SubscriptionManagerMockV2()
         storePurchaseManagerMock = StorePurchaseManagerMockV2()
         appStoreRestoreFlowMock = AppStoreRestoreFlowMockV2()
+        wideEventMock = WideEventMock()
         sut = DefaultAppStorePurchaseFlowV2(
             subscriptionManager: subscriptionManagerMock,
             storePurchaseManager: storePurchaseManagerMock,
-            appStoreRestoreFlow: appStoreRestoreFlowMock
+            appStoreRestoreFlow: appStoreRestoreFlowMock,
+            wideEvent: wideEventMock
         )
     }
 
@@ -47,6 +51,7 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
         subscriptionManagerMock = nil
         storePurchaseManagerMock = nil
         appStoreRestoreFlowMock = nil
+        wideEventMock = nil
         super.tearDown()
     }
 

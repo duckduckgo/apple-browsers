@@ -424,7 +424,7 @@ final class ContextualMenuTests: XCTestCase {
             XCTFail("No item")
             return
         }
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
@@ -436,7 +436,7 @@ final class ContextualMenuTests: XCTestCase {
             window: window,
             mainViewController: mainViewController,
             fireViewModel: fireCoordinator.fireViewModel,
-            visualStyle: NSApp.delegateTyped.visualStyle
+            themeManager: MockThemeManager()
         )
 
         // WHEN
@@ -463,7 +463,7 @@ final class ContextualMenuTests: XCTestCase {
             XCTFail("No item")
             return
         }
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
@@ -475,7 +475,7 @@ final class ContextualMenuTests: XCTestCase {
             window: window,
             mainViewController: mainViewController,
             fireViewModel: fireCoordinator.fireViewModel,
-            visualStyle: NSApp.delegateTyped.visualStyle
+            themeManager: MockThemeManager()
         )
 
         // WHEN

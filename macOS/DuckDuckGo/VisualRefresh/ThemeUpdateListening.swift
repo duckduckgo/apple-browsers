@@ -43,7 +43,7 @@ extension ThemeUpdateListening {
         themeManager.theme
     }
 
-    /// By marking this API as nonisolated, we're preventing an error triggered when called from within initializers
+    /// Subscribes the receiver to Theme changes
     ///
     func subscribeToThemeChanges() {
         themeUpdateCancellable = themeManager.themePublisher

@@ -79,11 +79,6 @@ final class ClosureSamplerTests: XCTestCase {
         XCTAssertLessThanOrEqual(executionCount, expectedMax)
     }
 
-    func testWhenPercentageIsBelowOneThenClampsToOne() {
-        let sampler = ClosureSampler(percentage: -5)
-        XCTAssertEqual(sampler.percentage, 1)
-    }
-
     func testWhenPercentageIsAboveHundredThenClampsToHundred() {
         let sampler = ClosureSampler(percentage: 150)
         XCTAssertEqual(sampler.percentage, 100)

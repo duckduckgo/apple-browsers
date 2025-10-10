@@ -26,7 +26,7 @@ public final class ClosureSampler {
     public let percentage: Int
 
     public init(percentage: Int) {
-        self.percentage = max(1, min(100, percentage))
+        self.percentage = max(0, min(100, percentage))
     }
 
     /// Executes the closure only if sampling allows it

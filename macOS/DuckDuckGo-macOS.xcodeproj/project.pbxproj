@@ -2871,6 +2871,8 @@
 		B31055CB27A1BA1D001AC618 /* autoconsent-bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = B31055C327A1BA1D001AC618 /* autoconsent-bundle.js */; };
 		B313C04F2E1FD91200C34AE6 /* AutoconsentPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B313C04E2E1FD91200C34AE6 /* AutoconsentPixels.swift */; };
 		B313C0502E1FD91200C34AE6 /* AutoconsentPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B313C04E2E1FD91200C34AE6 /* AutoconsentPixels.swift */; };
+		B52B61802E94331B008888E3 /* ThemeUpdateListening.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52B617F2E94331B008888E3 /* ThemeUpdateListening.swift */; };
+		B52B61812E94331B008888E3 /* ThemeUpdateListening.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52B617F2E94331B008888E3 /* ThemeUpdateListening.swift */; };
 		B541A3542E858041004AEAAD /* ThemeColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B541A3532E858041004AEAAD /* ThemeColors.swift */; };
 		B541A3552E858041004AEAAD /* ThemeColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B541A3532E858041004AEAAD /* ThemeColors.swift */; };
 		B54347A12E8DC7B1009EAE79 /* MockThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5ACEDAB2E8DC635008EC8B9 /* MockThemeManager.swift */; };
@@ -5434,6 +5436,7 @@
 		B31055BE27A1BA1D001AC618 /* userscript.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = userscript.js; sourceTree = "<group>"; };
 		B31055C327A1BA1D001AC618 /* autoconsent-bundle.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "autoconsent-bundle.js"; sourceTree = "<group>"; };
 		B313C04E2E1FD91200C34AE6 /* AutoconsentPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentPixels.swift; sourceTree = "<group>"; };
+		B52B617F2E94331B008888E3 /* ThemeUpdateListening.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeUpdateListening.swift; sourceTree = "<group>"; };
 		B541A3532E858041004AEAAD /* ThemeColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeColors.swift; sourceTree = "<group>"; };
 		B55C8F732E81A8730024B421 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		B5ACEDAB2E8DC635008EC8B9 /* MockThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockThemeManager.swift; sourceTree = "<group>"; };
@@ -10973,6 +10976,7 @@
 				B55C8F732E81A8730024B421 /* ThemeManager.swift */,
 				B5AE99522E84A5D900F45912 /* ThemeName.swift */,
 				B541A3532E858041004AEAAD /* ThemeColors.swift */,
+				B52B617F2E94331B008888E3 /* ThemeUpdateListening.swift */,
 			);
 			path = VisualRefresh;
 			sourceTree = "<group>";
@@ -13823,6 +13827,7 @@
 				84E9D4BD2E6B07D400E7CC5B /* FireproofDomainCellView.swift in Sources */,
 				1DDD3EBD2B84DCB9004CBF2B /* WebTrackingProtectionPreferences.swift in Sources */,
 				3706FC25293F65D500E42796 /* ColorView.swift in Sources */,
+				B52B61802E94331B008888E3 /* ThemeUpdateListening.swift in Sources */,
 				E2BC1B242E210AF300F58D61 /* NewTabPageOmnibarConfigProvider.swift in Sources */,
 				37E307B32D075B6500599500 /* NewTabPagePrivacyStatsEventHandler.swift in Sources */,
 				3706FC26293F65D500E42796 /* RecentlyClosedCacheItem.swift in Sources */,
@@ -15935,6 +15940,7 @@
 				372D15EC2D00FA1A00A11576 /* AppearancePreferences+NewTabPage.swift in Sources */,
 				C1DAF3B52B9A44860059244F /* AutofillPopoverPresenter.swift in Sources */,
 				B687B7CA2947A029001DEA6F /* ContentBlockingTabExtension.swift in Sources */,
+				B52B61812E94331B008888E3 /* ThemeUpdateListening.swift in Sources */,
 				4B379C1E27BDB7FF008A968E /* DeviceAuthenticator.swift in Sources */,
 				BD94DDF82D7A0CEC0090A599 /* DBPMetadataCollector.swift in Sources */,
 				1D6D041C2D9437ED005BC23F /* FullscreenController.swift in Sources */,

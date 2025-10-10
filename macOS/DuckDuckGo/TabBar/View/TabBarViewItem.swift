@@ -122,11 +122,8 @@ final class TabBarItemCellView: NSView {
         static let trailingSpaceWithPermissionAndButton: CGFloat = 40
     }
 
-    private var cancellables: Set<AnyCancellable> = []
-    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
-    private var theme: ThemeStyleProviding {
-        themeManager.theme
-    }
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
 
     fileprivate let faviconImageView = {
         let faviconImageView = NSImageView()
@@ -328,7 +325,7 @@ final class TabBarItemCellView: NSView {
         addSubview(rightSeparatorView)
 
         subscribeToThemeChanges()
-        applyThemeStyles()
+        applyThemeStyle()
     }
 
     required init?(coder: NSCoder) {
@@ -463,21 +460,11 @@ final class TabBarItemCellView: NSView {
             }
         }
     }
+}
 
-    private func subscribeToThemeChanges() {
-        themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                self?.applyThemeStyles(theme: theme)
-            }
-            .store(in: &cancellables)
-    }
+extension TabBarItemCellView: ThemeUpdateListening {
 
-    private func applyThemeStyles() {
-        applyThemeStyles(theme: theme)
-    }
-
-    private func applyThemeStyles(theme: ThemeStyleProviding) {
+    func applyThemeStyle(theme: ThemeStyleProviding) {
         let tabStyleProvider = theme.tabStyleProvider
         let colorsProvider = theme.colorsProvider
 
@@ -629,11 +616,8 @@ final class TabBarViewItem: NSCollectionViewItem {
     private var currentURL: URL?
     private var cancellables = Set<AnyCancellable>()
 
-    private var themeCancellable: AnyCancellable?
-    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
-    private var theme: ThemeStyleProviding {
-        themeManager.theme
-    }
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
 
     weak var delegate: TabBarViewItemDelegate?
     var tabViewModel: TabBarViewModel? {
@@ -1029,16 +1013,11 @@ final class TabBarViewItem: NSCollectionViewItem {
             cell.audioButton.setAccessibilityTitle(UserText.muteTab)
         }
     }
+}
 
-    private func subscribeToThemeChanges() {
-        themeCancellable = themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.applyThemeStyles()
-            }
-    }
+extension TabBarViewItem: ThemeUpdateListening {
 
-    private func applyThemeStyles() {
+    func applyThemeStyle(theme: ThemeStyleProviding) {
         updateSubviews()
         view.needsDisplay = true
     }

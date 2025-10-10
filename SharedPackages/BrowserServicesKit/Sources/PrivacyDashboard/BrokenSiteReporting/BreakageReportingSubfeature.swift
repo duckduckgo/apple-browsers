@@ -1,7 +1,7 @@
 //
-//  PerformanceMetricsSubfeature.swift
+//  BreakageReportingSubfeature.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,58 +19,48 @@
 import Foundation
 import UserScript
 import WebKit
-import PixelKit
 
-public class PerformanceMetricsSubfeature: Subfeature {
+public class BreakageReportingSubfeature: Subfeature {
 
     public var messageOriginPolicy: MessageOriginPolicy = .all
-    public var featureName: String = "performanceMetrics"
+    public var featureName: String = "breakageReporting"
     public weak var broker: UserScriptMessageBroker?
 
     private weak var targetWebview: WKWebView?
     private var timer: Timer?
-    private var completionHandler: (([Double]?) -> Void)?
+    private var completionHandler: ((PerformanceMetrics?) -> Void)?
+    private var currentPerformanceMetrics: PerformanceMetrics?
 
     public init(targetWebview: WKWebView) {
         self.targetWebview = targetWebview
     }
 
     public func handler(forMethodNamed methodName: String) -> Handler? {
-        switch methodName {
-        case "vitalsResult":
-            return vitalsResult
-        case "expandedPerformanceMetricsResult":
-            return expandedPerformanceMetricsResult
-        default:
-            return nil
-        }
-    }
+        guard methodName == "breakageReportResult" else { return nil }
 
-    public func expandedPerformanceMetricsResult(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        guard let payload = params as? [String: Any] else { return nil }
-
-        // Fire pixel with the expanded metrics data
-        firePerformancePixel(with: payload)
-
-        return nil
+        return vitalsResult
     }
 
     public func vitalsResult(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         timer?.invalidate()
-        guard let payload = params as? [String: Any] else {
+        guard let payload = params as? [String: Any],
+              let expandedMetrics = payload["expandedPerformanceMetrics"] as? [String: Any] else {
             completionHandler?(nil)
             return nil
         }
 
-        completionHandler?(payload["vitals"] as? [Double])
+        // Parse expanded performance metrics from payload
+        let performanceMetrics = PerformanceMetrics(from: expandedMetrics)
+        self.currentPerformanceMetrics = performanceMetrics
+        completionHandler?(performanceMetrics)
         return nil
     }
 
-    public func notifyHandler(completion: @escaping ([Double]?) -> Void) {
+    public func notifyHandler(completion: @escaping (PerformanceMetrics?) -> Void) {
         guard let broker, let targetWebview else { completion(nil); return }
 
         completionHandler = completion
-        broker.push(method: "getVitals", params: nil, for: self, into: targetWebview)
+        broker.push(method: "getBreakageReportValues", params: nil, for: self, into: targetWebview)
 
         // On the chance C-S-S doesn't respond to our message, set a timer
         // to continue the process since the breakage report blocks on this.
@@ -90,18 +80,8 @@ public class PerformanceMetricsSubfeature: Subfeature {
         self.broker = broker
     }
 
-    private func firePerformancePixel(with payload: [String: Any]) {
-        // expandedPerformanceMetricsResult has metrics under .metrics key
-        guard let metrics = payload["metrics"] as? [String: Any] else {
-            return
-        }
-
-        let rawMetrics = PerformanceMetrics(from: metrics)
-        let privacyAwareMetrics = rawMetrics.privacyAwareMetrics()
-
-        // Create pixel with privacy-aware data
-        let pixel = SiteLoadingPerformancePixel.performanceMetricsReceived(metrics: privacyAwareMetrics)
-
-        PixelKit.fire(pixel, frequency: .sample(percentage: 20))
+    public func getExpandedPerformanceMetrics() -> PerformanceMetrics? {
+        return currentPerformanceMetrics
     }
+
 }

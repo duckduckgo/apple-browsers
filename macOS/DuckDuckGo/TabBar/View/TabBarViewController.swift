@@ -88,10 +88,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var pinnedTabsDiscoveryPopover: NSPopover?
     private weak var crashPopoverViewController: PopoverMessageViewController?
 
-    private let themeManager: ThemeManaging
-    private var theme: ThemeStyleProviding {
-        themeManager.theme
-    }
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
 
     var tabPreviewsEnabled: Bool = true
 
@@ -216,7 +214,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         setupTabsContainersHeight()
         subscribeToThemeChanges()
 
-        applyThemeStyles()
+        applyThemeStyle()
     }
 
     override func viewWillAppear() {
@@ -892,37 +890,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         .store(in: &cancellables)
     }
 
-    private func subscribeToThemeChanges() {
-        themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                self?.applyThemeStyles(theme: theme)
-            }
-            .store(in: &cancellables)
-    }
-
-    private func applyThemeStyles() {
-        applyThemeStyles(theme: theme)
-    }
-
-    private func applyThemeStyles(theme: ThemeStyleProviding) {
-        let colorsProvider = theme.colorsProvider
-
-        backgroundColorView.backgroundColor = colorsProvider.baseBackgroundColor
-
-        fireButton.normalTintColor = colorsProvider.iconsColor
-        fireButton.mouseOverColor = colorsProvider.buttonMouseOverColor
-
-        leftScrollButton.normalTintColor = colorsProvider.iconsColor
-        leftScrollButton.mouseOverColor = colorsProvider.buttonMouseOverColor
-
-        rightScrollButton.normalTintColor = colorsProvider.iconsColor
-        rightScrollButton.mouseOverColor = colorsProvider.buttonMouseOverColor
-
-        addTabButton.normalTintColor = colorsProvider.iconsColor
-        addTabButton.mouseOverColor = colorsProvider.buttonMouseOverColor
-    }
-
     // MARK: - Tab Preview
 
     private lazy var tabPreviewWindowController = TabPreviewWindowController()
@@ -1022,6 +989,29 @@ extension TabBarViewController: MouseOverButtonDelegate {
         return true
     }
 }
+
+// MARK: - ThemeUpdateListening
+extension TabBarViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: any ThemeStyleProviding) {
+        let colorsProvider = theme.colorsProvider
+
+        backgroundColorView.backgroundColor = colorsProvider.baseBackgroundColor
+
+        fireButton.normalTintColor = colorsProvider.iconsColor
+        fireButton.mouseOverColor = colorsProvider.buttonMouseOverColor
+
+        leftScrollButton.normalTintColor = colorsProvider.iconsColor
+        leftScrollButton.mouseOverColor = colorsProvider.buttonMouseOverColor
+
+        rightScrollButton.normalTintColor = colorsProvider.iconsColor
+        rightScrollButton.mouseOverColor = colorsProvider.buttonMouseOverColor
+
+        addTabButton.normalTintColor = colorsProvider.iconsColor
+        addTabButton.mouseOverColor = colorsProvider.buttonMouseOverColor
+    }
+}
+
 // MARK: - TabCollectionViewModelDelegate
 extension TabBarViewController: TabCollectionViewModelDelegate {
 

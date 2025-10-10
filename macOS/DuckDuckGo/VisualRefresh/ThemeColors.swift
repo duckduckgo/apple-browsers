@@ -78,7 +78,7 @@ struct ThemeColors: ColorPalette {
 extension ThemeColors {
 
     init(themeName: ThemeName) {
-        let palette = Self.designColorPalette(for: themeName)
+        let palette = themeName.designColorPalette
 
         accentAltContentPrimary = NSColor(designSystemColor: .accentAltContentPrimary, palette: palette)
         accentAltContentSecondary = NSColor(designSystemColor: .accentAltContentSecondary, palette: palette)
@@ -132,28 +132,5 @@ extension ThemeColors {
         textSecondary = NSColor(designSystemColor: .textSecondary, palette: palette)
         textTertiary = NSColor(designSystemColor: .textTertiary, palette: palette)
         toneShadePrimary = NSColor(designSystemColor: .toneShadePrimary, palette: palette)
-    }
-
-    private static func designColorPalette(for themeName: ThemeName) -> DesignResourcesKit.ColorPalette {
-        switch themeName {
-        case .default:
-            .default
-        case .figma:
-            .figma
-        case .coolGray:
-            .coolGray
-        case .desert:
-            .desert
-        case .green:
-            .green
-        case .orange:
-            .orange
-        case .rose:
-            .rose
-        case .slateBlue:
-            .slateBlue
-        case .violet:
-            .violet
-        }
     }
 }

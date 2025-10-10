@@ -55,4 +55,9 @@ extension ThemeName {
             .violet
         }
     }
+
+    /// Exclude the "Legacy Theme" for Internal Users
+    static var internalUserThemes: [ThemeName] {
+        ThemeName.allCases.filter { $0 != .default }
+    }
 }

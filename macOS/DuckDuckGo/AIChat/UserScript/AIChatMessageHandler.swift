@@ -91,7 +91,8 @@ extension AIChatMessageHandler {
                                             supportsNativePrompt: true,
                                             supportsNativeChatInput: false,
                                             supportsURLChatIDRestoration: true,
-                                            supportsFullChatRestoration: true)
+                                            supportsFullChatRestoration: true,
+                                            supportsPageContext: featureFlagger.isFeatureOn(.aiChatPageContext))
         } else {
             return AIChatNativeConfigValues.defaultValues
         }
@@ -133,7 +134,7 @@ extension AIChatMessageHandler {
     }
 
     private func getPageContext() -> Encodable? {
-        PageContextPayload(serializedPageData: pageContextHandler.consumeData())
+        pageContextHandler.consumeData()
     }
 
     private func setPageContext(_ data: AIChatPageContextData?) {

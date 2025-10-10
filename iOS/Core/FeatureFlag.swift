@@ -208,7 +208,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .refreshButtonPosition,
              .newDeviceSyncPrompt,
              .subscriptionRestoreWidePixelMeasurement,
-             .authV2WideEventEnabled:
+             .authV2WideEventEnabled,
+             .embeddedSERPSettings:
             true
         default:
             false

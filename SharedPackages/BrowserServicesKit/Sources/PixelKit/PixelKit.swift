@@ -25,7 +25,7 @@ public final class PixelKit {
     public typealias CompletionBlock = (Bool, (any Error)?) -> Void
 
     /// The frequency with which a pixel is sent to our endpoint.
-    public enum Frequency {
+    public enum Frequency: Equatable {
         /// The default frequency for pixels. This fires pixels with the event names as-is.
         case standard
 
@@ -63,6 +63,9 @@ public final class PixelKit {
         /// This is useful in situations where pixels receive spikes in volume, as the daily pixel can be used to determine how many users are actually affected.
         case legacyDailyAndCount
 
+        /// Sent with sampling - only N% of calls result in actual pixel firing
+        case sample(percentage: Int)
+
         fileprivate var description: String {
             switch self {
             case .standard:
@@ -85,6 +88,8 @@ public final class PixelKit {
                 "Legacy Daily and Count"
             case .legacyDailyNoSuffix:
                 "Legacy Daily No Suffix"
+            case .sample(let percentage):
+                "Sample (\(percentage)%)"
             }
         }
     }
@@ -323,6 +328,8 @@ public final class PixelKit {
             handleLegacyDailyAndCount(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .legacyDailyNoSuffix:
             handleLegacyDailyNoSuffix(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
+        case .sample(let percentage):
+            handleSample(pixelName, headers, newParams, allowedQueryReservedCharacters, percentage, onComplete)
         }
     }
 
@@ -414,6 +421,36 @@ public final class PixelKit {
         } else {
             printDebugInfo(pixelName: pixelName, frequency: .legacyDailyNoSuffix, parameters: newParams, skipped: true)
         }
+    }
+
+    /// Handles sampling frequency pixels - only N% of calls result in actual pixel firing
+    /// - Parameters:
+    ///   - pixelName: The name of the pixel to potentially fire
+    ///   - headers: HTTP headers for the request
+    ///   - newParams: Additional parameters for the pixel
+    ///   - allowedQueryReservedCharacters: Characters allowed in query parameters
+    ///   - percentage: Sampling percentage from 1 to 100 (inclusive)
+    ///   - onComplete: Completion handler called with whether the pixel was fired
+    private func handleSample(_ pixelName: String,
+                              _ headers: [String: String],
+                              _ newParams: [String: String],
+                              _ allowedQueryReservedCharacters: CharacterSet?,
+                              _ percentage: Int,
+                              _ onComplete: @escaping CompletionBlock) {
+        assert(percentage >= 1 && percentage <= 100, "Sampling percentage must be between 1 and 100, got \(percentage)")
+
+        reportErrorIf(pixel: pixelName, endsWith: "_u")
+        reportErrorIf(pixel: pixelName, endsWith: "_daily")
+
+        let suffix = "_sample\(percentage)"
+
+        let sampler = ClosureSampler(percentage: percentage)
+        sampler.sample({
+            let sampledPixelName = pixelName + suffix
+            fireRequestWrapper(sampledPixelName, headers, newParams, allowedQueryReservedCharacters, true, .sample(percentage: percentage), onComplete)
+        }, onDiscarded: {
+            self.printDebugInfo(pixelName: pixelName + suffix, frequency: .sample(percentage: percentage), parameters: newParams, skipped: true)
+        })
     }
 
     private func handleLegacyDaily(_ pixelName: String,

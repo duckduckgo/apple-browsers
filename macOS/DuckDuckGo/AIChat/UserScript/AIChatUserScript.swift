@@ -63,7 +63,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         handler.pageContextPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageContext in
-                self?.submitPageContext(pageContext)
+                self?.submitAIChatPageContext(pageContext)
             }
             .store(in: &cancellables)
     }
@@ -75,12 +75,12 @@ final class AIChatUserScript: NSObject, Subfeature {
         broker?.push(method: AIChatUserScriptMessages.submitAIChatNativePrompt.rawValue, params: prompt, for: self, into: webView)
     }
 
-    private func submitPageContext(_ pageContextData: AIChatPageContextData?) {
+    private func submitAIChatPageContext(_ pageContextData: AIChatPageContextData?) {
         guard let webView else {
             return
         }
-        let params = PageContextPayload(serializedPageData: pageContextData)
-        broker?.push(method: AIChatUserScriptMessages.submitPageContext.rawValue, params: params, for: self, into: webView)
+        let response = PageContextResponse(pageContext: pageContextData)
+        broker?.push(method: AIChatUserScriptMessages.submitAIChatPageContext.rawValue, params: response, for: self, into: webView)
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
@@ -107,8 +107,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.openSummarizationSourceLink
         case .openTranslationSourceLink:
             return handler.openTranslationSourceLink
-        case .getPageContext:
-            return handler.getPageContext
+        case .getAIChatPageContext:
+            return handler.getAIChatPageContext
         case .reportMetric:
             return handler.reportMetric
         case .togglePageContextTelemetry:

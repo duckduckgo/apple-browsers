@@ -112,7 +112,7 @@ final class RecordFoundDateResolverTests: XCTestCase {
         XCTAssertEqual(result, matchDate)
     }
 
-    func testFallsBackToFirstFoundDateInRepository() {
+    func testFallsBackToFirstFoundDateInRepository() throws {
         let events = [
             HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .reAppearence, date: .now)
         ]
@@ -129,7 +129,7 @@ final class RecordFoundDateResolverTests: XCTestCase {
         )
 
         let repositoryDate = Date(timeIntervalSince1970: 20_000)
-        mockDatabase.add(
+        try mockDatabase.add(
             HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: repositoryDate)
         )
 

@@ -106,8 +106,8 @@ public struct PrivacyAwarePerformanceMetrics {
         self.domContentLoadedMs = domContentLoaded?.roundedToMilliseconds()
     }
 
-    /// Returns a dictionary representation of all privacy-aware performance metrics
     // swiftlint:disable:next cyclomatic_complexity
+    /// Returns a dictionary representation of all privacy-aware performance metrics
     public func toDictionary() -> [String: Any] {
         var dict: [String: Any] = [:]
 
@@ -183,10 +183,10 @@ public enum SizeBucket: String, CaseIterable {
 
 /// Resource count buckets to prevent precise fingerprinting
 public enum ResourceBucket: String, CaseIterable {
-    case few = "few"              // 0-10 resources
-    case moderate = "moderate"    // 11-50 resources
-    case many = "many"            // 51-100 resources
-    case excessive = "excessive"  // > 100 resources
+    case few              // 0-10 resources
+    case moderate         // 11-50 resources
+    case many             // 51-100 resources
+    case excessive        // > 100 resources
 
     public static func from(_ count: Int) -> ResourceBucket {
         switch count {
@@ -204,10 +204,10 @@ public enum ResourceBucket: String, CaseIterable {
 
 /// Redirect count buckets to prevent precise fingerprinting
 public enum RedirectBucket: String, CaseIterable {
-    case none = "none"            // 0 redirects
-    case few = "few"              // 1-3 redirects
-    case moderate = "moderate"     // 4-10 redirects
-    case many = "many"            // > 10 redirects
+    case none             // 0 redirects
+    case few              // 1-3 redirects
+    case moderate         // 4-10 redirects
+    case many             // > 10 redirects
 
     public static func from(_ count: Int) -> RedirectBucket {
         switch count {

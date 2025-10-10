@@ -52,10 +52,8 @@ final class ClosureSamplerTests: XCTestCase {
         var executionCount = 0
         let iterations = 1000
 
-        for _ in 0..<iterations {
-            if sampler.sample({}) {
-                executionCount += 1
-            }
+        for _ in 0..<iterations where sampler.sample({}) {
+            executionCount += 1
         }
 
         // Allow for some variance (±10%)
@@ -70,10 +68,8 @@ final class ClosureSamplerTests: XCTestCase {
         var executionCount = 0
         let iterations = 1000
 
-        for _ in 0..<iterations {
-            if sampler.sample({}) {
-                executionCount += 1
-            }
+        for _ in 0..<iterations where sampler.sample({}) {
+            executionCount += 1
         }
 
         // Allow for some variance (±5%)

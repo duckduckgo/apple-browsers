@@ -32,6 +32,7 @@ final class WinBackOfferPromptPresenter: WinBackOfferPromptPresenting {
 
     func tryToShowPrompt(in window: NSWindow?) {
         guard visibilityManager.shouldShowLaunchMessage else { return }
+        visibilityManager.setLaunchMessagePresented(true)
         showPrompt(in: window)
     }
 
@@ -39,28 +40,16 @@ final class WinBackOfferPromptPresenter: WinBackOfferPromptPresenting {
         let viewModel = WinBackOfferPromptViewModel(
             confirmAction: { [weak self] in
                 self?.handleSeeOffer()
-            },
-            dismissAction: { [weak self] in
-                self?.handleNotNow()
             }
         )
 
         Task { @MainActor in
-
-        let view = WinBackOfferPromptView(viewModel: viewModel)
-        view.show(in: window)
-
-        // Mark modal as shown
-        visibilityManager.setLaunchMessagePresented(true)
-
+            let view = WinBackOfferPromptView(viewModel: viewModel)
+            view.show(in: window)
         }
     }
 
     private func handleSeeOffer() {
         // Open landing page
-    }
-
-    private func handleNotNow() {
-        // User dismissed - tracking handled by visibility manager
     }
 }

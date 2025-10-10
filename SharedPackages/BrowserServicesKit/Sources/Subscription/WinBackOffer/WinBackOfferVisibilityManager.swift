@@ -59,14 +59,19 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private var winbackOfferStore: any WinbackOfferStoring
     private var winbackOfferFeatureFlagProvider: any WinBackOfferFeatureFlagProvider
+    private let dateProvider: () -> Date
 
     private var hasActiveSubscription: Bool = false
     private var observer: NSObjectProtocol?
 
-    public init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, winbackOfferStore: any WinbackOfferStoring, winbackOfferFeatureFlagProvider: any WinBackOfferFeatureFlagProvider) {
+    public init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+                winbackOfferStore: any WinbackOfferStoring,
+                winbackOfferFeatureFlagProvider: any WinBackOfferFeatureFlagProvider,
+                dateProvider: @escaping () -> Date = Date.init) {
         self.subscriptionManager = subscriptionManager
         self.winbackOfferStore = winbackOfferStore
         self.winbackOfferFeatureFlagProvider = winbackOfferFeatureFlagProvider
+        self.dateProvider = dateProvider
 
         observeSubscriptionDidChange()
         checkCachedSubscription()
@@ -102,7 +107,8 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
         // Offer availability window check
         let offerStartDate = offerStartDate(churnDate: lastChurnDate)
-        guard offerStartDate.isInThePast(), Date().timeIntervalSince(offerStartDate) <= Constants.offerAvailabilityPeriod else {
+        let now = dateProvider()
+        guard now >= offerStartDate, now.timeIntervalSince(offerStartDate) <= Constants.offerAvailabilityPeriod else {
             return false
         }
 
@@ -126,7 +132,8 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     }
 
     private func isLastDayOfOffer(startDate: Date) -> Bool {
-        return Date().timeIntervalSince(startDate) >= Constants.offerAvailabilityPeriod - 1 * TimeInterval.day
+        let now = dateProvider()
+        return now.timeIntervalSince(startDate) >= Constants.offerAvailabilityPeriod - 1 * TimeInterval.day
     }
 
     private func checkCachedSubscription() {
@@ -166,7 +173,8 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
         }
 
         // User churned in the past, and now they churned again.
-        guard Date().timeIntervalSince(lastStoredChurnDate) > Constants.cooldownPeriod else {
+        let now = dateProvider()
+        guard now.timeIntervalSince(lastStoredChurnDate) > Constants.cooldownPeriod else {
             // Still within the cooldown period, no-op.
             return
         }
@@ -176,7 +184,7 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     }
 
     private func resetOffer() {
-        winbackOfferStore.storeChurnDate(Date())
+        winbackOfferStore.storeChurnDate(dateProvider())
         winbackOfferStore.setHasRedeemedOffer(false)
         winbackOfferStore.firstDayModalShown = false
     }

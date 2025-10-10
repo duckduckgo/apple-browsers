@@ -20,13 +20,10 @@ import AppKit
 
 public final class WinBackOfferPromptViewModel {
     let confirmAction: () -> Void
-    let dismissAction: () -> Void
 
     public init(
-        confirmAction: @escaping () -> Void,
-        dismissAction: @escaping () -> Void
+        confirmAction: @escaping () -> Void
     ) {
         self.confirmAction = confirmAction
-        self.dismissAction = dismissAction
     }
 }

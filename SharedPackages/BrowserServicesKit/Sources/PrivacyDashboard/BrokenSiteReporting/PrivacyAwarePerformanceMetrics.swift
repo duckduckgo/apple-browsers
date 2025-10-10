@@ -106,7 +106,6 @@ public struct PrivacyAwarePerformanceMetrics {
         self.domContentLoadedMs = domContentLoaded?.roundedToMilliseconds()
     }
 
-    // swiftlint:disable:next cyclomatic_complexity
     /// Returns a dictionary representation of all privacy-aware performance metrics
     public func toDictionary() -> [String: Any] {
         var dict: [String: Any] = [:]

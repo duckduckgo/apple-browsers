@@ -211,7 +211,7 @@ extension Preferences {
 
         var body: some View {
             Button {
-                model.themeName = .default
+                model.themeName = .figma
 
             } label: {
                 HStack(spacing: 8) {

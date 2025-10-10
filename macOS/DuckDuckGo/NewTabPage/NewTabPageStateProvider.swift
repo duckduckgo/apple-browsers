@@ -44,7 +44,10 @@ final class NewTabPageStateProvider: NewTabPageStateProviding {
         stateChangedPublisher = windowControllersManager
             .tabsChanged
             .receive(on: DispatchQueue.main)
-            .filter { _ in featureFlagger.isFeatureOn(.newTabPageTabIDs) }
+            .filter { _ in
+                featureFlagger.isFeatureOn(.newTabPageTabIDs) &&
+                !featureFlagger.isFeatureOn(.newTabPagePerTab)
+            }
             .eraseToAnyPublisher()
     }
 

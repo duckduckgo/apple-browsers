@@ -859,6 +859,8 @@ class AddressBarTests: XCTestCase {
         let tabLoadedPromise = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         let newTabLoadedPromise = newTabTab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         window = WindowsManager.openNewWindow(with: viewModel)!
+        Logger.tests.info("pinned: [\(viewModel.pinnedTabs.map { String(describing: $0.content) }.joined(separator: ", "))] tabs: [\(viewModel.tabs.map { String(describing: $0.content) }.joined(separator: ", "))] pinnedTabsMode: \(Application.appDelegate.pinnedTabsManagerProvider.pinnedTabsMode.rawValue)")
+
         viewModel.select(at: .pinned(0))
         _=try await tabLoadedPromise.value
         _=try await newTabLoadedPromise.value

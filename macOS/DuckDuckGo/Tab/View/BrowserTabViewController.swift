@@ -854,7 +854,7 @@ final class BrowserTabViewController: NSViewController {
         viewToMakeFirstResponderAfterAdding = nil
         guard let window = view.window, window.isVisible,
               let tabViewModel = tabViewModel ?? self.tabViewModel else {
-            Logger.general.error("adjustFirstResponder called but window.isVisible: \(self.view.window == nil ? "nil" : "\(self.view.window!.isVisible)")\(self.tabViewModel == nil ? ", tabViewModel is nil" : ""))")
+            Logger.general.error("adjustFirstResponder called but window.isVisible: \(self.view.window == nil ? "nil" : "\(self.view.window!.isVisible)")\(self.tabViewModel == nil ? ", tabViewModel is nil" : "")")
             return
         }
         let tabContent = tabContent ?? tabViewModel.tab.content
@@ -867,10 +867,14 @@ final class BrowserTabViewController: NSViewController {
         switch tabContent {
         case .newtab:
             // don‘t steal focus from the address bar at .newtab page
+            Logger.general.info("adjustFirstResponder: content is .newtab, not stealing focus")
             return
         case .url, .subscription, .identityTheftRestoration, .onboarding, .releaseNotes, .history, .aiChat, .webExtensionUrl:
             getView = { [weak self, weak tabViewModel] in
-                guard let self, let tabViewModel else { return nil }
+                guard let self, let tabViewModel else {
+                    Logger.general.info("adjustFirstResponder: too late for \(String(describing: self)) \(String(describing: tabViewModel))")
+                    return nil
+                }
                 return webView(for: tabViewModel, tabContent: tabContent)
             }
         case .settings:
@@ -888,10 +892,11 @@ final class BrowserTabViewController: NSViewController {
             // if contentView in wrong window or not created yet - activate after adding
             viewToMakeFirstResponderAfterAdding = getView
             contentView = nil
+            Logger.general.info("adjustFirstResponder: assigning viewToMakeFirstResponderAfterAdding")
         }
 
         guard window.firstResponder !== contentView ?? window else {
-            Logger.general.info("adjustFirstResponder: skip: contentView: \(String(describing: contentView)) firstResponder: \(String(describing: window.firstResponder)) newTabPagePerTab: \(self.featureFlagger.isFeatureOn(.newTabPagePerTab))")
+            Logger.general.info("adjustFirstResponder: skip: \(String(describing: tabContent)) contentView: \(String(describing: contentView)) firstResponder: \(String(describing: window.firstResponder)) newTabPagePerTab: \(self.featureFlagger.isFeatureOn(.newTabPagePerTab))")
             return
         }
         window.makeFirstResponder(contentView)
@@ -903,9 +908,10 @@ final class BrowserTabViewController: NSViewController {
               let contentView = viewToMakeFirstResponderAfterAdding?() else {
             return
         }
+        Logger.general.info("adjustFirstResponderAfterAddingContentViewIfNeeded: \(String(describing: contentView))")
 
         guard contentView.window === window else {
-            Logger.general.error("BrowserTabViewController: Content view window is \(contentView.window?.description ?? "<nil>") but expected: \(window)")
+            Logger.general.error("adjustFirstResponderAfterAddingContentViewIfNeeded: Content view window is \(contentView.window?.description ?? "<nil>") but expected: \(window)")
             return
         }
         viewToMakeFirstResponderAfterAdding = nil
@@ -913,6 +919,7 @@ final class BrowserTabViewController: NSViewController {
         // if the Address Bar was activated after the initial adjustFirstResponder call -
         // don‘t steal focus from the Address Bar
         guard window.firstResponder === window else {
+            Logger.general.info("adjustFirstResponderAfterAddingContentViewIfNeeded: No need to set first responder: \(String(describing: window.firstResponder))")
             self.viewToMakeFirstResponderAfterAdding = nil
             return
         }
@@ -1698,6 +1705,7 @@ extension BrowserTabViewController {
                         self?.webView
                     }
                 }
+                Logger.general.info("hideWebViewSnapshotIfNeeded")
                 showTabContent(of: tabViewModel)
                 webViewSnapshot?.removeFromSuperview()
             }

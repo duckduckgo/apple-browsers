@@ -150,10 +150,10 @@ final class SuggestionTrayManager: NSObject {
     }
     
     /// Handles query updates and shows appropriate suggestions
-    func handleQueryUpdate(_ query: String) {
+    func handleQueryUpdate(_ query: String, animated: Bool) {
         guard switchBarHandler.currentToggleState == .search else { return }
 
-        updateSuggestionTrayForCurrentState()
+        updateSuggestionTrayForCurrentState(animated: animated)
     }
     
     /// Shows the suggestion tray for the initial selected state
@@ -189,28 +189,28 @@ final class SuggestionTrayManager: NSObject {
             .store(in: &cancellables)
     }
     
-    private func updateSuggestionTrayForCurrentState() {
+    private func updateSuggestionTrayForCurrentState(animated: Bool = false) {
         if shouldDisplaySuggestionTray {
             let query = switchBarHandler.currentText
-            showSuggestionTray(.autocomplete(query: query))
+            showSuggestionTray(.autocomplete(query: query), animated: animated)
         } else {
-            showSuggestionTray(.favorites)
+            showSuggestionTray(.favorites, animated: animated)
         }
     }
     
-    private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
+    private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType, animated: Bool) {
         guard let suggestionTray = suggestionTrayViewController else { return }
         
         let canShowSuggestion =
-            suggestionTray.canShow(for: type) ||
+            suggestionTray.canShow(for: type, animated: animated) ||
             (type == .favorites && suggestionTray.hasRemoteMessages)
 
         if canShowSuggestion {
-            suggestionTray.fill()
-            suggestionTray.show(for: type, animated: false)
             suggestionTray.view.isHidden = false
+            suggestionTray.fill()
+            suggestionTray.show(for: type, animated: animated)
         } else {
-            suggestionTray.view.isHidden = true
+            suggestionTray.didHide(animated: animated)
         }
     }
     

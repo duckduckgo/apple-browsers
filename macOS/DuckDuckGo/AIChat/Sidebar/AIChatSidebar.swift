@@ -109,9 +109,6 @@ final class AIChatSidebar: NSObject {
         if let sidebarViewController {
             if persistingState {
                 aiChatURL = sidebarViewController.currentAIChatURL
-                if let restorationData = sidebarViewController.currentAIChatRestorationData {
-                    self.restorationData = restorationData
-                }
             }
             sidebarViewController.stopLoading()
             sidebarViewController.removeCompletely()
@@ -127,6 +124,11 @@ final class AIChatSidebar: NSObject {
     /// Test-only method to set the hiddenAt date for testing session timeout scenarios
     func updateHiddenAt(_ date: Date?) {
         hiddenAt = date
+    }
+
+    /// Test-only method to set the restoration data for testing
+    func updateRestorationData(_ data: AIChatRestorationData?) {
+        restorationData = data
     }
 #endif
 }

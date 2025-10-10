@@ -82,7 +82,6 @@ final class AddressBarViewController: NSViewController {
     private let suggestionContainerViewModel: SuggestionContainerViewModel
     private let isBurner: Bool
     private let onboardingPixelReporter: OnboardingAddressBarReporting
-    private let themeManager: ThemeManaging
     private var tabViewModel: TabViewModel?
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
@@ -99,9 +98,8 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
-    private var theme: ThemeStyleProviding {
-        themeManager.theme
-    }
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
 
     private(set) var isFirstResponder = false {
         didSet {
@@ -293,6 +291,18 @@ final class AddressBarViewController: NSViewController {
             }
             .store(in: &cancellables)
 
+        // hide Suggestions when child window is shown (Suggestions, Bookmarks, Downloads etc…, excluding Tab Previews and Suggestions)
+        window.publisher(for: \.childWindows)
+            .debounce(for: 0.05, scheduler: DispatchQueue.main)
+            .sink { [weak self] childWindows in
+                guard let self, let childWindows, childWindows.contains(where: {
+                    !($0.windowController is TabPreviewWindowController || $0.contentViewController is SuggestionViewController)
+                }) else { return }
+
+                addressBarTextField.hideSuggestionWindow()
+            }
+            .store(in: &cancellables)
+
         NSApp.publisher(for: \.effectiveAppearance)
             .sink { [weak self] _ in
                 self?.refreshAddressBarAppearance(nil)
@@ -439,15 +449,6 @@ final class AddressBarViewController: NSViewController {
         view.superview?.publisher(for: \.frame)
             .sink { [weak self] _ in
                 self?.layoutShadowView()
-            }
-            .store(in: &cancellables)
-    }
-
-    private func subscribeToThemeChanges() {
-        themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.applyThemeStyles()
             }
             .store(in: &cancellables)
     }
@@ -629,7 +630,12 @@ final class AddressBarViewController: NSViewController {
         self.updateMode()
         self.addressBarButtonsViewController?.updateButtons()
 
-        guard let window = view.window, AppVersion.runType != .unitTests else { return }
+        guard let window = view.window, window.sheets.isEmpty else {
+            // Hide suggestions when a Sheet is presented (Open panel, Fire dialog…)
+            addressBarTextField.hideSuggestionWindow()
+            return
+        }
+        guard AppVersion.runType != .unitTests else { return }
         let navigationBarBackgroundColor = theme.colorsProvider.navigationBackgroundColor
 
         NSAppearance.withAppAppearance {
@@ -690,14 +696,6 @@ final class AddressBarViewController: NSViewController {
         } else if isFirstResponder {
             isFirstResponder = false
         }
-    }
-
-    // MARK: - Themes
-
-    private func applyThemeStyles() {
-        refreshAddressBarAppearance(nil)
-        refreshSuggestionsAppearance()
-        updateView()
     }
 
     // MARK: - Event handling
@@ -805,6 +803,15 @@ final class AddressBarViewController: NSViewController {
         return event
     }
 
+}
+
+extension AddressBarViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        refreshAddressBarAppearance(nil)
+        refreshSuggestionsAppearance()
+        updateView()
+    }
 }
 
 extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {

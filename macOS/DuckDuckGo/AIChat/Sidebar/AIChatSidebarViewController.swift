@@ -25,7 +25,7 @@ import Combine
 /// This protocol defines methods for responding to navigation and UI events in the sidebar.
 protocol AIChatSidebarViewControllerDelegate: AnyObject {
     /// Called when the user clicks the "Expand" button
-    func didClickOpenInNewTabButton(currentAIChatURL: URL, aiChatRestorationData: AIChatRestorationData?)
+    func didClickOpenInNewTabButton()
     /// Called when the user clicks the "Close" button
     func didClickCloseButton()
 }
@@ -53,15 +53,10 @@ final class AIChatSidebarViewController: NSViewController {
     public var aiChatPayload: AIChatPayload?
     private(set) var currentAIChatURL: URL
 
-    /// The current AI chat restoration data being displayed.
-    public var currentAIChatRestorationData: AIChatRestorationData? {
-        get {
-            return aiTab.aiChat?.aiChatUserScript?.handler.messageHandling.getDataForMessageType(.chatRestorationData) as? AIChatRestorationData
-        }
-    }
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
     private let burnerMode: BurnerMode
-    private var themeCancellable: AnyCancellable?
-    private let themeManager: ThemeManaging
 
     private var openInNewTabButton: MouseOverButton!
     private var closeButton: MouseOverButton!
@@ -91,7 +86,7 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     public func setPageContext(_ pageContext: AIChatPageContextData?) {
-        aiTab.aiChat?.submitPageContext(pageContext)
+        aiTab.aiChat?.submitAIChatPageContext(pageContext)
     }
 
     public func setAIChatRestorationData(_ restorationData: AIChatRestorationData?) {
@@ -297,8 +292,7 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     @objc private func openInNewTabButtonClicked() {
-        delegate?.didClickOpenInNewTabButton(currentAIChatURL: currentAIChatURL.removingAIChatPlacementParameter(),
-                                             aiChatRestorationData: currentAIChatRestorationData)
+        delegate?.didClickOpenInNewTabButton()
     }
 
     @objc private func closeButtonClicked() {
@@ -312,16 +306,12 @@ final class AIChatSidebarViewController: NSViewController {
         aiTab.webView.stopLoading()
         aiTab.webView.loadHTMLString("", baseURL: nil)
     }
+}
 
-    private func subscribeToThemeChanges() {
-        themeCancellable = themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] style in
-                self?.applyThemeStyle(theme: style)
-            }
-    }
+// MARK: - ThemeUpdateListening
+extension AIChatSidebarViewController: ThemeUpdateListening {
 
-    private func applyThemeStyle(theme: ThemeStyleProviding) {
+    func applyThemeStyle(theme: ThemeStyleProviding) {
         guard let contentView = view as? ColorView else {
             assertionFailure()
             return

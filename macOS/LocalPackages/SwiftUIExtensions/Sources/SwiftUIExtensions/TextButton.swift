@@ -18,14 +18,17 @@
 
 import SwiftUI
 
+public typealias LinkButton = TextButton
 public struct TextButton: View {
 
     public let title: String
+    public let fontSize: CGFloat
     public let fontWeight: Font.Weight
     public let action: () -> Void
 
-    public init(_ title: String, weight: Font.Weight = .regular, action: @escaping () -> Void) {
+    public init(_ title: String, fontSize: CGFloat = NSFont.systemFontSize, weight: Font.Weight = .regular, action: @escaping () -> Void) {
         self.title = title
+        self.fontSize = fontSize
         self.fontWeight = weight
         self.action = action
     }
@@ -33,6 +36,7 @@ public struct TextButton: View {
     public var body: some View {
         Button(action: action) {
             Text(title)
+                .font(.system(size: fontSize))
                 .fontWeight(fontWeight)
                 .foregroundColor(Color(.linkBlue))
         }

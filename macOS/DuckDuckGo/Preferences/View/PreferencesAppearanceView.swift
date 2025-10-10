@@ -219,7 +219,7 @@ extension Preferences {
 
             } label: {
                 HStack(spacing: 8) {
-                    Image(systemNamed: .arrowCounterClockWise)
+                    Image(.reset)
                     Text(UserText.themeReset)
                 }
                 .foregroundColor(Color.linkBlue)
@@ -250,6 +250,10 @@ extension Preferences {
                             .padding(.bottom, 16)
 
                         ThemesPickerView(theme: themeManager.theme)
+                            .environmentObject(model)
+                            .padding(.bottom, 16)
+
+                        ThemesResetView()
                             .environmentObject(model)
                             .padding(.bottom, 16)
 

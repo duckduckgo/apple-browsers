@@ -52,10 +52,8 @@ final class AddressBarButtonsViewController: NSViewController {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let permissionManager: PermissionManagerProtocol
 
-    private let themeManager: ThemeManaging
-    private var theme: ThemeStyleProviding {
-        themeManager.theme
-    }
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
 
     private var permissionAuthorizationPopover: PermissionAuthorizationPopover?
     private func permissionAuthorizationPopoverCreatingIfNeeded() -> PermissionAuthorizationPopover {
@@ -1817,27 +1815,21 @@ final class AddressBarButtonsViewController: NSViewController {
             })
             .store(in: &cancellables)
     }
+}
 
-    private func subscribeToThemeChanges() {
-        themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.applyThemeStyle()
-            }
-            .store(in: &cancellables)
-    }
+extension AddressBarButtonsViewController: ThemeUpdateListening {
 
-    private func applyThemeStyle() {
+    func applyThemeStyle(theme: ThemeStyleProviding) {
         configureAIChatButton()
         updateAIChatButtonState()
         updateBookmarkButtonImage()
         updateImageButton()
         updateZoomButtonVisibility()
         refreshAskAIChatButtonStyle()
-        refreshButtonsThemeStyle()
+        refreshButtonsThemeStyle(theme: theme)
     }
 
-    private func refreshButtonsThemeStyle() {
+    private func refreshButtonsThemeStyle(theme: ThemeStyleProviding) {
         let colorsProvider = theme.colorsProvider
 
         bookmarkButton.normalTintColor = colorsProvider.iconsColor

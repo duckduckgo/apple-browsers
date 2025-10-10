@@ -41,6 +41,13 @@ final class FireDialogViewModel: ObservableObject {
             }
         }
 
+        var shouldShowChatHistoryToggle: Bool {
+            switch self {
+            case .allData: return true
+            case .currentTab, .currentWindow: return false
+            }
+        }
+
     }
 
     enum Mode: Equatable {
@@ -155,7 +162,7 @@ final class FireDialogViewModel: ObservableObject {
         self.includeTabsAndWindows = includeTabsAndWindows ?? Self.lastIncludeTabsAndWindowsState
         self.includeHistory = includeHistory ?? Self.lastIncludeHistoryState
         self.includeCookiesAndSiteData = includeCookiesAndSiteData ?? Self.lastIncludeCookiesAndSiteDataState
-        self.includeChatHistory = includeChatHistory ?? Self.lastIncludeChatHistoryState
+        self.includeChatHistorySetting = includeChatHistory ?? Self.lastIncludeChatHistoryState
 
         self.tld = tld
         self.mode = mode
@@ -171,7 +178,7 @@ final class FireDialogViewModel: ObservableObject {
     private(set) var shouldShowPinnedTabsInfo: Bool = false
 
     var shouldShowChatHistoryToggle: Bool {
-        aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption && mode.shouldShowChatHistoryToggle && clearingOption == .allData
+        aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption && mode.shouldShowChatHistoryToggle && clearingOption.shouldShowChatHistoryToggle
     }
 
     let fireViewModel: FireViewModel
@@ -211,10 +218,16 @@ final class FireDialogViewModel: ObservableObject {
             Self.lastIncludeCookiesAndSiteDataState = includeCookiesAndSiteData
         }
     }
-    /// when true, all Duck.ai chat history is cleared.
-    @Published var includeChatHistory: Bool {
+    /// When true, all Duck.ai chat history is cleared.
+    /// Use this property (not `includeChatHistorySetting`) to perform the data clearing.
+    var includeChatHistory: Bool {
+        shouldShowChatHistoryToggle && includeChatHistorySetting
+    }
+    /// Persisted user setting to clear chat history.
+    /// Do not use this property directly to perform the data clearing; use `includeChatHistory` instead.
+    @Published var includeChatHistorySetting: Bool {
         didSet {
-            Self.lastIncludeChatHistoryState = includeChatHistory
+            Self.lastIncludeChatHistoryState = includeChatHistorySetting
         }
     }
 

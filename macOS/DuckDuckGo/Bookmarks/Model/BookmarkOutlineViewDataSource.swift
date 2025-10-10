@@ -236,7 +236,7 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
     func outlineView(_ outlineView: NSOutlineView, rowViewForItem item: Any) -> NSTableRowView? {
         let row = outlineView.row(forItem: item)
         let rowView = RoundedSelectionRowView()
-        
+
         rowView.requiresAccentColors = contentMode != .foldersOnly
         rowView.insets = NSEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
 

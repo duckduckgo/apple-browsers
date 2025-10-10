@@ -236,8 +236,6 @@ final class BookmarkOutlineCellView: NSTableCellView {
     }
 
     private func updateUI() {
-        let palette = theme.palette
-
         if titleLabel.isEnabled {
             let isHighlighted = self.highlight && (self.isInKeyWindow || self.contentMode == .foldersOnly)
             countLabel.isHidden = isHighlighted || countLabel.stringValue.isEmpty
@@ -249,17 +247,44 @@ final class BookmarkOutlineCellView: NSTableCellView {
             menuButton.isHidden = true
             urlLabel.isHidden = true
         }
+
+        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.themes) {
+            applyThemedLabelStyles()
+        } else {
+            applyLegacyLabelStyles()
+        }
+
+        updateUIAtNarrowWidths()
+    }
+
+    private func applyLegacyLabelStyles() {
         if !titleLabel.isEnabled {
             titleLabel.textColor = .disabledControlTextColor
-        } else if highlight,
-                  contentMode != .foldersOnly {
+
+        } else if highlight && contentMode != .foldersOnly && isInKeyWindow {
+            titleLabel.textColor = .selectedMenuItemTextColor
+            urlLabel.textColor = .selectedMenuItemTextColor
+
+        } else {
+            titleLabel.textColor = .controlTextColor
+            urlLabel.textColor = .secondaryLabelColor
+        }
+    }
+
+    private func applyThemedLabelStyles() {
+        let palette = theme.palette
+
+        if !titleLabel.isEnabled {
+            titleLabel.textColor = .disabledControlTextColor
+
+        } else if highlight && contentMode != .foldersOnly {
             titleLabel.textColor = palette.accentContentPrimary
             urlLabel.textColor = palette.accentContentSecondary
+
         } else {
             titleLabel.textColor = palette.textPrimary
             urlLabel.textColor = palette.textSecondary
         }
-        updateUIAtNarrowWidths()
     }
 
     private func updateUIAtNarrowWidths() {

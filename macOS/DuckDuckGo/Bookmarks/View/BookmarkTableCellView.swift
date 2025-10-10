@@ -68,6 +68,9 @@ final class BookmarkTableCellView: NSTableCellView {
             }
 
             updateTitleLabelValue()
+
+            /// Update Colors is required since the color may change, depending on the `mouseInside` state
+            updateColors()
         }
     }
 
@@ -241,7 +244,9 @@ final class BookmarkTableCellView: NSTableCellView {
     }
 
     private func updateColors() {
-        titleLabel.textColor = isSelected ? .white : .controlTextColor
+        let isThemesEnabled = isThemeFeatureEnabled
+
+        titleLabel.textColor = isThemesEnabled ? themedTextColor : legacyTextColor
         menuButton.contentTintColor = isSelected ? .white : .button
         faviconImageView.contentTintColor = isSelected ? .white : .suggestionIcon
         accessoryImageView.contentTintColor = isSelected ? .white : .suggestionIcon
@@ -296,12 +301,13 @@ final class BookmarkTableCellView: NSTableCellView {
     }
 
     private func buildTitleAttributedString(tertiaryValue: String) -> NSAttributedString {
-        let color = isSelected ? NSColor.white : NSColor.labelColor
+        let isThemesEnabled = isThemeFeatureEnabled
 
-        let titleAttributes = [NSAttributedString.Key.foregroundColor: color]
+        let textColor = isThemesEnabled ? themedTextColor : legacyTextColor
+        let urlColor = isThemesEnabled ? themedURLColor : legacyURLColor
+
+        let titleAttributes = [NSAttributedString.Key.foregroundColor: textColor]
         let titleString = NSMutableAttributedString(string: primaryTitleLabelValue, attributes: titleAttributes)
-
-        let urlColor = isSelected ? NSColor.white.withAlphaComponent(0.6) : NSColor.tertiaryLabelColor
 
         let urlAttributes = [NSAttributedString.Key.foregroundColor: urlColor]
         let urlString = NSAttributedString(string: " – \(tertiaryValue)", attributes: urlAttributes)
@@ -311,6 +317,25 @@ final class BookmarkTableCellView: NSTableCellView {
         return titleString
     }
 
+    private var isThemeFeatureEnabled: Bool {
+        NSApp.delegateTyped.featureFlagger.isFeatureOn(.themes)
+    }
+
+    private var themedTextColor: NSColor {
+        (mouseInside || isSelected) ? theme.palette.accentContentPrimary : theme.palette.textPrimary
+    }
+
+    private var themedURLColor: NSColor {
+        (mouseInside || isSelected) ? theme.palette.accentContentSecondary : theme.palette.textSecondary
+    }
+
+    private var legacyTextColor: NSColor {
+        isSelected ? .white : .labelColor
+    }
+
+    private var legacyURLColor: NSColor {
+        isSelected ? NSColor.white.withAlphaComponent(0.6) : NSColor.tertiaryLabelColor
+    }
 }
 
 #if DEBUG

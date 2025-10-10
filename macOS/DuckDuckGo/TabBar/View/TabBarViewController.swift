@@ -995,11 +995,12 @@ extension TabBarViewController: ThemeUpdateListening {
 
     func applyThemeStyle(theme: any ThemeStyleProviding) {
         let colorsProvider = theme.colorsProvider
+        let isFireWindow = tabCollectionViewModel.isBurner
 
         backgroundColorView.backgroundColor = colorsProvider.baseBackgroundColor
 
-        fireButton.normalTintColor = colorsProvider.iconsColor
-        fireButton.mouseOverColor = colorsProvider.buttonMouseOverColor
+        fireButton.normalTintColor = isFireWindow ? .white : colorsProvider.iconsColor
+        fireButton.mouseOverColor = isFireWindow ? .fireButtonRedHover : colorsProvider.buttonMouseOverColor
 
         leftScrollButton.normalTintColor = colorsProvider.iconsColor
         leftScrollButton.mouseOverColor = colorsProvider.buttonMouseOverColor

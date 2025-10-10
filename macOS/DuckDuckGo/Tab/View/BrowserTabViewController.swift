@@ -853,9 +853,15 @@ final class BrowserTabViewController: NSViewController {
     func adjustFirstResponder(force: Bool = false, tabViewModel: TabViewModel? = nil, tabContent: Tab.TabContent? = nil) {
         viewToMakeFirstResponderAfterAdding = nil
         guard let window = view.window, window.isVisible,
-              let tabViewModel = tabViewModel ?? self.tabViewModel else { return }
+              let tabViewModel = tabViewModel ?? self.tabViewModel else {
+            Logger.general.error("adjustFirstResponder called but window.isVisible: \(self.view.window == nil ? "nil" : "\(self.view.window!.isVisible)")\(self.tabViewModel == nil ? ", tabViewModel is nil" : ""))")
+            return
+        }
         let tabContent = tabContent ?? tabViewModel.tab.content
-        guard force || shouldMakeContentViewFirstResponder(for: tabContent) else { return }
+        guard force || shouldMakeContentViewFirstResponder(for: tabContent) else {
+            Logger.general.info("adjustFirstResponder: early return: force: \(force) tabContent: \(String(describing: tabContent))")
+            return
+        }
 
         let getView: (() -> NSView?)?
         switch tabContent {
@@ -884,7 +890,10 @@ final class BrowserTabViewController: NSViewController {
             contentView = nil
         }
 
-        guard window.firstResponder !== contentView ?? window else { return }
+        guard window.firstResponder !== contentView ?? window else {
+            Logger.general.info("adjustFirstResponder: skip: contentView: \(String(describing: contentView)) firstResponder: \(String(describing: window.firstResponder)) newTabPagePerTab: \(self.featureFlagger.isFeatureOn(.newTabPagePerTab))")
+            return
+        }
         window.makeFirstResponder(contentView)
     }
 

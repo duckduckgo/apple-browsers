@@ -243,9 +243,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     deinit {
 #if DEBUG
-        if isLazyVar(named: "tabPreviewWindowController", initializedIn: self) {
-            tabPreviewWindowController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
-        }
+        _tabPreviewWindowController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         tabBarRemoteMessagePopoverHoverTimer?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
 
         feedbackBarButtonHostingController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
@@ -925,7 +923,15 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     // MARK: - Tab Preview
 
-    private lazy var tabPreviewWindowController = TabPreviewWindowController()
+    private var _tabPreviewWindowController: TabPreviewWindowController?
+    private var tabPreviewWindowController: TabPreviewWindowController {
+        if let tabPreviewWindowController = _tabPreviewWindowController {
+            return tabPreviewWindowController
+        }
+        let tabPreviewWindowController = TabPreviewWindowController()
+        _tabPreviewWindowController = tabPreviewWindowController
+        return tabPreviewWindowController
+    }
 
     private func subscribeToChildWindows() {
         guard let window = view.window else {
@@ -995,7 +1001,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     func hideTabPreview(withDelay: Bool = false, allowQuickRedisplay: Bool = false) {
-        tabPreviewWindowController.hide(withDelay: withDelay, allowQuickRedisplay: allowQuickRedisplay)
+        _tabPreviewWindowController?.hide(withDelay: withDelay, allowQuickRedisplay: allowQuickRedisplay)
     }
 
 }

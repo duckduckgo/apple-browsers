@@ -93,6 +93,7 @@ final class TabCollectionViewModel: NSObject {
 
     @Published private(set) var selectionIndex: TabIndex? {
         didSet {
+            Logger.tabPreview.info("SelectionIndex set to \(String(describing: self.selectionIndex))")
             updateSelectedTabViewModel()
         }
     }

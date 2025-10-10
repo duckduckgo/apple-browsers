@@ -44,7 +44,8 @@ final class PrivacyDashboardPopover: NSPopover {
 #else
         self.behavior = .transient
 #endif
-        self.backgroundColor = NSColor.popoverBackground
+
+        self.backgroundColor = .privacyDashboardBackground
         setupContentController(entryPoint: entryPoint, contentBlocking: contentBlocking, permissionManager: permissionManager)
     }
 

@@ -300,13 +300,19 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         switchBarHandler.currentTextPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] currentText in
-                self?.delegate?.onQueryUpdated(currentText)
-                self?.suggestionTrayManager?.handleQueryUpdate(currentText)
-                self?.updateDaxVisibility()
-                DispatchQueue.main.async {
-                    // Delay to next runloop so the text field size is updated.
-                    self?.updateSwipeContainerSafeArea()
+
+                guard let self else { return }
+
+                self.delegate?.onQueryUpdated(currentText)
+
+                let animator = UIViewPropertyAnimator(duration: Constants.animationDuration, curve: .easeInOut) {
+                    self.updateDaxVisibility()
+                    self.updateSwipeContainerSafeArea()
                 }
+
+                self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
+
+                animator.startAnimation()
             }
             .store(in: &cancellables)
 
@@ -528,5 +534,6 @@ private extension OmniBarEditingStateViewController {
         // Adjusts for two buttons in the action bar
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .background)
+        static let animationDuration: TimeInterval = 0.15
     }
 }

@@ -29,27 +29,39 @@ public final class ClosureSampler {
         self.percentage = max(1, min(100, percentage))
     }
 
+    /// Executes the closure only if sampling allows it
+    /// - Parameters:
+    ///   - closure: The closure to potentially execute
+    ///   - onDiscarded: Optional closure to execute when sampling discards the attempt
+    /// - Returns: true if the closure was executed, false if it was skipped
     @discardableResult
-    public func sample<T>(_ closure: () -> T) -> T? {
+    public func sample(_ closure: () -> Void, onDiscarded: (() -> Void)? = nil) -> Bool {
         guard shouldSample() else {
             logger.debug("Closure skipped due to sampling (percentage: \(self.percentage)%)")
-            return nil
-        }
-
-        logger.debug("Closure executed due to sampling (percentage: \(self.percentage)%)")
-        return closure()
-    }
-
-    @discardableResult
-    public func sample(_ closure: () -> Void) -> Bool {
-        guard shouldSample() else {
-            logger.debug("Closure skipped due to sampling (percentage: \(self.percentage)%)")
+            onDiscarded?()
             return false
         }
 
         logger.debug("Closure executed due to sampling (percentage: \(self.percentage)%)")
         closure()
         return true
+    }
+
+    /// Executes the closure only if sampling allows it (with return value)
+    /// - Parameters:
+    ///   - closure: The closure to potentially execute
+    ///   - onDiscarded: Optional closure to execute when sampling discards the attempt
+    /// - Returns: The result if the closure was executed, nil if it was skipped
+    @discardableResult
+    public func sample<T>(_ closure: () -> T, onDiscarded: (() -> Void)? = nil) -> T? {
+        guard shouldSample() else {
+            logger.debug("Closure skipped due to sampling (percentage: \(self.percentage)%)")
+            onDiscarded?()
+            return nil
+        }
+
+        logger.debug("Closure executed due to sampling (percentage: \(self.percentage)%)")
+        return closure()
     }
 
     private func shouldSample() -> Bool {

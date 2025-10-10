@@ -443,10 +443,12 @@ public final class PixelKit {
         reportErrorIf(pixel: pixelName, endsWith: "_daily")
 
         let sampler = ClosureSampler(percentage: percentage)
-        sampler.sample {
+        sampler.sample({
             let sampledPixelName = pixelName + "_sample\(percentage)"
             fireRequestWrapper(sampledPixelName, headers, newParams, allowedQueryReservedCharacters, true, .sample(percentage: percentage), onComplete)
-        }
+        }, onDiscarded: {
+            printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDaily, parameters: newParams, skipped: true)
+        })
     }
 
     private func handleLegacyDaily(_ pixelName: String,

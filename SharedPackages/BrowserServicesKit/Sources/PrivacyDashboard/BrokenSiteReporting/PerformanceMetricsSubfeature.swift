@@ -102,6 +102,6 @@ public class PerformanceMetricsSubfeature: Subfeature {
         // Create pixel with privacy-aware data
         let pixel = SiteLoadingPerformancePixel.performanceMetricsReceived(metrics: privacyAwareMetrics)
 
-        PixelKit.fire(pixel, frequency: .daily)
+        PixelKit.fire(pixel, frequency: .sample(percentage: 20))
     }
 }

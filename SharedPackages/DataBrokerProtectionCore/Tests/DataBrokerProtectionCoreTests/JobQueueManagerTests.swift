@@ -522,8 +522,8 @@ final class JobQueueManagerTests: XCTestCase {
             XCTFail("Unexpected pixel fired: \(lastEvent)")
         }
 
-        XCTAssertEqual(mockPixelHandler.lastPassedParameters?["stepType"], StepType.optOut.rawValue)
-        XCTAssertEqual(mockPixelHandler.lastPassedParameters?["parent"], "parent.com")
+        XCTAssertEqual(mockPixelHandler.lastFiredEvent?.parameters?["stepType"], StepType.optOut.rawValue)
+        XCTAssertEqual(mockPixelHandler.lastFiredEvent?.parameters?["parent"], "parent.com")
     }
 
     func testWhenActionFailedErrorHasNoParent_parametersIncludeEmptyParentAndNoStepType() {
@@ -556,7 +556,7 @@ final class JobQueueManagerTests: XCTestCase {
             XCTFail("Unexpected pixel fired: \(lastEvent)")
         }
 
-        XCTAssertEqual(mockPixelHandler.lastPassedParameters?["stepType"], "unknown")
-        XCTAssertEqual(mockPixelHandler.lastPassedParameters?["parent"], "")
+        XCTAssertEqual(mockPixelHandler.lastFiredEvent?.parameters?["stepType"], "unknown")
+        XCTAssertEqual(mockPixelHandler.lastFiredEvent?.parameters?["parent"], "")
     }
 }

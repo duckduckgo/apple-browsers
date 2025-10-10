@@ -183,7 +183,6 @@
         ]
     },
 
-
     // Specific database setup error pixels
     "m_debug_bookmarks_could_not_get_favorites_order": {
         "description": "Fires when unable to get favorites order during database setup.",

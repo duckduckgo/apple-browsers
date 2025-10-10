@@ -154,7 +154,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         featureFlagger: featureFlagger,
         windowControllersManager: windowControllersManager,
         tabsPreferences: TabsPreferences.shared,
-        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration)
+        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
+        winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -266,6 +267,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var winBackOfferPromptPresenter: WinBackOfferPromptPresenting = {
         return WinBackOfferPromptPresenter(visibilityManager: winBackOfferVisibilityManager)
+    }()
+
+    lazy var winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator = {
+        return WinBackOfferPromotionViewCoordinator(winBackOfferVisibilityManager: winBackOfferVisibilityManager)
     }()
 
     // MARK: - Wide Event Service
@@ -1530,7 +1535,8 @@ extension AppDelegate: UserScriptDependenciesProviding {
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             tabsPreferences: TabsPreferences.shared,
-            newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration)
+            newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
+            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
         )
     }
 }

@@ -40,8 +40,8 @@ public protocol NewTabPageSectionsVisibilityProviding: AnyObject {
 public protocol NewTabPageTabIDsProviding: AnyObject {
 
     @MainActor
-    func getTabIDs() -> NewTabPageDataModel.Tabs
-    var tabIDsChangedPublisher: AnyPublisher<NewTabPageDataModel.Tabs, Never> { get }
+    func getTabStateData() -> [(NewTabPageDataModel.Tabs, WKWebView)]
+    var tabStateChangedPublisher: AnyPublisher<Void, Never> { get }
 
 }
 
@@ -96,10 +96,13 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             }
             .store(in: &cancellables)
 
-        tabIDsProvider.tabIDsChangedPublisher
+        tabIDsProvider.tabStateChangedPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] tabs in
-                self?.notifyTabsDidChange(tabIDs: tabs)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                Task { @MainActor in
+                    self.notifyTabStateDidChange()
+                }
             }
             .store(in: &cancellables)
     }
@@ -155,18 +158,17 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         return configs
     }
 
-    @MainActor
-    private func fetchTabIDs() -> NewTabPageDataModel.Tabs {
-        return tabIDsProvider.getTabIDs()
-    }
-
     private func notifyWidgetConfigsDidChange() {
         let widgetConfigs = fetchWidgetConfigs()
         pushMessage(named: MessageName.widgetsOnConfigUpdated.rawValue, params: widgetConfigs)
     }
 
-    private func notifyTabsDidChange(tabIDs: NewTabPageDataModel.Tabs) {
-        pushMessage(named: MessageName.tabsOnDataUpdate.rawValue, params: tabIDs)
+    @MainActor
+    private func notifyTabStateDidChange() {
+        let data = tabIDsProvider.getTabStateData()
+        for tuple in data {
+            pushMessage(named: MessageName.tabsOnDataUpdate.rawValue, params: tuple.0, to: tuple.1)
+        }
     }
 
     private func makeShowDuckAIMenuItem() -> NSMenuItem {
@@ -267,7 +269,9 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         let widgets = fetchWidgets()
         let widgetConfigs = fetchWidgetConfigs()
         let customizerData = customBackgroundProvider.customizerData
-        let tabs = fetchTabIDs()
+        let tabs = tabIDsProvider.getTabStateData().first { (_, webView) in
+            webView === original.webView
+        }?.0 ?? nil
         let config = NewTabPageDataModel.NewTabPageConfiguration(
             widgets: widgets,
             widgetConfigs: widgetConfigs,

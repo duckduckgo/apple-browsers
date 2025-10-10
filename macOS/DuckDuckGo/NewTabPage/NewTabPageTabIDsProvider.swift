@@ -1,5 +1,5 @@
 //
-//  NewTabPageOmnibarActionsHandler.swift
+//  NewTabPageTabIDsProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -24,10 +24,11 @@ import AIChat
 import os.log
 import PixelKit
 import Combine
+import WebKit
 
 final class NewTabPageTabIDsProvider: NewTabPageTabIDsProviding {
 
-    var tabIDsChangedPublisher: AnyPublisher<NewTabPage.NewTabPageDataModel.Tabs, Never>
+    var tabStateChangedPublisher: AnyPublisher<Void, Never>
 
     private let windowControllersManager: WindowControllersManagerProtocol
 
@@ -37,24 +38,29 @@ final class NewTabPageTabIDsProvider: NewTabPageTabIDsProviding {
     init(windowControllersManager: WindowControllersManagerProtocol) {
         self.windowControllersManager = windowControllersManager
 
-        tabIDsChangedPublisher = windowControllersManager
+        tabStateChangedPublisher = windowControllersManager
             .tabsChanged
             .receive(on: DispatchQueue.main)
-            .map { [weak windowControllersManager] _ -> NewTabPageDataModel.Tabs in
-                guard let manager = windowControllersManager else {
-                    return NewTabPageDataModel.Tabs(tabId: "", tabIds: [])
-                }
-                return NewTabPageDataModel.Tabs(from: manager)
-            }
-            .removeDuplicates { old, new in
-                old.tabId == new.tabId && old.tabIds == new.tabIds
-            }
             .eraseToAnyPublisher()
     }
 
+//    @MainActor
+//    func getTabIDs() -> NewTabPage.NewTabPageDataModel.Tabs {
+//        return NewTabPageDataModel.Tabs(from: windowControllersManager)
+//    }
+
+//    @MainActor
+//    func getActiveWebView() -> WKWebView? {
+//        return windowControllersManager.lastKeyMainWindowController?.mainViewController.browserTabViewController.newTabPageWebViewModel.webView
+//    }
+
     @MainActor
-    func getTabIDs() -> NewTabPage.NewTabPageDataModel.Tabs {
-        return NewTabPageDataModel.Tabs(from: windowControllersManager)
+    func getTabStateData() -> [(NewTabPage.NewTabPageDataModel.Tabs, WKWebView)] {
+        return windowControllersManager.mainWindowControllers.compactMap { controller in
+            let webView = controller.mainViewController.browserTabViewController.newTabPageWebViewModel.webView
+            let tabs = NewTabPageDataModel.Tabs(from: controller)
+            return (tabs, webView)
+        }
     }
 
 }
@@ -62,29 +68,28 @@ final class NewTabPageTabIDsProvider: NewTabPageTabIDsProviding {
 extension NewTabPageDataModel.Tabs {
 
     @MainActor
-    init(from windowControllersManager: WindowControllersManagerProtocol) {
-        // Gather all tab IDs where the tab content is New Tab Page
-        let tabIDs = windowControllersManager.allTabCollectionViewModels
-            .flatMap { viewModel in
-                viewModel.tabs.filter { tab in
-                    if case .newtab = tab.content {
-                        return true
-                    }
-                    return false
+    init(from mainWindowController: MainWindowController) {
+        // Gather tab IDs that are currently showing a New Tab Page
+        let tabIDs: [String] = mainWindowController.mainViewController.tabCollectionViewModel.tabViewModels.values
+            .compactMap { viewModel in
+                guard case .newtab = viewModel.tab.content else {
+                    return nil
                 }
-                .map { $0.uuid }
+                return viewModel.tab.uuid
             }
 
-        // Provide the currently selected tab if the New Tab Page is currently loaded
-        let selectedTab = windowControllersManager.selectedTab
-        let tabID: String
-        if let tab = selectedTab, case .newtab = tab.content {
-            tabID = tab.uuid
-        } else {
-            tabID = ""
-        }
+        // Get the selected tab, only if it's a new tab page
+        let selectedTabID: String = {
+            guard
+                let selected = mainWindowController.mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab,
+                case .newtab = selected.content
+            else {
+                return ""
+            }
+            return selected.uuid
+        }()
 
-        self.init(tabId: tabID, tabIds: tabIDs)
+        self.init(tabId: selectedTabID, tabIds: tabIDs)
     }
 
 }

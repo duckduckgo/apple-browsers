@@ -24,27 +24,36 @@ import os.log
 import PixelKit
 import Combine
 import WebKit
+import BrowserServicesKit
 
 final class NewTabPageStateProvider: NewTabPageStateProviding {
 
     var stateChangedPublisher: AnyPublisher<Void, Never>
 
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let featureFlagger: FeatureFlagger
 
     private var cancellables = Set<AnyCancellable>()
 
     @MainActor
-    init(windowControllersManager: WindowControllersManagerProtocol) {
+    init(windowControllersManager: WindowControllersManagerProtocol,
+         featureFlagger: FeatureFlagger) {
         self.windowControllersManager = windowControllersManager
+        self.featureFlagger = featureFlagger
 
         stateChangedPublisher = windowControllersManager
             .tabsChanged
             .receive(on: DispatchQueue.main)
+            .filter { _ in featureFlagger.isFeatureOn(.newTabPageTabIDs) }
             .eraseToAnyPublisher()
     }
 
     @MainActor
     func getState() -> [NewTabPage.WindowNewTabPageStateData] {
+        guard featureFlagger.isFeatureOn(.newTabPageTabIDs) else {
+            return []
+        }
+
         return windowControllersManager.mainWindowControllers.compactMap { controller in
             let webView = controller.mainViewController.browserTabViewController.newTabPageWebViewModel.webView
             let tabs = NewTabPageDataModel.Tabs(from: controller)

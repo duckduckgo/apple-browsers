@@ -155,7 +155,10 @@ extension NewTabPageActionsManager {
             keyValueStore: keyValueStore,
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider
         )
-        let stateProvider = NewTabPageStateProvider(windowControllersManager: windowControllersManager)
+        let stateProvider = NewTabPageStateProvider(
+            windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger
+        )
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(

@@ -133,4 +133,15 @@ public final class AIChatPageContextHandler: AIChatConsumableDataHandling {
     }
 }
 
-public typealias AIChatPageContextData = String
+public struct AIChatPageContextData: Codable {
+    let title: String
+    let favicon: [PageContextFavicon]
+    let url: String
+    let content: String
+    let truncated: Bool
+
+    public struct PageContextFavicon: Codable {
+        let href: String
+        let rel: String
+    }
+}

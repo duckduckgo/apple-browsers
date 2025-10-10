@@ -472,7 +472,6 @@ final class MoreOptionsMenuTests: XCTestCase {
 #if SPARKLE
     @MainActor
     func testWhenBrowserIsNotAddedToDockThenMenuItemIsVisible() {
-        dockCustomizer.didShowFeatureFromMoreOptionsMenu = true
         dockCustomizer.dockStatus = false
 
         setupMoreOptionsMenu()
@@ -483,7 +482,6 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testWhenBrowserIsNotInTheDockAndIsNotSetAsDefaultThenTheOrderIsCorrect() {
-        dockCustomizer.didShowFeatureFromMoreOptionsMenu = true
         dockCustomizer.dockStatus = false
         defaultBrowserProvider.isDefault = false
 

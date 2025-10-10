@@ -293,6 +293,18 @@ final class AddressBarViewController: NSViewController {
             }
             .store(in: &cancellables)
 
+        // hide Suggestions when child window is shown (Suggestions, Bookmarks, Downloads etc…, excluding Tab Previews and Suggestions)
+        window.publisher(for: \.childWindows)
+            .debounce(for: 0.05, scheduler: DispatchQueue.main)
+            .sink { [weak self] childWindows in
+                guard let self, let childWindows, childWindows.contains(where: {
+                    !($0.windowController is TabPreviewWindowController || $0.contentViewController is SuggestionViewController)
+                }) else { return }
+
+                addressBarTextField.hideSuggestionWindow()
+            }
+            .store(in: &cancellables)
+
         NSApp.publisher(for: \.effectiveAppearance)
             .sink { [weak self] _ in
                 self?.refreshAddressBarAppearance(nil)
@@ -629,7 +641,12 @@ final class AddressBarViewController: NSViewController {
         self.updateMode()
         self.addressBarButtonsViewController?.updateButtons()
 
-        guard let window = view.window, AppVersion.runType != .unitTests else { return }
+        guard let window = view.window, window.sheets.isEmpty else {
+            // Hide suggestions when a Sheet is presented (Open panel, Fire dialog…)
+            addressBarTextField.hideSuggestionWindow()
+            return
+        }
+        guard AppVersion.runType != .unitTests else { return }
         let navigationBarBackgroundColor = theme.colorsProvider.navigationBackgroundColor
 
         NSAppearance.withAppAppearance {

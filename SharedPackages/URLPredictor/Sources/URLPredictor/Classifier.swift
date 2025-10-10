@@ -81,7 +81,7 @@ public enum Classifier {
             allowIntranetMultiLabel: true,
             allowIntranetSingleLabel: false,
             allowPrivateSuffix: true,
-            allowedSchemes: ["http", "https", "file", "about", "data", "duck", "mailto", "x-safari-https", "networkprotection"]
+            allowedSchemes: ["http", "https", "file", "about", "blob", "data", "duck", "mailto", "networkprotection", "webkit-extension", "x-safari-https"]
         )
     }
 

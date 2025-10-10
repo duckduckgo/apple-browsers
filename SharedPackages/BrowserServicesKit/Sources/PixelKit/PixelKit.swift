@@ -432,11 +432,11 @@ public final class PixelKit {
     ///   - percentage: Sampling percentage from 1 to 100 (inclusive)
     ///   - onComplete: Completion handler called with whether the pixel was fired
     private func handleSample(_ pixelName: String,
-                             _ headers: [String: String],
-                             _ newParams: [String: String],
-                             _ allowedQueryReservedCharacters: CharacterSet?,
-                             _ percentage: Int,
-                             _ onComplete: @escaping CompletionBlock) {
+                              _ headers: [String: String],
+                              _ newParams: [String: String],
+                              _ allowedQueryReservedCharacters: CharacterSet?,
+                              _ percentage: Int,
+                              _ onComplete: @escaping CompletionBlock) {
         assert(percentage >= 1 && percentage <= 100, "Sampling percentage must be between 1 and 100, got \(percentage)")
 
         reportErrorIf(pixel: pixelName, endsWith: "_u")
@@ -447,7 +447,7 @@ public final class PixelKit {
             let sampledPixelName = pixelName + "_sample\(percentage)"
             fireRequestWrapper(sampledPixelName, headers, newParams, allowedQueryReservedCharacters, true, .sample(percentage: percentage), onComplete)
         }, onDiscarded: {
-            printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDaily, parameters: newParams, skipped: true)
+            self.printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDaily, parameters: newParams, skipped: true)
         })
     }
 

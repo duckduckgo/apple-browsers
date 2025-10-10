@@ -277,7 +277,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
         if !titleLabel.isEnabled {
             titleLabel.textColor = .disabledControlTextColor
 
-        } else if highlight && contentMode != .foldersOnly {
+        } else if highlight && contentMode != .foldersOnly && isInKeyWindow {
             titleLabel.textColor = palette.accentContentPrimary
             urlLabel.textColor = palette.accentContentSecondary
 

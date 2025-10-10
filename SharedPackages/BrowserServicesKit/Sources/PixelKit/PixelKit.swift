@@ -442,12 +442,14 @@ public final class PixelKit {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_daily")
 
+        let suffix = "_sample\(percentage)"
+
         let sampler = ClosureSampler(percentage: percentage)
         sampler.sample({
-            let sampledPixelName = pixelName + "_sample\(percentage)"
+            let sampledPixelName = pixelName + suffix
             fireRequestWrapper(sampledPixelName, headers, newParams, allowedQueryReservedCharacters, true, .sample(percentage: percentage), onComplete)
         }, onDiscarded: {
-            self.printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDaily, parameters: newParams, skipped: true)
+            self.printDebugInfo(pixelName: pixelName + suffix, frequency: .sample(percentage: percentage), parameters: newParams, skipped: true)
         })
     }
 

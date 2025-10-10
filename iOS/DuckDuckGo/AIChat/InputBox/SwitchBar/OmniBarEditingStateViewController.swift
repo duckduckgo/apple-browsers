@@ -91,6 +91,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private var notificationCancellable: AnyCancellable?
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
 
+    private weak var contentAnimator: UIViewPropertyAnimator?
+
     // MARK: - Initialization
 
     internal init(switchBarHandler: any SwitchBarHandling,
@@ -286,17 +288,30 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func installNavigationActionBar() {
         let manager = NavigationActionBarManager(switchBarHandler: switchBarHandler)
-        manager.delegate = self
         if isUsingTopBarPosition {
             // Note this is not installed in contentContainerView - this is floating over content.
             manager.installInViewController(self)
         } else {
             manager.installInViewController(switchBarVC.textEntryViewController, inView: switchBarVC.textEntryViewController.buttonsContainerView)
         }
+        manager.delegate = self
+        manager.animationDelegate = self
         navigationActionBarManager = manager
     }
 
     private func setupSubscriptions() {
+        switchBarVC.textEntryViewController.textHeightChangePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+
+                self?.scheduleAnimation({
+                    self?.updateSwipeContainerSafeArea()
+                    self?.view.layoutIfNeeded()
+                }, completion: nil)
+
+            }
+            .store(in: &cancellables)
+
         switchBarHandler.currentTextPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] currentText in
@@ -396,6 +411,23 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             }
     }
 
+    private func scheduleAnimation(_ animation: @escaping () -> Void, completion: ((UIViewAnimatingPosition) -> Void)?) {
+
+        if contentAnimator?.state == .stopped {
+            contentAnimator = nil
+        }
+
+        let animator = self.contentAnimator ?? UIViewPropertyAnimator(duration: 0.4, dampingRatio: 0.73)
+
+        animator.addAnimations(animation)
+        if let completion {
+            animator.addCompletion(completion)
+        }
+
+        // Starts the animation. No effect if it's already running.
+        animator.startAnimation()
+    }
+
     // MARK: - Action Handlers
 
     @objc private func dismissButtonTapped(_ sender: UIButton) {
@@ -442,6 +474,19 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
+    }
+}
+
+// MARK: - NavigationActionBarViewAnimationDelegate
+
+extension OmniBarEditingStateViewController: NavigationActionBarViewAnimationDelegate {
+    func animateActionBarView(_ view: NavigationActionBarView,
+                              animations: @escaping () -> Void,
+                              completion: ((UIViewAnimatingPosition) -> Void)?) {
+        scheduleAnimation({
+            animations()
+            self.view.layoutIfNeeded()
+        }, completion: completion)
     }
 }
 

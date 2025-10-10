@@ -61,6 +61,8 @@ class SwitchBarTextEntryView: UIView {
     private var heightConstraint: NSLayoutConstraint?
     private var buttonsTrailingConstraint: NSLayoutConstraint?
 
+    let textHeightChangeSubject = PassthroughSubject<Void, Never>()
+
     var hasBeenInteractedWith = false
     var isURL: Bool {
         // TODO some kind of text length check?
@@ -156,6 +158,7 @@ class SwitchBarTextEntryView: UIView {
 
     private func setupButtonsView() {
         buttonsView.onClearTapped = { [weak self] in
+            self?.hasBeenInteractedWith = true
             self?.fireClearButtonPressedPixel()
             self?.handler.clearText()
             self?.handler.clearButtonTapped()
@@ -232,7 +235,12 @@ class SwitchBarTextEntryView: UIView {
 
         if newButtonState != currentButtonState {
             currentButtonState = newButtonState
-            adjustTextViewContentInset()
+
+            // Prevent unexpected animations of this change
+            UIView.performWithoutAnimation {
+                adjustTextViewContentInset()
+                buttonsView.layoutIfNeeded()
+            }
         }
     }
 
@@ -274,6 +282,13 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateTextViewHeight() {
+
+        let currentHeight = heightConstraint?.constant
+        defer {
+            if currentHeight != heightConstraint?.constant {
+                textHeightChangeSubject.send()
+            }
+        }
 
         let size = textView.systemLayoutSizeFitting(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude))
         let contentExceedsMaxHeight = size.height > Constants.maxHeight

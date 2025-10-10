@@ -31,6 +31,10 @@ class SwitchBarTextEntryViewController: UIViewController {
 
     let buttonsContainerView = UIView()
 
+    var textHeightChangePublisher: AnyPublisher<Void, Never> {
+        textEntryView.textHeightChangeSubject.eraseToAnyPublisher()
+    }
+
     private var cancellables = Set<AnyCancellable>()
     var isExpandable: Bool {
         get { textEntryView.isExpandable }
@@ -89,6 +93,9 @@ class SwitchBarTextEntryViewController: UIViewController {
         containerView.translatesAutoresizingMaskIntoConstraints = false
         textEntryView.translatesAutoresizingMaskIntoConstraints = false
         buttonsContainerView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Prevents showing buttons out of bounds when animating
+        containerView.layer.masksToBounds = true
     }
 
     private func setupContainerViewAppearance() {

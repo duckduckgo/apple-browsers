@@ -23,6 +23,7 @@ import History
 import os.log
 import PixelKit
 import DesignResourcesKitIcons
+import BrowserServicesKit
 
 protocol FirePopoverViewControllerDelegate: AnyObject {
 
@@ -84,6 +85,9 @@ final class FirePopoverViewController: NSViewController {
           fireViewModel: FireViewModel,
           tabCollectionViewModel: TabCollectionViewModel,
           historyCoordinating: HistoryCoordinating = NSApp.delegateTyped.historyCoordinator,
+          aiChatHistoryCleaner: AIChatHistoryCleaning = AIChatHistoryCleaner(featureFlagger: NSApp.delegateTyped.featureFlagger,
+                                                                             aiChatMenuConfiguration: NSApp.delegateTyped.aiChatMenuConfiguration,
+                                                                             featureDiscovery: DefaultFeatureDiscovery()),
           fireproofDomains: FireproofDomains = NSApp.delegateTyped.fireproofDomains,
           faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager,
           tld: TLD = NSApp.delegateTyped.tld,
@@ -94,6 +98,7 @@ final class FirePopoverViewController: NSViewController {
         self.firePopoverViewModel = FireDialogViewModel(fireViewModel: fireViewModel,
                                                         tabCollectionViewModel: tabCollectionViewModel,
                                                         historyCoordinating: historyCoordinating,
+                                                        aiChatHistoryCleaner: aiChatHistoryCleaner,
                                                         fireproofDomains: fireproofDomains,
                                                         faviconManagement: faviconManagement,
                                                         clearingOption: .allData,
@@ -304,6 +309,7 @@ final class FirePopoverViewController: NSViewController {
             includeHistory: firePopoverViewModel.includeHistory,
             includeTabsAndWindows: firePopoverViewModel.includeTabsAndWindows,
             includeCookiesAndSiteData: firePopoverViewModel.includeCookiesAndSiteData,
+            includeChatHistory: firePopoverViewModel.includeChatHistory,
             selectedCookieDomains: firePopoverViewModel.selectedCookieDomainsForScope,
             selectedVisits: nil,
             isToday: false

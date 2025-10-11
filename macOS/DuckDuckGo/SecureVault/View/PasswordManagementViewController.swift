@@ -1148,8 +1148,8 @@ final class PasswordManagementViewController: NSViewController {
         switch category {
         case .allItems: showEmptyState(image: .passwordsAdd128, title: UserText.pmEmptyStateDefaultTitle, hideMessage: false, hideImportButton: false, hideSyncButton: false)
         case .logins: showEmptyState(image: .passwordsAdd128, title: UserText.pmEmptyStateLoginsTitle, hideMessage: false, hideImportButton: false, hideSyncButton: false)
-        case .identities: showEmptyState(image: .identityAdd128, title: UserText.pmEmptyStateIdentitiesTitle, hideMessage: true, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards))
-        case .cards: showEmptyState(image: .creditCardsAdd128, title: UserText.pmEmptyStateCardsTitle, hideMessage: true, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncIdentities))
+        case .identities: showEmptyState(image: .identityAdd128, title: UserText.pmEmptyStateIdentitiesTitle, hideMessage: true, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncIdentities))
+        case .cards: showEmptyState(image: .creditCardsAdd128, title: UserText.pmEmptyStateCardsTitle, hideMessage: true, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards))
         }
     }
 

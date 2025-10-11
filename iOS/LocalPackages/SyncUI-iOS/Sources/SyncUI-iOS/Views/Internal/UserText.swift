@@ -27,7 +27,7 @@ public struct UserText {
     // Sync Set Up
     // Sync With Another Device Card
     static let syncWithAnotherDeviceTitle = NSLocalizedString("sync.with.another.device.title", bundle: Bundle.module, value: "Begin Syncing", comment: "Title for syncing with another device")
-    static let syncWithAnotherDeviceMessage = NSLocalizedString("sync.with.another.device.message", bundle: Bundle.module, value: "Securely sync bookmarks and autofill data between your devices.", comment: "Message for syncing with another device")
+    static let syncWithAnotherDeviceMessage = NSLocalizedString("sync.with.another.device.message", bundle: Bundle.module, value: "Securely sync bookmarks and passwords between your devices.", comment: "Message for syncing with another device")
     static let syncWithAnotherDeviceButton = NSLocalizedString("sync.with.another.device.button", bundle: Bundle.module, value: "Sync With Another Device", comment: "Button label for syncing with another device")
     static let syncWithAnotherDeviceFooter = NSLocalizedString("sync.with.another.device.footer", bundle: Bundle.module, value: "Your data is end-to-end encrypted, and DuckDuckGo does not have access to the encryption key.", comment: "Footer message for syncing with another device")
     // Other Options
@@ -47,7 +47,7 @@ public struct UserText {
     static let invalidCreditCardsPresentTitle = NSLocalizedString("creditCards.invalid.objects.present.title", bundle: Bundle.module, value: "Some credit cards are not syncing due to excessively long content in certain fields.", comment: "Alert title for invalid credit cards being filtered out of synced data")
     static let bookmarksLimitExceededAction = NSLocalizedString("prefrences.sync.bookmarks-limit-exceeded-action", value: "Manage Bookmarks", comment: "Button title for sync bookmarks limits exceeded warning to go to manage bookmarks")
     static let credentialsLimitExceededAction = NSLocalizedString("prefrences.sync.credentials-limit-exceeded-action", value: "Manage passwords…", comment: "Button title for sync credentials limits exceeded warning to go to manage passwords")
-    static let creditCardsLimitExceededAction = NSLocalizedString("prefrences.sync.creditCards-limit-exceeded-action", value: "Manage Credit Cards…", comment: "Button title for sync credit cards limits exceeded warning to go to manage credit cards")
+    static let creditCardsLimitExceededAction = NSLocalizedString("prefrences.sync.credit-cards-limit-exceeded-action", value: "Manage Credit Cards…", comment: "Button title for sync credit cards limits exceeded warning to go to manage credit cards")
     static func invalidBookmarksPresentDescription(_ invalidItemTitle: String, numberOfOtherInvalidItems: Int) -> String {
         let message = NSLocalizedString("bookmarks.invalid.objects.present.description", bundle: Bundle.module, comment: "Do not translate - stringsdict entry")
         return String(format: message, numberOfOtherInvalidItems, invalidItemTitle)
@@ -59,7 +59,7 @@ public struct UserText {
     }
 
     static func invalidCreditCardsPresentDescription(_ invalidItemTitle: String, numberOfOtherInvalidItems: Int) -> String {
-        let message = NSLocalizedString("creditCards.invalid.objects.present.description", bundle: Bundle.module, comment: "Do not translate - stringsdict entry")
+        let message = NSLocalizedString("creditcards.invalid.objects.present.description", bundle: Bundle.module, comment: "Do not translate - stringsdict entry")
         return String(format: message, numberOfOtherInvalidItems, invalidItemTitle)
     }
 

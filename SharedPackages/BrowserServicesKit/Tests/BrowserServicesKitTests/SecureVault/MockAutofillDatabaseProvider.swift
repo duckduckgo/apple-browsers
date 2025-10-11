@@ -253,6 +253,24 @@ internal class MockAutofillDatabaseProvider: AutofillDatabaseProvider {
     func deleteSyncableCreditCard(_ syncableCreditCard: SecureVaultModels.SyncableCreditCard, in database: Database) throws {
     }
 
+    func modifiedSyncableIdentities() throws -> [SecureVaultModels.SyncableIdentity] {
+        []
+    }
+
+    func modifiedSyncableIdentities(before date: Date) throws -> [SecureVaultModels.SyncableIdentity] {
+        []
+    }
+
+    func syncableIdentitiesForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableIdentity] {
+        []
+    }
+
+    func storeSyncableIdentity(_ syncableIdentity: SecureVaultModels.SyncableIdentity, in database: Database) throws {
+    }
+
+    func deleteSyncableIdentity(_ syncableIdentity: SecureVaultModels.SyncableIdentity, in database: Database) throws {
+    }
+
     func neverPromptWebsites() throws -> [SecureVaultModels.NeverPromptWebsites] {
         return _neverPromptWebsites
     }

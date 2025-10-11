@@ -33,6 +33,7 @@ struct SyncView: View {
                     syncBookmarksAdapter: syncDataProviders.bookmarksAdapter,
                     syncCredentialsAdapter: syncDataProviders.credentialsAdapter,
                     syncCreditCardsAdapter: syncDataProviders.creditCardsAdapter,
+                    syncIdentitiesAdapter: syncDataProviders.identitiesAdapter,
                     syncPausedStateManager: syncDataProviders.syncErrorHandler
                 )
                 SyncUI_macOS.ManagementView(model: syncPreferences)
@@ -45,6 +46,7 @@ struct SyncView: View {
                     syncBookmarksAdapter: syncDataProviders.bookmarksAdapter,
                     syncCredentialsAdapter: syncDataProviders.credentialsAdapter,
                     syncCreditCardsAdapter: syncDataProviders.creditCardsAdapter,
+                    syncIdentitiesAdapter: syncDataProviders.identitiesAdapter,
                     syncPausedStateManager: syncDataProviders.syncErrorHandler
                 )
                 SyncUI_macOS.ManagementView(model: syncPreferences)

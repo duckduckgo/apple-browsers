@@ -2,7 +2,7 @@
     "agents": ["ddg_ios"],
     "target": {
         "key": "appVersion",
-        "version": "7.188.0"
+        "version": "7.189.0"
     },
     "forceLowerCase": false
 }

@@ -154,10 +154,8 @@ final class NavigationBarViewController: NSViewController {
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
     private let showTab: (Tab.TabContent) -> Void
 
-    private let themeManager: ThemeManagerProtocol
-    private var theme: ThemeDefinition {
-        themeManager.theme
-    }
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
 
     private var leftFocusSpacer: NSView?
     private var rightFocusSpacer: NSView?
@@ -215,7 +213,7 @@ final class NavigationBarViewController: NSViewController {
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-                       themeManager: ThemeManagerProtocol = NSApp.delegateTyped.themeManager,
+                       themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
                        aiChatSidebarPresenter: AIChatSidebarPresenting,
                        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = NSApp.delegateTyped.vpnUpsellVisibilityManager,
@@ -269,7 +267,7 @@ final class NavigationBarViewController: NSViewController {
         autofillPopoverPresenter: AutofillPopoverPresenter,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger,
-        themeManager: ThemeManagerProtocol,
+        themeManager: ThemeManaging,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatSidebarPresenter: AIChatSidebarPresenting,
         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
@@ -1069,15 +1067,6 @@ final class NavigationBarViewController: NSViewController {
         overflowButton.setCornerRadius(theme.toolbarButtonsCornerRadius)
     }
 
-    private func subscribeToThemeChanges() {
-        themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.applyThemeStyles()
-            }
-            .store(in: &cancellables)
-    }
-
     private func subscribeToSelectedTabViewModel() {
         selectedTabViewModelCancellable = tabCollectionViewModel.$selectedTabViewModel.receive(on: DispatchQueue.main).sink { [weak self] _ in
             self?.subscribeToNavigationActionFlags()
@@ -1199,13 +1188,6 @@ final class NavigationBarViewController: NSViewController {
         view.setAccessibilityRole(.toolbar) // AXToolbar
         view.setAccessibilityEnabled(true) // make the view AX-visible
         view.setAccessibilityElement(true) // is AX control by itself
-    }
-
-    // MARK: - Themes
-
-    private func applyThemeStyles() {
-        setupNavigationButtons()
-        setupBackgroundViewsAndColors()
     }
 
     // MARK: - Actions
@@ -1706,7 +1688,7 @@ final class NavigationBarViewController: NSViewController {
 
     /// Provides the menu items to display in the overflow menu for a given pinned view.
     private func overflowMenuItem(for view: PinnableView,
-                                  theme: ThemeDefinition) -> NSMenuItem {
+                                  theme: ThemeStyleProviding) -> NSMenuItem {
         switch view {
         case .autofill:
             return NSMenuItem(title: UserText.autofill, action: #selector(overflowMenuRequestedLoginsPopover), keyEquivalent: "")
@@ -1797,6 +1779,16 @@ final class NavigationBarViewController: NSViewController {
         addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(menu)
     }
 }
+
+// MARK: - ThemeUpdateListening
+extension NavigationBarViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        setupNavigationButtons()
+        setupBackgroundViewsAndColors()
+    }
+}
+
 // MARK: - NSMenuDelegate
 extension NavigationBarViewController: NSMenuDelegate {
 

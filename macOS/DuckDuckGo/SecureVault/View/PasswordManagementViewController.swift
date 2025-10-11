@@ -168,14 +168,13 @@ final class PasswordManagementViewController: NSViewController {
     private let urlMatcher = AutofillDomainNameUrlMatcher()
     private let tld = NSApp.delegateTyped.tld
     private let urlSort = AutofillDomainNameUrlSort()
-    private let visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
     private let syncButtonModel = SyncDeviceButtonModel()
+
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        boxView.fillColor = visualStyle.colorsProvider.passwordManagerBackgroundColor
-        backgroundView.backgroundColor = visualStyle.colorsProvider.passwordManagerLockScreenBackgroundColor
 
         createListView()
         createLoginItemView()
@@ -208,6 +207,9 @@ final class PasswordManagementViewController: NSViewController {
                 self?.refreshData()
             }
             .store(in: &cancellables)
+
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     private func setUpEmptyStateMessageView() {
@@ -1117,7 +1119,15 @@ final class PasswordManagementViewController: NSViewController {
         Logger.sync.debug("Requesting sync if enabled")
         syncService.scheduler.requestSyncImmediately()
     }
+}
 
+extension PasswordManagementViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        let colorsProvider = theme.colorsProvider
+        boxView.fillColor = colorsProvider.passwordManagerBackgroundColor
+        backgroundView.backgroundColor = colorsProvider.passwordManagerLockScreenBackgroundColor
+    }
 }
 
 extension PasswordManagementViewController: NSMenuDelegate {

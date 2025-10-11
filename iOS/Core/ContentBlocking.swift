@@ -36,12 +36,6 @@ public final class ContentBlocking {
     private let exceptionsSource: DefaultContentBlockerRulesExceptionsSource
     private let lastCompiledRulesStore: AppLastCompiledRulesStore
 
-    public var onCriticalError: (() -> Void)? {
-        didSet {
-            contentBlockingManager.onCriticalError = onCriticalError
-        }
-    }
-
     enum PixelParameterName {
         static let experimentName = "experimentName"
         static let etag = "etag"
@@ -126,6 +120,11 @@ public final class ContentBlocking {
             }
 
             domainEvent = .contentBlockingCompilationFailed(listType: listType, component: component)
+            
+            let tmpDirectory = FileManager.default.temporaryDirectory
+            if !FileManager.default.fileExists(atPath: tmpDirectory.path) {
+                Pixel.fire(pixel: .contentBlockingCompilationFailedMissingTmpDir)
+            }
 
         case .contentBlockingLookupRulesSucceeded:
             domainEvent = .contentBlockingLookupRulesSucceeded

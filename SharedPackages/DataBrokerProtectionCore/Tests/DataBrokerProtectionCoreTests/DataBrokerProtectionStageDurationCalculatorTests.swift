@@ -20,9 +20,9 @@ import BrowserServicesKit
 import Foundation
 import SecureStorage
 import XCTest
-
+import PixelKit
 @testable import DataBrokerProtectionCore
-import DataBrokerProtectionCoreTestsUtils
+@testable import DataBrokerProtectionCoreTestsUtils
 
 final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     let handler = MockDataBrokerProtectionPixelsHandler()
@@ -159,5 +159,46 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         } else {
             XCTFail("A pixel should be fired")
         }
+    }
+
+    func testRecorderReceivesSubmitSuccess() {
+        let recorder = SubmissionRecorderMock()
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker",
+                                                              dataBrokerVersion: "1.1.1",
+                                                              handler: handler,
+                                                              vpnConnectionState: "disconnected",
+                                                              vpnBypassStatus: "no")
+        sut.attachWideEventRecorder(recorder)
+
+        sut.fireOptOutStart()
+        sut.fireOptOutEmailGenerate()
+        sut.fireOptOutCaptchaParse()
+        sut.fireOptOutSubmit()
+        sut.fireOptOutSubmitSuccess(tries: 2)
+
+        XCTAssertEqual(recorder.completionStatus, .success)
+        XCTAssertTrue(recorder.submissionEndMarked)
+        XCTAssertEqual(recorder.recordedStages.map { $0.stage }, [.start, .emailGenerate, .captchaParse, .submit])
+        XCTAssertEqual(recorder.recordedStages.first?.tries, 1)
+        XCTAssertNil(recorder.recordedStages.first?.duration)
+        XCTAssertEqual(recorder.recordedStages.last?.tries, 1)
+        XCTAssertNotNil(recorder.recordedStages.last?.duration)
+    }
+
+    func testRecorderReceivesFailure() {
+        let recorder = SubmissionRecorderMock()
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker",
+                                                              dataBrokerVersion: "1.1.1",
+                                                              handler: handler,
+                                                              vpnConnectionState: "disconnected",
+                                                              vpnBypassStatus: "no")
+        sut.attachWideEventRecorder(recorder)
+
+        sut.fireOptOutStart()
+        sut.fireOptOutFailure(tries: 3)
+        recorder.complete(status: .failure)
+
+        XCTAssertEqual(recorder.completionStatus, .failure)
+        XCTAssertEqual(recorder.recordedStages.map { $0.stage }, [.start])
     }
 }

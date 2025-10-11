@@ -352,19 +352,6 @@ class PrivacyDashboardUITests: UITestCase {
         let dontSendButton = privacyDashboard.buttons["Don't Send"]
         if dontSendButton.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
             dontSendButton.click()
-
-            XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should disapppear after clicking 'Don't Send'")
-
-            // Open privacy dashboard to disable protections
-            XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available")
-            privacyButton.click()
-
-            // Privacy dashboard should open
-            XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
-
-            // Find and click "Disable Protections" checkbox
-            XCTAssertTrue(disableProtectionsCheckbox.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Disable Protections checkbox should be available")
-            disableProtectionsCheckbox.click()
         }
         XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should close")
 

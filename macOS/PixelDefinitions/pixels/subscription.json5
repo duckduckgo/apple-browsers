@@ -1,173 +1,342 @@
 // Privacy Pro subscription-related pixel definitions for macOS
 {
-    'm_mac_privacy-pro_keychain_manager_data_added_to_backlog': {
-        description: 'Fired when Privacy Pro keychain manager adds data to the backlog because keychain is unavailable (direct distribution)',
-        owners: ['federicocappelli'],
-        triggers: ['other'],
-        suffixes: ['first_daily_count'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
+    "m_mac_privacy-pro_keychain_manager_data_added_to_backlog": {
+        "description": "Fired when Privacy Pro keychain manager adds data to the backlog because keychain is unavailable (direct distribution)",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
             {
-                key: 'source',
-                description: 'The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP',
-                type: 'string',
-            },
-        ],
+                "key": "source",
+                "description": "The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP",
+                "type": "string"
+            }
+        ]
     },
-    'm_mac_privacy-pro_keychain_manager_deallocated_with_backlog': {
-        description: 'Fired when Privacy Pro keychain manager is deallocated while still having pending data in the backlog (direct distribution)',
-        owners: ['federicocappelli'],
-        triggers: ['other'],
-        suffixes: ['first_daily_count'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
+    "m_mac_privacy-pro_keychain_manager_deallocated_with_backlog": {
+        "description": "Fired when Privacy Pro keychain manager is deallocated while still having pending data in the backlog (direct distribution)",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
             {
-                key: 'source',
-                description: 'The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP',
-                type: 'string',
-            },
-        ],
+                "key": "source",
+                "description": "The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP",
+                "type": "string"
+            }
+        ]
     },
-    'm_mac_privacy-pro_keychain_manager_data_wrote_from_backlog': {
-        description: 'Fired when Privacy Pro keychain manager successfully writes data from the backlog to keychain (direct distribution)',
-        owners: ['federicocappelli'],
-        triggers: ['other'],
-        suffixes: ['first_daily_count'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
+    "m_mac_privacy-pro_keychain_manager_data_wrote_from_backlog": {
+        "description": "Fired when Privacy Pro keychain manager successfully writes data from the backlog to keychain (direct distribution)",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
             {
-                key: 'source',
-                description: 'The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP',
-                type: 'string',
-            },
-        ],
+                "key": "source",
+                "description": "The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP",
+                "type": "string"
+            }
+        ]
     },
-    'm_mac_privacy-pro_keychain_manager_failed_to_write_data_from_backlog': {
-        description: 'Fired when Privacy Pro keychain manager fails to write data from the backlog to keychain (direct distribution)',
-        owners: ['federicocappelli'],
-        triggers: ['other'],
-        suffixes: ['first_daily_count'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
+    "m_mac_privacy-pro_keychain_manager_failed_to_write_data_from_backlog": {
+        "description": "Fired when Privacy Pro keychain manager fails to write data from the backlog to keychain (direct distribution)",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
             {
-                key: 'source',
-                description: 'The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP',
-                type: 'string',
-            },
-        ],
+                "key": "source",
+                "description": "The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP",
+                "type": "string"
+            }
+        ]
     },
-    'm_mac_store_privacy-pro_app_subscription-purchase_failure': {
-        description: 'The error encountered when an App Store subscription purchase fails',
-        owners: ['federicocappelli'],
-        triggers: ['other'],
-        suffixes: [
+    "m_mac_store_privacy-pro_app_subscription-purchase_failure": {
+        "description": "The error encountered when an App Store subscription purchase fails",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": [
             {
-                description: 'The type of purchase failure',
-                enum: ['store', 'backend', 'account-creation', 'other'],
+                "description": "The type of purchase failure",
+                "enum": ["store", "backend", "account-creation", "other"]
             },
-            'legacy_daily_count',
+            "legacy_daily_count"
         ],
-        parameters: ['appVersion', 'pixelSource', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
-    'm_mac_direct_privacy-pro_app_subscription-purchase_failure': {
-        description: 'The error encountered when a Stripe subscription purchase fails',
-        owners: ['federicocappelli'],
-        triggers: ['other'],
-        suffixes: [
+    "m_mac_direct_privacy-pro_app_subscription-purchase_failure": {
+        "description": "The error encountered when a Stripe subscription purchase fails",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": [
             {
-                description: 'The type of purchase failure',
-                enum: ['store', 'backend', 'account-creation', 'other'],
+                "description": "The type of purchase failure",
+                "enum": ["store", "backend", "account-creation", "other"]
             },
-            'legacy_daily_count',
+            "legacy_daily_count"
         ],
-        parameters: ['appVersion', 'pixelSource', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     // Defined in https://app.asana.com/1/137249556945/task/1210959493759232
-    m_mac_wide_subscription_purchase: {
-        description: 'Wide pixel sent at the end of a subscription purchase flow',
-        owners: ['samsymons'],
-        triggers: ['other'],
-        suffixes: ['daily_standard'],
-        parameters: [
-            'widePixelAppName',
-            'widePixelAppVersion',
-            'widePixelInternalUser',
-            'widePixelPlatform',
-            'widePixelType',
-            'widePixelSampleRate',
-            'widePixelFeatureStatus',
-            'widePixelErrorDomain',
-            'widePixelErrorCode',
-            'widePixelUnderlyingErrorDomain',
-            'widePixelUnderlyingErrorCode',
+    "m_mac_wide_subscription_purchase": {
+        "description": "Wide pixel sent at the end of a subscription purchase flow",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "widePixelAppName",
+            "widePixelAppVersion",
+            "widePixelInternalUser",
+            "widePixelPlatform",
+            "widePixelType",
+            "widePixelSampleRate",
+            "widePixelFeatureStatus",
+            "widePixelErrorDomain",
+            "widePixelErrorCode",
+            "widePixelUnderlyingErrorDomain",
+            "widePixelUnderlyingErrorCode",
             {
-                key: 'feature.name',
-                type: 'string',
-                description: 'Feature identifier for this wide pixel',
-                enum: ['subscription-purchase'],
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["subscription-purchase"]
             },
             {
-                key: 'feature.status_reason',
-                type: 'string',
-                description: 'Reason string for the current status, when applicable - currently applied to UNKNOWN status pixels',
-                enum: ['partial_data', 'missing_entitlements', 'missing_entitlements_delayed_activation'],
+                "key": "feature.status_reason",
+                "type": "string",
+                "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status pixels",
+                "enum": ["partial_data", "missing_entitlements", "missing_entitlements_delayed_activation"]
             },
             {
-                key: 'feature.data.ext.purchase_platform',
-                type: 'string',
-                description: 'Platform used to complete the purchase',
-                enum: ['app_store', 'stripe'],
+                "key": "feature.data.ext.purchase_platform",
+                "type": "string",
+                "description": "Platform used to complete the purchase",
+                "enum": ["app_store", "stripe"]
             },
             {
-                key: 'feature.data.ext.failing_step',
-                type: 'string',
-                description: 'The step at which the flow failed, when applicable',
-                enum: ['FLOW_START', 'ACCOUNT_CREATE', 'ACCOUNT_PAYMENT', 'ACCOUNT_ACTIVATION'],
+                "key": "feature.data.ext.failing_step",
+                "type": "string",
+                "description": "The step at which the flow failed, when applicable",
+                "enum": ["FLOW_START", "ACCOUNT_CREATE", "ACCOUNT_PAYMENT", "ACCOUNT_ACTIVATION"]
             },
             {
-                key: 'feature.data.ext.subscription_identifier',
-                type: 'string',
-                description: 'Subscription product identifier from the payment provider, e.g. ddg.privacy.pro.monthly.renews.us',
+                "key": "feature.data.ext.subscription_identifier",
+                "type": "string",
+                "description": "Subscription product identifier from the payment provider, e.g. ddg.privacy.pro.monthly.renews.us"
             },
             {
-                key: 'feature.data.ext.free_trial_eligible',
-                type: 'string',
-                description: 'Whether a free trial was available',
-                enum: ['true', 'false'],
+                "key": "feature.data.ext.free_trial_eligible",
+                "type": "string",
+                "description": "Whether a free trial was available",
+                "enum": ["true", "false"]
             },
             {
-                key: 'feature.data.ext.account_creation_latency_ms_bucketed',
-                type: 'integer',
-                description: 'Bucketed latency for account creation step (ms)',
-                enum: [1000, 5000, 10000, 30000, 60000, 300000, 600000],
+                "key": "feature.data.ext.account_creation_latency_ms_bucketed",
+                "type": "integer",
+                "description": "Bucketed latency for account creation step (ms)",
+                "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
             },
             {
-                key: 'feature.data.ext.account_payment_latency_ms_bucketed',
-                type: 'integer',
-                description: 'Bucketed latency for purchase completion step (ms)',
-                enum: [1000, 5000, 10000, 30000, 60000, 300000, 600000],
+                "key": "feature.data.ext.account_payment_latency_ms_bucketed",
+                "type": "integer",
+                "description": "Bucketed latency for purchase completion step (ms)",
+                "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
             },
             {
-                key: 'feature.data.ext.account_activation_latency_ms_bucketed',
-                type: 'integer',
-                description: 'Bucketed latency for account activation step (ms)',
-                enum: [1000, 5000, 10000, 30000, 60000, 300000, 600000],
+                "key": "feature.data.ext.account_activation_latency_ms_bucketed",
+                "type": "integer",
+                "description": "Bucketed latency for account activation step (ms)",
+                "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
             },
             {
-                key: 'app.native_apps_experiments',
-                description: 'The list of enrolled Native Apps experiments in a comma-separated string, e.g. experiment1.cohortX,experiment2.cohortY',
-                type: 'string',
+                "key": "app.native_apps_experiments",
+                "description": "The list of enrolled Native Apps experiments in a comma-separated string, e.g. experiment1.cohortX,experiment2.cohortY",
+                "type": "string"
             },
             {
-                key: 'context.name',
-                type: 'string',
-                description: 'Context name for the flow',
-                enum: ['funnel_appsettings_macos', 'funnel_appmenu_macos', 'funnel_freescan_macos', 'funnel_toolbar_macos'],
-            },
-        ],
+                "key": "context.name",
+                "type": "string",
+                "description": "Context name for the flow",
+                "enum": ["funnel_appsettings_macos", "funnel_appmenu_macos", "funnel_freescan_macos", "funnel_toolbar_macos"]
+            }
+        ]
     },
+    // Defined in https://app.asana.com/1/137249556945/task/1211354430557014
+    "m_mac_wide_subscription_restore": {
+        "description": "Wide pixel sent at the end of a subscription restore flow",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "widePixelAppName",
+            "widePixelAppVersion",
+            "widePixelInternalUser",
+            "widePixelPlatform",
+            "widePixelType",
+            "widePixelSampleRate",
+            "widePixelFeatureStatus",
+            "widePixelErrorDomain",
+            "widePixelErrorCode",
+            "widePixelUnderlyingErrorDomain",
+            "widePixelUnderlyingErrorCode",
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["subscription-restore"]
+            },
+            {
+                "key": "feature.status_reason",
+                "type": "string",
+                "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status pixels",
+                "enum": ["partial_data", "timeout"]
+            },
+            {
+                "key": "feature.data.ext.restore_platform",
+                "type": "string",
+                "description": "Platform used to complete the restore",
+                "enum": ["apple_account", "email_address", "purchase_background_task"]
+            },
+            {
+                "key": "feature.data.ext.email_address_restore_last_url",
+                "type": "string",
+                "description": "The url at which the email flow, when applicable",
+                "enum": [
+                    "activation_flow",
+                    "activation_flow_email",
+                    "activation_flow_activate_email",
+                    "activation_flow_activate_email_otp",
+                    "activation_flow_success"
+                ]
+            },
+            {
+                "key": "feature.data.ext.apple_account_restore_latency_ms_bucketed",
+                "type": "integer",
+                "description": "Bucketed latency for restore using apple account (in ms)",
+                "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+            },
+            {
+                "key": "feature.data.ext.email_address_restore_latency_ms_bucketed",
+                "type": "integer",
+                "description": "Bucketed latency for restore using email address (in ms)",
+                "enum": [-1, 10000, 30000, 60000, 300000, 600000, 900000]
+            },
+            {
+                "key": "app.native_apps_experiments",
+                "description": "The list of enrolled Native Apps experiments in a comma-separated string, e.g. experiment1.cohortX,experiment2.cohortY",
+                "type": "string"
+            },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Context name for the flow",
+                "enum": [
+                    "funnel_appsettings_macos",
+                    "funnel_purchaseoffer_macos",
+                    "funnel_prepurchasecheck_macos",
+                    "funnel_onpurchasecheck_multiple"
+                ]
+            }
+        ]
+    },
+    // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211468169482228?focus=true
+    "m_mac_wide_auth_v2_token_refresh": {
+        "description": "Wide pixel sent after an AuthV2 token refresh",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "widePixelAppName",
+            "widePixelAppVersion",
+            "widePixelPlatform",
+            "widePixelType",
+            "widePixelSampleRate",
+            "widePixelFeatureStatus",
+            "widePixelErrorDomain",
+            "widePixelErrorCode",
+            "widePixelUnderlyingErrorDomain",
+            "widePixelUnderlyingErrorCode",
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide event",
+                "enum": ["authv2-token-refresh"]
+            },
+            {
+                "key": "feature.status_reason",
+                "type": "string",
+                "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status events",
+                "enum": ["partial_data"]
+            },
+            {
+                "key": "feature.data.ext.refresh_trigger",
+                "type": "string",
+                "description": "String representing what caused the token refresh to begin",
+                "enum": ["backend", "client", "token_adoption"]
+            },
+            {
+                "key": "feature.data.ext.failing_step",
+                "type": "string",
+                "description": "The step at which the flow failed, when applicable",
+                "enum": ["token_read", "refresh_access_token", "fetch_jwks", "verify_access_token", "verify_refresh_token", "token_write"]
+            },
+            {
+                "key": "feature.data.ext.refresh_token_latency_ms_bucketed",
+                "type": "integer",
+                "description": "Bucketed latency for token refresh step (ms)",
+                "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+            },
+            {
+                "key": "feature.data.ext.fetch_jwks_latency_ms_bucketed",
+                "type": "integer",
+                "description": "Bucketed latency for fetch JWKS step (ms)",
+                "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+            },
+            {
+                "key": "app.native_apps_experiments",
+                "description": "The list of enrolled Native Apps experiments in a comma-separated string, e.g. experiment1.cohortX,experiment2.cohortY",
+                "type": "string"
+            }
+        ]
+    },
+    // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211468169482228?focus=true
+    "m_mac_wide_auth_v2_token_adoption": {
+        "description": "Wide pixel sent after an AuthV2 token adoption event",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "widePixelAppName",
+            "widePixelAppVersion",
+            "widePixelPlatform",
+            "widePixelType",
+            "widePixelSampleRate",
+            "widePixelFeatureStatus",
+            "widePixelErrorDomain",
+            "widePixelErrorCode",
+            "widePixelUnderlyingErrorDomain",
+            "widePixelUnderlyingErrorCode",
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide event",
+                "enum": ["authv2-token-adoption"]
+            },
+            {
+                "key": "feature.status_reason",
+                "type": "string",
+                "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status events",
+                "enum": ["partial_data"]
+            }
+        ]
+    }
 }

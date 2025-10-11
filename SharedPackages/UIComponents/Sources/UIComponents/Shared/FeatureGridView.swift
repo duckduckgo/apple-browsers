@@ -160,7 +160,11 @@ struct FeatureCardView: View {
         }
         .padding(LayoutConstants.cardPadding)
         .frame(minHeight: minHeight, maxHeight: minHeight != nil ? .infinity : nil)
+#if os(iOS)
         .background(Color(designSystemColor: .surface))
+#else
+        .background(Color(designSystemColor: .surfacePrimary))
+#endif
         .cornerRadius(LayoutConstants.cornerRadius)
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cornerRadius)
@@ -188,7 +192,11 @@ struct FeatureCardView: View {
     @ViewBuilder
     private var iconPlaceholder: some View {
         Circle()
+#if os(iOS)
             .fill(Color(designSystemColor: .surface))
+#else
+            .fill(Color(designSystemColor: .surfacePrimary))
+#endif
             .frame(width: LayoutConstants.iconContainerSize, height: LayoutConstants.iconContainerSize)
             .overlay(
                 Circle()

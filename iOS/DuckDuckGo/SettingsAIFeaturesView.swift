@@ -138,12 +138,21 @@ struct SettingsAIFeaturesView: View {
 
             if !viewModel.openedFromSERPSettingsButton {
                 Section {
-                    SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
-                                     subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
-                                     image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist),
-                                     action: { viewModel.openAssistSettings() },
-                                     webLinkIndicator: true,
-                                     isButton: true)
+                    if viewModel.embedSERPSettings {
+                        NavigationLink(destination: SERPSettingsView(page: .searchAssist).environmentObject(viewModel)) {
+                            SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
+                                             subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
+                                             image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist))
+                        }
+                        .listRowBackground(Color(designSystemColor: .surface))
+                    } else {
+                        SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
+                                         subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
+                                         image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist),
+                                         action: { viewModel.openAssistSettings() },
+                                         webLinkIndicator: true,
+                                         isButton: true)
+                    }
                 }
             }
         }.applySettingsListModifiers(title: UserText.settingsAiFeatures,

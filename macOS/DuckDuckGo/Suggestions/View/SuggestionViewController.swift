@@ -43,8 +43,10 @@ final class SuggestionViewController: NSViewController {
     @IBOutlet weak var pixelPerfectConstraint: NSLayoutConstraint!
     @IBOutlet weak var backgroundViewTopConstraint: NSLayoutConstraint!
 
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
     private let suggestionContainerViewModel: SuggestionContainerViewModel
-    private let themeManager: ThemeManagerProtocol
     private let isBurner: Bool
 
     required init?(coder: NSCoder) {
@@ -54,7 +56,7 @@ final class SuggestionViewController: NSViewController {
     required init?(coder: NSCoder,
                    suggestionContainerViewModel: SuggestionContainerViewModel,
                    isBurner: Bool,
-                   themeManager: ThemeManagerProtocol) {
+                   themeManager: ThemeManaging) {
         self.suggestionContainerViewModel = suggestionContainerViewModel
         self.isBurner = isBurner
         self.themeManager = themeManager
@@ -64,7 +66,6 @@ final class SuggestionViewController: NSViewController {
 
     private var suggestionResultCancellable: AnyCancellable?
     private var selectionIndexCancellable: AnyCancellable?
-    private var themeCancellable: AnyCancellable?
 
     private var eventMonitorCancellables = Set<AnyCancellable>()
     private var appObserver: Any?
@@ -81,7 +82,7 @@ final class SuggestionViewController: NSViewController {
         subscribeToSelectionIndex()
         subscribeToThemeChanges()
 
-        applyThemeStyles()
+        applyThemeStyle()
     }
 
     override func viewWillAppear() {
@@ -163,33 +164,6 @@ final class SuggestionViewController: NSViewController {
                 weakSelf.selectRow(at: weakSelf.suggestionContainerViewModel.selectionIndex)
             }
         }
-    }
-
-    private func subscribeToThemeChanges() {
-        themeCancellable = themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let `self` else {
-                    return
-                }
-
-                self.applyThemeStyles()
-                self.tableView.reloadData()
-            }
-    }
-
-    private func applyThemeStyles() {
-        applyThemeStyles(theme: themeManager.theme)
-    }
-
-    private func applyThemeStyles(theme: ThemeDefinition) {
-        let barStyleProvider = theme.addressBarStyleProvider
-        let colorsProvider = theme.colorsProvider
-
-        backgroundViewTopConstraint.constant = barStyleProvider.topSpaceForSuggestionWindow
-        backgroundView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadius)
-        innerBorderView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadius)
-        backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor
     }
 
     private func displayNewSuggestions() {
@@ -309,6 +283,21 @@ final class SuggestionViewController: NSViewController {
         }
     }
 
+}
+
+extension SuggestionViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        let barStyleProvider = theme.addressBarStyleProvider
+        let colorsProvider = theme.colorsProvider
+
+        backgroundViewTopConstraint.constant = barStyleProvider.topSpaceForSuggestionWindow
+        backgroundView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadius)
+        innerBorderView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadius)
+        backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor
+
+        tableView.reloadData()
+    }
 }
 
 extension SuggestionViewController: NSTableViewDataSource {

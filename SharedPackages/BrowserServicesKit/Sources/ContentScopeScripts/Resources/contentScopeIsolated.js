@@ -2061,24 +2061,26 @@
       "duckPlayer",
       "duckPlayerNative",
       "duckAiListener",
+      "duckAiDataClearing",
       "harmfulApis",
       "webCompat",
       "windowsPermissionUsage",
       "brokerProtection",
       "performanceMetrics",
       "breakageReporting",
-      "autofillPasswordImport",
+      "autofillImport",
       "favicon",
       "webTelemetry",
       "pageContext"
     ]
   );
   var platformSupport = {
-    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "duckAiListener", "pageContext"],
+    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "duckAiListener", "duckAiDataClearing", "pageContext"],
     "apple-isolated": [
       "duckPlayer",
       "duckPlayerNative",
       "brokerProtection",
+      "breakageReporting",
       "performanceMetrics",
       "clickToLoad",
       "messageBridge",
@@ -2086,7 +2088,7 @@
     ],
     android: [...baseFeatures, "webCompat", "breakageReporting", "duckPlayer", "messageBridge"],
     "android-broker-protection": ["brokerProtection"],
-    "android-autofill-password-import": ["autofillPasswordImport"],
+    "android-autofill-import": ["autofillImport"],
     "android-adsjs": [
       "apiManipulation",
       "webCompat",
@@ -2109,7 +2111,8 @@
       "messageBridge",
       "webCompat",
       "pageContext",
-      "duckAiListener"
+      "duckAiListener",
+      "duckAiDataClearing"
     ],
     firefox: ["cookie", ...baseFeatures, "clickToLoad"],
     chrome: ["cookie", ...baseFeatures, "clickToLoad"],
@@ -12072,6 +12075,15 @@ ul.messages {
     return new SuccessResponse({ actionID: action.id, actionType: action.actionType, response: { actions: [] } });
   }
 
+  // src/features/broker-protection/actions/scroll.js
+  init_define_import_meta_trackerLookup();
+  function scroll(action, root = document) {
+    const element = getElement(root, action.selector);
+    if (!element) return new ErrorResponse({ actionID: action.id, message: "missing element" });
+    element.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    return new SuccessResponse({ actionID: action.id, actionType: action.actionType, response: null });
+  }
+
   // src/features/broker-protection/execute.js
   async function execute(action, inputData, root = document) {
     try {
@@ -12092,6 +12104,8 @@ ul.messages {
           return solveCaptcha2(action, data(action, inputData, "token"), root);
         case "condition":
           return condition(action, root);
+        case "scroll":
+          return scroll(action, root);
         default: {
           return new ErrorResponse({
             actionID: action.id,
@@ -12139,36 +12153,36 @@ ul.messages {
   }
 
   // src/features/broker-protection.js
-  var BrokerProtection = class extends ContentFeature {
-    init() {
-      this.messaging.subscribe("onActionReceived", async (params) => {
-        try {
-          const action = params.state.action;
-          const data2 = params.state.data;
-          if (!action) {
-            return this.messaging.notify("actionError", { error: "No action found." });
-          }
-          const { results, exceptions } = await this.exec(action, data2);
-          if (results) {
-            const parent = results[0];
-            const errors = results.filter((x2) => "error" in x2);
-            if (results.length === 1 || errors.length === 0) {
-              return this.messaging.notify("actionCompleted", { result: parent });
-            }
-            const joinedErrors = errors.map((x2) => x2.error.message).join(", ");
-            const response = new ErrorResponse({
-              actionID: action.id,
-              message: "Secondary actions failed: " + joinedErrors
-            });
-            return this.messaging.notify("actionCompleted", { result: response });
-          } else {
-            return this.messaging.notify("actionError", { error: "No response found, exceptions: " + exceptions.join(", ") });
-          }
-        } catch (e) {
-          console.log("unhandled exception: ", e);
-          this.messaging.notify("actionError", { error: e.toString() });
+  var ActionExecutorBase = class extends ContentFeature {
+    /**
+     * @param {any} action
+     * @param {Record<string, any>} data
+     */
+    async processActionAndNotify(action, data2) {
+      try {
+        if (!action) {
+          return this.messaging.notify("actionError", { error: "No action found." });
         }
-      });
+        const { results, exceptions } = await this.exec(action, data2);
+        if (results) {
+          const parent = results[0];
+          const errors = results.filter((x2) => "error" in x2);
+          if (results.length === 1 || errors.length === 0) {
+            return this.messaging.notify("actionCompleted", { result: parent });
+          }
+          const joinedErrors = errors.map((x2) => x2.error.message).join(", ");
+          const response = new ErrorResponse({
+            actionID: action.id,
+            message: "Secondary actions failed: " + joinedErrors
+          });
+          return this.messaging.notify("actionCompleted", { result: response });
+        } else {
+          return this.messaging.notify("actionError", { error: "No response found, exceptions: " + exceptions.join(", ") });
+        }
+      } catch (e) {
+        this.log.error("unhandled exception: ", e);
+        return this.messaging.notify("actionError", { error: e.toString() });
+      }
     }
     /**
      * Recursively execute actions with the same dataset, collecting all results/exceptions for
@@ -12196,6 +12210,20 @@ ul.messages {
       return { results: [], exceptions };
     }
     /**
+     * @returns {any}
+     */
+    retryConfigFor(action) {
+      this.log.error("unimplemented method: retryConfigFor:", action);
+    }
+  };
+  var BrokerProtection = class extends ActionExecutorBase {
+    init() {
+      this.messaging.subscribe("onActionReceived", async (params) => {
+        const { action, data: data2 } = params.state;
+        return await this.processActionAndNotify(action, data2);
+      });
+    }
+    /**
      * Define default retry configurations for certain actions
      *
      * @param {any} action
@@ -12221,7 +12249,7 @@ ul.messages {
     }
   };
 
-  // src/features/performance-metrics.js
+  // src/features/breakage-reporting.js
   init_define_import_meta_trackerLookup();
 
   // src/features/breakage-reporting/utils.js
@@ -12231,14 +12259,149 @@ ul.messages {
     const firstPaint = paintResources.find((entry) => entry.name === "first-contentful-paint");
     return firstPaint ? [firstPaint.startTime] : [];
   }
+  function returnError(errorMessage) {
+    return { error: errorMessage, success: false };
+  }
+  function waitForLCP(timeoutMs = 500) {
+    return new Promise((resolve) => {
+      let timeoutId;
+      let observer;
+      const cleanup = () => {
+        if (observer) observer.disconnect();
+        if (timeoutId) clearTimeout(timeoutId);
+      };
+      timeoutId = setTimeout(() => {
+        cleanup();
+        resolve(null);
+      }, timeoutMs);
+      observer = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        const lastEntry = entries[entries.length - 1];
+        if (lastEntry) {
+          cleanup();
+          resolve(lastEntry.startTime);
+        }
+      });
+      try {
+        observer.observe({ type: "largest-contentful-paint", buffered: true });
+      } catch (error) {
+        cleanup();
+        resolve(null);
+      }
+    });
+  }
+  async function getExpandedPerformanceMetrics() {
+    try {
+      if (document.readyState !== "complete") {
+        return returnError("Document not ready");
+      }
+      const navigation = (
+        /** @type {PerformanceNavigationTiming} */
+        performance.getEntriesByType("navigation")[0]
+      );
+      const paint = performance.getEntriesByType("paint");
+      const resources = (
+        /** @type {PerformanceResourceTiming[]} */
+        performance.getEntriesByType("resource")
+      );
+      const fcp = paint.find((p) => p.name === "first-contentful-paint");
+      let largestContentfulPaint = null;
+      if (PerformanceObserver.supportedEntryTypes.includes("largest-contentful-paint")) {
+        largestContentfulPaint = await waitForLCP();
+      }
+      const totalResourceSize = resources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
+      if (navigation) {
+        return {
+          success: true,
+          metrics: {
+            // Core timing metrics (in milliseconds)
+            loadComplete: navigation.loadEventEnd - navigation.fetchStart,
+            domComplete: navigation.domComplete - navigation.fetchStart,
+            domContentLoaded: navigation.domContentLoadedEventEnd - navigation.fetchStart,
+            domInteractive: navigation.domInteractive - navigation.fetchStart,
+            // Paint metrics
+            firstContentfulPaint: fcp ? fcp.startTime : null,
+            largestContentfulPaint,
+            // Network metrics
+            timeToFirstByte: navigation.responseStart - navigation.fetchStart,
+            responseTime: navigation.responseEnd - navigation.responseStart,
+            serverTime: navigation.responseStart - navigation.requestStart,
+            // Size metrics (in octets)
+            transferSize: navigation.transferSize,
+            encodedBodySize: navigation.encodedBodySize,
+            decodedBodySize: navigation.decodedBodySize,
+            // Resource metrics
+            resourceCount: resources.length,
+            totalResourcesSize: totalResourceSize,
+            // Additional metadata
+            protocol: navigation.nextHopProtocol,
+            redirectCount: navigation.redirectCount,
+            navigationType: navigation.type
+          }
+        };
+      }
+      return returnError("No navigation timing found");
+    } catch (e) {
+      return returnError("JavaScript execution error: " + e.message);
+    }
+  }
+
+  // src/features/breakage-reporting.js
+  var BreakageReporting = class extends ContentFeature {
+    init() {
+      const isExpandedPerformanceMetricsEnabled = this.getFeatureSettingEnabled("expandedPerformanceMetrics", "enabled");
+      this.messaging.subscribe("getBreakageReportValues", async () => {
+        const jsPerformance = getJsPerformanceMetrics();
+        const referrer = document.referrer;
+        const result = {
+          jsPerformance,
+          referrer
+        };
+        if (isExpandedPerformanceMetricsEnabled) {
+          const expandedPerformanceMetrics = await getExpandedPerformanceMetrics();
+          if (expandedPerformanceMetrics.success) {
+            result.expandedPerformanceMetrics = expandedPerformanceMetrics.metrics;
+          }
+        }
+        this.messaging.notify("breakageReportResult", result);
+      });
+    }
+  };
 
   // src/features/performance-metrics.js
+  init_define_import_meta_trackerLookup();
   var PerformanceMetrics = class extends ContentFeature {
     init() {
       this.messaging.subscribe("getVitals", () => {
         const vitals = getJsPerformanceMetrics();
         this.messaging.notify("vitalsResult", { vitals });
       });
+      if (isBeingFramed()) return;
+      if (this.getFeatureSettingEnabled("expandedPerformanceMetricsOnLoad", "enabled")) {
+        this.waitForAfterPageLoad(() => {
+          this.triggerExpandedPerformanceMetrics();
+        });
+      }
+    }
+    waitForNextTask(callback) {
+      setTimeout(callback, 0);
+    }
+    waitForAfterPageLoad(callback) {
+      if (document.readyState === "complete") {
+        this.waitForNextTask(callback);
+      } else {
+        window.addEventListener(
+          "load",
+          () => {
+            this.waitForNextTask(callback);
+          },
+          { once: true }
+        );
+      }
+    }
+    async triggerExpandedPerformanceMetrics() {
+      const expandedPerformanceMetrics = await getExpandedPerformanceMetrics();
+      this.messaging.notify("expandedPerformanceMetricsResult", expandedPerformanceMetrics);
     }
   };
 
@@ -15432,6 +15595,7 @@ ul.messages {
     ddg_feature_duckPlayer: DuckPlayerFeature,
     ddg_feature_duckPlayerNative: duck_player_native_default,
     ddg_feature_brokerProtection: BrokerProtection,
+    ddg_feature_breakageReporting: BreakageReporting,
     ddg_feature_performanceMetrics: PerformanceMetrics,
     ddg_feature_clickToLoad: ClickToLoad,
     ddg_feature_messageBridge: message_bridge_default,

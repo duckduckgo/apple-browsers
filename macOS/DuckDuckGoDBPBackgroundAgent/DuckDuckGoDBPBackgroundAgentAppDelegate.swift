@@ -125,6 +125,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
             privacyConfigurationManager: privacyConfigurationManager,
             featureFlagger: DBPFeatureFlagger(configurationManager: configurationManager,
                                               privacyConfigurationManager: privacyConfigurationManager),
+            wideEvent: WideEvent(),
             vpnBypassService: VPNBypassService()
         )
         manager?.agentFinishedLaunching()

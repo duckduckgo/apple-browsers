@@ -1,16 +1,16 @@
 {
-    m_aichat_settings_serp_followup_turned_on: {
-        description: 'Fires when the user enables the option to Ask Follow-up Questions on Duck.ai Shortcuts screen',
-        owners: ['pikorddg'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor', 'first_daily_count'],
-        parameters: ['appVersion'],
+    "m_aichat_settings_serp_followup_turned_on": {
+        "description": "Fires when the user enables the option to Ask Follow-up Questions on Duck.ai Shortcuts screen",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
     },
-    m_aichat_settings_serp_followup_turned_off: {
-        description: 'Fires when the user disables the option to Ask Follow-up Questions on Duck.ai Shortcuts screen',
-        owners: ['pikorddg'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor', 'first_daily_count'],
-        parameters: ['appVersion'],
-    },
+    "m_aichat_settings_serp_followup_turned_off": {
+        "description": "Fires when the user disables the option to Ask Follow-up Questions on Duck.ai Shortcuts screen",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
+    }
 }

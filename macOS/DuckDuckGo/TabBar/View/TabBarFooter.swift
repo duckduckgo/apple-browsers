@@ -23,11 +23,8 @@ final class TabBarFooter: NSView, NSCollectionViewElement {
 
     static let identifier = NSUserInterfaceItemIdentifier(rawValue: "TabBarFooter")
 
-    private var cancellables = Set<AnyCancellable>()
-    private let themeManager = NSApp.delegateTyped.themeManager
-    private var theme: ThemeDefinition {
-        themeManager.theme
-    }
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
 
     let addButton = MouseOverButton(image: .add, target: nil, action: #selector(TabBarViewController.addButtonAction))
 
@@ -71,8 +68,8 @@ final class TabBarFooter: NSView, NSCollectionViewElement {
         addSubview(addButton)
 
         subscribeToThemeChanges()
-        refreshTheme()
-     }
+        applyThemeStyle()
+    }
 
     required init?(coder: NSCoder) {
         fatalError("TabBarFooter: Bad initializer")
@@ -91,22 +88,16 @@ final class TabBarFooter: NSView, NSCollectionViewElement {
 
         addButton.cell?.setAccessibilityParent(addButton.superview?.superview) // make the AddButton a direct child of the TabBarCollectionView
     }
+}
 
-    private func subscribeToThemeChanges() {
-        themeManager.$theme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.refreshTheme()
-            }
-            .store(in: &cancellables)
-    }
+extension TabBarFooter: ThemeUpdateListening {
 
-    private func refreshTheme() {
+    func applyThemeStyle(theme: ThemeStyleProviding) {
         let colorsProvider = theme.colorsProvider
 
         addButton.cornerRadius = theme.toolbarButtonsCornerRadius
         addButton.normalTintColor = colorsProvider.iconsColor
-        addButton.mouseDownColor = .buttonMouseDown
+        addButton.mouseDownColor = colorsProvider.buttonMouseOverColor
         addButton.mouseOverColor = colorsProvider.buttonMouseOverColor
     }
 }

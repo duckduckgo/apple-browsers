@@ -122,8 +122,22 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
             return
         }
 
+        let id: NSManagedObjectID
         do {
-            let id = try store.add(eTLDPlus1Domain)
+            id = try store.add(eTLDPlus1Domain)
+        } catch {
+#if DEBUG
+            if AppVersion.runType == .xcPreviews {
+                id = NSManagedObjectID()
+            } else {
+                assertionFailure("could not add fireproof domain \(eTLDPlus1Domain): \(error)")
+                return
+            }
+#else
+            return
+#endif
+        }
+        do {
             try container.add(domain: eTLDPlus1Domain, withId: id)
         } catch {
             assertionFailure("could not add fireproof domain \(eTLDPlus1Domain): \(error)")

@@ -48,8 +48,8 @@ final class DownloadsViewController: NSViewController {
     private var errorBannerCancellable: AnyCancellable?
     private var errorBannerHostingView: NSHostingView<DownloadsErrorBannerView>?
 
-    private let themeManager: ThemeManager
-    private var themeCancellable: AnyCancellable?
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
 
     init(viewModel: DownloadListViewModel,
          themeManager: ThemeManager = NSApp.delegateTyped.themeManager) {
@@ -425,16 +425,11 @@ final class DownloadsViewController: NSViewController {
         tableView.setDraggingSourceOperationMask(NSDragOperation.none, forLocal: true)
         tableView.setDraggingSourceOperationMask(NSDragOperation.move, forLocal: false)
     }
+}
 
-    private func subscribeToThemeChanges() {
-        themeCancellable = themeManager.$theme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] style in
-                self?.applyThemeStyle(theme: style)
-            }
-    }
+extension DownloadsViewController: ThemeUpdateListening {
 
-    private func applyThemeStyle(theme: ThemeDefinition) {
+    func applyThemeStyle(theme: ThemeStyleProviding) {
         guard let contentView = view as? ColorView else {
             assertionFailure()
             return

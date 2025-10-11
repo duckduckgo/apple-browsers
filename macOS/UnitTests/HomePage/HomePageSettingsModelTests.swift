@@ -28,7 +28,7 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
     fileprivate var model: NewTabPageCustomizationModel!
     var storageLocation: URL!
     var appearancePreferences: AppearancePreferences!
-    var themeManager: ThemeManagerProtocol!
+    var themeManager: ThemeManaging!
     var userBackgroundImagesManager: CapturingUserBackgroundImagesManager!
     var sendPixelEvents: [PixelKitEvent] = []
     var openFilePanel: () -> URL? = { return "file:///sample.jpg".url! }
@@ -36,6 +36,7 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
     var showImageFailedAlertCallCount = 0
     var imageURL: URL?
 
+    @MainActor
     override func setUp() async throws {
         sendPixelEvents = []
 

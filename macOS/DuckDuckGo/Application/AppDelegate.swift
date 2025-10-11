@@ -179,10 +179,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
     let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let themeManager: ThemeManager
-    var visualStyle: VisualStyleProviding {
-        themeManager.theme
-    }
 
+    let wideEvent: WideEventManaging
     let isUsingAuthV2: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
     let subscriptionManagerV1: (any SubscriptionManager)?
@@ -244,11 +242,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                             pixelHandler: DataBrokerProtectionMacOSPixelsHandler())
     }()
 
-    // MARK: - Wide Pixel Service
+    // MARK: - Wide Event Service
 
     private lazy var wideEventService: WideEventService = {
         return WideEventService(
-            wideEvent: WideEvent(),
+            wideEvent: wideEvent,
             featureFlagger: featureFlagger,
             subscriptionBridge: subscriptionAuthV1toV2Bridge
         )
@@ -317,6 +315,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
+        wideEvent = WideEvent()
 
         if AppVersion.runType.requiresEnvironment {
             let commonDatabase = Database()
@@ -511,10 +510,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                              authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
+
         let legacyTokenStorage = SubscriptionTokenKeychainStorage(keychainType: keychainType)
+        let authRefreshWideEventMapper = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
+#if DEBUG
+            return featureFlagger.isFeatureOn(.authV2WideEventEnabled) // Allow the refresh event when using staging in debug mode, for easier testing
+#else
+            return featureFlagger.isFeatureOn(.authV2WideEventEnabled) && subscriptionEnvironment.serviceEnvironment == .production
+#endif
+        })
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             legacyTokenStorage: legacyTokenStorage,
-                                            authService: authService)
+                                            authService: authService,
+                                            refreshEventMapping: authRefreshWideEventMapper)
         let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
                                                     pixelHandler: pixelHandler,
@@ -606,7 +614,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform,
                 paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
                 supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) },
-                isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) }
+                isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) },
+                isSubscriptionRestoreWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) }
             ),
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger
@@ -619,7 +628,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
-        themeManager = ThemeManager(appearancePreferences: appearancePreferences)
+        themeManager = ThemeManager(appearancePreferences: appearancePreferences, internalUserDecider: internalUserDecider)
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
@@ -650,7 +659,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         startupPreferences = StartupPreferences(persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore), appearancePreferences: appearancePreferences)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(themeManager: themeManager, appearancePreferences: appearancePreferences)
 
-        fireCoordinator = FireCoordinator(tld: tld)
+        fireCoordinator = FireCoordinator(tld: tld, featureFlagger: featureFlagger)
 
         var appContentBlocking: AppContentBlocking?
 #if DEBUG
@@ -799,7 +808,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                        subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                        freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPPromotionViewCoordinator = FreemiumDBPPromotionViewCoordinator(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
-                                                                                  freemiumDBPFeature: freemiumDBPFeature)
+                                                                                  freemiumDBPFeature: freemiumDBPFeature,
+                                                                                  contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher())
 
         brokenSitePromptLimiter = BrokenSitePromptLimiter(privacyConfigManager: privacyConfigurationManager, store: BrokenSitePromptLimiterStore())
 #if DEBUG
@@ -863,8 +873,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let vpnUninstaller = VPNUninstaller(ipcClient: vpnXPCClient)
 
         vpnSubscriptionEventHandler = VPNSubscriptionEventsHandler(subscriptionManager: subscriptionAuthV1toV2Bridge,
-                                                                                              tunnelController: tunnelController,
-                                                                                              vpnUninstaller: vpnUninstaller)
+                                                                   tunnelController: tunnelController,
+                                                                   vpnUninstaller: vpnUninstaller)
 
         // Freemium DBP
         freemiumDBPFeature.subscribeToDependencyUpdates()

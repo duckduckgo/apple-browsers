@@ -70,8 +70,8 @@ final class MainViewController: NSViewController {
         return bookmarksBarViewController.parent != nil
     }
 
-    private let themeManager: ThemeManagerProtocol
-    private var theme: ThemeDefinition {
+    private let themeManager: ThemeManaging
+    private var theme: ThemeStyleProviding {
         themeManager.theme
     }
 
@@ -429,7 +429,7 @@ final class MainViewController: NSViewController {
                 if mainView.isBannerViewShown {
                     mainView.divider.backgroundColor = .bannerViewDivider
                 } else {
-                    mainView.divider.backgroundColor = .shadowSecondary
+                    mainView.divider.backgroundColor = theme.palette.surfaceDecorationPrimary
                 }
             } else {
                 let backgroundColor: NSColor = {

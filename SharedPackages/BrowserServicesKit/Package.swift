@@ -283,7 +283,8 @@ let package = Package(
                 "Persistence",
                 "BrowserServicesKit",
                 "MaliciousSiteProtection",
-                .product(name: "PrivacyDashboardResources", package: "privacy-dashboard")
+                .product(name: "PrivacyDashboardResources", package: "privacy-dashboard"),
+                "Navigation",
             ],
             path: "Sources/PrivacyDashboard",
             swiftSettings: [
@@ -379,7 +380,9 @@ let package = Package(
                 "Common",
                 "Networking",
                 "UserScript",
-                "PixelKit"
+                "PixelKit",
+                "Persistence",
+                "SecureStorage"
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

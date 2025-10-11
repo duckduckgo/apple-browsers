@@ -1,5 +1,5 @@
 //
-//  VisualStyleProviding.swift
+//  ThemeStyleProviding.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -24,8 +24,9 @@ import NetworkProtectionUI
 import DesignResourcesKit
 import PixelKit
 
-protocol VisualStyleProviding {
+protocol ThemeStyleProviding {
     var name: ThemeName { get }
+    var palette: ColorPalette { get }
 
     var toolbarButtonsCornerRadius: CGFloat { get }
     var fireWindowGraphic: NSImage { get }
@@ -61,8 +62,9 @@ enum AddressBarSizeClass {
     }
 }
 
-struct VisualStyle: VisualStyleProviding {
+struct ThemeStyle: ThemeStyleProviding {
     let name: ThemeName
+    let palette: ColorPalette
 
     let toolbarButtonsCornerRadius: CGFloat
     let fireWindowGraphic: NSImage
@@ -77,19 +79,20 @@ struct VisualStyle: VisualStyleProviding {
     let tabBarButtonSize: CGFloat
     let addToolbarShadow: Bool
 
-    static var current: VisualStyleProviding {
+    static var current: ThemeStyleProviding {
         let palette = NewColorPalette()
-        return buildVisualStyle(name: .default, palette: palette)
+        return buildThemeStyle(name: .default, palette: palette)
     }
 
-    static func buildVisualStyle(themeName: ThemeName) -> VisualStyle {
+    static func buildThemeStyle(themeName: ThemeName) -> ThemeStyle {
         let palette = ThemeColors(themeName: themeName)
-        return buildVisualStyle(name: themeName, palette: palette)
+        return buildThemeStyle(name: themeName, palette: palette)
     }
 
-    private static func buildVisualStyle(name: ThemeName, palette: ColorPalette) -> VisualStyle {
-        VisualStyle(
+    private static func buildThemeStyle(name: ThemeName, palette: ColorPalette) -> ThemeStyle {
+        ThemeStyle(
             name: name,
+            palette: palette,
             toolbarButtonsCornerRadius: 9,
             fireWindowGraphic: .burnerWindowGraphicNew,
             areNavigationBarCornersRound: true,

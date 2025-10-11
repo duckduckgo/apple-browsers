@@ -17,8 +17,10 @@
 //
 //  Implementation guidelines: https://app.asana.com/0/1198207348643509/1200202563872939/f
 
+import Navigation
 import Foundation
 import Common
+import WebKit
 
 public struct BrokenSiteReport {
 
@@ -95,12 +97,14 @@ public struct BrokenSiteReport {
     let openerContext: OpenerContext?
     let vpnOn: Bool
     let jsPerformance: [Double]?
+    let extendedPerformanceMetrics: PrivacyAwarePerformanceMetrics?
     let userRefreshCount: Int
     let locale: Locale
     let cookieConsentInfo: CookieConsentInfo?
     let debugFlags: String
     let privacyExperiments: String
     let isPirEnabled: Bool?
+    let pageLoadTiming: WKPageLoadTiming?
 #if os(iOS)
     let siteType: SiteType
     let atb: String
@@ -130,12 +134,14 @@ public struct BrokenSiteReport {
         openerContext: OpenerContext?,
         vpnOn: Bool,
         jsPerformance: [Double]?,
+        extendedPerformanceMetrics: PrivacyAwarePerformanceMetrics? = nil,
         userRefreshCount: Int,
         locale: Locale = Locale.current,
         cookieConsentInfo: CookieConsentInfo?,
         debugFlags: String,
         privacyExperiments: String,
-        isPirEnabled: Bool?
+        isPirEnabled: Bool?,
+        pageLoadTiming: WKPageLoadTiming?
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -157,12 +163,14 @@ public struct BrokenSiteReport {
         self.openerContext = openerContext
         self.vpnOn = vpnOn
         self.jsPerformance = jsPerformance
+        self.extendedPerformanceMetrics = extendedPerformanceMetrics
         self.userRefreshCount = userRefreshCount
         self.locale = locale
         self.cookieConsentInfo = cookieConsentInfo
         self.debugFlags = debugFlags
         self.privacyExperiments = privacyExperiments
         self.isPirEnabled = isPirEnabled
+        self.pageLoadTiming = pageLoadTiming
     }
 #endif
 
@@ -191,13 +199,15 @@ public struct BrokenSiteReport {
         openerContext: OpenerContext?,
         vpnOn: Bool,
         jsPerformance: [Double]?,
+        extendedPerformanceMetrics: PrivacyAwarePerformanceMetrics? = nil,
         userRefreshCount: Int,
         variant: String,
         locale: Locale = Locale.current,
         cookieConsentInfo: CookieConsentInfo?,
         debugFlags: String,
         privacyExperiments: String,
-        isPirEnabled: Bool?
+        isPirEnabled: Bool?,
+        pageLoadTiming: WKPageLoadTiming? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -222,6 +232,7 @@ public struct BrokenSiteReport {
         self.openerContext = openerContext
         self.vpnOn = vpnOn
         self.jsPerformance = jsPerformance
+        self.extendedPerformanceMetrics = extendedPerformanceMetrics
         self.userRefreshCount = userRefreshCount
         self.variant = variant
         self.locale = locale
@@ -229,6 +240,7 @@ public struct BrokenSiteReport {
         self.debugFlags = debugFlags
         self.privacyExperiments = privacyExperiments
         self.isPirEnabled = isPirEnabled
+        self.pageLoadTiming = pageLoadTiming
     }
 #endif
 
@@ -284,8 +296,19 @@ public struct BrokenSiteReport {
             result["jsPerformance"] = perf
         }
 
+        if let extendedPerformanceMetrics {
+            let metricsDict = extendedPerformanceMetrics.toDictionary()
+            for (key, value) in metricsDict {
+                result["extendedPerformance.\(key)"] = String(describing: value)
+            }
+        }
+
         if isPirEnabled == true {
             result["isPirEnabled"] = "true"
+        }
+
+        if let pageLoadTiming = pageLoadTiming {
+            addPageLoadTimingParameters(to: &result, timing: pageLoadTiming)
         }
 
 #if os(iOS)
@@ -315,6 +338,31 @@ public struct BrokenSiteReport {
         }
         let jsonString = try? String(data: JSONSerialization.data(withJSONObject: errorDescriptions), encoding: .utf8)!
         return jsonString ?? ""
+    }
+
+    private func addPageLoadTimingParameters(to result: inout [String: String], timing: WKPageLoadTiming) {
+        guard let navigationStart = timing.navigationStart else { return }
+
+        // Calculate all timing data as durations from navigation start (in milliseconds)
+        if let firstVisual = timing.firstVisualLayout {
+            let duration = firstVisual.timeIntervalSince(navigationStart)
+            result["webKitFirstVisualLayoutMs"] = String(Int(duration * 1000))
+        }
+
+        if let firstPaint = timing.firstMeaningfulPaint {
+            let duration = firstPaint.timeIntervalSince(navigationStart)
+            result["webKitFirstMeaningfulPaintMs"] = String(Int(duration * 1000))
+        }
+
+        if let docComplete = timing.documentFinishedLoading {
+            let duration = docComplete.timeIntervalSince(navigationStart)
+            result["webKitDocumentCompleteMs"] = String(Int(duration * 1000))
+        }
+
+        if let allResources = timing.allSubresourcesFinishedLoading {
+            let duration = allResources.timeIntervalSince(navigationStart)
+            result["webKitAllResourcesCompleteMs"] = String(Int(duration * 1000))
+        }
     }
 
 }

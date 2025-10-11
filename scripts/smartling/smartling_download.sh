@@ -124,7 +124,12 @@ if ! ./scripts/smartling/check_translation_integrity.py; then
 	# Commit the changes to the new branch
 	git config user.name "Dax the Duck"
 	git config user.email "dax@duckduckgo.com"
-	git add -A
+
+	# Reset any non-localization files (e.g., Package.resolved, build artifacts)
+	echo "Cleaning non-localization files from working tree..."
+	git restore --staged --worktree -- . ':(exclude)**/*.strings' ':(exclude)**/*.stringsdict' ':(exclude)**/*.xcstrings'
+
+	git add -A -- ':(glob)**/*.strings' ':(glob)**/*.stringsdict' ':(glob)**/*.xcstrings'
 	git commit -m "Smartling translations with deletions/replacements from job $JOB_ID"
 
 	# Push the new branch
@@ -165,8 +170,12 @@ else
 	git config user.name "Dax the Duck"
 	git config user.email "dax@duckduckgo.com"
 
-	# Add all changes
-	git add -A
+	# Reset any non-localization files (e.g., Package.resolved, build artifacts)
+	echo "Cleaning non-localization files from working tree..."
+	git restore --staged --worktree -- . ':(exclude)**/*.strings' ':(exclude)**/*.stringsdict' ':(exclude)**/*.xcstrings'
+
+	# Add only localization files (including deletions)
+	git add -A -- ':(glob)**/*.strings' ':(glob)**/*.stringsdict' ':(glob)**/*.xcstrings'
 
 	# Create commit message
 	git commit -m "Import translations from Smartling job $JOB_ID"

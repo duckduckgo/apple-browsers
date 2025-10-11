@@ -44,15 +44,17 @@ final class DownloadsViewController: NSViewController {
 
     private let separator = NSBox()
     private let viewModel: DownloadListViewModel
-    private let visualStyle: VisualStyleProviding
     private var downloadsCancellable: AnyCancellable?
     private var errorBannerCancellable: AnyCancellable?
     private var errorBannerHostingView: NSHostingView<DownloadsErrorBannerView>?
 
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
     init(viewModel: DownloadListViewModel,
-         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+         themeManager: ThemeManager = NSApp.delegateTyped.themeManager) {
         self.viewModel = viewModel
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -61,7 +63,9 @@ final class DownloadsViewController: NSViewController {
     }
 
     override func loadView() {
-        view = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.bookmarksPanelBackgroundColor)
+        let colorsProvider = themeManager.theme.colorsProvider
+
+        view = ColorView(frame: .zero, backgroundColor: colorsProvider.bookmarksPanelBackgroundColor)
 
         view.addSubview(titleLabel)
         view.addSubview(openDownloadsFolderButton)
@@ -211,6 +215,7 @@ final class DownloadsViewController: NSViewController {
 
         preferredContentSize = Self.preferredContentSize
         setupDragAndDrop()
+        subscribeToThemeChanges()
     }
 
     override func viewWillAppear() {
@@ -420,7 +425,18 @@ final class DownloadsViewController: NSViewController {
         tableView.setDraggingSourceOperationMask(NSDragOperation.none, forLocal: true)
         tableView.setDraggingSourceOperationMask(NSDragOperation.move, forLocal: false)
     }
+}
 
+extension DownloadsViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        guard let contentView = view as? ColorView else {
+            assertionFailure()
+            return
+        }
+
+        contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
+    }
 }
 
 extension DownloadsViewController: NSMenuDelegate {

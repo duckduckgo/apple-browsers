@@ -164,7 +164,15 @@ extension ReleaseNotesValues {
                 let releaseTitle = formatter.string(from: cached.date)
 
                 let cachedVersion = "\(cached.version) (\(cached.build))"
-                let status = currentVersion == cachedVersion ? ReleaseNotesValues.Status.loaded : ReleaseNotesValues.Status.updateReady
+                let status = {
+                    if currentVersion == cachedVersion {
+                        return ReleaseNotesValues.Status.loaded
+                    } else if case .updateCycleNotStarted = updateController.updateProgress {
+                        return .loading
+                    } else {
+                        return updateController.updateProgress.toStatus
+                    }
+                }()
 
                 self.init(status: status,
                           currentVersion: currentVersion,

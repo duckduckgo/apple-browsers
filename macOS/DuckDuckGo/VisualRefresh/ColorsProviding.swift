@@ -29,6 +29,7 @@ protocol ColorsProviding {
     var addressBarOutlineShadow: NSColor { get }
     var iconsColor: NSColor { get }
     var buttonMouseOverColor: NSColor { get }
+    var buttonMouseDownColor: NSColor { get }
     var fillButtonBackgroundColor: NSColor { get }
     var fillButtonMouseOverColor: NSColor { get }
     var addressBarSuffixTextColor: NSColor { get }
@@ -43,6 +44,7 @@ protocol ColorsProviding {
     var inactiveAddressBarBackgroundColor: NSColor { get }
     var suggestionsBackgroundColor: NSColor { get }
     var bannerBackgroundColor: NSColor { get }
+    var popoverBackgroundColor: NSColor { get }
 
     /// New Tab Page
     var ntpLightBackgroundColor: String { get }
@@ -76,6 +78,7 @@ final class NewColorsProviding: ColorsProviding {
     var inactiveAddressBarBackgroundColor: NSColor { palette.surfaceTertiary }
     var suggestionsBackgroundColor: NSColor { palette.surfaceTertiary }
     var bannerBackgroundColor: NSColor { palette.surfacePrimary }
+    var popoverBackgroundColor: NSColor { palette.surfaceSecondary }
     var ntpLightBackgroundColor: String { "#FAFAFA" }
     var ntpDarkBackgroundColor: String { "#1C1C1C" }
 

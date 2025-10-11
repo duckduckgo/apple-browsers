@@ -1284,6 +1284,9 @@ extension Pixel {
         // MARK: WebView Error Page Shown
         case webViewErrorPageShown
 
+        case webViewExternalSchemeNavigationXSafariHTTPSCancel
+        case webViewExternalSchemeNavigationXSafariHTTPSContinue
+
         // MARK: Browsing
         case stopPageLoad
 
@@ -1423,7 +1426,13 @@ extension Pixel {
         // MARK: - App Intent
         case appIntentPerformed
 
-        case failedToRecreateTmpDir
+        case failedToRemoveTmpDir
+        case recreateTmpAttemptFailed(attempt: Int)
+        case recreateTmpSuccessOnRetry(attempt: Int)
+        case recreateTmpWebViewFallbackSucceeded
+        case recreateTmpWebViewFallbackFailed
+        case contentBlockingCompilationFailedMissingTmpDir
+        case tmpDirStillMissingAfterRecreation
     }
 
 }
@@ -2582,6 +2591,8 @@ extension Pixel.Event {
 
         // MARK: Browsing
         case .stopPageLoad: return "m_stop-page-load"
+        case .webViewExternalSchemeNavigationXSafariHTTPSCancel: return "m_webview_external-scheme-navigation_x-safari-https_cancel"
+        case .webViewExternalSchemeNavigationXSafariHTTPSContinue: return "m_webview_external-scheme-navigation_x-safari-https_continue"
 
         // MARK: Launch time
         case .appDidFinishLaunchingTime(let time): return "m_debug_app-did-finish-launching-time-\(time)"
@@ -2773,7 +2784,13 @@ extension Pixel.Event {
         // MARK: App Intent
         case .appIntentPerformed: return "m_app-intent_intent-performed"
 
-        case .failedToRecreateTmpDir: return "m_debug_failed-to-recreate-tmp-dir"
+        case .failedToRemoveTmpDir: return "m_debug_failed-to-remove-tmp-dir"
+        case .recreateTmpAttemptFailed(let attempt): return "m_debug_recreate-tmp-attempt-failed-\(attempt)"
+        case .recreateTmpSuccessOnRetry(let attempt): return "m_debug_recreate-tmp-success-on-retry-\(attempt)"
+        case .recreateTmpWebViewFallbackSucceeded: return "m_debug_recreate-tmp-webview-fallback-succeeded"
+        case .recreateTmpWebViewFallbackFailed: return "m_debug_recreate-tmp-webview-fallback-failed"
+        case .contentBlockingCompilationFailedMissingTmpDir: return "m_debug_content-blocking-compilation-failed-missing-tmp-dir"
+        case .tmpDirStillMissingAfterRecreation: return "m_debug_tmp-dir-still-missing-after-recreation"
         }
     }
 }

@@ -33,7 +33,7 @@ final class SyncRecoveryPromptService {
     private let syncService: DDGSyncing
     private let keyValueStore: ThrowingKeyValueStoring
     private let isOnboardingComplete: Bool
-    private let secureVault: (any AutofillSecureVault)?
+    private var secureVault: (any AutofillSecureVault)?
     private let autofillUsageStore: AutofillUsageStore
     private let vaultDateProvider: VaultCreationDateProvider?
     private lazy var defaultVaultDateProvider: VaultCreationDateProvider = KeychainVaultDateProvider()
@@ -58,7 +58,7 @@ final class SyncRecoveryPromptService {
         self.vaultDateProvider = vaultDateProvider
     }
 
-    func shouldShowPrompt() -> Bool {
+    func shouldShowPrompt() async -> Bool {
         guard isFeatureFlagEnabled else {
             Logger.sync.debug("[Sync Recovery] Feature flag disabled")
             return false
@@ -81,13 +81,13 @@ final class SyncRecoveryPromptService {
             return false
         }
 
-        guard vaultIsEmpty else {
-            Logger.sync.debug("[Sync Recovery] Vault is not empty")
+        guard isFormerAutofillUser else {
+            Logger.sync.debug("[Sync Recovery] Is not a former autofill user")
             return false
         }
 
-        guard isFormerAutofillUser else {
-            Logger.sync.debug("[Sync Recovery] Is not a former autofill user")
+        guard await vaultIsEmpty else {
+            Logger.sync.debug("[Sync Recovery] Vault is not empty")
             return false
         }
 
@@ -96,18 +96,20 @@ final class SyncRecoveryPromptService {
         return true
     }
 
-    @discardableResult
     func tryPresentSyncRecoveryPrompt(from viewController: UIViewController,
-                                      onSyncFlowSelected: @escaping (String) -> Void) -> Bool {
-        guard shouldShowPrompt() else {
-            return false
-        }
+                                      onSyncFlowSelected: @escaping (String) -> Void) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
 
-        presenter.presentSyncRecoveryPrompt(
-            from: viewController,
-            onSyncFlowSelected: onSyncFlowSelected
-        )
-        return true
+            guard await shouldShowPrompt() else {
+                return
+            }
+
+            presenter.presentSyncRecoveryPrompt(
+                from: viewController,
+                onSyncFlowSelected: onSyncFlowSelected
+            )
+        }
     }
 
     // MARK: - Private
@@ -130,22 +132,31 @@ final class SyncRecoveryPromptService {
     }
 
     private var vaultIsEmpty: Bool {
-        do {
-            let vault = try getOrCreateVault()
-            let accountsCount = try vault.accountsCount()
-            Logger.sync.debug("[Sync Recovery] Vault accounts count: \(accountsCount)")
-            return accountsCount == 0
-        } catch {
-            Logger.sync.error("[Sync Recovery] Failed to check vault: \(error)")
-            return false
+        get async {
+            do {
+                let vault = try await getOrCreateVault()
+                let accountsCount = try vault.accountsCount()
+                Logger.sync.debug("[Sync Recovery] Vault accounts count: \(accountsCount)")
+                return accountsCount == 0
+            } catch {
+                Logger.sync.error("[Sync Recovery] Failed to check vault: \(error)")
+                return false
+            }
         }
     }
 
-    private func getOrCreateVault() throws -> any AutofillSecureVault {
-        if let secureVault = secureVault {
+    private func getOrCreateVault() async throws -> any AutofillSecureVault {
+        if let secureVault {
             return secureVault
         }
-        return try AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+
+        // Move heavy PBKDF2 crypto operations to background thread to avoid blocking main thread
+        let vault = try await Task.detached(priority: .userInitiated) { () throws -> any AutofillSecureVault in
+            try AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+        }.value
+
+        secureVault = vault
+        return vault
     }
 
     private var isFormerAutofillUser: Bool {

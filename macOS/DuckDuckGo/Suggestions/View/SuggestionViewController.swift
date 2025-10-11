@@ -43,9 +43,11 @@ final class SuggestionViewController: NSViewController {
     @IBOutlet weak var pixelPerfectConstraint: NSLayoutConstraint!
     @IBOutlet weak var backgroundViewTopConstraint: NSLayoutConstraint!
 
-    let suggestionContainerViewModel: SuggestionContainerViewModel
-    let visualStyle: VisualStyleProviding
-    let isBurner: Bool
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
+    private let suggestionContainerViewModel: SuggestionContainerViewModel
+    private let isBurner: Bool
 
     required init?(coder: NSCoder) {
         fatalError("SuggestionViewController: Bad initializer")
@@ -54,16 +56,16 @@ final class SuggestionViewController: NSViewController {
     required init?(coder: NSCoder,
                    suggestionContainerViewModel: SuggestionContainerViewModel,
                    isBurner: Bool,
-                   visualStyle: VisualStyleProviding) {
+                   themeManager: ThemeManaging) {
         self.suggestionContainerViewModel = suggestionContainerViewModel
         self.isBurner = isBurner
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
 
         super.init(coder: coder)
     }
 
-    var suggestionResultCancellable: AnyCancellable?
-    var selectionIndexCancellable: AnyCancellable?
+    private var suggestionResultCancellable: AnyCancellable?
+    private var selectionIndexCancellable: AnyCancellable?
 
     private var eventMonitorCancellables = Set<AnyCancellable>()
     private var appObserver: Any?
@@ -78,11 +80,9 @@ final class SuggestionViewController: NSViewController {
         addTrackingArea()
         subscribeToSuggestionResult()
         subscribeToSelectionIndex()
+        subscribeToThemeChanges()
 
-        backgroundViewTopConstraint.constant = visualStyle.addressBarStyleProvider.topSpaceForSuggestionWindow
-        backgroundView.setCornerRadius(visualStyle.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
-        innerBorderView.setCornerRadius(visualStyle.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
-        backgroundView.backgroundColor = visualStyle.colorsProvider.suggestionsBackgroundColor
+        applyThemeStyle()
     }
 
     override func viewWillAppear() {
@@ -93,7 +93,8 @@ final class SuggestionViewController: NSViewController {
 
         addEventMonitors()
 
-        tableView.rowHeight = visualStyle.addressBarStyleProvider.sizeForSuggestionRow(isHomePage: suggestionContainerViewModel.isHomePage)
+        let barStyleProvider = themeManager.theme.addressBarStyleProvider
+        tableView.rowHeight = barStyleProvider.sizeForSuggestionRow(isHomePage: suggestionContainerViewModel.isHomePage)
     }
 
     override func viewDidDisappear() {
@@ -235,8 +236,9 @@ final class SuggestionViewController: NSViewController {
         }
 
         let rowHeight = tableView.rowHeight
+        let barStyleProvider = themeManager.theme.addressBarStyleProvider
 
-        if visualStyle.addressBarStyleProvider.shouldLeaveBottomPaddingInSuggestions {
+        if barStyleProvider.shouldLeaveBottomPaddingInSuggestions {
             tableViewHeightConstraint.constant = CGFloat(suggestionContainerViewModel.numberOfSuggestions) * rowHeight
                 + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
                 + (tableView.enclosingScrollView?.contentInsets.bottom ?? 0)
@@ -283,6 +285,21 @@ final class SuggestionViewController: NSViewController {
 
 }
 
+extension SuggestionViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        let barStyleProvider = theme.addressBarStyleProvider
+        let colorsProvider = theme.colorsProvider
+
+        backgroundViewTopConstraint.constant = barStyleProvider.topSpaceForSuggestionWindow
+        backgroundView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadius)
+        innerBorderView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadius)
+        backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor
+
+        tableView.reloadData()
+    }
+}
+
 extension SuggestionViewController: NSTableViewDataSource {
 
     func numberOfRows(in tableView: NSTableView) -> Int {
@@ -295,7 +312,7 @@ extension SuggestionViewController: NSTableViewDelegate {
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         let cell = tableView.makeView(withIdentifier: SuggestionTableCellView.identifier, owner: self) as? SuggestionTableCellView ?? SuggestionTableCellView()
-        cell.visualStyle = visualStyle
+        cell.theme = themeManager.theme
 
         guard let suggestionViewModel = suggestionContainerViewModel.suggestionViewModel(at: row) else {
             assertionFailure("SuggestionViewController: Failed to get suggestion")
@@ -314,7 +331,7 @@ extension SuggestionViewController: NSTableViewDelegate {
             return nil
         }
 
-        suggestionTableRowView.visualStyle = visualStyle
+        suggestionTableRowView.theme = themeManager.theme
 
         return suggestionTableRowView
     }

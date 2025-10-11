@@ -30,9 +30,24 @@ public struct CreditCardsInput {
     public var deletedCreditCards: [SecureVaultModels.CreditCard]
 }
 
-public final class CreditCardsProvider: DataProvider {
+public final class CreditCardsProvider: DataProvider, FeatureToggleableProvider {
 
     public private(set) var creditCardsInput: CreditCardsInput = .init(modifiedCreditCards: [], deletedCreditCards: [])
+    private let featureStateLock = NSLock()
+    private var featureStateEnabled = true
+
+    public var isSyncFeatureEnabled: Bool {
+        featureStateLock.lock()
+        let value = featureStateEnabled
+        featureStateLock.unlock()
+        return value
+    }
+
+    public func setSyncFeatureEnabled(_ enabled: Bool) {
+        featureStateLock.lock()
+        featureStateEnabled = enabled
+        featureStateLock.unlock()
+    }
 
     public init(
         secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,

@@ -1625,55 +1625,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Lesezeichen und Passwörter sicher zwischen deinen Geräten synchronisieren."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Securely sync bookmarks and autofill data between your devices."
+            "value" : "Securely sync bookmarks and passwords between your devices."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Sincroniza de forma segura los marcadores y las contraseñas entre tus dispositivos."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Synchronisez en toute sécurité les signets et mots de passe entre vos appareils."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Sincronizza in sicurezza i segnalibri e le password tra i tuoi dispositivi."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Synchroniseer bladwijzers en wachtwoorden veilig tussen je apparaten."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Bezpiecznie synchronizuj zakładki i hasła między swoimi urządzeniami."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Sincroniza os marcadores e palavras-passe entre os teus dispositivos em segurança."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Безопасная синхронизация закладок и паролей на ваших устройствах."
           }
         }
@@ -1685,8 +1685,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Deine Daten sind Ende-zu-Ende-verschlüsselt. DuckDuckGo hat keinen Zugriff auf den Verschlüsselungsschlüssel."
+            "state" : "translated",
+            "value" : "Deine Daten sind Ende-zu-Ende-verschlüsselt. Niemand außer dir kann deine Daten sehen, nicht einmal wir. Die Unterstützung bestimmter Datentypen hängt von der Plattform ab. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
           }
         },
         "en" : {
@@ -1697,44 +1697,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Tus datos están encriptados de extremo a extremo y DuckDuckGo no tiene acceso a la clave de encriptación."
+            "state" : "translated",
+            "value" : "Tus datos están encriptados de extremo a extremo. Nadie más que tú puede ver tus datos, ni siquiera nosotros. La compatibilidad con determinados tipos de datos depende de la plataforma. [Más información](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Vos données sont cryptées de bout en bout et DuckDuckGo n'a pas accès à la clé de chiffrement."
+            "state" : "translated",
+            "value" : "Vos données sont cryptées de bout en bout. Personne d'autre que vous ne peut voir vos données, pas même nous. La prise en charge de certains types de données dépend de la plateforme. [En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "I tuoi dati sono crittografati end-to-end e DuckDuckGo non ha accesso alla chiave di crittografia."
+            "state" : "translated",
+            "value" : "I tuoi dati sono crittografati end-to-end. Nessuno tranne te può vedere i tuoi dati, nemmeno noi. Il supporto per alcuni tipi di dati dipende dalla piattaforma. [Scopri di più](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Je gegevens zijn volledig versleuteld en DuckDuckGo heeft geen toegang tot de versleutelingscode."
+            "state" : "translated",
+            "value" : "Je gegevens zijn end-to-end versleuteld. Niemand anders dan jij kan je gegevens zien, zelfs wij niet. Ondersteuning voor bepaalde gegevenstypen is afhankelijk van je platform. [Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Twoje dane są kompleksowo szyfrowane, a DuckDuckGo nie ma dostępu do klucza szyfrowania."
+            "state" : "translated",
+            "value" : "Twoje dane są szyfrowane kompleksowo. Nikt poza Tobą nie może zobaczyć Twoich danych, nawet my. Wsparcie dla niektórych typów danych zależy od platformy. [Więcej informacji](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Os teus dados são encriptados de ponta a ponta e o DuckDuckGo não tem acesso à chave de encriptação."
+            "state" : "translated",
+            "value" : "Os teus dados são encriptados de ponta a ponta. Ninguém além de ti pode ver os teus dados, nem mesmo nós. A compatibilidade de determinados tipos de dados depende da plataforma. [Sabe mais](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ваши данные защищены сквозным шифрованием. У DuckDuckGo нет доступа к ключу шифрования."
+            "state" : "translated",
+            "value" : "Ваши данные защищены сквозным шифрованием. Никто, кроме вас, их не увидит. Даже мы. Поддержка некоторых типов данных зависит от платформы. [Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
           }
         }
       }
@@ -2165,8 +2165,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Wir richten die Verbindung ein, um Ihre Lesezeichen und gespeicherten Logins mit dem anderen Gerät zu synchronisieren."
+            "state" : "translated",
+            "value" : "Wir richten die Verbindung ein, um deine Lesezeichen und Autofill-Daten mit dem anderen Gerät zu synchronisieren."
           }
         },
         "en" : {
@@ -2177,44 +2177,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Estamos configurando la conexión para sincronizar tus marcadores e inicios de sesión guardados con el otro dispositivo."
+            "state" : "translated",
+            "value" : "Estamos configurando la conexión para sincronizar tus marcadores y datos de autocompletado con el otro dispositivo."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nous configurons la connexion pour synchroniser vos signets et vos identifiants enregistrés avec l'autre appareil."
+            "state" : "translated",
+            "value" : "Nous configurons la connexion pour synchroniser vos favoris et vos données de remplissage automatique avec l'autre appareil."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Stiamo configurando la connessione per sincronizzare i segnalibri e gli accessi salvati con l'altro dispositivo."
+            "state" : "translated",
+            "value" : "Stiamo configurando la connessione per sincronizzare i segnalibri e i dati di compilazione automatica con l'altro dispositivo."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "We zijn de verbinding aan het instellen om je bladwijzers en opgeslagen logins met het andere apparaat te synchroniseren."
+            "state" : "translated",
+            "value" : "We zijn de verbinding aan het instellen om je bladwijzers en automatische invulgegevens met het andere apparaat te synchroniseren."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Konfigurujemy połączenie, aby zsynchronizować zakładki i zapisane dane logowania z drugim urządzeniem."
+            "state" : "translated",
+            "value" : "Konfigurujemy połączenie, aby zsynchronizować zakładki i dane autouzupełniania z innym urządzeniem."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Estamos a configurar a ligação para sincronizar os teus favoritos e os inícios de sessão guardados com o outro dispositivo."
+            "state" : "translated",
+            "value" : "Estamos a configurar a ligação para sincronizar os teus marcadores e dados de preenchimento automático com o outro dispositivo."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Идет подготовка привязки для синхронизации ваших закладок и сохраненных логинов с другим устройством."
+            "state" : "translated",
+            "value" : "Идет подготовка привязки для синхронизации ваших закладок и данных автозаполнения с другим устройством."
           }
         }
       }
@@ -2643,10 +2643,58 @@
       "comment" : "Footer / caption on the Sync card in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Unterstützung bestimmter Datentypen hängt von der Plattform ab. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Support for certain data types depends on the platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La compatibilidad con determinados tipos de datos depende de la plataforma. [Más información](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La prise en charge de certains types de données dépend de la plateforme. [En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il supporto per alcuni tipi di dati dipende dalla piattaforma. [Scopri di più](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ondersteuning voor bepaalde gegevenstypen is afhankelijk van je platform. [Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wsparcie dla niektórych typów danych zależy od platformy. [Więcej informacji](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A compatibilidade de determinados tipos de dados depende da plataforma. [Sabe mais](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поддержка некоторых типов данных зависит от платформы. [Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
           }
         }
       }
@@ -4097,8 +4145,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Dadurch wird ein verschlüsseltes Backup deiner Lesezeichen und Passwörter auf dem sicheren Server von DuckDuckGo erstellt, der mit deinen anderen Geräten synchronisiert werden kann."
+            "state" : "translated",
+            "value" : "Dadurch wird ein verschlüsseltes Backup deiner Lesezeichen und Autofill-Daten auf dem sicheren Server von DuckDuckGo erstellt, das mit deinen anderen Geräten synchronisiert werden kann."
           }
         },
         "en" : {
@@ -4109,44 +4157,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Esto crea una copia de seguridad encriptada de tus marcadores y contraseñas en el servidor seguro de DuckDuckGo que se puede sincronizar con tus otros dispositivos."
+            "state" : "translated",
+            "value" : "Esto crea una copia de seguridad encriptada de tus marcadores y datos de autocompletado en el servidor seguro de DuckDuckGo que se puede sincronizar con tus otros dispositivos."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Cela crée une sauvegarde cryptée de vos signets et mots de passe sur le serveur sécurisé de DuckDuckGo, qui peut être synchronisée avec vos autres appareils."
+            "state" : "translated",
+            "value" : "Cela crée une sauvegarde cryptée de vos signets et données de saisie automatique sur le serveur sécurisé de DuckDuckGo, qui peut être synchronisée avec vos autres appareils."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "La funzione crea un backup criptato dei tuoi segnalibri e delle tue password sul server sicuro di DuckDuckGo, in modo che possa essere sincronizzato con gli altri dispositivi."
+            "state" : "translated",
+            "value" : "La funzione crea un backup criptato dei tuoi segnalibri e dei tuoi dati di autocompilazione sul server sicuro di DuckDuckGo, in modo che possa essere sincronizzato con gli altri dispositivi."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Hiermee maak je een versleutelde back-up van je bladwijzers en wachtwoorden op de beveiligde server van DuckDuckGo. Deze back-up kan met je andere apparaten worden gesynchroniseerd."
+            "state" : "translated",
+            "value" : "Hiermee maak je een versleutelde back-up van je bladwijzers en automatisch ingevulde gegevens op de beveiligde server van DuckDuckGo. Deze back-up kan met je andere apparaten worden gesynchroniseerd."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Tworzy na bezpiecznym serwerze DuckDuckGo zaszyfrowaną kopię zapasową zakładek i haseł, którą można zsynchronizować z innymi urządzeniami."
+            "state" : "translated",
+            "value" : "Tworzy na bezpiecznym serwerze DuckDuckGo zaszyfrowaną kopię zapasową zakładek i danych autouzupełniania, którą można zsynchronizować z innymi urządzeniami."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Cria uma cópia de segurança encriptada dos teus marcadores e palavras-passe no servidor seguro do DuckDuckGo, que pode ser sincronizada com os teus restantes dispositivos."
+            "state" : "translated",
+            "value" : "Cria uma cópia de segurança encriptada dos teus marcadores e dados de preenchimento automático no servidor seguro do DuckDuckGo, que pode ser sincronizada com os teus restantes dispositivos."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo создаст зашифрованную резервную копию ваших закладок и паролей на защищенном сервере. Копию можно синхронизировать с другими устройствами."
+            "state" : "translated",
+            "value" : "DuckDuckGo создаст зашифрованную резервную копию ваших закладок и данных автозаполнения на надежном сервере. Копию можно синхронизировать с другими устройствами."
           }
         }
       }
@@ -4935,10 +4983,58 @@
       "comment" : "Button title for sync credit cards limits exceeded warning to go to manage payment methods",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kreditkarten verwalten …"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Manage credit cards…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Administrar tarjetas de crédito…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gérez les cartes bancaires…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestisci carte di credito…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creditcards beheren…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zarządzaj kartami kredytowymi…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerir cartões de crédito…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настроить платежные карты…"
           }
         }
       }
@@ -5607,10 +5703,58 @@
       "comment" : "Button title for sync identities limits exceeded warning to go to manage identities",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identitäten verwalten …"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Manage identities…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Administrar identidades…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gérez les identités…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestisci identità…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identiteiten beheren…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zarządzaj tożsamościami…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerir identidades…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настроить учетные данные…"
           }
         }
       }
@@ -5801,8 +5945,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Some passwords (n) can't sync because some of their fields exceed the character limit."
+            "state" : "translated",
+            "value" : "Einige Passwörter (%d) können nicht synchronisiert werden, weil einige ihrer Felder das Zeichenlimit überschreiten."
           }
         },
         "en" : {
@@ -5813,44 +5957,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Some passwords (n) can't sync because some of their fields exceed the character limit."
+            "state" : "translated",
+            "value" : "Algunas contraseñas (%d) no se pueden sincronizar porque algunos de sus campos superan el límite de caracteres."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Some passwords (n) can't sync because some of their fields exceed the character limit."
+            "state" : "translated",
+            "value" : "Certains mots de passe (%d) ne peuvent pas être synchronisés car certains de leurs champs dépassent la limite de caractères."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Some passwords (n) can't sync because some of their fields exceed the character limit."
+            "state" : "translated",
+            "value" : "Alcune password (%d) non possono essere sincronizzate perché alcuni dei loro campi superano il limite di caratteri."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Some passwords (n) can't sync because some of their fields exceed the character limit."
+            "state" : "translated",
+            "value" : "Sommige wachtwoorden (%d) kunnen niet worden gesynchroniseerd omdat sommige velden de tekenlimiet overschrijden."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Some passwords (n) can't sync because some of their fields exceed the character limit."
+            "state" : "translated",
+            "value" : "Nie można zsynchronizować części haseł (%d), ponieważ długość niektórych pól przekracza limit znaków."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Some passwords (n) can't sync because some of their fields exceed the character limit."
+            "state" : "translated",
+            "value" : "Não é possível sincronizar algumas palavras-passe (%d) porque alguns dos campos excedem o limite de carateres."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Some passwords (n) can't sync because some of their fields exceed the character limit."
+            "state" : "translated",
+            "value" : "Синхронизировать некоторые пароли (%d) невозможно: слишком длинные записи в отдельных полях."
           }
         }
       }
@@ -5921,8 +6065,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Some logins are not syncing due to excessively long content in certain fields."
+            "state" : "translated",
+            "value" : "Einige Passwörter werden nicht synchronisiert, weil der Inhalt bestimmter Felder zu lang ist."
           }
         },
         "en" : {
@@ -5933,44 +6077,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Some logins are not syncing due to excessively long content in certain fields."
+            "state" : "translated",
+            "value" : "Algunas contraseñas no se sincronizan debido a un contenido excesivamente largo en determinados campos."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Some logins are not syncing due to excessively long content in certain fields."
+            "state" : "translated",
+            "value" : "Certains mots de passe ne se synchronisent pas à cause de la longueur excessive du contenu de certains champs."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Some logins are not syncing due to excessively long content in certain fields."
+            "state" : "translated",
+            "value" : "Alcune password non vengono sincronizzate perché il contenuto di alcuni campi è eccessivamente lungo."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Some logins are not syncing due to excessively long content in certain fields."
+            "state" : "translated",
+            "value" : "Sommige wachtwoorden worden niet gesynchroniseerd vanwege te lange inhoud in bepaalde velden."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Some logins are not syncing due to excessively long content in certain fields."
+            "state" : "translated",
+            "value" : "Nie można zsynchronizować części haseł ze względu na zbyt długą treść w określonych polach."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Some logins are not syncing due to excessively long content in certain fields."
+            "state" : "translated",
+            "value" : "Algumas palavras-passe não estão a sincronizar devido ao conteúdo excessivamente longo em determinados campos."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Some logins are not syncing due to excessively long content in certain fields."
+            "state" : "translated",
+            "value" : "Некоторые пароли не синхронизируются: слишком длинные записи"
           }
         }
       }
@@ -5979,10 +6123,58 @@
       "comment" : "Alert message for multiple invalid credit cards being filtered out of synced data",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einige Kreditkarten (%d) können nicht synchronisiert werden, weil einige ihrer Felder das Zeichenlimit überschreiten."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Some credit cards (%d) can't sync because some of their fields exceed the character limit."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algunas tarjetas de crédito (%d) no se pueden sincronizar porque algunos de sus campos superan el límite de caracteres."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certaines cartes bancaires (%d) ne peuvent pas être synchronisées car certains de leurs champs dépassent la limite de caractères."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alcune carte di credito (%d) non possono essere sincronizzate perché alcuni dei loro campi superano il limite di caratteri."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sommige creditcards (%d) kunnen niet worden gesynchroniseerd omdat sommige velden de tekenlimiet overschrijden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie można zsynchronizować części kart kredytowych (%d), ponieważ długość niektórych pól przekracza limit znaków."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não é possível sincronizar alguns cartões de crédito (%d) porque alguns dos campos excedem o limite de carateres."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизировать некоторые карты (%d) невозможно: слишком длинные записи в отдельных полях."
           }
         }
       }
@@ -5991,10 +6183,58 @@
       "comment" : "Alert message for 1 invalid credit card being filtered out of synced data",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Kreditkarte %@ kann nicht synchronisiert werden, weil eines ihrer Felder das Zeichenlimit überschreitet."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Your credit card %@ can't sync because one of its fields exceeds the character limit."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu tarjeta de crédito %@ no se puede sincronizar porque uno de sus campos supera el límite de caracteres."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre carte bancaire %@ ne peut pas être synchronisée car l'un de ses champs dépasse la limite de caractères."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tua carta di credito %@ non può essere sincronizzata perché uno dei suoi campi supera il limite di caratteri."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je creditcard %@ kan niet worden gesynchroniseerd omdat een van de velden de tekenlimiet overschrijdt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie można zsynchronizować karty kredytowej %@, ponieważ długość jednego z pól przekracza limit znaków."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não é possível sincronizar o teu cartão de crédito %@ porque um dos campos excede o limite de carateres."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизировать карту %@ невозможно: слишком длинная запись в одном из полей."
           }
         }
       }
@@ -6003,10 +6243,58 @@
       "comment" : "Alert title for invalid credit cards being filtered out of synced data",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einige Kreditkarten werden nicht synchronisiert, weil der Inhalt bestimmter Felder zu lang ist."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Some credit cards are not syncing due to excessively long content in certain fields."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algunas tarjetas de crédito no se sincronizan debido a un contenido excesivamente largo en determinados campos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certaines cartes bancaires ne se synchronisent pas à cause de la longueur excessive du contenu de certains champs."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alcune carte di credito non vengono sincronizzate a causa di contenuti eccessivamente lunghi in alcuni campi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sommige creditcards worden niet gesynchroniseerd vanwege te lange inhoud in bepaalde velden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie można zsynchronizować części kart kredytowych ze względu na zbyt długą treść w określonych polach."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alguns cartões de crédito não estão a sincronizar devido ao conteúdo excessivamente longo em determinados campos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Некоторые карты не синхронизируются: слишком длинные записи"
           }
         }
       }
@@ -6015,10 +6303,58 @@
       "comment" : "Alert message for multiple invalid identities being filtered out of synced data",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einige Identitäten (%d) können nicht synchronisiert werden, weil einige ihrer Felder das Zeichenlimit überschreiten."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Some identities (%d) can't sync because some of their fields exceed the character limit."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algunas identidades (%d) no pueden sincronizarse porque algunos de sus campos superan el límite de caracteres."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certaines identités (%d) ne peuvent pas être synchronisées car certains de leurs champs dépassent la limite de caractères."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alcune identità (%d) non possono essere sincronizzate perché alcuni dei loro campi superano il limite di caratteri."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sommige identiteiten (%d) kunnen niet worden gesynchroniseerd omdat sommige velden de tekenlimiet overschrijden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie można zsynchronizować części tożsamości (%d), ponieważ długość niektórych pól przekracza limit znaków."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não é possível sincronizar algumas identidades (%d) porque alguns dos campos excedem o limite de carateres."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизировать некоторые данные (%d) невозможно: слишком длинные записи в отдельных полях."
           }
         }
       }
@@ -6027,10 +6363,58 @@
       "comment" : "Alert message for 1 invalid credit card being filtered out of synced data",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Identität für %@ kann nicht synchronisiert werden, weil eines ihrer Felder das Zeichenlimit überschreitet."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Your identity for %@ can't sync because one of its fields exceeds the character limit."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La identidad para %@ no se puede sincronizar porque uno de sus campos supera el límite de caracteres."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre identité pour %@ ne peut pas être synchronisée car l'un de ses champs dépasse la limite de caractères."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tua identità per %@ non può essere sincronizzata perché uno dei suoi campi supera il limite di caratteri."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je identiteit voor %@ kan niet worden gesynchroniseerd omdat een van de velden de tekenlimiet overschrijdt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie można zsynchronizować tożsamości %@, ponieważ długość jednego z pól przekracza limit znaków."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não é possível sincronizar a tua identidade de %@ porque um dos campos excede o limite de carateres."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизировать учетные данные для «%@» невозможно: слишком длинная запись в одном из полей."
           }
         }
       }
@@ -6039,10 +6423,58 @@
       "comment" : "Alert title for invalid identities being filtered out of synced data",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einige Identitäten werden nicht synchronisiert, weil der Inhalt bestimmter Felder zu lang ist."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Some identities are not syncing due to excessively long content in certain fields."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algunas identidades no se sincronizan debido a un contenido excesivamente largo en determinados campos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certaines identités ne se synchronisent pas à cause de la longueur excessive du contenu de certains champs."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alcune identità non vengono sincronizzate perché il contenuto di alcuni campi è eccessivamente lungo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sommige identiteiten worden niet gesynchroniseerd vanwege te lange inhoud in bepaalde velden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie można zsynchronizować części tożsamości ze względu na zbyt długą treść w określonych polach."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não é possível sincronizar algumas identidades porque têm conteúdo excessivamente longo em determinados campos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Некоторые учетные данные не синхронизируются: слишком длинные записи"
           }
         }
       }

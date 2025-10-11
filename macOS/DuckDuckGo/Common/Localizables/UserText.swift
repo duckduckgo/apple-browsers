@@ -1762,9 +1762,11 @@ struct UserText {
 
     // Mark: Sync Promo
     static let syncPromoBookmarksTitle = NSLocalizedString("sync.promo.bookmarks.title", value: "Sync & Back Up Your Bookmarks", comment: "Title for the Sync Promotion banner")
-    static let syncPromoPasswordsTitle = NSLocalizedString("sync.promo.passwords.title", value: "Sync & Back Up Your Passwords  ", comment: "Title for the Sync Promotion banner")
-    static let syncPromoBookmarksMessage = NSLocalizedString("sync.promo.bookmarks.message", value: "No account needed. End-to-end encryption means nobody but you can see your bookmarks, not even us.", comment: "Message for the Sync Promotion banner when user has bookmarks that can be synced")
-    static let syncPromoPasswordsMessage = NSLocalizedString("sync.promo.passwords.message", value: "No account needed. End-to-end encryption means nobody but you can see your passwords, not even us.", comment: "Message for the Sync Promotion banner when user has passwords that can be synced")
+    static let syncPromoAutofillTitle = NSLocalizedString("sync.promo.autofill.title", value: "Sync & Back Up Your Autofill Data", comment: "Title for the Sync Promotion banner")
+    static let syncPromoPasswordsTitle = NSLocalizedString("sync.promo.passwords.title", value: "Sync & Back Up Your Passwords", comment: "Title for the Sync Promotion banner")
+    static let syncPromoCreditCardsTitle = NSLocalizedString("sync.promo.creditcards.title", value: "Sync & Back Up Your Credit Cards", comment: "Title for the Sync Promotion banner")
+    static let syncPromoIdentitiesTitle = NSLocalizedString("sync.promo.identities.title", value: "Sync & Back Up Your Identities", comment: "Title for the Sync Promotion banner")
+    static let syncPromoMessage = NSLocalizedString("sync.promo.message", value: "No account needed. End-to-end encrypted.", comment: "Message for the Sync Promotion banner when user has bookmarks that can be synced")
     static let syncPromoConfirmAction = NSLocalizedString("sync.promo.confirm.action", value: "Set Up Sync", comment: "Title for a button in the Sync Promotion banner to set up Sync")
     static let syncPromoDismissAction = NSLocalizedString("sync.promo.dismiss.action", value: "No Thanks", comment: "Title for a button in the Sync Promotion banner to dismiss Sync promotion banner")
     static let syncPromoSidePanelTitle = NSLocalizedString("sync.promo.passwords.side.panel.title", value: "Setup", comment: "Title for the Sync Promotion in passwords side panel")

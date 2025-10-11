@@ -30,9 +30,24 @@ public struct IdentitiesInput {
     public var deletedIdentities: [SecureVaultModels.Identity]
 }
 
-public final class IdentitiesProvider: DataProvider {
+public final class IdentitiesProvider: DataProvider, FeatureToggleableProvider {
 
     public private(set) var identitiesInput: IdentitiesInput = .init(modifiedIdentities: [], deletedIdentities: [])
+    private let featureStateLock = NSLock()
+    private var featureStateEnabled = true
+
+    public var isSyncFeatureEnabled: Bool {
+        featureStateLock.lock()
+        let value = featureStateEnabled
+        featureStateLock.unlock()
+        return value
+    }
+
+    public func setSyncFeatureEnabled(_ enabled: Bool) {
+        featureStateLock.lock()
+        featureStateEnabled = enabled
+        featureStateLock.unlock()
+    }
 
     public init(
         secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,

@@ -50,7 +50,7 @@
 "credentials.invalid.objects.present.title" = "Some passwords are not syncing due to excessively long content in certain fields.";
 
 /* Do not translate - stringsdict entry */
-"creditCards.invalid.objects.present.description" = "creditCards.invalid.objects.present.description";
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
 
 /* Alert title for invalid credit cards being filtered out of synced data */
 "creditCards.invalid.objects.present.title" = "Some credit cards are not syncing due to excessively long content in certain fields.";
@@ -122,7 +122,7 @@
 "prefrences.sync.credentials-limit-exceeded-action" = "Manage passwords…";
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
-"prefrences.sync.creditCards-limit-exceeded-action" = "Manage Credit Cards…";
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Manage Credit Cards…";
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Your bookmarks and autofill data are being prepared to sync. This should only take a moment.";
@@ -266,7 +266,7 @@
 "sync.with.another.device.footer" = "Your data is end-to-end encrypted, and DuckDuckGo does not have access to the encryption key.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Securely sync bookmarks and autofill data between your devices.";
+"sync.with.another.device.message" = "Securely sync bookmarks and passwords between your devices.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Begin Syncing";

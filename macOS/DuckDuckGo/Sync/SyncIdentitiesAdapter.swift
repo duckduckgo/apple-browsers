@@ -31,6 +31,7 @@ final class SyncIdentitiesAdapter {
     let databaseCleaner: IdentitiesDatabaseCleaner
     let syncErrorHandler: SyncErrorHandling
     let syncDidCompletePublisher: AnyPublisher<Void, Never>
+    private var featureAvailabilityCancellable: AnyCancellable?
 
     init(secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
          syncErrorHandler: SyncErrorHandling) {
@@ -55,7 +56,8 @@ final class SyncIdentitiesAdapter {
     func setUpProviderIfNeeded(
         secureVaultFactory: AutofillVaultFactory,
         metadataStore: SyncMetadataStore,
-        metricsEventsHandler: EventMapping<MetricsEvent>? = nil
+        metricsEventsHandler: EventMapping<MetricsEvent>? = nil,
+        privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager
     ) {
         guard provider == nil else {
             return
@@ -79,6 +81,14 @@ final class SyncIdentitiesAdapter {
                 }
 
             self.provider = provider
+
+            featureAvailabilityCancellable = privacyConfigurationManager.updatesPublisher
+                .prepend(())
+                .receive(on: DispatchQueue.main)
+                .sink { [weak provider] in
+                    let isEnabled = privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncIdentities)
+                    provider?.setSyncFeatureEnabled(isEnabled)
+                }
 
         } catch let error as NSError {
             let processedErrors = CoreDataErrorsParser.parse(error: error)

@@ -38,7 +38,7 @@
 			<string>Your passwords for %2$@ and %1$d other sites can&apos;t sync because some of their fields exceed the character limit.</string>
 		</dict>
 	</dict>
-	<key>creditCards.invalid.objects.present.description</key>
+	<key>creditcards.invalid.objects.present.description</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%#@cards@</string>

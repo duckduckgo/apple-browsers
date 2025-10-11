@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import DDGSync
+import Foundation
 import Persistence
 import SecureStorage
 import SyncDataProviders
@@ -34,6 +35,7 @@ public final class SyncCreditCardsAdapter {
     public static let syncCreditCardsPausedStateChanged =  SyncBookmarksAdapter.syncBookmarksPausedStateChanged
     public static let creditCardsSyncLimitReached = Notification.Name("com.duckduckgo.app.SyncCreditCardsLimitReached")
     let syncErrorHandler: SyncErrorHandling
+    private var featureAvailabilityCancellable: AnyCancellable?
 
     public init(secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
                 secureVaultErrorReporter: SecureVaultReporting,
@@ -60,7 +62,8 @@ public final class SyncCreditCardsAdapter {
     public func setUpProviderIfNeeded(
         secureVaultFactory: AutofillVaultFactory,
         metadataStore: SyncMetadataStore,
-        metricsEventsHandler: EventMapping<MetricsEvent>? = nil
+        metricsEventsHandler: EventMapping<MetricsEvent>? = nil,
+        privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager
     ) {
         guard provider == nil else {
             return
@@ -84,6 +87,14 @@ public final class SyncCreditCardsAdapter {
                 }
 
             self.provider = provider
+
+            featureAvailabilityCancellable = privacyConfigurationManager.updatesPublisher
+                .prepend(())
+                .receive(on: DispatchQueue.main)
+                .sink { [weak provider] in
+                    let isEnabled = privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards)
+                    provider?.setSyncFeatureEnabled(isEnabled)
+                }
 
         } catch let error as NSError {
             let processedErrors = CoreDataErrorsParser.parse(error: error)

@@ -35,7 +35,7 @@ enum UserText {
     // Sync Set Up View
     // Begin Sync card
     static let beginSyncTitle = NSLocalizedString("preferences.begin-sync.card-title", bundle: Bundle.module, value: "Begin Syncing", comment: "Begin Syncing card title in sync settings")
-    static let beginSyncDescription = NSLocalizedString("preferences.begin-sync.card-description", bundle: Bundle.module, value: "Securely sync bookmarks and autofill data between your devices.", comment: "Begin Syncing card description in sync settings")
+    static let beginSyncDescription = NSLocalizedString("preferences.begin-sync.card-description", bundle: Bundle.module, value: "Securely sync bookmarks and passwords between your devices.", comment: "Begin Syncing card description in sync settings")
     static let beginSyncButton = NSLocalizedString("preferences.begin-sync.card-button", bundle: Bundle.module, value: "Sync With Another Device", comment: "Button text on the Begin Syncing card in sync settings")
     static let beginSyncFooter = NSLocalizedString("preferences.begin-sync.card-footer", bundle: Bundle.module, value: "Your data is end-to-end encrypted. Nobody but you can see your data, not even us. Support for certain data types depends on the platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)", comment: "Footer / caption on the Begin Syncing card in sync settings")
     static let syncFooter = NSLocalizedString("preferences.sync.card-footer", bundle: Bundle.module, value: "Support for certain data types depends on the platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)", comment: "Footer / caption on the Sync card in sync settings")

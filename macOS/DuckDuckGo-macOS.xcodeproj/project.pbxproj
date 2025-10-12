@@ -3724,6 +3724,8 @@
 		ED4B8BDA2E8C3FB100B9D9E9 /* MacWatchdogDiagnosticProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED4B8BD82E8C3FB100B9D9E9 /* MacWatchdogDiagnosticProviderTests.swift */; };
 		ED7478182E845D35008628A1 /* HangPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED7478172E845D35008628A1 /* HangPixel.swift */; };
 		ED7478192E845D35008628A1 /* HangPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED7478172E845D35008628A1 /* HangPixel.swift */; };
+		EDCFFF822E9A61AB00ABD9F9 /* WatchdogSleepMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDCFFF812E9A61AB00ABD9F9 /* WatchdogSleepMonitor.swift */; };
+		EDCFFF832E9A61AB00ABD9F9 /* WatchdogSleepMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDCFFF812E9A61AB00ABD9F9 /* WatchdogSleepMonitor.swift */; };
 		EDDDAC2E2E8AC42B0033A783 /* WatchdogEventMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDDDAC2D2E8AC42B0033A783 /* WatchdogEventMapper.swift */; };
 		EDDDAC2F2E8AC42B0033A783 /* WatchdogEventMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDDDAC2D2E8AC42B0033A783 /* WatchdogEventMapper.swift */; };
 		EDF339172E8BFD110062E7C3 /* WatchdogEventMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDF339142E8BFD110062E7C3 /* WatchdogEventMapperTests.swift */; };
@@ -5929,6 +5931,7 @@
 		ED190E102E8BD33F00CA3816 /* MacWatchdogDiagnosticProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacWatchdogDiagnosticProvider.swift; sourceTree = "<group>"; };
 		ED4B8BD82E8C3FB100B9D9E9 /* MacWatchdogDiagnosticProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacWatchdogDiagnosticProviderTests.swift; sourceTree = "<group>"; };
 		ED7478172E845D35008628A1 /* HangPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HangPixel.swift; sourceTree = "<group>"; };
+		EDCFFF812E9A61AB00ABD9F9 /* WatchdogSleepMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchdogSleepMonitor.swift; sourceTree = "<group>"; };
 		EDDDAC2D2E8AC42B0033A783 /* WatchdogEventMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchdogEventMapper.swift; sourceTree = "<group>"; };
 		EDF339132E8BFD110062E7C3 /* MockWatchdogDiagnosticProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWatchdogDiagnosticProvider.swift; sourceTree = "<group>"; };
 		EDF339142E8BFD110062E7C3 /* WatchdogEventMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchdogEventMapperTests.swift; sourceTree = "<group>"; };
@@ -11330,6 +11333,7 @@
 		ED7478162E845958008628A1 /* AppHealth */ = {
 			isa = PBXGroup;
 			children = (
+				EDCFFF812E9A61AB00ABD9F9 /* WatchdogSleepMonitor.swift */,
 				ED7478172E845D35008628A1 /* HangPixel.swift */,
 				EDDDAC2D2E8AC42B0033A783 /* WatchdogEventMapper.swift */,
 				ED190E102E8BD33F00CA3816 /* MacWatchdogDiagnosticProvider.swift */,
@@ -14049,6 +14053,7 @@
 				4B37EE732B4CFF0800A89A61 /* HomePageRemoteMessagingStorage.swift in Sources */,
 				C1351DD22C8B31CE0086B058 /* NotificationName+FreemiumDBP.swift in Sources */,
 				3706FC99293F65D500E42796 /* PreferencesSection.swift in Sources */,
+				EDCFFF832E9A61AB00ABD9F9 /* WatchdogSleepMonitor.swift in Sources */,
 				B6C8CAA82AD010DD0060E1CD /* YandexDataImporter.swift in Sources */,
 				B655124929A79465009BFE1C /* NavigationActionExtension.swift in Sources */,
 				3706FC9A293F65D500E42796 /* AutoconsentManagement.swift in Sources */,
@@ -15716,6 +15721,7 @@
 				4B9DB0292A983B24000927DB /* WaitlistStorage.swift in Sources */,
 				AA2CB1352587C29500AA6FBE /* TabBarFooter.swift in Sources */,
 				EEC111E6294D06290086524F /* JSAlertViewModel.swift in Sources */,
+				EDCFFF822E9A61AB00ABD9F9 /* WatchdogSleepMonitor.swift in Sources */,
 				4BE5336C286912D40019DBFD /* BookmarksBarCollectionViewItem.swift in Sources */,
 				BB9BA2292D10C0A5009229F3 /* TabBarActiveRemoteMessage.swift in Sources */,
 				B6C0B23926E742610031CB7F /* FileDownloadError.swift in Sources */,

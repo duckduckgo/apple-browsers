@@ -85,6 +85,8 @@ public final actor Watchdog {
         isRunning = state
     }
 
+    public private(set) var isPaused: Bool = false
+
     /// - Parameters:
     ///   - minimumHangDuration: The minimum duration of hang to be detected.
     ///   - maximumHangDuration: The maximum duration of hang to be detected. After this point, the hang will stop being measured
@@ -118,11 +120,18 @@ public final actor Watchdog {
         monitoringTask = nil
         heartbeatUpdateTask = nil
     }
+    
+    // MARK: - State management
 
+    /// Starts the watchdog running.
+    ///
     public func start() async {
         // Cancel any existing task
         monitoringTask?.cancel()
         heartbeatUpdateTask?.cancel()
+        
+        // Ensure we start in an unpaused state
+        isPaused = false
 
         Self.logger.info("Watchdog started monitoring main thread with timeout: \(self.maximumHangDuration)s")
 
@@ -133,6 +142,8 @@ public final actor Watchdog {
         await setIsRunning(true)
     }
 
+    /// Stops the watchdog entirely.
+    ///
     public func stop() async {
         monitoringTask?.cancel()
         monitoringTask = nil
@@ -144,6 +155,28 @@ public final actor Watchdog {
 
         await setIsRunning(false)
     }
+
+    /// Pauses the watchdog, if running. Can be resumed with `resume`.
+    ///
+    public func pause() async {
+        Self.logger.info("Watchdog paused")
+        isPaused = true
+    }
+
+    /// Resumes the watchdog after being paused. Will only resume if the watchdog was previously running.
+    ///
+    public func resume() async {
+        Self.logger.info("Watchdog resumed")
+
+        // Reset the heartbeat and state to start fresh after resume
+        await monitor.resetHeartbeat()
+        hangState = .responsive
+        hangStartTime = nil
+
+        isPaused = false
+    }
+    
+    // MARK: - Monitoring
 
     private func runMonitoringLoop() async {
         await monitor.resetHeartbeat()
@@ -171,12 +204,19 @@ public final actor Watchdog {
             handleHangDetection(timeSinceLastCheck: timeSinceLastCheck)
         }
     }
+    
     private func clearHeartbeatTask() {
         heartbeatUpdateTask = nil
     }
 
     private func handleHangDetection(timeSinceLastCheck: TimeInterval) {
         let now = Date()
+
+        // Skip hang detection checks if the watchdog is paused
+        guard !isPaused else {
+            Self.logger.debug("Ignoring hang detection while paused. Last heartbeat: \(timeSinceLastCheck)s ago.")
+            return
+        }
 
         switch hangState {
         case .responsive:

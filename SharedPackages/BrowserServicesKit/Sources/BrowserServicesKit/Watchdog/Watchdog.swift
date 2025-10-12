@@ -45,6 +45,7 @@ public final actor Watchdog {
 
     private let minimumHangDuration: TimeInterval
     private let maximumHangDuration: TimeInterval
+    private let reportingGapTolerance: TimeInterval
     private let checkInterval: TimeInterval
 
     private static var logger = { Logger(subsystem: "com.duckduckgo.watchdog", category: "hang-detection") }()
@@ -91,12 +92,13 @@ public final actor Watchdog {
     ///   - minimumHangDuration: The minimum duration of hang to be detected.
     ///   - maximumHangDuration: The maximum duration of hang to be detected. After this point, the hang will stop being measured
     ///                          and will be reported as a timeout.
+    ///   - reportingGapTolerance: Gaps in reporting of larger than this amount will be ignored – typically due to system sleep, etc.
     ///   - checkInterval: The interval at which the main thread is checked for hangs.
     ///   - eventMapper: An event mapper that can map between watchdog events and pixels.
     ///   - crashOnTimeout: Whether the watchdog should kill the app once the maximum hang duration has been reached (used for debugging purposes)
     ///   - killAppFunction: A closure to be executed when the maximum hang duration has been reached (used for testing purposes)
     ///
-    public init(minimumHangDuration: TimeInterval = 1.0, maximumHangDuration: TimeInterval = 5.0, checkInterval: TimeInterval = 0.5, eventMapper: EventMapping<Watchdog.Event>? = nil, crashOnTimeout: Bool = false, killAppFunction: ((TimeInterval) -> Void)? = nil) {
+    public init(minimumHangDuration: TimeInterval = 1.0, maximumHangDuration: TimeInterval = 5.0, reportingGapTolerance: TimeInterval = 20.0, checkInterval: TimeInterval = 0.5, eventMapper: EventMapping<Watchdog.Event>? = nil, crashOnTimeout: Bool = false, killAppFunction: ((TimeInterval) -> Void)? = nil) {
 
         assert(checkInterval > 0, "checkInterval must be greater than 0")
         assert(minimumHangDuration >= 0, "minimumHangDuration must be greater than or equal to 0")
@@ -105,6 +107,7 @@ public final actor Watchdog {
 
         self.minimumHangDuration = minimumHangDuration
         self.maximumHangDuration = maximumHangDuration
+        self.reportingGapTolerance = reportingGapTolerance
         self.checkInterval = checkInterval
         self.eventMapper = eventMapper
         self.crashOnTimeout = crashOnTimeout
@@ -220,6 +223,11 @@ public final actor Watchdog {
 
         switch hangState {
         case .responsive:
+            guard timeSinceLastCheck < reportingGapTolerance else {
+                Self.logger.info("Ignoring watchdog reporting gap of \(timeSinceLastCheck)s.")
+                return
+            }
+
             if timeSinceLastCheck > minimumHangDuration {
                 // Start of hang detected
                 hangState = .hanging

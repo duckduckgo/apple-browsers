@@ -185,12 +185,33 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - WireGuard
 
-    private static let wireGuardAdapterEventMapper: EventMapping<WireGuardAdapterEvent> = .init(mapping: { event, _, _, _ in
-        print("Got event: \(event)")
+    private lazy var wireGuardAdapterEventMapper: EventMapping<WireGuardAdapterEvent> = .init(mapping: { [weak self] event, _, _, _ in
+        guard let self else { return }
+
+        switch event {
+        case .beginTemporaryShutdownState:
+            Logger.networkProtection.log("Adapter entering temporary shutdown")
+        case .endTemporaryShutdownStateAttemptFailure(let error):
+            Logger.networkProtection.error("Adapter failed to exit temporary shutdown: \(error.localizedDescription)")
+        case .endTemporaryShutdownStateAttemptSuccess:
+            Logger.networkProtection.log("Adapter successfully exited temporary shutdown")
+        case .endTemporaryShutdownStateRecoveryFailure(let error):
+            Logger.networkProtection.error("Adapter recovery from temporary shutdown failed: \(error.localizedDescription)")
+        case .endTemporaryShutdownStateRecoverySuccess:
+            Logger.networkProtection.log("Adapter recovery from temporary shutdown succeeded")
+        }
+
+        self.handleWireGuardAdapterEventForDebugNotifications(event)
     })
 
+    /// Override this method in subclasses to send debug notifications based on WireGuard adapter events
+    open func handleWireGuardAdapterEventForDebugNotifications(_ event: WireGuardAdapterEvent) {
+        // Default implementation does nothing
+        // Subclasses can override to add platform-specific notification handling
+    }
+
     private lazy var adapter: WireGuardAdapter = {
-        WireGuardAdapter(with: self, wireGuardInterface: self.wireGuardInterface, eventMapper: Self.wireGuardAdapterEventMapper) { logLevel, message in
+        WireGuardAdapter(with: self, wireGuardInterface: self.wireGuardInterface, eventMapper: wireGuardAdapterEventMapper) { logLevel, message in
             if logLevel == .error {
                 Logger.networkProtectionWireGuard.error("🔴 Received error from adapter: \(message, privacy: .public)")
             } else {
@@ -281,7 +302,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - User Notifications
 
-    private let notificationsPresenter: VPNNotificationsPresenting
+    public let notificationsPresenter: VPNNotificationsPresenting
 
     // MARK: - Registration Key
 

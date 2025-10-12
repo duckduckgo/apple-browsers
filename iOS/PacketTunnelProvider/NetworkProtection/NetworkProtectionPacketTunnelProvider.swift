@@ -620,6 +620,29 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         VPNReloadStatusWidgets()
     }
 
+    public override func handleWireGuardAdapterEventForDebugNotifications(_ event: WireGuardAdapterEvent) {
+        guard settings.showDebugVPNEventNotifications else {
+            return
+        }
+
+        let notificationText: String
+
+        switch event {
+        case .beginTemporaryShutdownState:
+            notificationText = "VPN entered temporary shutdown due to connectivity change"
+        case .endTemporaryShutdownStateAttemptFailure(let error):
+            notificationText = "VPN failed to end temporary shutdown: \(error.localizedDescription)"
+        case .endTemporaryShutdownStateAttemptSuccess:
+            notificationText = "VPN restarted after temporary shutdown"
+        case .endTemporaryShutdownStateRecoveryFailure(let error):
+            notificationText = "VPN failed to recover from extended temporary shutdown: \(error.localizedDescription)"
+        case .endTemporaryShutdownStateRecoverySuccess:
+            notificationText = "VPN recovered after extended temporary shutdown"
+        }
+
+        notificationsPresenter.showDebugEventNotification(message: notificationText)
+    }
+
     private static func entitlementCheck(accountManager: AccountManager) async -> Result<Bool, Error> {
         
         guard NetworkProtectionVisibilityForTunnelProvider(accountManager: accountManager).shouldMonitorEntitlement() else {

@@ -64,6 +64,7 @@ final class NetworkProtectionDebugViewController: UITableViewController {
     enum DebugFeatureRows: Int, CaseIterable {
         case toggleAlwaysOn
         case enforceRoutes
+        case showDebugEventNotifications
     }
 
     enum SimulateFailureRows: Int, CaseIterable {
@@ -328,6 +329,14 @@ final class NetworkProtectionDebugViewController: UITableViewController {
             } else {
                 cell.accessoryType = .checkmark
             }
+        case .showDebugEventNotifications:
+            cell.textLabel?.text = "Debug Event Notifications"
+
+            if !AppDependencyProvider.shared.vpnSettings.showDebugVPNEventNotifications {
+                cell.accessoryType = .none
+            } else {
+                cell.accessoryType = .checkmark
+            }
         default:
             break
         }
@@ -340,6 +349,9 @@ final class NetworkProtectionDebugViewController: UITableViewController {
             tableView.reloadRows(at: [indexPath], with: .none)
         case .enforceRoutes:
             AppDependencyProvider.shared.vpnSettings.enforceRoutes.toggle()
+            tableView.reloadRows(at: [indexPath], with: .none)
+        case .showDebugEventNotifications:
+            AppDependencyProvider.shared.vpnSettings.showDebugVPNEventNotifications.toggle()
             tableView.reloadRows(at: [indexPath], with: .none)
         default:
             break

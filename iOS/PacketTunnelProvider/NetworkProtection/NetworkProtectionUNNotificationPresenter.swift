@@ -109,6 +109,11 @@ final class NetworkProtectionUNNotificationPresenter: NSObject, VPNNotifications
     func showSupersededNotification() {
     }
 
+    func showDebugEventNotification(message: String) {
+        let content = notificationContent(body: message)
+        showNotification(.debugEvent, content)
+    }
+
     func showEntitlementNotification() {
         let identifier = NetworkProtectionNotificationIdentifier.entitlement.rawValue
         let content = notificationContent(body: UserText.networkProtectionEntitlementExpiredNotificationBody)

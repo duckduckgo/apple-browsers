@@ -44,4 +44,8 @@ public protocol VPNNotificationsPresenting {
     /// Present a "expired subscription" notification to the user.
     func showEntitlementNotification()
 
+    /// Present a debug event notification to the user.
+    /// This is only available by enabling debug event notifications in the debug menu.
+    func showDebugEventNotification(message: String)
+
 }

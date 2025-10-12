@@ -24,14 +24,20 @@ public protocol WireGuardInterface {
 // MARK: - WireGuard Adapter
 
 public enum WireGuardAdapterEvent {
-    /// Sent when the adapter restart attempt fails for any reason.
-    case adapterRestartFailure(Error)
+    /// Sent when the WireGuard backend goes into temporary shutdown state.
+    case beginTemporaryShutdownState
 
-    /// Sent when the adapter restart had already failed and a subsequent attempt to restart the adapter also failed.
-    case adapterRestartRecoveryFailed(Error)
+    /// Sent when the WireGuard backend successfully ends the temporary shutdown state.
+    case endTemporaryShutdownStateAttemptSuccess
 
-    /// Sent when the adapter restart had already failed and a subsequent attempt to restart the adapter succeeded.
-    case adapterRestartRecoverySucceeded
+    /// Sent when the attempt to exit the temporary shutdown state fails for any reason.
+    case endTemporaryShutdownStateAttemptFailure(Error)
+
+    /// Sent when the adapter restart had already failed and a subsequent attempt to restart the backend succeeded.
+    case endTemporaryShutdownStateRecoverySuccess
+
+    /// Sent when the adapter restart had already failed and a subsequent attempt to restart the backend also failed.
+    case endTemporaryShutdownStateRecoveryFailure(Error)
 }
 
 public enum WireGuardAdapterErrorInvalidStateReason: String {
@@ -713,6 +719,7 @@ public class WireGuardAdapter {
     private func transitionToTemporaryShutdown(handle: Int32, settingsGenerator: PacketTunnelSettingsGenerator) {
         logHandler(.verbose, "Connectivity offline, pausing backend.")
 
+        eventMapper.fire(.beginTemporaryShutdownState)
         state = .temporaryShutdown(settingsGenerator)
         wireGuardInterface.turnOff(handle: handle)
     }
@@ -750,18 +757,20 @@ public class WireGuardAdapter {
 
     private func handleRecoveryError(_ error: Error, context: String) {
         if adapterRestartPreviouslyFailed {
-            eventMapper.fire(.adapterRestartRecoveryFailed(error))
+            eventMapper.fire(.endTemporaryShutdownStateRecoveryFailure(error))
         } else {
             adapterRestartPreviouslyFailed = true
-            eventMapper.fire(.adapterRestartFailure(error))
+            eventMapper.fire(.endTemporaryShutdownStateAttemptFailure(error))
         }
         logHandler(.error, "Failed to \(context): \(error.localizedDescription)")
     }
 
     private func handleRecoverySuccess() {
         if adapterRestartPreviouslyFailed {
-            eventMapper.fire(.adapterRestartRecoverySucceeded)
+            eventMapper.fire(.endTemporaryShutdownStateRecoverySuccess)
             adapterRestartPreviouslyFailed = false
+        } else {
+            eventMapper.fire(.endTemporaryShutdownStateAttemptSuccess)
         }
     }
 }

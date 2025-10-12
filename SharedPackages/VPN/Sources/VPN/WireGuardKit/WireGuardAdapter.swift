@@ -659,24 +659,28 @@ public class WireGuardAdapter {
             }
 
         case .temporaryShutdown(let settingsGenerator):
-            guard path.status.isSatisfiable else { return }
+            guard path.status.isSatisfiable else {
+                return
+            }
 
             self.logHandler(.verbose, "Connectivity online, resuming backend.")
 
             do {
-                try self.setNetworkSettings(settingsGenerator.generateNetworkSettings())
+                let generatedNetworkSettings = settingsGenerator.generateNetworkSettings()
+                try self.setNetworkSettings(generatedNetworkSettings)
+            } catch {
+                self.logHandler(.error, "Failed to set network settings: \(error.localizedDescription)")
+            }
 
+            do {
                 let (wgConfig, resolutionResults) = settingsGenerator.uapiConfiguration()
                 self.logEndpointResolutionResults(resolutionResults)
 
-                self.state = .started(
-                    try self.startWireGuardBackend(wgConfig: wgConfig),
-                    settingsGenerator
-                )
+                let result = try self.startWireGuardBackend(wgConfig: wgConfig)
+                self.state = .started(result, settingsGenerator)
             } catch {
-                self.logHandler(.error, "Failed to restart backend: \(error.localizedDescription)")
+                self.logHandler(.error, "Failed to start WireGuard backend: \(error.localizedDescription)")
             }
-
         case .stopped, .snoozing:
             // no-op
             break

@@ -23,6 +23,17 @@ public protocol WireGuardInterface {
 
 // MARK: - WireGuard Adapter
 
+public enum WireGuardAdapterEvent {
+    /// Sent when the adapter restart attempt fails for any reason.
+    case adapterRestartFailure(Error)
+
+    /// Sent when the adapter restart had already failed and a subsequent attempt to restart the adapter also failed.
+    case adapterRestartRecoveryFailed(Error)
+
+    /// Sent when the adapter restart had already failed and a subsequent attempt to restart the adapter succeeded.
+    case adapterRestartRecoverySucceeded
+}
+
 public enum WireGuardAdapterErrorInvalidStateReason: String {
     case alreadyStarted
     case alreadyStopped
@@ -145,6 +156,8 @@ public class WireGuardAdapter {
     /// Packet tunnel provider.
     private weak var packetTunnelProvider: NEPacketTunnelProvider?
 
+    private let eventMapper: EventMapping<WireGuardAdapterEvent>
+
     /// Log handler closure.
     private let logHandler: LogHandler
 
@@ -227,11 +240,15 @@ public class WireGuardAdapter {
     ///   as a weak reference.
     /// - Parameter logHandler: a log handler closure.
 
-    public init(with packetTunnelProvider: NEPacketTunnelProvider, wireGuardInterface: WireGuardInterface, logHandler: @escaping LogHandler) {
+    public init(with packetTunnelProvider: NEPacketTunnelProvider,
+                wireGuardInterface: WireGuardInterface,
+                eventMapper: EventMapping<WireGuardAdapterEvent>,
+                logHandler: @escaping LogHandler) {
         Logger.networkProtectionMemory.debug("[+] WireGuardAdapter")
 
         self.packetTunnelProvider = packetTunnelProvider
         self.wireGuardInterface = wireGuardInterface
+        self.eventMapper = eventMapper
         self.logHandler = logHandler
 
         setupLogHandler()
@@ -632,6 +649,9 @@ public class WireGuardAdapter {
         }
     }
 
+    /// Used to detect whether the adapter restart previously failed when attempt to restart it again.
+    private var adapterRestartPreviouslyFailed: Bool = false
+
     /// Helper method used by network path monitor.
     /// - Parameter path: new network path
     private func didReceivePathUpdate(path: Network.NWPath) {
@@ -668,8 +688,23 @@ public class WireGuardAdapter {
             do {
                 let generatedNetworkSettings = settingsGenerator.generateNetworkSettings()
                 try self.setNetworkSettings(generatedNetworkSettings)
+
+                if adapterRestartPreviouslyFailed {
+                    self.eventMapper.fire(.adapterRestartRecoverySucceeded)
+                    self.adapterRestartPreviouslyFailed = false
+                }
             } catch {
+                if adapterRestartPreviouslyFailed {
+                    // If the WireGuard backend restart attempt previously failed, send an event to tell the packet
+                    // tunnel provider that it failed again.
+                    self.eventMapper.fire(.adapterRestartRecoveryFailed(error))
+                } else {
+                    self.adapterRestartPreviouslyFailed = true
+                    self.eventMapper.fire(.adapterRestartFailure(error))
+                }
+
                 self.logHandler(.error, "Failed to set network settings: \(error.localizedDescription)")
+                return
             }
 
             do {
@@ -679,7 +714,17 @@ public class WireGuardAdapter {
                 let result = try self.startWireGuardBackend(wgConfig: wgConfig)
                 self.state = .started(result, settingsGenerator)
             } catch {
+                if adapterRestartPreviouslyFailed {
+                    // If the WireGuard backend restart attempt previously failed, send an event to tell the packet
+                    // tunnel provider that it failed again.
+                    self.eventMapper.fire(.adapterRestartRecoveryFailed(error))
+                } else {
+                    self.adapterRestartPreviouslyFailed = true
+                    self.eventMapper.fire(.adapterRestartFailure(error))
+                }
+
                 self.logHandler(.error, "Failed to start WireGuard backend: \(error.localizedDescription)")
+                return
             }
         case .stopped, .snoozing:
             // no-op

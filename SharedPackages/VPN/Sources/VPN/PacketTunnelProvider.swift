@@ -185,8 +185,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - WireGuard
 
+    private static let wireGuardAdapterEventMapper: EventMapping<WireGuardAdapterEvent> = .init(mapping: { event, _, _, _ in
+        print("Got event: \(event)")
+    })
+
     private lazy var adapter: WireGuardAdapter = {
-        WireGuardAdapter(with: self, wireGuardInterface: self.wireGuardInterface) { logLevel, message in
+        WireGuardAdapter(with: self, wireGuardInterface: self.wireGuardInterface, eventMapper: Self.wireGuardAdapterEventMapper) { logLevel, message in
             if logLevel == .error {
                 Logger.networkProtectionWireGuard.error("🔴 Received error from adapter: \(message, privacy: .public)")
             } else {

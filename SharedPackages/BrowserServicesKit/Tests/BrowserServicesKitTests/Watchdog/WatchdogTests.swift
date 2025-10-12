@@ -107,19 +107,19 @@ final class WatchdogTests: XCTestCase {
     func testPauseAndResume() async {
         await watchdog.start()
         XCTAssertTrue(watchdog.isRunning, "Watchdog should be running")
-        
+
         var isPaused = await watchdog.isPaused
         XCTAssertFalse(isPaused, "Should not be paused initially")
 
         await watchdog.pause()
         XCTAssertTrue(watchdog.isRunning, "Watchdog should still be running after pause")
-        
+
         isPaused = await watchdog.isPaused
         XCTAssertTrue(isPaused, "Should be paused after pause()")
 
         await watchdog.resume()
         XCTAssertTrue(watchdog.isRunning, "Watchdog should still be running after resume")
-        
+
         isPaused = await watchdog.isPaused
         XCTAssertFalse(isPaused, "Should not be paused after resume()")
 
@@ -129,16 +129,16 @@ final class WatchdogTests: XCTestCase {
     func testStartResetsPauseState() async {
         await watchdog.start()
         await watchdog.pause()
-        
+
         var isPaused = await watchdog.isPaused
         XCTAssertTrue(isPaused, "Should be paused")
 
         // Starting again should reset pause state
         await watchdog.stop()
         await watchdog.start()
-        
+
         XCTAssertTrue(watchdog.isRunning, "Should be running after restart")
-        
+
         isPaused = await watchdog.isPaused
         XCTAssertFalse(isPaused, "Pause state should be reset after start()")
 
@@ -148,21 +148,21 @@ final class WatchdogTests: XCTestCase {
     func testPausePreventsHangDetection() async throws {
         let mockKill = MockKillAppFunction()
         let pauseWatchdog = Watchdog(minimumHangDuration: 0.1, maximumHangDuration: 0.3, checkInterval: 0.1, crashOnTimeout: true, killAppFunction: mockKill.killApp)
-        
+
         var receivedStates: [(hangState: Watchdog.HangState, duration: TimeInterval?)] = []
         let cancellable = await pauseWatchdog.hangStatePublisher.sink { receivedStates.append($0) }
-        
+
         await pauseWatchdog.start()
         await pauseWatchdog.pause()
-        
+
         let isPaused = await pauseWatchdog.isPaused
         XCTAssertTrue(isPaused, "Should be paused")
-        
+
         // Block main thread while paused - should not trigger hang detection
         try await blockMainThread(for: 0.5, andSleepFor: 0.6)
-        
+
         XCTAssertTrue(receivedStates.isEmpty, "Should not detect any hangs while paused")
-        
+
         cancellable.cancel()
         await pauseWatchdog.stop()
     }
@@ -170,28 +170,28 @@ final class WatchdogTests: XCTestCase {
     func testResumeAfterPauseDetectsHangs() async throws {
         let mockKill = MockKillAppFunction()
         let resumeWatchdog = Watchdog(minimumHangDuration: 0.1, maximumHangDuration: 0.3, checkInterval: 0.1, crashOnTimeout: true, killAppFunction: mockKill.killApp)
-        
+
         var receivedStates: [(hangState: Watchdog.HangState, duration: TimeInterval?)] = []
         let cancellable = await resumeWatchdog.hangStatePublisher.sink { receivedStates.append($0) }
-        
+
         await resumeWatchdog.start()
         await resumeWatchdog.pause()
-        
+
         var isPaused = await resumeWatchdog.isPaused
         XCTAssertTrue(isPaused, "Should be paused")
-        
+
         await resumeWatchdog.resume()
-        
+
         isPaused = await resumeWatchdog.isPaused
         XCTAssertFalse(isPaused, "Should not be paused after resume")
-        
+
         // Block the main thread - should be detected
         try await blockMainThread(for: 0.5, andSleepFor: 0.7)
-        
+
         XCTAssertFalse(receivedStates.isEmpty, "Should detect hangs after resume")
         let hangingState = receivedStates.first { $0.hangState == .hanging }
         XCTAssertNotNil(hangingState, "Should transition to hanging state after resume")
-        
+
         cancellable.cancel()
         await resumeWatchdog.stop()
     }

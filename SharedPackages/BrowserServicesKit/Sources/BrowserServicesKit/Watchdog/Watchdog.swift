@@ -123,7 +123,7 @@ public final actor Watchdog {
         monitoringTask = nil
         heartbeatUpdateTask = nil
     }
-    
+
     // MARK: - State management
 
     /// Starts the watchdog running.
@@ -132,7 +132,7 @@ public final actor Watchdog {
         // Cancel any existing task
         monitoringTask?.cancel()
         heartbeatUpdateTask?.cancel()
-        
+
         // Ensure we start in an unpaused state
         isPaused = false
 
@@ -178,7 +178,7 @@ public final actor Watchdog {
 
         isPaused = false
     }
-    
+
     // MARK: - Monitoring
 
     private func runMonitoringLoop() async {
@@ -207,7 +207,7 @@ public final actor Watchdog {
             handleHangDetection(timeSinceLastCheck: timeSinceLastCheck)
         }
     }
-    
+
     private func clearHeartbeatTask() {
         heartbeatUpdateTask = nil
     }

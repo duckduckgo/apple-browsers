@@ -95,7 +95,7 @@ final class Application: NSApplication {
             .scrollWheel, .magnify, .rotate, .swipe,
             .directTouch, .gesture, .beginGesture,
             .tabletPoint, .tabletProximity,
-            .pressure, .appKitDefined,
+            .pressure,
         ]
         if #available(macOS 26.0, *) {
             testIgnoredEvents.append(.init(rawValue: 40)! /* .mouseCancelled */)

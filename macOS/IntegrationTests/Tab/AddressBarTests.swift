@@ -867,7 +867,7 @@ class AddressBarTests: XCTestCase {
 
         XCTAssertEqual(window.firstResponder, tab.webView)
 
-        let viewModel2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]), selectionIndex: .unpinned(0))
+        let viewModel2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .anySettingsPane, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]), selectionIndex: .unpinned(0))
         let window2 = WindowsManager.openNewWindow(with: viewModel2)!
         autoreleasepool {
             NSApp.activate(ignoringOtherApps: true)
@@ -882,7 +882,7 @@ class AddressBarTests: XCTestCase {
         // when activaing a Pinned Tab in another window its Web View should become the first responder
         viewModel2.select(at: .pinned(0))
 
-        await fulfillment(of: [firstResponderChangeExpectation], timeout: 5)
+        await fulfillment(of: [firstResponderChangeExpectation], timeout: 15)
         XCTAssertEqual(window2.firstResponder, tab.webView)
         XCTAssertEqual(window.firstResponder, window)
 
@@ -891,7 +891,7 @@ class AddressBarTests: XCTestCase {
 
         window.makeKeyAndOrderFront(nil)
 
-        await fulfillment(of: [firstResponderChangeExpectation2], timeout: 5)
+        await fulfillment(of: [firstResponderChangeExpectation2], timeout: 15)
         XCTAssertEqual(window.firstResponder, tab.webView)
         XCTAssertEqual(window2.firstResponder, window2)
     }

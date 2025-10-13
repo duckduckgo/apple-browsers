@@ -298,7 +298,7 @@ final class MainWindowController: NSWindowController {
     }
 
     override func showWindow(_ sender: Any?) {
-        Logger.general.debug("showWindow: \(String(describing: self.window!))")
+        Logger.general.info("showWindow: \(String(describing: self.window!))")
 
         window?.makeKeyAndOrderFront(sender)
         register()
@@ -318,10 +318,10 @@ final class MainWindowController: NSWindowController {
 
     func orderWindowBack(_ sender: Any?) {
         if let lastKeyWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window {
-            Logger.general.debug("orderWindowBack: \(String(describing: self.window!)) below \(String(describing: lastKeyWindow))")
+            Logger.general.info("orderWindowBack: \(String(describing: self.window!)) below \(String(describing: lastKeyWindow))")
             window?.order(.below, relativeTo: lastKeyWindow.windowNumber)
         } else {
-            Logger.general.debug("orderWindowBack: orderFront: \(String(describing: self.window!))")
+            Logger.general.info("orderWindowBack: orderFront: \(String(describing: self.window!))")
             window?.orderFront(sender)
         }
         register()
@@ -362,7 +362,7 @@ extension MainWindowController: NSWindowDelegate {
               // if one of the windows in the window controller chain became key instead of a sheet
               NSApp.keyWindow?.isInHierarchy(of: mainWindow) != true else { return }
 
-        Logger.general.debug("""
+        Logger.general.info("""
         windowDidResignKey: \(String(describing: exKeyWindow))
             mainWindow:  \(String(describing: mainWindow))
         """)

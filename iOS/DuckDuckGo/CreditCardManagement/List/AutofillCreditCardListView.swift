@@ -103,7 +103,3 @@ private struct EmptyStateView: View {
         )
     }
 }
-
-#Preview {
-    AutofillCreditCardListView(viewModel: AutofillCreditCardListViewModel(source: .settings))
-}

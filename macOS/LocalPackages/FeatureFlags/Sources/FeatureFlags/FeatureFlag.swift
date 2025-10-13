@@ -217,6 +217,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// Toggle for showing the "Manage individual sites" link in Fire dialog
     case fireDialogIndividualSitesLink
 
+    ///  https://app.asana.com/1/137249556945/project/72649045549333/task/1207055705580443?focus=true
+    case syncCreditCards
+    case syncIdentities
+
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211469820985204?focus=true
     case dataImportNewSafariFilePicker
 }
@@ -237,6 +242,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .subscriptionPurchaseWidePixelMeasurement,
                 .subscriptionRestoreWidePixelMeasurement,
                 .authV2WideEventEnabled,
+                .syncCreditCards,
+                .syncIdentities,
                 .dataImportNewSafariFilePicker:
             true
         default:
@@ -316,6 +323,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webKitPerformanceReporting,
                 .fireDialog,
                 .winBackOffer,
+                .syncCreditCards,
+                .syncIdentities,
                 .dataImportNewSafariFilePicker:
             return true
         case .debugMenu,
@@ -367,6 +376,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
+        case .syncCreditCards:
+            return .remoteReleasable(.subfeature(SyncSubfeature.syncCreditCards))
+        case .syncIdentities:
+            return .remoteReleasable(.subfeature(SyncSubfeature.syncIdentities))
         case .scamSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .scheduledSetDefaultBrowserAndAddToDockPrompts:
@@ -462,9 +475,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncFeatureLevel3:
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
         case .themes:
-            return .disabled
+            return .internalOnly()
         case .appStoreUpdateFlow:
-            return .remoteReleasable(.feature(.appStoreUpdateFlow))
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .unifiedURLPredictorMetrics:

@@ -53,9 +53,10 @@ final class AIChatSidebarViewController: NSViewController {
     public var aiChatPayload: AIChatPayload?
     private(set) var currentAIChatURL: URL
 
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
     private let burnerMode: BurnerMode
-    private var themeCancellable: AnyCancellable?
-    private let themeManager: ThemeManaging
 
     private var openInNewTabButton: MouseOverButton!
     private var closeButton: MouseOverButton!
@@ -305,16 +306,12 @@ final class AIChatSidebarViewController: NSViewController {
         aiTab.webView.stopLoading()
         aiTab.webView.loadHTMLString("", baseURL: nil)
     }
+}
 
-    private func subscribeToThemeChanges() {
-        themeCancellable = themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] style in
-                self?.applyThemeStyle(theme: style)
-            }
-    }
+// MARK: - ThemeUpdateListening
+extension AIChatSidebarViewController: ThemeUpdateListening {
 
-    private func applyThemeStyle(theme: ThemeStyleProviding) {
+    func applyThemeStyle(theme: ThemeStyleProviding) {
         guard let contentView = view as? ColorView else {
             assertionFailure()
             return

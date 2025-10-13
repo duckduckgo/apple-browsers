@@ -35,7 +35,7 @@
 "connect.with.server.sheet.button" = "Szinkronizálás és biztonsági mentés bekapcsolása";
 
 /* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "Ez a DuckDuckGo biztonságos szerverén egy titkosított biztonsági másolatot készít a könyvjelzőidről és jelszavaidról, amelyet más eszközökkel szinkronizálhatsz.";
+"connect.with.server.sheet.description.part1" = "Ez titkosított biztonsági mentést hoz létre a könyvjelzőidről és az űrlapokon automatikusan megadásra kerülő adataidról a DuckDuckGo biztonságos szerverén, amit szinkronizálhatsz a többi eszközöddel.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "A titkosítási kulcsot csak az eszközöd tárolja, a DuckDuckGo nem fér hozzá.";
@@ -53,7 +53,13 @@
 "credentials.invalid.objects.present.description" = "credentials.invalid.objects.present.description";
 
 /* Alert title for invalid logins being filtered out of synced data */
-"credentials.invalid.objects.present.title" = "Egyes bejelentkezési adatokat nem szinkronizál a rendszer bizonyos mezők túl hosszú tartalma miatt.";
+"credentials.invalid.objects.present.title" = "Néhány jelszó nem szinkronizálható, mert egyes mezők tartalma túl hosszú.";
+
+/* Do not translate - stringsdict entry */
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
+
+/* Alert title for invalid credit cards being filtered out of synced data */
+"creditCards.invalid.objects.present.title" = "Néhány bankkártya nem szinkronizálható, mert egyes mezők tartalma túl hosszú.";
 
 /* Delete Server Data - Button */
 "delete.server.data" = "Kikapcsolás és szerveradatok törlése…";
@@ -130,8 +136,11 @@
 /* Button title for sync credentials limits exceeded warning to go to manage passwords */
 "prefrences.sync.credentials-limit-exceeded-action" = "Jelszavak kezelése…";
 
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Hitelkártyák kezelése…";
+
 /* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "A rendszer előkészíti a könyvjelzők és jelszavak szinkronizálását. Ez csak néhány pillanatig tart.";
+"preparing.to.sync.sheet.description" = "Folyamatban van a könyvjelzőid és az űrlapokon automatikusan megadásra kerülő adataid előkészítése a szinkronizáláshoz. Ez csak néhány pillanatig tart.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Csatlakozás…";
@@ -254,7 +263,7 @@
 "sync.get.other.devices.screen.title" = "DuckDuckGo letöltése";
 
 /* Message included when sharing a url via the system share sheet */
-"sync.get.other.devices.share.link.message" = "Telepítsd a DuckDuckGo böngészőt az eszközeidre a könyvjelzők és jelszavak biztonságos szinkronizálásának megkezdéséhez:";
+"sync.get.other.devices.share.link.message" = "Telepítsd a DuckDuckGo böngészőt az eszközeidre, hogy biztonságosan szinkronizálhasd a könyvjelzőidet és az űrlapokon automatikusan megadásra kerülő adataidat:";
 
 /* Sync Menu Path */
 "sync.menu.path" = "Beállítások > Szinkronizálás és biztonsági mentés > szinkronizálás másik eszközzel";
@@ -278,7 +287,7 @@
 "sync.with.another.device.footer" = "Az adataid végponttól végpontig titkosítva vannak, a DuckDuckGo pedig nem fér hozzá a titkosítási kulcshoz.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Szinkronizáld biztonságosan a könyvjelzőket és jelszavakat az eszközök között.";
+"sync.with.another.device.message" = "Szinkronizáld biztonságosan a könyvjelzőket és az űrlapokon automatikusan megadásra kerülő adatokat az eszközeid között.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Szinkronizálás megkezdése";

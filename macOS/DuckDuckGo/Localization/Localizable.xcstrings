@@ -43047,13 +43047,13 @@
       }
     },
     "import.html.instructions.safari" : {
-      "comment" : "Instructions to import Bookmarks exported as HTML from Safari.\n%N$d - step number\n%5$@ - \"Select Bookmarks HTML File\" button\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Bookmarks exported as HTML from Safari.\n%N$d - step number\n%5$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Öffne **Safari**\n%2$d Wähle **Datei → Exportieren → Lesezeichen**\n%3$d Speichere die Datei an einem Ort, an dem du sie finden kannst (z. B. Desktop)\n%4$d %5$@"
+            "value" : "%1$d Öffne **Safari**\n%2$d Wähle **Datei → Exportieren → Lesezeichen**\n%3$d Speichere die Datei mit den Passwörtern an einem Ort, an dem du sie finden kannst (z. B. auf dem Desktop) %4$d %5$@"
           }
         },
         "en" : {
@@ -43065,103 +43065,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Abre **Safari**\n%2$d Selecciona **Archivo → Exportar → Marcadores**\n%3$d Guarda el archivo en un lugar donde puedas encontrarlo (p. ej., Escritorio)\n%4$d %5$@"
+            "value" : "%1$d Abre **Safari**\n%2$d Selecciona **Archivo → Exportar → Marcadores**\n%3$d Guarda el archivo de contraseñas donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%4$d %5$@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Ouvrez **Safari**\n%2$d Sélectionnez **Fichier → Exporter → Signets**\n%3$d Enregistrez le fichier dans un endroit où vous pourrez le retrouver (par ex., Bureau)\n%4$d %5$@"
+            "value" : "%1$d Ouvrez **Safari**\n%2$d Sélectionnez **Fichier → Exporter → Signets**\n%3$d Enregistrez le fichier des mots de passe à un endroit où le trouver facilement (par exemple, sur le bureau)\n%4$d %5$@"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Apri **Safari**\n%2$d Seleziona **File → Esporta → Segnalibri**\n%3$d Salva il file in un posto dove puoi trovarlo (ad es., Desktop)\n%4$d %5$@"
+            "value" : "%1$d Apri **Safari**\n%2$d Seleziona **File → Esporta → Segnalibri**\n%3$d Salva il file delle password dove puoi trovarlo (ad esempio, sul desktop)\n%4$d %5$@"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Open **Safari**\n%2$d Selecteer **Bestand → Exporteren → Bladwijzers**\n%3$d Sla het bestand op een plaats op waar je het kunt vinden (bijv. Bureaublad)\n%4$d %5$@"
+            "value" : "%1$d Open **Safari**\n%2$d Selecteer **Bestand → Exporteren → Bladwijzers**\n%3$d Bewaar het bestand op een plek waar je het kunt vinden (bijv. het bureaublad)\n%4$d %5$@"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Otwórz **Safari**\n%2$d Wybierz **Plik → Eksportuj → Zakładki**\n%3$d Zapisz plik w miejscu, gdzie możesz go znaleźć (np. Pulpit)\n%4$d %5$@"
+            "value" : "%1$d Otwórz przeglądarkę **Safari**\n%2$d Wybierz **Plik → Eksportuj → Zakładki**\n%3$d Zapisz plik w łatwo dostępnym miejscu (np. na biurku)\n%4$d %5$@"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Abre **Safari**\n%2$d Seleciona **Ficheiro → Exportar → Marcadores**\n%3$d Guarda o ficheiro num local onde o possas encontrar (por ex., Ambiente de Trabalho)\n%4$d %5$@"
+            "value" : "%1$d Abre o **Safari**\n%2$d Selecione **Ficheiro → Exportar → Marcadores**\n%3$d Guarda o ficheiro de palavras-passe onde consigas encontrá-lo (por exemplo, no ambiente de trabalho)\n%4$d %5$@"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Откройте **Safari**\n%2$d Выберите **Файл → Экспорт → Закладки**\n%3$d Сохраните файл в месте, где вы сможете его найти (например, Рабочий стол)\n%4$d %5$@"
-          }
-        }
-      }
-    },
-    "import.zip.instructions.safari" : {
-      "comment" : "Instructions to import multiple data types exported as ZIP from Safari.\n%N$d - step number\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$d Öffne %2$@ **Safari → Datei → Browsing-Daten in Datei exportieren...**\n%3$d Wähle **Lesezeichen, Passwörter** bzw. **Kreditkarten** und klicke dann auf **Exportieren**\n%4$d Füge die exportierte ZIP-Datei unten hinzu"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Choose **Bookmarks, Passwords,** and/or **Credit Cards**, then click **Export**\n%4$d Add the exported ZIP file below"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$d Abre %2$@ **Safari → Archivo → Exportar datos de navegación a archivo…**\n%3$d Elige **Marcadores, contraseñas** o **Tarjetas de crédito**, luego haz clic en **Exportar**\n%4$d Añade el archivo ZIP exportado a continuación"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$d Ouvrez %2$@ **Safari → Fichier → Exporter les données de navigation vers un fichier...**\n%3$d Choisissez **Signets, Mots de passe** et/ou **Cartes de crédit**, puis cliquez sur **Exporter**\n%4$d Ajoutez le fichier ZIP exporté ci-dessous"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$d Apri %2$@ **Safari → File → Esporta dati di navigazione su file...**\n%3$d Scegli **Segnalibri, password** e/o **Carte di credito**, quindi fai clic su **Esporta**\n%4$d Aggiungi il file ZIP esportato qui sotto"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$d Open %2$@ **Safari → Bestand → Exporteer browsinggegevens naar bestand…**\n%3$d Kies **Bladwijzers, Wachtwoorden,** en/of **Creditcards** en klik dan op **Exporteren**\n%4$d Voeg het geëxporteerde ZIP-bestand hieronder toe"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$d Otwórz %2$@ **Safari → Plik → Eksportuj dane przeglądania do pliku...**\n%3$d Wybierz **Zakładki, Hasła** i/lub **Karty kredytowe**, a następnie kliknij **Eksportuj**\n%4$d Dodaj poniżej wyeksportowany plik ZIP"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$d Abre %2$@ **Safari → Ficheiro → Exportar dados de navegação para o ficheiro...**\n%3$d Escolhe **Marcadores, Palavras-passe,** e/ou **Cartões de crédito** e, em seguida, clica em **Exportar**\n%4$d Adiciona o ficheiro ZIP exportado abaixo"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$d Откройте %2$@ **Safari → Файл → Экспорт данных просмотра в файл...**\n%3$d Выберите **Закладки**, **пароли** и/или **кредитные карты** и нажмите **Экспортировать**.\n%4$d Загрузите экспортированный ZIP-архив ниже."
+            "value" : "%1$d Откройте **Safari**\n%2$d Выберите раздел **Файл → Экспортировать → Закладки**\n%3$d Сохраните файл с закладками там, где вы легко его найдете (например, на рабочем столе)\n%4$d %5$@"
           }
         }
       }
@@ -44182,6 +44122,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показывать ярлык для паролей"
+          }
+        }
+      }
+    },
+    "import.zip.instructions.safari" : {
+      "comment" : "Instructions to import multiple data types exported as ZIP from Safari.\n%N$d - step number\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Öffne %2$@ **Safari → Datei → Browsing-Daten in Datei exportieren...**\n%3$d Wähle **Lesezeichen, Passwörter** bzw. **Kreditkarten** und klicke dann auf **Exportieren**\n%4$d Füge die exportierte ZIP-Datei unten hinzu"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Choose **Bookmarks, Passwords,** and/or **Credit Cards**, then click **Export**\n%4$d Add the exported ZIP file below"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Abre %2$@ **Safari → Archivo → Exportar datos de navegación a archivo…**\n%3$d Elige **Marcadores, contraseñas** o **Tarjetas de crédito**, luego haz clic en **Exportar**\n%4$d Añade el archivo ZIP exportado a continuación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Ouvrez %2$@ **Safari → Fichier → Exporter les données de navigation vers un fichier...**\n%3$d Choisissez **Signets, Mots de passe** et/ou **Cartes de crédit**, puis cliquez sur **Exporter**\n%4$d Ajoutez le fichier ZIP exporté ci-dessous"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Apri %2$@ **Safari → File → Esporta dati di navigazione su file...**\n%3$d Scegli **Segnalibri, password** e/o **Carte di credito**, quindi fai clic su **Esporta**\n%4$d Aggiungi il file ZIP esportato qui sotto"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Open %2$@ **Safari → Bestand → Exporteer browsinggegevens naar bestand…**\n%3$d Kies **Bladwijzers, Wachtwoorden,** en/of **Creditcards** en klik dan op **Exporteren**\n%4$d Voeg het geëxporteerde ZIP-bestand hieronder toe"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Otwórz %2$@ **Safari → Plik → Eksportuj dane przeglądania do pliku...**\n%3$d Wybierz **Zakładki, Hasła** i/lub **Karty kredytowe**, a następnie kliknij **Eksportuj**\n%4$d Dodaj poniżej wyeksportowany plik ZIP"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Abre %2$@ **Safari → Ficheiro → Exportar dados de navegação para o ficheiro...**\n%3$d Escolhe **Marcadores, Palavras-passe,** e/ou **Cartões de crédito** e, em seguida, clica em **Exportar**\n%4$d Adiciona o ficheiro ZIP exportado abaixo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Откройте %2$@ **Safari → Файл → Экспорт данных просмотра в файл...**\n%3$d Выберите **Закладки**, **пароли** и/или **кредитные карты** и нажмите **Экспортировать**.\n%4$d Загрузите экспортированный ZIP-архив ниже."
           }
         }
       }

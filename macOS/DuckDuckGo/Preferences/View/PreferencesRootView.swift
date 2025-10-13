@@ -278,6 +278,7 @@ enum Preferences {
 
             return PreferencesSubscriptionSettingsModelV1(userEventHandler: userEventHandler,
                                                           subscriptionManager: subscriptionManager,
+                                                          winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher())
         }
 
@@ -573,7 +574,8 @@ enum Preferences {
             return PreferencesSubscriptionSettingsModelV2(userEventHandler: userEventHandler,
                                                           subscriptionManager: subscriptionManager,
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
-                                                          keyValueStore: NSApp.delegateTyped.keyValueStore)
+                                                          keyValueStore: NSApp.delegateTyped.keyValueStore,
+                                                          winBackOfferVisibilityManager: winBackOfferVisibilityManager)
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {

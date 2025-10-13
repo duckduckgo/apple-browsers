@@ -5879,6 +5879,18 @@
         }
       }
     },
+    "win-back.campaign.logged-in.preferences.cta" : {
+      "comment" : "CTA of the message displayed for logged in users to resubscribe during the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Resubscribe and Save 25%"
+          }
+        }
+      }
+    },
     "win-back.campaign.logged-in.preferences.message" : {
       "comment" : "Message of the message displayed for logged in users to resubscribe during the win-back campaign",
       "extractionState" : "extracted_with_value",

@@ -1903,11 +1903,4 @@ struct UserText {
     static let winBackCampaignLastDayMessageCTA = NSLocalizedString("win-back.campaign.last-day.message.cta", value: "See Offer", comment: "CTA of the message displayed on the last day of the win-back campaign")
 
     static let winBackCampaignMenuBadgeText = NSLocalizedString("win-back.campaign.menu.badge.text", value: "SAVE 25%", comment: "Text for the badge displayed on the Subscription menu item during the win-back campaign")
-
-    static let winBackCampaignLoggedInPreferencesCTA = NSLocalizedString("win-back.campaign.logged-in.preferences.cta", value: "Resubscribe and Save 25%", comment: "CTA of the message displayed for logged in users to resubscribe during the win-back campaign")
-    
-    static let winBackCampaignLoggedOutPreferencesTitle = NSLocalizedString("win-back.campaign.logged-out.preferences.title", value: "We want you back! Get 25% off.", comment: "Title of the message displayed for logged out users to resubscribe during the win-back campaign")
-    static let winBackCampaignLoggedInPreferencesMessage = NSLocalizedString("win-back.campaign.logged-in.preferences.message", value: "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%. Limited time offer.", comment: "Message of the message displayed for logged in users to resubscribe during the win-back campaign")
-    static let winBackCampaignLoggedOutPreferencesCTA = NSLocalizedString("win-back.campaign.logged-out.preferences.cta", value: "See Offer", comment: "CTA of the message displayed for logged out users to resubscribe during the win-back campaign")
-    static let winBackCampaignLoggedOutPreferencesExistingSubscriptionButton = NSLocalizedString("win-back.campaign.logged-out.preferences.existing.subscription.button", value: "I Have a Subscription", comment: "Button for logged out users to resubscribe during the win-back campaign")
 }

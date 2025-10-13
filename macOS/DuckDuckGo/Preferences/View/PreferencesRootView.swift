@@ -320,9 +320,9 @@ enum Preferences {
             featureFlagger: FeatureFlagger,
             aiChatURLSettings: AIChatRemoteSettingsProvider,
             wideEvent: WideEventManaging,
+            winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
             themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
-            winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager
         ) {
             self.model = model
             self.subscriptionManager = subscriptionManager

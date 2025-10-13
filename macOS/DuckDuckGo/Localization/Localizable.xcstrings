@@ -2616,6 +2616,186 @@
         }
       }
     },
+    "alert.sync-credit-cards-bad-data-error-description" : {
+      "comment" : "Description for alert shown when sync error occurs because of bad data",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einige Kreditkarten sind falsch formatiert oder zu lang und wurden nicht synchronisiert."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some credit cards are formatted incorrectly or too long and were not synced."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algunas tarjetas de crédito tienen un formato incorrecto o demasiado largo y no se han sincronizado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certaines cartes bancaires sont mal formatées ou trop longues et n'ont pas été synchronisées."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alcune carte di credito sono formattate in modo errato o sono troppo lunghe e non sono state sincronizzate."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sommige creditcards zijn onjuist geformatteerd of te lang en zijn niet gesynchroniseerd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niektóre karty kredytowe mają niepoprawny format lub są zbyt długie i nie zostały zsynchronizowane."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alguns cartões de crédito estão formatados incorretamente ou têm carateres a mais e não foram sincronizados."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Некоторые платежные карты не синхронизируются из-за неверного формата или превышения ограничений по длине."
+          }
+        }
+      }
+    },
+    "alert.sync-credit-cards-paused-description" : {
+      "comment" : "Description for alert shown when sync credit cards paused for too many items",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast die maximale Anzahl von Kreditkarten erreicht. Lösche einige, um die Synchronisierung fortzusetzen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You've reached the maximum number of credit cards. Please delete some to resume sync."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Has alcanzado el número máximo de tarjetas de crédito. Elimina algunas para reanudar la sincronización."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez atteint le nombre maximal de cartes bancaires. Veuillez en supprimer quelques-uns pour reprendre la synchronisation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai raggiunto il numero massimo di carte di credito. Eliminane alcuni per riprendere la sincronizzazione."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je hebt het maximumaantal creditcards bereikt. Verwijder er een paar om de synchronisatie te hervatten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Osiągnięto maksymalną liczbę kart kredytowych. Usuń część z nich, aby wznowić synchronizację."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atingiste o número máximo de cartões de crédito. Elimina algumas para retomar a sincronização."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Достигнуто максимальное число карт. Чтобы возобновить синхронизацию, удалите некоторые из них."
+          }
+        }
+      }
+    },
+    "alert.sync-credit-cards-paused-title" : {
+      "comment" : "Title for alert shown when sync credit cards paused for too many items",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Kreditkarten-Synchronisierung wurde angehalten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Credit Cards Sync is Paused"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La sincronización de tarjetas de crédito está en pausa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La synchronisation des cartes bancaires est suspendue"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La sincronizzazione delle carte di credito è in pausa"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisatie van creditcards is gepauzeerd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizacja kart kredytowych jest wstrzymana"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A sincronização de cartões de crédito está em pausa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизация кредитных карт приостановлена"
+          }
+        }
+      }
+    },
     "alert.sync-error-action" : {
       "comment" : "Sync error alert action button title, takes the user to the sync settings page.",
       "extractionState" : "extracted_with_value",
@@ -2732,6 +2912,186 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ошибка синхронизации"
+          }
+        }
+      }
+    },
+    "alert.sync-identities-bad-data-error-description" : {
+      "comment" : "Description for alert shown when sync error occurs because of bad data",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einige Identitäten sind falsch formatiert oder zu lang und wurden nicht synchronisiert."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some identities are formatted incorrectly or too long and were not synced."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algunas identidades tienen un formato incorrecto o demasiado largo y no se han sincronizado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certaines identités sont mal formatées ou trop longues et n'ont pas été synchronisées."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alcune identità sono formattate in modo errato o sono troppo lunghe e non sono state sincronizzate."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sommige identiteiten hebben de verkeerde indeling of zijn te lang en werden niet gesynchroniseerd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niektóre tożsamości mają niepoprawny format lub są zbyt długie i nie zostały zsynchronizowane."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algumas identidades estão formatadas incorretamente ou têm carateres a mais e não foram sincronizadas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Некоторые учетные данные не синхронизируются из-за неверного формата или превышения ограничений по длине."
+          }
+        }
+      }
+    },
+    "alert.sync-identities-paused-description" : {
+      "comment" : "Description for alert shown when sync identities paused for too many items",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast die maximale Anzahl von Identitäten erreicht. Lösche einige, um die Synchronisierung fortzusetzen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You've reached the maximum number of identities. Please delete some to resume sync."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Has alcanzado el número máximo de identidades. Elimina algunas para reanudar la sincronización."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez atteint le nombre maximum d'identités. Veuillez en supprimer quelques-uns pour reprendre la synchronisation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai raggiunto il numero massimo di identità. Eliminane alcuni per riprendere la sincronizzazione."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je hebt het maximum aantal identiteiten bereikt. Verwijder er een paar om de synchronisatie te hervatten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Osiągnięto maksymalną liczbę tożsamości. Usuń część z nich, aby wznowić synchronizację."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atingiste o número máximo de identidades. Elimina algumas para retomar a sincronização."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Достигнуто максимальное число наборов учетных данных. Чтобы возобновить синхронизацию, удалите некоторые из них."
+          }
+        }
+      }
+    },
+    "alert.sync-identities-paused-title" : {
+      "comment" : "Title for alert shown when sync identities paused for too many items",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Identitätssynchronisierung wurde angehalten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Identities Sync is Paused"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La sincronización de identidades está en pausa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La synchronisation des identités est suspendue"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La sincronizzazione delle identità è in pausa"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identiteitssynchronisatie is onderbroken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizacja tożsamości jest wstrzymana"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A sincronização de identidades está em pausa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизация личных данных приостановлена"
           }
         }
       }
@@ -61750,55 +62110,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Passwörter sind verschlüsselt. Niemand außer dir kann sie sehen, nicht einmal wir."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Passwords are encrypted. Nobody but you can see them, not even us."
+            "value" : "Passwords and credit cards are encrypted. Nobody but you can see them, not even us."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Las contraseñas están cifradas. Nadie más que tú puede verlas, ni siquiera nosotros."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Les mots de passe sont cryptés. Personne d'autre que vous ne peut les voir, pas même nous."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Le password sono crittografate. Nessuno tranne te può vederle, nemmeno noi."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Wachtwoorden worden versleuteld. Niemand anders kan ze zien, zelfs wij niet."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Hasła są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "As palavras-passe estão encriptadas. Ninguém além de ti pode vê-las, nem mesmo nós."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Пароли подвергаются шифрованию. Никто, кроме вас, их не увидит. Даже мы."
           }
         }
@@ -61810,7 +62170,127 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
+            "value" : "Passwörter sind verschlüsselt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Passwords and credit cards are encrypted."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las contraseñas están cifradas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Les mots de passe sont cryptés."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Le password sono crittografate."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wachtwoorden worden versleuteld."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hasła są szyfrowane."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "As palavras-passe estão encriptadas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Пароли подвергаются шифрованию."
+          }
+        }
+      }
+    },
+    "pm.empty.default.passwords.description.extended.v2" : {
+      "comment" : "Label for default empty state description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Passwörter sind verschlüsselt. Niemand außer dir kann sie sehen, nicht einmal wir."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Passwords are encrypted. Nobody but you can see them, not even us."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las contraseñas están cifradas. Nadie más que tú puede verlas, ni siquiera nosotros."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Les mots de passe sont cryptés. Personne d'autre que vous ne peut les voir, pas même nous."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Le password sono crittografate. Nessuno tranne te può vederle, nemmeno noi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wachtwoorden worden versleuteld. Niemand anders kan ze zien, zelfs wij niet."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hasła są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "As palavras-passe estão encriptadas. Ninguém além de ti pode vê-las, nem mesmo nós."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Пароли подвергаются шифрованию. Никто, кроме вас, их не увидит. Даже мы."
+          }
+        }
+      }
+    },
+    "pm.empty.default.description.extended.v2.autolock.off" : {
+      "comment" : "Label for default empty state description when the autolock feature is off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
             "value" : "Passwörter sind verschlüsselt."
           }
         },
@@ -61822,43 +62302,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Las contraseñas están cifradas."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Les mots de passe sont cryptés."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Le password sono crittografate."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Wachtwoorden worden versleuteld."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Hasła są szyfrowane."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "As palavras-passe estão encriptadas."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Пароли подвергаются шифрованию."
           }
         }
@@ -62164,8 +62644,188 @@
         }
       }
     },
+    "pm.empty.secondary.button.credit-cards.title" : {
+      "comment" : "Sync credit cards button title for default empty state",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kreditkarten synchronisieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync Credit Cards"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar tarjetas de crédito"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniser les cartes bancaires"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza carte di credito"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creditcards synchroniseren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizuj karty kredytowe"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar cartões de crédito"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизировать платежные карты"
+          }
+        }
+      }
+    },
+    "pm.empty.secondary.button.identities.title" : {
+      "comment" : "Sync identities button title for default empty state",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identitäten synchronisieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync Identities"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar identidades"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniser les identités"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza identità"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identiteiten synchroniseren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizuj tożsamości"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar identidades"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизировать учетные данные"
+          }
+        }
+      }
+    },
+    "pm.empty.secondary.button.passwords.title" : {
+      "comment" : "Sync passwords button title for default empty state",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passwörter synchronisieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync Passwords"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar contraseñas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniser les mots de passe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza password"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wachtwoorden synchroniseren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizuj hasła"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar palavras-passe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизировать пароли"
+          }
+        }
+      }
+    },
     "pm.empty.secondary.button.title" : {
-      "comment" : "Import passwords button title for default empty state\nSync passwords button title for default empty state",
+      "comment" : "Import passwords button title for default empty state",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -72185,7 +72845,7 @@
     },
     "prefrences.sync.bookmarks-limit-exceeded-action" : {
       "comment" : "Button title for sync bookmarks limits exceeded warning to go to manage bookmarks",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -72365,7 +73025,7 @@
     },
     "prefrences.sync.credentials-limit-exceeded-action" : {
       "comment" : "Button title for sync credentials limits exceeded warning to go to manage passwords",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -72539,6 +73199,366 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Некоторые пароли не синхронизируются из-за неверного формата или превышения ограничений по длине."
+          }
+        }
+      }
+    },
+    "prefrences.sync.credit-cards-limit-exceeded-action" : {
+      "comment" : "Button title for sync credit cards limits exceeded warning to go to manage payment methods",
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kreditkarten verwalten …"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Manage credit cards…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Administrar tarjetas de crédito…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gérez les cartes bancaires…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestisci carte di credito…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creditcards beheren…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zarządzaj kartami kredytowymi…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerir cartões de crédito…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настроить платежные карты…"
+          }
+        }
+      }
+    },
+    "prefrences.sync.credit-cards-limit-exceeded-description" : {
+      "comment" : "Description for sync credit cards limits exceeded warning",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast die maximale Anzahl von Kreditkarten erreicht. Lösche einige, um die Synchronisierung fortzusetzen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You've reached the maximum number of credit cards. Please delete some to resume sync."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Has alcanzado el número máximo de tarjetas de crédito. Elimina algunas para reanudar la sincronización."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez atteint le nombre maximal de cartes bancaires. Veuillez en supprimer quelques-uns pour reprendre la synchronisation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai raggiunto il numero massimo di carte di credito. Eliminane alcuni per riprendere la sincronizzazione."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je hebt het maximumaantal creditcards bereikt. Verwijder er een paar om de synchronisatie te hervatten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Osiągnięto maksymalną liczbę kart kredytowych. Usuń część z nich, aby wznowić synchronizację."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atingiste o número máximo de cartões de crédito. Elimina algumas para retomar a sincronização."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Достигнуто максимальное число карт. Чтобы возобновить синхронизацию, удалите некоторые из них."
+          }
+        }
+      }
+    },
+    "prefrences.sync.credit-cards.bad.request.description" : {
+      "comment" : "Description of incorrectly formatted data error when syncing.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einige Kreditkarten sind falsch formatiert oder zu lang und wurden nicht synchronisiert."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some credit cards are formatted incorrectly or too long and were not synced."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algunas tarjetas de crédito tienen un formato incorrecto o demasiado largo y no se han sincronizado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certaines cartes bancaires sont mal formatées ou trop longues et n'ont pas été synchronisées."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alcune carte di credito sono formattate in modo errato o sono troppo lunghe e non sono state sincronizzate."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sommige creditcards zijn onjuist geformatteerd of te lang en zijn niet gesynchroniseerd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niektóre karty kredytowe mają niepoprawny format lub są zbyt długie i nie zostały zsynchronizowane."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alguns cartões de crédito estão formatados incorretamente ou têm carateres a mais e não foram sincronizados."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Некоторые платежные карты не синхронизируются из-за неверного формата или превышения ограничений по длине."
+          }
+        }
+      }
+    },
+    "prefrences.sync.identities-limit-exceeded-action" : {
+      "comment" : "Button title for sync identities limits exceeded warning to go to manage identities",
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identitäten verwalten …"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Manage identities…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Administrar identidades…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gérez les identités…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestisci identità…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identiteiten beheren…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zarządzaj tożsamościami…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerir identidades…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настроить учетные данные…"
+          }
+        }
+      }
+    },
+    "prefrences.sync.identities-limit-exceeded-description" : {
+      "comment" : "Description for sync identities limits exceeded warning",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast die maximale Anzahl von Identitäten erreicht. Lösche einige, um die Synchronisierung fortzusetzen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You've reached the maximum number of identities. Please delete some to resume sync."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Has alcanzado el número máximo de identidades. Elimina algunas para reanudar la sincronización."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez atteint le nombre maximum d'identités. Veuillez en supprimer quelques-uns pour reprendre la synchronisation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai raggiunto il numero massimo di identità. Eliminane alcuni per riprendere la sincronizzazione."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je hebt het maximum aantal identiteiten bereikt. Verwijder er een paar om de synchronisatie te hervatten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Osiągnięto maksymalną liczbę tożsamości. Usuń część z nich, aby wznowić synchronizację."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atingiste o número máximo de identidades. Elimina algumas para retomar a sincronização."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Достигнуто максимальное число наборов учетных данных. Чтобы возобновить синхронизацию, удалите некоторые из них."
+          }
+        }
+      }
+    },
+    "prefrences.sync.identities.bad.request.description" : {
+      "comment" : "Description of incorrectly formatted data error when syncing.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einige Identitäten sind falsch formatiert oder zu lang und wurden nicht synchronisiert."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some identities are formatted incorrectly or too long and were not synced."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algunas identidades tienen un formato incorrecto o demasiado largo y no se han sincronizado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certaines identités sont mal formatées ou trop longues et n'ont pas été synchronisées."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alcune identità sono formattate in modo errato o sono troppo lunghe e non sono state sincronizzate."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sommige identiteiten hebben de verkeerde indeling of zijn te lang en werden niet gesynchroniseerd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niektóre tożsamości mają niepoprawny format lub są zbyt długie i nie zostały zsynchronizowane."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algumas identidades estão formatadas incorretamente ou têm carateres a mais e não foram sincronizadas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Некоторые учетные данные не синхронизируются из-за неверного формата или превышения ограничений по длине."
           }
         }
       }
@@ -80721,9 +81741,69 @@
         }
       }
     },
+    "sync.promo.autofill.title" : {
+      "comment" : "Title for the Sync Promotion banner",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisiere und sichere deine Autofill-Daten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync & Back Up Your Autofill Data"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincroniza y haz copias de seguridad de tus datos de autocompletado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisez et sauvegardez vos données de remplissage automatique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza ed esegui il backup dei tuoi dati di compilazione automatica"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniseer en back-up je gegevens voor automatisch invullen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizuj i twórz kopie zapasowe danych autouzupełniania"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincroniza e faz uma cópia de segurança dos dados de preenchimento automático"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизация и резервное копирование данных автозаполнения"
+          }
+        }
+      }
+    },
     "sync.promo.bookmarks.message" : {
       "comment" : "Message for the Sync Promotion banner when user has bookmarks that can be synced",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -80901,6 +81981,66 @@
         }
       }
     },
+    "sync.promo.creditcards.title" : {
+      "comment" : "Title for the Sync Promotion banner",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kreditkarten synchronisieren und sichern"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync & Back Up Your Credit Cards"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincroniza y haz copias de seguridad de tus tarjetas de crédito"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisez et sauvegardez vos cartes bancaires"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza ed esegui il backup delle tue carte di credito"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniseer en back-up je creditcards"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizuj i twórz kopie zapasowe kart kredytowych"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincroniza e faz uma cópia de segurança dos cartões de crédito"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизация и резервное копирование данных карт"
+          }
+        }
+      }
+    },
     "sync.promo.dismiss.action" : {
       "comment" : "Title for a button in the Sync Promotion banner to dismiss Sync promotion banner",
       "extractionState" : "extracted_with_value",
@@ -80961,9 +82101,129 @@
         }
       }
     },
+    "sync.promo.identities.title" : {
+      "comment" : "Title for the Sync Promotion banner",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identitäten synchronisieren und sichern"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync & Back Up Your Identities"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincroniza y haz copias de seguridad de tus identidades"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisez et sauvegardez vos identités"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza ed esegui il backup delle tue identità"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniseer en back-up uw identiteiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizuj i twórz kopie zapasowe tożsamości"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincroniza e faz uma cópia de segurança das tuas identidades"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизация и резервное копирование учетных данных"
+          }
+        }
+      }
+    },
+    "sync.promo.message" : {
+      "comment" : "Message for the Sync Promotion banner when user has bookmarks that can be synced",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Konto erforderlich. Ende-zu-Ende-verschlüsselt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No account needed. End-to-end encrypted."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No necesitas ninguna cuenta. Encriptado de extremo a extremo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun compte n'est nécessaire. Cryptage de bout en bout."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non è necessario un account. Crittografato end-to-end."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen account nodig. End-to-end versleuteld."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konto nie jest wymagane. Szyfrowane kompleksowo."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não precisas de uma conta. Encriptado de ponta a ponta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Учетная запись не требуется. Защита сквозным шифрованием."
+          }
+        }
+      }
+    },
     "sync.promo.passwords.message" : {
       "comment" : "Message for the Sync Promotion banner when user has passwords that can be synced",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -81148,55 +82408,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Passwörter synchronisieren und sichern  "
+            "value" : "Passwörter synchronisieren und sichern"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Sync & Back Up Your Passwords  "
+            "value" : "Sync & Back Up Your Passwords"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sincroniza y haz copias de seguridad de tus contraseñas  "
+            "value" : "Sincroniza y haz copias de seguridad de tus contraseñas"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Synchronisez et sauvegardez vos mots de passe  "
+            "value" : "Synchronisez et sauvegardez vos mots de passe"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sincronizza e fai il backup delle password  "
+            "value" : "Sincronizza e fai il backup delle password"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Synchroniseer en maak een back-up van je wachtwoorden  "
+            "value" : "Synchroniseer en maak een back-up van je wachtwoorden"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Synchronizuj i twórz kopie zapasowe haseł  "
+            "value" : "Synchronizuj i twórz kopie zapasowe haseł"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sincroniza e faz uma cópia de segurança das tuas palavras-passe  "
+            "value" : "Sincroniza e faz uma cópia de segurança das tuas palavras-passe"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Синхронизация и резервное копирование паролей  "
+            "value" : "Синхронизация и резервное копирование паролей"
           }
         }
       }

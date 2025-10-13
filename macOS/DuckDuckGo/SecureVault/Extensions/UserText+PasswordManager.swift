@@ -27,15 +27,23 @@ extension UserText {
     static let pmUpdateCredentialsTitle = NSLocalizedString("pm.update-credentials.title", value: "Update password?", comment: "Title for the Update Credentials popover")
 
     static let pmEmptyStateDefaultTitle = NSLocalizedString("pm.empty.default.title2", value: "Nothing added yet", comment: "Label for default empty state title")
-    static let pmEmptyStateDefaultDescription = NSLocalizedString("pm.empty.default.description.extended.v2",
+    static let pmEmptyStatePasswordsDefaultDescription = NSLocalizedString("pm.empty.default.passwords.description.extended.v2",
                                                                   value: "Passwords are encrypted. Nobody but you can see them, not even us.",
                                                                   comment: "Label for default empty state description")
-    static let pmEmptyStateDefaultDescriptionAutolockOff = NSLocalizedString("pm.empty.default.description.extended.v2.autolock.off",
+    static let pmEmptyStatePasswordsDefaultDescriptionAutolockOff = NSLocalizedString("pm.empty.default.passwords.description.extended.v2.autolock.off",
                                                                              value: "Passwords are encrypted.",
+                                                                             comment: "Label for default empty state description when the autolock feature is off")
+    static let pmEmptyStateDefaultDescription = NSLocalizedString("pm.empty.default.description.extended.v2",
+                                                                  value: "Passwords and credit cards are encrypted. Nobody but you can see them, not even us.",
+                                                                  comment: "Label for default empty state description")
+    static let pmEmptyStateDefaultDescriptionAutolockOff = NSLocalizedString("pm.empty.default.description.extended.v2.autolock.off",
+                                                                             value: "Passwords and credit cards are encrypted.",
                                                                              comment: "Label for default empty state description when the autolock feature is off")
     static let pmEmptyStateLearnMoreLink = NSLocalizedString("pm.empty.learn.more.link", value: "Learn more", comment: "Text for link to learn more about DuckDuckGo password manager")
     static let pmEmptyStateDefaultButtonTitle = NSLocalizedString("pm.empty.default.button.title", value: "Import Passwords", comment: "Import passwords button title for default empty state")
-    static let pmEmptyStateSecondaryButtonTitle = NSLocalizedString("pm.empty.secondary.button.title", value: "Sync Passwords", comment: "Sync passwords button title for default empty state")
+    static let pmEmptyStateSecondaryButtonTitlePasswords = NSLocalizedString("pm.empty.secondary.button.passwords.title", value: "Sync Passwords", comment: "Sync passwords button title for default empty state")
+    static let pmEmptyStateSecondaryButtonTitleCreditCards = NSLocalizedString("pm.empty.secondary.button.credit-cards.title", value: "Sync Credit Cards", comment: "Sync credit cards button title for default empty state")
+    static let pmEmptyStateSecondaryButtonTitleIdentities = NSLocalizedString("pm.empty.secondary.button.identities.title", value: "Sync Identities", comment: "Sync identities button title for default empty state")
     static let pmEmptyStateDefaultButtonTitleAllItems = NSLocalizedString("pm.empty.default.button.title", value: "Import From Another Browser", comment: "Import passwords button title for default empty state")
     static let pmEmptyStateSecondaryButtonTitleAllItems = NSLocalizedString("pm.empty.secondary.button.title", value: "Set up Sync & Backup", comment: "Import passwords button title for default empty state")
 

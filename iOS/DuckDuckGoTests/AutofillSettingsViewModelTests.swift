@@ -20,6 +20,11 @@
 import XCTest
 @testable import DuckDuckGo
 import BrowserServicesKit
+import Bookmarks
+import DDGSync
+import Persistence
+@testable import Core
+import Common
 
 final class AutofillSettingsViewModelTests: XCTestCase {
     
@@ -29,19 +34,37 @@ final class AutofillSettingsViewModelTests: XCTestCase {
     private var mockDelegate: MockAutofillSettingsViewModelDelegate!
     private var viewModel: AutofillSettingsViewModel!
     private var mockFeatureFlagger: MockFeatureFlagger!
-    
+    private var syncService: MockDDGSyncing!
+    private var dataProviders: SyncDataProviders!
+
     override func setUpWithError() throws {
         super.setUp()
         setupUserDefault(with: #file)
         manager = AutofillNeverPromptWebsitesManager(secureVault: vault)
         mockDelegate = MockAutofillSettingsViewModelDelegate()
         mockFeatureFlagger = MockFeatureFlagger()
-        
+        syncService = MockDDGSyncing(authState: .inactive, scheduler: CapturingScheduler(), isSyncInProgress: false)
+        let db = CoreDataDatabase.bookmarksMock
+
+        dataProviders = SyncDataProviders(
+            bookmarksDatabase: db,
+            secureVaultFactory: AutofillSecureVaultFactory,
+            secureVaultErrorReporter: SecureVaultReporter(),
+            settingHandlers: [],
+            favoritesDisplayModeStorage: MockFavoritesDisplayModeStoring(),
+            syncErrorHandler: SyncErrorHandler(),
+            faviconStoring: MockFaviconStore(),
+            tld: TLD(),
+            featureFlagger: MockFeatureFlagger()
+        )
+
         viewModel = AutofillSettingsViewModel(
             appSettings: appSettings,
             autofillNeverPromptWebsitesManager: manager,
             secureVault: vault,
-            source: .settings
+            source: .settings,
+            syncService: syncService,
+            syncDataProviders: dataProviders
         )
         viewModel.delegate = mockDelegate
     }
@@ -64,7 +87,9 @@ final class AutofillSettingsViewModelTests: XCTestCase {
             appSettings: appSettings,
             autofillNeverPromptWebsitesManager: manager,
             secureVault: vault,
-            source: .settings
+            source: .settings,
+            syncService: syncService,
+            syncDataProviders: dataProviders
         )
         
         // Then
@@ -86,7 +111,9 @@ final class AutofillSettingsViewModelTests: XCTestCase {
             appSettings: appSettings,
             autofillNeverPromptWebsitesManager: manager,
             secureVault: vault,
-            source: .settings
+            source: .settings,
+            syncService: syncService,
+            syncDataProviders: dataProviders
         )
         
         // Then
@@ -114,7 +141,9 @@ final class AutofillSettingsViewModelTests: XCTestCase {
             appSettings: appSettings,
             autofillNeverPromptWebsitesManager: manager,
             secureVault: nil,
-            source: .settings
+            source: .settings,
+            syncService: syncService,
+            syncDataProviders: dataProviders
         )
         
         // When/Then (handles nil vault)
@@ -154,7 +183,9 @@ final class AutofillSettingsViewModelTests: XCTestCase {
                 autofillNeverPromptWebsitesManager: manager,
                 secureVault: vault,
                 source: .settings,
-                featureFlagger: mockFeatureFlagger
+                featureFlagger: mockFeatureFlagger,
+                syncService: syncService,
+                syncDataProviders: dataProviders
         )
 
         // Then
@@ -169,7 +200,9 @@ final class AutofillSettingsViewModelTests: XCTestCase {
                 autofillNeverPromptWebsitesManager: manager,
                 secureVault: vault,
                 source: .settings,
-                featureFlagger: mockFeatureFlagger
+                featureFlagger: mockFeatureFlagger,
+                syncService: syncService,
+                syncDataProviders: dataProviders
         )
 
         // Then
@@ -187,7 +220,9 @@ final class AutofillSettingsViewModelTests: XCTestCase {
                 autofillNeverPromptWebsitesManager: manager,
                 secureVault: vault,
                 source: .settings,
-                featureFlagger: mockFeatureFlagger
+                featureFlagger: mockFeatureFlagger,
+                syncService: syncService,
+                syncDataProviders: dataProviders
         )
 
         // Then
@@ -203,7 +238,9 @@ final class AutofillSettingsViewModelTests: XCTestCase {
                 autofillNeverPromptWebsitesManager: manager,
                 secureVault: vault,
                 source: .settings,
-                featureFlagger: mockFeatureFlagger
+                featureFlagger: mockFeatureFlagger,
+                syncService: syncService,
+                syncDataProviders: dataProviders
         )
 
         // When
@@ -227,7 +264,9 @@ final class AutofillSettingsViewModelTests: XCTestCase {
                 autofillNeverPromptWebsitesManager: manager,
                 secureVault: vault,
                 source: .settings,
-                featureFlagger: mockFeatureFlagger
+                featureFlagger: mockFeatureFlagger,
+                syncService: syncService,
+                syncDataProviders: dataProviders
         )
 
         // Then
@@ -261,7 +300,9 @@ final class AutofillSettingsViewModelTests: XCTestCase {
                 autofillNeverPromptWebsitesManager: manager,
                 secureVault: vault,
                 source: .settings,
-                featureFlagger: mockFeatureFlagger
+                featureFlagger: mockFeatureFlagger,
+                syncService: syncService,
+                syncDataProviders: dataProviders
         )
 
         // Add new items without refreshing
@@ -295,7 +336,9 @@ final class AutofillSettingsViewModelTests: XCTestCase {
                 autofillNeverPromptWebsitesManager: manager,
                 secureVault: vault,
                 source: .settings,
-                featureFlagger: mockFeatureFlagger
+                featureFlagger: mockFeatureFlagger,
+                syncService: syncService,
+                syncDataProviders: dataProviders
         )
         viewModel.delegate = mockDelegate
 

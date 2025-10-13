@@ -184,6 +184,15 @@
 /* Title for alert shown when sync credentials paused for too many items */
 "alert.sync-credentials-paused-title" = "Salasanojen synkronointi on keskeytetty";
 
+/* Description for alert shown when sync error occurs because of bad credit cards data */
+"alert.sync-credit-cards-bad-data-error-description" = "Jotkin luottokortit on muotoiltu väärin tai ovat liian pitkiä, eikä niitä synkronoitu.";
+
+/* Description for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-description" = "Luottokorttikiintiösi on täynnä. Poista joitakin luottokortteja, jotta voit jatkaa synkronointia.";
+
+/* Title for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-title" = "Luottokorttien synkronointi on keskeytetty";
+
 /* Title for sync error alert */
 "alert.sync-error" = "Synkronointi- ja varmuuskopiointivirhe";
 
@@ -2593,11 +2602,11 @@
 /* Caption of the option to show the Threat Protection preferences */
 "preferences.threat-protection.caption" = "DuckDuckGon parannetut suojaustoiminnot pysäyttävät yleisimmät uhat ja pitävät yhteytesi suojattuna.\n[Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
-/* Description of incorrectly formatted data error when syncing. */
-"prefrences.sync.bad-request.description" = "Jotkin kirjanmerkit tai salasanat on väärin muotoiltuja tai liian pitkiä, eikä niitä ole synkronoitu.";
+/* Description of incorrectly formatted bookmarks data error when syncing. */
+"prefrences.sync.bookmarks-bad-request.description" = "Jotkin kirjanmerkit on muotoiltu väärin tai ovat liian pitkiä, eikä niitä ole synkronoitu.";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
-"prefrences.sync.bookmarks-limit-exceeded-action" = "Hallitse kirjanmerkkejä";
+"prefrences.sync.bookmarks-limit-exceeded-action" = "Hallitse kirjanmerkkejä…";
 
 /* Description for sync bookmarks limits exceeded warning */
 "prefrences.sync.bookmarks-limit-exceeded-description" = "Kirjanmerkkikiintiösi on täynnä. Poista jotakin niistä jatkaaksesi synkronointia.";
@@ -2608,11 +2617,20 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Salasanakiintiösi on täynnä. Poista joitain salasanoja jatkaaksesi synkronointia.";
 
+/* Description of incorrectly formatted credit card data error when syncing. */
+"prefrences.sync.credit-cards-bad-request.description" = "Jotkin luottokortit on muotoiltu väärin tai ovat liian pitkiä, eikä niitä synkronoitu.";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Hallitse luottokortteja…";
+
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Synkronoinnin aikana havaittiin virhe. Yritä poistaa synkronointi käytöstä tällä laitteella. Muodosta sitten yhteys uudelleen toisella laitteella tai palautuskoodilla.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Synkronointi keskeytetty";
+
+/* Description of incorrectly formatted password data error when syncing. */
+"prefrences.sync.passwords-bad-request.description" = "Jotkin salasanat on muotoiltu väärin tai ovat liian pitkiä, eikä niitä ole synkronoitu.";
 
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Synkronointi ja varmuuskopiointi on tilapäisesti poissa käytöstä.";

@@ -120,6 +120,7 @@ final class PasswordManagementViewController: NSViewController {
 
     var domain: String?
     var isEditing = false
+    var pendingRefresh = false
     var isDirty = false {
         didSet {
             listModel?.canChangeCategory = !isDirty
@@ -154,6 +155,13 @@ final class PasswordManagementViewController: NSViewController {
                 self.searchField.isEditable = !isEditing
 
                 self.recalculateKeyViewLoop()
+
+                // If editing ended and we have a pending refresh, do it now
+                if !isEditing && self.pendingRefresh {
+                    Logger.sync.debug("Editing ended, executing pending refresh")
+                    self.pendingRefresh = false
+                    self.refreshData()
+                }
             })
         }
     }
@@ -169,6 +177,7 @@ final class PasswordManagementViewController: NSViewController {
     private let tld = NSApp.delegateTyped.tld
     private let urlSort = AutofillDomainNameUrlSort()
     private let syncButtonModel = SyncDeviceButtonModel()
+    private lazy var privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager
 
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
@@ -246,14 +255,46 @@ final class PasswordManagementViewController: NSViewController {
         emptyStateTitle.stringValue = UserText.pmEmptyStateDefaultTitle
         setUpEmptyStateMessageView()
         emptyStateImportButton.title = listModel?.emptyStateImportButtonText ?? UserText.pmEmptyStateDefaultButtonTitle
-        emptyStateSyncButton.title = listModel?.emptyStateSyncButtonText ?? UserText.pmEmptyStateSecondaryButtonTitle
+        emptyStateSyncButton.title = listModel?.emptyStateSyncButtonText ?? UserText.pmEmptyStateSecondaryButtonTitlePasswords
     }
 
     private func bindSyncDidFinish() -> AnyCancellable? {
-        NSApp.delegateTyped.syncDataProviders?.credentialsAdapter.syncDidCompletePublisher
+        guard let syncDataProviders = NSApp.delegateTyped.syncDataProviders else {
+            return nil
+        }
+
+        var syncPublishers: [AnyPublisher<Void, Never>] = []
+        syncPublishers.append(
+            syncDataProviders.credentialsAdapter.syncDidCompletePublisher
+                .eraseToAnyPublisher()
+        )
+
+        if let creditCardsAdapter = syncDataProviders.creditCardsAdapter {
+            syncPublishers.append(
+                creditCardsAdapter.syncDidCompletePublisher
+                    .eraseToAnyPublisher()
+            )
+        }
+
+        if let identitiesAdapter = syncDataProviders.identitiesAdapter {
+            syncPublishers.append(
+                identitiesAdapter.syncDidCompletePublisher
+                    .eraseToAnyPublisher()
+            )
+        }
+
+        return Publishers.MergeMany(syncPublishers)
+            .debounce(for: .milliseconds(500), scheduler: DispatchQueue.main)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.refreshData()
+                guard let self = self else { return }
+                if self.isEditing {
+                    Logger.sync.debug("Currently editing, deferring refresh")
+                    self.pendingRefresh = true
+                } else {
+                    Logger.sync.debug("Sync completed, refreshing data")
+                    self.refreshData()
+                }
             }
     }
 
@@ -645,6 +686,7 @@ final class PasswordManagementViewController: NSViewController {
                 syncModelsOnIdentity(storedIdentity)
             }
             postChange()
+            requestSync()
 
         } catch {
             PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
@@ -689,6 +731,7 @@ final class PasswordManagementViewController: NSViewController {
                 syncModelsOnCreditCard(storedCard)
             }
             postChange()
+            requestSync()
 
         } catch {
             PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
@@ -732,6 +775,7 @@ final class PasswordManagementViewController: NSViewController {
             case .alertFirstButtonReturn:
                 do {
                     try self.secureVault?.deleteIdentityFor(identityId: id)
+                    self.requestSync()
                     self.refreshData()
                 } catch {
                     PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
@@ -774,6 +818,7 @@ final class PasswordManagementViewController: NSViewController {
             case .alertFirstButtonReturn:
                 do {
                     try self.secureVault?.deleteCreditCardFor(cardId: id)
+                    self.requestSync()
                     self.refreshData()
                 } catch {
                     PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
@@ -902,17 +947,33 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager()
-    lazy var syncPromoViewModel: SyncPromoViewModel = SyncPromoViewModel(touchpointType: .passwords,
-                                                                         primaryButtonAction: { [weak self] in
-        self?.syncPromoManager.goToSyncSettings(for: .passwords)
-        self?.dismiss()
-    },
-                                                                         dismissButtonAction: { [weak self] in
-        self?.syncPromoManager.dismissPromoFor(.passwords)
-        self?.refreshData()
-    })
 
     private func displaySyncPromoView() {
+        let touchpoint: SyncPromoManager.Touchpoint
+        switch listModel?.sortDescriptor.category {
+        case .allItems:
+            touchpoint = .autofill
+        case .logins:
+            touchpoint = .passwords
+        case .cards:
+            touchpoint = .creditCards
+        case .identities:
+            touchpoint = .identities
+        default:
+            touchpoint = .passwords
+        }
+
+        let syncPromoViewModel = SyncPromoViewModel(
+            touchpointType: touchpoint,
+            primaryButtonAction: { [weak self] in
+                self?.syncPromoManager.goToSyncSettings(for: touchpoint)
+                self?.dismiss()
+            },
+            dismissButtonAction: { [weak self] in
+                self?.syncPromoManager.dismissPromoFor(touchpoint)
+                self?.refreshData()
+            }
+        )
 
         let syncPromoView = SyncPromoView(viewModel: syncPromoViewModel, layout: .vertical)
         let view = NSHostingView(rootView: syncPromoView)
@@ -1087,10 +1148,10 @@ final class PasswordManagementViewController: NSViewController {
 
     private func showEmptyState(category: SecureVaultSorting.Category) {
         switch category {
-        case .allItems: showEmptyState(image: .passwordsAdd128, title: UserText.pmEmptyStateDefaultTitle, hideMessage: false, hideButton: false)
-        case .logins: showEmptyState(image: .passwordsAdd128, title: UserText.pmEmptyStateLoginsTitle, hideMessage: false, hideButton: false)
-        case .identities: showEmptyState(image: .identityAdd128, title: UserText.pmEmptyStateIdentitiesTitle)
-        case .cards: showEmptyState(image: .creditCardsAdd128, title: UserText.pmEmptyStateCardsTitle)
+        case .allItems: showEmptyState(image: .passwordsAdd128, title: UserText.pmEmptyStateDefaultTitle, hideMessage: false, hideImportButton: false, hideSyncButton: false)
+        case .logins: showEmptyState(image: .passwordsAdd128, title: UserText.pmEmptyStateLoginsTitle, hideMessage: false, hideImportButton: false, hideSyncButton: false)
+        case .identities: showEmptyState(image: .identityAdd128, title: UserText.pmEmptyStateIdentitiesTitle, hideMessage: true, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncIdentities))
+        case .cards: showEmptyState(image: .creditCardsAdd128, title: UserText.pmEmptyStateCardsTitle, hideMessage: true, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards))
         }
     }
 
@@ -1098,18 +1159,23 @@ final class PasswordManagementViewController: NSViewController {
         emptyState.isHidden = true
     }
 
-    private func showEmptyState(image: NSImage, title: String, hideMessage: Bool = true, hideButton: Bool = true) {
+    private func showEmptyState(image: NSImage, title: String, hideMessage: Bool = true, hideImportButton: Bool = true, hideSyncButton: Bool = true) {
         emptyState.isHidden = false
         emptyStateImageView.image = image
         emptyStateTitle.attributedStringValue = NSAttributedString.make(title, lineHeight: 1.14, kern: -0.23)
         if !hideMessage {
             setUpEmptyStateMessageView()
         }
-        emptyStateImportButton.isHidden = hideButton
-        emptyStateSyncButton.isHidden = hideButton || !syncButtonModel.shouldShowSyncButton
+        emptyStateImportButton.isHidden = hideImportButton
+        emptyStateSyncButton.isHidden = hideSyncButton || !syncButtonModel.shouldShowSyncButton
         emptyStateMessageContainer.isHidden = hideMessage
-        emptyStateImportButton.title = listModel?.emptyStateImportButtonText ?? UserText.pmEmptyStateDefaultButtonTitle
-        emptyStateSyncButton.title = listModel?.emptyStateSyncButtonText ?? UserText.pmEmptyStateSecondaryButtonTitle
+        if hideImportButton {
+            // Setting title to empty string when hidden since there is a width constraint dependency between the import and sync buttons
+            emptyStateImportButton.title = ""
+        } else {
+            emptyStateImportButton.title = listModel?.emptyStateImportButtonText ?? UserText.pmEmptyStateDefaultButtonTitle
+        }
+        emptyStateSyncButton.title = listModel?.emptyStateSyncButtonText ?? UserText.pmEmptyStateSecondaryButtonTitlePasswords
     }
 
     private func requestSync() {

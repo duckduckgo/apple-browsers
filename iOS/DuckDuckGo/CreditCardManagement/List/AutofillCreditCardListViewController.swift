@@ -23,6 +23,8 @@ import Combine
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import DDGSync
+import Core
 
 final class AutofillCreditCardListViewController: UIViewController {
     
@@ -30,7 +32,9 @@ final class AutofillCreditCardListViewController: UIViewController {
     private let secureVault: (any AutofillSecureVault)?
     private var selectedCard: SecureVaultModels.CreditCard?
     private var cancellables: Set<AnyCancellable> = []
-    
+    private let syncService: DDGSyncing
+    private var syncUpdatesCancellable: AnyCancellable?
+
     private lazy var addBarButtonItem: UIBarButtonItem = {
         UIBarButtonItem(image: DesignSystemImages.Glyphs.Size24.add,
                         style: .plain,
@@ -38,9 +42,11 @@ final class AutofillCreditCardListViewController: UIViewController {
                         action: #selector(addButtonPressed))
     }()
     
-    init(secureVault: (any AutofillSecureVault)? = nil, selectedCard: SecureVaultModels.CreditCard? = nil, source: AutofillSettingsSource) {
+    init(secureVault: (any AutofillSecureVault)? = nil, syncService: DDGSyncing, syncDataProviders: SyncDataProviders, selectedCard: SecureVaultModels.CreditCard? = nil, source: AutofillSettingsSource) {
         self.secureVault = secureVault
-        self.viewModel = AutofillCreditCardListViewModel(secureVault: secureVault, source: source)
+        self.syncService = syncService
+
+        self.viewModel = AutofillCreditCardListViewModel(secureVault: secureVault, syncService: syncService, source: source)
         self.selectedCard = selectedCard
         
         super.init(nibName: nil, bundle: nil)
@@ -48,6 +54,12 @@ final class AutofillCreditCardListViewController: UIViewController {
         setupCancellables()
         setupObservers()
         authenticate()
+
+        syncUpdatesCancellable = syncDataProviders.creditCardsAdapter?.syncDidCompletePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.viewModel.refreshData()
+            }
     }
     
     required init?(coder: NSCoder) {
@@ -128,6 +140,7 @@ final class AutofillCreditCardListViewController: UIViewController {
                 }
             } else {
                 showSelectedCardIfRequired()
+                syncService.scheduler.requestSyncImmediately()
             }
         }
     }
@@ -171,6 +184,7 @@ extension AutofillCreditCardListViewController: AutofillCreditCardDetailsViewCon
     
     func autofillCreditCardDetailsViewControllerDidSave(_ controller: AutofillCreditCardDetailsViewController, card: SecureVaultModels.CreditCard?) {
         viewModel.refreshData()
+        syncService.scheduler.notifyDataChanged()
     }
     
     func autofillCreditCardDetailsViewControllerDelete(card: SecureVaultModels.CreditCard) {

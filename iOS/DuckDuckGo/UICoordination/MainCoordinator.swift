@@ -151,7 +151,8 @@ final class MainCoordinator {
                                         systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                         daxDialogsManager: daxDialogsManager,
                                         dbpIOSPublicInterface: dbpIOSPublicInterface,
-                                        launchSourceManager: launchSourceManager)
+                                        launchSourceManager: launchSourceManager,
+                                        remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler)
     }
 
     func start() {

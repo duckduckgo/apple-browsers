@@ -34,7 +34,7 @@ struct HomeMessageViewModelBuilder {
 
     static func build(for remoteMessage: RemoteMessageModel,
                       with subscriptionDataReporter: SubscriptionDataReporting?,
-                      navigator: MessageNavigator,
+                      messageActionHandler: RemoteMessagingActionHandling,
                       onDidClose: @escaping (HomeMessageViewModel.ButtonAction?) async -> Void,
                       onDidAppear: @escaping () -> Void) -> HomeMessageViewModel? {
         guard
@@ -43,12 +43,12 @@ struct HomeMessageViewModelBuilder {
         else {
             return nil
         }
-        
+
         return HomeMessageViewModel(
             messageId: remoteMessage.id,
             sendPixels: remoteMessage.isMetricsEnabled,
             modelType: homeSupportedMessageDisplayType,
-            navigator: navigator,
+            messageActionHandler: messageActionHandler,
             onDidClose: onDidClose,
             onDidAppear: onDidAppear,
             onAttachAdditionalParameters: { useCase, params in

@@ -57,11 +57,11 @@ final class WinBackOfferPromotionViewCoordinator: ObservableObject {
 
 private extension WinBackOfferPromotionViewCoordinator {
     var proceedAction: () async -> Void {
-        {  }
+        { }
     }
 
     var closeAction: () -> Void {
-        {  }
+        { }
     }
 
     /// Dismisses the home page promotion and updates the user state to reflect this.

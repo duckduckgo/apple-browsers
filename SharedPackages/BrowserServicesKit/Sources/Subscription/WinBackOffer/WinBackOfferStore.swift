@@ -60,7 +60,7 @@ public struct WinbackOfferStore: WinbackOfferStoring {
     private let serviceName = "com.duckduckgo.winback-offer"
 
     public init(keychainService: KeychainService = DefaultKeychainService(),
-         keyValueStore: ThrowingKeyValueStoring) {
+                keyValueStore: ThrowingKeyValueStoring) {
         self.keychainService = keychainService
         self.keyValueStore = keyValueStore
     }

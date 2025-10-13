@@ -80,47 +80,6 @@ struct HomeMessageViewModelTests {
         #expect(capturedButtonAction == buttonAction)
     }
 
-//    @Test("mapActionToViewModel handles different button action types")
-//    func mapActionToViewModelHandlesDifferentButtonActions() async throws {
-//        // GIVEN
-//        let mockActionHandler = MockRemoteMessagingActionHandlerForViewModel()
-//        let mockPresenter = MockRemoteMessagingPresenterForViewModel()
-//
-//        let sut = HomeMessageViewModel(
-//            messageId: "test-message",
-//            sendPixels: true,
-//            modelType: .small(titleText: "Title", descriptionText: "Description"),
-//            messageActionHandler: mockActionHandler,
-//            onDidClose: { _ in },
-//            onDidAppear: {},
-//            onAttachAdditionalParameters: nil
-//        )
-//
-//        let testCases: [(RemoteAction, HomeMessageViewModel.ButtonAction)] = [
-//            (.dismiss, .close),
-//            (.url(value: "https://example.com"), .action(isShare: false)),
-//            (.share(value: "share", title: nil), .action(isShare: true)),
-//            (.appStore, .primaryAction(isShare: false)),
-//            (.survey(value: "survey"), .secondaryAction(isShare: false))
-//        ]
-//
-//        // WHEN/THEN
-//        for (remoteAction, buttonAction) in testCases {
-//            mockActionHandler.reset()
-//
-//            let viewModelAction = sut.mapActionToViewModel(
-//                remoteAction: remoteAction,
-//                buttonAction: buttonAction,
-//                onDidClose: sut.onDidClose
-//            )
-//            await viewModelAction(mockPresenter)
-//
-//            #expect(mockActionHandler.handleActionCalled)
-//            #expect(mockActionHandler.lastRemoteAction == remoteAction)
-//        }
-//    }
-//
-
     @Test(
         "Check Image Property Returns Expected Value For Model Type",
         arguments: [

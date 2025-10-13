@@ -58,7 +58,7 @@ enum SyncUIViews {
         let text: String
 
         var body: some View {
-            Text(text)
+            Text(.init(text))
                 .foregroundColor(Color(.blackWhite60))
                 .multilineTextAlignment(.center)
         }

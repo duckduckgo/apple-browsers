@@ -29,6 +29,7 @@ protocol ColorsProviding {
     var addressBarOutlineShadow: NSColor { get }
     var iconsColor: NSColor { get }
     var buttonMouseOverColor: NSColor { get }
+    var buttonMouseDownColor: NSColor { get }
     var fillButtonBackgroundColor: NSColor { get }
     var fillButtonMouseOverColor: NSColor { get }
     var addressBarSuffixTextColor: NSColor { get }

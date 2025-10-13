@@ -38,6 +38,9 @@ final class BookmarkListViewController: NSViewController {
     weak var delegate: BookmarkListViewControllerDelegate?
     var currentTabWebsite: WebsiteInfo?
 
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
     private lazy var titleTextField = NSTextField(string: UserText.bookmarks)
 
     private lazy var stackView = NSStackView()
@@ -77,9 +80,6 @@ final class BookmarkListViewController: NSViewController {
     private let sortBookmarksViewModel: SortBookmarksViewModel
     private let bookmarkMetrics: BookmarksSearchAndSortMetrics
     private let navigationEngagementMetrics: BookmarksNavigationEngagementMetrics
-
-    private var themeCancellable: AnyCancellable?
-    private let themeManager: ThemeManaging
 
     private let treeController: BookmarkTreeController
 
@@ -759,16 +759,12 @@ final class BookmarkListViewController: NSViewController {
 
         outlineView.selectRowIndexes(indexes, byExtendingSelection: false)
     }
+}
 
-    private func subscribeToThemeChanges() {
-        themeCancellable = themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] style in
-                self?.applyThemeStyle(theme: style)
-            }
-    }
+// MARK: - ThemeUpdateListening
+extension BookmarkListViewController: ThemeUpdateListening {
 
-    private func applyThemeStyle(theme: ThemeStyleProviding) {
+    func applyThemeStyle(theme: ThemeStyleProviding) {
         guard let contentView = view as? ColorView else {
             assertionFailure()
             return

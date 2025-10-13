@@ -216,6 +216,11 @@ public enum FeatureFlag: String, CaseIterable {
     case fireDialog
     /// Toggle for showing the "Manage individual sites" link in Fire dialog
     case fireDialogIndividualSitesLink
+
+    ///  https://app.asana.com/1/137249556945/project/72649045549333/task/1207055705580443?focus=true
+    case syncCreditCards
+    case syncIdentities
+
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -233,7 +238,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .refactorOfSyncPreferences,
                 .subscriptionPurchaseWidePixelMeasurement,
                 .subscriptionRestoreWidePixelMeasurement,
-                .authV2WideEventEnabled:
+                .authV2WideEventEnabled,
+                .syncCreditCards,
+                .syncIdentities:
             true
         default:
             false
@@ -311,7 +318,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .authV2WideEventEnabled,
                 .webKitPerformanceReporting,
                 .fireDialog,
-                .winBackOffer:
+                .winBackOffer,
+                .syncCreditCards,
+                .syncIdentities:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -362,6 +371,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
+        case .syncCreditCards:
+            return .remoteReleasable(.subfeature(SyncSubfeature.syncCreditCards))
+        case .syncIdentities:
+            return .remoteReleasable(.subfeature(SyncSubfeature.syncIdentities))
         case .scamSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .scheduledSetDefaultBrowserAndAddToDockPrompts:
@@ -417,7 +430,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .willSoonDropBigSurSupport:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.willSoonDropBigSurSupport))
         case .hangReporting:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.hangReporting))
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))
         case .importChromeShortcuts:
@@ -457,9 +470,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncFeatureLevel3:
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
         case .themes:
-            return .disabled
+            return .internalOnly()
         case .appStoreUpdateFlow:
-            return .remoteReleasable(.feature(.appStoreUpdateFlow))
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .unifiedURLPredictorMetrics:

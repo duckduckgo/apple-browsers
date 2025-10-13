@@ -27,8 +27,8 @@ protocol BookmarkListPopoverDelegate: NSPopoverDelegate {
 
 final class BookmarkListPopover: NSPopover {
 
-    private var themeCancellable: AnyCancellable?
-    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
 
     init(bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager) {
         super.init()
@@ -68,19 +68,7 @@ final class BookmarkListPopover: NSPopover {
     }
 }
 
-private extension BookmarkListPopover {
-
-    func subscribeToThemeChanges() {
-        themeCancellable = themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] style in
-                self?.applyThemeStyle(theme: style)
-            }
-    }
-
-    func applyThemeStyle() {
-        applyThemeStyle(theme: themeManager.theme)
-    }
+extension BookmarkListPopover: ThemeUpdateListening {
 
     func applyThemeStyle(theme: ThemeStyleProviding) {
         backgroundColor = theme.colorsProvider.popoverBackgroundColor

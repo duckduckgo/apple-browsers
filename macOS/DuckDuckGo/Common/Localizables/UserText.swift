@@ -75,7 +75,7 @@ struct UserText {
     }
 
     // Strings to be translated: https://app.asana.com/1/137249556945/project/72649045549333/task/1211370814674975?focus=true
-    static let fireDialogChatHistoryTitle = "Duck.ai Chats"
+    static let fireDialogChatHistoryTitle = "Duck.ai chats"
     static let fireDialogChatHistorySubtitle = "Delete all chats."
 
     static let notNow = NSLocalizedString("notnow", value: "Not Now", comment: "Not Now button")

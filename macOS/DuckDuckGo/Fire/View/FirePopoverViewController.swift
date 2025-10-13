@@ -97,6 +97,8 @@ final class FirePopoverViewController: NSViewController {
         self.fireViewModel = fireViewModel
         self.historyCoordinating = historyCoordinating
         self.themeManager = themeManager
+        // Clear chat history if the option is available and Duck.ai auto-clear is enabled
+        let includeChatHistory = aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption && dataClearingPreferences.isAutoClearEnabled && dataClearingPreferences.isAutoClearAIChatHistoryEnabled
         self.firePopoverViewModel = FireDialogViewModel(fireViewModel: fireViewModel,
                                                         tabCollectionViewModel: tabCollectionViewModel,
                                                         historyCoordinating: historyCoordinating,
@@ -107,7 +109,7 @@ final class FirePopoverViewController: NSViewController {
                                                         includeTabsAndWindows: true,
                                                         includeHistory: true,
                                                         includeCookiesAndSiteData: true,
-                                                        includeChatHistory: aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption && dataClearingPreferences.isAutoClearAIChatHistoryEnabled,
+                                                        includeChatHistory: includeChatHistory,
                                                         tld: tld)
 
         super.init(coder: coder)

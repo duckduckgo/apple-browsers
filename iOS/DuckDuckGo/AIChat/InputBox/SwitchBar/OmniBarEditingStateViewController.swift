@@ -419,6 +419,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         let animator = self.contentAnimator ?? UIViewPropertyAnimator(duration: 0.4, dampingRatio: 0.73)
 
+        contentAnimator = animator
+
         animator.addAnimations(animation)
         if let completion {
             animator.addCompletion(completion)

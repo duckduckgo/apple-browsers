@@ -80,7 +80,10 @@ enum Preferences {
 
         var body: some View {
             HStack(spacing: 0) {
-                Sidebar().environmentObject(model).frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
+                Sidebar()
+                    .environmentObject(model)
+                    .environmentObject(themeManager)
+                    .frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
                     .layoutPriority(1)
                 Color(NSColor.separatorColor).frame(width: 1)
                 ScrollView(.vertical) {
@@ -125,7 +128,10 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared, isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences,
+                                   aiChatModel: AIChatPreferences.shared,
+                                   themeManager: themeManager,
+                                   isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
                 case .dataClearing:
                     DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences,
                                      startupModel: NSApp.delegateTyped.startupPreferences)
@@ -330,7 +336,10 @@ enum Preferences {
 
         var body: some View {
             HStack(spacing: 0) {
-                Sidebar().environmentObject(model).frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
+                Sidebar()
+                    .environmentObject(model)
+                    .environmentObject(themeManager)
+                    .frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
                     .layoutPriority(1)
                 Color(NSColor.separatorColor).frame(width: 1)
                 ScrollView(.vertical) {
@@ -376,7 +385,10 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared, isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences,
+                                   aiChatModel: AIChatPreferences.shared,
+                                   themeManager: themeManager,
+                                   isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
                 case .dataClearing:
                     DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences, startupModel: NSApp.delegateTyped.startupPreferences)
                 case .subscription:

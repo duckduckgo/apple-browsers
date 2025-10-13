@@ -33,6 +33,10 @@ public protocol WinBackOfferVisibilityManaging {
     /// 
     /// Availability depends on feature flag, subscription status, and churn date.
     var isOfferAvailable: Bool { get }
+    /// Whether the urgency message has been dismissed.
+    /// 
+    /// Use this to update the storage when the urgency message is dismissed.
+    var didDismissUrgencyMessage: Bool { get set }
     /// Mark the launch message as presented.
     /// 
     /// Use this to update the storage when the launch message is presented.
@@ -113,6 +117,11 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
         }
 
         return !winbackOfferStore.hasRedeemedOffer()
+    }
+
+    public var didDismissUrgencyMessage: Bool {
+        get { winbackOfferStore.didDismissUrgencyMessage }
+        set { winbackOfferStore.didDismissUrgencyMessage = newValue }
     }
 
     private var isFeatureEnabled: Bool {

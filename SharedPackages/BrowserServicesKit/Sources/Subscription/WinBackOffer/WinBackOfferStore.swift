@@ -27,10 +27,12 @@ public protocol WinbackOfferStoring {
     func setHasRedeemedOffer(_ didRedeem: Bool)
     func hasRedeemedOffer() -> Bool
     var firstDayModalShown: Bool { get set }
+    var didDismissUrgencyMessage: Bool { get set }
 }
 extension WinbackOfferStore {
     enum Key: String {
         case firstDayModalShown = "winback-offer.first-day-modal-shown"
+        case didDismissUrgencyMessage = "winback-offer.did-dismiss-urgency-message"
     }
 
     private enum KeychainKey: String {
@@ -51,6 +53,7 @@ extension WinbackOfferStore {
 /// 
 /// And in user defaults:
 /// - firstDayModalShown
+/// - didDismissUrgencyMessage
 public struct WinbackOfferStore: WinbackOfferStoring {
     private let keychainService: KeychainService
     private let keyValueStore: ThrowingKeyValueStoring
@@ -92,6 +95,11 @@ public struct WinbackOfferStore: WinbackOfferStoring {
             return false
         }
         return didRedeem
+    }
+
+    public var didDismissUrgencyMessage: Bool {
+        get { (try? keyValueStore.object(forKey: Key.didDismissUrgencyMessage.rawValue) as? Bool) ?? false }
+        set { try? keyValueStore.set(newValue, forKey: Key.didDismissUrgencyMessage.rawValue) }
     }
 }
 

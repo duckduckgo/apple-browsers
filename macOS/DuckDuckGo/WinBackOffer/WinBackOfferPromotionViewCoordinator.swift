@@ -34,18 +34,15 @@ final class WinBackOfferPromotionViewCoordinator: ObservableObject {
     /// Stores whether the user has dismissed the home page promotion.
     private var didDismissHomePagePromotion: Bool {
         get {
-            // TODO: Use storage
-            return false
+            return winBackOfferVisibilityManager.didDismissUrgencyMessage
         }
         set {
-            // TODO: Storage (via visibility man + user defaults)
-//            Logger.freemiumDBP.debug("[Freemium DBP] Promotion dismiss state set to \(newValue)")
-//            freemiumDBPUserStateManager.didDismissHomePagePromotion = newValue
+            winBackOfferVisibilityManager.didDismissUrgencyMessage = newValue
             isHomePagePromotionVisible = !newValue
         }
     }
 
-    private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+    private var winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
     /// A set of cancellables for managing Combine subscriptions.
     private var cancellables = Set<AnyCancellable>()
@@ -60,12 +57,10 @@ final class WinBackOfferPromotionViewCoordinator: ObservableObject {
 
 private extension WinBackOfferPromotionViewCoordinator {
     var proceedAction: () async -> Void {
-        // TODO: Implement
         {  }
     }
 
     var closeAction: () -> Void {
-        // TODO: Implement
         {  }
     }
 

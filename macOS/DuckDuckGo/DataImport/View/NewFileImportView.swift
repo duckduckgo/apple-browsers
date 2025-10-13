@@ -106,7 +106,7 @@ struct NewFileImportView: View {
     }
 
     private var fileDropBackgroundColor: Color {
-        isTargeted ? Color(designSystemColor: .accentPrimary).opacity(0.2) : Color(designSystemColor: .surface)
+        isTargeted ? Color(designSystemColor: .accentPrimary).opacity(0.2) : Color(designSystemColor: .surfaceSecondary)
     }
 
     private func button(_ title: String) -> AnyView {

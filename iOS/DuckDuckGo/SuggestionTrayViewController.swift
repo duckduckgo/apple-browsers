@@ -47,8 +47,12 @@ class SuggestionTrayViewController: UIViewController {
         autocompleteController != nil
     }
 
+    var hasFavorites: Bool {
+        return favoritesModel.favorites.isEmpty == false
+    }
+
     var isShowing: Bool {
-        isShowingAutocompleteSuggestions
+        isShowingAutocompleteSuggestions || hasFavorites
     }
 
     private var autocompleteController: AutocompleteViewController?

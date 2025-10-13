@@ -320,14 +320,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
                 self.delegate?.onQueryUpdated(currentText)
 
-                let animator = UIViewPropertyAnimator(duration: Constants.animationDuration, curve: .easeInOut) {
+                scheduleAnimation {
                     self.updateDaxVisibility()
                     self.updateSwipeContainerSafeArea()
                 }
 
                 self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
-
-                animator.startAnimation()
             }
             .store(in: &cancellables)
 
@@ -411,7 +409,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             }
     }
 
-    private func scheduleAnimation(_ animation: @escaping () -> Void, completion: ((UIViewAnimatingPosition) -> Void)?) {
+    private func scheduleAnimation(_ animation: @escaping () -> Void, completion: ((UIViewAnimatingPosition) -> Void)? = nil) {
 
         if contentAnimator?.state == .stopped {
             contentAnimator = nil

@@ -507,6 +507,7 @@ final class BrowserTabViewController: NSViewController {
         if webView.window === view.window, webView.isInspectorShown {
             removeWebInspectorFromHierarchy(container: container)
         }
+        Logger.general.info("removeWebViewFromHierarchy: \(String(describing: webView)) in \(String(describing: self.view.window))")
         container.removeFromSuperview()
         if self.webViewContainer === container {
             self.webViewContainer = nil
@@ -517,6 +518,7 @@ final class BrowserTabViewController: NSViewController {
     private(set) var sidebarContainerWidthConstraint: NSLayoutConstraint?
 
     private func addWebViewToViewHierarchy(_ webView: WebView, tab: Tab) {
+        Logger.general.info("addWebViewToViewHierarchy: \(String(describing: webView)) in \(String(describing: self.view.window))")
         let container = WebViewContainerView(tab: tab, webView: webView, frame: view.bounds)
         self.webViewContainer = container
         containerStackView.orientation = .vertical
@@ -645,6 +647,14 @@ final class BrowserTabViewController: NSViewController {
                let mainWindowController = window.windowController as? MainWindowController,
                let tabIndex = mainWindowController.mainViewController.browserTabViewController.tabCollectionViewModel.selectionIndex,
                tabIndex.isPinnedTab, tabIndex == tabCollectionViewModel.selectionIndex {
+                Logger.general.info("""
+                displayWebView: skipping display of web view for pinned tab in background window:
+                    view.window?.isKeyWindow: \(self.view.window?.isKeyWindow == true)
+                    pinnedTabsManagerProvider.pinnedTabsMode: \(self.pinnedTabsManagerProvider.pinnedTabsMode == .shared)
+                    window: \(String(describing: window))
+                    tabIndex: \(String(describing: tabIndex))
+                    tabCollectionViewModel.selectionIndex: \(String(describing: self.tabCollectionViewModel.selectionIndex))
+                """)
                 guard webViewSnapshot == nil else { return }
 
                 makeWebViewSnapshot(newWebView)
@@ -878,12 +888,16 @@ final class BrowserTabViewController: NSViewController {
                 return webView(for: tabViewModel, tabContent: tabContent)
             }
         case .settings:
+            Logger.general.info("adjustFirstResponder: .settings")
             getView = { [weak self] in self?.preferencesViewController?.view }
         case .bookmarks:
+            Logger.general.info("adjustFirstResponder: .bookmarks")
             getView = { [weak self] in self?.bookmarksViewController?.view }
         case .dataBrokerProtection:
+            Logger.general.info("adjustFirstResponder: .dataBrokerProtection")
             getView = { [weak self] in self?.dataBrokerProtectionHomeViewController?.view }
         case .none:
+            Logger.general.info("adjustFirstResponder: .none")
             getView = nil
         }
 
@@ -891,8 +905,8 @@ final class BrowserTabViewController: NSViewController {
         if let getView, contentView == nil || contentView?.window !== window {
             // if contentView in wrong window or not created yet - activate after adding
             viewToMakeFirstResponderAfterAdding = getView
-            contentView = nil
             Logger.general.info("adjustFirstResponder: assigning viewToMakeFirstResponderAfterAdding for \(String(describing: tabContent))/\(String(describing: contentView)) in \(String(describing: contentView?.window)) !== \(String(describing: window))")
+            contentView = nil
         }
 
         guard window.firstResponder !== contentView ?? window else {
@@ -1040,6 +1054,7 @@ final class BrowserTabViewController: NSViewController {
             changeWebView(tabViewModel: tabViewModel)
             onNewTabPageDidPresent()
         } else {
+            Logger.general.info("updateTabIfNeeded: .onNewTabPageAlreadyPresented")
             onNewTabPageAlreadyPresented()
         }
     }
@@ -1098,9 +1113,11 @@ final class BrowserTabViewController: NSViewController {
         let tabIsNotOnScreen = webView?.tabContentView.superview == nil
         let isDifferentTabDisplayed = webView !== newWebView
 
-        return isDifferentTabDisplayed
+        let shouldReplaceWebView = isDifferentTabDisplayed
         || tabIsNotOnScreen
         || (isPinnedTab && isKeyWindow && webView?.tabContentView.window !== view.window)
+        Logger.general.info("Should replace web view: \(shouldReplaceWebView) (isDifferentTabDisplayed: \(isDifferentTabDisplayed), tabIsNotOnScreen: \(tabIsNotOnScreen), isPinnedTab: \(isPinnedTab), isKeyWindow: \(isKeyWindow), window: \(String(describing: self.webView?.tabContentView.window)), view.window: \(String(describing: self.view.window)))")
+        return shouldReplaceWebView
     }
 
     func generateNativePreviewIfNeeded() {
@@ -1669,6 +1686,7 @@ extension BrowserTabViewController {
         config.afterScreenUpdates = false
 
         showWebViewSnapshot(with: tabViewModel?.snapshot)
+        Logger.general.info("showWebViewSnapshot: takeSnapshot")
         webView.takeSnapshot(with: config) { [weak self] image, _ in
             guard let self, let image,
                   // the window became key while the snapshot was prepared
@@ -1681,6 +1699,7 @@ extension BrowserTabViewController {
     }
 
     private func showWebViewSnapshot(with image: NSImage?) {
+        Logger.general.info("showWebViewSnapshot: image: \(String(describing: image))")
         let snapshotView = if let image {
             WebViewSnapshotView(image: image, frame: view.bounds)
         } else {
@@ -1700,12 +1719,14 @@ extension BrowserTabViewController {
             return
         }
         DispatchQueue.main.async { [weak self, tabViewModel] in
-            guard let self,
-                  self.tabViewModel === tabViewModel else { return }
+            guard let self, self.tabViewModel === tabViewModel else {
+                return Logger.general.info("hideWebViewSnapshotIfNeeded: tabViewModel \(String(describing: self?.tabViewModel)) != \(String(describing: tabViewModel))")
+            }
 
             // only make web view first responder after replacing the
             // snapshot if the address bar is not the first responder
             if view.window?.firstResponder === view.window {
+                Logger.general.info("hideWebViewSnapshotIfNeeded: view.window?.firstResponder === view.window; setting viewToMakeFirstResponderAfterAdding to \(String(describing: self.webView))")
                 viewToMakeFirstResponderAfterAdding = { [weak self] in
                     self?.webView
                 }

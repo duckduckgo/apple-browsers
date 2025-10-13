@@ -334,6 +334,9 @@ final class BookmarkFilePresenter: FilePresenter {
 
         try super.init(url: url, consumeUnbalancedStartAccessingResource: consumeUnbalancedStartAccessingResource, createIfNeededCallback: createIfNeededCallback)
 
+        // TEMP: Remove this before merging.
+        fatalError()
+
         do {
             try self.coordinateRead(at: url, with: .withoutChanges) { url in
                 Logger.fileDownload.debug("📒 updating bookmark data for \"\(url.path)\"")

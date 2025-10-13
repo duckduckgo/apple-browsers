@@ -23,6 +23,7 @@ final class MockWinBackOfferVisibilityManager: WinBackOfferVisibilityManaging {
     var isOfferAvailable = false
     var shouldShowUrgencyMessage = false
     var shouldShowLaunchMessage = false
+    var didDismissUrgencyMessage = false
 
     var lastReceivedLaunchMessagePresented = false
     var lastReceivedOfferRedeemed = false

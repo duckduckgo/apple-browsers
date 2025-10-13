@@ -170,10 +170,14 @@ public final actor Watchdog {
 
         // Reset the heartbeat and state to start fresh after resume
         await monitor.resetHeartbeat()
-        hangState = .responsive
-        hangStartTime = nil
+        resetHangState()
 
         isPaused = false
+    }
+
+    private func resetHangState() {
+        hangStartTime = nil
+        hangState = .responsive
     }
 
     // MARK: - Monitoring
@@ -232,8 +236,7 @@ public final actor Watchdog {
                 logHangDuration(message: "Main thread hang ended.", currentTime: now)
                 fireHangEvent(Watchdog.Event.uiHangRecovered, currentTime: now)
 
-                hangState = .responsive
-                hangStartTime = nil
+                resetHangState()
             } else if timeSinceLastCheck > maximumHangDuration {
                 hangState = .timeout
 
@@ -246,8 +249,8 @@ public final actor Watchdog {
         case .timeout:
             if timeSinceLastCheck <= minimumHangDuration {
                 // Hang became responsive again after timeout. Reset hang state.
-                hangState = .responsive
-                hangStartTime = nil
+                resetHangState()
+
                 logHangDuration(message: "Main thread hang ended after timeout.", currentTime: now)
             } else if timeSinceLastCheck > maximumHangDuration && crashOnTimeout {
                 logHangDuration(message: "Main thread hang timeout reached. Crashing app.", currentTime: now)

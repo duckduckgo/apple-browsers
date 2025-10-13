@@ -31,6 +31,7 @@ import PixelKit
 import SpecialErrorPages
 import UserScript
 import WebKit
+import SERPSettings
 
 protocol TabDelegate: ContentOverlayUserScriptDelegate {
     func tabWillStartNavigation(_ tab: Tab, isUserInitiated: Bool)
@@ -1241,15 +1242,17 @@ extension Tab: PageObserverUserScriptDelegate {
 }
 
 extension Tab: SERPSettingsUserScriptDelegate {
-
-    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
+    func serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
         delegate?.closeTab(self)
     }
 
-    func serpSettingsUserScriptDidRequestToOpenDuckAISettings(_ userScript: SERPSettingsUserScript) {
-        delegate?.closeTab(self)
+    func serpSettingsUserScriptDidRequestToCloseTabAndOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
+        // TODO: To be implemented
     }
 
+    func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
+        delegate?.closeTab(self)
+    }
 }
 
 extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift

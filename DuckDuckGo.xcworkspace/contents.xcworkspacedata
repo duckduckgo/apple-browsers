@@ -34,6 +34,9 @@
       <FileRef
          location = "group:SystemFrameworksExtensions">
       </FileRef>
+      <FileRef
+         location = "container:SharedPackages/SERPSettings">
+      </FileRef>
    </Group>
    <FileRef
       location = "group:iOS/DuckDuckGo-iOS.xcodeproj">

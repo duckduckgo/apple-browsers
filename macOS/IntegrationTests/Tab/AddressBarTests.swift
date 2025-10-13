@@ -869,6 +869,10 @@ class AddressBarTests: XCTestCase {
 
         let viewModel2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]), selectionIndex: .unpinned(0))
         let window2 = WindowsManager.openNewWindow(with: viewModel2)!
+        autoreleasepool {
+            NSApp.activate(ignoringOtherApps: true)
+            window2.makeKeyAndOrderFront(nil)
+        }
         defer {
             window2.close()
         }

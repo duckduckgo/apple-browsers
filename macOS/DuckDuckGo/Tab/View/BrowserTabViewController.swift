@@ -255,7 +255,9 @@ final class BrowserTabViewController: NSViewController {
 
     override func viewDidAppear() {
         super.viewDidAppear()
-
+        Logger.general.debug("""
+        BrowserTabViewController.viewDidAppear: \(String(describing: self)) \(String(describing: self.view))
+        """)
         subscribeToNotifications()
     }
 
@@ -649,6 +651,7 @@ final class BrowserTabViewController: NSViewController {
                tabIndex.isPinnedTab, tabIndex == tabCollectionViewModel.selectionIndex {
                 Logger.general.info("""
                 displayWebView: skipping display of web view for pinned tab in background window:
+                    webView: \(String(describing: newWebView))
                     view.window?.isKeyWindow: \(self.view.window?.isKeyWindow == true)
                     pinnedTabsManagerProvider.pinnedTabsMode: \(self.pinnedTabsManagerProvider.pinnedTabsMode == .shared)
                     window: \(String(describing: window))
@@ -926,7 +929,7 @@ final class BrowserTabViewController: NSViewController {
         Logger.general.info("adjustFirstResponderAfterAddingContentViewIfNeeded: \(String(describing: contentView))")
 
         guard contentView.window === window else {
-            Logger.general.error("adjustFirstResponderAfterAddingContentViewIfNeeded: Content view window is \(contentView.window?.description ?? "<nil>") but expected: \(window)")
+             Logger.general.error("adjustFirstResponderAfterAddingContentViewIfNeeded: Content view window is \(contentView.window?.description ?? "<nil>") but expected: \(window)")
             return
         }
         viewToMakeFirstResponderAfterAdding = nil

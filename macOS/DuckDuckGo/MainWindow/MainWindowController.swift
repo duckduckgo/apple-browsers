@@ -19,6 +19,7 @@
 import Cocoa
 import Combine
 import Common
+import os.log
 import PixelKit
 
 @MainActor
@@ -297,6 +298,8 @@ final class MainWindowController: NSWindowController {
     }
 
     override func showWindow(_ sender: Any?) {
+        Logger.general.debug("showWindow: \(String(describing: self.window!))")
+
         window?.makeKeyAndOrderFront(sender)
         register()
     }
@@ -315,8 +318,10 @@ final class MainWindowController: NSWindowController {
 
     func orderWindowBack(_ sender: Any?) {
         if let lastKeyWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window {
+            Logger.general.debug("orderWindowBack: \(String(describing: self.window!)) below \(String(describing: lastKeyWindow))")
             window?.order(.below, relativeTo: lastKeyWindow.windowNumber)
         } else {
+            Logger.general.debug("orderWindowBack: orderFront: \(String(describing: self.window!))")
             window?.orderFront(sender)
         }
         register()
@@ -336,6 +341,10 @@ extension MainWindowController: NSWindowDelegate {
               keyWindow.isInHierarchy(of: mainWindow) else { return }
 
         mainViewController.windowDidBecomeKey()
+        Logger.general.info("""
+        windowDidBecomeKey: \(String(describing: keyWindow))
+            mainWindow:  \(String(describing: mainWindow))
+        """)
 
         if !mainWindow.isPopUpWindow {
             Application.appDelegate.windowControllersManager.lastKeyMainWindowController = self
@@ -352,6 +361,11 @@ extension MainWindowController: NSWindowDelegate {
               exKeyWindow.isInHierarchy(of: mainWindow),
               // if one of the windows in the window controller chain became key instead of a sheet
               NSApp.keyWindow?.isInHierarchy(of: mainWindow) != true else { return }
+
+        Logger.general.debug("""
+        windowDidResignKey: \(String(describing: exKeyWindow))
+            mainWindow:  \(String(describing: mainWindow))
+        """)
 
         mainViewController.windowDidResignKey()
     }

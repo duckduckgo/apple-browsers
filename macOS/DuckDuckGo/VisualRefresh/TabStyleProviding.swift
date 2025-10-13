@@ -60,7 +60,7 @@ final class LegacyTabStyleProvider: TabStyleProviding {
 final class NewlineTabStyleProvider: TabStyleProviding {
     private let palette: ColorPalette
 
-    var separatorColor: NSColor { palette.decorationTertiary }
+    var separatorColor: NSColor { palette.surfaceDecorationTertiary }
     var selectedTabColor: NSColor { palette.surfacePrimary }
     var hoverTabColor: NSColor { palette.controlsFillPrimary }
 

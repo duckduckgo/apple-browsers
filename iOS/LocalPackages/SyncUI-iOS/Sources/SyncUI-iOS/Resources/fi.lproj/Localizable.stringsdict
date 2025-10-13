@@ -38,5 +38,23 @@
 			<string>Sivuston %2$@ salasanaa ei voi synkronoida, koska yksi sen kenttä ylittää merkkirajoituksen.</string>
 		</dict>
 	</dict>
+	<key>creditcards.invalid.objects.present.description</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@cards@</string>
+		<key>cards</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Luottokorttia %2$@ ja yhtä muuta korttia ei voi synkronoida, koska jotkin niiden kentät ylittävät merkkirajoituksen.</string>
+			<key>other</key>
+			<string>Luottokorttia %2$@ ja %1$d muuta korttia ei voi synkronoida, koska jotkin niiden kentät ylittävät merkkirajoituksen.</string>
+			<key>zero</key>
+			<string>Luottokorttia %2$@ ei voi synkronoida, koska yksi sen kenttä ylittää merkkirajoituksen.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -43,9 +43,11 @@ public struct UserText {
     static let turnSyncOffSectionHeader = NSLocalizedString("turn.sync.off.section.header", bundle: Bundle.module, value: "Sync Enabled", comment: "Turn Sync Off - Section Header")
     // Sync Filtered Items Errors
     static let invalidBookmarksPresentTitle = NSLocalizedString("bookmarks.invalid.objects.present.title", bundle: Bundle.module, value: "Some bookmarks are not syncing due to excessively long content in certain fields.", comment: "Alert title for invalid bookmarks being filtered out of synced data")
-    static let invalidCredentialsPresentTitle = NSLocalizedString("credentials.invalid.objects.present.title", bundle: Bundle.module, value: "Some logins are not syncing due to excessively long content in certain fields.", comment: "Alert title for invalid logins being filtered out of synced data")
+    static let invalidCredentialsPresentTitle = NSLocalizedString("credentials.invalid.objects.present.title", bundle: Bundle.module, value: "Some passwords are not syncing due to excessively long content in certain fields.", comment: "Alert title for invalid logins being filtered out of synced data")
+    static let invalidCreditCardsPresentTitle = NSLocalizedString("creditCards.invalid.objects.present.title", bundle: Bundle.module, value: "Some credit cards are not syncing due to excessively long content in certain fields.", comment: "Alert title for invalid credit cards being filtered out of synced data")
     static let bookmarksLimitExceededAction = NSLocalizedString("prefrences.sync.bookmarks-limit-exceeded-action", value: "Manage Bookmarks", comment: "Button title for sync bookmarks limits exceeded warning to go to manage bookmarks")
     static let credentialsLimitExceededAction = NSLocalizedString("prefrences.sync.credentials-limit-exceeded-action", value: "Manage passwords…", comment: "Button title for sync credentials limits exceeded warning to go to manage passwords")
+    static let creditCardsLimitExceededAction = NSLocalizedString("prefrences.sync.credit-cards-limit-exceeded-action", value: "Manage Credit Cards…", comment: "Button title for sync credit cards limits exceeded warning to go to manage credit cards")
     static func invalidBookmarksPresentDescription(_ invalidItemTitle: String, numberOfOtherInvalidItems: Int) -> String {
         let message = NSLocalizedString("bookmarks.invalid.objects.present.description", bundle: Bundle.module, comment: "Do not translate - stringsdict entry")
         return String(format: message, numberOfOtherInvalidItems, invalidItemTitle)
@@ -53,6 +55,11 @@ public struct UserText {
 
     static func invalidCredentialsPresentDescription(_ invalidItemTitle: String, numberOfOtherInvalidItems: Int) -> String {
         let message = NSLocalizedString("credentials.invalid.objects.present.description", bundle: Bundle.module, comment: "Do not translate - stringsdict entry")
+        return String(format: message, numberOfOtherInvalidItems, invalidItemTitle)
+    }
+
+    static func invalidCreditCardsPresentDescription(_ invalidItemTitle: String, numberOfOtherInvalidItems: Int) -> String {
+        let message = NSLocalizedString("creditcards.invalid.objects.present.description", bundle: Bundle.module, comment: "Do not translate - stringsdict entry")
         return String(format: message, numberOfOtherInvalidItems, invalidItemTitle)
     }
 
@@ -75,14 +82,14 @@ public struct UserText {
 
     // Connect With Server Sheet
     static let connectWithServerSheetTitle = NSLocalizedString("connect.with.server.sheet.title", bundle: Bundle.module, value: "Sync and Back Up This Device", comment: "Connect With Server Sheet - Title")
-    static let connectWithServerSheetDescriptionPart1 = NSLocalizedString("connect.with.server.sheet.description.part1", bundle: Bundle.module, value: "This creates an encrypted backup of your bookmarks and passwords on DuckDuckGo’s secure server, which can be synced with your other devices.", comment: "Connect With Server Sheet - Description Part 1")
+    static let connectWithServerSheetDescriptionPart1 = NSLocalizedString("connect.with.server.sheet.description.part1", bundle: Bundle.module, value: "This creates an encrypted backup of your bookmarks and autofill data on DuckDuckGo’s secure server, which can be synced with your other devices.", comment: "Connect With Server Sheet - Description Part 1")
     static let connectWithServerSheetDescriptionPart2 = NSLocalizedString("connect.with.server.sheet.description.part2", bundle: Bundle.module, value: "The encryption key is only stored on your device, DuckDuckGo cannot access it.", comment: "Connect With Server Sheet - Description Part 2")
     static let connectWithServerSheetButton = NSLocalizedString("connect.with.server.sheet.button", bundle: Bundle.module, value: "Turn On Sync & Back Up", comment: "Connect With Server Sheet - Button")
     static let connectWithServerSheetFooter = NSLocalizedString("connect.with.server.sheet.footer", bundle: Bundle.module, value: "You can sync with your other devices later.", comment: "Connect With Server Sheet - Footer")
 
     // Preparing To Sync Sheet
     static let preparingToSyncSheetTitle = NSLocalizedString("preparing.to.sync.sheet.title", bundle: Bundle.module, value: "Setting Up Sync and Backup", comment: "Preparing To Sync Sheet - Title")
-    static let preparingToSyncSheetDescription = NSLocalizedString("preparing.to.sync.sheet.description", bundle: Bundle.module, value: "Your bookmarks and passwords are being prepared to sync. This should only take a moment.", comment: "Preparing To Sync Sheet - Description")
+    static let preparingToSyncSheetDescription = NSLocalizedString("preparing.to.sync.sheet.description", bundle: Bundle.module, value: "Your bookmarks and autofill data are being prepared to sync. This should only take a moment.", comment: "Preparing To Sync Sheet - Description")
     static let preparingToSyncSheetFooter = NSLocalizedString("preparing.to.sync.sheet.footer", bundle: Bundle.module, value: "Connecting…", comment: "Preparing To Sync Sheet - Footer")
 
     // Save Recovery Code Sheet
@@ -186,6 +193,6 @@ public struct UserText {
     static let syncGetOtherDevicesTitle = NSLocalizedString("sync.get.other.devices.card.title", bundle: Bundle.module, value: "Get DuckDuckGo on other devices to sync with this one", comment: "Title of card with share links for users to download DuckDuckGo on other devices")
     static let syncGetOtherDevicesMessage = NSLocalizedString("sync.get.other.devices.card.message", bundle: Bundle.module, value: "To download DuckDuckGo on desktop or another mobile device, visit:", comment: "Message before share link for downloading DuckDuckGo on other devices")
     static let syncGetOtherDevicesButtonTitle = NSLocalizedString("sync.get.other.devices.card.button.title", bundle: Bundle.module, value: "Share Download Link", comment: "Button title to share link for downloading DuckDuckGo on other devices")
-    static let syncGetOtherDeviceShareLinkMessage = NSLocalizedString("sync.get.other.devices.share.link.message", bundle: Bundle.module, value: "Install the DuckDuckGo browser on your devices to start securely syncing your bookmarks and passwords:", comment: "Message included when sharing a url via the system share sheet")
+    static let syncGetOtherDeviceShareLinkMessage = NSLocalizedString("sync.get.other.devices.share.link.message", bundle: Bundle.module, value: "Install the DuckDuckGo browser on your devices to start securely syncing your bookmarks and autofill data:", comment: "Message included when sharing a url via the system share sheet")
 
 }

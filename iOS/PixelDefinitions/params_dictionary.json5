@@ -115,6 +115,40 @@
         "type": "string",
         "description": "Underlying error domain (supports optional numeric index for nested errors)"
     },
+    "duration": {
+        "key": "duration",
+        "type": "string",
+        "description": "Duration in milliseconds",
+        "pattern": "^\\d+$",
+        "examples": ["1500", "3200"]
+    },
+    "navigation_type": {
+        "key": "navigation_type",
+        "type": "string",
+        "description": "Type of navigation that triggered the loading",
+        "enum": [
+            "linkActivated",
+            "formSubmitted",
+            "formResubmitted",
+            "backForward",
+            "reload",
+            "redirect",
+            "sessionRestoration",
+            "alternateHtmlLoad",
+            "sameDocumentNavigation",
+            "other",
+            "custom.userEnteredUrl",
+            "custom.loadedByStateRestoration",
+            "custom.appOpenUrl",
+            "custom.historyEntry",
+            "custom.bookmark",
+            "custom.ui",
+            "custom.link",
+            "custom.webViewUpdated",
+            "custom.userRequestedPageDownload",
+            "custom.unknown"
+        ]
+    },
     "widePixelUnderlyingErrorCode": {
         "keyPattern": "feature\\.data\\.error\\.underlying_code[0-9]*",
         "type": "string",

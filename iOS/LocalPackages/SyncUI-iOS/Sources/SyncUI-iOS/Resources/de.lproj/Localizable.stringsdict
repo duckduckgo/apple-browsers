@@ -38,5 +38,23 @@
 			<string>Dein Passwort für %2$@ kann nicht synchronisiert werden, weil eines der Felder das Zeichenlimit überschreitet.</string>
 		</dict>
 	</dict>
+	<key>creditcards.invalid.objects.present.description</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@cards@</string>
+		<key>cards</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Deine Kreditkarte %2$@ und 1 andere Karte können nicht synchronisiert werden, weil einige ihrer Felder das Zeichenlimit überschreiten.</string>
+			<key>other</key>
+			<string>Deine Kreditkarte %2$@ und %1$d andere Karten können nicht synchronisiert werden, weil einige ihrer Felder das Zeichenlimit überschreiten.</string>
+			<key>zero</key>
+			<string>Deine Kreditkarte %2$@ kann nicht synchronisiert werden, da eines ihrer Felder das Zeichenlimit überschreitet.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

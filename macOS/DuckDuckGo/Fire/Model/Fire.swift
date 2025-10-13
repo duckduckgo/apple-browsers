@@ -133,7 +133,7 @@ final class Fire: FireProtocol {
     let permissionManager: PermissionManagerProtocol
     let savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating
     let downloadListCoordinator: DownloadListCoordinator
-    let windowControllerManager: WindowControllersManagerProtocol
+    let windowControllersManager: WindowControllersManagerProtocol
     let faviconManagement: FaviconManagement
     let fireproofDomains: FireproofDomains
     let autoconsentManagement: AutoconsentManagement?
@@ -214,7 +214,7 @@ final class Fire: FireProtocol {
          permissionManager: PermissionManagerProtocol? = nil,
          savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating = AccessibilityPreferences.shared,
          downloadListCoordinator: DownloadListCoordinator = DownloadListCoordinator.shared,
-         windowControllerManager: WindowControllersManagerProtocol? = nil,
+         windowControllersManager: WindowControllersManagerProtocol? = nil,
          faviconManagement: FaviconManagement? = nil,
          fireproofDomains: FireproofDomains? = nil,
          autoconsentManagement: AutoconsentManagement? = nil,
@@ -235,7 +235,7 @@ final class Fire: FireProtocol {
         self.permissionManager = permissionManager ?? NSApp.delegateTyped.permissionManager
         self.savedZoomLevelsCoordinating = savedZoomLevelsCoordinating
         self.downloadListCoordinator = downloadListCoordinator
-        self.windowControllerManager = windowControllerManager ?? Application.appDelegate.windowControllersManager
+        self.windowControllersManager = windowControllersManager ?? Application.appDelegate.windowControllersManager
         self.faviconManagement = faviconManagement ?? NSApp.delegateTyped.faviconManager
         self.fireproofDomains = fireproofDomains ?? NSApp.delegateTyped.fireproofDomains
         self.recentlyClosedCoordinator = recentlyClosedCoordinator ?? RecentlyClosedCoordinator.shared
@@ -327,7 +327,7 @@ final class Fire: FireProtocol {
 
         burningData = .all
 
-        let entity = BurningEntity.allWindows(mainWindowControllers: windowControllerManager.mainWindowControllers, selectedDomains: Set(), customURLToOpen: url, close: true)
+        let entity = BurningEntity.allWindows(mainWindowControllers: windowControllersManager.mainWindowControllers, selectedDomains: Set(), customURLToOpen: url, close: true)
 
         // Close windows first if fire animation is disabled
         let shouldCloseWindowsFirst = !visualizeFireAnimationDecider.shouldShowFireAnimation
@@ -338,7 +338,7 @@ final class Fire: FireProtocol {
         burnLastSessionState()
         burnDeletedBookmarks()
 
-        let windowControllers = windowControllerManager.mainWindowControllers
+        let windowControllers = windowControllersManager.mainWindowControllers
 
         let tabViewModels = tabViewModels(of: entity)
 
@@ -417,7 +417,7 @@ final class Fire: FireProtocol {
 
             // Burn all windows in case we are burning visits for today (respecting closeWindows flag)
             if isToday {
-                entity = .allWindows(mainWindowControllers: self.windowControllerManager.mainWindowControllers, selectedDomains: domains, customURLToOpen: url, close: closeWindows)
+                entity = .allWindows(mainWindowControllers: self.windowControllersManager.mainWindowControllers, selectedDomains: domains, customURLToOpen: url, close: closeWindows)
             } else {
                 entity = .none(selectedDomains: domains)
             }
@@ -448,7 +448,7 @@ final class Fire: FireProtocol {
         /// This function returns the dropping point of the closed window,
         /// useful for opening a new window after burning in the exact same place.
         func closeWindow(of tabCollectionViewModel: TabCollectionViewModel) -> NSPoint? {
-            guard let windowController = windowControllerManager.windowController(for: tabCollectionViewModel) else {
+            guard let windowController = windowControllersManager.windowController(for: tabCollectionViewModel) else {
                 return nil
             }
             let droppingPoint = windowController.window?.frame.droppingPoint
@@ -479,17 +479,24 @@ final class Fire: FireProtocol {
         }
 
         // If the app is not active, don't retake focus by opening a new window
-        guard NSApp.isActive else { return }
+        let isActive = NSApp.isActive
+        guard isActive else { return }
 
         // Open a new window in case there is none
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             /// When we are burning on exit we do not need to open a new window.
-            if self.windowControllerManager.mainWindowControllers.count == 0 && !isBurnOnExit {
+            if windowControllersManager.mainWindowControllers.count == 0 && !isBurnOnExit {
                 if case let .allWindows(_, _, customURLToOpen: customURL, _) = entity, let customURL {
                     WindowsManager.openNewWindow(with: customURL, source: .ui, isBurner: false, droppingPoint: newWindowDroppingPoint)
+                    let tab = Tab(content: .contentFromURL(customURL, source: .ui), shouldLoadInBackground: true, burnerMode: .regular)
+                    let tabCollection = TabCollection(tabs: [tab], isPopup: false)
+
+                    let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: pinnedTabsManagerProvider, burnerMode: .regular, windowControllersManager: windowControllersManager)
+// TODO: validate this in tests; 
+                    windowControllersManager.openNewWindow(with: tabCollectionViewModel, droppingPoint: newWindowDroppingPoint, showWindow: true)
                 } else {
-                    WindowsManager.openNewWindow(droppingPoint: newWindowDroppingPoint)
+                    windowControllersManager.openNewWindow(droppingPoint: newWindowDroppingPoint)
                 }
             }
         }
@@ -753,7 +760,7 @@ final class Fire: FireProtocol {
             return pinnedTabViewModels + tabViewModels
         case .allWindows:
             let pinnedTabViewModels = Array(pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabViewModels.values })
-            let tabViewModels = windowControllerManager.allTabViewModels
+            let tabViewModels = windowControllersManager.allTabViewModels
             return pinnedTabViewModels + tabViewModels
         }
     }

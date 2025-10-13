@@ -72,6 +72,7 @@ struct PrivateSearchViewSettings: View {
                     SettingsCellView(label: UserText.moreSearchSettings,
                                      subtitle: UserText.moreSearchSettingsExplanation)
                 }
+                .listRowBackground(Color(designSystemColor: .surface))
             } else {
                 SettingsCellView(label: UserText.moreSearchSettings,
                                  subtitle: UserText.moreSearchSettingsExplanation,

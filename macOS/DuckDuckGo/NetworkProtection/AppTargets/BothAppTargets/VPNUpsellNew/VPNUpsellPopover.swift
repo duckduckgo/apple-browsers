@@ -180,7 +180,7 @@ private struct FeatureRow: View {
         HStack(alignment: .top, spacing: Constants.featureRowHorizontalSpacing) {
             Image(systemName: "checkmark")
                 .font(.system(size: Constants.featureRowImageFontSize, weight: .medium))
-                .foregroundColor(Color(designSystemColor: .icons))
+                .foregroundColor(Color(designSystemColor: .iconsPrimary))
                 .frame(width: Constants.featureRowImageSize.width, height: Constants.featureRowImageSize.height)
                 .padding(.top, Constants.featureRowImageTopPadding)
 

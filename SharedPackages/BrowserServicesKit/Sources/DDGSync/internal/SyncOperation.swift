@@ -132,6 +132,11 @@ final class SyncOperation: Operation, @unchecked Sendable {
 
         try await withThrowingTaskGroup(of: Void.self) { group in
             for dataProvider in dataProviders {
+                if let toggleable = dataProvider as? FeatureToggleableProvider,
+                   toggleable.isSyncFeatureEnabled == false {
+                    Logger.sync.debug("Skipping \(dataProvider.feature.name, privacy: .public) because feature is disabled")
+                    continue
+                }
                 group.addTask { [weak self] in
                     guard let self else {
                         return

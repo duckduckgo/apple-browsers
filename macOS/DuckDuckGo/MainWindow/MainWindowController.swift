@@ -336,15 +336,18 @@ final class MainWindowController: NSWindowController {
 extension MainWindowController: NSWindowDelegate {
 
     private func windowDidBecomeKeyNotification(_ notification: Notification) {
+        Logger.general.info("""
+        windowDidBecomeKey: \(String(describing: notification.object))
+            mainWindow:  \(String(describing: self.window))
+        """)
         guard let keyWindow = notification.object as? NSWindow,
               let mainWindow = self.window,
-              keyWindow.isInHierarchy(of: mainWindow) else { return }
+              keyWindow.isInHierarchy(of: mainWindow) else {
+            Logger.general.info("Unexpected window object: children: \(String(describing: self.window?.childWindows)); sheets: \(String(describing: self.window?.sheets))")
+            return
+        }
 
         mainViewController.windowDidBecomeKey()
-        Logger.general.info("""
-        windowDidBecomeKey: \(String(describing: keyWindow))
-            mainWindow:  \(String(describing: mainWindow))
-        """)
 
         if !mainWindow.isPopUpWindow {
             Application.appDelegate.windowControllersManager.lastKeyMainWindowController = self

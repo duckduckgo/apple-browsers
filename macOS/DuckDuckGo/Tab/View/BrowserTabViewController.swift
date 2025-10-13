@@ -255,8 +255,9 @@ final class BrowserTabViewController: NSViewController {
 
     override func viewDidAppear() {
         super.viewDidAppear()
-        Logger.general.debug("""
+        Logger.general.info("""
         BrowserTabViewController.viewDidAppear: \(String(describing: self)) \(String(describing: self.view))
+            key window: \(String(describing: NSApp.keyWindow)) <- \(String(describing: NSApp.keyWindow?.parent))
         """)
         subscribeToNotifications()
     }

@@ -221,7 +221,6 @@ public enum FeatureFlag: String, CaseIterable {
     case syncCreditCards
     case syncIdentities
 
-
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211469820985204?focus=true
     case dataImportNewSafariFilePicker
 }

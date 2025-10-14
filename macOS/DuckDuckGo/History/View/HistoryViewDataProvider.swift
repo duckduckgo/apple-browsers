@@ -81,14 +81,13 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         historyDataSource: HistoryDataSource,
         historyBurner: HistoryBurning,
         dateFormatter: HistoryViewDateFormatting = DefaultHistoryViewDateFormatter(),
-        featureFlagger: FeatureFlagger? = nil,
+        featureFlagger: FeatureFlagger,
         pixelHandler: HistoryViewDataProviderPixelFiring = HistoryViewDataProviderPixelHandler()
     ) {
         self.dateFormatter = dateFormatter
         self.historyDataSource = historyDataSource
         self.historyBurner = historyBurner
         self.pixelHandler = pixelHandler
-        let featureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
         self.featureFlagger = featureFlagger
         historyGroupingProvider = { @MainActor in
             HistoryGroupingProvider(dataSource: historyDataSource, featureFlagger: featureFlagger)
@@ -161,7 +160,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         }
     }
 
-    private func bestTitle(forSiteDomain domain: String) -> String {
+    func bestTitle(forSiteDomain domain: String) -> String {
         guard let historyDictionary = historyDataSource.historyDictionary else {
             return domain
         }
@@ -437,7 +436,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
     private var visitsByRange: [DataModel.HistoryRange: [Visit]] = [:]
 
     private var isSitesSectionEnabled: Bool {
-        featureFlagger.isFeatureOn(.historyViewSitesSectionSubfeature)
+        featureFlagger.isFeatureOn(.historyViewSitesSection)
     }
 
     private func uniqueETLDPlus1Domains() -> [String] {

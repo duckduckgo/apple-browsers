@@ -760,6 +760,159 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(siteItem.title, "Newer Title")
     }
 
+    // MARK: - bestTitle(forSiteDomain:)
+
+    func testWhenHistoryIsEmptyThenBestTitleReturnsDomain() {
+        dataSource.history = nil
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "example.com")
+    }
+
+    func testWhenNoEntriesMatchDomainThenBestTitleReturnsDomain() throws {
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://other.com".url), title: "Other Site", visits: [.init(date: Date())])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "example.com")
+    }
+
+    func testWhenRootIndexPageExistsThenBestTitleReturnsItsTitle() throws {
+        let today = Date()
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://example.com/page1/page2".url), title: "Page 2", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://example.com".url), title: "Example Home", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://example.com/page".url), title: "Other Page", visits: [.init(date: today)]),
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "Example Home")
+    }
+
+    func testWhenRootIndexPageHasEmptyTitleThenBestTitleReturnsURL() throws {
+        let today = Date()
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://example.com".url), title: "", visits: [.init(date: today)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "https://example.com")
+    }
+
+    func testWhenRootIndexPageHasNilTitleThenBestTitleReturnsURL() throws {
+        let today = Date()
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://example.com".url), title: nil, visits: [.init(date: today)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "https://example.com")
+    }
+
+    func testWhenWWWRootIndexPageExistsThenBestTitleReturnsItsTitle() throws {
+        let today = Date()
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://www.example.com".url), title: "WWW Example", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://example.com/page".url), title: "Other Page", visits: [.init(date: today)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "WWW Example")
+    }
+
+    func testWhenRootIndexPageWithSlashExistsThenBestTitleReturnsItsTitle() throws {
+        let today = Date()
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://example.com/".url), title: "Root Slash", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://example.com/page".url), title: "Other Page", visits: [.init(date: today)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "Root Slash")
+    }
+
+    func testWhenMultipleRootPagesThenBestTitlePrefersHTTPS() throws {
+        let today = Date()
+        dataSource.history = [
+            .make(url: try XCTUnwrap("http://example.com".url), title: "HTTP Root", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://example.com".url), title: "HTTPS Root", visits: [.init(date: today)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "HTTPS Root")
+    }
+
+    func testWhenMultipleRootPagesWithSameSchemesThenBestTitlePrefersMostRecent() throws {
+        let olderDate = Date().addingTimeInterval(-7200)
+        let newerDate = Date().addingTimeInterval(-3600)
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://example.com".url), title: "Older Root", visits: [.init(date: olderDate)]),
+            .make(url: try XCTUnwrap("https://www.example.com".url), title: "Newer Root", visits: [.init(date: newerDate)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "Newer Root")
+    }
+
+    func testWhenNoRootPageThenBestTitleReturnsMostRecentPageTitle() throws {
+        let olderDate = Date().addingTimeInterval(-7200)
+        let newerDate = Date().addingTimeInterval(-3600)
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://example.com/older".url), title: "Older Page", visits: [.init(date: olderDate)]),
+            .make(url: try XCTUnwrap("https://example.com/newer".url), title: "Newer Page", visits: [.init(date: newerDate)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "Newer Page")
+    }
+
+    func testWhenNoRootPageAndMostRecentHasEmptyTitleThenBestTitleReturnsURL() throws {
+        let olderDate = Date().addingTimeInterval(-7200)
+        let newerDate = Date().addingTimeInterval(-3600)
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://example.com/older".url), title: "Older Page", visits: [.init(date: olderDate)]),
+            .make(url: try XCTUnwrap("https://example.com/newer".url), title: "", visits: [.init(date: newerDate)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "https://example.com/newer")
+    }
+
+    func testWhenMultipleSubdomainsThenBestTitleMatchesAllForDomain() throws {
+        let today = Date()
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://a.example.com/page".url), title: "Subdomain A", visits: [.init(date: today.addingTimeInterval(-3600))]),
+            .make(url: try XCTUnwrap("https://b.example.com/page".url), title: "Subdomain B", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://other.com".url), title: "Other", visits: [.init(date: today)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        // Should return most recent from any subdomain
+        XCTAssertEqual(title, "Subdomain B")
+    }
+
+    func testWhenRootPageExistsWithSubdomainPagesThenBestTitlePrefersRoot() throws {
+        let today = Date()
+        let olderDate = today.addingTimeInterval(-7200)
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://example.com".url), title: "Root Page", visits: [.init(date: olderDate)]),
+            .make(url: try XCTUnwrap("https://subdomain.example.com/newer".url), title: "Subdomain Newer", visits: [.init(date: today)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        // Should prefer root even if subdomain is more recent
+        XCTAssertEqual(title, "Root Page")
+    }
+
+    func testWhenHTTPSRootAndHTTPNonRootThenBestTitlePrefersHTTPSRoot() throws {
+        let today = Date()
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://example.com".url), title: "HTTPS Root", visits: [.init(date: today.addingTimeInterval(-3600))]),
+            .make(url: try XCTUnwrap("http://example.com/page".url), title: "HTTP Page", visits: [.init(date: today)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "HTTPS Root")
+    }
+
+    func testWhenRootHTTPNewerThanRootHTTPSThenBestTitlePrefersHTTPS() throws {
+        let olderDate = Date().addingTimeInterval(-7200)
+        let newerDate = Date().addingTimeInterval(-3600)
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://example.com".url), title: "HTTPS Root", visits: [.init(date: olderDate)]),
+            .make(url: try XCTUnwrap("http://example.com".url), title: "HTTP Root", visits: [.init(date: newerDate)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "HTTPS Root")
+    }
+
     // MARK: - helpers
 
     private func date(year: Int?, month: Int?, day: Int?, hour: Int? = nil, minute: Int? = nil, second: Int? = nil) throws -> Date {

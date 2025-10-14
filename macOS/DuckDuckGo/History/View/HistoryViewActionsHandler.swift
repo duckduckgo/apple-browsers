@@ -151,11 +151,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
     func showDeleteDialog(for entries: [String], in window: NSWindow?) async -> DataModel.DeleteDialogResponse {
         // If entries represent site selections (e.g., "site:example.com"),
         // mirror the context menu behavior and present the Fire dialog for sites.
-        let siteDomains: [String] = entries.compactMap { entry in
-            guard entry.hasPrefix("site:"), let idx = entry.firstIndex(of: ":") else { return nil }
-            let domain = entry[entry.index(after: idx)...]
-            return domain.isEmpty ? nil : String(domain)
-        }
+        let siteDomains = extractSiteDomains(from: entries)
 
         if !siteDomains.isEmpty {
             return await showDeleteDialog(for: .domainFilter(Set(siteDomains)), in: window)
@@ -178,11 +174,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         contextMenuResponse = .noAction
 
         let identifiers = entries.compactMap(VisitIdentifier.init)
-        let siteDomains: [String] = entries.compactMap { entry in
-            guard entry.hasPrefix("site:"), let idx = entry.firstIndex(of: ":") else { return nil }
-            let domain = entry[entry.index(after: idx)...]
-            return domain.isEmpty ? nil : String(domain)
-        }
+        let siteDomains = extractSiteDomains(from: entries)
 
         // Unify sites vs identifiers: compute selection kind and build a single menu differing only by delete item
         let isSiteSelection = identifiers.isEmpty && !siteDomains.isEmpty
@@ -365,6 +357,14 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
             return .noAction
         case .delete, .burn:
             return .delete
+        }
+    }
+
+    private func extractSiteDomains(from entries: [String]) -> [String] {
+        entries.compactMap { entry in
+            guard entry.hasPrefix("site:"), let idx = entry.firstIndex(of: ":") else { return nil }
+            let domain = entry[entry.index(after: idx)...]
+            return domain.isEmpty ? nil : String(domain)
         }
     }
 }

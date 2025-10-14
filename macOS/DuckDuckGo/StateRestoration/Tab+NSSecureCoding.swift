@@ -82,6 +82,8 @@ extension Tab: NSSecureCoding {
 
         if let pane = content.preferencePane {
             coder.encode(pane.rawValue, forKey: NSSecureCodingKeys.preferencePane)
+        } else if let pane = content.historyPane {
+            coder.encode(pane.rawValue, forKey: NSSecureCodingKeys.historyPane)
         }
 
         self.encodeExtensions(with: coder)
@@ -168,6 +170,15 @@ private extension Tab.TabContent {
     var preferencePane: PreferencePaneIdentifier? {
         switch self {
         case let .settings(pane: pane):
+            return pane
+        default:
+            return nil
+        }
+    }
+
+    var historyPane: HistoryPaneIdentifier? {
+        switch self {
+        case let .history(pane: pane):
             return pane
         default:
             return nil

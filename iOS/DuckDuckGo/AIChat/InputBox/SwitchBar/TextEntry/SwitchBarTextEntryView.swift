@@ -166,6 +166,10 @@ class SwitchBarTextEntryView: UIView {
             self?.handler.clearText()
             self?.handler.clearButtonTapped()
         }
+
+        buttonsView.onVoiceTapped = { [weak self] in
+            self?.handler.microphoneButtonTapped()
+        }
     }
 
     private func updateButtonsPadding() {
@@ -251,7 +255,7 @@ class SwitchBarTextEntryView: UIView {
         let buttonsIntersectionWidth = textView.frame.intersection(buttonsView.frame).width
 
         // Use default inset or the amount of how buttons interset with the view + required spacing
-        let rightInset = currentButtonState.showsClearButton ? buttonsIntersectionWidth : Constants.textHorizontalInset
+        let rightInset = currentButtonState.showsAnyButton ? buttonsIntersectionWidth : Constants.textHorizontalInset
 
         textView.textContainerInset = UIEdgeInsets(
             top: Constants.textTopInset,

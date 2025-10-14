@@ -218,7 +218,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                 let dataBroker = brokerProfileQueriesData.first?.dataBroker
                 errorDelegate?.dataBrokerOperationDidError(error,
                                                            withBrokerURL: dataBroker?.url,
-                                                           version: dataBroker?.url,
+                                                           version: dataBroker?.version,
                                                            stepType: stepType,
                                                            dataBrokerParent: dataBroker?.parent)
             }

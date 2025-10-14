@@ -13,9 +13,9 @@
                 "type": "integer"
             },
             {
-                key: 'data_broker',
-                description: 'The URL of the data broker that this action was operating on',
-                type: 'string',
+                "key": "data_broker",
+                "description": "The URL of the data broker that this action was operating on",
+                "type": "string"
             },
             {
                 "key": "broker_version",
@@ -53,9 +53,9 @@
                 "type": "integer"
             },
             {
-                key: 'data_broker',
-                description: 'The URL of the data broker that this action was operating on',
-                type: 'string',
+                "key": "data_broker",
+                "description": "The URL of the data broker that this action was operating on",
+                "type": "string"
             },
             {
                 "key": "broker_version",
@@ -207,9 +207,9 @@
             "appVersion",
             "pixelSource",
             {
-                key: 'data_broker',
-                description: 'The URL of the data broker that this action was operating on',
-                type: 'string',
+                "key": "data_broker",
+                "description": "The URL of the data broker that this action was operating on",
+                "type": "string"
             },
             {
                 "key": "broker_version",
@@ -232,9 +232,9 @@
             "appVersion",
             "pixelSource",
             {
-                key: 'data_broker',
-                description: 'The URL of the data broker that this action was operating on',
-                type: 'string',
+                "key": "data_broker",
+                "description": "The URL of the data broker that this action was operating on",
+                "type": "string"
             },
             {
                 "key": "broker_version",
@@ -264,9 +264,9 @@
             "appVersion",
             "pixelSource",
             {
-                key: 'data_broker',
-                description: 'The URL of the data broker that this action was operating on',
-                type: 'string',
+                "key": "data_broker",
+                "description": "The URL of the data broker that this action was operating on",
+                "type": "string"
             },
             {
                 "key": "broker_version",
@@ -304,9 +304,9 @@
             "appVersion",
             "pixelSource",
             {
-                key: 'data_broker',
-                description: 'The URL of the data broker that this action was operating on',
-                type: 'string',
+                "key": "data_broker",
+                "description": "The URL of the data broker that this action was operating on",
+                "type": "string"
             },
             {
                 "key": "broker_version",
@@ -339,9 +339,9 @@
             "appVersion",
             "pixelSource",
             {
-                key: 'data_broker',
-                description: 'The URL of the data broker that this action was operating on',
-                type: 'string',
+                "key": "data_broker",
+                "description": "The URL of the data broker that this action was operating on",
+                "type": "string"
             },
             {
                 "key": "broker_version",
@@ -379,9 +379,9 @@
             "appVersion",
             "pixelSource",
             {
-                key: 'data_broker',
-                description: 'The URL of the data broker that this action was operating on',
-                type: 'string',
+                "key": "data_broker",
+                "description": "The URL of the data broker that this action was operating on",
+                "type": "string"
             },
             {
                 "key": "broker_version",
@@ -419,9 +419,9 @@
             "appVersion",
             "pixelSource",
             {
-                key: 'data_broker',
-                description: 'The URL of the data broker that this action was operating on',
-                type: 'string',
+                "key": "data_broker",
+                "description": "The URL of the data broker that this action was operating on",
+                "type": "string"
             },
             {
                 "key": "broker_version",
@@ -449,9 +449,9 @@
             "appVersion",
             "pixelSource",
             {
-                key: 'data_broker',
-                description: 'The URL of the data broker that this action was operating on',
-                type: 'string',
+                "key": "data_broker",
+                "description": "The URL of the data broker that this action was operating on",
+                "type": "string"
             },
             {
                 "key": "broker_version",
@@ -485,9 +485,9 @@
                 "enum": ["pir-opt-out-submission"]
             },
             {
-                key: 'feature.data.ext.data_broker',
-                type: 'string',
-                description: 'The URL of the data broker associated with this opt-out submission',
+                "key": "feature.data.ext.data_broker",
+                "type": "string",
+                "description": "The URL of the data broker associated with this opt-out submission"
             },
             {
                 "key": "feature.data.ext.data_broker_version",
@@ -564,9 +564,9 @@
                 "enum": ["pir-opt-out-confirmation"]
             },
             {
-                key: 'feature.data.ext.data_broker',
-                type: 'string',
-                description: 'The URL of the data broker associated with this confirmation flow',
+                "key": "feature.data.ext.data_broker",
+                "type": "string",
+                "description": "The URL of the data broker associated with this confirmation flow"
             },
             {
                 "key": "feature.data.ext.data_broker_version",

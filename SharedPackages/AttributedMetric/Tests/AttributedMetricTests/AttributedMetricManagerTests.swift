@@ -21,6 +21,8 @@ import XCTest
 @testable import AttributedMetric
 import PixelKit
 import BrowserServicesKit
+import BrowserServicesKitTestsUtils
+import AttributedMetricTestsUtils
 
 final class AttributedMetricManagerTests: XCTestCase {
 

@@ -451,8 +451,9 @@ extension PerformanceTestWindowView {
             Text(PerformanceTestConstants.Strings.totalTests)
                 .foregroundColor(.secondary)
             Spacer()
+
             Text("\(results.iterations)")
-                .font(.system(.body, design: .monospaced))
+               .font(.system(.body, design: .monospaced))
         }
     }
 
@@ -630,8 +631,9 @@ extension PerformanceTestWindowView {
         case PerformanceTestConstants.StatViews.cv:
             let mean = relevantValues.reduce(0, +) / Double(relevantValues.count)
             guard mean > 0 else { return nil }
+
             // Calculate stdDev directly on relevantValues to avoid recursive dropFirst()
-            let variance = relevantValues.reduce(0) { sum, value in
+           let variance = relevantValues.reduce(0) { sum, value in
                 sum + pow(value - mean, 2)
             } / Double(relevantValues.count)
             let stdDev = sqrt(variance)

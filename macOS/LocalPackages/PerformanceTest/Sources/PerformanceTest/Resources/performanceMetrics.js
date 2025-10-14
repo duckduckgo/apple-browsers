@@ -16,28 +16,33 @@
 //  limitations under the License.
 //
 
-(function() {
-    try {
-        if (document.readyState !== 'complete') {
+const NOT_AVAILABLE = 'N/A';
+const DOCUMENT_STATE_COMPLETE = 'complete';
+const NAVIGATION_TYPE_NAVIGATE = 'navigate';
+
+// Performance API
+const ENTRY_TYPE_NAVIGATION = 'navigation';
+const ENTRY_TYPE_PAINT = 'paint';
+const ENTRY_TYPE_RESOURCE = 'resource';
+const PAINT_NAME_FCP = 'first-contentful-paint';
+
+
+
+function collectPerformanceMetrics() {
+   try {
+        if (document.readyState !== DOCUMENT_STATE_COMPLETE) {
             return null;
         }
 
-        const navigation = performance.getEntriesByType('navigation')[0];
-        const paint = performance.getEntriesByType('paint');
-        const resources = performance.getEntriesByType('resource');
+        const navigation = performance.getEntriesByType(ENTRY_TYPE_NAVIGATION)[0];
+        const paint = performance.getEntriesByType(ENTRY_TYPE_PAINT);
+        const resources = performance.getEntriesByType(ENTRY_TYPE_RESOURCE);
 
         // Find FCP
-        const fcp = paint.find(p => p.name === 'first-contentful-paint');
+        const fcp = paint.find(p => p.name === PAINT_NAME_FCP);
 
-        // Get largest contentful paint if available
-        let largestContentfulPaint = null;
-        if (window.PerformanceObserver && PerformanceObserver.supportedEntryTypes &&
-            PerformanceObserver.supportedEntryTypes.includes('largest-contentful-paint')) {
-            const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
-            if (lcpEntries.length > 0) {
-                largestContentfulPaint = lcpEntries[lcpEntries.length - 1].startTime;
-            }
-        }
+        // Note: LCP is not supported in Safari/WebKit - always 0
+        const largestContentfulPaint = 0;
 
         // Calculate total resource sizes
         const totalResourceSize = resources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
@@ -55,16 +60,21 @@
                 firstContentfulPaint: fcp ? fcp.startTime : null,
                 largestContentfulPaint: largestContentfulPaint,
 
-                // Network metrics (both naming conventions for compatibility)
-                ttfb: navigation.responseStart - navigation.fetchStart,
-                timeToFirstByte: navigation.responseStart - navigation.fetchStart,
-                responseTime: navigation.responseEnd - navigation.responseStart,
-                serverTime: navigation.responseStart - navigation.requestStart,
+                // Network timing metrics
+                ttfb: (typeof navigation.responseStart === 'number' && typeof navigation.fetchStart === 'number')
+                    ? (navigation.responseStart - navigation.fetchStart)
+                    : NOT_AVAILABLE,
+                responseTime: (typeof navigation.responseEnd === 'number' && typeof navigation.responseStart === 'number')
+                    ? (navigation.responseEnd - navigation.responseStart)
+                    : NOT_AVAILABLE,
+                serverTime: (typeof navigation.responseStart === 'number' && typeof navigation.requestStart === 'number')
+                    ? (navigation.responseStart - navigation.requestStart)
+                    : NOT_AVAILABLE,
 
-                // Size metrics (in bytes)
-                transferSize: navigation.transferSize || 0,
-                encodedBodySize: navigation.encodedBodySize || 0,
-                decodedBodySize: navigation.decodedBodySize || 0,
+                // Size metrics - return 0 as legitimate value (not N/A)
+                transferSize: typeof navigation.transferSize === 'number' ? navigation.transferSize : 0,
+                encodedBodySize: typeof navigation.encodedBodySize === 'number' ? navigation.encodedBodySize : 0,
+                decodedBodySize: typeof navigation.decodedBodySize === 'number' ? navigation.decodedBodySize : 0,
 
                 // Resource metrics
                 resourceCount: resources.length,
@@ -74,9 +84,9 @@
                 tti: navigation.domInteractive - navigation.fetchStart,
 
                 // Additional metadata
-                protocol: navigation.nextHopProtocol || 'unknown',
-                redirectCount: navigation.redirectCount || 0,
-                navigationType: navigation.type || 'navigate'
+                protocol: navigation.nextHopProtocol || NOT_AVAILABLE,
+               redirectCount: navigation.redirectCount || 0,
+                navigationType: navigation.type || NAVIGATION_TYPE_NAVIGATE
             };
         }
 
@@ -84,4 +94,4 @@
     } catch (e) {
         return { error: 'JavaScript execution error: ' + e.message };
     }
-})();
+}

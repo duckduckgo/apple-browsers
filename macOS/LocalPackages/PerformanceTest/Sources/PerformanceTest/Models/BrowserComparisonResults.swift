@@ -116,57 +116,6 @@ public struct BrowserComparisonResults {
         return safariValue < duckduckgoValue ? .safari : .duckduckgo
     }
 
-    /// Determine which browser won for a count-based metric (fewer is typically better)
-    public func countBasedWinner(_ duckduckgoValue: Int, _ safariValue: Int) -> BrowserWinner {
-        let threshold = 1
-        let diff = abs(duckduckgoValue - safariValue)
-
-        if diff <= threshold {
-            return .tie
-        }
-
-        return safariValue < duckduckgoValue ? .safari : .duckduckgo
-    }
-
-    // MARK: - Overall Comparison
-
-    /// Calculate overall winner based on key metrics
-    public var overallWinner: BrowserWinner {
-        var duckduckgoWins = 0
-        var safariWins = 0
-
-        // Key metrics to consider (weighted equally)
-        let metrics: [(Double, Double)] = [
-            (getMedian(duckDuckGoResults.detailedMetrics.loadComplete),
-             getMedian(safariResults.detailedMetrics.loadComplete)),
-            (getMedian(duckDuckGoResults.detailedMetrics.domComplete),
-             getMedian(safariResults.detailedMetrics.domComplete)),
-            (getMedian(duckDuckGoResults.detailedMetrics.ttfb),
-             getMedian(safariResults.detailedMetrics.ttfb)),
-            (getMedian(duckDuckGoResults.detailedMetrics.fcp),
-             getMedian(safariResults.detailedMetrics.fcp))
-        ]
-
-        for (ddgValue, safariValue) in metrics {
-            switch timeBasedWinner(ddgValue, safariValue) {
-            case .duckduckgo:
-                duckduckgoWins += 1
-            case .safari:
-                safariWins += 1
-            case .tie:
-                break
-            }
-        }
-
-        if duckduckgoWins > safariWins {
-            return .duckduckgo
-        } else if safariWins > duckduckgoWins {
-            return .safari
-        } else {
-            return .tie
-        }
-    }
-
     // MARK: - Helper Methods
 
     private func getMedian(_ values: [Double]) -> Double {

@@ -115,7 +115,8 @@ final class SuggestionTrayManager: NSObject {
                 appSettings: self.dependencies.appSettings,
                 aiChatSettings: self.dependencies.aiChatSettings,
                 featureDiscovery: self.dependencies.featureDiscovery,
-                newTabPageDependencies: self.dependencies.newTabPageDependencies
+                newTabPageDependencies: self.dependencies.newTabPageDependencies,
+                hideBorder: true
             )
         }) else {
             assertionFailure("Failed to instantiate SuggestionTrayViewController")

@@ -574,7 +574,8 @@ class MainViewController: UIViewController {
                                          appSettings: self.appSettings,
                                          aiChatSettings: self.aiChatSettings,
                                          featureDiscovery: self.featureDiscovery,
-                                         newTabPageDependencies: self.newTabPageDependencies)
+                                         newTabPageDependencies: self.newTabPageDependencies,
+                                         hideBorder: false)
         }) else {
             assertionFailure()
             return

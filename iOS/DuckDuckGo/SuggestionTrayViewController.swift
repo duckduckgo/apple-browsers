@@ -66,6 +66,7 @@ class SuggestionTrayViewController: UIViewController {
     private let appSettings: AppSettings
     private let aiChatSettings: AIChatSettingsProvider
     private let featureDiscovery: FeatureDiscovery
+    private let hideBorder: Bool
 
     var coversFullScreen: Bool = false
 
@@ -120,7 +121,8 @@ class SuggestionTrayViewController: UIViewController {
                    appSettings: AppSettings,
                    aiChatSettings: AIChatSettingsProvider,
                    featureDiscovery: FeatureDiscovery,
-                   newTabPageDependencies: NewTabPageDependencies) {
+                   newTabPageDependencies: NewTabPageDependencies,
+                   hideBorder: Bool) {
         self.favoritesModel = favoritesViewModel
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
@@ -130,6 +132,7 @@ class SuggestionTrayViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.newTabPageDependencies = newTabPageDependencies
         self.featureDiscovery = featureDiscovery
+        self.hideBorder = hideBorder
         super.init(coder: coder)
     }
     
@@ -287,7 +290,9 @@ class SuggestionTrayViewController: UIViewController {
         )
 
         controller.delegate = newTabPageControllerDelegate
-        controller.hideBorderView()
+        if hideBorder {
+            controller.hideBorderView()
+        }
 
         install(controller: controller,
                 animated: animated,

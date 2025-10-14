@@ -84,6 +84,7 @@ protocol OmniBarDelegate: AnyObject {
     func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?)
 
     func onSelectFavorite(_ favorite: BookmarkEntity)
+    func onEditFavorite(_ favorite: BookmarkEntity)
 
     func didRequestCurrentURL() -> URL?
 

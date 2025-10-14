@@ -63,6 +63,10 @@ class SwitchBarTextEntryView: UIView {
 
     let textHeightChangeSubject = PassthroughSubject<Void, Never>()
 
+    /// When true the text entry will expand the text when the selection changes, e.g.  If the user uses the space bar to move the caret then it updates the selection.
+    ///   This gets set to true after selectAll() on the field gets call.
+    var canExpandOnSelectionChange = false
+
     var hasBeenInteractedWith = false
     var isURL: Bool {
         // TODO some kind of text length check?
@@ -398,10 +402,17 @@ class SwitchBarTextEntryView: UIView {
 
     func selectAllText() {
         textView.selectAll(nil)
+        canExpandOnSelectionChange = true
     }
 }
 
 extension SwitchBarTextEntryView: UITextViewDelegate {
+
+    func textViewDidChangeSelection(_ textView: UITextView) {
+        guard canExpandOnSelectionChange else { return }
+        textViewDidChange(textView)
+        canExpandOnSelectionChange = false
+    }
 
     func textViewDidBeginEditing(_ textView: UITextView) {
         fireTextAreaFocusedPixel()

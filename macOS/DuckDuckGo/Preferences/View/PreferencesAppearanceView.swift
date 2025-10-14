@@ -134,7 +134,7 @@ extension Preferences {
         private let knobSize = CGSize(width: 28, height: 8)
         private let knobRadius: CGFloat = 7
 
-        /// MARK: - Properties
+        // MARK: - Properties
         private let themeColors: ThemeColors
 
         /// Designated Initializer

@@ -1346,7 +1346,7 @@ final class FireDialogViewModelTests: XCTestCase {
         let historyCoordinator = HistoryCoordinatingMock()
         let faviconManager = FaviconManagerMock()
         let fire = Fire(historyCoordinating: historyCoordinator,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         tld: Application.appDelegate.tld)
         let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())

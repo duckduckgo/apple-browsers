@@ -660,7 +660,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(pixelHandler.fireFilterUpdatedPixelCalls, [])
     }
 
-    // MARK: - delete chat history
+    // MARK: - chat history
 
     func testWhenDeleteVisitsIsCalledWithDeleteChatsThenBurnChatsIsCalled() async throws {
         let deleteChats = true
@@ -671,6 +671,19 @@ final class HistoryViewDataProviderTests: XCTestCase {
     func testWhenDeleteVisitsIsCalledWithoutDeleteChatsThenBurnChatsIsNotCalled() async throws {
         let deleteChats = false
         await provider.deleteVisits(matching: .rangeFilter(.all), and: deleteChats)
+        XCTAssertEqual(burner.burnChatsCallsCount, 0)
+    }
+
+    func testWhenBurnVisitsIsCalledForAllVisitsWithBurnChatsThenBurnAllIsCalled() async throws {
+        let deleteChats = true
+        await provider.burnVisits(matching: .rangeFilter(.all), and: deleteChats)
+        XCTAssertEqual(burner.burnAllCallsCount, 1)
+    }
+
+    func testWhenBurnVisitsIsCalledForAllVisitsWithoutBurnChatsThenBurnAllIsNotCalled() async throws {
+        let deleteChats = false
+        await provider.burnVisits(matching: .rangeFilter(.all), and: deleteChats)
+        XCTAssertEqual(burner.burnAllCallsCount, 0)
         XCTAssertEqual(burner.burnChatsCallsCount, 0)
     }
 

@@ -132,7 +132,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
     }
 
     func burnVisits(matching query: DataModel.HistoryQueryKind, and burnChats: Bool) async {
-        guard query != .rangeFilter(.all) else {
+        guard query != .rangeFilter(.all) || !burnChats else {
             await historyBurner.burnAll()
             await refreshData()
             return

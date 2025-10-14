@@ -59,7 +59,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     }
 
     func cleanAIChatHistory() {
-        // TODO: https://app.asana.com/1/137249556945/project/72649045549333/task/1211370814674973?focus=true
+        // To be implemented: https://app.asana.com/1/137249556945/project/72649045549333/task/1211370814674973?focus=true
         print("*** AIChatHistoryCleaner: cleaning chat history ***")
     }
 

@@ -29,7 +29,11 @@ public enum JobType {
 }
 
 public protocol BrokerProfileJobErrorDelegate: AnyObject {
-    func dataBrokerOperationDidError(_ error: Error, withBrokerURL brokerURL: String?, version: String?)
+    func dataBrokerOperationDidError(_ error: any Error,
+                                     withBrokerURL brokerURL: String?,
+                                     version: String?,
+                                     stepType: StepType?,
+                                     dataBrokerParent: String?)
 }
 
 public class BrokerProfileJob: Operation, @unchecked Sendable {

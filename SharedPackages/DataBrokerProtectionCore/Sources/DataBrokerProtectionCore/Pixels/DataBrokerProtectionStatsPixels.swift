@@ -285,6 +285,23 @@ extension DataBrokerProtectionStatsPixels {
                                                                    profileQueryId: optOutJob.profileQueryId,
                                                                    extractedProfileId: extractedProfileID)
         }
+
+        for optOutJob in fortyTwoDayOldPlusOptOutsThatHaveNotFiredPixel {
+            let brokerURL = brokerIDsToURLs[optOutJob.brokerId] ?? ""
+            let isOptOutConfirmed = optOutJob.extractedProfile.removedDate != nil
+
+            if isOptOutConfirmed {
+                handler.fire(.optOutJobAt42DaysConfirmed(dataBroker: brokerURL))
+            } else {
+                handler.fire(.optOutJobAt42DaysUnconfirmed(dataBroker: brokerURL))
+            }
+
+            guard let extractedProfileID = optOutJob.extractedProfile.id else { continue }
+            try? database.updateFortyTwoDaysConfirmationPixelFired(true,
+                                                                   forBrokerId: optOutJob.brokerId,
+                                                                   profileQueryId: optOutJob.profileQueryId,
+                                                                   extractedProfileId: extractedProfileID)
+        }
     }
 }
 

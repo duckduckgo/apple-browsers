@@ -80,7 +80,8 @@ public class FileStore {
             } catch {
                 let nserror = error as NSError
                 if nserror.domain != NSCocoaErrorDomain || nserror.code != NSFileReadNoSuchFileError {
-                    let pixel = configuration.couldNotLoadConfigurationPixelEvent
+                    // Only non-app targets provide a suffix to the pixel, so pass nil here:
+                    let pixel = Pixel.Event.couldNotLoadConfiguration(configuration: configuration, target: nil)
                     let parameters: [String: String] = if configuration == .trackerDataSet, let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                         [
                             "experimentName": experimentName,

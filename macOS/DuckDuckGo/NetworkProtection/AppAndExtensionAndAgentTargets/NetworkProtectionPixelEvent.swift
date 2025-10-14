@@ -113,7 +113,8 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
 
     case networkProtectionConfigurationInvalidPayload(configuration: Configuration)
     case networkProtectionConfigurationErrorLoadingCachedConfig(_ error: Error)
-    case networkProtectionConfigurationFailedToParse(_ error: Error)
+
+    case couldNotParseConfiguration(configuration: Configuration, error: Error)
 
     case networkProtectionUnhandledError(function: String, line: Int, error: Error)
 
@@ -333,8 +334,8 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
         case .networkProtectionConfigurationErrorLoadingCachedConfig:
             return "netp_ev_configuration_error_loading_cached_config"
 
-        case .networkProtectionConfigurationFailedToParse:
-            return "netp_ev_configuration_failed_to_parse"
+        case .couldNotParseConfiguration(let configuration):
+            return "\(configuration)_parse_failed_vpn".lowercased()
 
         case .networkProtectionUnhandledError:
             return "netp_unhandled_error"
@@ -400,7 +401,7 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
             return error?.pixelParameters
         case .networkProtectionConfigurationErrorLoadingCachedConfig(let error):
             return error.pixelParameters
-        case .networkProtectionConfigurationFailedToParse(let error):
+        case .couldNotParseConfiguration(_, let error):
             return error.pixelParameters
         case .networkProtectionVPNAccessRevoked(let error):
             return error.pixelParameters

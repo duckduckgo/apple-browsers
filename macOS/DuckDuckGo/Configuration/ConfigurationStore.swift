@@ -165,7 +165,7 @@ final class ConfigurationStore: ConfigurationStoring {
                 let nserror = error as NSError
 
                 if nserror.domain != NSCocoaErrorDomain || nserror.code != NSFileReadNoSuchFileError {
-                    let pixel = config.couldNotLoadConfigurationPixelEvent
+                    let pixel = GeneralPixel.couldNotLoadConfiguration(configuration: config, target: nil)
                     let parameters: [String: String] = if config == .trackerDataSet, let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                         [
                             "experimentName": experimentName,
@@ -217,29 +217,6 @@ final class ConfigurationStore: ConfigurationStoring {
     func fileUrl(for configuration: Configuration) -> URL {
         let dir = FileManager.default.configurationDirectory()
         return dir.appendingPathComponent(configuration.fileName)
-    }
-
-}
-
-private extension Configuration {
-
-    var couldNotLoadConfigurationPixelEvent: GeneralPixel {
-        switch self {
-        case .bloomFilterBinary:
-            return .bloomFilterBinaryCouldNotBeLoaded
-        case .bloomFilterExcludedDomains:
-            return .bloomFilterExcludedDomainsCouldNotBeLoaded
-        case .bloomFilterSpec:
-            return .bloomFilterSpecCouldNotBeLoaded
-        case .privacyConfiguration:
-            return .privacyConfigurationCouldNotBeLoaded
-        case .remoteMessagingConfig:
-            return .remoteMessagingConfigCouldNotBeLoaded
-        case .surrogates:
-            return .surrogateCouldNotBeLoaded
-        case .trackerDataSet:
-            return .trackerDataCouldNotBeLoaded
-        }
     }
 
 }

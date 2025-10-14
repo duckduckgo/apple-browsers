@@ -344,19 +344,12 @@ enum GeneralPixel: PixelKitEvent {
 
     case configurationFetchError(error: Error)
 
-    case trackerDataParseFailed
+    case couldNotLoadConfiguration(configuration: Configuration, target: String?)
+    case couldNotParseConfiguration(configuration: Configuration)
+
     case trackerDataReloadFailed
-    case trackerDataCouldNotBeLoaded
 
-    case privacyConfigurationParseFailed
     case privacyConfigurationReloadFailed
-
-    case bloomFilterBinaryCouldNotBeLoaded
-    case bloomFilterSpecCouldNotBeLoaded
-    case bloomFilterExcludedDomainsCouldNotBeLoaded
-    case privacyConfigurationCouldNotBeLoaded
-    case surrogateCouldNotBeLoaded
-    case remoteMessagingConfigCouldNotBeLoaded
 
     case configurationFileCoordinatorError
 
@@ -988,30 +981,21 @@ enum GeneralPixel: PixelKitEvent {
         case .configurationFetchError:
             return "cfgfetch"
 
-        case .trackerDataParseFailed:
-            return "tracker_data_parse_failed"
+        case .couldNotLoadConfiguration(let configuration, let target):
+            if let target {
+                return "\(configuration)_load_failed_\(target)".lowercased()
+            } else {
+                return "\(configuration)_load_failed".lowercased()
+            }
+
+        case .couldNotParseConfiguration(let configuration):
+            return "\(configuration)_parse_failed".lowercased()
+
         case .trackerDataReloadFailed:
             return "tds_r"
-        case .trackerDataCouldNotBeLoaded:
-            return "tracker_data_could_not_be_loaded"
 
-        case .privacyConfigurationParseFailed:
-            return "pcf_p"
         case .privacyConfigurationReloadFailed:
             return "pcf_r"
-
-        case .bloomFilterBinaryCouldNotBeLoaded:
-            return "bloom_filter_binary_could_not_be_loaded"
-        case .bloomFilterSpecCouldNotBeLoaded:
-            return "bloom-filter_spec_could_not_be_loaded"
-        case .bloomFilterExcludedDomainsCouldNotBeLoaded:
-            return "bloom_filter_exclued_domains_could_not_be_loaded"
-        case .privacyConfigurationCouldNotBeLoaded:
-            return "privacy_configuration_could_not_be_loaded"
-        case .surrogateCouldNotBeLoaded:
-            return "surrogates_could_not_be_loaded"
-        case .remoteMessagingConfigCouldNotBeLoaded:
-            return "remote_message_config_could_not_be_loaded"
 
         case .configurationFileCoordinatorError:
             return "configuration_file_coordinator_error"

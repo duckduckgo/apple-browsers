@@ -191,6 +191,9 @@ public struct PixelParameters {
 
     // New Address Bar Picker
     public static let selection = "selection"
+
+    // Target type
+    public static let vpnTarget = "vpn"
 }
 
 public struct PixelValues {

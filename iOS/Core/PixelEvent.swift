@@ -725,14 +725,13 @@ extension Pixel {
         case dbLocalAuthenticationError
         
         case configurationFetchInfo
-        
-        case trackerDataParseFailed
+        case couldNotLoadConfiguration(configuration: Configuration, target: String?)
+        case couldNotParseConfiguration(configuration: Configuration, target: String?)
+
         case trackerDataReloadFailed
-        case trackerDataCouldNotBeLoaded
         case fileStoreWriteFailed
         case fileStoreCoordinatorFailed
         case privacyConfigurationReloadFailed
-        case privacyConfigurationParseFailed
         
         case contentBlockingCompilationFailed(listType: CompileRulesListType,
                                               component: ContentBlockerDebugEvents.Component)
@@ -744,13 +743,6 @@ extension Pixel {
         
         case contentBlockingCompilationTaskPerformance(iterationCount: Int, timeBucketAggregation: CompileTimeBucketAggregation)
         case ampBlockingRulesCompilationFailed
-
-        case bloomFilterBinaryCouldNotBeLoaded
-        case bloomFilterSpecCouldNotBeLoaded
-        case bloomFilterExcludedDomainsCouldNotBeLoaded
-        case privacyConfigurationCouldNotBeLoaded
-        case surrogateCouldNotBeLoaded
-        case remoteMessagingConfigCouldNotBeLoaded
 
         case webKitDidTerminate
         case webKitTerminationDidReloadCurrentTab
@@ -2064,18 +2056,27 @@ extension Pixel.Event {
         case .debugBookmarksMigratedMoreThanOnce: return "m_debug_bookmarks_migrated-more-than-once"
             
         case .configurationFetchInfo: return "m_d_cfgfetch"
-            
-        case .trackerDataParseFailed: return "m_d_tracker_data_parse_failed"
+        case .couldNotLoadConfiguration(let configuration, let target):
+            if let target {
+                return "m_debug_\(configuration)_load_failed_\(target)".lowercased()
+            } else {
+                return "m_debug_\(configuration)_load_failed".lowercased()
+            }
+
+        case .couldNotParseConfiguration(let configuration, let target):
+            if let target {
+                return "m_debug_\(configuration)_parse_failed_\(target)".lowercased()
+            } else {
+                return "m_debug_\(configuration)_parse_failed".lowercased()
+            }
+
         case .trackerDataReloadFailed: return "m_d_tds_r"
-        case .trackerDataCouldNotBeLoaded: return "m_d_tracker_data_could_not_be_loaded"
         case .fileStoreWriteFailed: return "m_d_fswf"
         case .fileStoreCoordinatorFailed: return "m_d_configuration_file_coordinator_error"
         case .privacyConfigurationReloadFailed: return "m_d_pc_r"
-        case .privacyConfigurationParseFailed: return "m_d_pc_p"
             
         case .contentBlockingCompilationFailed(let listType, let component):
             return "m_d_content_blocking_\(listType)_\(component)_compilation_failed"
-            
             
         case .contentBlockingLookupRulesSucceeded: return "m_content_blocking_lookup_rules_succeeded"
         case .contentBlockingFetchLRCSucceeded: return "m_content_blocking_fetch_lrc_succeeded"
@@ -2085,19 +2086,6 @@ extension Pixel.Event {
         case .contentBlockingCompilationTaskPerformance(let iterationCount, let timeBucketAggregation):
             return "m_content_blocking_compilation_loops_\(iterationCount)_time_\(timeBucketAggregation)"
         case .ampBlockingRulesCompilationFailed: return "m_debug_amp_rules_compilation_failed"
-
-        case .bloomFilterBinaryCouldNotBeLoaded:
-            return "m_debug_bloom_filter_binary_could_not_be_loaded"
-        case .bloomFilterSpecCouldNotBeLoaded:
-            return "m_debug_bloom-filter_spec_could_not_be_loaded"
-        case .bloomFilterExcludedDomainsCouldNotBeLoaded:
-            return "m_debug_bloom_filter_exclued_domains_could_not_be_loaded"
-        case .privacyConfigurationCouldNotBeLoaded:
-            return "m_debug_privacy_configuration_could_not_be_loaded"
-        case .surrogateCouldNotBeLoaded:
-            return "m_debug_surrogates_could_not_be_loaded"
-        case .remoteMessagingConfigCouldNotBeLoaded:
-            return "m_debug_remote_message_config_could_not_be_loaded"
 
         case .webKitDidTerminate: return "m_d_wkt"
         case .webKitDidTerminateDuringWarmup: return "m_d_webkit-terminated-during-warmup"

@@ -1285,7 +1285,6 @@
 		9FD6E6192DFA72C200C2B032 /* PictureInPictureControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E6182DFA72BC00C2B032 /* PictureInPictureControllerTests.swift */; };
 		9FD6E61B2DFA739200C2B032 /* MockAVPictureInPictureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E61A2DFA738800C2B032 /* MockAVPictureInPictureController.swift */; };
 		9FD6E61D2DFA743300C2B032 /* MockPIctureInPictureControllerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E61C2DFA742A00C2B032 /* MockPIctureInPictureControllerFactory.swift */; };
-		9FD6F9832E7D16F800F9DBB1 /* Configuration+Pixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6F9822E7D16F000F9DBB1 /* Configuration+Pixels.swift */; };
 		9FDD72052D895D8C0016246B /* CombineSchedulers in Frameworks */ = {isa = PBXBuildFile; productRef = 9FDD72042D895D8C0016246B /* CombineSchedulers */; };
 		9FDEC7B42C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEC7B32C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift */; };
 		9FDEC7B82C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEC7B72C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift */; };
@@ -3485,7 +3484,6 @@
 		9FD6E6182DFA72BC00C2B032 /* PictureInPictureControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PictureInPictureControllerTests.swift; sourceTree = "<group>"; };
 		9FD6E61A2DFA738800C2B032 /* MockAVPictureInPictureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAVPictureInPictureController.swift; sourceTree = "<group>"; };
 		9FD6E61C2DFA742A00C2B032 /* MockPIctureInPictureControllerFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPIctureInPictureControllerFactory.swift; sourceTree = "<group>"; };
-		9FD6F9822E7D16F000F9DBB1 /* Configuration+Pixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Configuration+Pixels.swift"; sourceTree = "<group>"; };
 		9FDEC7B32C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAddressBarPositionPickerViewModelTests.swift; sourceTree = "<group>"; };
 		9FDEC7B72C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingIntroViewModel+Copy.swift"; sourceTree = "<group>"; };
 		9FDEC7B92C9006E000C7A692 /* BrowserComparisonModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserComparisonModelTests.swift; sourceTree = "<group>"; };
@@ -6979,14 +6977,6 @@
 			path = Factory;
 			sourceTree = "<group>";
 		};
-		9FD6F9812E7D16DF00F9DBB1 /* Configuration */ = {
-			isa = PBXGroup;
-			children = (
-				9FD6F9822E7D16F000F9DBB1 /* Configuration+Pixels.swift */,
-			);
-			path = Configuration;
-			sourceTree = "<group>";
-		};
 		9FDEC7BD2C9125EC00C7A692 /* AddressBarPositionPicker */ = {
 			isa = PBXGroup;
 			children = (
@@ -8467,7 +8457,6 @@
 				C1CAAA962CFCAB8000C37EE6 /* Autofill */,
 				31B2F10D2C92FEB000CD30E3 /* MarketplaceAdPostback */,
 				F1CE42A71ECA0A520074A8DF /* Bookmarks */,
-				9FD6F9812E7D16DF00F9DBB1 /* Configuration */,
 				837774491F8E1ECE00E17A29 /* ContentBlocker */,
 				F143C2E61E4A4CD400CFDE3A /* Core.h */,
 				C1C23C0E2D490ADB00B6BDF6 /* DataImport */,
@@ -11692,7 +11681,6 @@
 				372A0FF02B2389590033BF7F /* SyncMetricsEventsHandler.swift in Sources */,
 				F41C2DA326C1925700F9A760 /* BookmarksAndFolders.xcdatamodeld in Sources */,
 				F4F6DFBA26EFF28A00ED7E12 /* BookmarkObjects.swift in Sources */,
-				9FD6F9832E7D16F800F9DBB1 /* Configuration+Pixels.swift in Sources */,
 				85DDB83E2E4CDDF000C6FA9F /* AppConfigurationKeyNames.swift in Sources */,
 				EE7A92872AC6DE4700832A36 /* NetworkProtectionNotificationIdentifier.swift in Sources */,
 				836A941D247F23C600BF8EF5 /* UserAgentManaging.swift in Sources */,

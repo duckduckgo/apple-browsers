@@ -3853,6 +3853,8 @@
 		F1476FC12C1359FB00EAE46A /* SubscriptionUIHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1476FBF2C1359FB00EAE46A /* SubscriptionUIHandler.swift */; };
 		F158DE022E9E992C00628DD0 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = F158DE012E9E992C00628DD0 /* ContentBlocking */; };
 		F158DE042E9E995F00628DD0 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = F158DE032E9E995F00628DD0 /* ContentBlocking */; };
+		F158DE062E9E9DF100628DD0 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = F158DE052E9E9DF100628DD0 /* ContentBlocking */; };
+		F158DE082E9E9DF700628DD0 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = F158DE072E9E9DF700628DD0 /* ContentBlocking */; };
 		F1664A682D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1664A672D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift */; };
 		F1664A692D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1664A672D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift */; };
 		F17114822C7C98FB009836C1 /* Logger+Favicons.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17114812C7C98FB009836C1 /* Logger+Favicons.swift */; };
@@ -6128,6 +6130,7 @@
 				4B9EE3722D76CB5F00DDC75C /* SubscriptionTestingUtilities in Frameworks */,
 				8448016E2E3BA42400E8A2C1 /* Clocks in Frameworks */,
 				F1A9DD032E9E42C900D37BE0 /* AttributedMetricTestsUtils in Frameworks */,
+				F158DE062E9E9DF100628DD0 /* ContentBlocking in Frameworks */,
 				84D6780C2D842DBE0030BC82 /* InlineSnapshotTesting in Frameworks */,
 				374EFDF12D01C70A00B30939 /* Utilities in Frameworks */,
 				4B9EE3702D76CB5600DDC75C /* PixelKitTestingUtilities in Frameworks */,
@@ -6149,6 +6152,7 @@
 				F124E0F12D6E123A0035C7BA /* SubscriptionTestingUtilities in Frameworks */,
 				84B49F0F2CB10F0900FF08BB /* OHHTTPStubsSwift in Frameworks */,
 				4B9EE3742D76CB6D00DDC75C /* Common in Frameworks */,
+				F158DE082E9E9DF700628DD0 /* ContentBlocking in Frameworks */,
 				F124E0EF2D6E123A0035C7BA /* PixelKitTestingUtilities in Frameworks */,
 				F124E0EB2D6E123A0035C7BA /* NetworkingTestingUtils in Frameworks */,
 				84494D272E18211D00C9E5E8 /* NoARCObjCTestsExtensions in Frameworks */,
@@ -11652,6 +11656,7 @@
 				8448016D2E3BA42400E8A2C1 /* Clocks */,
 				D668401B2E82BE31007DAAB2 /* PerformanceTest */,
 				F1A9DD022E9E42C900D37BE0 /* AttributedMetricTestsUtils */,
+				F158DE052E9E9DF100628DD0 /* ContentBlocking */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = 3706FE99293F661700E42796 /* Unit Tests App Store.xctest */;
@@ -11684,6 +11689,7 @@
 				4B9EE3732D76CB6D00DDC75C /* Common */,
 				84494D262E18211D00C9E5E8 /* NoARCObjCTestsExtensions */,
 				8448016F2E3BA42800E8A2C1 /* Clocks */,
+				F158DE072E9E9DF700628DD0 /* ContentBlocking */,
 			);
 			productName = "Integration Tests";
 			productReference = 3706FEB2293F662100E42796 /* Integration Tests App Store.xctest */;
@@ -19098,6 +19104,14 @@
 			productName = ContentBlocking;
 		};
 		F158DE032E9E995F00628DD0 /* ContentBlocking */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ContentBlocking;
+		};
+		F158DE052E9E9DF100628DD0 /* ContentBlocking */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ContentBlocking;
+		};
+		F158DE072E9E9DF700628DD0 /* ContentBlocking */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ContentBlocking;
 		};

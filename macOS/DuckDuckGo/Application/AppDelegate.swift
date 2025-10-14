@@ -646,12 +646,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
 
+        let aiChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: featureFlagger,
+                                                        aiChatMenuConfiguration: aiChatMenuConfiguration,
+                                                        featureDiscovery: DefaultFeatureDiscovery())
         dataClearingPreferences = DataClearingPreferences(
             fireproofDomains: fireproofDomains,
             faviconManager: faviconManager,
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger,
-            pixelFiring: PixelKit.shared
+            pixelFiring: PixelKit.shared,
+            aiChatHistoryCleaner: aiChatHistoryCleaner
         )
         visualizeFireSettingsDecider = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
         startupPreferences = StartupPreferences(persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore), appearancePreferences: appearancePreferences)

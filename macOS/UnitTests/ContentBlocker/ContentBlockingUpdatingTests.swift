@@ -46,7 +46,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             fireproofDomains: MockFireproofDomains(domains: []),
             faviconManager: FaviconManagerMock(),
             windowControllersManager: WindowControllersManagerMock(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner()
         )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),

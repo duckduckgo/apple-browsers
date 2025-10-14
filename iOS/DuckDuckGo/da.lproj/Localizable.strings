@@ -184,6 +184,15 @@
 /* Title for alert shown when sync credentials paused for too many items */
 "alert.sync-credentials-paused-title" = "Synkronisering af adgangskoder er sat på pause";
 
+/* Description for alert shown when sync error occurs because of bad credit cards data */
+"alert.sync-credit-cards-bad-data-error-description" = "Nogle betalingskort er formateret forkert eller er for lange og blev ikke synkroniseret.";
+
+/* Description for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-description" = "Du har nået det maksimale antal betalingskort. Slet nogle betalingskort for at genoptage synkroniseringen.";
+
+/* Title for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-title" = "Betalingskortsynkronisering er sat på pause";
+
 /* Title for sync error alert */
 "alert.sync-error" = "Fejl ved synkronisering og sikkerhedskopiering";
 
@@ -2593,11 +2602,11 @@
 /* Caption of the option to show the Threat Protection preferences */
 "preferences.threat-protection.caption" = "DuckDuckGos forbedrede beskyttelser stopper almindelige trusler, mens de holder din forbindelse sikker.\n[Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
-/* Description of incorrectly formatted data error when syncing. */
-"prefrences.sync.bad-request.description" = "Nogle bogmærker eller adgangskoder er formateret forkert eller er for lange og blev ikke synkroniseret.";
+/* Description of incorrectly formatted bookmarks data error when syncing. */
+"prefrences.sync.bookmarks-bad-request.description" = "Nogle bogmærker er formateret forkert eller er for lange og blev ikke synkroniseret.";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
-"prefrences.sync.bookmarks-limit-exceeded-action" = "Administrer bogmærker";
+"prefrences.sync.bookmarks-limit-exceeded-action" = "Administrer bogmærker…";
 
 /* Description for sync bookmarks limits exceeded warning */
 "prefrences.sync.bookmarks-limit-exceeded-description" = "Du har nået det maksimale antal bogmærker. Slet nogle af dem for at genoptage synkroniseringen.";
@@ -2608,11 +2617,20 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Du har nået det maksimale antal adgangskoder. Slet nogle af dem for at genoptage synkroniseringen.";
 
+/* Description of incorrectly formatted credit card data error when syncing. */
+"prefrences.sync.credit-cards-bad-request.description" = "Nogle betalingskort er formateret forkert eller er for lange og blev ikke synkroniseret.";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Administrer kreditkort…";
+
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Synkronisering stødte på en fejl. Prøv at deaktivere synkronisering på denne enhed, og opret derefter forbindelse igen ved hjælp af en anden enhed eller din gendannelseskode.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Synkronisering sat på pause";
+
+/* Description of incorrectly formatted password data error when syncing. */
+"prefrences.sync.passwords-bad-request.description" = "Nogle adgangskoder er formateret forkert eller er for lange og blev ikke synkroniseret.";
 
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backup er midlertidigt utilgængelig.";

@@ -21,15 +21,13 @@ import Foundation
 import CoreData
 import Bookmarks
 import Persistence
-
-private extension BoolFileMarker.Name {
-    static let hasSuccessfullyLaunchedBefore = BoolFileMarker.Name(rawValue: "app-launched-successfully")
-}
+import UIKit
 
 public protocol BookmarksStateValidation {
 
     func validateInitialState(context: NSManagedObjectContext,
-                              validationError: BookmarksStateValidator.ValidationError) -> Bool
+                              validationError: BookmarksStateValidator.ValidationError,
+                              isBackground: Bool) -> Bool
 
     func validateBookmarksStructure(context: NSManagedObjectContext)
 }
@@ -48,19 +46,17 @@ public class BookmarksStateValidator: BookmarksStateValidation {
     }
 
     let keyValueStore: KeyValueStoring
-    let isSyncEnabled: Bool
     let errorHandler: (ValidationError, [String: String]?) -> Void
 
     public init(keyValueStore: KeyValueStoring,
-                isSyncEnabled: Bool = false,
                 errorHandler: @escaping (ValidationError, [String: String]?) -> Void) {
         self.keyValueStore = keyValueStore
-        self.isSyncEnabled = isSyncEnabled
         self.errorHandler = errorHandler
     }
 
     public func validateInitialState(context: NSManagedObjectContext,
-                                     validationError: ValidationError) -> Bool {
+                                     validationError: ValidationError,
+                                     isBackground: Bool) -> Bool {
         guard keyValueStore.object(forKey: Constants.bookmarksDBIsInitialized) != nil else { return true }
 
         let fetch = BookmarkEntity.fetchRequest()
@@ -69,7 +65,7 @@ public class BookmarksStateValidator: BookmarksStateValidation {
             if count == 0 {
                 switch validationError {
                 case .bookmarksStructureLost:
-                    errorHandler(.bookmarksStructureLost, generateDiagnosticParameters())
+                    errorHandler(.bookmarksStructureLost, ["is-background": String(isBackground)])
                 default:
                     errorHandler(validationError, nil)
                 }
@@ -78,7 +74,6 @@ public class BookmarksStateValidator: BookmarksStateValidation {
         } catch {
             errorHandler(.validatorError(error), nil)
         }
-
         return true
     }
 
@@ -112,55 +107,6 @@ public class BookmarksStateValidator: BookmarksStateValidation {
         } catch {
             errorHandler(.validatorError(error), nil)
         }
-    }
-    
-    private func generateDiagnosticParameters() -> [String: String] {
-        var params = [String: String]()
-        
-        params["sync-enabled"] = "\(isSyncEnabled)"
-
-        // Add recent bookmark error information
-        if let recentBookmarkError = getRecentBookmarkError() {
-            params["recent-bookmark-error-name"] = recentBookmarkError.name
-            params["recent-bookmark-error-domain"] = recentBookmarkError.domain
-            params["recent-bookmark-error-code"] = "\(recentBookmarkError.code)"
-        }
-        
-        // Check if launch marker file exists (helps distinguish restore vs corruption)
-        params["launch-marker-present"] = "\(hasLaunchedSuccessfullyBefore)"
-        
-        return params
-    }
-    
-    // MARK: - Diagnostic Helper Methods
-        
-    private var hasLaunchedSuccessfullyBefore: Bool {
-        guard let marker = BoolFileMarker(name: .hasSuccessfullyLaunchedBefore) else {
-            return false
-        }
-        return marker.isPresent
-    }
-
-    private func getRecentBookmarkError() -> (name: String, domain: String, code: Int)? {
-        let bookmarkErrorKey = "BookmarksValidator.lastBookmarkError"
-        let maxAgeSeconds: TimeInterval = 24 * 60 * 60 // 1 day
-
-        // Check UserDefaults for bookmark error
-        guard let errorInfo = UserDefaults.app.object(forKey: bookmarkErrorKey) as? [String: Any],
-              let timestamp = errorInfo["timestamp"] as? Date,
-              let name = errorInfo["bookmarkError"] as? String,
-              let domain = errorInfo["domain"] as? String,
-              let code = errorInfo["code"] as? Int else {
-            return nil
-        }
-
-        // Check if error is recent (within 1 day)
-        let secondsSinceError = Date().timeIntervalSince(timestamp)
-        guard secondsSinceError <= maxAgeSeconds else {
-            return nil
-        }
-
-        return (name: name, domain: domain, code: code)
     }
 
 }

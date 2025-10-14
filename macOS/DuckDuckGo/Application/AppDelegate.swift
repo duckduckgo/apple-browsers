@@ -86,6 +86,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
 
     let watchdog: Watchdog
+    private let watchdogSleepMonitor: WatchdogSleepMonitor
 
     let keyValueStore: ThrowingKeyValueStoring
 
@@ -830,6 +831,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let watchdogDiagnosticProvider = MacWatchdogDiagnosticProvider(windowControllersManager: windowControllersManager)
         let eventMapper = WatchdogEventMapper(diagnosticProvider: watchdogDiagnosticProvider)
         watchdog = Watchdog(eventMapper: eventMapper)
+        watchdogSleepMonitor = WatchdogSleepMonitor(watchdog: watchdog)
 
 #if !DEBUG
         // Start UI hang watchdog

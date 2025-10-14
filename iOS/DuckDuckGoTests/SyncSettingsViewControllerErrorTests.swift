@@ -25,6 +25,7 @@ import Combine
 import Persistence
 import Common
 import SyncUI_iOS
+import SecureStorage
 
 final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
@@ -59,11 +60,15 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             secureVaultErrorReporter: MockSecureVaultReporting(),
             syncErrorHandler: CapturingAdapterErrorHandler(),
             tld: TLD())
+        let creditCardsAdapter = SyncCreditCardsAdapter(
+            secureVaultErrorReporter: MockSecureVaultReporting(),
+            syncErrorHandler: CapturingAdapterErrorHandler())
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.syncSeamlessAccountSwitching])
         vc = SyncSettingsViewController(
             syncService: ddgSyncing,
             syncBookmarksAdapter: bookmarksAdapter,
             syncCredentialsAdapter: credentialsAdapter,
+            syncCreditCardsAdapter: creditCardsAdapter,
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger
         )
@@ -132,6 +137,27 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         Task {
             errorHandler.isSyncCredentialsPaused = true
+            errorHandler.isSyncPausedChangedPublisher.send()
+            expectation1.fulfill()
+        }
+
+        await self.fulfillment(of: [expectation1, expectation2], timeout: 5.0)
+    }
+
+    @MainActor
+    func test_WhenSyncCreditCardsPausedIsTrue_andChangePublished_isSyncCreditCardsPausedIsUpdated() async {
+        let expectation2 = XCTestExpectation(description: "isSyncCreditCardsPaused received the update")
+        let expectation1 = XCTestExpectation(description: "isSyncCreditCardsPaused published")
+        vc.viewModel?.$isSyncCreditCardsPaused
+            .dropFirst()
+            .sink { isPaused in
+                XCTAssertTrue(isPaused)
+                expectation2.fulfill()
+            }
+            .store(in: &cancellables)
+
+        Task {
+            errorHandler.isSyncCreditCardsPaused = true
             errorHandler.isSyncPausedChangedPublisher.send()
             expectation1.fulfill()
         }

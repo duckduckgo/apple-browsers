@@ -21,7 +21,7 @@ import UIKit
 
 final class NavigationActionBarViewController: UIViewController {
     private let viewModel: NavigationActionBarViewModel
-    private var navigationActionBarView: NavigationActionBarView!
+    private(set) var navigationActionBarView: NavigationActionBarView!
 
     var isShowingGradient: Bool {
         get { navigationActionBarView.isShowingGradient }

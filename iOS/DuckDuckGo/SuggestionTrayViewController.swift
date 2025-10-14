@@ -98,7 +98,7 @@ class SuggestionTrayViewController: UIViewController {
         }
     }
 
-    let newTabPageDependencies: NewTabPageDependencies?
+    let newTabPageDependencies: NewTabPageDependencies
 
     struct NewTabPageDependencies {
         let favoritesModel: FavoritesListInteracting
@@ -258,7 +258,6 @@ class SuggestionTrayViewController: UIViewController {
     }
 
     var hasRemoteMessages: Bool {
-        guard let newTabPageDependencies else { return false }
         return !newTabPageDependencies.homePageMessagesConfiguration.homeMessages.isEmpty
     }
 
@@ -271,11 +270,7 @@ class SuggestionTrayViewController: UIViewController {
     }
 
     private func installNewTabPage(animated: Bool, onInstall: @escaping () -> Void = {}) {
-        guard let dependencies = newTabPageDependencies else {
-            assertionFailure("No dependencies found for NTP")
-            return
-        }
-
+        let dependencies = newTabPageDependencies
         let controller = NewTabPageViewController(
             tab: Tab(),
             interactionModel: dependencies.favoritesModel,

@@ -134,15 +134,12 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
             }
             self.firePixel(.delete, .daily)
             self.firePixel(.multipleItemsDeleted(pixelScope, burn: true), .dailyAndStandard)
-        case .delete(let burnChats):
+        case .delete(let deleteChats):
             // FireCoordinator handles the result of the new Fire Dialog
             if featureFlagger.isFeatureOn(.fireDialog) {
                 await dataProvider.refreshData()
             } else {
-                await dataProvider.deleteVisits(matching: adjustedQuery)
-                if burnChats {
-                    fireCoordinator.fireViewModel.fire.burnChatHistory()
-                }
+                await dataProvider.deleteVisits(matching: adjustedQuery, and: deleteChats)
             }
             self.firePixel(.delete, .daily)
             self.firePixel(.multipleItemsDeleted(pixelScope, burn: false), .dailyAndStandard)

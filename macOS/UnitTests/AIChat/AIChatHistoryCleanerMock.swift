@@ -20,11 +20,17 @@ import Combine
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
+    private(set) var didCleanAIChatHistory = false
+
     @Published
     var shouldDisplayCleanAIChatHistoryOption: Bool
 
     var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> {
         $shouldDisplayCleanAIChatHistoryOption.eraseToAnyPublisher()
+    }
+
+    func cleanAIChatHistory() {
+        didCleanAIChatHistory = true
     }
 
     init(showCleanOption: Bool = false) {

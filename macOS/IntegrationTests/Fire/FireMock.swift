@@ -24,6 +24,7 @@ import History
 @testable import DuckDuckGo_Privacy_Browser
 
 final class FireMock: FireProtocol {
+
     var burningData: DuckDuckGo_Privacy_Browser.Fire.BurningData?
 
     let fireproofDomains: FireproofDomains
@@ -42,10 +43,12 @@ final class FireMock: FireProtocol {
     struct BurnAllCall { let isBurnOnExit: Bool; let url: URL }
     struct BurnEntityCall { let entity: Fire.BurningEntity; let includingHistory: Bool }
     struct BurnVisitsCall { let visits: [Visit]; let isToday: Bool; let closeWindows: Bool; let clearSiteData: Bool; let url: URL? }
+    struct BurnChatHistoryCall { }
 
     private(set) var burnAllCalls: [BurnAllCall] = []
     private(set) var burnEntityCalls: [BurnEntityCall] = []
     private(set) var burnVisitsCalls: [BurnVisitsCall] = []
+    private(set) var burnChatHistoryCalls: [BurnChatHistoryCall] = []
 
     // MARK: - Fire animation hooks
     func fireAnimationDidStart() {
@@ -76,7 +79,7 @@ final class FireMock: FireProtocol {
                     isToday: Bool,
                     closeWindows: Bool = true,
                     clearSiteData: Bool = true,
-                    clearChatHistory: Bool,
+                    clearChatHistory: Bool = false,
                     urlToOpenIfWindowsAreClosed url: URL? = .newtab,
                     completion: (@MainActor () -> Void)? = nil) {
         burnVisitsCalls.append(.init(visits: visits, isToday: isToday, closeWindows: closeWindows, clearSiteData: clearSiteData, url: url))
@@ -84,6 +87,6 @@ final class FireMock: FireProtocol {
     }
 
     func burnChatHistory() {
-        // no-op
+        burnChatHistoryCalls.append(.init())
     }
 }

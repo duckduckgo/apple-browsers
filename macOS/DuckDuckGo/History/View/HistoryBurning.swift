@@ -21,6 +21,7 @@ import History
 protocol HistoryBurning {
     func burn(_ visits: [Visit], and burnChats: Bool, animated: Bool) async
     func burnAll() async
+    func burnChats() async
 }
 
 struct FireHistoryBurner: HistoryBurning {
@@ -61,5 +62,9 @@ struct FireHistoryBurner: HistoryBurning {
 
     func burnAll() async {
         await fire().burnAll(opening: .history)
+    }
+
+    func burnChats() async {
+        await fire().burnChatHistory()
     }
 }

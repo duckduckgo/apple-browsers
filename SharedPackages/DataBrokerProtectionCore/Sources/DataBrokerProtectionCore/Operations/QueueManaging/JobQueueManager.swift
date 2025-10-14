@@ -332,30 +332,30 @@ private extension JobQueueManager {
 }
 
 extension JobQueueManager: BrokerProfileJobErrorDelegate {
-    public func dataBrokerOperationDidError(_ error: any Error, withBrokerName brokerName: String?, version: String?) {
+    public func dataBrokerOperationDidError(_ error: any Error, withBrokerURL brokerURL: String?, version: String?) {
         operationErrors.append(error)
 
-        guard let error = error as? DataBrokerProtectionError, let brokerName, let version else { return }
+        guard let error = error as? DataBrokerProtectionError, let brokerURL, let version else { return }
 
         switch error {
         case .httpError(let code):
-            pixelHandler.fire(.httpError(error: error, code: code, dataBroker: brokerName, version: version))
+            pixelHandler.fire(.httpError(error: error, code: code, dataBroker: brokerURL, version: version))
         case .actionFailed(let actionId, let message):
-            pixelHandler.fire(.actionFailedError(error: error, actionId: actionId, message: message, dataBroker: brokerName, version: version))
+            pixelHandler.fire(.actionFailedError(error: error, actionId: actionId, message: message, dataBroker: brokerURL, version: version))
         default:
-            pixelHandler.fire(.otherError(error: error, dataBroker: brokerName, version: version))
+            pixelHandler.fire(.otherError(error: error, dataBroker: brokerURL, version: version))
         }
     }
 }
 
 extension JobQueueManager: EmailConfirmationErrorDelegate {
-    public func emailConfirmationOperationDidError(_ error: Error, withBrokerName brokerName: String?, version: String?) {
+    public func emailConfirmationOperationDidError(_ error: Error, withBrokerURL brokerURL: String?, version: String?) {
         operationErrors.append(error)
 
-        guard let error = error as? DataBrokerProtectionError, let brokerName, let version else {
+        guard let error = error as? DataBrokerProtectionError, let brokerURL, let version else {
             return
         }
 
-        pixelHandler.fire(.otherError(error: error, dataBroker: brokerName, version: version))
+        pixelHandler.fire(.otherError(error: error, dataBroker: brokerURL, version: version))
     }
 }

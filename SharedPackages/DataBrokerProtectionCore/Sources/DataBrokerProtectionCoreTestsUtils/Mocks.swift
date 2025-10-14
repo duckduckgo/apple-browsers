@@ -1760,7 +1760,7 @@ public final class MockBrokerProfileJob: BrokerProfileJob, @unchecked Sendable {
 
     public override func main() {
         if shouldError {
-            errorDelegate?.dataBrokerOperationDidError(DataBrokerProtectionError.noActionFound, withBrokerName: nil, version: nil)
+            errorDelegate?.dataBrokerOperationDidError(DataBrokerProtectionError.noActionFound, withBrokerURL: nil, version: nil)
         }
 
         finish()
@@ -1805,7 +1805,7 @@ public final class MockBrokerProfileJobErrorDelegate: BrokerProfileJobErrorDeleg
 
     public init() {}
 
-    public func dataBrokerOperationDidError(_ error: any Error, withBrokerName brokerName: String?, version: String?) {
+    public func dataBrokerOperationDidError(_ error: any Error, withBrokerURL brokerURL: String?, version: String?) {
         dataBrokerOperationDidErrorCalled = true
         operationErrors.append(error)
     }

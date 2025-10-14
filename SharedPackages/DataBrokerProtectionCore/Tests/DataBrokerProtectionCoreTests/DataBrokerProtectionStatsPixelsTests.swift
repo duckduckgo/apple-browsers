@@ -464,13 +464,13 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
     // MARK: - opt out confirmed/unconfirmed pixel tests
 
-    private static let dataBroker = "Test broker"
-    private let optOutJobAt7DaysConfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt7DaysConfirmed(dataBroker: dataBroker)
-    private let optOutJobAt7DaysUnconfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt7DaysUnconfirmed(dataBroker: dataBroker)
-    private let optOutJobAt14DaysConfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt14DaysConfirmed(dataBroker: dataBroker)
-    private let optOutJobAt14DaysUnconfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt14DaysUnconfirmed(dataBroker: dataBroker)
-    private let optOutJobAt21DaysConfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt21DaysConfirmed(dataBroker: dataBroker)
-    private let optOutJobAt21DaysUnconfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt21DaysUnconfirmed(dataBroker: dataBroker)
+    private static let dataBrokerURL = DataBroker.mockWithDefaults().url
+    private let optOutJobAt7DaysConfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt7DaysConfirmed(dataBroker: dataBrokerURL)
+    private let optOutJobAt7DaysUnconfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt7DaysUnconfirmed(dataBroker: dataBrokerURL)
+    private let optOutJobAt14DaysConfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt14DaysConfirmed(dataBroker: dataBrokerURL)
+    private let optOutJobAt14DaysUnconfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt14DaysUnconfirmed(dataBroker: dataBrokerURL)
+    private let optOutJobAt21DaysConfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt21DaysConfirmed(dataBroker: dataBrokerURL)
+    private let optOutJobAt21DaysUnconfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt21DaysUnconfirmed(dataBroker: dataBrokerURL)
 
     private func validatePixelsFired(_ pixels: [DataBrokerProtectionSharedPixels]) {
         let pixelsFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired

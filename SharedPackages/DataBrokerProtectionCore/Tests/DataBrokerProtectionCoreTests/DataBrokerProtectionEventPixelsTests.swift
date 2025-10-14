@@ -537,7 +537,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
      - Does fire for every child broker once (and _only_ child brokers)
      */
 
-    let pixelName = DataBrokerProtectionSharedPixels.weeklyChildBrokerOrphanedOptOuts(dataBrokerName: "",
+    let pixelName = DataBrokerProtectionSharedPixels.weeklyChildBrokerOrphanedOptOuts(dataBrokerURL: "",
                                                                                       childParentRecordDifference: 0,
                                                                                       calculatedOrphanedRecords: 0).name
 
@@ -613,7 +613,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         let pixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
         let firedPixel = pixels.first { $0.name == pixelName }!
         let parameters = firedPixel.params
-        XCTAssertEqual(parameters, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childName,
+        XCTAssertEqual(parameters, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childURL,
                                     DataBrokerProtectionSharedPixels.Consts.calculatedOrphanedRecords: "3",
                                     DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "0"])
     }
@@ -665,18 +665,18 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
         XCTAssertEqual(firedPixels.count, 3)
 
-        let child1Pixel = firedPixels.filter { $0.params![DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey] == childName1 }.first!
-        XCTAssertEqual(child1Pixel.params, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childName1,
+        let child1Pixel = firedPixels.filter { $0.params![DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey] == childURL1 }.first!
+        XCTAssertEqual(child1Pixel.params, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childURL1,
                                             DataBrokerProtectionSharedPixels.Consts.calculatedOrphanedRecords: "1",
                                             DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "1"])
 
-        let child2Pixel = firedPixels.filter { $0.params![DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey] == childName2 }.first!
-        XCTAssertEqual(child2Pixel.params, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childName2,
+        let child2Pixel = firedPixels.filter { $0.params![DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey] == childURL2 }.first!
+        XCTAssertEqual(child2Pixel.params, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childURL2,
                                             DataBrokerProtectionSharedPixels.Consts.calculatedOrphanedRecords: "2",
                                             DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "1"])
 
-        let child3Pixel = firedPixels.filter { $0.params![DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey] == childName3 }.first!
-        XCTAssertEqual(child3Pixel.params, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childName3,
+        let child3Pixel = firedPixels.filter { $0.params![DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey] == childURL3 }.first!
+        XCTAssertEqual(child3Pixel.params, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childURL3,
                                             DataBrokerProtectionSharedPixels.Consts.calculatedOrphanedRecords: "1",
                                             DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "-1"])
     }

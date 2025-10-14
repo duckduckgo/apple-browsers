@@ -70,6 +70,8 @@ final class SyncPreferencesTests: XCTestCase {
     var ddgSyncing: MockDDGSyncing!
     var syncBookmarksAdapter: SyncBookmarksAdapter!
     var syncCredentialsAdapter: SyncCredentialsAdapter!
+    var syncCreditCardsAdapter: SyncCreditCardsAdapter!
+    var syncIdentitiesAdapter: SyncIdentitiesAdapter!
     var appearancePersistor: MockAppearancePreferencesPersistor! = MockAppearancePreferencesPersistor()
     var appearancePreferences: AppearancePreferences!
     var syncPreferences: SyncPreferences!
@@ -92,6 +94,8 @@ final class SyncPreferencesTests: XCTestCase {
 
         syncBookmarksAdapter = SyncBookmarksAdapter(database: bookmarksDatabase, bookmarkManager: MockBookmarkManager(), appearancePreferences: appearancePreferences, syncErrorHandler: SyncErrorHandler())
         syncCredentialsAdapter = SyncCredentialsAdapter(secureVaultFactory: AutofillSecureVaultFactory, syncErrorHandler: SyncErrorHandler())
+        syncCreditCardsAdapter = SyncCreditCardsAdapter(syncErrorHandler: SyncErrorHandler())
+        syncIdentitiesAdapter = SyncIdentitiesAdapter(syncErrorHandler: SyncErrorHandler())
         featureFlagger = MockSyncFeatureFlagger()
         featureFlagger.isFeatureOn[FeatureFlag.syncSeamlessAccountSwitching.rawValue] = true
         connectionController = MockSyncConnectionControlling()
@@ -100,6 +104,8 @@ final class SyncPreferencesTests: XCTestCase {
             syncService: ddgSyncing,
             syncBookmarksAdapter: syncBookmarksAdapter,
             syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncIdentitiesAdapter: syncIdentitiesAdapter,
             appearancePreferences: appearancePreferences,
             userAuthenticator: MockUserAuthenticator(),
             syncPausedStateManager: pausedStateManager,
@@ -124,6 +130,8 @@ final class SyncPreferencesTests: XCTestCase {
         scheduler = nil
         syncBookmarksAdapter = nil
         syncCredentialsAdapter = nil
+        syncCreditCardsAdapter = nil
+        syncIdentitiesAdapter = nil
     }
 
     private func setUpDatabase() {
@@ -213,6 +221,46 @@ final class SyncPreferencesTests: XCTestCase {
         await self.fulfillment(of: [expectation1, expectation2], timeout: 5.0)
     }
 
+    func test_WhenSyncCreditCardsPausedIsTrue_andChangePublished_isSyncCreditCardsPausedIsUpdated() async {
+        let expectation2 = XCTestExpectation(description: "isSyncCreditCardsPaused received the update")
+        let expectation1 = XCTestExpectation(description: "isSyncCreditCardsPaused published")
+        syncPreferences.$isSyncCreditCardsPaused
+            .dropFirst()
+            .sink { isPaused in
+                XCTAssertTrue(isPaused)
+                expectation2.fulfill()
+            }
+            .store(in: &cancellables)
+
+        Task {
+            pausedStateManager.isSyncCreditCardsPaused = true
+            pausedStateManager.isSyncPausedChangedPublisher.send()
+            expectation1.fulfill()
+        }
+
+        await self.fulfillment(of: [expectation1, expectation2], timeout: 5.0)
+    }
+
+    func test_WhenSyncIdentitiesPausedIsTrue_andChangePublished_isSyncIdentitiesPausedIsUpdated() async {
+        let expectation2 = XCTestExpectation(description: "isSyncIdentitiesPaused received the update")
+        let expectation1 = XCTestExpectation(description: "isSyncIdentitiesPaused published")
+        syncPreferences.$isSyncIdentitiesPaused
+            .dropFirst()
+            .sink { isPaused in
+                XCTAssertTrue(isPaused)
+                expectation2.fulfill()
+            }
+            .store(in: &cancellables)
+
+        Task {
+            pausedStateManager.isSyncIdentitiesPaused = true
+            pausedStateManager.isSyncPausedChangedPublisher.send()
+            expectation1.fulfill()
+        }
+
+        await self.fulfillment(of: [expectation1, expectation2], timeout: 5.0)
+    }
+
     func test_ErrorHandlerReturnsExpectedSyncBookmarksPausedMetadata() {
         XCTAssertEqual(syncPreferences.syncBookmarksPausedTitle, MockSyncPausedStateManaging.syncBookmarksPausedData.title)
         XCTAssertEqual(syncPreferences.syncBookmarksPausedMessage, MockSyncPausedStateManaging.syncBookmarksPausedData.description)
@@ -225,6 +273,20 @@ final class SyncPreferencesTests: XCTestCase {
         XCTAssertEqual(syncPreferences.syncCredentialsPausedMessage, MockSyncPausedStateManaging.syncCredentialsPausedData.description)
         XCTAssertEqual(syncPreferences.syncCredentialsPausedButtonTitle, MockSyncPausedStateManaging.syncCredentialsPausedData.buttonTitle)
         XCTAssertNotNil(syncPreferences.syncCredentialsPausedButtonAction)
+    }
+
+    func test_ErrorHandlerReturnsExpectedSyncCreditCardsPausedMetadata() {
+        XCTAssertEqual(syncPreferences.syncCreditCardsPausedTitle, MockSyncPausedStateManaging.syncCreditCardsPausedData.title)
+        XCTAssertEqual(syncPreferences.syncCreditCardsPausedMessage, MockSyncPausedStateManaging.syncCreditCardsPausedData.description)
+        XCTAssertEqual(syncPreferences.syncCreditCardsPausedButtonTitle, MockSyncPausedStateManaging.syncCreditCardsPausedData.buttonTitle)
+        XCTAssertNotNil(syncPreferences.syncCreditCardsPausedButtonAction)
+    }
+
+    func test_ErrorHandlerReturnsExpectedSyncIdentitiesPausedMetadata() {
+        XCTAssertEqual(syncPreferences.syncIdentitiesPausedTitle, MockSyncPausedStateManaging.syncIdentitiesPausedData.title)
+        XCTAssertEqual(syncPreferences.syncIdentitiesPausedMessage, MockSyncPausedStateManaging.syncIdentitiesPausedData.description)
+        XCTAssertEqual(syncPreferences.syncIdentitiesPausedButtonTitle, MockSyncPausedStateManaging.syncIdentitiesPausedData.buttonTitle)
+        XCTAssertNotNil(syncPreferences.syncIdentitiesPausedButtonAction)
     }
 
     func test_ErrorHandlerReturnsExpectedSyncIsPausedMetadata() {

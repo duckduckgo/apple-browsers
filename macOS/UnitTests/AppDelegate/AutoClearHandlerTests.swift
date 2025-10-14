@@ -38,7 +38,8 @@ class AutoClearHandlerTests: XCTestCase {
             fireproofDomains: MockFireproofDomains(domains: []),
             faviconManager: FaviconManagerMock(),
             windowControllersManager: WindowControllersManagerMock(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner()
         )
         let persistor2 = StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: "duckduckgo.com")
         let appearancePreferences = AppearancePreferences(

@@ -119,8 +119,6 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
     private let optOutJobAt14DaysUnconfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt14DaysUnconfirmed(dataBroker: dataBrokerURL)
     private let optOutJobAt21DaysConfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt21DaysConfirmed(dataBroker: dataBrokerURL)
     private let optOutJobAt21DaysUnconfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt21DaysUnconfirmed(dataBroker: dataBrokerURL)
-    private let optOutJobAt42DaysConfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt42DaysConfirmed(dataBroker: dataBrokerURL)
-    private let optOutJobAt42DaysUnconfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt42DaysUnconfirmed(dataBroker: dataBrokerURL)
 
     private func validatePixelsFired(_ pixels: [DataBrokerProtectionSharedPixels]) {
         let pixelsFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
@@ -171,9 +169,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
                                 optOutJobAt14DaysConfirmedPixel,
                                 optOutJobAt14DaysUnconfirmedPixel,
                                 optOutJobAt21DaysConfirmedPixel,
-                                optOutJobAt21DaysUnconfirmedPixel,
-                                optOutJobAt42DaysConfirmedPixel,
-                                optOutJobAt42DaysUnconfirmedPixel
+                                optOutJobAt21DaysUnconfirmedPixel
                                ])
 
         // Cleanup
@@ -210,9 +206,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         validatePixelsNotFired([optOutJobAt7DaysUnconfirmedPixel,
                                 optOutJobAt14DaysUnconfirmedPixel,
                                 optOutJobAt21DaysConfirmedPixel,
-                                optOutJobAt21DaysUnconfirmedPixel,
-                                optOutJobAt42DaysConfirmedPixel,
-                                optOutJobAt42DaysUnconfirmedPixel
+                                optOutJobAt21DaysUnconfirmedPixel
                                ])
 
         // Cleanup
@@ -249,84 +243,8 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         validatePixelsNotFired([optOutJobAt7DaysConfirmedPixel,
                                 optOutJobAt14DaysConfirmedPixel,
                                 optOutJobAt21DaysConfirmedPixel,
-                                optOutJobAt21DaysUnconfirmedPixel,
-                                optOutJobAt42DaysConfirmedPixel,
-                                optOutJobAt42DaysUnconfirmedPixel
+                                optOutJobAt21DaysUnconfirmedPixel
                                ])
-
-        // Cleanup
-        handler.clear()
-    }
-
-    func testWhenSubmittedDateIs43DaysAgoAndOptOutConfirmed_thenAllConfirmedPixelsAreFired() async {
-        // Given
-        let mockDatabase = MockDatabase()
-        let submittedDate = Calendar.current.date(byAdding: .day, value: -43, to: Date())
-        let optOutJobData = OptOutJobData.mock(with: .optOutConfirmed,
-                                               submittedDate: submittedDate,
-                                               sevenDaysConfirmationPixelFired: false,
-                                               fourteenDaysConfirmationPixelFired: false,
-                                               twentyOneDaysConfirmationPixelFired: false)
-        let brokerProfileQueryData = BrokerProfileQueryData(
-            dataBroker: .mock,
-            profileQuery: .mock,
-            scanJobData: .mockWith(historyEvents: optOutJobData.historyEvents),
-            optOutJobData: [optOutJobData])
-
-        let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
-                                                  handler: handler,
-                                                  repository: MockDataBrokerProtectionStatsPixelsRepository())
-
-        // When
-        sut.fireRegularIntervalConfirmationPixelsForSubmittedOptOuts(for: [brokerProfileQueryData])
-
-        // Then
-        validatePixelsFired([optOutJobAt7DaysConfirmedPixel,
-                             optOutJobAt14DaysConfirmedPixel,
-                             optOutJobAt21DaysConfirmedPixel,
-                             optOutJobAt42DaysConfirmedPixel])
-        validatePixelsNotFired([optOutJobAt7DaysUnconfirmedPixel,
-                                optOutJobAt14DaysUnconfirmedPixel,
-                                optOutJobAt21DaysUnconfirmedPixel,
-                                optOutJobAt42DaysUnconfirmedPixel])
-        XCTAssertTrue(mockDatabase.wasUpdateFortyTwoDaysConfirmationPixelFired)
-
-        // Cleanup
-        handler.clear()
-    }
-
-    func testWhenSubmittedDateIs43DaysAgoAndOptOutNotConfirmed_thenAllUnconfirmedPixelsAreFired() async {
-        // Given
-        let mockDatabase = MockDatabase()
-        let submittedDate = Calendar.current.date(byAdding: .day, value: -43, to: Date())
-        let optOutJobData = OptOutJobData.mock(with: .optOutRequested,
-                                               submittedDate: submittedDate,
-                                               sevenDaysConfirmationPixelFired: false,
-                                               fourteenDaysConfirmationPixelFired: false,
-                                               twentyOneDaysConfirmationPixelFired: false)
-        let brokerProfileQueryData = BrokerProfileQueryData(
-            dataBroker: .mock,
-            profileQuery: .mock,
-            scanJobData: .mockWith(historyEvents: optOutJobData.historyEvents),
-            optOutJobData: [optOutJobData])
-
-        let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
-                                                  handler: handler,
-                                                  repository: MockDataBrokerProtectionStatsPixelsRepository())
-
-        // When
-        sut.fireRegularIntervalConfirmationPixelsForSubmittedOptOuts(for: [brokerProfileQueryData])
-
-        // Then
-        validatePixelsFired([optOutJobAt7DaysUnconfirmedPixel,
-                             optOutJobAt14DaysUnconfirmedPixel,
-                             optOutJobAt21DaysUnconfirmedPixel,
-                             optOutJobAt42DaysUnconfirmedPixel])
-        validatePixelsNotFired([optOutJobAt7DaysConfirmedPixel,
-                                optOutJobAt14DaysConfirmedPixel,
-                                optOutJobAt21DaysConfirmedPixel,
-                                optOutJobAt42DaysConfirmedPixel])
-        XCTAssertTrue(mockDatabase.wasUpdateFortyTwoDaysConfirmationPixelFired)
 
         // Cleanup
         handler.clear()
@@ -340,8 +258,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
                                                submittedDate: submittedDate,
                                                sevenDaysConfirmationPixelFired: true,
                                                fourteenDaysConfirmationPixelFired: true,
-                                               twentyOneDaysConfirmationPixelFired: true,
-                                               fortyTwoDaysConfirmationPixelFired: true)
+                                               twentyOneDaysConfirmationPixelFired: true)
         let brokerProfileQueryData = BrokerProfileQueryData(
             dataBroker: .mock,
             profileQuery: .mock,
@@ -363,9 +280,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
                                 optOutJobAt14DaysConfirmedPixel,
                                 optOutJobAt14DaysUnconfirmedPixel,
                                 optOutJobAt21DaysConfirmedPixel,
-                                optOutJobAt21DaysUnconfirmedPixel,
-                                optOutJobAt42DaysConfirmedPixel,
-                                optOutJobAt42DaysUnconfirmedPixel
+                                optOutJobAt21DaysUnconfirmedPixel
                                ])
 
         // Cleanup
@@ -402,9 +317,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         validatePixelsNotFired([optOutJobAt7DaysConfirmedPixel,
                                 optOutJobAt7DaysUnconfirmedPixel,
                                 optOutJobAt14DaysUnconfirmedPixel,
-                                optOutJobAt21DaysUnconfirmedPixel,
-                                optOutJobAt42DaysConfirmedPixel,
-                                optOutJobAt42DaysUnconfirmedPixel
+                                optOutJobAt21DaysUnconfirmedPixel
                                ])
 
         // Cleanup
@@ -442,9 +355,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
                                 optOutJobAt14DaysConfirmedPixel,
                                 optOutJobAt14DaysUnconfirmedPixel,
                                 optOutJobAt21DaysConfirmedPixel,
-                                optOutJobAt21DaysUnconfirmedPixel,
-                                optOutJobAt42DaysConfirmedPixel,
-                                optOutJobAt42DaysUnconfirmedPixel
+                                optOutJobAt21DaysUnconfirmedPixel
                                ])
 
         // Cleanup

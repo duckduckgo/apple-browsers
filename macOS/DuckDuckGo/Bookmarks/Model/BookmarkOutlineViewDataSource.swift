@@ -236,7 +236,10 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
     func outlineView(_ outlineView: NSOutlineView, rowViewForItem item: Any) -> NSTableRowView? {
         let row = outlineView.row(forItem: item)
         let rowView = RoundedSelectionRowView()
+
+        rowView.requiresAccentColors = contentMode != .foldersOnly
         rowView.insets = NSEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
+
         // observe row drag&drop target highlight state and update `targetRowForDropOperation`
         let cancellable = rowView.publisher(for: \.isTargetForDropOperation).sink { [weak self] isTargetForDropOperation in
             guard let self else { return }

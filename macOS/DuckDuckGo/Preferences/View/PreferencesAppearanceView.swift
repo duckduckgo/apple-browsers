@@ -110,9 +110,10 @@ extension Preferences {
     //
     struct ThemeAppearancePickerV2: View {
         @EnvironmentObject var model: AppearancePreferences
+        var theme: ThemeStyleProviding
 
         var body: some View {
-            SlidingPickerView(settings: .appearancePickerSettings, allValues: ThemeAppearance.allCases, selectedValue: $model.themeAppearance) { appearance in
+            SlidingPickerView(settings: .buildAppearancePickerSetting(theme: theme), allValues: ThemeAppearance.allCases, selectedValue: $model.themeAppearance) { appearance in
                 AnyView(
                     ThemeAppearanceViewV2(appearance: appearance)
                 )
@@ -133,7 +134,7 @@ extension Preferences {
         private let knobSize = CGSize(width: 28, height: 8)
         private let knobRadius: CGFloat = 7
 
-        /// MARK: - Properties
+        // MARK: - Properties
         private let themeColors: ThemeColors
 
         /// Designated Initializer
@@ -150,7 +151,7 @@ extension Preferences {
                     .frame(width: outerSize, height: outerSize)
                     .overlay(
                         RoundedRectangle(cornerRadius: outerCornerRadius)
-                        .stroke(Color(themeColors.decorationPrimary), lineWidth: 1)
+                        .stroke(Color(themeColors.surfaceDecorationPrimary), lineWidth: 1)
                         .frame(width: outerSize, height: outerSize)
                     )
 
@@ -193,9 +194,12 @@ extension Preferences {
     //
     struct ThemesPickerView: View {
         @EnvironmentObject var model: AppearancePreferences
+        var theme: ThemeStyleProviding
 
         var body: some View {
-            SlidingPickerView(settings: .themesPickerSettings, allValues: ThemeName.allCases, selectedValue: $model.themeName) { themeName in
+            SlidingPickerView(settings: .buildThemesPickerSettings(theme: theme),
+                              allValues: ThemeName.internalUserThemes,
+                              selectedValue: $model.themeName) { themeName in
                 AnyView(
                     ThemeView(themeName: themeName)
                 )
@@ -204,11 +208,34 @@ extension Preferences {
         }
     }
 
+    // MARK: - Reset Theme
+    //
+    struct ThemesResetView: View {
+        @EnvironmentObject var model: AppearancePreferences
+
+        var body: some View {
+            Button {
+                model.themeName = .figma
+
+            } label: {
+                HStack(spacing: 8) {
+                    Image(.reset)
+                    Text(UserText.themeReset)
+                }
+                .foregroundColor(Color.linkBlue)
+                .cursor(.pointingHand)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
     // MARK: - Appearance Container View
     //
     struct AppearanceView: View {
         @ObservedObject var model: AppearancePreferences
         @ObservedObject var aiChatModel: AIChatPreferences
+        @ObservedObject var themeManager: ThemeManager
+
         var isThemeSwitcherEnabled: Bool = false
 
         var body: some View {
@@ -218,11 +245,15 @@ extension Preferences {
                 PreferencePaneSection(UserText.theme) {
 
                     if isThemeSwitcherEnabled {
-                        ThemeAppearancePickerV2()
+                        ThemeAppearancePickerV2(theme: themeManager.theme)
                             .environmentObject(model)
                             .padding(.bottom, 16)
 
-                        ThemesPickerView()
+                        ThemesPickerView(theme: themeManager.theme)
+                            .environmentObject(model)
+                            .padding(.bottom, 16)
+
+                        ThemesResetView()
                             .environmentObject(model)
 
                     } else {
@@ -333,21 +364,21 @@ private extension ThemeAppearance {
 //
 private extension SlidingPickerSettings {
 
-    static var themesPickerSettings: SlidingPickerSettings {
+    static func buildThemesPickerSettings(theme: ThemeStyleProviding) -> SlidingPickerSettings {
         SlidingPickerSettings(
-            selectionBorderColor: Color(designSystemColor: .accentPrimary),
+            selectionBorderColor: Color(theme.palette.accentPrimary),
             cornerRadius: 8,
             elementsPadding: 12,
             sliderInset: 1,
             sliderLineWidth: 2)
     }
 
-    static var appearancePickerSettings: SlidingPickerSettings {
+    static func buildAppearancePickerSetting(theme: ThemeStyleProviding) -> SlidingPickerSettings {
         SlidingPickerSettings(
-            backgroundColor: Color(designSystemColor: .surfacePrimary),
-            borderColor: Color(designSystemColor: .containerDecorationSecondary),
-            selectionBackgroundColor: Color(designSystemColor: .surfaceTertiary),
-            selectionBorderColor: Color(designSystemColor: .containerDecorationSecondary),
+            backgroundColor: Color(theme.palette.surfacePrimary),
+            borderColor: Color(theme.palette.surfaceDecorationPrimary),
+            selectionBackgroundColor: Color(theme.palette.surfaceTertiary),
+            selectionBorderColor: Color(theme.palette.accentPrimary),
             animationsEnabled: false,
             dividerSize: CGSize(width: 1, height: 16))
     }

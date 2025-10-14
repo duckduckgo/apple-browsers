@@ -34,6 +34,10 @@ struct SyncStatusView<ViewModel>: View where ViewModel: ManagementViewModel {
                 }
             }
             .roundedBorder()
+
+            SyncUIViews.TextDetailSecondary(text: UserText.syncFooter)
+                .padding(.horizontal, 16)
+                .font(.system(size: 11))
         }
     }
 }

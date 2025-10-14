@@ -21,6 +21,7 @@ import SwiftUI
 extension Image {
 
     public enum SystemImageName: String {
+        case arrowCounterClockWise = "arrow.counterclockwise"
         case circleLeftHalfFilled = "circle.lefthalf.filled"
         case moon = "moon"
         case sunMax = "sun.max"

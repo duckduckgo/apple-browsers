@@ -26,6 +26,7 @@ import PixelKit
 
 protocol ThemeStyleProviding {
     var name: ThemeName { get }
+    var palette: ColorPalette { get }
 
     var toolbarButtonsCornerRadius: CGFloat { get }
     var fireWindowGraphic: NSImage { get }
@@ -63,6 +64,7 @@ enum AddressBarSizeClass {
 
 struct ThemeStyle: ThemeStyleProviding {
     let name: ThemeName
+    let palette: ColorPalette
 
     let toolbarButtonsCornerRadius: CGFloat
     let fireWindowGraphic: NSImage
@@ -90,6 +92,7 @@ struct ThemeStyle: ThemeStyleProviding {
     private static func buildThemeStyle(name: ThemeName, palette: ColorPalette) -> ThemeStyle {
         ThemeStyle(
             name: name,
+            palette: palette,
             toolbarButtonsCornerRadius: 9,
             fireWindowGraphic: .burnerWindowGraphicNew,
             areNavigationBarCornersRound: true,

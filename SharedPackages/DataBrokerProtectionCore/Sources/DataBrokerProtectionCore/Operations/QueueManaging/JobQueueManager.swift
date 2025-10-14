@@ -332,11 +332,7 @@ private extension JobQueueManager {
 }
 
 extension JobQueueManager: BrokerProfileJobErrorDelegate {
-    public func dataBrokerOperationDidError(_ error: any Error,
-                                            withBrokerURL brokerURL: String?,
-                                            version: String?,
-                                            stepType: StepType?,
-                                            dataBrokerParent: String?) {
+    public func dataBrokerOperationDidError(_ error: any Error, withBrokerURL brokerURL: String?, version: String?) {
         operationErrors.append(error)
 
         guard let error = error as? DataBrokerProtectionError, let brokerURL, let version else { return }
@@ -345,13 +341,7 @@ extension JobQueueManager: BrokerProfileJobErrorDelegate {
         case .httpError(let code):
             pixelHandler.fire(.httpError(error: error, code: code, dataBroker: brokerURL, version: version))
         case .actionFailed(let actionId, let message):
-            pixelHandler.fire(.actionFailedError(error: error,
-                                                 actionId: actionId,
-                                                 message: message,
-                                                 dataBroker: brokerURL,
-                                                 version: version,
-                                                 stepType: stepType,
-                                                 dataBrokerParent: dataBrokerParent))
+            pixelHandler.fire(.actionFailedError(error: error, actionId: actionId, message: message, dataBroker: brokerURL, version: version))
         default:
             pixelHandler.fire(.otherError(error: error, dataBroker: brokerURL, version: version))
         }

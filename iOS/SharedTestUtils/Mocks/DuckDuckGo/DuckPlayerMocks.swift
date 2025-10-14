@@ -22,6 +22,7 @@ import WebKit
 import ContentScopeScripts
 import Combine
 import BrowserServicesKit
+import BrowserServicesKitTestsUtils
 import SwiftUI
 
 @testable import DuckDuckGo

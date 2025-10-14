@@ -90,7 +90,7 @@ class FormFactorMigratingMock: BookmarkFormFactorFavoritesMigrating {
 class BookmarksStateValidationMock: BookmarksStateValidation {
 
     var onValidateInitialState: () -> Bool = { return true }
-    func validateInitialState(context: NSManagedObjectContext, validationError: Core.BookmarksStateValidator.ValidationError) -> Bool {
+    func validateInitialState(context: NSManagedObjectContext, validationError: Core.BookmarksStateValidator.ValidationError, isBackground: Bool) -> Bool {
         onValidateInitialState()
     }
     
@@ -158,9 +158,9 @@ class BookmarksDatabaseSetupTests: XCTestCase {
         let setup = BookmarksDatabaseSetup(migrationAssertion: BookmarksMigrationAssertion(store: MockKeyValueStore()))
 
         do {
-            _ = try setup.loadStoreAndMigrate(bookmarksDatabase: dbMock,
-                                              formFactorFavoritesMigrator: ffMock,
-                                              validator: validatorMock)
+            try setup.loadStoreAndMigrate(bookmarksDatabase: dbMock,
+                                          formFactorFavoritesMigrator: ffMock,
+                                          validator: validatorMock)
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
@@ -196,9 +196,9 @@ class BookmarksDatabaseSetupTests: XCTestCase {
         let setup = BookmarksDatabaseSetup(migrationAssertion: BookmarksMigrationAssertion(store: MockKeyValueStore()))
 
         do {
-            _ = try setup.loadStoreAndMigrate(bookmarksDatabase: dbMock,
-                                              formFactorFavoritesMigrator: ffMock,
-                                              validator: validatorMock)
+            try setup.loadStoreAndMigrate(bookmarksDatabase: dbMock,
+                                          formFactorFavoritesMigrator: ffMock,
+                                          validator: validatorMock)
             XCTFail("Unexpected")
         } catch {
             if case BookmarksDatabaseError.couldNotGetFavoritesOrder(let underlyingError) = error {
@@ -242,9 +242,9 @@ class BookmarksDatabaseSetupTests: XCTestCase {
         let setup = BookmarksDatabaseSetup(migrationAssertion: BookmarksMigrationAssertion(store: MockKeyValueStore()))
 
         do {
-            _ = try setup.loadStoreAndMigrate(bookmarksDatabase: dbMock,
-                                              formFactorFavoritesMigrator: ffMock,
-                                              validator: validatorMock)
+            try setup.loadStoreAndMigrate(bookmarksDatabase: dbMock,
+                                          formFactorFavoritesMigrator: ffMock,
+                                          validator: validatorMock)
             XCTFail("Unexpected")
         } catch {
             if case BookmarksDatabaseError.couldNotPrepareDatabase(let underlyingError) = error {

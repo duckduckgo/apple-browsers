@@ -380,7 +380,9 @@ let package = Package(
                 "Common",
                 "Networking",
                 "UserScript",
-                "PixelKit"
+                "PixelKit",
+                "Persistence",
+                "SecureStorage"
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

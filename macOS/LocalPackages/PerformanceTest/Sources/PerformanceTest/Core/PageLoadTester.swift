@@ -81,7 +81,7 @@ public class PageLoadTester: NSObject {
         var lastError: Error?
         var attempts = 0
 
-        while attempts < maxRetries {
+        while attempts <= maxRetries {
             attempts += 1
 
             // Call setup hook if provided
@@ -168,7 +168,9 @@ public class PageLoadTester: NSObject {
         }
 
         do {
-            let result = try await webView.evaluateJavaScript(scriptContent)
+            // Load the function definition and then call it
+            let fullScript = scriptContent + "; collectPerformanceMetrics();"
+            let result = try await webView.evaluateJavaScript(fullScript)
             guard let metrics = result as? [String: Any] else { return nil }
 
             // Check for errors from JavaScript

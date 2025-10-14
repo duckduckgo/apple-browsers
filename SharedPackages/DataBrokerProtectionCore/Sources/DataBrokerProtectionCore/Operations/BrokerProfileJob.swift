@@ -29,11 +29,7 @@ public enum JobType {
 }
 
 public protocol BrokerProfileJobErrorDelegate: AnyObject {
-    func dataBrokerOperationDidError(_ error: Error,
-                                     withBrokerURL brokerURL: String?,
-                                     version: String?,
-                                     stepType: StepType?,
-                                     dataBrokerParent: String?)
+    func dataBrokerOperationDidError(_ error: Error, withBrokerURL brokerURL: String?, version: String?)
 }
 
 public class BrokerProfileJob: Operation, @unchecked Sendable {
@@ -208,19 +204,9 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
             } catch {
                 Logger.dataBrokerProtection.error("Error: \(error.localizedDescription, privacy: .public)")
 
-                let stepType: StepType? = {
-                    switch jobData {
-                    case is ScanJobData: return .scan
-                    case is OptOutJobData: return .optOut
-                    default: return nil
-                    }
-                }()
-                let dataBroker = brokerProfileQueriesData.first?.dataBroker
                 errorDelegate?.dataBrokerOperationDidError(error,
-                                                           withBrokerURL: dataBroker?.url,
-                                                           version: dataBroker?.version,
-                                                           stepType: stepType,
-                                                           dataBrokerParent: dataBroker?.parent)
+                                                           withBrokerURL: brokerProfileQueriesData.first?.dataBroker.url,
+                                                           version: brokerProfileQueriesData.first?.dataBroker.version)
             }
         }
     }

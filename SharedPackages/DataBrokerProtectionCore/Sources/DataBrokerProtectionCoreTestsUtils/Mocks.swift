@@ -611,6 +611,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public var lastDeletedEmailConfirmationExtractedProfileId: Int64?
     public var wasIncrementAttemptCountCalled = false
     public var incrementAttemptCountCallCount = 0
+    public var incrementShouldThrow = false
 
     public typealias DatabaseProvider = SecureStorageDatabaseProviderMock
 
@@ -974,9 +975,11 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var lastDeletedEmailConfirmationExtractedProfileId: Int64?
     public var wasIncrementAttemptCountCalled = false
     public var incrementAttemptCountCallCount = 0
+    public var incrementAttemptShouldThrow = false
     public var lastAddedHistoryEvent: HistoryEvent?
 
     public var saveResult: Result<Void, Error> = .success(())
+    public var addHistoryEventError: Error?
 
     public lazy var callsList: [Bool] = [
         wasSaveProfileCalled,
@@ -1122,6 +1125,9 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     }
 
     public func incrementAttemptCount(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
+        if incrementAttemptShouldThrow {
+            throw MockError.saveFailed
+        }
         attemptCount += 1
     }
 
@@ -1159,9 +1165,14 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasUpdateRemoveDateCalled = true
     }
 
-    public func add(_ historyEvent: HistoryEvent) {
+    public func add(_ historyEvent: HistoryEvent) throws {
         wasAddHistoryEventCalled = true
         lastAddedHistoryEvent = historyEvent
+
+        if let addHistoryEventError {
+            throw addHistoryEventError
+        }
+
         if historyEvent.extractedProfileId != nil {
             optOutEvents.append(historyEvent)
         } else {
@@ -1270,6 +1281,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         scanEvents.removeAll()
         optOutEvents.removeAll()
         backgroundTaskEventsToReturn.removeAll()
+        addHistoryEventError = nil
     }
 
     public var backgroundTaskEventsToReturn: [BackgroundTaskEvent] = []
@@ -1761,11 +1773,7 @@ public final class MockBrokerProfileJob: BrokerProfileJob, @unchecked Sendable {
 
     public override func main() {
         if shouldError {
-            errorDelegate?.dataBrokerOperationDidError(DataBrokerProtectionError.noActionFound,
-                                                       withBrokerURL: nil,
-                                                       version: nil,
-                                                       stepType: nil,
-                                                       dataBrokerParent: nil)
+            errorDelegate?.dataBrokerOperationDidError(DataBrokerProtectionError.noActionFound, withBrokerURL: nil, version: nil)
         }
 
         finish()
@@ -1810,11 +1818,7 @@ public final class MockBrokerProfileJobErrorDelegate: BrokerProfileJobErrorDeleg
 
     public init() {}
 
-    public func dataBrokerOperationDidError(_ error: any Error,
-                                            withBrokerURL brokerURL: String?,
-                                            version: String?,
-                                            stepType: StepType?,
-                                            dataBrokerParent: String?) {
+    public func dataBrokerOperationDidError(_ error: any Error, withBrokerURL brokerURL: String?, version: String?) {
         dataBrokerOperationDidErrorCalled = true
         operationErrors.append(error)
     }

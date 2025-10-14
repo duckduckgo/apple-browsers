@@ -40,6 +40,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
     let syncService: DDGSyncing
     let syncBookmarksAdapter: SyncBookmarksAdapter
     let syncCredentialsAdapter: SyncCredentialsAdapter
+    let syncCreditCardsAdapter: SyncCreditCardsAdapter?
     var connector: RemoteConnecting?
 
     let userAuthenticator = UserAuthenticator(reason: UserText.syncUserUserAuthenticationReason,
@@ -82,6 +83,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         syncService: DDGSyncing,
         syncBookmarksAdapter: SyncBookmarksAdapter,
         syncCredentialsAdapter: SyncCredentialsAdapter,
+        syncCreditCardsAdapter: SyncCreditCardsAdapter?,
         appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
         syncPausedStateManager: any SyncPausedStateManaging,
         source: String? = nil,
@@ -91,6 +93,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         self.syncService = syncService
         self.syncBookmarksAdapter = syncBookmarksAdapter
         self.syncCredentialsAdapter = syncCredentialsAdapter
+        self.syncCreditCardsAdapter = syncCreditCardsAdapter
         self.syncPausedStateManager = syncPausedStateManager
         self.source = source
         self.pairingInfo = pairingInfo
@@ -226,6 +229,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
     private func updateSyncPausedState(_ viewModel: SyncSettingsViewModel, syncPausedStateManager: any SyncPausedStateManaging) {
         viewModel.isSyncBookmarksPaused = syncPausedStateManager.isSyncBookmarksPaused
         viewModel.isSyncCredentialsPaused = syncPausedStateManager.isSyncCredentialsPaused
+        viewModel.isSyncCreditCardsPaused = syncPausedStateManager.isSyncCreditCardsPaused
         viewModel.isSyncPaused = syncPausedStateManager.isSyncPaused
     }
 
@@ -247,6 +251,9 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
         let invalidCredentialsObjects: [String] = (try? syncCredentialsAdapter.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []
         viewModel.invalidCredentialsTitles = invalidCredentialsObjects.map({ $0.truncated(length: 15) })
+
+        let invalidCreditCardObjects: [String] = (try? syncCreditCardsAdapter?.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []
+        viewModel.invalidCreditCardsTitles = invalidCreditCardObjects
     }
 
 

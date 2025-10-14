@@ -144,7 +144,6 @@ struct Terminating: TerminatingHandling {
                 pixel = .bookmarksCouldNotLoadDatabase
             }
             
-            recordBookmarkDatabaseError(error: bookmarkError, underlyingError: underlyingError)
             errorToReport = underlyingError
             mode = underlyingError.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(debugMessage: debugMessage)
         case .historyDatabase(let error):
@@ -190,19 +189,6 @@ struct Terminating: TerminatingHandling {
         let window = UIWindow.makeBlank()
         application.setWindow(window)
         window.rootViewController?.present(alertController, animated: true, completion: nil)
-    }
-
-    // MARK: - Error Tracking
-
-    private func recordBookmarkDatabaseError(error: BookmarksDatabaseError, underlyingError: Error) {
-        let errorInfo: [String: Any] = [
-            "timestamp": Date(),
-            "bookmarkError": error.name,
-            "domain": (underlyingError as NSError).domain,
-            "code": (underlyingError as NSError).code
-        ]
-
-        UserDefaults.app.set(errorInfo, forKey: "BookmarksValidator.lastBookmarkError")
     }
 
 }

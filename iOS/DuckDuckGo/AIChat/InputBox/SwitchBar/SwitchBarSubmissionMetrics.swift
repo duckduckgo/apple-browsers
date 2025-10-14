@@ -19,6 +19,7 @@
 
 import Foundation
 import Core
+import BrowserServicesKit
 
 /// Privacy-safe text length categorization for input analysis
 enum SwitchBarTextBucket: String, CaseIterable {

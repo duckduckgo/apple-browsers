@@ -1266,6 +1266,7 @@
 		9F8E0F382CCFAA8A001EA7C5 /* AddToDockPromoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8E0F372CCFAA8A001EA7C5 /* AddToDockPromoView.swift */; };
 		9F8E0F3D2CCFD072001EA7C5 /* AddToDockPromoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8E0F3C2CCFD071001EA7C5 /* AddToDockPromoViewModel.swift */; };
 		9F8FE9492BAE50E50071E372 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 9F8FE9482BAE50E50071E372 /* Lottie */; };
+		9F989C1B2E9E205B00EC2701 /* RemoteMessage.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9F989C1A2E9E205B00EC2701 /* RemoteMessage.xcassets */; };
 		9F9A922E2C86A56B001D036D /* OnboardingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9A922D2C86A56B001D036D /* OnboardingManager.swift */; };
 		9F9A92312C86AAE9001D036D /* OnboardingDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9A92302C86AAE9001D036D /* OnboardingDebugView.swift */; };
 		9F9A92342C86B42B001D036D /* AppIconPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9A92332C86B42B001D036D /* AppIconPicker.swift */; };
@@ -3474,6 +3475,7 @@
 		9F8E0F372CCFAA8A001EA7C5 /* AddToDockPromoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToDockPromoView.swift; sourceTree = "<group>"; };
 		9F8E0F3C2CCFD071001EA7C5 /* AddToDockPromoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToDockPromoViewModel.swift; sourceTree = "<group>"; };
 		9F9845142E8D35C4004D5C9B /* SystemFrameworksExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SystemFrameworksExtensions; path = ../SharedPackages/SystemFrameworksExtensions; sourceTree = SOURCE_ROOT; };
+		9F989C1A2E9E205B00EC2701 /* RemoteMessage.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = RemoteMessage.xcassets; sourceTree = "<group>"; };
 		9F9A922D2C86A56B001D036D /* OnboardingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingManager.swift; sourceTree = "<group>"; };
 		9F9A92302C86AAE9001D036D /* OnboardingDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingDebugView.swift; sourceTree = "<group>"; };
 		9F9A92332C86B42B001D036D /* AppIconPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconPicker.swift; sourceTree = "<group>"; };
@@ -6891,6 +6893,14 @@
 			path = Background;
 			sourceTree = "<group>";
 		};
+		9F989C152E9CCF3600EC2701 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				9F989C1A2E9E205B00EC2701 /* RemoteMessage.xcassets */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
 		9F9A922C2C86A560001D036D /* Manager */ = {
 			isa = PBXGroup;
 			children = (
@@ -7541,6 +7551,7 @@
 		C1B7B51D28941F160098FD6A /* RemoteMessaging */ = {
 			isa = PBXGroup;
 			children = (
+				9F989C152E9CCF3600EC2701 /* UI */,
 				9F44A7CB2E973F82008B3D5A /* RemoteMessagingActionHandling.swift */,
 				9FAB4B7C2E98D67300D8298A /* RemoteMessagingSurveyLastSearchStateRefresher.swift */,
 				9FB19C7F2E94BE8000B651B1 /* DefaultRemoteMessagingSurfacesProvider.swift */,
@@ -9765,6 +9776,7 @@
 				F1F533841F26ABAC00D80D4F /* Localizable.strings in Resources */,
 				6F8348E32D01E401005872E3 /* AlternateAppIcons.xcassets in Resources */,
 				F1ED309D1EDC2EA400651986 /* TabSwitcher.storyboard in Resources */,
+				9F989C1B2E9E205B00EC2701 /* RemoteMessage.xcassets in Resources */,
 				8524AAAC2A3888FE00EEC6D2 /* Waitlist.xcassets in Resources */,
 				982686B92600C0960011A8D6 /* ActionMessageView.xib in Resources */,
 				F4F7F10A25813FE200045D62 /* 01_Fire_really_small.json in Resources */,

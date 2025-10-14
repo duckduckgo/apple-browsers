@@ -60,186 +60,223 @@ public class SitePerformanceTester: NSObject {
         var detailedMetrics = CollectedMetrics()
         var failedAttempts = 0
 
-        // Adaptive iterations: configurable min and max
         let minIterations = iterations
-        let maxIterations = maxIterations
         var currentIteration = 0
         var shouldContinue = true
 
         while shouldContinue && currentIteration < maxIterations {
             currentIteration += 1
-            let iteration = currentIteration
-            // Check cancellation
+
             if isCancelled() {
-                return PerformanceTestResults(
-                    url: url,
-                    loadTimes: loadTimes,
-                    detailedMetrics: detailedMetrics,
-                    failedAttempts: failedAttempts,
-                    iterations: loadTimes.count,  // Actual completed tests (excluding warm-up)
-                    cancelled: true
-                )
+                return createCancelledResults(url: url, loadTimes: loadTimes, detailedMetrics: detailedMetrics, failedAttempts: failedAttempts)
             }
 
-            // Progress: Clearing cache
-            progressHandler?(iteration, iterations, "Clearing cache...")
+            let iterationResult = await performSingleIteration(
+                url: url,
+                iteration: currentIteration,
+                minIterations: iterations,
+                timeout: timeout
+            )
 
-            // Clear ALL cache and website data to ensure clean test
-            await clearCacheForURL(url)
+            loadTimes.append(contentsOf: iterationResult.loadTimes)
+            detailedMetrics = iterationResult.metrics
+            failedAttempts += iterationResult.failedAttempts
 
-            // Verify cache was actually cleared
-            let dataStore = webView.configuration.websiteDataStore
-            let remainingRecords = await dataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
-            if !remainingRecords.isEmpty {
-                logger.warning("Warning: \(remainingRecords.count) data records still present after clearing")
-            } else {
-                logger.debug("Cache clearing verified - 0 data records remaining")
-            }
-
-            // Wait 500ms after cache clearing for it to fully take effect
-            try? await Task.sleep(nanoseconds: 500_000_000)
-
-            // Warm up JavaScript engine with duckduckgo.com
-            progressHandler?(iteration, iterations, "Warming up JavaScript engine...")
-
-            guard let warmupURL = URL(string: "https://duckduckgo.com") else {
-                logger.error("Failed to create warmup URL")
-                failedAttempts += 1
-                continue
-            }
-
-            // Close the previous iteration's tab before creating a new one
-            if iteration > 1, let closeTab = closeTab {
-                logger.debug("Iteration \(iteration): Closing previous test tab")
-                _ = await closeTab()
-                logger.debug("Iteration \(iteration): Closed previous test tab")
-            }
-
-            // Create a fresh tab for this iteration (never touch the original tab)
-            guard let createNewTab = createNewTab else {
-                logger.error("createNewTab closure not provided")
-                failedAttempts += 1
-                continue
-            }
-
-            progressHandler?(iteration, iterations, "Creating fresh tab...")
-
-            guard let newWebView = await createNewTab() else {
-                logger.warning("Iteration \(iteration): Failed to create new tab - tab creation returned nil")
-                failedAttempts += 1
-                continue
-            }
-            logger.debug("Iteration \(iteration): Created new test tab: \(String(describing: Unmanaged.passUnretained(newWebView).toOpaque()))")
-
-            // Replace the webView reference with the fresh test tab
-            webView = newWebView
-
-            // Run warmup in this fresh tab
-            let warmupDelegate = NavigationDelegate()
-            let originalDelegate = webView.navigationDelegate
-
-            defer {
-                // Always restore original delegate
-                webView.navigationDelegate = originalDelegate
-            }
-
-            warmupDelegate.startMeasurement()
-            webView.navigationDelegate = warmupDelegate
-            webView.load(URLRequest(url: warmupURL))
-
-            // Wait for warmup to complete
-            let warmupTimeout: TimeInterval = 10
-            var warmupElapsed: TimeInterval = 0
-            let checkInterval: TimeInterval = 0.5
-
-            while !warmupDelegate.isComplete && warmupElapsed < warmupTimeout {
-                try? await Task.sleep(nanoseconds: UInt64(checkInterval * 1_000_000_000))
-                warmupElapsed += checkInterval
-            }
-
-            // Log warmup result
-            if let error = warmupDelegate.error {
-                logger.warning("Warmup navigation failed: \(error.localizedDescription)")
-            } else if !warmupDelegate.isComplete {
-                logger.warning("Warmup navigation timed out after \(warmupTimeout)s")
-            } else {
-                logger.debug("Warmup navigation completed in \(warmupDelegate.loadTime ?? 0)s")
-            }
-
-            // Brief pause after warmup for JS engine to settle
-            try? await Task.sleep(nanoseconds: 500_000_000)
-
-            // Progress: Loading page
-            progressHandler?(iteration, iterations, "Loading page...")
-
-            // Measure load time and collect metrics
-            let metrics = await measurePageLoadAndCollectMetrics(url: url, timeout: timeout)
-
-            if let metrics = metrics {
-                loadTimes.append(metrics.loadComplete)
-                detailedMetrics.append(metrics)
-                logger.debug("Iteration \(iteration): Collected metrics successfully")
-            } else {
-                failedAttempts += 1
-                logger.debug("Iteration \(iteration): Failed to collect metrics")
-            }
-
-            // Tab closing happens at the start of the next iteration
-            // The final tab stays open for the ViewModel to close after showing results
-
-            // Did we reach minimum iteration number?
-            if iteration >= minIterations {
-                // Calculate and display consistency metrics
-                if loadTimes.count >= 4 {
-                    let sorted = loadTimes.sorted()
-                    let median = PerformanceTestResults.calculateMedian(sorted)
-                    if let iqr = PerformanceTestResults.calculateIQR(sorted), median > 0 {
-                        let coeffVar = (iqr / median * 100)
-                        let p50Index = Int(Double(sorted.count - 1) * 0.50)
-                        let p95Index = Int(Double(sorted.count - 1) * 0.95)
-                        let ratio = sorted[p95Index] / sorted[p50Index]
-                        let statusMsg = String(format: "CoeffVar: %.1f%%, Ratio: %.2fx", coeffVar, ratio)
-                        logger.info("Consistency metrics: \(statusMsg) (target: <20% AND <2.0x)")
-                        logger.info("  Median: \(Int(median))ms, IQR: \(Int(iqr))ms, P50: \(Int(sorted[p50Index]))ms, P95: \(Int(sorted[p95Index]))ms")
-                        progressHandler?(iteration, maxIterations, statusMsg)
-
-                        let isConsistent = isDataConsistent(loadTimes)
-                        logger.info("  Consistency check result: \(isConsistent) (needs BOTH coeffVar<20% AND ratio<2.0x)")
-
-                        // Did we reach desired consistency?
-                        if isConsistent {
-                            // Yes - STOP
-                            logger.info("✓ Achieved 'Good' consistency after \(iteration) iterations. Stopping.")
-                            progressHandler?(iteration, maxIterations, "Good consistency achieved")
-                            shouldContinue = false
-                        } else {
-                            // Otherwise test one more time (continue loop)
-                            logger.info("Consistency not yet achieved. Testing iteration \(iteration + 1)...")
-                        }
-                    }
-                } else {
-                    logger.info("Only \(loadTimes.count) samples - need 4+ for consistency check. Continuing...")
-                }
-            }
+            shouldContinue = checkShouldContinue(
+                iteration: currentIteration,
+                minIterations: minIterations,
+                maxIterations: maxIterations,
+                loadTimes: loadTimes
+            )
         }
 
-        // Log summary of collected metrics
-        logger.debug("Test complete. Collected \(detailedMetrics.loadComplete.count) samples across \(currentIteration) iterations")
-        logger.debug("LoadComplete values: \(detailedMetrics.loadComplete)")
-        logger.debug("DomComplete values: \(detailedMetrics.domComplete)")
-        logger.debug("TTFB values: \(detailedMetrics.ttfb)")
-
-        // Note: navigationDelegate is already properly restored by defer blocks in measurePageLoadAndCollectMetrics
-        // The PerformanceTestViewModel will handle final cleanup by creating a new tab and closing this one
+        logTestSummary(detailedMetrics: detailedMetrics, currentIteration: currentIteration)
 
         return PerformanceTestResults(
             url: url,
             loadTimes: loadTimes,
             detailedMetrics: detailedMetrics,
             failedAttempts: failedAttempts,
-            iterations: loadTimes.count,  // Total successful measurements
+            iterations: loadTimes.count,
             cancelled: false
         )
+    }
+
+    private func createCancelledResults(
+        url: URL,
+        loadTimes: [TimeInterval],
+        detailedMetrics: CollectedMetrics,
+        failedAttempts: Int
+    ) -> PerformanceTestResults {
+        return PerformanceTestResults(
+            url: url,
+            loadTimes: loadTimes,
+            detailedMetrics: detailedMetrics,
+            failedAttempts: failedAttempts,
+            iterations: loadTimes.count,
+            cancelled: true
+        )
+    }
+
+    private func performSingleIteration(
+        url: URL,
+        iteration: Int,
+        minIterations: Int,
+        timeout: TimeInterval
+    ) async -> (loadTimes: [TimeInterval], metrics: CollectedMetrics, failedAttempts: Int) {
+        var loadTimes: [TimeInterval] = []
+        var detailedMetrics = CollectedMetrics()
+        var failedAttempts = 0
+
+        progressHandler?(iteration, minIterations, "Clearing cache...")
+        await clearCacheForURL(url)
+        await verifyCacheClearing()
+        try? await Task.sleep(nanoseconds: 500_000_000)
+
+        guard await prepareTestIteration(iteration: iteration) else {
+            return ([], detailedMetrics, 1)
+        }
+
+        await runWarmup(iteration: iteration, minIterations: minIterations)
+        try? await Task.sleep(nanoseconds: 500_000_000)
+
+        progressHandler?(iteration, minIterations, "Loading page...")
+
+        if let metrics = await measurePageLoadAndCollectMetrics(url: url, timeout: timeout) {
+            loadTimes.append(metrics.loadComplete)
+            detailedMetrics.append(metrics)
+            logger.debug("Iteration \(iteration): Collected metrics successfully")
+        } else {
+            failedAttempts += 1
+            logger.debug("Iteration \(iteration): Failed to collect metrics")
+        }
+
+        return (loadTimes, detailedMetrics, failedAttempts)
+    }
+
+    private func verifyCacheClearing() async {
+        let dataStore = webView.configuration.websiteDataStore
+        let remainingRecords = await dataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
+
+        if !remainingRecords.isEmpty {
+            logger.warning("Warning: \(remainingRecords.count) data records still present after clearing")
+        } else {
+            logger.debug("Cache clearing verified - 0 data records remaining")
+        }
+    }
+
+    private func prepareTestIteration(iteration: Int) async -> Bool {
+        if iteration > 1, let closeTab = closeTab {
+            logger.debug("Iteration \(iteration): Closing previous test tab")
+            await closeTab()
+            logger.debug("Iteration \(iteration): Closed previous test tab")
+        }
+
+        guard let createNewTab = createNewTab else {
+            logger.error("createNewTab closure not provided")
+            return false
+        }
+
+        guard let newWebView = await createNewTab() else {
+            logger.warning("Iteration \(iteration): Failed to create new tab")
+            return false
+        }
+
+        logger.debug("Iteration \(iteration): Created new test tab")
+        webView = newWebView
+        return true
+    }
+
+    private func runWarmup(iteration: Int, minIterations: Int) async {
+        progressHandler?(iteration, minIterations, "Warming up JavaScript engine...")
+
+        guard let warmupURL = URL(string: "https://duckduckgo.com") else {
+            logger.error("Failed to create warmup URL")
+            return
+        }
+
+        let warmupDelegate = NavigationDelegate()
+        let originalDelegate = webView.navigationDelegate
+
+        defer {
+            webView.navigationDelegate = originalDelegate
+        }
+
+        warmupDelegate.startMeasurement()
+        webView.navigationDelegate = warmupDelegate
+        webView.load(URLRequest(url: warmupURL))
+
+        await waitForWarmupCompletion(delegate: warmupDelegate)
+    }
+
+    private func waitForWarmupCompletion(delegate: NavigationDelegate) async {
+        let warmupTimeout: TimeInterval = 10
+        var warmupElapsed: TimeInterval = 0
+        let checkInterval: TimeInterval = 0.5
+
+        while !delegate.isComplete && warmupElapsed < warmupTimeout {
+            try? await Task.sleep(nanoseconds: UInt64(checkInterval * 1_000_000_000))
+            warmupElapsed += checkInterval
+        }
+
+        logWarmupResult(delegate: delegate)
+    }
+
+    private func logWarmupResult(delegate: NavigationDelegate) {
+        if let error = delegate.error {
+            logger.warning("Warmup navigation failed: \(error.localizedDescription)")
+        } else if !delegate.isComplete {
+            logger.warning("Warmup navigation timed out")
+        } else {
+            logger.debug("Warmup navigation completed in \(delegate.loadTime ?? 0)s")
+        }
+    }
+
+    private func checkShouldContinue(
+        iteration: Int,
+        minIterations: Int,
+        maxIterations: Int,
+        loadTimes: [TimeInterval]
+    ) -> Bool {
+        guard iteration >= minIterations, loadTimes.count >= 4 else {
+            return true
+        }
+
+        let isConsistent = isDataConsistent(loadTimes)
+        logConsistencyMetrics(loadTimes: loadTimes, iteration: iteration, maxIterations: maxIterations)
+
+        if isConsistent {
+            logger.info("✓ Achieved 'Good' consistency after \(iteration) iterations. Stopping.")
+            progressHandler?(iteration, maxIterations, "Good consistency achieved")
+            return false
+        }
+
+        logger.info("Consistency not yet achieved. Testing iteration \(iteration + 1)...")
+        return true
+    }
+
+    private func logConsistencyMetrics(loadTimes: [TimeInterval], iteration: Int, maxIterations: Int) {
+        let sorted = loadTimes.sorted()
+        let median = PerformanceTestResults.calculateMedian(sorted)
+
+        guard let iqr = PerformanceTestResults.calculateIQR(sorted), median > 0 else { return }
+
+        let coeffVar = (iqr / median * 100)
+        let p50Index = Int(Double(sorted.count - 1) * 0.50)
+        let p95Index = Int(Double(sorted.count - 1) * 0.95)
+        let ratio = sorted[p95Index] / sorted[p50Index]
+        let statusMsg = String(format: "CoeffVar: %.1f%%, Ratio: %.2fx", coeffVar, ratio)
+
+        logger.info("Consistency metrics: \(statusMsg) (target: <20% AND <2.0x)")
+        logger.info("  Median: \(Int(median))ms, IQR: \(Int(iqr))ms, P50: \(Int(sorted[p50Index]))ms, P95: \(Int(sorted[p95Index]))ms")
+        progressHandler?(iteration, maxIterations, statusMsg)
+    }
+
+    private func logTestSummary(detailedMetrics: CollectedMetrics, currentIteration: Int) {
+        logger.debug("Test complete. Collected \(detailedMetrics.loadComplete.count) samples across \(currentIteration) iterations")
+        logger.debug("LoadComplete values: \(detailedMetrics.loadComplete)")
+        logger.debug("DomComplete values: \(detailedMetrics.domComplete)")
+        logger.debug("TTFB values: \(detailedMetrics.ttfb)")
     }
 
     private func clearCacheForURL(_ url: URL) async {

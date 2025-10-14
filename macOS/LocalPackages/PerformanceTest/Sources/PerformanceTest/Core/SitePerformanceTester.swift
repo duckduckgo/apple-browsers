@@ -170,6 +170,7 @@ public class SitePerformanceTester: NSObject {
             logger.debug("Iteration \(iteration): Closing previous test tab")
             await closeTab()
             logger.debug("Iteration \(iteration): Closed previous test tab")
+            try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5s delay to visualize tab closure
         }
 
         guard let createNewTab = createNewTab else {
@@ -184,6 +185,7 @@ public class SitePerformanceTester: NSObject {
 
         logger.debug("Iteration \(iteration): Created new test tab")
         webView = newWebView
+        try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5s delay to visualize tab creation
         return true
     }
 

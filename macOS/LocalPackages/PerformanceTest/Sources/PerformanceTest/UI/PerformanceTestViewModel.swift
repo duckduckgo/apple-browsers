@@ -161,28 +161,14 @@ final class PerformanceTestViewModel: ObservableObject {
 
         guard let tester = duckDuckGoTester else { return nil }
 
-        do {
-            let results = await tester.runPerformanceTest(
-                url: url,
-                iterations: minIterations,
-                maxIterations: maxIterations,
-                timeout: PerformanceTestConstants.TestConfig.testTimeout
-            )
-            duckDuckGoTester = nil
-            return results
-        } catch {
-            handleDuckDuckGoError(error)
-            duckDuckGoTester = nil
-            return nil
-        }
-    }
-
-    private func handleDuckDuckGoError(_ error: Error) async {
-        let errorMsg = "DuckDuckGo test failed: \(error.localizedDescription)"
-        logger.error("\(errorMsg)")
-        statusText = errorMsg
-        errorMessage = errorMsg
-        try? await Task.sleep(nanoseconds: 2_000_000_000)
+        let results = await tester.runPerformanceTest(
+            url: url,
+            iterations: minIterations,
+            maxIterations: maxIterations,
+            timeout: PerformanceTestConstants.TestConfig.testTimeout
+        )
+        duckDuckGoTester = nil
+        return results
     }
 
     private func runSafariTest(url: URL) async -> PerformanceTestResults? {

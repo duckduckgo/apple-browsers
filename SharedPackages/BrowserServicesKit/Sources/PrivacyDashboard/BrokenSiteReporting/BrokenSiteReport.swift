@@ -97,6 +97,7 @@ public struct BrokenSiteReport {
     let openerContext: OpenerContext?
     let vpnOn: Bool
     let jsPerformance: [Double]?
+    let extendedPerformanceMetrics: PrivacyAwarePerformanceMetrics?
     let userRefreshCount: Int
     let locale: Locale
     let cookieConsentInfo: CookieConsentInfo?
@@ -133,6 +134,7 @@ public struct BrokenSiteReport {
         openerContext: OpenerContext?,
         vpnOn: Bool,
         jsPerformance: [Double]?,
+        extendedPerformanceMetrics: PrivacyAwarePerformanceMetrics? = nil,
         userRefreshCount: Int,
         locale: Locale = Locale.current,
         cookieConsentInfo: CookieConsentInfo?,
@@ -161,6 +163,7 @@ public struct BrokenSiteReport {
         self.openerContext = openerContext
         self.vpnOn = vpnOn
         self.jsPerformance = jsPerformance
+        self.extendedPerformanceMetrics = extendedPerformanceMetrics
         self.userRefreshCount = userRefreshCount
         self.locale = locale
         self.cookieConsentInfo = cookieConsentInfo
@@ -196,6 +199,7 @@ public struct BrokenSiteReport {
         openerContext: OpenerContext?,
         vpnOn: Bool,
         jsPerformance: [Double]?,
+        extendedPerformanceMetrics: PrivacyAwarePerformanceMetrics? = nil,
         userRefreshCount: Int,
         variant: String,
         locale: Locale = Locale.current,
@@ -228,6 +232,7 @@ public struct BrokenSiteReport {
         self.openerContext = openerContext
         self.vpnOn = vpnOn
         self.jsPerformance = jsPerformance
+        self.extendedPerformanceMetrics = extendedPerformanceMetrics
         self.userRefreshCount = userRefreshCount
         self.variant = variant
         self.locale = locale
@@ -289,6 +294,13 @@ public struct BrokenSiteReport {
         if let jsPerformance {
             let perf = jsPerformance.map { String($0) }.joined(separator: ",")
             result["jsPerformance"] = perf
+        }
+
+        if let extendedPerformanceMetrics {
+            let metricsDict = extendedPerformanceMetrics.toDictionary()
+            for (key, value) in metricsDict {
+                result["extendedPerformance.\(key)"] = String(describing: value)
+            }
         }
 
         if isPirEnabled == true {

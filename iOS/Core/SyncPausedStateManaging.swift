@@ -25,6 +25,7 @@ public protocol SyncPausedStateManaging: ObservableObject {
     var isSyncPaused: Bool { get }
     var isSyncBookmarksPaused: Bool { get }
     var isSyncCredentialsPaused: Bool { get }
+    var isSyncCreditCardsPaused: Bool { get }
     var syncPausedChangedPublisher: AnyPublisher<Void, Never> { get }
 //    var syncPausedMessageData: SyncPausedMessageData? { get }
 //    var syncBookmarksPausedMessageData: SyncPausedMessageData? { get }
@@ -32,6 +33,7 @@ public protocol SyncPausedStateManaging: ObservableObject {
     var currentSyncAllPausedError: String? { get }
     var currentSyncBookmarksPausedError: String? { get }
     var currentSyncCredentialsPausedError: String? { get }
+    var currentSyncCreditCardsPausedError: String? { get }
 
 
     func syncDidTurnOff()

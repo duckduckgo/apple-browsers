@@ -68,7 +68,7 @@ struct Launching: LaunchingHandling {
 
         // MARK: - Application Setup
         // Handles one-time application setup during launch
-        let isBookmarksStructureMissing = try configuration.start()
+        try configuration.start()
 
         // MARK: - Service Initialization (continued)
         // Create and initialize remaining core services
@@ -80,7 +80,7 @@ struct Launching: LaunchingHandling {
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared)
         let configurationService = RemoteConfigurationService()
-        let crashCollectionService = CrashCollectionService(isBookmarksStructureMissing: isBookmarksStructureMissing)
+        let crashCollectionService = CrashCollectionService()
         let statisticsService = StatisticsService()
         let reportingService = ReportingService(fireproofing: fireproofing, featureFlagging: featureFlagger)
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,

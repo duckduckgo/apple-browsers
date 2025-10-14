@@ -22,6 +22,7 @@ import BrowserServicesKit
 import SwiftUI
 import Combine
 import Core
+import DDGSync
 
 protocol AutofillCreditCardListViewModelDelegate: AnyObject {
     func autofillCreditCardListViewModelDidSelectCard(_ viewModel: AutofillCreditCardListViewModel, card: SecureVaultModels.CreditCard)
@@ -63,12 +64,14 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
     }
     
     private var secureVault: (any AutofillSecureVault)?
+    private let syncService: DDGSyncing
     private var cachedDeletedCreditCard: SecureVaultModels.CreditCard?
     private var cancellables: Set<AnyCancellable> = []
     
-    init(secureVault: (any AutofillSecureVault)? = nil, source: AutofillSettingsSource) {
+    init(secureVault: (any AutofillSecureVault)? = nil, syncService: DDGSyncing, source: AutofillSettingsSource) {
         self.secureVault = secureVault
-        
+        self.syncService = syncService
+
         if let count = try? secureVault?.creditCardsCount() {
             authenticationNotRequired = count == 0
             Pixel.fire(pixel: .autofillCardsManagementOpened,
@@ -103,6 +106,7 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
             try secureVault?.deleteCreditCardFor(cardId: cardId)
             fetchCreditCards()
             presentDeleteConfirmation()
+            syncService.scheduler.notifyDataChanged()
         } catch {
             Pixel.fire(pixel: .secureVaultError, error: error)
         }

@@ -144,6 +144,7 @@ struct SettingsAIFeaturesView: View {
                                              subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
                                              image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist))
                         }
+                        .listRowBackground(Color(designSystemColor: .surface))
                     } else {
                         SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
                                          subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,

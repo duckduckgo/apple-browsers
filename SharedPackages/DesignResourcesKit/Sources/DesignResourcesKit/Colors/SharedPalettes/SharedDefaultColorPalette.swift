@@ -22,7 +22,6 @@ import SwiftUI
 
 /// Based on DefaultColorPalette, for compatibility. This class will be removed as soon as `FigmaColorPalette` is validated
 struct SharedDefaultColorPalette: SharedColorPaletteDefinition {
-
     private static let x1F1F1F = Color(0x1F1F1F)
     private static let x141415 = Color(0x141415)
     private static let x181818 = Color(0x181818)
@@ -108,9 +107,9 @@ struct SharedDefaultColorPalette: SharedColorPaletteDefinition {
     static let controlsFillTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.18), darkColor: xF9F9F9.opacity(0.24))
 
     // Decorations
-    static let decorationPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.3), darkColor: xF9F9F9.opacity(0.36))
-    static let decorationSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.48), darkColor: xF9F9F9.opacity(0.64))
-    static let decorationTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
+    static let surfaceDecorationPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.3), darkColor: xF9F9F9.opacity(0.36))
+    static let surfaceDecorationSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.48), darkColor: xF9F9F9.opacity(0.64))
+    static let surfaceDecorationTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
 
     // Destructive Colors
     static let destructiveContentPrimary = DynamicColor(lightHex: 0xffffff, darkHex: 0x000000)

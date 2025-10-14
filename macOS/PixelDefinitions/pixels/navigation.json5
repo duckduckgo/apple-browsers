@@ -82,5 +82,85 @@
                 "description": "Time in milliseconds from navigation start to all resources complete"
             }
         ]
+    },
+    "siteLoadingPerformance": {
+        "description": "Fired when CSS pushes privacy-aware performance metrics via expandedPerformanceMetricsResult notification",
+        "owners": ["diegoreymendez"],
+        "triggers": ["page_load"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "first_contentful_paint_ms",
+                "type": "integer",
+                "description": "First Contentful Paint in milliseconds (rounded for privacy)"
+            },
+            {
+                "key": "largest_contentful_paint_ms",
+                "type": "integer",
+                "description": "Largest Contentful Paint in milliseconds (rounded for privacy)"
+            },
+            {
+                "key": "time_to_first_byte_ms",
+                "type": "integer",
+                "description": "Time to First Byte in milliseconds (rounded for privacy)"
+            },
+            {
+                "key": "load_complete_ms",
+                "type": "integer",
+                "description": "Load Complete time in milliseconds (rounded for privacy)"
+            },
+            {
+                "key": "transfer_size_bucket",
+                "type": "string",
+                "enum": ["small", "medium", "large", "very_large"],
+                "description": "Transfer size bucket to prevent fingerprinting"
+            },
+            {
+                "key": "decoded_body_size_bucket",
+                "type": "string",
+                "enum": ["small", "medium", "large", "very_large"],
+                "description": "Decoded body size bucket to prevent fingerprinting"
+            },
+            {
+                "key": "encoded_body_size_bucket",
+                "type": "string",
+                "enum": ["small", "medium", "large", "very_large"],
+                "description": "Encoded body size bucket to prevent fingerprinting"
+            },
+            {
+                "key": "resource_count_bucket",
+                "type": "string",
+                "enum": ["few", "moderate", "many", "excessive"],
+                "description": "Resource count bucket to prevent fingerprinting"
+            },
+            {
+                "key": "total_resources_size_bucket",
+                "type": "string",
+                "enum": ["small", "medium", "large", "very_large"],
+                "description": "Total resources size bucket to prevent fingerprinting"
+            },
+            {
+                "key": "dom_interactive_ms",
+                "type": "integer",
+                "description": "DOM Interactive time in milliseconds (rounded for privacy)"
+            },
+            {
+                "key": "dom_complete_ms",
+                "type": "integer",
+                "description": "DOM Complete time in milliseconds (rounded for privacy)"
+            },
+            {
+                "key": "dom_content_loaded_ms",
+                "type": "integer",
+                "description": "DOM Content Loaded time in milliseconds (rounded for privacy)"
+            },
+            {
+                "key": "redirect_count_bucket",
+                "type": "string",
+                "enum": ["none", "few", "moderate", "many"],
+                "description": "Redirect count bucket to prevent fingerprinting"
+            }
+        ]
     }
 }

@@ -316,7 +316,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
             return .noAction
         }
 
-        guard featureFlagger.isFeatureOn(.fireDialog) || identifiers.count > 1 else {
+        guard identifiers.count > 1 else {
             await dataProvider.deleteVisits(matching: .visits(identifiers))
             firePixel(.delete, .daily)
             firePixel(.singleItemDeleted, .dailyAndStandard)

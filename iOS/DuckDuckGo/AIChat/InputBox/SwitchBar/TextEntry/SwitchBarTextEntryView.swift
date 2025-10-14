@@ -117,7 +117,6 @@ class SwitchBarTextEntryView: UIView {
         textView.isScrollEnabled = false
         textView.showsVerticalScrollIndicator = false
 
-
         placeholderLabel.font = textFont
         placeholderLabel.adjustsFontForContentSizeCategory = true
         placeholderLabel.textColor = UIColor(designSystemColor: .textSecondary)
@@ -290,9 +289,6 @@ class SwitchBarTextEntryView: UIView {
             }
         }
 
-        let size = textView.systemLayoutSizeFitting(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude))
-        let contentExceedsMaxHeight = size.height > Constants.maxHeight
-
         // Reset defaults
         textView.textContainer.lineBreakMode = .byWordWrapping
 
@@ -307,7 +303,10 @@ class SwitchBarTextEntryView: UIView {
             textView.showsVerticalScrollIndicator = false
             textView.textContainer.lineBreakMode = .byTruncatingTail
         } else if isExpandable {
-            let newHeight = max(Constants.minHeight, min(Constants.maxHeight, size.height))
+            let contentHeight = getCurrentContentHeight()
+            let contentExceedsMaxHeight = contentHeight > Constants.maxHeight
+            
+            let newHeight = max(Constants.minHeight, min(Constants.maxHeight, contentHeight))
 
             heightConstraint?.constant = newHeight
 
@@ -321,6 +320,16 @@ class SwitchBarTextEntryView: UIView {
         }
 
         adjustScrollPosition()
+    }
+
+    private func getCurrentContentHeight() -> CGFloat {
+        let previousScrollSetting = textView.isScrollEnabled
+        defer {
+            textView.isScrollEnabled = previousScrollSetting
+        }
+
+        textView.isScrollEnabled = false
+        return textView.systemLayoutSizeFitting(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude)).height
     }
 
     /// Computes the min height for one line given current fonts/insets, using the larger of the text view or placeholder font.

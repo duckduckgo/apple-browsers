@@ -41,8 +41,8 @@ final class FireMock: FireProtocol {
 
     // Captured calls
     struct BurnAllCall { let isBurnOnExit: Bool; let url: URL }
-    struct BurnEntityCall { let entity: Fire.BurningEntity; let includingHistory: Bool }
-    struct BurnVisitsCall { let visits: [Visit]; let isToday: Bool; let closeWindows: Bool; let clearSiteData: Bool; let url: URL? }
+    struct BurnEntityCall { let entity: Fire.BurningEntity; let includingHistory: Bool; let includingChatHistory: Bool }
+    struct BurnVisitsCall { let visits: [Visit]; let isToday: Bool; let closeWindows: Bool; let clearSiteData: Bool; let clearChatHistory: Bool; let url: URL? }
     struct BurnChatHistoryCall { }
 
     private(set) var burnAllCalls: [BurnAllCall] = []
@@ -69,7 +69,7 @@ final class FireMock: FireProtocol {
 
     @MainActor
     func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool = true, includingChatHistory: Bool = false, completion: (@MainActor () -> Void)? = nil) {
-        burnEntityCalls.append(.init(entity: entity, includingHistory: includingHistory))
+        burnEntityCalls.append(.init(entity: entity, includingHistory: includingHistory, includingChatHistory: includingChatHistory))
         completion?()
     }
 
@@ -82,7 +82,7 @@ final class FireMock: FireProtocol {
                     clearChatHistory: Bool = false,
                     urlToOpenIfWindowsAreClosed url: URL? = .newtab,
                     completion: (@MainActor () -> Void)? = nil) {
-        burnVisitsCalls.append(.init(visits: visits, isToday: isToday, closeWindows: closeWindows, clearSiteData: clearSiteData, url: url))
+        burnVisitsCalls.append(.init(visits: visits, isToday: isToday, closeWindows: closeWindows, clearSiteData: clearSiteData, clearChatHistory: clearChatHistory, url: url))
         completion?()
     }
 

@@ -521,14 +521,6 @@ public struct PerformanceTestResults {
         return loadTimes.reduce(0, +) / Double(loadTimes.count)
     }
 
-    public var minTime: TimeInterval? {
-        return loadTimes.min()
-    }
-
-    public var maxTime: TimeInterval? {
-        return loadTimes.max()
-    }
-
     public var standardDeviation: TimeInterval? {
         guard !loadTimes.isEmpty else { return nil }
         let avg = averageTime ?? 0
@@ -722,12 +714,6 @@ public struct PerformanceTestResults {
     public var coefficientOfVariation: Double? {
         guard let avg = averageTime, let stdDev = standardDeviation, avg > 0 else { return nil }
         return (stdDev / avg) * 100
-    }
-
-    public var recommendedIterations: Int {
-        guard let coeffVariation = coefficientOfVariation else { return 20 }
-
-        if coeffVariation > 30 { return 50 } else if coeffVariation > 15 { return 30 } else { return 20 }
     }
 
     public var performanceScore: Int {

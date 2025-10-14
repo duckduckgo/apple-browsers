@@ -249,13 +249,6 @@ public class SafariTestRunner: SafariTestExecuting {
 
     // MARK: - Internal Methods (for testing)
 
-    internal func buildProcessArguments() -> [String] {
-        return [
-            url.absoluteString,
-            "\(iterations)"
-        ]
-    }
-
     internal func buildProcessArguments(scriptPath: String, outputPath: String) -> [String] {
         return [
             scriptPath,
